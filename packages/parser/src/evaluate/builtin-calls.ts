@@ -618,6 +618,12 @@ const assignOwnEntries = (target: StaticObjectValue, source: StaticValue): void 
   }
 };
 
+/** `ToIntegerOrInfinity`: `NaN` reads as 0, infinities stay, everything else truncates. */
+const toIntegerOrInfinity = (value: StaticPrimitive): number => {
+  const number = Number(value);
+  return Number.isNaN(number) ? 0 : Math.trunc(number);
+};
+
 /** `receiver.hasOwnProperty(key)` / `propertyIsEnumerable(key)`; null when the receiver's own keys are not modeled. */
 const hasOwnProperty = (
   receiver: StaticValue,
@@ -970,7 +976,9 @@ const callGlobal = (
     case "Object":
       return first ? toObjectValue(first, location) : objectValue([]);
     case "String":
-      return first ? toStringValue(first) : primitiveValue("");
+      return first
+        ? toStringValue(interpreter.toPrimitive(first, ["toString", "valueOf"], context, location))
+        : primitiveValue("");
     case "Number":
       return first ? toNumberValue(first) : primitiveValue(0);
     case "Boolean":
@@ -1060,7 +1068,7 @@ const callGlobal = (
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context, location);
-        return source;
+        return source.kind === "list" ? listValue([...source.items]) : source;
       }
       return unknownValue("Array.from of dynamic iterable", location);
     }
@@ -1083,6 +1091,15 @@ const callGlobal = (
         ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
         : mapped;
     }
+    case "Object.hasOwn": {
+      if (first === undefined || second === undefined) return unknownValue(name, location);
+      return mapValue(
+        first,
+        (target) =>
+          hasOwnProperty(target, second, "hasOwnProperty") ??
+          unknownPrimitiveValue("boolean", `${name} of ${describeValue(target)}`),
+      );
+    }
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
@@ -1094,7 +1111,10 @@ const callGlobal = (
         if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
-      const target = first ?? UNDEFINED_VALUE;
+      const target =
+        first?.kind === "namespace"
+          ? interpreter.materializeNamespace(first.module)
+          : (first ?? UNDEFINED_VALUE);
       return getOwnEnumerableEntries(target)
         ? inspect(target)
         : mapValue(distributeObjectBranches(target), inspect);
@@ -1145,12 +1165,23 @@ const callGlobal = (
       if (first?.kind === "primitive") return TRUE_VALUE;
       return unknownPrimitiveValue("boolean", `${name} on a dynamic target`);
     case "Object.seal":
-    case "Object.setPrototypeOf":
       return first ?? UNDEFINED_VALUE;
+    case "Object.setPrototypeOf": {
+      const prototype = args[1];
+      if (
+        prototype?.kind === "object" &&
+        (first?.kind === "object" || first?.kind === "function")
+      ) {
+        if (first.kind === "object") first.prototype = prototype;
+        else first.inheritsFrom = prototype;
+      }
+      return first ?? UNDEFINED_VALUE;
+    }
     case "Object.getPrototypeOf":
     case "Reflect.getPrototypeOf":
       if (first?.kind === "class") return getClassPrototype(first);
-      if (first?.kind === "function") return { kind: "global", name: "Function.prototype" };
+      if (first?.kind === "function")
+        return first.inheritsFrom ?? { kind: "global", name: "Function.prototype" };
       if (first?.kind === "object" && first.prototype) return first.prototype;
       if (first?.kind === "object" && first.hasNullPrototype) return NULL_VALUE;
       if (first?.kind === "object" && first.constructedBy)
@@ -1403,6 +1434,19 @@ const callGlobal = (
       break;
   }
   if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
+  if (name === "String.fromCharCode" || name === "String.fromCodePoint") {
+    const natives = toNativeArguments(args, null);
+    if (natives === null) return unknownPrimitiveValue("string", name);
+    const codes = natives.map(Number);
+    if (name === "String.fromCharCode") return primitiveValue(String.fromCharCode(...codes));
+    if (codes.every((code) => Number.isInteger(code) && code >= 0 && code <= 0x10ffff))
+      return primitiveValue(String.fromCodePoint(...codes));
+    return thrownValue(
+      "String.fromCodePoint() of an invalid code point",
+      createErrorValue("RangeError", [primitiveValue("Invalid code point")], location),
+      location,
+    );
+  }
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
@@ -2309,18 +2353,30 @@ export const evaluateBuiltinCall = (
           second?.kind === "primitive" && typeof second.value === "number"
             ? Math.max(0, second.value < 0 ? receiver.items.length + second.value : second.value)
             : 0;
-        const verdicts = receiver.items
-          .slice(fromIndex)
-          .map((item) => compareIdentity(item, first));
-        const foundIndex = verdicts.indexOf(true);
-        if (
-          foundIndex !== -1 &&
-          verdicts.slice(0, foundIndex).every((verdict) => verdict === false)
-        ) {
-          return name === "includes" ? TRUE_VALUE : primitiveValue(foundIndex + fromIndex);
+        const searched = receiver.items.slice(fromIndex);
+        const locate = (needle: StaticValue): StaticValue | null => {
+          const verdicts = searched.map((item) => compareIdentity(item, needle));
+          const foundIndex = verdicts.indexOf(true);
+          if (
+            foundIndex !== -1 &&
+            verdicts.slice(0, foundIndex).every((verdict) => verdict === false)
+          ) {
+            return name === "includes" ? TRUE_VALUE : primitiveValue(foundIndex + fromIndex);
+          }
+          if (verdicts.every((verdict) => verdict === false)) {
+            return name === "includes" ? FALSE_VALUE : primitiveValue(-1);
+          }
+          return null;
+        };
+        if (first.kind !== "branch") {
+          const located = locate(first);
+          if (located) return located;
+          break;
         }
-        if (verdicts.every((verdict) => verdict === false)) {
-          return name === "includes" ? FALSE_VALUE : primitiveValue(-1);
+        if (first.alternatives.length > MAX_DISTRIBUTED_ALTERNATIVES) break;
+        const located = first.alternatives.map(locate);
+        if (located.every((alternative) => alternative !== null)) {
+          return mapValue(first, (_alternative, index) => located[index] ?? UNDEFINED_VALUE);
         }
         break;
       }
@@ -2429,18 +2485,18 @@ export const evaluateBuiltinCall = (
       }
       case "splice": {
         interpreter.recordHeapMutation(receiver);
-        const start = first?.kind === "primitive" ? Number(first.value) : Number.NaN;
+        const start = first?.kind === "primitive" ? toIntegerOrInfinity(first.value) : Number.NaN;
         const deleteCount =
           second === undefined
-            ? receiver.items.length
+            ? Number.POSITIVE_INFINITY
             : second.kind === "primitive"
-              ? Number(second.value)
+              ? toIntegerOrInfinity(second.value)
               : Number.NaN;
         if (
           hasDefiniteItems(receiver) &&
           context.uncertainDepth === 0 &&
-          Number.isInteger(start) &&
-          Number.isInteger(deleteCount)
+          !Number.isNaN(start) &&
+          !Number.isNaN(deleteCount)
         ) {
           return listValue(receiver.items.splice(start, deleteCount, ...args.slice(2)));
         }

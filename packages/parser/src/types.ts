@@ -252,6 +252,8 @@ export interface SuperBinding {
   construct: ((args: StaticValue[]) => void) | null;
   /** The class `super.member` reads from; null for a base class. */
   parent: StaticValue | null;
+  /** The object a base constructor function returned in place of `this`, once `super(...)` ran. */
+  replacedThis?: StaticValue;
 }
 
 export interface ContextDefinition {
@@ -332,9 +334,12 @@ export type MacroJsxChildSource =
 
 /** React hooks bound to the stub's own fiber, with the reconciler's ordering rules. */
 export interface StubHooks {
-  useState: (initial: StaticValue) => [StaticValue, (next: StaticValue) => void];
+  useState: (
+    initial: StaticValue | (() => StaticValue),
+  ) => [StaticValue, (next: StaticValue | ((current: StaticValue) => StaticValue)) => void];
   useRef: <T>(initial: T) => { current: T };
   useEffect: (effect: () => void | (() => void), dependencies: unknown[]) => void;
+  useLayoutEffect: (effect: () => void | (() => void), dependencies: unknown[]) => void;
 }
 
 /**
@@ -798,6 +803,8 @@ export interface StaticFunctionValue {
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
   isClientReference?: boolean;
+  /** The object `Object.setPrototypeOf` made the function inherit from instead of `Function.prototype`. */
+  inheritsFrom?: StaticObjectValue;
 }
 
 export interface StaticClassValue {

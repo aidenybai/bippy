@@ -139,7 +139,7 @@ export const nextMemoCell = (
 };
 
 /** `Object.is` on hook values: decided identity, else values analysis cannot tell apart count as the same. */
-const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
+export const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
   compareIdentity(left, right) ?? areValuesEquivalent(left, right);
 
 const escapedStateValue = (cell: StateCell): StaticValue =>

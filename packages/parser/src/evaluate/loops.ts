@@ -36,8 +36,13 @@ type LoopStatement =
   | WhileStatement
   | DoWhileStatement;
 
-/** Upper bound on concretely unrolled iterations before the tail becomes uncertain. */
-const MAX_UNROLLED_ITERATIONS = 256;
+/**
+ * Upper bound on concretely unrolled iterations of a conditional loop before
+ * the tail becomes uncertain. Loops over known data (a tokenizer walking a
+ * string) legitimately run thousands of decidable iterations; the step budget
+ * bounds a loop that never terminates.
+ */
+const MAX_UNROLLED_ITERATIONS = 65_536;
 
 type UnrollResult =
   | { kind: "exact"; outcome: StatementOutcome }
@@ -87,7 +92,9 @@ const iterationValues = (
       return [...right.value].map(primitiveValue);
     return null;
   }
-  const enumerated = getEnumerationTarget(right);
+  const enumerated = getEnumerationTarget(
+    right.kind === "namespace" ? interpreter.materializeNamespace(right.module) : right,
+  );
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);
   return entries ? entries.map(([key]) => primitiveValue(key)) : null;
@@ -133,7 +140,7 @@ const unrollForEach = (
   context: EvaluationContext,
 ): UnrollResult | null => {
   const values = iterationValues(interpreter, statement, context);
-  if (!values || values.length > MAX_UNROLLED_ITERATIONS) return null;
+  if (!values) return null;
   const outcomes: StatementOutcome[] = [];
   for (const value of values) {
     const iterationContext = withScope(context, createScope(context.scope));

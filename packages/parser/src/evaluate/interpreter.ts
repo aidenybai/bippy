@@ -300,6 +300,7 @@ import {
   objectValue,
   setObjectProperty,
   deleteObjectProperty,
+  hasTrailingUnknownSpread,
   omitObjectKeys,
   partialJsonValue,
   primitiveValue,
@@ -658,6 +659,10 @@ const isNonProgressingRecursion = (
   );
 };
 
+/** `this` inside a function body: the object a base constructor returned takes over once `super(...)` ran. */
+const getBoundThis = (context: EvaluationContext): StaticValue | null =>
+  context.superBinding?.replacedThis ?? context.thisValue ?? null;
+
 const getCallReceiver = (
   functionValue: StaticFunctionValue,
   options: CallOptions,
@@ -981,14 +986,14 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  /** The exports of a module as an object (`{ ...m }`, `Object.keys(m)`, `for..in`); its own keys are the export names in code unit order. */
   materializeNamespace(module: ModuleRecord): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
     return objectValue(
-      names.map((name) => ({
+      [...names].sort().map((name) => ({
         kind: "property",
         key: name,
         value: this.evaluateModuleExport(module, name),
@@ -1690,7 +1695,7 @@ export class Interpreter {
         if (node.name === "undefined") return UNDEFINED_VALUE;
         return this.lookupIdentifier(node.name, context);
       case "ThisExpression":
-        return context.thisValue ?? this.evaluateUnboundThis(context, location);
+        return getBoundThis(context) ?? this.evaluateUnboundThis(context, location);
       case "ArrayExpression":
         return this.evaluateArrayExpression(node, context);
       case "ObjectExpression":
@@ -1837,10 +1842,47 @@ export class Interpreter {
       const quasiText = primitiveValue(quasi.value.cooked ?? quasi.value.raw);
       const withQuasi = applyBinaryOperator("+", text, quasiText);
       const expression = node.expressions[index];
-      return expression
-        ? applyBinaryOperator("+", withQuasi, this.evaluateExpression(expression, context))
-        : withQuasi;
+      if (!expression) return withQuasi;
+      const substituted = this.toPrimitive(
+        this.evaluateExpression(expression, context),
+        ["toString", "valueOf"],
+        context,
+        this.locate(context.module, expression),
+      );
+      return applyBinaryOperator("+", withQuasi, substituted);
     }, primitiveValue(""));
+  }
+
+  /**
+   * `OrdinaryToPrimitive` of an object: the conversion methods run in `hint`
+   * order until one yields a primitive. `Object.prototype.valueOf` returns the
+   * object itself and `Object.prototype.toString` yields `[object Object]`; an
+   * object whose methods are not modeled keeps its existing native conversion.
+   */
+  toPrimitive(
+    value: StaticValue,
+    hint: ["toString", "valueOf"] | ["valueOf", "toString"],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    return mapValue(value, (alternative) => {
+      if (alternative.kind !== "object") return alternative;
+      for (const name of hint) {
+        const method = getObjectProperty(alternative, name);
+        if (method.kind === "function") {
+          const converted = this.callValue(method, [], context, location, {
+            thisValue: alternative,
+          });
+          if (converted.kind !== "object" && converted.kind !== "list") return converted;
+          continue;
+        }
+        if (method.kind !== "primitive" || method.value !== undefined) return alternative;
+        if (name === "toString" && !alternative.hasNullPrototype) {
+          return primitiveValue("[object Object]");
+        }
+      }
+      return alternative;
+    });
   }
 
   private evaluateArrayExpression(node: ArrayExpression, context: EvaluationContext): StaticValue {
@@ -2263,7 +2305,7 @@ export class Interpreter {
         this.recordHeapMutation(target);
         this.escapeWalk.memo.invalidate(target, name);
         if (name !== null) deleteObjectProperty(target, name);
-        else
+        else if (!hasTrailingUnknownSpread(target))
           target.entries.push({
             kind: "spread",
             value: unknownValue(`property ${describeValue(key)} deleted`),
@@ -2297,6 +2339,15 @@ export class Interpreter {
         hasProperty(left, right) ??
         this.hasGlobalObjectProperty(left, right, context.environment) ??
         applyBinaryOperator("in", left, right)
+      );
+    }
+    if (node.operator === "+") {
+      const location = this.locate(context.module, node);
+      return applyBinaryOperator(
+        "+",
+        this.toPrimitive(left, ["valueOf", "toString"], context, location),
+        this.toPrimitive(right, ["valueOf", "toString"], context, location),
+        this.getRealm(context.environment),
       );
     }
     return applyBinaryOperator(node.operator, left, right, this.getRealm(context.environment));
@@ -2854,6 +2905,10 @@ export class Interpreter {
         const property =
           object.kind === "class" ? getStaticProperty(object, key) : object.properties.get(key);
         if (property) return property;
+        if (object.kind === "function" && object.inheritsFrom) {
+          const inherited = getObjectProperty(object.inheritsFrom, key);
+          if (inherited.kind !== "primitive" || inherited.value !== undefined) return inherited;
+        }
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         if (object.kind === "class") {
           if (key === "prototype") return getClassPrototypeObject(this, object, context);
@@ -3036,7 +3091,7 @@ export class Interpreter {
     if (isReceiverIndependent(callee)) return callWith(callee, null);
     return joinAlternatives(
       receivers.map((target, index) =>
-        callWith(callees[index], member.object.type === "Super" ? context.thisValue : target),
+        callWith(callees[index], member.object.type === "Super" ? getBoundThis(context) : target),
       ),
     );
   }

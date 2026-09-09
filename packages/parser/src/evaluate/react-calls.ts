@@ -21,6 +21,7 @@ import type { EvaluationContext } from "./context.js";
 import {
   escapeStateCell,
   invokeHookFactory,
+  isSameHookValue,
   nextMemoCell,
   nextStateCell,
   queueStateUpdate,
@@ -72,7 +73,7 @@ const stateHook = (
     current: StaticValue,
     tools: StubRenderTools,
   ) => StaticValue,
-  reduceEscaped: (action: StaticValue | undefined) => StaticValue | null,
+  reduceEscaped: (action: StaticValue | undefined, current: StaticValue) => StaticValue | null,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -100,7 +101,11 @@ const stateHook = (
     },
     onEscape: (argumentValues) => {
       const action = argumentValues?.[0];
-      escapeStateCell(frame, cell, action === null ? null : reduceEscaped(action));
+      escapeStateCell(
+        frame,
+        cell,
+        action === null ? null : reduceEscaped(action, cell.next ?? cell.current),
+      );
     },
   };
   return listValue([cell.current, cell.setter]);
@@ -501,7 +506,13 @@ export const evaluateReactApiCall = (
           first
             ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
-        () => null,
+        (action, current) => {
+          if (!first) return null;
+          const reduce = (state: StaticValue): StaticValue =>
+            interpreter.callValue(first, [state, action ?? UNDEFINED_VALUE], context, location);
+          const next = reduce(current);
+          return next.kind !== "unknown" && isSameHookValue(next, reduce(next)) ? next : null;
+        },
       );
     }
     case "useMemo": {

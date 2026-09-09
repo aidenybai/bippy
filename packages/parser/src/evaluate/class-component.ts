@@ -562,9 +562,16 @@ export const constructClassInstance = (
   classValue: StaticClassValue,
   args: StaticValue[],
   context: EvaluationContext,
-): StaticObjectValue => {
+): StaticValue => {
   const instance = objectFromRecord({});
-  const chain = initializeInstance(interpreter, classValue, instance, args, context);
+  const { chain, replacedThis } = initializeInstance(
+    interpreter,
+    classValue,
+    instance,
+    args,
+    context,
+  );
+  if (replacedThis) return replacedThis;
   const baseValue = chain[chain.length - 1].body.superValue;
   if (baseValue && baseValue.kind !== "class") {
     instance.entries.unshift({
@@ -584,7 +591,7 @@ interface ClassLayer {
 const initializeFields = (
   interpreter: Interpreter,
   layer: ClassLayer,
-  instance: StaticObjectValue,
+  instance: StaticValue,
 ): void => {
   for (const field of layer.members.fields) {
     const fieldContext: EvaluationContext = {
@@ -595,8 +602,32 @@ const initializeFields = (
       field.kind === "field" && field.value
         ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
         : UNDEFINED_VALUE;
-    instance.entries.push({ kind: "property", key: field.key, value });
+    if (instance.kind === "object") {
+      instance.entries.push({ kind: "property", key: field.key, value });
+    } else if (instance.kind === "function") {
+      instance.properties.set(field.key, value);
+    }
   }
+};
+
+/**
+ * `super(...)` reaching a base constructor that is a plain function: `new`
+ * runs it against the instance and adopts the object it returns as `this`.
+ */
+const constructFunctionBase = (
+  interpreter: Interpreter,
+  layer: ClassLayer,
+  args: StaticValue[],
+  instance: StaticObjectValue,
+): StaticValue | null => {
+  const base = layer.current.body.superValue;
+  if (base?.kind !== "function") return null;
+  const returned = interpreter.callFunction(base, args, layer.methodContext, {
+    thisValue: instance,
+  });
+  return returned.kind === "object" || returned.kind === "function" || returned.kind === "list"
+    ? returned
+    : null;
 };
 
 /**
@@ -612,23 +643,27 @@ const constructLayer = (
   index: number,
   args: StaticValue[],
   instance: StaticObjectValue,
-): void => {
+): StaticValue | null => {
   const layer = layers[index];
-  if (!layer) return;
+  if (!layer) return null;
   const isDerived = layer.current.body.superValue !== null;
   let hasConstructedParent = false;
+  const superBinding: SuperBinding = {
+    construct: null,
+    parent: layer.current.body.superValue,
+  };
   const constructParent = (superArgs: StaticValue[]): void => {
     if (hasConstructedParent) return;
     hasConstructedParent = true;
-    constructLayer(interpreter, layers, index + 1, superArgs, instance);
-    initializeFields(interpreter, layer, instance);
+    const replacedThis =
+      constructLayer(interpreter, layers, index + 1, superArgs, instance) ??
+      constructFunctionBase(interpreter, layer, superArgs, instance);
+    if (replacedThis) superBinding.replacedThis = replacedThis;
+    initializeFields(interpreter, layer, replacedThis ?? instance);
   };
-  if (!isDerived) initializeFields(interpreter, layer, instance);
+  if (isDerived) superBinding.construct = constructParent;
+  else initializeFields(interpreter, layer, instance);
   if (layer.members.constructor) {
-    const superBinding: SuperBinding = {
-      construct: isDerived ? constructParent : null,
-      parent: layer.current.body.superValue,
-    };
     const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);
     interpreter.pendingSuperBindings.set(instance, superBinding);
     interpreter.callFunction(
@@ -641,7 +676,14 @@ const constructLayer = (
     else interpreter.pendingSuperBindings.delete(instance);
   }
   if (isDerived) constructParent(args);
+  return superBinding.replacedThis ?? null;
 };
+
+interface InstanceConstruction {
+  chain: StaticClassValue[];
+  /** The object a function base constructor returned in place of the instance, if any. */
+  replacedThis: StaticValue | null;
+}
 
 const initializeInstance = (
   interpreter: Interpreter,
@@ -649,7 +691,7 @@ const initializeInstance = (
   instance: StaticObjectValue,
   args: StaticValue[],
   context: EvaluationContext,
-): StaticClassValue[] => {
+): InstanceConstruction => {
   instance.constructedBy = classValue;
   const chain = collectClassChain(classValue);
   const seen = new Set<string>();
@@ -668,6 +710,6 @@ const initializeInstance = (
       );
     }
   }
-  constructLayer(interpreter, layers, 0, args, instance);
-  return chain;
+  const replacedThis = constructLayer(interpreter, layers, 0, args, instance);
+  return { chain, replacedThis };
 };

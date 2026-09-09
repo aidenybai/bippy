@@ -71,6 +71,7 @@ import {
 import type { ReactRuntime } from "./react-runtime.js";
 import type { RendererHost } from "./renderer-host.js";
 import { ServerEnvironmentStamper } from "./server-environment.js";
+import { callStubHook } from "./stub-hook-calls.js";
 
 /**
  * Whether React would take the input for the proxy's `current` props: the same
@@ -1370,13 +1371,14 @@ export class Materializer {
 
   private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
     const { context, props, location } = input;
-    const { useState, useRef, useEffect } = this.runtime.react;
+    const { useState, useRef, useEffect, useLayoutEffect } = this.runtime.react;
     const rendered = stub.render(
       props,
       this.stubTools(context, location, {
         useState: (initial) => useState(initial),
         useRef: (initial) => useRef(initial),
         useEffect: (effect, dependencies) => useEffect(effect, dependencies),
+        useLayoutEffect: (effect, dependencies) => useLayoutEffect(effect, dependencies),
       }),
     );
     return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
@@ -1399,7 +1401,11 @@ export class Materializer {
           });
         }
         if (callee.kind === "native-function") return callee.call(args, tools);
-        return unknownValue(`call of ${describeValue(callee)}`, location);
+        const hookValue =
+          callee.kind === "react-api" && hooks
+            ? callStubHook(callee.api, args, hooks, tools)
+            : null;
+        return hookValue ?? unknownValue(`call of ${describeValue(callee)}`, location);
       },
       callDeferred: (callee, args) =>
         callee.kind === "function"

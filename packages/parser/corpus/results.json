@@ -620,8 +620,8 @@
       "id": "chadnext",
       "revision": "1a1f25a6de88453bd3c80efa8c3f61f9c159661c",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:34:20.741Z",
-      "durationMs": 784,
+      "capturedAt": "2026-09-09T22:15:33.066Z",
+      "durationMs": 819,
       "runtime": {
         "reactVersion": "19.3.0-canary-52684925-20251110",
         "rendererName": "react-dom",
@@ -856,27 +856,27 @@
       "id": "copilotkit",
       "revision": "fbe488869949f5b7300945ed54c88ef6b8b16df1",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T08:10:21.274Z",
-      "durationMs": 1292,
+      "capturedAt": "2026-09-09T22:08:23.140Z",
+      "durationMs": 1848,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 2,
-        "fibers": 355,
-        "commits": 128,
+        "fibers": 354,
+        "commits": 226,
         "pageErrors": [],
         "title": "Create Next App"
       },
       "static": {
         "stats": {
-          "fiberCount": 942,
+          "fiberCount": 723,
           "textCount": 0,
-          "branchCount": 35,
+          "branchCount": 32,
           "repeatCount": 7,
           "opaqueCount": 5,
           "unknownCount": 18,
-          "modulesLoaded": 1723
+          "modulesLoaded": 1724
         },
         "diagnostics": [
           {
@@ -902,26 +902,961 @@
             "reason": "call of call of Object.values of {...}",
             "absorbedFibers": 15,
             "heads": [
-              "<MemoizedSlotWrapper> key=\"Generate a simple UI-0\" [MemoComponent]",
-              "<MemoizedSlotWrapper> key=\"Build an interactive form-1\" [MemoComponent]",
+              "<MemoizedSlotWrapper> key=\"Generate a minimal settings panel UI-0\" [MemoComponent]",
+              "<MemoizedSlotWrapper> key=\"Build a simple dashboard layout-1\" [MemoComponent]",
               "<MemoizedSlotWrapper> key=\"Test the sayHello tool-2\" [MemoComponent]"
             ]
           }
         ],
         "branchesResolved": 12,
         "repeatIterations": 0,
-        "transparentFibers": 0,
+        "transparentFibers": 45,
         "runtimeFibers": 179,
-        "staticFibers": 264,
+        "staticFibers": 262,
         "coverage": 1,
         "strictCoverage": 0.9050279329608939,
         "divergence": null,
         "stepsUsed": 735,
         "budgetExhausted": false
       },
-      "stateSpace": null,
+      "stateSpace": {
+        "states": 256,
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 6,
+              "commitCount": 7
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "&& on branch(unknown | false)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:3753:6",
+              "alternativeIndex": 0,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#2",
+              "reason": "&& on branch(unknown | false)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:3754:6",
+              "alternativeIndex": 0,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(6061)",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:3763:6",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(6062)",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:3764:6",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(6063)",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:3765:6",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(6064)",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:3766:6",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#30",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:1807:2",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#3",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#4",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:6",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#5",
+              "reason": "&& on branch(true | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6525:25",
+              "alternativeIndex": 1,
+              "alternativeCount": 40
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(7772)",
+              "reason": "&& on branch(function <anonymous> | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:1099:239",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(7771)",
+              "reason": "conditional on branch(true | false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:808:13",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 18,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "repeat#3",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#4@repeat#3[0]",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#13@repeat#3[0]",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "transition",
+                  "commit": 0,
+                  "commitCount": 7
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "&& on branch(<boolean> | false | unknown)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6075:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(99)",
+                  "reason": "conditional on branch(false | true | <boolean>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6541:34",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(177)",
+                  "reason": "&& on branch(function <anonymous> | undefined)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:1099:239",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(176)",
+                  "reason": "conditional on branch(true | false | unknown)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:808:13",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(176)",
+              "reason": "conditional on branch(true | false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:808:13",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "&& on branch(<boolean> | false | unknown)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6075:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(99)",
+                  "reason": "conditional on branch(false | true | <boolean>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6541:34",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(177)",
+                  "reason": "&& on branch(function <anonymous> | undefined)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:1099:239",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(177)",
+              "reason": "&& on branch(function <anonymous> | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:1099:239",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#14",
+                  "reason": "&& on branch(<boolean> | false | unknown)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6075:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(99)",
+                  "reason": "conditional on branch(false | true | <boolean>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6541:34",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#14",
+              "reason": "&& on branch(<boolean> | false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6075:4",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#14",
+              "reason": "&& on branch(<boolean> | false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6075:4",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#14",
+              "reason": "&& on branch(<boolean> | false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6075:4",
+              "alternativeIndex": 3,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#13@repeat#3[0]",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6028:3",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+              "reason": "&& on branch(<boolean> | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#8@repeat#3[0]@repeat#4@repeat#3[0][0]",
+              "reason": "&& on branch(<boolean> | true | false)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4907:4",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: negation of unknown>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#7@repeat#3[0]@repeat#4@repeat#3[0][0]",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4831:2",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#6@repeat#3[0]@repeat#4@repeat#3[0][0]",
+              "reason": "|| on unknown(spread of unknown(Map with dynamic keys))",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:4845:118",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+                  "reason": "if (<boolean: === on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#5@repeat#3[0]@repeat#4@repeat#3[0][0]",
+              "reason": "if (<boolean: === on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#4@repeat#3[0]",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#4@repeat#3[0]",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5999:3",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#3",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#3",
+              "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:5929:10",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(true | false))",
+                  "location": "/home/ubuntu/bippy-corpus/copilotkit/packages/react-core/dist/copilotkit-3XTEoVQO.mjs:6548:2",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            }
+          ]
+        }
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T08:02:55.873Z",
+      "note": "runtime replayed from 2026-09-09T21:50:02.121Z",
       "failure": null
     },
     {
@@ -953,8 +1888,8 @@
       "id": "data-table-filters",
       "revision": "27e165378fa6f58dab0486cd06b078b6956230f2",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:05:36.265Z",
-      "durationMs": 2322,
+      "capturedAt": "2026-09-09T22:17:09.958Z",
+      "durationMs": 2778,
       "runtime": {
         "reactVersion": "19.3.0-canary-52684925-20251110",
         "rendererName": "react-dom",
@@ -967,9 +1902,9 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 2906,
+          "fiberCount": 2903,
           "textCount": 118,
-          "branchCount": 110,
+          "branchCount": 109,
           "repeatCount": 2,
           "opaqueCount": 103,
           "unknownCount": 15,
@@ -1168,7 +2103,7 @@
             ]
           }
         ],
-        "branchesResolved": 29,
+        "branchesResolved": 28,
         "repeatIterations": 11,
         "transparentFibers": 126,
         "runtimeFibers": 1518,
@@ -1176,7 +2111,7 @@
         "coverage": 1,
         "strictCoverage": 0.6198945981554678,
         "divergence": null,
-        "stepsUsed": 8211,
+        "stepsUsed": 8209,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -1199,15 +2134,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2693)",
-              "reason": "conditional on unknown(new DocumentFragment())",
-              "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-select@2.2.6_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react@_b9a2ec348a0f89e707b9c4c0f4d8a06d/node_modules/@r…",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(3303)",
+              "variable": "truthy(3302)",
               "reason": "conditional on branch(true | native HTMLSpanElement | false)",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-select@2.2.6_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react@_b9a2ec348a0f89e707b9c4c0f4d8a06d/node_modules/@r…",
               "alternativeIndex": 0,
@@ -1215,7 +2142,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2695)",
+              "variable": "truthy(2694)",
               "reason": "conditional on branch(true | false)",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-select@2.2.6_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react@_b9a2ec348a0f89e707b9c4c0f4d8a06d/node_modules/@r…",
               "alternativeIndex": 0,
@@ -1395,7 +2322,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2903)",
+              "variable": "truthy(2902)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@r…",
               "alternativeIndex": 1,
@@ -1403,7 +2330,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2866)",
+              "variable": "truthy(2865)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@r…",
               "alternativeIndex": 1,
@@ -1411,7 +2338,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2836)",
+              "variable": "truthy(2835)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@r…",
               "alternativeIndex": 1,
@@ -1419,7 +2346,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2833)",
+              "variable": "truthy(2832)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@r…",
               "alternativeIndex": 1,
@@ -1427,7 +2354,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(2830)",
+              "variable": "truthy(2829)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/data-table-filters/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@r…",
               "alternativeIndex": 1,
@@ -7094,27 +8021,27 @@
       "id": "magicui-portfolio",
       "revision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:35:46.679Z",
-      "durationMs": 1683,
+      "capturedAt": "2026-09-09T22:16:57.629Z",
+      "durationMs": 4339,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
         "fibers": 1895,
-        "commits": 20,
+        "commits": 19,
         "pageErrors": [],
         "title": "Dillion Verma"
       },
       "static": {
         "stats": {
-          "fiberCount": 1752,
-          "textCount": 82,
-          "branchCount": 8,
+          "fiberCount": 1756,
+          "textCount": 89,
+          "branchCount": 6,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 5,
-          "modulesLoaded": 2066
+          "unknownCount": 0,
+          "modulesLoaded": 2221
         },
         "diagnostics": [
           {
@@ -7128,73 +8055,32 @@
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 1473,
-        "matchedText": 82,
+        "status": "exact",
+        "matchedFibers": 1483,
+        "matchedText": 89,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 17,
-        "wildcards": [
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <BlurFade> [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent]",
-            "reason": "value from hast-util-to-jsx-runtime (toJsxRuntime())",
-            "absorbedFibers": 10,
-            "heads": [
-              "<p> key=\"p-0\" [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <section> [HostComponent] > <BlurFade> [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlurFade> key=\"Chat Collect\" [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <ProjectCard> key=\"Chat Collect\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Markdown> [FunctionComponent]",
-            "reason": "value from hast-util-to-jsx-runtime (toJsxRuntime())",
-            "absorbedFibers": 4,
-            "heads": [
-              "<p> key=\"p-0\" [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <section> [HostComponent] > <BlurFade> [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlurFade> key=\"Automatic Chat\" [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <ProjectCard> key=\"Automatic Chat\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Markdown> [FunctionComponent]",
-            "reason": "value from hast-util-to-jsx-runtime (toJsxRuntime())",
-            "absorbedFibers": 1,
-            "heads": [
-              "<p> key=\"p-0\" [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <section> [HostComponent] > <BlurFade> [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlurFade> key=\"llm.report\" [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <ProjectCard> key=\"llm.report\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Markdown> [FunctionComponent]",
-            "reason": "value from hast-util-to-jsx-runtime (toJsxRuntime())",
-            "absorbedFibers": 1,
-            "heads": [
-              "<p> key=\"p-0\" [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <J> [FunctionComponent] > <V> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <div> [HostComponent] > <main> [HostComponent] > <section> [HostComponent] > <BlurFade> [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlurFade> key=\"Magic UI\" [FunctionComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"\" [FunctionComponent] > <motion.div> [ForwardRef] > <div> [HostComponent] > <ProjectCard> key=\"Magic UI\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Markdown> [FunctionComponent]",
-            "reason": "value from hast-util-to-jsx-runtime (toJsxRuntime())",
-            "absorbedFibers": 1,
-            "heads": [
-              "<p> key=\"p-0\" [HostComponent]"
-            ]
-          }
-        ],
-        "branchesResolved": 8,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 184,
         "runtimeFibers": 1572,
-        "staticFibers": 1563,
+        "staticFibers": 1578,
         "coverage": 1,
-        "strictCoverage": 0.9891857506361323,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 1575,
+        "stepsUsed": 1584,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 256,
+        "states": 193,
         "matchedState": {
-          "index": 137,
+          "index": 192,
           "conditions": [
             {
               "kind": "transition",
@@ -7203,7 +8089,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(1263)",
+              "variable": "truthy(834)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
               "alternativeIndex": 1,
@@ -7211,7 +8097,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(1260)",
+              "variable": "truthy(831)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
               "alternativeIndex": 1,
@@ -7219,7 +8105,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(1257)",
+              "variable": "truthy(828)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
               "alternativeIndex": 1,
@@ -7227,7 +8113,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(1254)",
+              "variable": "truthy(825)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
               "alternativeIndex": 1,
@@ -7235,7 +8121,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(1251)",
+              "variable": "truthy(822)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
               "alternativeIndex": 1,
@@ -7243,219 +8129,19 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(1248)",
+              "variable": "truthy(819)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
               "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(1233)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(1232)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-              "alternativeIndex": 0,
               "alternativeCount": 2
             }
           ]
         },
         "closestState": null,
-        "omitted": {
-          "total": 3,
-          "omissions": [
-            {
-              "kind": "state",
-              "conditions": [
-                {
-                  "kind": "transition",
-                  "commit": 3,
-                  "commitCount": 4
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1232)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1233)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1248)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1251)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1254)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1257)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1260)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1263)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(1263)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1232)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1233)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1248)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1251)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1254)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1257)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1260)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(1254)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1232)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1233)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f24f4d51/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1248)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(1251)",
-                  "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051ff6aff/node_modules/@ra…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                }
-              ]
-            }
-          ]
-        }
+        "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-09T19:22:03.669Z",
+      "note": "runtime replayed from 2026-09-09T20:36:18.759Z",
       "failure": null
     },
     {
@@ -17619,8 +18305,8 @@
       "id": "next-landing-starter",
       "revision": "cd6694e6c69efad1128c1ed732188389182789df",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T19:34:22.861Z",
-      "durationMs": 208,
+      "capturedAt": "2026-09-09T22:15:35.069Z",
+      "durationMs": 210,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -17683,8 +18369,8 @@
       "id": "next-mdx-blog",
       "revision": "90d71ae00cc1518394e6f0fa635bc3d9e3adbff9",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:22:27.611Z",
-      "durationMs": 116063,
+      "capturedAt": "2026-09-09T22:17:08.335Z",
+      "durationMs": 267,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -17769,15 +18455,15 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-09T19:24:22.451Z",
       "failure": null
     },
     {
       "id": "next-shadcn-dashboard-starter",
       "revision": "621cae9b49baa4f3ce9508c62525ee54c4180fa5",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:05:47.037Z",
-      "durationMs": 1282,
+      "capturedAt": "2026-09-09T22:17:19.740Z",
+      "durationMs": 1296,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -17870,8 +18556,8 @@
       "id": "nextjs-blog-boilerplate",
       "revision": "8b29f57b8da07127bf59fcdad68b9b4e9e1d8770",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T19:05:42.380Z",
-      "durationMs": 170,
+      "capturedAt": "2026-09-09T22:17:06.284Z",
+      "durationMs": 253,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -18367,8 +19053,8 @@
       "id": "openai-translator",
       "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T19:34:24.633Z",
-      "durationMs": 3853,
+      "capturedAt": "2026-09-09T22:15:36.554Z",
+      "durationMs": 1242,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -20114,8 +20800,8 @@
       "id": "react-data-table-component",
       "revision": "3c080557be7723f6815a7dc9555f21df1164c11f",
       "framework": "spa",
-      "capturedAt": "2026-09-09T19:34:29.836Z",
-      "durationMs": 3302,
+      "capturedAt": "2026-09-09T22:15:38.974Z",
+      "durationMs": 1985,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -20185,8 +20871,8 @@
       "id": "react-datasheet-grid",
       "revision": "862a1bb7777550fa04445fb283fa035a759c7c22",
       "framework": "spa",
-      "capturedAt": "2026-09-09T19:05:29.763Z",
-      "durationMs": 540,
+      "capturedAt": "2026-09-09T22:17:25.476Z",
+      "durationMs": 493,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -22240,8 +22926,8 @@
       "id": "react-starter-kit",
       "revision": "3c5132eb3d0a02dc8090eb6248f8959744e18d12",
       "framework": "spa",
-      "capturedAt": "2026-09-09T19:34:35.755Z",
-      "durationMs": 35267,
+      "capturedAt": "2026-09-09T22:15:42.222Z",
+      "durationMs": 37149,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -22267,12 +22953,12 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 2181
+          "modulesLoaded": 2192
         },
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 51
+            "count": 57
           }
         ]
       },
@@ -39010,8 +39696,8 @@
       "id": "remix-fastify",
       "revision": "c69fe3491774b636dd148b409c916006588e37e7",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T19:35:12.289Z",
-      "durationMs": 31089,
+      "capturedAt": "2026-09-09T22:16:20.570Z",
+      "durationMs": 33591,
       "runtime": {
         "reactVersion": "19.2.0",
         "rendererName": "react-dom",
@@ -39275,8 +39961,8 @@
       "id": "saasfly",
       "revision": "49f7e28f69eae9cd9eed84221e13a3dbae87da67",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:05:44.154Z",
-      "durationMs": 1636,
+      "capturedAt": "2026-09-09T22:17:16.285Z",
+      "durationMs": 2023,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -39524,7 +40210,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(323)",
+              "variable": "truthy(320)",
               "reason": "conditional on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
               "alternativeIndex": 1,
@@ -39586,7 +40272,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -39594,8 +40280,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -39707,7 +40393,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -39715,8 +40401,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -39820,7 +40506,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -39828,8 +40514,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -39925,7 +40611,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -39933,8 +40619,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -40022,7 +40708,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -40030,8 +40716,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -40103,7 +40789,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -40111,8 +40797,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -40168,7 +40854,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -40176,8 +40862,8 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(228)",
-                  "reason": "conditional on branch(false | <boolean>)",
+                  "variable": "truthy(226)",
+                  "reason": "conditional on branch(false | true)",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
@@ -40186,8 +40872,8 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(228)",
-              "reason": "conditional on branch(false | <boolean>)",
+              "variable": "truthy(226)",
+              "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/bippy-corpus/saasfly/node_modules/@radix-ui/react-avatar/dist/index.mjs:70:12",
               "alternativeIndex": 1,
               "conditions": [
@@ -40225,7 +40911,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(208)",
+                  "variable": "truthy(206)",
                   "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
                   "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
                   "alternativeIndex": 0,
@@ -40235,7 +40921,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(208)",
+              "variable": "truthy(206)",
               "reason": "conditional on @clerk/nextjs#auth().sessionClaims.user.image",
               "location": "/home/ubuntu/bippy-corpus/saasfly/apps/nextjs/src/components/user-avatar.tsx:14:8",
               "alternativeIndex": 1,
@@ -45831,8 +46517,8 @@
       "id": "shadcn-chat",
       "revision": "47e5f8af020b6eacbd4cbd6ad5f6ff8d60e76aa8",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T20:27:08.054Z",
-      "durationMs": 1050,
+      "capturedAt": "2026-09-09T22:17:03.187Z",
+      "durationMs": 1455,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -45873,6 +46559,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 823,
         "matchedText": 26,
         "opaqueSubtrees": 0,
@@ -45886,7 +46573,6 @@
         "branchesResolved": 2,
         "repeatIterations": 0,
         "transparentFibers": 73,
-        "status": "exact",
         "runtimeFibers": 849,
         "staticFibers": 861,
         "coverage": 1,
@@ -46723,17 +47409,16 @@
       "id": "shadcn-landing-page-nobruf",
       "revision": "ec8e18e8ed56ed6636023ced09948515c19258cc",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T19:05:49.752Z",
-      "durationMs": 1209,
+      "capturedAt": "2026-09-09T23:08:14.433Z",
+      "durationMs": 1051,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 1766,
-        "commits": 9,
+        "commits": 8,
         "pageErrors": [
-          "Invalid or unexpected token",
           "Warning: Expected server HTML to contain a matching <%s> in <%s>.%s span span \n    at span\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:44:26)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-avatar/dist/index.mjs:78:28)\n    at _c4 (webpack-internal:///(app-pages-browser)/./components/ui/avatar.tsx:45:11)\n    at span\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-primitive/dist/index.mjs:44:26)\n    at Provider (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-context/dist/index.mjs:47:28)\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/@radix-ui/react-avatar/dist/index.mjs:36:28)\n    at _c (webpack-internal:///(app-pages-browser)/./components/ui/avatar.tsx:17:11)\n    at div\n    at div\n    at _c2 (webpack-internal:///(app-pages-browser)/./components/ui/card.tsx:32:11)\n    at div\n    at _c (webpack-internal:///(app-pages-browser)/./components/ui/card.tsx:18:11)\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./components/ui/carousel.tsx:168:11)\n    at div\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./components/ui/carousel.tsx:136:11)\n    at div\n    at eval (webpack-internal:///(app-pages-browser)/./components/ui/carousel.tsx:35:11)\n    at section\n    at TestimonialSection\n    at Home (Server)\n    at Home (Server)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:348:11)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)\n    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)\n    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)\n    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:369:11)\n    at O (webpack-internal:///(app-pages-browser)/./node_modules/next-themes/dist/index.mjs:28:24)\n    at z (webpack-internal:///(app-pages-browser)/./node_modules/next-themes/dist/index.mjs:21:47)\n    at ThemeProvider (webpack-internal:///(app-pages-browser)/./components/layout/theme-provider.tsx:13:11)\n    at body\n    at html\n    at RootLayout (Server)\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:321:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:207:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:113:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:577:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:112:27)\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:117:11)",
           "Hydration failed because the initial UI does not match what was rendered on the server.\nSee more info here: https://nextjs.org/docs/messages/react-hydration-error",
           "Warning: An error occurred during hydration. The server HTML was replaced with client content in <%s>. #document",
@@ -46748,253 +47433,53 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 1807,
-          "textCount": 68,
-          "branchCount": 32,
+          "fiberCount": 1738,
+          "textCount": 70,
+          "branchCount": 2,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1574
+          "modulesLoaded": 1575
         },
         "diagnostics": []
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 1499,
-        "matchedText": 63,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 73,
-        "slotsMatched": 1,
+        "matchedFibers": 1565,
+        "matchedText": 70,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 27,
+        "branchesResolved": 2,
         "repeatIterations": 0,
         "transparentFibers": 78,
+        "status": "exact",
         "runtimeFibers": 1635,
-        "staticFibers": 1644,
+        "staticFibers": 1665,
         "coverage": 1,
-        "strictCoverage": 0.9553516819571866,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 1619,
+        "stepsUsed": 1639,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 256,
+        "states": 96,
         "matchedState": {
-          "index": null,
+          "index": 93,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 4,
-              "commitCount": 5
+              "commit": 15,
+              "commitCount": 16
             },
             {
               "kind": "branch",
-              "variable": "truthy(237)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-collapsible/dist/index.mjs:151:9",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(234)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-collapsible/dist/index.mjs:151:9",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(231)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-collapsible/dist/index.mjs:151:9",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(228)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-collapsible/dist/index.mjs:151:9",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(225)",
-              "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-collapsible/dist/index.mjs:151:9",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(250)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:124:15",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(186)",
-              "reason": "conditional on unknown(new DocumentFragment())",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(196)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(194)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(192)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(190)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(188)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(252)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(185)",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:75:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(184)",
+              "variable": "truthy(553)",
               "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(183)",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:75:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(182)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(181)",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:75:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(180)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(179)",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:75:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(178)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(177)",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:75:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(176)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(175)",
-              "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:75:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(174)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(106)",
-              "reason": "conditional on <boolean: includes()>",
               "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
               "alternativeIndex": 1,
               "alternativeCount": 2
@@ -47010,405 +47495,10 @@
           ]
         },
         "closestState": null,
-        "omitted": {
-          "total": 8,
-          "omissions": [
-            {
-              "kind": "state",
-              "conditions": [
-                {
-                  "kind": "transition",
-                  "commit": 1,
-                  "commitCount": 5
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "&& on branch(<boolean> | true | false)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 3
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(106)",
-                  "reason": "conditional on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(108)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(110)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(112)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(114)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(116)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(118)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(121)",
-                  "reason": "conditional on <boolean: === on dynamic values>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(119)",
-                  "reason": "conditional on <boolean: === on dynamic values>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:124:15",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(119)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:124:15",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "&& on branch(<boolean> | true | false)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 3
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(106)",
-                  "reason": "conditional on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(108)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(110)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(112)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(114)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(116)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(118)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(121)",
-                  "reason": "conditional on <boolean: === on dynamic values>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(121)",
-              "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "&& on branch(<boolean> | true | false)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 3
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(106)",
-                  "reason": "conditional on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(108)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(110)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(112)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(114)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(116)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(118)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(118)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "&& on branch(<boolean> | true | false)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 3
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(106)",
-                  "reason": "conditional on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(108)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(110)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(112)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(114)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(116)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(114)",
-              "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "&& on branch(<boolean> | true | false)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 3
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(106)",
-                  "reason": "conditional on <boolean: includes()>",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(108)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(110)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(112)",
-                  "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-avatar/dist/index.mjs:50:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(106)",
-              "reason": "conditional on <boolean: includes()>",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-presence/dist/index.mjs:27:12",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "&& on branch(<boolean> | true | false)",
-                  "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 3
-                }
-              ]
-            },
-            {
-              "kind": "branch",
-              "variable": "branch#1",
-              "reason": "&& on branch(<boolean> | true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-              "alternativeIndex": 1,
-              "conditions": []
-            },
-            {
-              "kind": "branch",
-              "variable": "branch#1",
-              "reason": "&& on branch(<boolean> | true | false)",
-              "location": "/home/ubuntu/bippy-corpus/shadcn-landing-page-nobruf/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:346:12",
-              "alternativeIndex": 2,
-              "conditions": []
-            }
-          ]
-        }
+        "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-09T13:17:38.833Z",
+      "note": "runtime replayed from 2026-09-09T22:28:53.744Z",
       "failure": null
     },
     {
@@ -47502,8 +47592,8 @@
       "id": "socialecho",
       "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T19:35:44.547Z",
-      "durationMs": 931,
+      "capturedAt": "2026-09-09T22:16:55.432Z",
+      "durationMs": 1010,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",

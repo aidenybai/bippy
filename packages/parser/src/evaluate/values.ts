@@ -663,13 +663,13 @@ const omitObjectKeysShared = (
       continue;
     }
     const rest = omitSpreadKeys(entry.value, omitted, results);
-    if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
-      results.set(object, rest);
-      return rest;
-    }
     if (rest === entry.value) {
       entries.push(entry);
       continue;
+    }
+    if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
+      results.set(object, rest);
+      return rest;
     }
     isChanged = true;
     entries.push({ kind: "spread", value: rest });
@@ -688,6 +688,7 @@ const omitSpreadKeys = (
     case "object":
       return omitObjectKeysShared(spread, omitted, results);
     case "primitive":
+    case "unknown":
       return spread;
     case "branch": {
       const alternatives = spread.alternatives.map((alternative) =>
@@ -720,6 +721,12 @@ export const deleteObjectProperty = (object: StaticObjectValue, key: string): vo
       ? remaining.entries
       : object.entries.filter((entry) => entry.kind === "spread" || entry.key !== key)),
   );
+};
+
+/** Whether the object's latest entry already makes every property uncertain, as a `delete` of a dynamic key does. */
+export const hasTrailingUnknownSpread = (object: StaticObjectValue): boolean => {
+  const last = object.entries.at(-1);
+  return last?.kind === "spread" && last.value.kind === "unknown";
 };
 
 export const componentReference = (type: StaticElementType): StaticValue => ({
