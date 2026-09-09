@@ -135,7 +135,7 @@ class PatternReader {
         return [
           {
             kind: "repeat",
-            variable: `repeat#${++this.anonymousDecisions}`,
+            variable: readString(fiber.props, "predicate") ?? `repeat#${++this.anonymousDecisions}`,
             location: readString(fiber.props, "location"),
             count: {
               min: readNumber(fiber.props, "countMin") ?? 0,

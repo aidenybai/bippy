@@ -1326,6 +1326,8 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  if (alternatives.length > 0 && alternatives.every((alternative) => alternative === alternatives[0]))
+    return alternatives[0];
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1351,16 +1353,16 @@ export const branchValue = (
   if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
     return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
-  const isPositional =
-    flattened.length === alternatives.length &&
-    alternatives.every((alternative) => alternative.kind !== "branch");
+  if (predicate !== null && alternatives.every((alternative) => alternative.kind !== "branch")) {
+    return { kind: "branch", alternatives, preferredIndex, reason, location, predicate };
+  }
   return {
     kind: "branch",
     alternatives: flattened,
     preferredIndex: resolvedPreferred,
     reason,
     location,
-    predicate: isPositional ? predicate : null,
+    predicate: null,
   };
 };
 
@@ -1459,12 +1461,14 @@ export const isNullish = (value: StaticValue): boolean | null => {
 export const truthyCounterpart = (value: StaticValue): StaticValue => {
   if (value.kind !== "branch") return value;
   const truthy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== false);
+  if (truthy.length === value.alternatives.length) return value;
   return truthy.length === 0 ? value : branchValue(truthy, value.reason, value.location);
 };
 
 export const falsyCounterpart = (value: StaticValue): StaticValue => {
   if (value.kind === "branch") {
     const falsy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== true);
+    if (falsy.length === value.alternatives.length) return mapValue(value, falsyCounterpart);
     return falsy.length === 0
       ? UNDEFINED_VALUE
       : branchValue(falsy.map(falsyCounterpart), value.reason, value.location);

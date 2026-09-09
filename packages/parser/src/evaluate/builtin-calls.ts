@@ -11,6 +11,7 @@ import type {
   StaticObjectValue,
   StaticPrimitive,
   StaticRegExpValue,
+  StaticRepeatValue,
   StaticValue,
 } from "../types.js";
 import { getReactApiTypeof } from "../react/react-api.js";
@@ -90,6 +91,7 @@ import {
   type PromiseTools,
 } from "./promises.js";
 import { createNumberFormat } from "./intl-format.js";
+import { recordRepeatSource } from "./predicates.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
@@ -286,6 +288,20 @@ export const isModeledOpaqueMethodName = (name: string): boolean =>
 /** Methods declared to return the receiver's own items (`filter`, `slice`, `sort`), so an indefinite receiver stands for its own result. */
 const isListPreservingMethod = (name: string): boolean =>
   getListMethod(name)?.returnsReceiverItems === true;
+
+/** Receiver-item methods whose result may hold fewer items than the receiver, so its count is decided separately. */
+const SUBLIST_METHOD_NAMES = new Set(["filter", "slice", "splice", "toSpliced", "take", "drop"]);
+
+/** A repeat over the same items keeping at most `repeat`'s count, decided separately from it. */
+const subRepeatOf = (repeat: StaticRepeatValue): StaticRepeatValue => ({
+  kind: "repeat",
+  item: repeat.item,
+  location: repeat.location,
+  ...(repeat.count && { count: { min: 0, max: repeat.count.max } }),
+});
+
+const sublistOf = (receiver: StaticListValue): StaticListValue =>
+  listValue(receiver.items.map((item) => (item.kind === "repeat" ? subRepeatOf(item) : item)));
 
 /** `typeof <global>` in the rendering host; null when its declarations leave it open, or when only the bundler could provide it. */
 export const getGlobalTypeof = (name: string, realm: HostRealm): string | null => {
@@ -1602,17 +1618,20 @@ const mapList = (
     return listValue(
       receiver.items.map((item, index) => {
         if (item.kind === "repeat") {
-          return {
-            kind: "repeat",
-            item: callUncertainCallback(
-              interpreter,
-              callback,
-              [item.item, unknownPrimitiveValue("number", "index"), receiver],
-              context,
-            ),
-            location: item.location,
-            count: item.count,
-          };
+          return recordRepeatSource(
+            {
+              kind: "repeat",
+              item: callUncertainCallback(
+                interpreter,
+                callback,
+                [item.item, unknownPrimitiveValue("number", "index"), receiver],
+                context,
+              ),
+              location: item.location,
+              count: item.count,
+            },
+            item,
+          );
         }
         if (item.kind === "optional") {
           return optionalValue(
@@ -1636,32 +1655,38 @@ const mapList = (
     );
   }
   if (receiver.kind === "repeat") {
-    return {
+    return recordRepeatSource(
+      {
+        kind: "repeat",
+        item: callUncertainCallback(
+          interpreter,
+          callback,
+          [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+          context,
+        ),
+        location: receiver.location,
+        count: receiver.count,
+      },
+      receiver,
+    );
+  }
+  return recordRepeatSource(
+    {
       kind: "repeat",
       item: callUncertainCallback(
         interpreter,
         callback,
-        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        [
+          unknownValue(`item of ${describeValue(receiver)}`),
+          unknownPrimitiveValue("number", "index"),
+          receiver,
+        ],
         context,
       ),
-      location: receiver.location,
-      count: receiver.count,
-    };
-  }
-  return {
-    kind: "repeat",
-    item: callUncertainCallback(
-      interpreter,
-      callback,
-      [
-        unknownValue(`item of ${describeValue(receiver)}`),
-        unknownPrimitiveValue("number", "index"),
-        receiver,
-      ],
-      context,
-    ),
-    location,
-  };
+      location,
+    },
+    receiver,
+  );
 };
 
 const toRegExp = (value: StaticRegExpValue): RegExp | null => {
@@ -1903,8 +1928,11 @@ const fallbackMethodResult = (
   location: SourceLocation | null,
 ): StaticValue => {
   if (name === "split") return dynamicSplitResult(location);
-  if (isListPreservingMethod(name) && (receiver.kind === "unknown" || receiver.kind === "repeat")) {
-    return receiver;
+  if (isListPreservingMethod(name)) {
+    if (receiver.kind === "repeat") {
+      return SUBLIST_METHOD_NAMES.has(name) ? subRepeatOf(receiver) : receiver;
+    }
+    if (receiver.kind === "unknown" && !SUBLIST_METHOD_NAMES.has(name)) return receiver;
   }
   return (
     getLanguageMethodResult(receiver, name) ??
@@ -2188,9 +2216,9 @@ export const evaluateBuiltinCall = (
             }),
           );
         }
-        return receiver;
+        return sublistOf(receiver);
       case "slice": {
-        if (!isKnownList(receiver)) return receiver;
+        if (!isKnownList(receiver)) return sublistOf(receiver);
         const start = toIndex(first, 0);
         const end = toIndex(second, receiver.items.length);
         if (start === null || end === null)

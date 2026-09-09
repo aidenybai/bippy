@@ -8,6 +8,7 @@ import {
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { ComponentKindError } from "../errors.js";
+import { getRepeatCountPredicate } from "../evaluate/predicates.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -549,6 +550,7 @@ export class Materializer {
           location: value.location && formatSourceLocation(value.location),
           countMin: value.count?.min ?? 0,
           countMax: value.count?.max ?? null,
+          predicate: getRepeatCountPredicate(value),
           children: [this.toNode(value.item, context, false)],
         });
       case "branch":

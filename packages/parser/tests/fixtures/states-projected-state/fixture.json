@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 3,
+  "expectOmitted": false,
+  "notes": "Image listeners may move one state cell from idle to loaded or error. Two children each project it to `status !== \"idle\"`; the projection stays tied to the cell, so both children take one decision: the mount commit plus 2 settled states rather than 4."
+}

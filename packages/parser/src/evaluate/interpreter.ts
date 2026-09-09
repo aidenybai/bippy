@@ -296,7 +296,12 @@ import {
   thrownValue,
   unknownValue,
 } from "./values.js";
-import { createPathPredicate, getTruthinessPredicate, recordNegation } from "./predicates.js";
+import {
+  createPathPredicate,
+  getTruthinessPredicate,
+  getUncertainEquality,
+  recordNegation,
+} from "./predicates.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
@@ -4719,6 +4724,7 @@ const applyBinaryOperator = (
     case "!=":
     case "===":
     case "!==":
+      return getUncertainEquality(operator, left, right);
     case "<":
     case "<=":
     case ">":

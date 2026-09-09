@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 129,
+  "expectOmitted": false,
+  "notes": "Seven panels each own an image loading status that a load listener may set to anything. Within a panel, `status === \"loaded\"` in one child and `status !== \"loaded\"` in another are one decision over the same state cell, so the settled commit has 2^7 states rather than 4^7 (past the budget), plus the pre-effect commit."
+}

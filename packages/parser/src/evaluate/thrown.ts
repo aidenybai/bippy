@@ -1,5 +1,5 @@
 import type { SourceLocation, StaticUnknownValue, StaticValue } from "../types.js";
-import { branchValue, getObjectProperty, unknownValue } from "./values.js";
+import { branchValue, getObjectProperty, mapValue, unknownValue } from "./values.js";
 
 type ThrowCertainty = "never" | "maybe" | "always";
 
@@ -116,6 +116,9 @@ export const withoutThrows = (value: StaticValue): StaticValue => {
         (alternative) => getThrowCertainty(alternative) !== "always",
       );
       if (surviving.length === 0) return unknownValue("thrown render", value.location);
+      if (surviving.length === value.alternatives.length) {
+        return mapValue(value, withoutThrows);
+      }
       const preferred = value.alternatives[value.preferredIndex];
       return branchValue(
         surviving.map(withoutThrows),

@@ -97,8 +97,19 @@ const partition = (
     else if (verdict) passing.push(alternative);
     if (verdict !== true) failing.push(alternative);
   }
-  const rebuild = (alternatives: StaticValue[]): StaticValue | null =>
-    alternatives.length === 0 ? null : branchValue(alternatives, reason);
+  const rebuild = (alternatives: StaticValue[]): StaticValue | null => {
+    if (alternatives.length === 0) return null;
+    if (value.kind === "branch" && alternatives.length === value.alternatives.length) {
+      return branchValue(
+        alternatives,
+        reason,
+        value.location,
+        value.preferredIndex,
+        value.predicate,
+      );
+    }
+    return branchValue(alternatives, reason);
+  };
   return [rebuild(passing), rebuild(failing)];
 };
 

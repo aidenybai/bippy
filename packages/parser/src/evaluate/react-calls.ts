@@ -24,6 +24,7 @@ import {
   nextMemoCell,
   nextStateCell,
   queueStateUpdate,
+  settledEscapedState,
 } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
 import { isElementValue } from "./type-predicates.js";
@@ -72,7 +73,7 @@ const stateHook = (
     current: StaticValue,
     tools: StubRenderTools,
   ) => StaticValue,
-  reduceEscaped: (action: StaticValue | undefined) => StaticValue | null,
+  reduceEscaped: (action: StaticValue | undefined, current: StaticValue) => StaticValue | null,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -100,7 +101,13 @@ const stateHook = (
     },
     onEscape: (argumentValues) => {
       const action = argumentValues?.[0];
-      escapeStateCell(frame, cell, action === null ? null : reduceEscaped(action));
+      escapeStateCell(
+        frame,
+        cell,
+        action === null
+          ? null
+          : settledEscapedState(cell, (current) => reduceEscaped(action, current)),
+      );
     },
   };
   return listValue([cell.current, cell.setter]);
@@ -485,7 +492,10 @@ export const evaluateReactApiCall = (
         computeInitial,
         (action, current, tools) =>
           action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
-        (action) => (isCallable(action) ? null : (action ?? UNDEFINED_VALUE)),
+        (action, current) =>
+          isCallable(action)
+            ? interpreter.callValue(action, [current], context, location)
+            : (action ?? UNDEFINED_VALUE),
       );
     }
     case "useReducer": {
@@ -501,7 +511,8 @@ export const evaluateReactApiCall = (
           first
             ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
-        () => null,
+        (action, current) =>
+          first ? interpreter.callValue(first, [current, action ?? UNDEFINED_VALUE], context, location) : null,
       );
     }
     case "useMemo": {

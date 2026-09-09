@@ -213,6 +213,24 @@ export const escapeStateCell = (
   if (!frame.isRendering) frame.requestRender?.();
 };
 
+/**
+ * An escaped update may fire any number of times, so the value it leaves the
+ * cell with is only known when applying it once more changes nothing: a state
+ * machine ignoring the dispatched event, or a setter of a constant. An update
+ * that keeps producing new values (`dispatch("increment")`) has no settled
+ * value.
+ */
+export const settledEscapedState = (
+  cell: StateCell,
+  reduce: (current: StaticValue) => StaticValue | null,
+): StaticValue | null => {
+  const current = cell.next ?? cell.current;
+  const next = reduce(current);
+  if (next === null || isSameHookValue(next, current)) return next;
+  const following = reduce(next);
+  return following !== null && isSameHookValue(following, next) ? next : null;
+};
+
 /** `processUpdateQueue` for one cell: true when its committed value changed. */
 export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {
   const next = pendingStateValue(cell);

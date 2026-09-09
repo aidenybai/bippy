@@ -271,6 +271,11 @@ class StateEnumerator {
   }
 
   private expandRepeat(node: PatternRepeat, conditions: ConditionMap, emit: Emit): void {
+    const decided = conditions.get(node.variable);
+    if (decided?.kind === "repeat") {
+      this.expandIterations(node, decided.count, 0, [], conditions, emit);
+      return;
+    }
     const { min, max } = node.count;
     const enumeratedMax =
       max === null ? min + this.budget.maxRepeat : Math.min(max, min + this.budget.maxRepeat);

@@ -33,6 +33,8 @@ interface RepeatMarkerProps extends MarkerChildrenProps {
   location: string | null;
   countMin: number;
   countMax: number | null;
+  /** Identity of the count; repeats sharing one have the same number of items. */
+  predicate: string | null;
 }
 
 interface OpaqueMarkerProps extends MarkerChildrenProps {

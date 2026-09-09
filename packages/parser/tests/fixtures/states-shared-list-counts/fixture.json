@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "truncated",
+  "minCoverage": 1,
+  "expectedStates": 3,
+  "expectOmitted": true,
+  "notes": "One opaque list is mapped twice. Each map yields one item per source item, so the two repeats are one count decision (0, 1 or 2 items): 3 states rather than 9."
+}
