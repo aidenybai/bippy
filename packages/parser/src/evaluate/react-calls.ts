@@ -329,6 +329,7 @@ const cloneElement = (
     props: merged,
     location: element.location,
     environment: element.environment,
+    owner: element.owner,
   };
 };
 
@@ -590,6 +591,7 @@ export const evaluateReactApiCall = (
         props,
         location,
         environment: context.environment,
+        owner: context.owner,
       };
     }
     case "flushSync":

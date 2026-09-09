@@ -78,3 +78,17 @@ export const mountNode = async (
     container.remove();
   }
 };
+
+/** The HTML a server render of `node` produces, as a framework's document shell does before the client mounts. */
+export const renderStaticMarkup = (runtime: ReactRuntime, node: ReactNode): string => {
+  const { error: consoleError, warn: consoleWarn } = console;
+  // HACK: the proxies' layout effects draw React 18's "does nothing on the server" warning.
+  console.error = noop;
+  console.warn = noop;
+  try {
+    return runtime.domServer.renderToStaticMarkup(node);
+  } finally {
+    console.error = consoleError;
+    console.warn = consoleWarn;
+  }
+};

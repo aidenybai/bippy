@@ -34,6 +34,18 @@ export default () => (
 );
 `;
 
+const OPAQUE_RENDER_PROP_SOURCE = `
+import { Highlight } from "prism-react-renderer";
+
+export default () => (
+  <section>
+    <Highlight code="const x = 1;" language="tsx">
+      {({ tokens }) => <pre>{tokens.length}</pre>}
+    </Highlight>
+  </section>
+);
+`;
+
 const renderSource = async (source: string): Promise<string> => {
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-library-"));
   const entryFile = join(rootDirectory, "app.tsx");
@@ -58,6 +70,17 @@ describe("library models", () => {
         "            <div>",
         "              <Box>",
         "                <span>",
+      ].join("\n"),
+    );
+  });
+
+  it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {
+    expect(await renderSource(OPAQUE_RENDER_PROP_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <section>",
+        "      <Highlight> (opaque: Highlight from prism-react-renderer is not analyzed)",
       ].join("\n"),
     );
   });

@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import fs from "fs";
 import { flattenDeep, isEqual, isNil } from "lodash-es";
 import isEmpty from "lodash-es/isEmpty";
+import { matchSorter } from "match-sorter";
 import { basename, join } from "path";
 import { twMerge } from "tailwind-merge";
 
@@ -109,6 +110,50 @@ const Board = () => {
   );
 };
 
+interface RouteItem {
+  label: string;
+  keywords?: string[];
+  items?: RouteItem[];
+}
+
+const ROUTES: RouteItem[] = [
+  {
+    label: "Getting Started",
+    items: [{ label: "Install" }, { label: "Usage", keywords: ["api"] }],
+  },
+  { label: "Guides", items: [{ label: "Sorting" }] },
+];
+
+/** material-react-table's sidebar: every route ranks for an empty query, so the filtered list is the whole list. */
+const filterRoutes = (routes: RouteItem[], search: string): RouteItem[] =>
+  routes.reduce((matched: RouteItem[], route) => {
+    const matchKeys = ["label"];
+    if (route.keywords) matchKeys.push("keywords");
+    if (matchSorter([route], search, { keys: matchKeys }).length > 0) {
+      matched.push(route);
+    } else {
+      const items = route.items ? filterRoutes(route.items, search) : undefined;
+      if (items?.length) matched.push({ ...route, items });
+    }
+    return matched;
+  }, []);
+
+const RouteList = ({ routes }: { routes: RouteItem[] }) => (
+  <ul>
+    {routes.map(({ label, items }) => (
+      <li key={label}>
+        <Shown value={label} />
+        {items && <RouteList routes={items} />}
+      </li>
+    ))}
+  </ul>
+);
+
+const SearchableRoutes = ({ search }: { search: string }) => {
+  const filtered = filterRoutes(ROUTES, search);
+  return filtered.length === 0 ? <em>No results for {search}</em> : <RouteList routes={filtered} />;
+};
+
 export default function PurePackages() {
   return (
     <section>
@@ -118,6 +163,9 @@ export default function PurePackages() {
       <ClassNames isActive={false} />
       <ProjectFiles />
       <Board />
+      <SearchableRoutes search="" />
+      <SearchableRoutes search="api" />
+      <SearchableRoutes search="missing" />
     </section>
   );
 }

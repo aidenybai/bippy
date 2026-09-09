@@ -18,7 +18,7 @@ import {
   resetDomGlobals,
 } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
-import { mountNode } from "../materialize/mount.js";
+import { mountNode, renderStaticMarkup } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
@@ -39,6 +39,20 @@ export interface RenderComponentOptions {
   props?: StaticObjectValue;
   /** The component is rendered somewhere inside a larger app, so unprovided contexts may still be provided. */
   isolated?: boolean;
+}
+
+export interface RenderWithOptions {
+  /**
+   * Produces the document the framework serves the page in (a Next `_document`);
+   * its server-rendered markup is the DOM the page's code then mounts into and
+   * queries, the way `index.html` is for a Vite app.
+   */
+  document?: (interpreter: Interpreter) => StaticValue;
+}
+
+interface DocumentShell {
+  markup: string;
+  diagnostics: Diagnostic[];
 }
 
 interface BootstrapCall {
@@ -122,8 +136,11 @@ export class StaticRenderer {
     return this.graph.getModule(this.resolvePath(filePath));
   }
 
-  private createInterpreter(assumeOuterProviders = false): Interpreter {
-    resetDomGlobals(this.documentShell);
+  private createInterpreter(
+    assumeOuterProviders = false,
+    documentShell = this.documentShell,
+  ): Interpreter {
+    resetDomGlobals(documentShell);
     const interpreter = new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
@@ -132,7 +149,7 @@ export class StaticRenderer {
       defines: this.options.defines,
       environment: this.options.environment,
       hostPlatform: this.options.hostPlatform,
-      hostDocument: createDomHostDocument(this.documentShell !== null),
+      hostDocument: createDomHostDocument(documentShell !== null),
       capturedGlobals: this.options.observations?.globals,
       route: this.options.route,
       origin: this.options.origin,
@@ -182,12 +199,7 @@ export class StaticRenderer {
     rootValue: StaticValue,
   ): Promise<StaticRenderResult> {
     const runtime = await this.loadRuntime();
-    const materializer = new Materializer(interpreter, runtime, {
-      maxComponentDepth: this.options.maxComponentDepth,
-      maxFiberCount: this.options.maxFiberCount,
-      maxRecursionPerComponent: this.options.maxRecursionPerComponent,
-      serverComponents: this.options.serverComponents,
-    });
+    const materializer = this.createMaterializer(interpreter, runtime);
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
     const mounted = await mountNode(runtime, rootNode, interpreter.timers, () =>
@@ -215,6 +227,25 @@ export class StaticRenderer {
       diagnostics: [...interpreter.diagnostics],
       stats: computeRenderStats(mounted.snapshot, this.graph.loadedModuleCount),
     };
+  }
+
+  private createMaterializer(interpreter: Interpreter, runtime: ReactRuntime): Materializer {
+    return new Materializer(interpreter, runtime, {
+      maxComponentDepth: this.options.maxComponentDepth,
+      maxFiberCount: this.options.maxFiberCount,
+      maxRecursionPerComponent: this.options.maxRecursionPerComponent,
+      serverComponents: this.options.serverComponents,
+    });
+  }
+
+  /** Server-renders the framework's document into the markup the page's DOM starts from. */
+  private async renderDocumentShell(
+    produce: (interpreter: Interpreter) => StaticValue,
+  ): Promise<DocumentShell> {
+    const runtime = await this.loadRuntime();
+    const interpreter = this.createInterpreter();
+    const rootNode = this.createMaterializer(interpreter, runtime).toRootNode(produce(interpreter));
+    return { markup: renderStaticMarkup(runtime, rootNode), diagnostics: interpreter.diagnostics };
   }
 
   private missingModuleResult(filePath: string, message: string): Promise<StaticRenderResult> {
@@ -252,6 +283,7 @@ export class StaticRenderer {
       props: options.props ?? objectValue([]),
       location: null,
       environment: null,
+      owner: null,
     };
     return this.finish(interpreter, element);
   }
@@ -307,8 +339,13 @@ export class StaticRenderer {
     return interpreter.evaluateExpression(rootCall.element, context);
   }
 
-  renderWith(produce: (interpreter: Interpreter) => StaticValue): Promise<StaticRenderResult> {
-    const interpreter = this.createInterpreter();
+  async renderWith(
+    produce: (interpreter: Interpreter) => StaticValue,
+    options: RenderWithOptions = {},
+  ): Promise<StaticRenderResult> {
+    const shell = options.document ? await this.renderDocumentShell(options.document) : null;
+    const interpreter = this.createInterpreter(false, shell?.markup ?? this.documentShell);
+    if (shell) interpreter.diagnostics.push(...shell.diagnostics);
     return this.finish(interpreter, produce(interpreter));
   }
 }

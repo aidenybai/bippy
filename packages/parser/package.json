@@ -60,6 +60,7 @@
     "kea": "3.1.7",
     "kea-loaders": "3.1.1",
     "lodash-es": "4.17.21",
+    "match-sorter": "8.0.0",
     "mobx": "6.12.0",
     "mobx-react": "9.1.1",
     "mobx-react-lite": "4.1.0",

@@ -1366,7 +1366,26 @@
         "route": "/",
         "aliases": {
           "src": "src"
-        }
+        },
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "minimal-shared",
+          "es-toolkit",
+          "es-toolkit/*",
+          "dayjs",
+          "dayjs/*",
+          "simplebar-react",
+          "simplebar-core",
+          "@iconify/react",
+          "react-apexcharts"
+        ]
       }
     },
     {
@@ -1399,7 +1418,27 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": ".",
-        "route": "/dashboard"
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "mantine-react-table",
+          "@mantine/*",
+          "@tabler/icons-react",
+          "@tanstack/*",
+          "@floating-ui/*",
+          "react-remove-scroll",
+          "react-remove-scroll-bar",
+          "react-style-singleton",
+          "use-callback-ref",
+          "use-sidecar",
+          "react-textarea-autosize",
+          "react-number-format",
+          "react-chartjs-2",
+          "react-transition-group",
+          "@vercel/analytics",
+          "clsx",
+          "dayjs",
+          "dayjs/*"
+        ]
       }
     },
     {
@@ -1441,7 +1480,20 @@
         "route": "/login",
         "aliases": {
           "@": "src"
-        }
+        },
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "classnames",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "tss-react"
+        ],
+        "envFiles": [".env"]
       }
     },
     {
@@ -1449,7 +1501,7 @@
       "repository": "https://github.com/llorentegerman/react-admin-dashboard",
       "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
       "description": "react-admin-dashboard (CRA 3 / React 16, legacy ReactDOM.render, react-router-dom v5 Switch/Route, react-jss)",
-      "framework": "react-router",
+      "framework": "spa",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx yarn@1.22.22 install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
@@ -1467,7 +1519,35 @@
         "rootDirectory": ".",
         "tsconfig": "jsconfig.json",
         "entry": "src/index.js",
-        "route": "/dashboard"
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "path-to-regexp",
+          "isarray",
+          "mini-create-react-context",
+          "tiny-invariant",
+          "resolve-pathname",
+          "value-equal",
+          "react-jss",
+          "jss",
+          "jss-*",
+          "css-jss",
+          "theming",
+          "hoist-non-react-statics",
+          "is-in-browser",
+          "shallow-equal",
+          "tiny-warning",
+          "react-display-name",
+          "@emotion/is-prop-valid",
+          "@babel/runtime/*",
+          "simple-flexbox",
+          "react-burger-menu",
+          "classnames",
+          "prop-types",
+          "react-is"
+        ]
       },
       "notes": "react-scripts 3 exits when its stdin closes unless CI=true; webpack 4 needs Node 16 (ERR_OSSL_EVP_UNSUPPORTED on newer OpenSSL), and the ambient yarn is a corepack shim that refuses to run under Node 16 (yarn 1 itself balks at the parent bippy package.json's packageManager field without SKIP_YARN_COREPACK_CHECK), so both commands go through npx."
     },
@@ -2166,7 +2246,12 @@
           "@mui/*",
           "@emotion/*",
           "@tanstack/*",
-          "highlight-words"
+          "@floating-ui/*",
+          "highlight-words",
+          "react-transition-group",
+          "next-plausible",
+          "@next/mdx",
+          "@mdx-js/react"
         ],
         "maxFiberCount": 20000
       },
@@ -2193,6 +2278,10 @@
           "@mantine/*",
           "@tabler/icons-react",
           "@tanstack/*",
+          "next-plausible",
+          "@next/mdx",
+          "@mdx-js/react",
+          "@floating-ui/*",
           "clsx",
           "dayjs"
         ],

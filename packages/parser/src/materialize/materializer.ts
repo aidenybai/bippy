@@ -42,6 +42,7 @@ import { isClientModule } from "../graph/module-record.js";
 import { getFunctionComponent } from "../react/element-type.js";
 import type {
   ComponentDefinition,
+  ElementOwner,
   ContextDefinition,
   RenderEnvironment,
   Scope,
@@ -133,13 +134,6 @@ export interface SuspenseScope {
   commit: () => void;
 }
 
-export interface CompositeFrame {
-  node: ComponentDefinition["node"];
-  /** Closure the component was created in: a factory's components share a node but not a scope. */
-  scope: Scope;
-  props: StaticValue;
-}
-
 /**
  * Everything about a position in the tree that React does not carry for us:
  * the static context values in scope, the RSC environment, and the guards
@@ -147,7 +141,7 @@ export interface CompositeFrame {
  */
 export interface MaterializeContext {
   depth: number;
-  componentStack: CompositeFrame[];
+  componentStack: ElementOwner[];
   suspenseScope: SuspenseScope | null;
   environment: RenderEnvironment | null;
   errorBoundaryDepth: number;
@@ -166,6 +160,7 @@ export interface ProxyInput {
   props: StaticObjectValue;
   ref: StaticValue | null;
   location: SourceLocation | null;
+  owner: ElementOwner | null;
   context: MaterializeContext;
   /** Wrapped in `React.memo` without a custom compare, so shallow-equal props bail out. */
   isMemoized: boolean;
@@ -264,7 +259,10 @@ interface HostRefBinding {
   callback: (node: Element | null) => void;
 }
 
-const isSameFrame = (first: CompositeFrame, second: CompositeFrame): boolean =>
+const ownerChain = (owner: ElementOwner | null): ElementOwner[] =>
+  owner === null ? [] : [owner, ...ownerChain(owner.owner)];
+
+const isSameFrame = (first: ElementOwner, second: ElementOwner): boolean =>
   first.node === second.node && first.scope === second.scope && first.props === second.props;
 
 /** Whether two contexts describe the same tree position; the owner differs between renders of one component. */
@@ -351,6 +349,10 @@ const isEmptyChild = (value: StaticValue): boolean =>
 
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));
+
+/** A function child is a render prop only its consumer can turn into React children. */
+const isRenderProp = (value: StaticValue): boolean =>
+  value.kind === "function" || value.kind === "native-function";
 
 // A lone text child is written as textContent; React creates no HostText fiber for it.
 const isTextContentChild = (children: StaticValue): boolean => {
@@ -690,13 +692,12 @@ export class Materializer {
       if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
     if (!this.isServerEnvironment(element, context)) {
-      return this.createNode(element.type, element.key, element.props, element.location, context);
+      return this.createNode(element, element.props, context);
     }
     if (this.isFlightUnwrappedFragment(element)) {
       return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
     }
-    const props = this.serverEnvironment.stampProps(element.props);
-    return this.createNode(element.type, element.key, props, element.location, context);
+    return this.createNode(element, this.serverEnvironment.stampProps(element.props), context);
   }
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
@@ -735,6 +736,7 @@ export class Materializer {
     const server = this.evaluateComposite(
       serverComponent,
       props,
+      element.owner,
       serverContext,
       location,
       null,
@@ -747,12 +749,11 @@ export class Materializer {
   }
 
   private createNode(
-    type: StaticElementType,
-    key: StaticValue | null,
+    element: StaticElementValue,
     props: StaticObjectValue,
-    location: SourceLocation | null,
     context: MaterializeContext,
   ): ReactNode {
+    const { type, key, location, owner } = element;
     const { createElement } = this.runtime.react;
     if (type.kind !== "fragment" && this.materializedCount++ >= this.maxElementCount) {
       if (!this.isBudgetExhausted) {
@@ -768,7 +769,7 @@ export class Materializer {
     }
     const reactKey = this.keyToString(key, location);
     const children = getObjectProperty(props, "children");
-    const input: ProxyInput = { props, ref: null, location, context, isMemoized: false };
+    const input: ProxyInput = { props, ref: null, location, owner, context, isMemoized: false };
     switch (type.kind) {
       case "host":
         return createElement(
@@ -876,7 +877,7 @@ export class Materializer {
           importedName: type.importedName,
           packageName: type.packageName,
           reason: `${type.importedName} from ${type.packageName} is not analyzed`,
-          children: this.toNode(children, context, true),
+          children: isRenderProp(children) ? null : this.toNode(children, context, true),
         });
       }
       case "stub":
@@ -1434,6 +1435,7 @@ export class Materializer {
         this.evaluateComposite(
           component,
           props,
+          input.owner,
           input.context,
           input.location,
           frame,
@@ -1632,6 +1634,7 @@ export class Materializer {
           this.evaluateComposite(
             component,
             props,
+            input.owner,
             boundaryContext,
             input.location,
             frame,
@@ -1713,19 +1716,18 @@ export class Materializer {
   private evaluateComposite(
     component: ComponentDefinition,
     props: StaticValue,
+    owner: ElementOwner | null,
     context: MaterializeContext,
     location: SourceLocation | null,
     hooks: HookFrame | null,
     render: (componentContext: EvaluationContext) => StaticValue,
   ): CompositeEvaluation {
     const environment = this.componentEnvironment(component, context);
+    const frame: ElementOwner = { node: component.node, scope: component.scope, props, owner };
     const childContext: MaterializeContext = {
       ...context,
       depth: context.depth + 1,
-      componentStack: [
-        ...context.componentStack,
-        { node: component.node, scope: component.scope, props },
-      ],
+      componentStack: [...context.componentStack, frame],
       environment,
       owner: null,
     };
@@ -1742,9 +1744,10 @@ export class Materializer {
         componentContext: null,
       };
     }
-    const ancestors = context.componentStack.filter((frame) => frame.node === component.node);
+    const ancestors = ownerChain(owner).filter((ancestor) => ancestor.node === component.node);
     const isNonTerminating = ancestors.some(
-      (frame) => frame.scope === component.scope && areValuesEquivalent(frame.props, props),
+      (ancestor) =>
+        ancestor.scope === component.scope && areValuesEquivalent(ancestor.props, props),
     );
     if (isNonTerminating || ancestors.length >= this.maxRecursionPerComponent) {
       this.interpreter.report(
@@ -1764,6 +1767,7 @@ export class Materializer {
     const componentContext: EvaluationContext = {
       ...this.interpreter.createModuleContext(component.module, this.readContext, environment),
       hooks,
+      owner: frame,
     };
     childContext.owner = componentContext;
     return { rendered: render(componentContext), childContext, componentContext };

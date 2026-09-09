@@ -5,6 +5,7 @@ import { Spinner, useDelayed } from "umd-kit";
 import urlJoin from "umd-join";
 import { Registry, defaultLimit } from "cjs-statics";
 import { createRegistry, Stack, version as umdVersion } from "umd-return-kit";
+import Sparkline, { palette } from "terser-kit";
 
 const registry = new Registry().register("seen").register("caught");
 
@@ -48,6 +49,7 @@ export const App = () => {
         <ul />
       </Panel>
       <Banner tone="info">bundled {version}</Banner>
+      <Sparkline points={[1, 2, 3]} label={palette[1]} />
     </LabelContext.Provider>
   );
 };

@@ -1,4 +1,5 @@
 import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
+import type { HostRealm } from "../host/host-realm.js";
 import { getAbortWitness } from "./abort-controller.js";
 import { isBlobValue } from "./blob.js";
 import { getPrototypeOwner } from "./class-component.js";
@@ -239,8 +240,12 @@ export const isPrototypeOf = (prototype: StaticValue, value: StaticValue): boole
   }
 };
 
-/** `left instanceof right` for a built-in or analyzed constructor; null when it depends on values the analysis cannot see. */
-export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | null => {
+/** `left instanceof right` for a built-in, host or analyzed constructor; null when it depends on values the analysis cannot see. */
+export const isInstanceOf = (
+  left: StaticValue,
+  right: StaticValue,
+  realm: HostRealm | null,
+): boolean | null => {
   if (right.kind === "class") return isInstanceOfClass(left, right);
   if (right.kind === "function") return isInstanceOfFunction(left, right);
   if (right.kind === "external") {
@@ -255,8 +260,12 @@ export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | n
   }
   if (right.kind !== "global") return null;
   const constructor = BUILTIN_CONSTRUCTORS[right.name];
-  if (!constructor)
-    return left.kind === "native-object" ? isNativeInstanceOf(left, right.name) : null;
+  if (!constructor) {
+    if (left.kind === "native-object") return isNativeInstanceOf(left, right.name);
+    return isPrimitiveLike(left) && realm?.getGlobalTypeof(right.name) === "function"
+      ? false
+      : null;
+  }
   if (isPrimitiveLike(left)) return false;
   const witness = getPrototypeWitness(left);
   return witness === null ? null : witness instanceof constructor;

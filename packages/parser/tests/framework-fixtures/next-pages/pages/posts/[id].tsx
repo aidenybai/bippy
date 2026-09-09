@@ -5,6 +5,7 @@ export default function Post() {
   return (
     <article>
       <h1>Post {router.query.id}</h1>
+      <p>at {router.pathname}</p>
     </article>
   );
 }

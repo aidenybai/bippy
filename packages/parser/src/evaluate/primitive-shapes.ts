@@ -7,7 +7,13 @@ import type {
 } from "../types.js";
 import { distributeBinary, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
 
-const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
+const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", minLength: 0, length: null };
+
+const fixedLengthShape = (prefix: string, length: number | null): StringShape => ({
+  prefix,
+  minLength: length ?? prefix.length,
+  length,
+});
 
 const shapedStringValue = (reason: string, shape: StringShape): StaticValue =>
   shape.length === shape.prefix.length
@@ -23,7 +29,7 @@ export const rangedNumberValue = (
 const getConcatenationShape = (value: StaticValue): StringShape => {
   if (value.kind === "primitive" && typeof value.value !== "symbol") {
     const text = String(value.value);
-    return { prefix: text, length: text.length };
+    return fixedLengthShape(text, text.length);
   }
   if (value.kind === "unknown-primitive" && value.primitiveType === "string") {
     return value.stringShape ?? UNKNOWN_STRING_SHAPE;
@@ -59,6 +65,7 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
   const isLeftComplete = leftShape.length === leftShape.prefix.length;
   const concatenated = shapedStringValue("+ on dynamic values", {
     prefix: isLeftComplete ? leftShape.prefix + rightShape.prefix : leftShape.prefix,
+    minLength: leftShape.minLength + rightShape.minLength,
     length:
       leftShape.length === null || rightShape.length === null
         ? null
@@ -108,19 +115,23 @@ const sliceShapedString = (
   if (to === null && end !== undefined) return null;
   if (shape.length !== null) {
     const clampedTo = Math.min(to ?? shape.length, shape.length);
-    return shapedStringValue("slice()", {
-      prefix: shape.prefix.slice(from, clampedTo),
-      length: Math.max(0, clampedTo - from),
-    });
+    return shapedStringValue(
+      "slice()",
+      fixedLengthShape(shape.prefix.slice(from, clampedTo), Math.max(0, clampedTo - from)),
+    );
   }
   if (to !== null && to <= shape.prefix.length) return primitiveValue(shape.prefix.slice(from, to));
-  return shapedStringValue("slice()", { prefix: shape.prefix.slice(from), length: null });
+  return shapedStringValue("slice()", {
+    prefix: shape.prefix.slice(from),
+    minLength: Math.max(0, Math.min(shape.minLength, to ?? shape.minLength) - from),
+    length: null,
+  });
 };
 
 const toFixedOfRange = (range: NumberRange, digits: number): StaticValue | null => {
   if (!Number.isInteger(digits) || digits < 0 || digits > 100) return null;
   if (range.min < 0 || range.max >= 9) return null;
-  return shapedStringValue("toFixed()", { prefix: "", length: digits === 0 ? 1 : digits + 2 });
+  return shapedStringValue("toFixed()", fixedLengthShape("", digits === 0 ? 1 : digits + 2));
 };
 
 /** `text[index]`: the character when `index` falls inside the known prefix, `undefined` past a known length. */
@@ -139,7 +150,7 @@ export const getShapedStringLength = (receiver: StaticUnknownPrimitiveValue): St
   const shape = receiver.stringShape;
   if (shape?.length !== null && shape?.length !== undefined) return primitiveValue(shape.length);
   return rangedNumberValue("length of dynamic value", {
-    min: shape?.prefix.length ?? 0,
+    min: shape?.minLength ?? 0,
     max: Number.POSITIVE_INFINITY,
   });
 };

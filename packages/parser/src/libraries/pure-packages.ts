@@ -22,6 +22,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "hasown",
   "lodash",
   "lodash-es",
+  "match-sorter",
   "node:path",
   "object.entries",
   "path",

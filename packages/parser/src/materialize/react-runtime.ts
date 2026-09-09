@@ -8,6 +8,7 @@ import { ensureDomGlobals } from "./dom-environment.js";
 export type ReactModule = typeof import("react");
 export type ReactDomClientModule = typeof import("react-dom/client");
 export type ReactDomModule = typeof import("react-dom");
+export type ReactDomServerModule = typeof import("react-dom/server");
 
 /**
  * The React installation the static tree is materialized with: the app's own
@@ -21,6 +22,7 @@ export interface ReactRuntime {
   react: ReactModule;
   domClient: ReactDomClientModule;
   dom: ReactDomModule;
+  domServer: ReactDomServerModule;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   version: string;
 }
@@ -39,6 +41,9 @@ const isReactDomClientModule = (value: unknown): value is ReactDomClientModule =
 
 const isReactDomModule = (value: unknown): value is ReactDomModule =>
   isRecord(value) && typeof value.createPortal === "function";
+
+const isReactDomServerModule = (value: unknown): value is ReactDomServerModule =>
+  isRecord(value) && typeof value.renderToStaticMarkup === "function";
 
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
@@ -118,20 +123,25 @@ const load = async (
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   const appResolver = hasClientEntry(resolver, rootDirectory) ? resolver : null;
-  const [react, domClient, dom] = await Promise.all([
+  const [react, domClient, dom, domServer] = await Promise.all([
     importResolved(appResolver, "react", rootDirectory),
     importResolved(appResolver, "react-dom/client", rootDirectory),
     importResolved(appResolver, "react-dom", rootDirectory),
+    importResolved(appResolver, "react-dom/server", rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomClientModule(domClient)) {
     throw new ReactRuntimeError("could not load react-dom/client");
   }
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
+  if (!isReactDomServerModule(domServer)) {
+    throw new ReactRuntimeError("could not load react-dom/server");
+  }
   return {
     react,
     domClient,
     dom,
+    domServer,
     act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
   };

@@ -59,8 +59,14 @@ export interface NextModel {
    * same match the page was composed from.
    */
   params: Record<string, string>;
+  /** The matched `pages/` route pattern (`/posts/[id]`), which `router.pathname` reports; null until matched. */
+  page: NextPageRoute;
   /** `next-intl`, whose request configuration `next.config` registers through its plugin. */
   intl: NextIntlModel;
+}
+
+export interface NextPageRoute {
+  pattern: string | null;
 }
 
 export type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
@@ -104,6 +110,7 @@ const IMAGE_ONLY_PROPS: ReadonlySet<string> = new Set([
 ]);
 
 const FORM_ONLY_PROPS: ReadonlySet<string> = new Set(["replace", "scroll", "prefetch", "ref"]);
+const CHILDREN_PROP: ReadonlySet<string> = new Set(["children"]);
 
 const LINK_STATUS_CONTEXT: ContextDefinition = {
   name: "LinkStatusContext",
@@ -223,6 +230,85 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
 const HEAD_STUB: StubComponent = {
   displayName: "Head",
   render: () => stubElement(emptyStub("SideEffect"), {}),
+};
+
+/**
+ * `next/document` (next/dist/pages/_document.js) as the server renders it:
+ * `<Head>` starts with `defaultHead()`'s metas, `<Main>` is the
+ * `next-js-internal-body-render-target` the renderer replaces with the
+ * `<div id="__next">` the page mounts into, and `<NextScript>`'s scripts are not
+ * DOM the page's code sees rendered.
+ */
+const DOCUMENT_HTML_STUB: StubComponent = {
+  displayName: "Html",
+  render: (props) => element({ kind: "host", tagName: "html" }, props),
+};
+
+const DOCUMENT_HEAD_STUB: StubComponent = {
+  displayName: "Head",
+  render: (props) =>
+    element(
+      { kind: "host", tagName: "head" },
+      {
+        kind: "object",
+        entries: [
+          ...omitProps(props, CHILDREN_PROP).entries,
+          {
+            kind: "property",
+            key: "children",
+            value: listValue([
+              hostElement("meta", { charSet: primitiveValue("utf-8") }),
+              hostElement("meta", {
+                name: primitiveValue("viewport"),
+                content: primitiveValue("width=device-width"),
+              }),
+              getObjectProperty(props, "children"),
+            ]),
+          },
+        ],
+      },
+    ),
+};
+
+const DOCUMENT_MAIN_STUB: StubComponent = {
+  displayName: "Main",
+  render: () => hostElement("div", { id: primitiveValue("__next") }),
+};
+
+const NEXT_SCRIPT_STUB = emptyStub("NextScript");
+
+export const DEFAULT_DOCUMENT_STUB: StubComponent = {
+  displayName: "Document",
+  tag: ClassComponentTag,
+  render: () =>
+    stubElement(DOCUMENT_HTML_STUB, {
+      children: listValue([
+        stubElement(DOCUMENT_HEAD_STUB, {}),
+        hostElement("body", {
+          children: listValue([
+            stubElement(DOCUMENT_MAIN_STUB, {}),
+            stubElement(NEXT_SCRIPT_STUB, {}),
+          ]),
+        }),
+      ]),
+    }),
+};
+
+const documentValue = (importedName: string): StaticValue | null => {
+  switch (importedName) {
+    case "default":
+      return stubValue(DEFAULT_DOCUMENT_STUB);
+    case "Html":
+      return stubValue(DOCUMENT_HTML_STUB);
+    case "Head":
+      return stubValue(DOCUMENT_HEAD_STUB);
+    case "Main":
+      return stubValue(DOCUMENT_MAIN_STUB);
+    case "NextScript":
+      return stubValue(NEXT_SCRIPT_STUB);
+    default:
+      return null;
+  }
 };
 
 const IMAGE_ELEMENT_STUB: StubComponent = {
@@ -541,6 +627,7 @@ const pagesRouterValue = (
   importedName: string,
   url: URL,
   params: Record<string, string>,
+  page: NextPageRoute,
 ): StaticValue | null => {
   if (importedName !== "useRouter" && importedName !== "default") return null;
   const query = objectFromRecord({
@@ -552,7 +639,10 @@ const pagesRouterValue = (
     ),
   });
   const router = objectFromRecord({
-    pathname: unknownValue("pathname is the page's route pattern"),
+    pathname:
+      page.pattern === null
+        ? unknownValue("pathname is the page's route pattern")
+        : primitiveValue(page.pattern),
     asPath: primitiveValue(`${url.pathname}${url.search}`),
     query,
     isReady: primitiveValue(true),
@@ -583,6 +673,7 @@ export interface NextModelOptions {
 export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
+  const page: NextPageRoute = { pattern: null };
   const linkStub = createLinkStub(options);
   const intl = createNextIntlModel({
     link: linkStub,
@@ -610,6 +701,8 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return importedName === "default" ? images.legacyImage : null;
       case "next/head":
         return importedName === "default" ? stubValue(head) : null;
+      case "next/document":
+        return documentValue(importedName);
       case "next/script":
         return importedName === "default" ? stubValue(scriptStub(options.kind)) : null;
       case "next/dynamic":
@@ -624,12 +717,12 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
       case "next/headers":
         return nextRequestValue(importedName, options.request ?? null, options.origin ?? null);
       case "next/router":
-        return pagesRouterValue(importedName, url, params);
+        return pagesRouterValue(importedName, url, params, page);
       case STYLED_JSX_SPECIFIER:
         return importedName === "default" ? stubValue(emptyStub("JSXStyle")) : null;
       default:
         return intl.externalValues(packageName, importedName);
     }
   };
-  return { externalValues, params, intl };
+  return { externalValues, params, page, intl };
 };

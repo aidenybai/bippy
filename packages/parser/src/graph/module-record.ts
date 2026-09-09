@@ -801,6 +801,17 @@ class CommonJsCollector {
     if (specifier !== null) this.addReExportAll(specifier);
   }
 
+  /** Minifiers join top-level statements into one comma sequence. */
+  private collectExpression(expression: Expression): void {
+    if (expression.type === "SequenceExpression") {
+      for (const inner of expression.expressions) this.collectExpression(inner);
+    } else if (expression.type === "AssignmentExpression") {
+      this.collectAssignment(expression, null);
+    } else if (expression.type === "CallExpression") {
+      this.collectCall(expression);
+    }
+  }
+
   collectStatement(statement: Statement): void {
     if (statement.type === "ReturnStatement") {
       if (statement.argument && this.factoryReturns.has(statement)) {
@@ -816,9 +827,7 @@ class CommonJsCollector {
       return;
     }
     if (statement.type === "ExpressionStatement") {
-      const { expression } = statement;
-      if (expression.type === "AssignmentExpression") this.collectAssignment(expression, null);
-      else if (expression.type === "CallExpression") this.collectCall(expression);
+      this.collectExpression(statement.expression);
       return;
     }
     if (statement.type !== "VariableDeclaration") return;
