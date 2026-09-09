@@ -4,6 +4,7 @@ import type {
   AwaitExpression,
   BindingPattern,
   Expression,
+  MemberExpression,
   Node,
   ObjectPropertyKind,
   Statement,
@@ -118,6 +119,12 @@ export const unwrapExpression = (node: Expression): Expression => {
     default:
       return node;
   }
+};
+
+/** The property name a non-computed member access reads (`#name` for a private field); null when the key is computed. */
+export const getStaticMemberKey = (node: MemberExpression): string | null => {
+  if (node.property.type === "PrivateIdentifier") return `#${node.property.name}`;
+  return !node.computed && node.property.type === "Identifier" ? node.property.name : null;
 };
 
 /** Decides which side of a short-circuiting operator runs; null when the source does not decide. */

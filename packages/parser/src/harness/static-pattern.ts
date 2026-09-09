@@ -1,4 +1,4 @@
-import { MARKER_NAMES } from "../materialize/markers.js";
+import { KEY_PLACEHOLDER, MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import type {
   RuntimeFiberSnapshot,
@@ -95,6 +95,9 @@ const readNumber = (props: Record<string, SnapshotPropValue>, key: string): numb
   return typeof value === "number" ? value : null;
 };
 
+const readKey = (fiber: RuntimeFiberSnapshot): string | null =>
+  fiber.key === KEY_PLACEHOLDER ? null : fiber.key;
+
 const NEGATED_PREDICATE_PREFIX = "!";
 
 /** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
@@ -153,7 +156,7 @@ class PatternReader {
               readString(fiber.props, "displayName"),
               readString(fiber.props, "importedName"),
             ),
-            key: fiber.key,
+            key: readKey(fiber),
             reason: readString(fiber.props, "reason") ?? "",
             passedChildren: this.read(fiber.children),
           },
@@ -178,7 +181,7 @@ class PatternReader {
             kind: "fiber",
             tag: fiber.tag,
             name: fiber.name,
-            key: fiber.key,
+            key: readKey(fiber),
             children: this.read(fiber.children),
           },
         ];

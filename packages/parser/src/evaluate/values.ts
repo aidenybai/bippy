@@ -1327,6 +1327,12 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const [firstAlternative] = alternatives;
+  if (
+    firstAlternative !== undefined &&
+    alternatives.every((alternative) => isInterchangeable(alternative, firstAlternative))
+  )
+    return firstAlternative;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1335,23 +1341,21 @@ export const branchValue = (
     flattened.push(value);
     return flattened.length - 1;
   };
-  alternatives.forEach((alternative, index) => {
-    if (alternative.kind === "branch") {
-      alternative.alternatives.forEach((inner, innerIndex) => {
-        const position = add(inner);
-        if (index === preferredIndex && innerIndex === alternative.preferredIndex) {
-          resolvedPreferred = position;
-        }
-      });
-    } else {
-      const position = add(alternative);
-      if (index === preferredIndex) resolvedPreferred = position;
+  for (const [index, alternative] of alternatives.entries()) {
+    const inner = alternative.kind === "branch" ? alternative.alternatives : [alternative];
+    const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
+    for (const [innerIndex, value] of inner.entries()) {
+      const position = add(value);
+      if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
+      if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
+        return unknownValue(
+          `${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`,
+          location,
+        );
+      }
     }
-  });
-  if (flattened.length === 1) return flattened[0];
-  if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
-    return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
+  if (flattened.length === 1) return flattened[0];
   const isPositional =
     flattened.length === alternatives.length &&
     alternatives.every((alternative) => alternative.kind !== "branch");

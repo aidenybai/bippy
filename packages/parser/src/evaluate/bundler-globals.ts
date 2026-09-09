@@ -39,6 +39,13 @@ const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "de
 export const isBundlerUndeclaredName = (bundler: ModuleBundler, name: string): boolean =>
   bundler === "vite" && VITE_UNDECLARED_NAMES.has(name);
 
+/** Packages that bundle the client with webpack, whose `node.global` polyfill makes the bare `global` the page's window. */
+const WEBPACK_BUNDLER_PACKAGES = ["webpack", "react-scripts", "next", "@rspack/core"];
+
+export const isWebpackBundled = (
+  hasDeclaredDependency: (packageName: string) => boolean,
+): boolean => WEBPACK_BUNDLER_PACKAGES.some(hasDeclaredDependency);
+
 const VITE_ENVIRONMENT: Record<string, StaticValue> = {
   MODE: primitiveValue(DEV_SERVER_MODE),
   DEV: TRUE_VALUE,

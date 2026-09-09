@@ -1,4 +1,5 @@
 import path from "node:path";
+import type { EvaluationContext } from "../evaluate/context.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import {
   FALSE_VALUE,
@@ -14,8 +15,9 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { toElementType } from "../react/element-type.js";
+import { hasExportedName } from "../graph/module-record.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type { StaticRenderResult, StaticValue } from "../types.js";
+import type { ModuleRecord, StaticRenderResult, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import { element } from "./stubs.js";
@@ -39,6 +41,8 @@ export interface NextPagesRouteOptions {
 
 const RESERVED_PAGES = new Set(["_app", "_document", "_error", "404", "500", "api"]);
 const DATA_FETCHING_EXPORTS = ["getServerSideProps", "getStaticProps", "getInitialProps"];
+/** The hydration payload `next/client` parses out of the document; `props` is what the App is rendered with. */
+export const NEXT_DATA_GLOBAL = "__NEXT_DATA__";
 /**
  * `reactStrictMode` from `next.config`, which the pages client reads as
  * `process.env.__NEXT_STRICT_MODE` (`false` when unset).
@@ -141,9 +145,37 @@ const matchPage = (
 };
 
 /**
+ * The props `next/client` renders the App with: `{...__NEXT_DATA__.props,
+ * Component, router}`. Without a capture of the payload, `pageProps` is `{}`
+ * unless the page exports a data-fetching function, in which case it is
+ * unknown.
+ */
+const readAppProps = (
+  renderer: StaticRenderer,
+  interpreter: Interpreter,
+  pageModule: ModuleRecord,
+  pageContext: EvaluationContext,
+): StaticValue => {
+  const nextData = renderer.options.observations?.globals?.[NEXT_DATA_GLOBAL];
+  if (nextData !== undefined) {
+    return interpreter.getProperty(
+      interpreter.captured(nextData, `window.${NEXT_DATA_GLOBAL}`),
+      "props",
+      pageContext,
+      null,
+    );
+  }
+  const fetchesData = DATA_FETCHING_EXPORTS.some((name) => hasExportedName(pageModule, name));
+  return objectFromRecord({
+    pageProps: fetchesData
+      ? unknownValue("pageProps come from data fetching at request time")
+      : objectValue(),
+  });
+};
+
+/**
  * Composes `<App Component={Page} pageProps={…} router={…} />` (or just
- * `<Page />` without a custom `_app`). `pageProps` is `{}` unless the page
- * exports a data-fetching function, in which case it is unknown; `_document` is
+ * `<Page {...pageProps} />` without a custom `_app`); `_document` is
  * server-only and never part of the client fiber tree.
  */
 export const renderNextPagesRoute = (
@@ -186,14 +218,9 @@ export const renderNextPagesRoute = (
     }
     const pageName = path.basename(pagePath, path.extname(pagePath));
     const pageComponent = interpreter.evaluateModuleExport(pageModule, "default");
-    const fetchesData = DATA_FETCHING_EXPORTS.some((name) =>
-      pageModule.exports.some(
-        (entry) => entry.kind !== "re-export-all" && entry.exportedName === name,
-      ),
-    );
-    const pageProps = fetchesData
-      ? unknownValue("pageProps come from data fetching at request time")
-      : objectValue();
+    const pageContext = interpreter.createModuleContext(pageModule);
+    const appProps = readAppProps(renderer, interpreter, pageModule, pageContext);
+    const pageProps = interpreter.getProperty(appProps, "pageProps", pageContext, null);
     const router = model.externalValues("next/router", "default") ?? unknownValue("next router");
 
     const appPath = findRouteFile(pagesDirectory, "_app");
@@ -208,7 +235,7 @@ export const renderNextPagesRoute = (
           [],
           null,
           pageName,
-          interpreter.createModuleContext(pageModule),
+          pageContext,
         ),
         isStrictMode,
       );
@@ -218,12 +245,12 @@ export const renderNextPagesRoute = (
       interpreter.createElement(
         appComponent,
         objectValue([
+          { kind: "spread", value: appProps },
           {
             kind: "property",
             key: "Component",
             value: componentReference(toElementType(pageComponent, pageName)),
           },
-          { kind: "property", key: "pageProps", value: pageProps },
           { kind: "property", key: "router", value: router },
         ]),
         null,

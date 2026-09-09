@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
+import { transformAsync } from "@babel/core";
 import { transform as transformSvgr } from "@svgr/core";
+import svgr from "vite-plugin-svgr";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
@@ -85,6 +87,35 @@ const fixtureSvgrPlugin = (): Plugin => ({
   },
 });
 
+// What `@stylexjs/unplugin` does in a dev server: compile `stylex.create` and
+// friends away with the babel plugin in debug mode, leaving `props` to run.
+const fixtureStylexPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-stylex",
+  enforce: "pre",
+  async transform(code, id) {
+    if (!code.includes("@stylexjs/stylex") || relative(componentsDirectory, id).startsWith(".."))
+      return null;
+    const result = await transformAsync(code, {
+      babelrc: false,
+      configFile: false,
+      cwd: parserDirectory,
+      filename: id,
+      parserOpts: { plugins: ["jsx", "typescript"] },
+      plugins: [
+        [
+          "@stylexjs/babel-plugin",
+          {
+            dev: true,
+            runtimeInjection: false,
+            unstable_moduleResolution: { type: "commonJS", rootDir: parserDirectory },
+          },
+        ],
+      ],
+    });
+    return result?.code == null ? null : { code: result.code, map: result.map };
+  },
+});
+
 const fixtureJsxInJsPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-jsx-in-js",
   enforce: "pre",
@@ -96,7 +127,13 @@ const fixtureJsxInJsPlugin = (): Plugin => ({
 
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin(), fixtureJsxInJsPlugin()],
+  plugins: [
+    fixtureAliasPlugin(),
+    fixtureSvgrPlugin(),
+    svgr(),
+    fixtureStylexPlugin(),
+    fixtureJsxInJsPlugin(),
+  ],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },

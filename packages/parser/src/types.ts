@@ -46,9 +46,15 @@ export interface TransformedSource {
   lang: SourceLanguage;
 }
 
-/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+/**
+ * A bundler loader the app applies to a non-JavaScript file extension,
+ * producing the module the bundler links in its place. With `query` it only
+ * applies to imports carrying that Vite query (`icon.svg?react`); a plain
+ * import of the file stays the asset it is.
+ */
 export interface SourceTransform {
   extension: string;
+  query?: string;
   transform: (filePath: string, sourceText: string) => TransformedSource | null;
 }
 
