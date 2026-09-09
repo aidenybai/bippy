@@ -97,7 +97,7 @@
         "fibers": 1000,
         "commits": 32,
         "pageErrors": [],
-        "title": "Dashboard \u2014 Free Tailwind 4 React Next Typescript dashboard template"
+        "title": "Dashboard — Free Tailwind 4 React Next Typescript dashboard template"
       },
       "static": {
         "stats": {
@@ -256,6 +256,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -268,7 +269,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -319,6 +319,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -331,7 +332,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -718,8 +718,8 @@
       "id": "data-table-filters",
       "revision": "27e165378fa6f58dab0486cd06b078b6956230f2",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:53:51.002Z",
-      "durationMs": 10589,
+      "capturedAt": "2026-09-09T06:58:18.323Z",
+      "durationMs": 2649,
       "runtime": {
         "reactVersion": "19.3.0-canary-52684925-20251110",
         "rendererName": "react-dom",
@@ -728,33 +728,25 @@
         "fibers": 1781,
         "commits": 22,
         "pageErrors": [],
-        "title": "React Data Table with Filters \u2014 shadcn/ui + TanStack Table | openstatus"
+        "title": "React Data Table with Filters — shadcn/ui + TanStack Table | openstatus"
       },
       "static": {
         "stats": {
-          "fiberCount": 3357,
+          "fiberCount": 3328,
           "textCount": 118,
-          "branchCount": 219,
+          "branchCount": 215,
           "repeatCount": 2,
           "opaqueCount": 103,
-          "unknownCount": 123,
+          "unknownCount": 121,
           "modulesLoaded": 1720
         },
         "diagnostics": [
-          {
-            "code": "budget-exhausted",
-            "count": 50
-          },
           {
             "code": "dynamic-key",
             "count": 2
           },
           {
             "code": "dynamic-props",
-            "count": 1
-          },
-          {
-            "code": "unsettled-state",
             "count": 1
           }
         ]
@@ -783,7 +775,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "runtimeFibers": 1515,
-        "staticFibers": 1682,
+        "staticFibers": 1681,
         "coverage": 0.054409005628517824,
         "strictCoverage": 0.05742574257425743,
         "divergence": null,
@@ -798,7 +790,7 @@
             {
               "kind": "transition",
               "commit": 2,
-              "commitCount": 7
+              "commitCount": 6
             },
             {
               "kind": "branch",
@@ -835,7 +827,7 @@
                 {
                   "kind": "transition",
                   "commit": 0,
-                  "commitCount": 7
+                  "commitCount": 6
                 },
                 {
                   "kind": "branch",
@@ -3115,6 +3107,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 195,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -3127,7 +3120,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 203,
         "staticFibers": 203,
         "coverage": 1,
@@ -3547,6 +3539,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -3559,7 +3552,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -3675,7 +3667,7 @@
         "fibers": 1439,
         "commits": 25,
         "pageErrors": [
-          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved \u00b7 just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
         "title": "Free Invoice Generator | Invoify"
       },
@@ -3906,6 +3898,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -3918,7 +3911,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -4006,7 +3998,7 @@
             "reason": "step budget exhausted",
             "absorbedFibers": 5,
             "heads": [
-              "\"\u00a9 2026 \"",
+              "\"© 2026 \"",
               "<LinkComponent> key=\"1/.$linkwarden-website-key\" [ForwardRef]",
               "\". All rights reserved.\""
             ]
@@ -4130,8 +4122,8 @@
       "id": "magic-portfolio",
       "revision": "2a55890c38f18e0ad1e267748373bfb703ce146a",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:53:43.588Z",
-      "durationMs": 2552,
+      "capturedAt": "2026-09-09T06:58:10.700Z",
+      "durationMs": 2735,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
@@ -5278,8 +5270,8 @@
       "id": "magicui-portfolio",
       "revision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:53:41.357Z",
-      "durationMs": 1121,
+      "capturedAt": "2026-09-09T06:58:08.064Z",
+      "durationMs": 1106,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
@@ -5384,7 +5376,7 @@
               "kind": "branch",
               "variable": "truthy(413)",
               "reason": "conditional on branch(false | true)",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
               "alternativeIndex": 0,
               "alternativeCount": 2
             },
@@ -5392,7 +5384,7 @@
               "kind": "branch",
               "variable": "truthy(414)",
               "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -5400,7 +5392,7 @@
               "kind": "branch",
               "variable": "truthy(429)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -5408,7 +5400,7 @@
               "kind": "branch",
               "variable": "truthy(432)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -5416,7 +5408,7 @@
               "kind": "branch",
               "variable": "truthy(435)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -5424,7 +5416,7 @@
               "kind": "branch",
               "variable": "truthy(438)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -5432,7 +5424,7 @@
               "kind": "branch",
               "variable": "truthy(441)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -5440,7 +5432,7 @@
               "kind": "branch",
               "variable": "truthy(444)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -5461,7 +5453,7 @@
                   "kind": "branch",
                   "variable": "truthy(413)",
                   "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5469,7 +5461,7 @@
                   "kind": "branch",
                   "variable": "truthy(414)",
                   "reason": "conditional on branch(true | false)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5477,7 +5469,7 @@
                   "kind": "branch",
                   "variable": "truthy(429)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5485,7 +5477,7 @@
                   "kind": "branch",
                   "variable": "truthy(432)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5493,7 +5485,7 @@
                   "kind": "branch",
                   "variable": "truthy(435)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
@@ -5501,7 +5493,7 @@
                   "kind": "branch",
                   "variable": "truthy(438)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5509,7 +5501,7 @@
                   "kind": "branch",
                   "variable": "truthy(441)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5517,7 +5509,7 @@
                   "kind": "branch",
                   "variable": "truthy(444)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
                 }
@@ -5527,14 +5519,14 @@
               "kind": "branch",
               "variable": "truthy(444)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
                   "variable": "truthy(413)",
                   "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5542,7 +5534,7 @@
                   "kind": "branch",
                   "variable": "truthy(414)",
                   "reason": "conditional on branch(true | false)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5550,7 +5542,7 @@
                   "kind": "branch",
                   "variable": "truthy(429)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5558,7 +5550,7 @@
                   "kind": "branch",
                   "variable": "truthy(432)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5566,7 +5558,7 @@
                   "kind": "branch",
                   "variable": "truthy(435)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
@@ -5574,7 +5566,7 @@
                   "kind": "branch",
                   "variable": "truthy(438)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5582,7 +5574,7 @@
                   "kind": "branch",
                   "variable": "truthy(441)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 }
@@ -5592,14 +5584,14 @@
               "kind": "branch",
               "variable": "truthy(435)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
                   "variable": "truthy(413)",
                   "reason": "conditional on branch(false | true)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5607,7 +5599,7 @@
                   "kind": "branch",
                   "variable": "truthy(414)",
                   "reason": "conditional on branch(true | false)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-avatar@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.7__@types+react_cea228018a2b8cb6c2f671b3f2…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5615,7 +5607,7 @@
                   "kind": "branch",
                   "variable": "truthy(429)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
@@ -5623,7 +5615,7 @@
                   "kind": "branch",
                   "variable": "truthy(432)",
                   "reason": "&& on <boolean: includes()>",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051\u2026",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/magicui-portfolio/node_modules/.pnpm/@radix-ui+react-collapsible@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.7__@types+_8d17d0d613caa2864062459051…",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 }
@@ -6057,7 +6049,7 @@
             "skippedFibers": 5,
             "divergence": {
               "path": "root > <body> [HostComponent] > <DirectionProvider> (opaque) > <MantineProvider> (opaque) > <ModalsProvider> (opaque) > <AppProvider> [FunctionComponent] > <QueryClientProvider> (opaque) > <DashboardLayout> [FunctionComponent] > <AppShell> (opaque) > <AppShell.Footer> (opaque) > <Text> (opaque)[0]",
-              "expected": "\"CopyRight \u00a9 2023 Jotyy\"",
+              "expected": "\"CopyRight © 2023 Jotyy\"",
               "actual": "<footer> [HostComponent]"
             }
           }
@@ -6297,7 +6289,7 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Typography> (opaque)[0]",
-              "expected": "\"Hi, Welcome back \ud83d\udc4b\"",
+              "expected": "\"Hi, Welcome back 👋\"",
               "actual": "<MuiTypographyRoot> [ForwardRef]"
             }
           },
@@ -6723,8 +6715,8 @@
       "id": "next-landing-starter",
       "revision": "cd6694e6c69efad1128c1ed732188389182789df",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T23:53:47.290Z",
-      "durationMs": 371,
+      "capturedAt": "2026-09-09T06:58:14.553Z",
+      "durationMs": 389,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -7128,6 +7120,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -7140,7 +7133,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -7720,6 +7712,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -7732,7 +7725,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -7789,6 +7781,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -7801,7 +7794,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -7863,6 +7855,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 5505,
         "matchedText": 66,
         "opaqueSubtrees": 0,
@@ -7875,7 +7868,6 @@
         "wildcards": [],
         "branchesResolved": 3,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 5571,
         "staticFibers": 5581,
         "coverage": 1,
@@ -8151,6 +8143,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -8163,7 +8156,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -8846,6 +8838,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -8858,7 +8851,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -8890,8 +8882,8 @@
       "id": "shadcn-chat",
       "revision": "47e5f8af020b6eacbd4cbd6ad5f6ff8d60e76aa8",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:54:03.213Z",
-      "durationMs": 1667,
+      "capturedAt": "2026-09-09T06:58:22.097Z",
+      "durationMs": 882,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -8921,41 +8913,44 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 700,
+          "fiberCount": 693,
           "textCount": 22,
           "branchCount": 26,
-          "repeatCount": 6,
+          "repeatCount": 3,
           "opaqueCount": 48,
-          "unknownCount": 9,
+          "unknownCount": 8,
           "modulesLoaded": 1762
         },
         "diagnostics": [
           {
             "code": "dynamic-key",
-            "count": 5
+            "count": 4
           }
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 398,
+        "matchedFibers": 402,
         "matchedText": 17,
-        "opaqueSubtrees": 76,
-        "opaqueSkippedFibers": -28,
-        "slotsMatched": 38,
-        "slotsUnmatched": 0,
+        "opaqueSubtrees": 79,
+        "opaqueSkippedFibers": -12,
+        "slotsMatched": 39,
+        "slotsUnmatched": 1,
         "opaqueRenamed": 3,
-        "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 56,
-        "wildcards": [
+        "unmatchedSlots": [
           {
-            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <ChatSupport> [FunctionComponent] > <ExpandableChat> (opaque) > <ExpandableChatBody> (opaque) > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent]",
-            "reason": "child",
-            "absorbedFibers": 20,
-            "heads": [
-              "<MotionComponent> key=\"0\" [ForwardRef]"
-            ]
-          },
+            "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <ChatSupport> [FunctionComponent] > <ExpandableChat> (opaque) > <ExpandableChatBody> (opaque) > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"0\" [FunctionComponent] > <MotionComponent> key=\"0\" [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
+            "reason": "ChatBubbleMessage from @shadcn-chat/ui is not analyzed",
+            "head": "<ChatBubbleMessage> key=\".1\" [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <ChatSupport> [FunctionComponent] > <ExpandableChat> (opaque) > <ExpandableChatBody> (opaque) > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> key=\"0\" [FunctionComponent] > <MotionComponent> key=\"0\" [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)[0]",
+              "expected": "\"Hello! How can I help you today?\"",
+              "actual": "<div> [HostComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 36,
+        "wildcards": [
           {
             "path": "root > <body> [HostComponent] > <ThemeProvider> [FunctionComponent] > <z> [FunctionComponent] > <O> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <ChatLayout> [FunctionComponent] > <ResizablePanelGroup> [FunctionComponent] > <ResizablePrimitive.PanelGroup> (opaque) > <ResizablePanel> (opaque) > <Chat> [FunctionComponent] > <div> [HostComponent] > <ChatList> [FunctionComponent] > <div> [HostComponent] > <ChatMessageList> (opaque) > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <MotionComponent> [ForwardRef] > <div> [HostComponent] > <ChatBubble> (opaque) > <ChatBubbleMessage> (opaque)",
             "reason": "item of zustand#create()()()",
@@ -9030,13 +9025,14 @@
           }
         ],
         "branchesResolved": 35,
-        "repeatIterations": 14,
+        "repeatIterations": 12,
+        "status": "partial",
         "runtimeFibers": 849,
-        "staticFibers": 453,
-        "coverage": 0.5054811205846529,
-        "strictCoverage": 0.48881036513545345,
+        "staticFibers": 452,
+        "coverage": 0.5078787878787879,
+        "strictCoverage": 0.49352179034157834,
         "divergence": null,
-        "stepsUsed": 1785,
+        "stepsUsed": 2166,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -9051,7 +9047,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(37)",
+              "variable": "truthy(31)",
               "reason": "conditional on unknown(new DocumentFragment())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
               "alternativeIndex": 0,
@@ -9059,7 +9055,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(40)@repeat#1[0]",
+              "variable": "truthy(34)@repeat#1[0]",
               "reason": "conditional on <boolean: === on dynamic values>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 0,
@@ -9067,7 +9063,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(64)@repeat#1[0]",
+              "variable": "truthy(58)@repeat#1[0]",
               "reason": "conditional on branch(<boolean> | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
@@ -9075,7 +9071,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(40)@repeat#1[1]",
+              "variable": "truthy(34)@repeat#1[1]",
               "reason": "conditional on <boolean: === on dynamic values>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
@@ -9083,7 +9079,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(64)@repeat#1[1]",
+              "variable": "truthy(58)@repeat#1[1]",
               "reason": "conditional on branch(<boolean> | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
@@ -9091,7 +9087,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(40)@repeat#1[2]",
+              "variable": "truthy(34)@repeat#1[2]",
               "reason": "conditional on <boolean: === on dynamic values>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
@@ -9099,7 +9095,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(64)@repeat#1[2]",
+              "variable": "truthy(58)@repeat#1[2]",
               "reason": "conditional on branch(<boolean> | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
@@ -9113,23 +9109,23 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#2",
-              "reason": "&& on branch(false | <boolean>)",
+              "variable": "truthy(68)",
+              "reason": "&& on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/sidebar.tsx:34:8",
               "alternativeIndex": 0,
-              "alternativeCount": 3
+              "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(76)",
-              "reason": "conditional on branch(true | <boolean>)",
+              "variable": "truthy(69)",
+              "reason": "conditional on branch(true | false)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/sidebar.tsx:66:11",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(133)",
+              "variable": "truthy(126)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
               "alternativeIndex": 1,
@@ -9137,7 +9133,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(135)",
+              "variable": "truthy(128)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
               "alternativeIndex": 1,
@@ -9145,7 +9141,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(137)",
+              "variable": "truthy(130)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
               "alternativeIndex": 1,
@@ -9153,7 +9149,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(139)",
+              "variable": "truthy(132)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
               "alternativeIndex": 1,
@@ -9161,7 +9157,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(81)",
+              "variable": "truthy(74)",
               "reason": "conditional on branch(false | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
               "alternativeIndex": 1,
@@ -9169,7 +9165,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(95)",
+              "variable": "truthy(88)",
               "reason": "conditional on <number: Map.size>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:164:55",
               "alternativeIndex": 0,
@@ -9177,7 +9173,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[0]",
+              "variable": "truthy(85)@repeat#2[0]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9185,7 +9181,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[0]",
+              "variable": "truthy(76)@repeat#2[0]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9193,7 +9189,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[1]",
+              "variable": "truthy(85)@repeat#2[1]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9201,7 +9197,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[1]",
+              "variable": "truthy(76)@repeat#2[1]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9209,7 +9205,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[2]",
+              "variable": "truthy(85)@repeat#2[2]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9217,7 +9213,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[2]",
+              "variable": "truthy(76)@repeat#2[2]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9225,7 +9221,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[3]",
+              "variable": "truthy(85)@repeat#2[3]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9233,7 +9229,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[3]",
+              "variable": "truthy(76)@repeat#2[3]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9241,7 +9237,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[4]",
+              "variable": "truthy(85)@repeat#2[4]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9249,7 +9245,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[4]",
+              "variable": "truthy(76)@repeat#2[4]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9257,7 +9253,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[5]",
+              "variable": "truthy(85)@repeat#2[5]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9265,7 +9261,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[5]",
+              "variable": "truthy(76)@repeat#2[5]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9273,7 +9269,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[6]",
+              "variable": "truthy(85)@repeat#2[6]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9281,7 +9277,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[6]",
+              "variable": "truthy(76)@repeat#2[6]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9289,7 +9285,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[7]",
+              "variable": "truthy(85)@repeat#2[7]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9297,7 +9293,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[7]",
+              "variable": "truthy(76)@repeat#2[7]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9305,7 +9301,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(92)@repeat#3[8]",
+              "variable": "truthy(85)@repeat#2[8]",
               "reason": "conditional on <boolean: Map.has() with a dynamic key>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:157:16",
               "alternativeIndex": 1,
@@ -9313,7 +9309,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(83)@repeat#3[8]",
+              "variable": "truthy(76)@repeat#2[8]",
               "reason": "&& on unknown(item of zustand#create()()())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
               "alternativeIndex": 1,
@@ -9321,43 +9317,25 @@
             },
             {
               "kind": "repeat",
-              "variable": "repeat#3",
+              "variable": "repeat#2",
               "location": null,
               "count": 9
             },
             {
               "kind": "branch",
-              "variable": "truthy(143)",
-              "reason": "&& on branch(<boolean> | undefined)",
+              "variable": "truthy(136)",
+              "reason": "&& on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-bottombar.tsx:174:10",
               "alternativeIndex": 0,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(144)",
+              "variable": "truthy(137)",
               "reason": "conditional on branch(\"\" | unknown)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-bottombar.tsx:229:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#5",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-              "count": 0
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#7@repeat#6[0]",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-              "count": 1
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#6",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:22:9",
-              "count": 1
             }
           ]
         },
@@ -9367,7 +9345,7 @@
             {
               "kind": "repeat",
               "variable": "repeat#1",
-              "location": null,
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -9375,31 +9353,7 @@
             {
               "kind": "repeat",
               "variable": "repeat#2",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#3",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:22:9",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#4@repeat#3[0]",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#4@repeat#3[1]",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
+              "location": null,
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -9409,130 +9363,273 @@
               "conditions": [
                 {
                   "kind": "transition",
-                  "commit": 0,
+                  "commit": 2,
                   "commitCount": 9
                 },
                 {
+                  "kind": "branch",
+                  "variable": "truthy(31)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
                   "kind": "repeat",
                   "variable": "repeat#1",
-                  "location": null,
-                  "count": 2
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
+                  "count": 0
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(6)@repeat#1[0]",
-                  "reason": "&& on unknown(item of zustand#create()()())",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+                  "variable": "truthy(37)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(38)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(39)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(40)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(6)@repeat#1[1]",
-                  "reason": "&& on unknown(item of zustand#create()()())",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+                  "variable": "truthy(41)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "repeat",
                   "variable": "repeat#2",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-                  "count": 1
-                },
-                {
-                  "kind": "repeat",
-                  "variable": "repeat#3",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:22:9",
-                  "count": 2
-                },
-                {
-                  "kind": "repeat",
-                  "variable": "repeat#4@repeat#3[0]",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-                  "count": 1
-                },
-                {
-                  "kind": "repeat",
-                  "variable": "repeat#4@repeat#3[1]",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-                  "count": 2
-                }
-              ]
-            },
-            {
-              "kind": "repeat",
-              "variable": "repeat#4@repeat#3[0]",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-              "countsAbove": 1,
-              "max": null,
-              "conditions": [
-                {
-                  "kind": "repeat",
-                  "variable": "repeat#1",
                   "location": null,
                   "count": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(6)@repeat#1[0]",
+                  "variable": "truthy(6)@repeat#2[0]",
                   "reason": "&& on unknown(item of zustand#create()()())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(6)@repeat#2[1]",
+                  "reason": "&& on unknown(item of zustand#create()()())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(6)@repeat#2[0]",
+              "reason": "&& on unknown(item of zustand#create()()())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(31)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#1",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(37)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(38)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(39)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(40)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(6)@repeat#1[1]",
-                  "reason": "&& on unknown(item of zustand#create()()())",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
+                  "variable": "truthy(41)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
                   "alternativeIndex": 1,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "repeat",
                   "variable": "repeat#2",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-                  "count": 1
-                },
-                {
-                  "kind": "repeat",
-                  "variable": "repeat#3",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:22:9",
+                  "location": null,
                   "count": 2
                 }
               ]
             },
             {
-              "kind": "repeat",
-              "variable": "repeat#2",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs:23:13",
-              "countsAbove": 1,
-              "max": null,
+              "kind": "branch",
+              "variable": "truthy(39)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
               "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(31)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
                 {
                   "kind": "repeat",
                   "variable": "repeat#1",
-                  "location": null,
-                  "count": 2
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
+                  "count": 0
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(6)@repeat#1[0]",
-                  "reason": "&& on unknown(item of zustand#create()()())",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
-                  "alternativeIndex": 1,
+                  "variable": "truthy(37)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(6)@repeat#1[1]",
-                  "reason": "&& on unknown(item of zustand#create()()())",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/chat/chat-list.tsx:70:22",
-                  "alternativeIndex": 1,
+                  "variable": "truthy(38)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
                   "alternativeCount": 2
                 }
               ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(38)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(31)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#1",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(37)",
+                  "reason": "conditional on branch(false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(37)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(31)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#1",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#1",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/apps/www/src/components/examples.tsx:42:12",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(31)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(31)",
+              "reason": "conditional on unknown(new DocumentFragment())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/shadcn-chat/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+              "alternativeIndex": 1,
+              "conditions": []
             }
           ]
         }
@@ -9812,8 +9909,8 @@
       "id": "shadcn-landing-page",
       "revision": "ae3716dbce5c8a26815222bb743994b5717938f1",
       "framework": "spa",
-      "capturedAt": "2026-09-08T23:53:35.957Z",
-      "durationMs": 983,
+      "capturedAt": "2026-09-09T06:58:03.859Z",
+      "durationMs": 984,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -10331,8 +10428,8 @@
       "id": "shadcn-landing-page-nobruf",
       "revision": "ec8e18e8ed56ed6636023ced09948515c19258cc",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:53:38.449Z",
-      "durationMs": 1784,
+      "capturedAt": "2026-09-09T06:58:05.913Z",
+      "durationMs": 1028,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -11173,6 +11270,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -11185,7 +11283,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -11304,6 +11401,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -11316,7 +11414,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -11821,8 +11918,8 @@
       "id": "tremor-dashboard",
       "revision": "a20f619680e4582122c331bacf2efdef6daf460f",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:53:48.758Z",
-      "durationMs": 1149,
+      "capturedAt": "2026-09-09T06:58:16.111Z",
+      "durationMs": 1113,
       "runtime": {
         "reactVersion": "18.3.0-canary-178c267a4e-20241218",
         "rendererName": "react-dom",

@@ -67,7 +67,7 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toClientReference, toElementType } from "../react/element-type.js";
+import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -3817,10 +3817,11 @@ export class Interpreter {
     } else if (children.length > 1) {
       props.entries.push({ kind: "property", key: "children", value: listValue(children) });
     }
+    const elementKey = toElementKey(key);
     const element = (elementType: StaticValue): StaticElementValue => ({
       kind: "element",
       type: toElementType(elementType, nameHint),
-      key,
+      key: elementKey,
       props,
       location,
       environment: context.environment,
