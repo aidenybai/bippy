@@ -21,6 +21,11 @@ const Title = styled("h2", { label: "Title" })`
   color: ${(props: { theme: Theme }) => props.theme.accent};
 `;
 
+const Slot = styled("footer", { label: "MuiCard-root" })`
+  margin: 0;
+`;
+Slot.displayName = "MuiCardRoot";
+
 const Backdrop = styled("div", { label: "MuiBackdrop-root" })`
   opacity: 0.5;
 `;
@@ -88,6 +93,7 @@ export default function Emotion() {
         <NoteLink href="/docs">linked note</NoteLink>
         <Themed />
         <Accent />
+        <Slot>slot</Slot>
         <Statics component={Card} />
         <Statics component={Anchor} />
       </Card>

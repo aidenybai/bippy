@@ -122,6 +122,7 @@ export default defineConfig({
     },
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
+    css: { include: [/\.module\.css$/] },
     testTimeout: 20_000,
   },
 });

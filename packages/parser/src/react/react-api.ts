@@ -55,6 +55,7 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
 const REACT_DOM_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "createPortal",
   "flushSync",
+  "batchedUpdates",
   "createRoot",
   "hydrateRoot",
   "render",

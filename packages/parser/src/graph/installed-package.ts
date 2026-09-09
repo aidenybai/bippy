@@ -2,10 +2,15 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { readPackageManifest } from "../package-manifest.js";
 import type { InstalledPackage, ModuleResolution } from "../types.js";
+import { isInstalledFor } from "./install-root.js";
 import type { ModuleResolver } from "./module-resolver.js";
 
-const resolvedFilePath = (resolution: ModuleResolution): string | null =>
-  resolution.kind === "external" ? resolution.filePath : null;
+const resolvedFilePath = (rootDirectory: string, resolution: ModuleResolution): string | null =>
+  resolution.kind === "external" &&
+  resolution.filePath !== null &&
+  isInstalledFor(rootDirectory, resolution.filePath)
+    ? resolution.filePath
+    : null;
 
 /** The nearest `package.json` above `filePath` that declares `packageName`; an `exports` map may hide `<name>/package.json` itself. */
 const findOwningManifest = (filePath: string, packageName: string): InstalledPackage | null => {
@@ -26,11 +31,14 @@ export const readInstalledPackage = (
   packageName: string,
 ): InstalledPackage | null => {
   const importer = `${rootDirectory}/index.js`;
-  const manifestPath = resolvedFilePath(resolver.resolve(`${packageName}/package.json`, importer));
+  const manifestPath = resolvedFilePath(
+    rootDirectory,
+    resolver.resolve(`${packageName}/package.json`, importer),
+  );
   if (manifestPath !== null) {
     const { name, version } = readPackageManifest(manifestPath);
     return name !== undefined && version !== undefined ? { name, version } : null;
   }
-  const entryPath = resolvedFilePath(resolver.resolve(packageName, importer));
+  const entryPath = resolvedFilePath(rootDirectory, resolver.resolve(packageName, importer));
   return entryPath === null ? null : findOwningManifest(entryPath, packageName);
 };

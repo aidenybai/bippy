@@ -191,6 +191,7 @@ const collectDefaultExport = (
 };
 
 const isCommonJsExportStatement = (statement: Statement): boolean => {
+  if (statement.type === "ReturnStatement") return true;
   if (statement.type !== "ExpressionStatement") return false;
   const { expression } = statement;
   if (expression.type === "AssignmentExpression") {
@@ -240,6 +241,30 @@ const isCallInitializedDeclaration = (statement: Statement): boolean =>
 const isSideEffectStatement = (statement: Statement): boolean =>
   isCallInitializedDeclaration(statement) ||
   (!DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement));
+
+const isOutParameterCall = (
+  init: Expression | null,
+  bindings: ReadonlyMap<string, TopLevelBinding>,
+): boolean =>
+  (init?.type === "CallExpression" || init?.type === "NewExpression") &&
+  init.arguments.some((argument) => {
+    if (argument.type !== "Identifier") return false;
+    const kind = bindings.get(argument.name)?.kind;
+    return kind === "variable" || kind === "destructured";
+  });
+
+const collectOutParameterBindings = (bindings: ReadonlyMap<string, TopLevelBinding>): string[] => {
+  const names: string[] = [];
+  for (const binding of bindings.values()) {
+    if (
+      (binding.kind === "variable" || binding.kind === "destructured") &&
+      isOutParameterCall(binding.init, bindings)
+    ) {
+      names.push(binding.name);
+    }
+  }
+  return names;
+};
 
 const collectStatement = (
   statement: Statement,
@@ -494,6 +519,59 @@ const getUmdFactoryBody = (
   return factory.body.body;
 };
 
+/** Parameter names the wrapper body assigns as `module.exports = name()`, through `if` branches. */
+const collectReturningFactoryNames = (statements: Statement[], names: Set<string>): void => {
+  for (const statement of statements) {
+    if (statement.type === "IfStatement") {
+      collectReturningFactoryNames(getBranchBody(statement.consequent), names);
+      if (statement.alternate)
+        collectReturningFactoryNames(getBranchBody(statement.alternate), names);
+      continue;
+    }
+    if (statement.type !== "ExpressionStatement") continue;
+    const { expression } = statement;
+    if (
+      expression.type === "AssignmentExpression" &&
+      expression.operator === "=" &&
+      (expression.left.type === "Identifier" || expression.left.type === "MemberExpression") &&
+      isExportsObject(expression.left) &&
+      expression.right.type === "CallExpression" &&
+      expression.right.callee.type === "Identifier" &&
+      expression.right.arguments.length === 0
+    ) {
+      names.add(expression.right.callee.name);
+    }
+  }
+};
+
+/**
+ * The body of the parameterless factory a `(function (name, root, definition) { … module.exports = definition() … })("x", this, function () { … })`
+ * UMD wrapper hands to `module.exports`; its `return` becomes the module's `module.exports`.
+ */
+const getReturningFactoryBody = (
+  statement: Statement,
+  factoryReturns: Set<Statement>,
+): Statement[] | null => {
+  const call = getWrapperCall(statement);
+  const wrapper = call ? getBlockFunction(call.callee) : null;
+  if (!call || !wrapper || wrapper.params.length !== call.arguments.length) return null;
+  const factoryNames = new Set<string>();
+  collectReturningFactoryNames(wrapper.body.body, factoryNames);
+  const factories = wrapper.params.flatMap((parameter, index) => {
+    const argument = call.arguments[index];
+    if (parameter.type !== "Identifier" || !factoryNames.has(parameter.name)) return [];
+    if (argument === undefined || argument.type === "SpreadElement") return [];
+    const factory = getBlockFunction(argument);
+    return factory && factory.params.length === 0 ? [factory.body.body] : [];
+  });
+  const [body] = factories;
+  if (factories.length !== 1 || !body) return null;
+  for (const inner of body) {
+    if (inner.type === "ReturnStatement") factoryReturns.add(inner);
+  }
+  return body;
+};
+
 /** Module-level statements, with UMD/IIFE wrappers flattened so their declarations become module bindings. */
 const getModuleStatements = (
   statements: Statement[],
@@ -503,7 +581,8 @@ const getModuleStatements = (
   statements.flatMap((statement) => {
     const body =
       getModuleWrapperBody(statement) ??
-      getUmdFactoryBody(statement, factoryArguments, factoryReturns);
+      getUmdFactoryBody(statement, factoryArguments, factoryReturns) ??
+      getReturningFactoryBody(statement, factoryReturns);
     return body ? getModuleStatements(body, factoryArguments, factoryReturns) : [statement];
   });
 
@@ -858,6 +937,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     bindings,
     dependencies,
     sideEffectStatements,
+    outParameterBindings: collectOutParameterBindings(bindings),
     isCommonJs: commonJs !== null,
     moduleExports: commonJs?.moduleExports ?? null,
   };

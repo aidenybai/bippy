@@ -30,14 +30,31 @@ export type ComparisonStatus =
   | "skipped";
 
 // esbuild lowers `class X { static … }` to `var _a; _a = class {…}`, so pre-bundled
-// library components can surface as `_a`, `_a2`, … with no identity to compare.
+// library components can surface as `_a`, `_a2`, … with no identity to compare; swc
+// lowers `const X = class { static … }` to `var _class; X = (_class = function _class …`.
 // A class body that refers to its own name is lowered to `var X = class _X {…}`.
-const BUNDLER_PLACEHOLDER_NAME = /^_[a-z]\d*$/;
+const BUNDLER_PLACEHOLDER_NAME = /^_([a-z]\d*|class\d*)$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
 
 const isBundlerClassName = (name: string, expected: string): boolean =>
   isBundlerPlaceholderName(name) || name === `_${expected}`;
+
+const WRAPPED_DISPLAY_NAME = /^([^()]+)\((.+)\)$/;
+
+// A higher-order component's `displayName` embeds the wrapped component's name
+// (`SideEffect(NullComponent)`), so the bundler's dedupe suffix lands inside it.
+const isBundlerRenamedName = (sourceName: string, runtimeName: string): boolean => {
+  if (isBundlerDedupedName(sourceName, runtimeName)) return true;
+  const source = WRAPPED_DISPLAY_NAME.exec(sourceName);
+  const runtime = WRAPPED_DISPLAY_NAME.exec(runtimeName);
+  return (
+    source !== null &&
+    runtime !== null &&
+    source[1] === runtime[1] &&
+    isBundlerRenamedName(source[2], runtime[2])
+  );
+};
 
 export interface ComparisonOptions {
   compareKeys?: boolean;
@@ -724,7 +741,7 @@ class Matcher {
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
     if (isHostTag(actual.tag)) return false;
     return (
-      isBundlerDedupedName(pattern.name, actual.name) ||
+      isBundlerRenamedName(pattern.name, actual.name) ||
       isBundledDefaultExportName(pattern.name, actual.name) ||
       (isClassTag(actual.tag) && isBundlerClassName(actual.name, pattern.name))
     );
@@ -747,7 +764,7 @@ class Matcher {
     if (pattern.runtimeNames === null) return true;
     const runtimeName = actual.name;
     return pattern.runtimeNames.some(
-      (name) => name === runtimeName || isBundlerDedupedName(name, runtimeName),
+      (name) => name === runtimeName || isBundlerRenamedName(name, runtimeName),
     );
   }
 

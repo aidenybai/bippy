@@ -83,7 +83,12 @@ describe("runtime observations", () => {
       readObservationsJson({ globals: {}, queries: [], mutations: [mutation] }, source),
     ).toEqual({ globals: {}, queries: [], mutations: [mutation] });
     const page = { cookie: "", localStorage: {}, sessionStorage: {} };
-    const browser = { ...page, userAgent: "Mozilla/5.0 (Macintosh)", language: "en-US" };
+    const browser = {
+      ...page,
+      userAgent: "Mozilla/5.0 (Macintosh)",
+      language: "en-US",
+      maxTouchPoints: 0,
+    };
     expect(readObservationsJson({ globals: {}, queries: [], page: browser }, source)).toEqual({
       globals: {},
       queries: [],

@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A theme built with an is-plain-obj style deepmerge (`Object.getPrototypeOf(value) === Object.prototype`, `Symbol.toStringTag in value`) as MUI's createTheme does; the merged palette decides which sections render."
+}

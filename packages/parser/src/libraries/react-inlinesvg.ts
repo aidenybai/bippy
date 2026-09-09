@@ -3,6 +3,7 @@ import {
   getObjectProperty,
   getTruthiness,
   isKnownString,
+  mapValue,
   objectValue,
   omitObjectKeys,
   unknownValue,
@@ -17,6 +18,7 @@ import type {
   StaticValue,
   StubComponent,
 } from "../types.js";
+import { ClassComponentTag } from "../work-tags.js";
 import { getDefaultExport, getInstalledModules } from "./installed-modules.js";
 
 // react-inlinesvg fetches `src`, parses it with the browser's DOM parser,
@@ -25,7 +27,9 @@ import { getDefaultExport, getInstalledModules } from "./installed-modules.js";
 // of the SVG text, which the dev server serves from the project, so the same
 // converter runs here on the same file. Anything that rewrites the document
 // (title, description, id uniquifying, a pre-processor) stays unknown. The
-// `CacheProvider` entry point is plain React and analyzed from source.
+// `CacheProvider` entry point is plain React and analyzed from source. Up to
+// v3 the default export is one `PureComponent`; from v4 a function component
+// wraps the `ReactInlineSVG` function that renders.
 
 export const REACT_INLINESVG_PACKAGES = ["react-inlinesvg"];
 
@@ -82,12 +86,25 @@ const convertSvg = (svgText: string, rootDirectory: string): StaticValue => {
   return fromNativeValue(convert(node), `${CONVERTER_PACKAGE}()`, null);
 };
 
-const renderSettledSvg = (props: StaticObjectValue, project: ProjectContext): StaticValue => {
-  const rewriting = REWRITING_PROPS.find((name) => isRewriting(props, name));
-  if (rewriting !== undefined) return unknownValue(`${PACKAGE_NAME} ${rewriting}`);
-  const src = getObjectProperty(props, "src");
+const SVG_DATA_URI = /^data:image\/svg[^,]*?(;base64)?,(.*)/u;
+
+const readSvgSource = (src: string, project: ProjectContext): string | null => {
+  const dataUri = SVG_DATA_URI.exec(src);
+  if (dataUri !== null) {
+    return dataUri[1]
+      ? Buffer.from(dataUri[2], "base64").toString()
+      : decodeURIComponent(dataUri[2]);
+  }
+  return src.includes("<svg") ? src : project.readServedAsset(src);
+};
+
+const renderSvgSource = (
+  src: StaticValue,
+  props: StaticObjectValue,
+  project: ProjectContext,
+): StaticValue => {
   if (!isKnownString(src)) return unknownValue(`${PACKAGE_NAME} src`);
-  const svgText = src.value.includes("<svg") ? src.value : project.readServedAsset(src.value);
+  const svgText = readSvgSource(src.value, project);
   if (svgText === null || project.rootDirectory === null) {
     return unknownValue(`${PACKAGE_NAME} src not served from the project`);
   }
@@ -108,11 +125,30 @@ const renderSettledSvg = (props: StaticObjectValue, project: ProjectContext): St
   };
 };
 
+const renderSettledSvg = (props: StaticObjectValue, project: ProjectContext): StaticValue => {
+  const rewriting = REWRITING_PROPS.find((name) => isRewriting(props, name));
+  if (rewriting !== undefined) return unknownValue(`${PACKAGE_NAME} ${rewriting}`);
+  return mapValue(getObjectProperty(props, "src"), (src) => renderSvgSource(src, props, project));
+};
+
+const isClassComponent = (component: unknown): boolean => {
+  if (typeof component !== "function") return false;
+  const prototype: unknown = Reflect.get(component, "prototype");
+  return typeof prototype === "object" && prototype !== null && "isReactComponent" in prototype;
+};
+
+const isInstalledAsClass = (project: ProjectContext): boolean => {
+  if (project.rootDirectory === null) return false;
+  const module = getInstalledModules(project.rootDirectory).load(PACKAGE_NAME);
+  return module !== null && isClassComponent(getDefaultExport(module));
+};
+
 const createInlineSvgStub = (project: ProjectContext): StubComponent => {
-  const settled: StubComponent = {
-    displayName: "ReactInlineSVG",
-    render: (props) => renderSettledSvg(props, project),
-  };
+  const render: StubComponent["render"] = (props) => renderSettledSvg(props, project);
+  if (isInstalledAsClass(project)) {
+    return { displayName: "InlineSVG", tag: ClassComponentTag, render };
+  }
+  const settled: StubComponent = { displayName: "ReactInlineSVG", render };
   return {
     displayName: "InlineSVG",
     render: (props) => element({ kind: "stub", stub: settled }, props),

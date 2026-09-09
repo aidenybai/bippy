@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.js",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "JSX in .js files (Babel/SWC/webpack projects) and a root render deferred to a timer."
+}

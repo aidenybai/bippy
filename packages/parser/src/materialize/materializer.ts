@@ -222,8 +222,11 @@ interface StatefulRender extends EffectPhaseWork {
 }
 
 /** How a class proxy instance hands its persistent state and commit hooks to the materializer. */
+/** Which of an error boundary's renders a proxy instance belongs to; each keeps its own hook frame. */
+type BoundaryRenderPath = "rendered" | "ignoring-maybe-throws" | "caught";
+
 interface ClassProxyHost {
-  getInstance: (caughtError: boolean) => ProxyInstance;
+  getInstance: (path: BoundaryRenderPath) => ProxyInstance;
   rerender: () => void;
   queueCommitWork: (work: EffectPhaseWork) => void;
 }
@@ -1158,15 +1161,15 @@ export class Materializer {
         );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
         state: ErrorBoundaryState = { caught: null };
-        private readonly instances = new Map<boolean, ProxyInstance>();
+        private readonly instances = new Map<BoundaryRenderPath, ProxyInstance>();
         private pendingWork: EffectPhaseWork[] = [];
         private committedWork: EffectPhaseWork[] = [];
         private readonly host: ClassProxyHost = {
-          getInstance: (caughtError) => {
-            let instance = this.instances.get(caughtError);
+          getInstance: (path) => {
+            let instance = this.instances.get(path);
             if (!instance) {
               instance = createProxyInstance(this.props.input.context, interpreter);
-              this.instances.set(caughtError, instance);
+              this.instances.set(path, instance);
             }
             return instance;
           },
@@ -1403,6 +1406,7 @@ export class Materializer {
       project: this.interpreter.project,
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
+      pushItems: (list, items) => this.interpreter.pushItems(list, items),
       nameHint: null,
       templateArgumentNames: null,
       environment: context.environment,
@@ -1613,11 +1617,16 @@ export class Materializer {
       caughtError: boolean,
       boundaryContext: MaterializeContext,
     ): ReactNode => {
+      const path: BoundaryRenderPath = caughtError
+        ? "caught"
+        : boundaryContext.ignoresMaybeThrows
+          ? "ignoring-maybe-throws"
+          : "rendered";
       const { node, mount, unmount } = this.renderStateful(
         input,
         boundaryContext,
         component,
-        host.getInstance(caughtError),
+        host.getInstance(path),
         host.rerender,
         (frame) =>
           this.evaluateComposite(

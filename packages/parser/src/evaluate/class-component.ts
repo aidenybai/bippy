@@ -1,4 +1,4 @@
-import type { Class, ClassElement } from "oxc-parser";
+import type { Class, ClassElement, ParamPattern } from "oxc-parser";
 import type {
   ClassBody,
   ClassFunctionMember,
@@ -29,6 +29,7 @@ import {
   accessorEntry,
   describeValue,
   getObjectProperty,
+  getTruthiness,
   isCallable,
   isNullish,
   NULL_VALUE,
@@ -196,6 +197,8 @@ export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | 
 export const isBaseClassPrototype = (value: StaticObjectValue): boolean =>
   getPrototypeOwner(value)?.body.superValue === null;
 
+export const isClassPrototype = (value: StaticObjectValue): boolean => prototypeOwners.has(value);
+
 /**
  * `Class.prototype`: the chain's methods and accessors with the prototype as
  * their receiver, inheriting like an instance of the parent class does.
@@ -225,13 +228,20 @@ export const getClassPrototypeObject = (
   return prototype;
 };
 
+/** The parameters that receive arguments: a leading TypeScript `this` annotation is not one. */
+export const getValueParams = (params: ParamPattern[]): ParamPattern[] => {
+  const [firstParam] = params;
+  return firstParam?.type === "Identifier" && firstParam.name === "this" ? params.slice(1) : params;
+};
+
 /** `Function.length`: the leading parameters before the first default or rest parameter. */
 export const getFunctionLength = (functionNode: FunctionLikeNode): number => {
-  const parameters = functionNode.params;
-  const optionalIndex = parameters.findIndex(
-    (parameter) => parameter.type === "AssignmentPattern" || parameter.type === "RestElement",
-  );
-  return optionalIndex === -1 ? parameters.length : optionalIndex;
+  const valueParams = getValueParams(functionNode.params);
+  const optionalIndex = valueParams.findIndex((parameter) => {
+    const pattern = parameter.type === "TSParameterProperty" ? parameter.parameter : parameter;
+    return pattern.type === "AssignmentPattern" || pattern.type === "RestElement";
+  });
+  return optionalIndex === -1 ? valueParams.length : optionalIndex;
 };
 
 /** `Class.length`: the constructor's `Function.length`; 0 without a constructor. */
@@ -297,6 +307,7 @@ export interface ClassInstanceRecord {
   committedProps: StaticValue;
   committedState: StaticValue;
   pendingCallbacks: StaticValue[];
+  rendered: StaticValue | null;
 }
 
 const classInstances = new WeakMap<HookFrame, ClassInstanceRecord>();
@@ -332,6 +343,7 @@ const mountClassInstance = (
     committedProps: props,
     committedState: initialState,
     pendingCallbacks: [],
+    rendered: null,
   };
   const setState: StaticNativeFunctionValue = {
     kind: "native-function",
@@ -376,12 +388,14 @@ const mountClassInstance = (
 /**
  * `commitClassLayoutLifecycles` for the pass that just committed:
  * `componentDidMount` on the first commit, `componentDidUpdate(prevProps,
- * prevState)` afterwards, then the `setState` callbacks in order.
+ * prevState)` afterwards unless the update was bailed out of, then the
+ * `setState` callbacks in order.
  */
 const lifecycleEffect = (
   record: ClassInstanceRecord,
   props: StaticValue,
   state: StaticValue,
+  didBailOut: boolean,
 ): StaticNativeFunctionValue => ({
   kind: "native-function",
   name: "commitClassLayoutLifecycles",
@@ -395,7 +409,7 @@ const lifecycleEffect = (
       record.isMounted = true;
       const didMount = getInstanceMethod(instance, "componentDidMount");
       if (didMount) tools.call(didMount, []);
-    } else {
+    } else if (!didBailOut) {
       const didUpdate = getInstanceMethod(instance, "componentDidUpdate");
       if (didUpdate) tools.call(didUpdate, [previousProps, previousState]);
     }
@@ -405,6 +419,26 @@ const lifecycleEffect = (
     return UNDEFINED_VALUE;
   },
 });
+
+/**
+ * `checkShouldComponentUpdate` for an update pass: `false` only when the
+ * instance's `shouldComponentUpdate(nextProps, nextState)` decidedly declines,
+ * so an undecided answer renders as a forced update would.
+ */
+const shouldClassUpdate = (
+  interpreter: Interpreter,
+  instance: StaticObjectValue,
+  props: StaticValue,
+  state: StaticValue,
+  context: EvaluationContext,
+): boolean => {
+  const shouldComponentUpdate = getInstanceMethod(instance, "shouldComponentUpdate");
+  if (!shouldComponentUpdate) return true;
+  const decision = interpreter.callFunction(shouldComponentUpdate, [props, state], context, {
+    thisValue: instance,
+  });
+  return getTruthiness(decision) !== false;
+};
 
 /**
  * `safelyCallComponentWillUnmount` for the instance rendered against `frame`;
@@ -445,7 +479,6 @@ export const renderClassComponent = (
     classInstances.set(frame, record);
   }
   const { instance, stateCell } = record;
-  setObjectProperty(instance, "props", props);
   let state = stateCell.current;
   const deriveStateFromProps = getStaticMethod(classValue, "getDerivedStateFromProps");
   if (deriveStateFromProps) {
@@ -476,19 +509,27 @@ export const renderClassComponent = (
       }),
     );
   }
+  const didBailOut =
+    record.isMounted &&
+    !caughtError &&
+    record.rendered !== null &&
+    !shouldClassUpdate(interpreter, instance, props, state, context);
+  setObjectProperty(instance, "props", props);
   stateCell.current = state;
   setObjectProperty(instance, "state", state);
   frame.effects.push({
     isLayout: true,
-    callback: lifecycleEffect(record, props, state),
+    callback: lifecycleEffect(record, props, state, didBailOut),
     deps: null,
     cleanup: null,
   });
+  if (didBailOut && record.rendered !== null) return record.rendered;
   const render = getInstanceMethod(instance, "render");
   if (!render) {
     return unknownValue(`class ${classValue.name ?? "component"} has no static render method`);
   }
-  return interpreter.callFunction(render, [], context, { thisValue: instance });
+  record.rendered = interpreter.callFunction(render, [], context, { thisValue: instance });
+  return record.rendered;
 };
 
 /** `new Class(...args)`: the instance as it is right after construction. */

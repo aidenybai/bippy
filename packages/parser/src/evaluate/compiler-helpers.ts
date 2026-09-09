@@ -141,13 +141,9 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
 
 const defineProperty: HelperImplementation = ([target, key, value], tools) => {
   if (!target) return UNDEFINED_VALUE;
-  if (key?.kind !== "primitive" || !value) return target;
-  const propertyName = String(key.value);
-  if (target.kind === "object") tools.setProperty(target, propertyName, value);
-  if (target.kind === "function" || target.kind === "class") {
-    target.properties.set(propertyName, value);
-  }
-  return target;
+  if (!key || !value) return target;
+  const descriptor = objectValue([{ kind: "property", key: "value", value }]);
+  return tools.call({ kind: "global", name: "Object.defineProperty" }, [target, key, descriptor]);
 };
 
 const toPropertyKey: HelperImplementation = ([key]) => {

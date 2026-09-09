@@ -78,7 +78,7 @@ const getMember = (current: unknown, member: string): unknown =>
     : undefined;
 
 /** The native object or function a dotted builtin global such as `Object.prototype.hasOwnProperty` denotes, or null. */
-const getBuiltinWitness = (globalName: string): object | null => {
+export const getBuiltinWitness = (globalName: string): object | null => {
   const [rootName = "", ...members] = globalName.split(".");
   const witness = members.reduce<unknown>(
     getMember,
@@ -243,6 +243,16 @@ export const isPrototypeOf = (prototype: StaticValue, value: StaticValue): boole
 export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | null => {
   if (right.kind === "class") return isInstanceOfClass(left, right);
   if (right.kind === "function") return isInstanceOfFunction(left, right);
+  if (right.kind === "external") {
+    if (right.origin !== "binding") return null;
+    if (isPrimitiveLike(left)) return false;
+    return left.kind === "external" &&
+      left.origin === "instance" &&
+      left.packageName === right.packageName &&
+      left.importedName === `new ${right.importedName}`
+      ? true
+      : null;
+  }
   if (right.kind !== "global") return null;
   const constructor = BUILTIN_CONSTRUCTORS[right.name];
   if (!constructor)

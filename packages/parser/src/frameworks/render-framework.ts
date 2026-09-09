@@ -130,6 +130,8 @@ const rendererOptionsForEntry = (
   const rootDirectory = path.join(cloneDirectory, entry.static.rootDirectory);
   return {
     rootDirectory,
+    servedDirectory: entry.static.servedDirectory,
+    publicDirectory: entry.static.publicDirectory,
     tsconfigPath: path.join(rootDirectory, entry.static.tsconfig ?? "tsconfig.json"),
     aliases: entry.static.aliases,
     externalPackageAllowList: entry.static.externalPackageAllowList,
@@ -138,7 +140,6 @@ const rendererOptionsForEntry = (
     defines: entry.static.defines,
     environment: readProcessEnvironment(entry, rootDirectory),
     origin: new URL(entry.url).origin,
-    publicDirectory: entry.static.publicDirectory,
     observations,
     maxSteps: entry.static.maxSteps,
     maxFiberCount: entry.static.maxFiberCount,

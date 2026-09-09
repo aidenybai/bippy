@@ -28,9 +28,16 @@ import {
   REACT_INLINESVG_PACKAGES,
   reactInlineSvgValue,
 } from "./react-inlinesvg.js";
-import { REDUX_TOOLKIT_PACKAGES, reduxToolkitValue } from "./redux-toolkit.js";
+import {
+  REDUX_MODELED_EXPORTS,
+  REDUX_PACKAGES,
+  REDUX_TOOLKIT_PACKAGES,
+  reduxToolkitValue,
+  reduxValue,
+} from "./redux-toolkit.js";
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
+import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
 import {
   TANSTACK_QUERY_MODELED_EXPORTS,
   TANSTACK_QUERY_PACKAGES,
@@ -83,9 +90,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: reactInlineSvgValue,
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
   },
+  { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
+  { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
   {
     packages: TANSTACK_QUERY_PACKAGES,
     getValue: tanstackQueryValue,
@@ -122,10 +131,12 @@ export const getLibraryValue: LibraryValueProvider = (specifier, importedName, p
     const value = model.getValue(specifier, importedName, project);
     if (value) return value;
   }
-  return importedName === "*" && MODELED_PACKAGES.has(specifier)
-    ? lazyProperties(
-        objectValue(),
-        (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
-      )
-    : null;
+  if (importedName !== "*" || !MODELED_PACKAGES.has(specifier)) return null;
+  const defaultExport = getLibraryValue(specifier, "default", project);
+  return lazyProperties(
+    defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
+      ? defaultExport
+      : objectValue(),
+    (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
+  );
 };
