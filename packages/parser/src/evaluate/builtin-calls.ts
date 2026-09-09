@@ -96,6 +96,8 @@ import {
   rangedNumberValue,
 } from "./primitive-shapes.js";
 import { isArrayValue } from "./type-predicates.js";
+import { recordDerivation, recordInputSource, recordRepeatSource } from "./predicates.js";
+import type { GuardLiteral } from "../harness/symbolic-tree.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
   callStringCodec,
@@ -340,7 +342,7 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return primitiveValue(typeof value.value);
     case "unknown-primitive":
       return value.primitiveType === "any"
-        ? unknownPrimitiveValue("string", `typeof ${describeValue(value)}`)
+        ? unknownTypeofValue(value)
         : primitiveValue(value.primitiveType);
     case "function":
     case "class":
@@ -351,9 +353,7 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return primitiveValue(getReactApiTypeof(value.api));
     case "component-reference": {
       const componentTypeof = getComponentTypeof(value.type);
-      return componentTypeof
-        ? primitiveValue(componentTypeof)
-        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+      return componentTypeof ? primitiveValue(componentTypeof) : unknownTypeofValue(value);
     }
     case "proxy":
       return getTypeofValue(value.target, realm);
@@ -371,17 +371,21 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return (value.importedName === "*" && value.origin === "binding") ||
         value.origin === "instance"
         ? primitiveValue("object")
-        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+        : unknownTypeofValue(value);
     case "global": {
       const globalType = getGlobalTypeof(value.name, realm);
-      return globalType
-        ? primitiveValue(globalType)
-        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+      return globalType ? primitiveValue(globalType) : unknownTypeofValue(value);
     }
     default:
-      return unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+      return unknownTypeofValue(value);
   }
 };
+
+const unknownTypeofValue = (value: StaticValue): StaticValue =>
+  recordDerivation(unknownPrimitiveValue("string", `typeof ${describeValue(value)}`), {
+    kind: "typeof",
+    operand: value,
+  });
 
 /** A global the bundler injects or the host declares; null when the name is undeclared in this host. */
 export const getBuiltinGlobal = (
@@ -1362,7 +1366,8 @@ const callGlobal = (
     default:
       break;
   }
-  if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
+  if (name === "Math.random")
+    return recordInputSource(rangedNumberValue(name, { min: 0, max: 1 }), "random", location);
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
@@ -1588,6 +1593,17 @@ const sortListItems = (
   return isDecidable ? sorted : null;
 };
 
+const toGuardLiteral = (value: StaticValue): GuardLiteral | undefined =>
+  value.kind === "primitive" &&
+  typeof value.value !== "bigint" &&
+  value.value !== undefined &&
+  !Number.isNaN(value.value)
+    ? value.value
+    : undefined;
+
+const isGuardLiteral = (literal: GuardLiteral | undefined): literal is GuardLiteral =>
+  literal !== undefined;
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -1599,17 +1615,20 @@ const mapList = (
     return listValue(
       receiver.items.map((item, index) => {
         if (item.kind === "repeat") {
-          return {
-            kind: "repeat",
-            item: callUncertainCallback(
-              interpreter,
-              callback,
-              [item.item, unknownPrimitiveValue("number", "index"), receiver],
-              context,
-            ),
-            location: item.location,
-            count: item.count,
-          };
+          return recordRepeatSource(
+            {
+              kind: "repeat",
+              item: callUncertainCallback(
+                interpreter,
+                callback,
+                [item.item, unknownPrimitiveValue("number", "index"), receiver],
+                context,
+              ),
+              location: item.location,
+              count: item.count,
+            },
+            item,
+          );
         }
         if (item.kind === "optional") {
           return optionalValue(
@@ -1633,32 +1652,41 @@ const mapList = (
     );
   }
   if (receiver.kind === "repeat") {
-    return {
+    return recordRepeatSource(
+      {
+        kind: "repeat",
+        item: callUncertainCallback(
+          interpreter,
+          callback,
+          [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+          context,
+        ),
+        location: receiver.location,
+        count: receiver.count,
+      },
+      receiver,
+    );
+  }
+  return recordRepeatSource(
+    {
       kind: "repeat",
       item: callUncertainCallback(
         interpreter,
         callback,
-        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        [
+          recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
+            kind: "element",
+            list: receiver,
+          }),
+          unknownPrimitiveValue("number", "index"),
+          receiver,
+        ],
         context,
       ),
-      location: receiver.location,
-      count: receiver.count,
-    };
-  }
-  return {
-    kind: "repeat",
-    item: callUncertainCallback(
-      interpreter,
-      callback,
-      [
-        unknownValue(`item of ${describeValue(receiver)}`),
-        unknownPrimitiveValue("number", "index"),
-        receiver,
-      ],
-      context,
-    ),
-    location,
-  };
+      location,
+    },
+    receiver,
+  );
 };
 
 const toRegExp = (value: StaticRegExpValue): RegExp | null => {
@@ -2290,6 +2318,15 @@ export const evaluateBuiltinCall = (
         }
         if (verdicts.every((verdict) => verdict === false)) {
           return name === "includes" ? FALSE_VALUE : primitiveValue(-1);
+        }
+        if (name === "includes" && second === undefined) {
+          const literals = receiver.items.map(toGuardLiteral);
+          if (literals.every(isGuardLiteral)) {
+            return recordDerivation(
+              unknownPrimitiveValue("boolean", `includes on ${describeValue(first)}`),
+              { kind: "membership", operand: first, literals },
+            );
+          }
         }
         break;
       }

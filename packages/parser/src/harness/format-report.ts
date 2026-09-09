@@ -1,10 +1,21 @@
 import type { ComparisonDivergence, ComparisonReport, WildcardAbsorption } from "./compare.js";
-import type {
-  StateCondition,
-  StateOmission,
-  StateSpaceSummary,
-  StaticState,
+import { enumerateClusters, type GuardCluster } from "./enumerate-states.js";
+import { formatGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
+import {
+  DEFAULT_STATE_SPACE_BUDGET,
+  type StateCondition,
+  type StateOmission,
+  type StateSpaceBudget,
+  type StateSpaceSummary,
+  type StaticState,
 } from "./state-space.js";
+import { formatRepeatBounds, type PatternNode } from "./static-pattern.js";
+import {
+  formatGuard,
+  formatVariable,
+  type InputVariable,
+  type SymbolicTree,
+} from "./symbolic-tree.js";
 
 const percent = (value: number): string => `${(value * 100).toFixed(1)}%`;
 
@@ -12,6 +23,8 @@ const MAX_REPORTED_WILDCARDS = 5;
 const MAX_REPORTED_HEADS = 3;
 const MAX_REPORTED_STATES = 8;
 const MAX_PATH_SEGMENTS = 6;
+const MAX_REPORTED_SIDES = 12;
+const MAX_TABLE_ROWS = 16;
 
 const shortenPath = (path: string): string => {
   const segments = path.split(" > ");
@@ -69,11 +82,42 @@ const formatOmission = (omission: StateOmission): string => {
   }
 };
 
+const formatSideStatus = (
+  coverage: GuardCoverage,
+  status: "possible" | "unreachable",
+): string[] => {
+  const sides = coverage.sides.filter((side) => side.status === status);
+  if (sides.length === 0) return [];
+  return [
+    `${status} guard sides (${sides.length}):`,
+    ...sides
+      .slice(0, MAX_REPORTED_SIDES)
+      .map(
+        (side) =>
+          `  ${side.kind}(${side.reason})${formatLocation(side.location)} |${side.side} ${side.guard}`,
+      ),
+    ...(sides.length > MAX_REPORTED_SIDES
+      ? [`  … and ${sides.length - MAX_REPORTED_SIDES} more`]
+      : []),
+  ];
+};
+
+export const formatGuardCoverageLines = (coverage: GuardCoverage): string[] => [
+  `guards: ${formatGuardCoverage(coverage)}`,
+  ...formatSideStatus(coverage, "possible"),
+  ...formatSideStatus(coverage, "unreachable"),
+];
+
 export const formatStateSpaceSummary = (
   summary: StateSpaceSummary,
   states: StaticState[] = [],
 ): string[] => {
-  const lines = [`states: ${summary.states}${summary.omitted ? " (incomplete)" : ""}`];
+  const { tree } = summary;
+  const lines = [
+    `symbolic tree: ${tree.nodes} nodes, ${tree.inputs} inputs, ${tree.guards} guards (${tree.branches} branches, ${tree.repeats} repeats, ${tree.opaque} opaque, ${tree.wildcards} wildcards)`,
+    `states: ${summary.stateCount} in ${summary.clusters} clusters${summary.states === summary.stateCount ? "" : `, ${summary.states} enumerated`}${summary.omitted ? " (incomplete)" : ""}`,
+    ...formatGuardCoverageLines(summary.coverage),
+  ];
   if (summary.matchedState) {
     const { index, conditions } = summary.matchedState;
     lines.push(
@@ -130,5 +174,119 @@ export const formatComparisonReport = (
       if (slot.divergence) lines.push(`    furthest: ${formatDivergence(slot.divergence)}`);
     }
   }
+  return lines.join("\n");
+};
+
+const formatInput = (input: InputVariable): string =>
+  `${input.id} = ${input.label} <${input.source}>${formatLocation(input.location)}`;
+
+class DecisionHandles {
+  private readonly handles = new Map<string, string>();
+
+  of(variable: string): string {
+    let handle = this.handles.get(variable);
+    if (handle === undefined) {
+      handle = `d${this.handles.size + 1}`;
+      this.handles.set(variable, handle);
+    }
+    return handle;
+  }
+}
+
+const formatSymbolicNodes = (
+  nodes: PatternNode[],
+  depth: number,
+  handles: DecisionHandles,
+): string[] => {
+  const indent = "  ".repeat(depth);
+  return nodes.flatMap((node): string[] => {
+    switch (node.kind) {
+      case "fiber": {
+        const key = node.key === null ? "" : ` key=${JSON.stringify(node.key)}`;
+        return [
+          `${indent}<${node.name ?? node.tag}>${key}`,
+          ...formatSymbolicNodes(node.children, depth + 1, handles),
+        ];
+      }
+      case "text":
+        return [`${indent}${node.text === null ? "?text" : JSON.stringify(node.text)}`];
+      case "branch":
+        return [
+          `${indent}?${handles.of(node.variable)} ${node.reason}${formatLocation(node.location)}`,
+          ...node.alternatives.flatMap((alternative, index) => [
+            `${indent}  |${index} ${formatGuard(node.guards[index])}${index === node.preferredIndex ? " (preferred)" : ""}`,
+            ...formatSymbolicNodes(alternative, depth + 2, handles),
+          ]),
+        ];
+      case "repeat":
+        return [
+          `${indent}*${handles.of(node.variable)} ${formatVariable(node.cardinality)} in ${formatRepeatBounds(node.count)}${formatLocation(node.location)}`,
+          ...formatSymbolicNodes(node.children, depth + 1, handles),
+        ];
+      case "opaque":
+        return [
+          `${indent}?opaque <${node.name}> (${node.reason})`,
+          ...formatSymbolicNodes(node.passedChildren, depth + 1, handles),
+        ];
+      case "wildcard":
+        return [`${indent}~wildcard (${node.reason})${node.isTruncated ? " truncated" : ""}`];
+    }
+  });
+};
+
+const formatDecisionRow = (conditions: StateCondition[], handles: DecisionHandles): string =>
+  conditions
+    .map((condition) => {
+      switch (condition.kind) {
+        case "branch":
+        case "state-update":
+          return `${handles.of(condition.variable)}|${condition.alternativeIndex}`;
+        case "repeat":
+          return `${handles.of(condition.variable)}×${condition.count}`;
+        case "transition":
+          return `commit=${condition.commit}`;
+      }
+    })
+    .join("  ");
+
+/** One decision table per independent cluster: each row is one consistent assignment of its decisions. */
+const formatDecisionTable = (cluster: GuardCluster, handles: DecisionHandles): string[] => [
+  `  over ${cluster.inputs.join(", ")}: ${cluster.states.length} states${cluster.isTruncated ? " (truncated)" : ""}`,
+  ...cluster.states
+    .slice(0, MAX_TABLE_ROWS)
+    .map((state) => `    ${formatDecisionRow(state, handles)}`),
+  ...(cluster.states.length > MAX_TABLE_ROWS
+    ? [`    … and ${cluster.states.length - MAX_TABLE_ROWS} more`]
+    : []),
+];
+
+/**
+ * The agent-facing rendering: every input with its provenance, the tree with
+ * guards inline at each uncertain node, and per commit the decision table of
+ * each independent guard cluster.
+ */
+export const formatSymbolicTree = (
+  tree: SymbolicTree,
+  budget: StateSpaceBudget = DEFAULT_STATE_SPACE_BUDGET,
+): string => {
+  const lines = [
+    `inputs (${tree.inputs.length}):`,
+    ...tree.inputs.map((input) => `  ${formatInput(input)}`),
+  ];
+  const commits = enumerateClusters(tree, budget);
+  const handles = new DecisionHandles();
+  tree.commits.forEach((commit, index) => {
+    lines.push(
+      tree.commits.length > 1
+        ? `commit ${index + 1} of ${tree.commits.length} [${formatGuard(commit.guard)}]:`
+        : "tree:",
+    );
+    lines.push(...formatSymbolicNodes(commit.tree, 1, handles));
+    const { clusters } = commits[index];
+    if (clusters.length > 0) {
+      lines.push(`decisions (${clusters.length} independent clusters):`);
+      for (const cluster of clusters) lines.push(...formatDecisionTable(cluster, handles));
+    }
+  });
   return lines.join("\n");
 };

@@ -38,6 +38,8 @@ export interface BranchMarkerProps extends MarkerChildrenProps {
 
 export interface RepeatMarkerProps extends MarkerChildrenProps {
   location: string | null;
+  /** Serialized `SymbolicCardinality`; null when the iterated collection is not an input the analysis can name. */
+  cardinality: string | null;
   countMin: number;
   countMax: number | null;
 }

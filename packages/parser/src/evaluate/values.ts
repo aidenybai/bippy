@@ -33,6 +33,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
+import { recordBranchOrigin, recordDerivation } from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -1327,6 +1328,8 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const [first] = alternatives;
+  if (first && alternatives.every((alternative) => alternative === first)) return first;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1439,7 +1442,10 @@ export const toBooleanValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     const truthiness = getTruthiness(alternative);
     if (truthiness === null) {
-      return unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`);
+      return recordDerivation(
+        unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`),
+        { kind: "alias", operand: alternative },
+      );
     }
     return truthiness ? TRUE_VALUE : FALSE_VALUE;
   });
@@ -1500,13 +1506,22 @@ export const mapValue = (
   transform: (alternative: StaticValue) => StaticValue,
 ): StaticValue => {
   if (value.kind !== "branch") return transform(value);
-  return branchValue(
-    value.alternatives.map(transform),
+  const alternatives = value.alternatives.map(transform);
+  const mapped = branchValue(
+    alternatives,
     value.reason,
     value.location,
     value.preferredIndex,
     value.predicate,
   );
+  if (
+    mapped.kind === "branch" &&
+    mapped.predicate === null &&
+    alternatives.every((alternative) => alternative.kind !== "branch")
+  ) {
+    recordBranchOrigin(mapped, value);
+  }
+  return mapped;
 };
 
 const MAX_DISTRIBUTED_ALTERNATIVES = 16;

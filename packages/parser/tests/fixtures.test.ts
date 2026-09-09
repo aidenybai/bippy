@@ -53,7 +53,8 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
         expect(matchedState, detail).not.toBeNull();
         expect(stateSpace.states.length, detail).toBeGreaterThan(0);
       }
-      if (report.status === "exact") expect(stateSpace.omitted, detail).toBeNull();
+      if (report.status === "exact")
+        expect(stateSpace.omitted?.omissions ?? [], detail).toEqual([]);
       if (fixture.manifest.expectedStates !== undefined) {
         expect(stateSpace.states.length, detail).toBe(fixture.manifest.expectedStates);
       }

@@ -107,6 +107,7 @@ import type {
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
+  StaticUnknownPrimitiveValue,
   StaticValue,
   StyledComponentsTransformOptions,
   SuperBinding,
@@ -292,7 +293,14 @@ import {
   thrownValue,
   unknownValue,
 } from "./values.js";
-import { createPathPredicate, getTruthinessPredicate, recordNegation } from "./predicates.js";
+import {
+  createPathPredicate,
+  getPresencePredicate,
+  getTruthinessPredicate,
+  recordDerivation,
+  recordNegation,
+} from "./predicates.js";
+import type { CompareOperator, GuardLiteral } from "../harness/symbolic-tree.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
@@ -1928,7 +1936,7 @@ export class Interpreter {
           context,
           () => this.evaluateExpression(node.right, context),
           (narrowed) =>
-            narrowed ? this.evaluateExpression(node.left, context) : falsyCounterpart(left),
+            falsyCounterpart(narrowed ? this.evaluateExpression(node.left, context) : left),
           reason,
           location,
           preferredSide,
@@ -1936,7 +1944,12 @@ export class Interpreter {
         );
         if (!right) return falsyLeft ?? falsyCounterpart(left);
         if (!falsyLeft) return right;
-        return branchValue([right, falsyLeft], reason, location, preferredSide, predicate);
+        return logicalOutcome(
+          branchValue([right, falsyLeft], reason, location, preferredSide, predicate),
+          "&&",
+          left,
+          right,
+        );
       }
       case "||": {
         const truthiness = getTruthiness(left);
@@ -1949,7 +1962,7 @@ export class Interpreter {
           node.left,
           context,
           (narrowed) =>
-            narrowed ? this.evaluateExpression(node.left, context) : truthyCounterpart(left),
+            truthyCounterpart(narrowed ? this.evaluateExpression(node.left, context) : left),
           () => this.evaluateExpression(node.right, context),
           reason,
           location,
@@ -1958,7 +1971,12 @@ export class Interpreter {
         );
         if (!truthyLeft) return right ?? left;
         if (!right) return truthyLeft;
-        return branchValue([truthyLeft, right], reason, location, preferredSide, predicate);
+        return logicalOutcome(
+          branchValue([truthyLeft, right], reason, location, preferredSide, predicate),
+          "||",
+          left,
+          right,
+        );
       }
       case "??": {
         const nullish = isNullish(left);
@@ -1970,7 +1988,13 @@ export class Interpreter {
           right ??= this.evaluateExpression(node.right, context);
           return isNullish(alternative) === true
             ? right
-            : branchValue([alternative, right], `?? on ${describeValue(alternative)}`, location);
+            : branchValue(
+                [alternative, right],
+                `?? on ${describeValue(alternative)}`,
+                location,
+                0,
+                getPresencePredicate(alternative),
+              );
         };
         return mapValue(left, withRight);
       }
@@ -2271,7 +2295,15 @@ export class Interpreter {
       const right = this.evaluateExpression(node.right, context, nameHint);
       value =
         truthiness === null
-          ? branchValue([current, right], `${node.operator} on ${describeValue(current)}`)
+          ? branchValue(
+              [current, right],
+              `${node.operator} on ${describeValue(current)}`,
+              null,
+              0,
+              node.operator === "??="
+                ? getPresencePredicate(current)
+                : getTruthinessPredicate(current, node.operator === "&&="),
+            )
           : right;
     } else {
       const right = this.evaluateExpression(node.right, context);
@@ -2626,9 +2658,12 @@ export class Interpreter {
         return prototypeMember(object, Object.getPrototypeOf(object.value), key);
       case "unknown-primitive": {
         if (key === "length") {
-          return object.primitiveType === "string"
-            ? getShapedStringLength(object)
-            : unknownPrimitiveValue("number", "length of dynamic value");
+          return recordDerivation(
+            object.primitiveType === "string"
+              ? getShapedStringLength(object)
+              : unknownPrimitiveValue("number", "length of dynamic value"),
+            { kind: "length", operand: object },
+          );
         }
         const index = toIndexKey(key);
         if (index !== null && object.primitiveType === "string")
@@ -2773,7 +2808,12 @@ export class Interpreter {
       case "component-reference":
         return this.readComponentProperty(object, object.type, key, location);
       case "repeat":
-        if (key === "length") return unknownPrimitiveValue("number", "length of a repeated list");
+        if (key === "length") {
+          return recordDerivation(unknownPrimitiveValue("number", "length of a repeated list"), {
+            kind: "length",
+            operand: object,
+          });
+        }
         return { kind: "method", receiver: object, name: key };
       case "method":
       case "native-function": {
@@ -2794,7 +2834,13 @@ export class Interpreter {
       }
       case "unknown":
         if (object === CHAIN_SHORT_CIRCUIT) return object;
-        return object.thrown ? object : unknownValue(object.reason, location);
+        return object.thrown
+          ? object
+          : recordDerivation(unknownValue(object.reason, location), {
+              kind: "property",
+              object,
+              key,
+            });
     }
   }
 
@@ -4014,7 +4060,7 @@ export class Interpreter {
       journal.endPath();
       this.heapJournals.pop();
       const preferredPath = isLikelyRun ? 0 : 1;
-      const predicate = createPathPredicate();
+      const predicate = createPathPredicate(reason, location);
       journal.join(reason, location, preferredPath, predicate);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
     }
@@ -4056,7 +4102,7 @@ export class Interpreter {
     reason: string,
     location: SourceLocation,
     preferredBranch = 0,
-    predicate = createPathPredicate(),
+    predicate = createPathPredicate(reason, location),
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
@@ -4610,6 +4656,23 @@ const widenValue = (value: StaticValue, location: SourceLocation): StaticValue =
     : unknownValue("loop-carried value", location);
 };
 
+/**
+ * `a && b` / `a || b` whose two outcomes are interchangeable uncertain values
+ * joins to one of them; a copy keeps the truth of the whole expression as a
+ * formula over both operands instead of claiming it equals one of them.
+ */
+const logicalOutcome = (
+  joined: StaticValue,
+  operator: "&&" | "||",
+  left: StaticValue,
+  right: StaticValue,
+): StaticValue => {
+  if (joined.kind !== "unknown-primitive" && (joined.kind !== "unknown" || joined.thrown)) {
+    return joined;
+  }
+  return recordDerivation({ ...joined }, { kind: "logical", operator, left, right });
+};
+
 const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
   argument: StaticValue,
@@ -4674,6 +4737,12 @@ const applyBinaryOperator = (
     case "<=":
     case ">":
     case ">=":
+      return deriveComparison(
+        operator,
+        left,
+        right,
+        unknownPrimitiveValue("boolean", `${operator} on dynamic values`),
+      );
     case "instanceof":
     case "in":
       return unknownPrimitiveValue("boolean", `${operator} on dynamic values`);
@@ -4703,6 +4772,56 @@ const nameAnonymousInner = (
 };
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
+
+const COMPARE_OPERATORS: Partial<Record<string, CompareOperator>> = {
+  "<": "<",
+  "<=": "<=",
+  ">": ">",
+  ">=": ">=",
+};
+
+const MIRRORED_COMPARISONS: Record<CompareOperator, CompareOperator> = {
+  "<": ">",
+  "<=": ">=",
+  ">": "<",
+  ">=": "<=",
+};
+
+const isGuardLiteral = (value: StaticPrimitive): value is GuardLiteral =>
+  typeof value !== "bigint" && value !== undefined && !Number.isNaN(value);
+
+/** Records an undecided comparison of a dynamic operand against a literal as a guard over that operand. */
+const deriveComparison = (
+  operator: string,
+  left: StaticValue,
+  right: StaticValue,
+  result: StaticUnknownPrimitiveValue,
+): StaticValue => {
+  const isMirrored = right.kind !== "primitive";
+  const [operand, literalSide] = isMirrored ? [right, left] : [left, right];
+  if (literalSide.kind !== "primitive") return result;
+  const literal = literalSide.value;
+  if (EQUALITY_OPERATORS.has(operator)) {
+    if (literal !== undefined && !isGuardLiteral(literal)) return result;
+    return recordDerivation(result, {
+      kind: "equality",
+      operand,
+      literal,
+      isStrict: operator === "===" || operator === "!==",
+      isNegated: operator === "!==" || operator === "!=",
+    });
+  }
+  const compareOperator = COMPARE_OPERATORS[operator];
+  if (compareOperator === undefined || typeof literal !== "number" || Number.isNaN(literal)) {
+    return result;
+  }
+  return recordDerivation(result, {
+    kind: "comparison",
+    operand,
+    operator: isMirrored ? MIRRORED_COMPARISONS[compareOperator] : compareOperator,
+    literal,
+  });
+};
 
 /** Loose equality only differs from identity when both sides can coerce; null, undefined and symbols never do. */
 const mayCoerce = (value: StaticValue): boolean =>
