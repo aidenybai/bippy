@@ -50,13 +50,13 @@ export interface HookFrame {
   isRendering: boolean;
   isDeferred: boolean;
   isFrozen: boolean;
-  isStrictMode: boolean;
+  doublesHookFactories: boolean;
   requestRender: (() => void) | null;
   recordUpdate: ((cell: StateCell) => void) | null;
 }
 
 export const createHookFrame = (
-  isStrictMode = false,
+  doublesHookFactories = false,
   recordUpdate: HookFrame["recordUpdate"] = null,
 ): HookFrame => ({
   cells: [],
@@ -68,22 +68,22 @@ export const createHookFrame = (
   isRendering: false,
   isDeferred: false,
   isFrozen: false,
-  isStrictMode,
+  doublesHookFactories,
   requestRender: null,
   recordUpdate,
 });
 
 /**
  * Runs a hook's user function (`useState`/`useReducer` initializer, `useMemo`
- * factory) as `shouldDoubleInvokeUserFnsInHooksDEV` does: under Strict Mode the
- * function runs twice and the first result is kept.
+ * factory) as `shouldDoubleInvokeUserFnsInHooksDEV` does: under Strict Mode on
+ * React 19+ the function runs twice and the first result is kept.
  */
 export const invokeHookFactory = (
   frame: HookFrame | null,
   compute: () => StaticValue,
 ): StaticValue => {
   const value = compute();
-  if (frame?.isStrictMode) compute();
+  if (frame?.doublesHookFactories) compute();
   return value;
 };
 
@@ -169,8 +169,8 @@ const pendingStateValue = (cell: StateCell): StaticValue | null => {
 };
 
 /**
- * Mirrors `dispatchSetState`: with nothing pending, an update that leaves the
- * cell unchanged is dropped eagerly. An escaped cell already commits to every
+ * Mirrors `dispatchSetState`: an update that leaves the value the cell will
+ * commit unchanged is dropped eagerly. An escaped cell already commits to every
  * value it may take, so further updates cannot change it either. An update
  * queued by a continuation whose timing is unknown is kept as one more value
  * the cell may hold rather than the value it holds.
@@ -186,7 +186,7 @@ export const queueStateUpdate = (
     if (cell.deferred.some((deferred) => isSameHookValue(deferred, value))) return;
     cell.deferred.push(value);
   } else {
-    if (cell.next === null && isSameHookValue(value, cell.current)) return;
+    if (isSameHookValue(value, cell.next ?? cell.current)) return;
     frame.recordUpdate?.(cell);
     cell.next = value;
   }

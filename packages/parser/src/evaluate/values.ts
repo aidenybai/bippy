@@ -1,4 +1,9 @@
-import { getCapturedExportReference, getOpaqueCaptureDescription } from "../observations.js";
+import type { HostDocument } from "../host/host-document.js";
+import {
+  getCapturedDate,
+  getCapturedExportReference,
+  getOpaqueCaptureDescription,
+} from "../observations.js";
 import type {
   CapturedExportReference,
   CapturedValue,
@@ -9,6 +14,7 @@ import type {
   StaticElementType,
   StaticFunctionValue,
   StaticListValue,
+  StaticNativeObjectValue,
   StaticObjectEntry,
   StaticObjectValue,
   StaticOptionalValue,
@@ -139,6 +145,21 @@ export interface CapturedExportResolver {
 
 const NO_EXPORTS: CapturedExportResolver = () => null;
 
+/** One interpreter value per native object, so identity comparisons and collection keys hold. */
+const nativeObjectValues = new WeakMap<object, StaticNativeObjectValue>();
+
+export const nativeObjectValue = (
+  value: object,
+  host: HostDocument | null,
+): StaticNativeObjectValue => {
+  let lifted = nativeObjectValues.get(value);
+  if (!lifted) {
+    lifted = { kind: "native-object", value, host };
+    nativeObjectValues.set(value, lifted);
+  }
+  return lifted;
+};
+
 /** A value serialized whole from a running page: every key is known, and nodes JSON could not carry stay unknown. */
 export const capturedValue = (
   captured: CapturedValue,
@@ -153,6 +174,8 @@ export const capturedValue = (
   }
   const opaque = getOpaqueCaptureDescription(captured);
   if (opaque !== null) return unknownValue(`${name}: ${opaque} recorded from the page`);
+  const date = getCapturedDate(captured);
+  if (date !== null) return nativeObjectValue(date, null);
   const reference = getCapturedExportReference(captured);
   if (reference !== null) {
     return (
@@ -255,35 +278,44 @@ export const accessorEntry = (
   accessor,
 });
 
+type LookupMemo = Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
+
 /**
  * Results of the lookup in progress. Objects spread through many branches
  * (`state = cond ? {...state, ...next} : state` repeated) are reached once per
  * path otherwise, and nothing mutates while a lookup runs.
  */
-let lookupMemo: Map<StaticObjectValue, Map<string, StaticValue>> | null = null;
+let lookupMemo: LookupMemo | null = null;
 
 export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
-  if (lookupMemo) return getMemoizedObjectProperty(lookupMemo, object, key);
+  if (lookupMemo) return getMemoizedObjectProperty(lookupMemo, object, key, object.entries.length);
   lookupMemo = new Map();
   try {
-    return getMemoizedObjectProperty(lookupMemo, object, key);
+    return getMemoizedObjectProperty(lookupMemo, object, key, object.entries.length);
   } finally {
     lookupMemo = null;
   }
 };
 
+/** `key` as seen through the first `entryCount` entries of `object` (and its prototype). */
 const getMemoizedObjectProperty = (
-  memo: Map<StaticObjectValue, Map<string, StaticValue>>,
+  memo: LookupMemo,
   object: StaticObjectValue,
   key: string,
+  entryCount: number,
 ): StaticValue => {
-  let properties = memo.get(object);
+  let prefixes = memo.get(object);
+  let properties = prefixes?.get(entryCount);
   const memoized = properties?.get(key);
   if (memoized) return memoized;
-  const value = lookupObjectProperty(object, key);
+  const value = lookupObjectProperty(memo, object, key, entryCount);
+  if (!prefixes) {
+    prefixes = new Map();
+    memo.set(object, prefixes);
+  }
   if (!properties) {
     properties = new Map();
-    memo.set(object, properties);
+    prefixes.set(entryCount, properties);
   }
   properties.set(key, value);
   return value;
@@ -292,30 +324,27 @@ const getMemoizedObjectProperty = (
 const isPresent = (value: StaticValue): boolean =>
   value.kind !== "primitive" || value.value !== undefined;
 
-const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
-  for (let index = object.entries.length - 1; index >= 0; index--) {
+const lookupObjectProperty = (
+  memo: LookupMemo,
+  object: StaticObjectValue,
+  key: string,
+  entryCount: number,
+): StaticValue => {
+  for (let index = entryCount - 1; index >= 0; index--) {
     const entry = object.entries[index];
     if (entry.kind === "property") {
       if (entry.key === key) return entry.value;
       continue;
     }
     const spread = entry.value;
-    if (spread.kind === "object") {
-      const nested = getObjectProperty(spread, key);
-      if (isPresent(nested)) return nested;
-      continue;
-    }
-    if (spread.kind === "primitive" || spread.kind === "function" || spread.kind === "class")
-      continue;
-    if (spread.kind === "external" && spread.importedName === "*" && spread.origin === "binding")
-      return getExternalMember(spread, key);
     if (spread.kind === "branch") {
       let fromEarlier: StaticValue | null = null;
       return branchValue(
         spread.alternatives.map((alternative) => {
-          const own = getSpreadProperty(alternative, key);
+          const own =
+            getSpreadProperty(memo, alternative, key) ?? unknownSpreadProperty(alternative, key);
           if (isPresent(own)) return own;
-          fromEarlier ??= getObjectProperty(objectValue(object.entries.slice(0, index)), key);
+          fromEarlier ??= getMemoizedObjectProperty(memo, object, key, index);
           return fromEarlier;
         }),
         spread.reason,
@@ -324,22 +353,63 @@ const lookupObjectProperty = (object: StaticObjectValue, key: string): StaticVal
         spread.predicate,
       );
     }
-    const inherited = getInheritedProperty(object, key);
-    if (isPresent(inherited)) return inherited;
-    return unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+    const own = getSpreadProperty(memo, spread, key);
+    if (own === null) {
+      const inherited = getInheritedProperty(memo, object, key);
+      return isPresent(inherited) ? inherited : unknownSpreadProperty(spread, key);
+    }
+    if (isPresent(own)) return own;
   }
-  return getInheritedProperty(object, key);
+  return getInheritedProperty(memo, object, key);
 };
 
-const getInheritedProperty = (object: StaticObjectValue, key: string): StaticValue => {
+const unknownSpreadProperty = (spread: StaticValue, key: string): StaticValue =>
+  unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+
+const getInheritedProperty = (
+  memo: LookupMemo,
+  object: StaticObjectValue,
+  key: string,
+): StaticValue => {
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
-  return object.prototype ? getObjectProperty(object.prototype, key) : UNDEFINED_VALUE;
+  return object.prototype
+    ? getMemoizedObjectProperty(memo, object.prototype, key, object.prototype.entries.length)
+    : UNDEFINED_VALUE;
 };
 
-const getSpreadProperty = (spread: StaticValue, key: string): StaticValue =>
-  spread.kind === "object"
-    ? getObjectProperty(spread, key)
-    : getObjectProperty(objectValue([{ kind: "spread", value: spread }]), key);
+/** What `{...spread}[key]` contributes, or `null` for a spread whose keys are unknowable. */
+const getSpreadProperty = (
+  memo: LookupMemo,
+  spread: StaticValue,
+  key: string,
+): StaticValue | null => {
+  switch (spread.kind) {
+    case "object":
+      return getMemoizedObjectProperty(memo, spread, key, spread.entries.length);
+    case "primitive":
+    case "function":
+    case "class":
+      return UNDEFINED_VALUE;
+    case "external":
+      if (spread.importedName === "*" && spread.origin === "binding") {
+        return getExternalMember(spread, key);
+      }
+      return null;
+    case "branch":
+      return branchValue(
+        spread.alternatives.map(
+          (alternative) =>
+            getSpreadProperty(memo, alternative, key) ?? unknownSpreadProperty(alternative, key),
+        ),
+        spread.reason,
+        spread.location,
+        spread.preferredIndex,
+        spread.predicate,
+      );
+    default:
+      return null;
+  }
+};
 
 /** `fn.prototype` of a constructor function, created on first access like engines do. */
 export const getFunctionPrototype = (fn: StaticFunctionValue): StaticValue => {
@@ -450,14 +520,6 @@ const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   }
 };
 
-const getOwnPropertyValue = (entries: StaticObjectEntry[], key: string): StaticValue | null => {
-  for (let index = entries.length - 1; index >= 0; index--) {
-    const entry = entries[index];
-    if (entry.kind === "property" && entry.key === key) return entry.value;
-  }
-  return null;
-};
-
 /**
  * Copies a closed spread source into one property per key, so `{ ...source }`
  * snapshots the source instead of aliasing its later mutations and a branch
@@ -485,75 +547,150 @@ export const joinObjectEntries = (
   preferredIndex: number,
   predicate: string | null,
 ): StaticObjectEntry[] => {
-  const isExtension = (entries: StaticObjectEntry[]): boolean =>
-    entries.length >= original.length && original.every((entry, index) => entries[index] === entry);
-  const appended = pathEntries.map((entries) =>
-    isExtension(entries) ? entries.slice(original.length) : null,
-  );
-  const keys = new Set<string>();
-  for (const entries of appended) {
-    if (!entries || entries.some((entry) => entry.kind === "spread")) {
-      const alternatives = pathEntries.map((entries, index) =>
-        objectValue(appended[index] ?? entries),
-      );
-      return [
-        ...original,
-        {
-          kind: "spread",
-          value: branchValue(alternatives, reason, location, preferredIndex, predicate),
-        },
-      ];
-    }
-    for (const entry of entries) if (entry.kind === "property") keys.add(entry.key);
+  const pathObjects = pathEntries.map((entries) => objectValue(entries));
+  const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
+  if (joinedKeys === null) {
+    return [
+      ...original,
+      {
+        kind: "spread",
+        value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
+      },
+    ];
   }
-  const entryObject = objectValue(original);
-  return [
-    ...original,
-    ...[...keys].map((key): StaticObjectEntry => ({
-      kind: "property",
-      key,
-      value: branchValue(
-        appended.map(
-          (entries) =>
-            getOwnPropertyValue(entries ?? [], key) ?? getObjectProperty(entryObject, key),
-        ),
-        reason,
-        location,
-        preferredIndex,
-        predicate,
-      ),
-    })),
-  ];
+  const joinedEntry = (key: string): StaticObjectEntry => ({
+    kind: "property",
+    key,
+    value: branchValue(
+      pathObjects.map((pathObject) => getObjectProperty(pathObject, key)),
+      reason,
+      location,
+      preferredIndex,
+      predicate,
+    ),
+  });
+  const lastSpreadIndex = original.findLastIndex((entry) => entry.kind === "spread");
+  const placedKeys = new Set<string>();
+  const entries = original.map((entry, index) => {
+    if (entry.kind === "spread" || index < lastSpreadIndex || !joinedKeys.has(entry.key)) {
+      return entry;
+    }
+    placedKeys.add(entry.key);
+    return joinedEntry(entry.key);
+  });
+  for (const key of joinedKeys) if (!placedKeys.has(key)) entries.push(joinedEntry(key));
+  return entries;
 };
 
+/**
+ * The keys whose own property entries some path replaced, added or removed, or
+ * null when a path also changed the spreads or an accessor: only property-level
+ * differences can be joined per key without nesting the alternatives.
+ */
+const getJoinedPropertyKeys = (
+  original: StaticObjectEntry[],
+  pathEntries: StaticObjectEntry[][],
+): Set<string> | null => {
+  const originalSpreads = original.filter((entry) => entry.kind === "spread");
+  const originalEntries = new Set(original);
+  const keys = new Set<string>();
+  for (const entries of pathEntries) {
+    const pathEntrySet = new Set(entries);
+    let spreadIndex = 0;
+    for (const entry of entries) {
+      if (entry.kind === "spread") {
+        if (originalSpreads[spreadIndex++] !== entry) return null;
+        continue;
+      }
+      if (originalEntries.has(entry)) continue;
+      if (entry.accessor) return null;
+      keys.add(entry.key);
+    }
+    if (spreadIndex !== originalSpreads.length) return null;
+    for (const entry of original) {
+      if (entry.kind === "spread" || pathEntrySet.has(entry)) continue;
+      if (entry.accessor) return null;
+      keys.add(entry.key);
+    }
+  }
+  return keys;
+};
+
+/**
+ * `object` without `omitted` keys. Objects that never held one of the keys are
+ * returned as they are, so a spread chain shared through many joins stays shared.
+ */
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {
+  const rest = omitObjectKeysShared(object, omitted, new Map());
+  return rest === object ? objectValue([...object.entries]) : rest;
+};
+
+const omitObjectKeysShared = (
+  object: StaticObjectValue,
+  omitted: Set<string>,
+  results: Map<StaticObjectValue, StaticValue>,
+): StaticValue => {
+  const memoized = results.get(object);
+  if (memoized) return memoized;
   const entries: StaticObjectEntry[] = [];
+  let isChanged = false;
   for (const entry of object.entries) {
     if (entry.kind === "property") {
-      if (!omitted.has(entry.key)) entries.push(entry);
+      if (omitted.has(entry.key)) isChanged = true;
+      else entries.push(entry);
       continue;
     }
-    if (entry.value.kind === "object") {
-      const nested = omitObjectKeys(entry.value, omitted);
-      entries.push({ kind: "spread", value: nested });
+    const rest = omitSpreadKeys(entry.value, omitted, results);
+    if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
+      results.set(object, rest);
+      return rest;
+    }
+    if (rest === entry.value) {
+      entries.push(entry);
       continue;
     }
-    if (entry.value.kind === "primitive") continue;
-    if (entry.value.kind === "branch") {
-      const rest = mapValue(entry.value, (alternative) =>
-        omitObjectKeys(objectValue([{ kind: "spread", value: alternative }]), omitted),
-      );
-      entries.push({ kind: "spread", value: rest });
-      continue;
-    }
-    return unknownValue(`rest of ${describeValue(entry.value)}`);
+    isChanged = true;
+    entries.push({ kind: "spread", value: rest });
   }
-  return objectValue(entries);
+  const result = isChanged ? objectValue(entries) : object;
+  results.set(object, result);
+  return result;
+};
+
+const omitSpreadKeys = (
+  spread: StaticValue,
+  omitted: Set<string>,
+  results: Map<StaticObjectValue, StaticValue>,
+): StaticValue => {
+  switch (spread.kind) {
+    case "object":
+      return omitObjectKeysShared(spread, omitted, results);
+    case "primitive":
+      return spread;
+    case "branch": {
+      const alternatives = spread.alternatives.map((alternative) =>
+        omitSpreadKeys(alternative, omitted, results),
+      );
+      if (alternatives.every((alternative, index) => alternative === spread.alternatives[index])) {
+        return spread;
+      }
+      return branchValue(
+        alternatives,
+        spread.reason,
+        spread.location,
+        spread.preferredIndex,
+        spread.predicate,
+      );
+    }
+    default:
+      return unknownValue(`rest of ${describeValue(spread)}`);
+  }
 };
 
 /** `delete object[key]`: an own property vanishes; one a dynamic spread may hold stays as uncertain as that spread. */
 export const deleteObjectProperty = (object: StaticObjectValue, key: string): void => {
-  const remaining = omitObjectKeys(object, new Set([key]));
+  const remaining = omitObjectKeysShared(object, new Set([key]), new Map());
+  if (remaining === object) return;
   object.entries.splice(
     0,
     object.entries.length,
@@ -781,6 +918,78 @@ export const compareShallowly = (left: StaticValue, right: StaticValue): boolean
 
 const MAX_EQUIVALENCE_DEPTH = 6;
 
+const compareDeeplyAcross = (
+  alternatives: StaticValue[],
+  other: StaticValue,
+  depth: number,
+): boolean | null => {
+  const first = compareDeeply(alternatives[0], other, depth);
+  if (first === null) return null;
+  return alternatives.every((alternative) => compareDeeply(alternative, other, depth) === first)
+    ? first
+    : null;
+};
+
+const compareDeeplyPairwise = (
+  pairs: Array<[StaticValue, StaticValue]>,
+  depth: number,
+): boolean | null => {
+  let isEqual: boolean | null = true;
+  for (const [left, right] of pairs) {
+    const same = compareDeeply(left, right, depth);
+    if (same === false) return false;
+    if (same === null) isEqual = null;
+  }
+  return isEqual;
+};
+
+const isPlainDataObject = (object: StaticObjectValue): boolean =>
+  !object.constructedBy &&
+  !object.prototype &&
+  !object.hasNullPrototype &&
+  object.entries.every((entry) => entry.kind === "spread" || !entry.accessor);
+
+/**
+ * Deep equality as lodash `isEqual` defines it: SameValueZero on primitives,
+ * arrays by index, plain objects by own enumerable keys, identity otherwise.
+ */
+export const compareDeeply = (left: StaticValue, right: StaticValue, depth = 0): boolean | null => {
+  if (left === right) return true;
+  if (left.kind === "primitive" && right.kind === "primitive") {
+    return left.value === right.value || (left.value !== left.value && right.value !== right.value);
+  }
+  if (left.kind === "branch") return compareDeeplyAcross(left.alternatives, right, depth);
+  if (right.kind === "branch") return compareDeeplyAcross(right.alternatives, left, depth);
+  const identity = compareIdentity(left, right);
+  if (identity === true || depth >= MAX_EQUIVALENCE_DEPTH) return identity;
+  if (left.kind === "primitive" || right.kind === "primitive") {
+    return isProgramAllocated(left) || isProgramAllocated(right) ? false : identity;
+  }
+  if (left.kind === "list" && right.kind === "list") {
+    if (!hasDefiniteItems(left) || !hasDefiniteItems(right)) return null;
+    if (left.items.length !== right.items.length) return false;
+    return compareDeeplyPairwise(
+      left.items.map((item, index) => [item, right.items[index]]),
+      depth + 1,
+    );
+  }
+  if (left.kind === "object" && right.kind === "object") {
+    if (!isPlainDataObject(left) || !isPlainDataObject(right)) return null;
+    const leftKeys = getKnownObjectKeys(left);
+    const rightKeys = getKnownObjectKeys(right);
+    if (!leftKeys || !rightKeys) return null;
+    if (leftKeys.length !== rightKeys.length || !leftKeys.every((key) => rightKeys.includes(key))) {
+      return false;
+    }
+    return compareDeeplyPairwise(
+      leftKeys.map((key) => [getObjectProperty(left, key), getObjectProperty(right, key)]),
+      depth + 1,
+    );
+  }
+  if (isHeapValue(left) && isHeapValue(right)) return false;
+  return identity;
+};
+
 /**
  * Structural equivalence for detecting non-terminating recursion: dynamic
  * values are equivalent to each other because analysis can never tell them
@@ -935,6 +1144,14 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   );
 };
 
+/**
+ * Widening bound: a value joined at every iteration of an uncertain loop or on
+ * every call into a stateful module (a scheduler's queue, a store's listener
+ * list) accumulates one alternative per join, and each later join re-scans
+ * them all. Past this many, the state is unknown rather than enumerated.
+ */
+const MAX_BRANCH_ALTERNATIVES = 64;
+
 export const branchValue = (
   alternatives: StaticValue[],
   reason: string,
@@ -964,6 +1181,9 @@ export const branchValue = (
     }
   });
   if (flattened.length === 1) return flattened[0];
+  if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
+    return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
+  }
   const isPositional =
     flattened.length === alternatives.length &&
     alternatives.every((alternative) => alternative.kind !== "branch");
@@ -1039,6 +1259,14 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
 };
 
 /** `Boolean(value)` / `!!value`, keeping a branch's alternatives and preferred side. */
+/** A decided comparison as `true`/`false`, an undecided one as an unknown boolean. */
+export const decidedBooleanValue = (decision: boolean | null, reason: string): StaticValue =>
+  decision === null
+    ? unknownPrimitiveValue("boolean", reason)
+    : decision
+      ? TRUE_VALUE
+      : FALSE_VALUE;
+
 export const toBooleanValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     const truthiness = getTruthiness(alternative);
@@ -1110,6 +1338,60 @@ export const getListLength = (list: StaticListValue): StaticValue =>
   list.items.some(isIndefiniteItem)
     ? unknownPrimitiveValue("number", "length of a partially known list")
     : primitiveValue(list.items.length);
+
+const MAX_LIST_GROWTH = 1_000;
+
+/**
+ * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
+ * does. Past a partially known prefix the slot the write lands on is unknown, so
+ * the indefinite tail becomes an unknown repeat.
+ */
+export const setListItem = (list: StaticListValue, index: number, value: StaticValue): void => {
+  const indefiniteIndex = list.items.findIndex(isIndefiniteItem);
+  if (indefiniteIndex !== -1 && index >= indefiniteIndex) {
+    list.items.splice(
+      indefiniteIndex,
+      list.items.length - indefiniteIndex,
+      repeatItem(unknownValue("item of a partially known list written by index")),
+    );
+    return;
+  }
+  if (index - list.items.length > MAX_LIST_GROWTH) {
+    list.items.push(repeatItem(UNDEFINED_VALUE), value);
+    return;
+  }
+  while (list.items.length < index) list.items.push(UNDEFINED_VALUE);
+  list.items[index] = value;
+};
+
+/** `list.length = length`: truncates or extends with holes; an unknown length leaves every item uncertain. */
+export const setListLength = (list: StaticListValue, length: number | null): void => {
+  if (length === null) {
+    list.items.splice(
+      0,
+      list.items.length,
+      repeatItem(unknownValue("item of a list resized to an unknown length")),
+    );
+    return;
+  }
+  const indefiniteIndex = list.items.findIndex(isIndefiniteItem);
+  if (indefiniteIndex !== -1 && length > indefiniteIndex) {
+    list.items.splice(
+      indefiniteIndex,
+      list.items.length - indefiniteIndex,
+      repeatItem(unknownValue("item of a partially known list resized by length")),
+    );
+    return;
+  }
+  if (length - list.items.length > MAX_LIST_GROWTH) {
+    list.items.push(repeatItem(UNDEFINED_VALUE));
+    return;
+  }
+  while (list.items.length < length) list.items.push(UNDEFINED_VALUE);
+  list.items.length = length;
+};
+
+const repeatItem = (item: StaticValue): StaticValue => ({ kind: "repeat", item, location: null });
 
 /** Every item is present with certainty (it may still be a branch of values). */
 export const hasDefiniteItems = (value: StaticValue): value is StaticListValue =>

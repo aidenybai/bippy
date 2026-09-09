@@ -40,6 +40,9 @@ const USER_GESTURE_EVENTS = new Set([
   "touchend",
   "touchmove",
   "touchcancel",
+  "gesturestart",
+  "gesturechange",
+  "gestureend",
   "wheel",
   "drag",
   "dragstart",
@@ -62,6 +65,9 @@ const USER_GESTURE_EVENTS = new Set([
 /** Events the browser dispatches only when the page is being left, after any snapshot. */
 const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
 
+/** Fires after `requestFullscreen()`/`exitFullscreen()`, which need transient user activation. */
+const FULLSCREEN_EVENTS = new Set(["fullscreenchange", "webkitfullscreenchange"]);
+
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
 
@@ -77,12 +83,36 @@ const FOCUS_EVENTS = new Set([
   "blur",
   "focusin",
   "focusout",
+  "select",
   "selectionchange",
   "selectstart",
 ]);
 
 /** Browser-dispatched event types are bare words; namespaced names are app-defined and only fire on `dispatchEvent`. */
 const isCustomEventType = (type: string): boolean => /[^a-zA-Z]/.test(type);
+
+const isUserDrivenEventType = (type: string): boolean =>
+  USER_GESTURE_EVENTS.has(type) ||
+  PAGE_UNLOAD_EVENTS.has(type) ||
+  SCROLL_EVENTS.has(type) ||
+  FOCUS_EVENTS.has(type) ||
+  FULLSCREEN_EVENTS.has(type);
+
+/** Components may report a value they settle on at mount through these, unlike a real DOM event. */
+const VALUE_EVENTS = new Set(["input", "beforeinput", "change", "select"]);
+
+/**
+ * `onClick`, `onKeyDownCapture`, `onDoubleClick`: a React event handler prop
+ * named after an event only a user drives, so whichever component it is
+ * handed to, it does not run before the runtime snapshot.
+ */
+export const isUserDrivenEventHandlerProp = (name: string): boolean => {
+  const match = /^on([A-Z][a-zA-Z]*?)(Capture)?$/.exec(name);
+  if (!match) return false;
+  const reactName = match[1].toLowerCase();
+  const type = reactName === "doubleclick" ? "dblclick" : reactName;
+  return isUserDrivenEventType(type) && !VALUE_EVENTS.has(type);
+};
 
 export interface NativeEventTarget {
   addEventListener(type: string, listener: () => void): void;
@@ -183,13 +213,7 @@ const isEventBeforeCapture = (
   ) {
     return false;
   }
-  return !(
-    USER_GESTURE_EVENTS.has(type.value) ||
-    PAGE_UNLOAD_EVENTS.has(type.value) ||
-    SCROLL_EVENTS.has(type.value) ||
-    FOCUS_EVENTS.has(type.value) ||
-    isCustomEventType(type.value)
-  );
+  return !(isUserDrivenEventType(type.value) || isCustomEventType(type.value));
 };
 
 const isHistoryTraversalListener = (

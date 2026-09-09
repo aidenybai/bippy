@@ -1,16 +1,15 @@
 import {
   FALSE_VALUE,
-  TRUE_VALUE,
   UNDEFINED_VALUE,
   compareIdentity,
   compareShallowly,
+  decidedBooleanValue,
   getObjectProperty,
   getTruthiness,
   isCallable,
   isNullish,
   mapValue,
   objectFromRecord,
-  unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
 import { nativeFunction } from "../frameworks/stubs.js";
@@ -232,13 +231,10 @@ const useStore = nativeFunction("useStore", ([store, selector], tools) => {
   return isCallable(selector) ? tools.call(selector, [snapshot]) : snapshot;
 });
 
-const booleanValue = (value: boolean | null, reason: string): StaticValue =>
-  value === null ? unknownPrimitiveValue("boolean", reason) : value ? TRUE_VALUE : FALSE_VALUE;
-
 const shallow = nativeFunction("shallow", ([left, right]) =>
   left === undefined || right === undefined
     ? FALSE_VALUE
-    : booleanValue(compareShallowly(left, right), "shallow comparison of two objects"),
+    : decidedBooleanValue(compareShallowly(left, right), "shallow comparison of two objects"),
 );
 
 export const tanstackStoreValue: ExternalValueProvider = (specifier, importedName) => {

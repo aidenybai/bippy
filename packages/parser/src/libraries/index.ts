@@ -3,6 +3,7 @@ import { lazyProperties } from "../frameworks/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
+import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
 import {
   FRAMER_MOTION_MODELED_EXPORTS,
   FRAMER_MOTION_PACKAGES,
@@ -18,6 +19,7 @@ import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
+import { isPurePackage } from "./pure-packages.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
@@ -53,6 +55,7 @@ interface LibraryModel {
 const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
+  { packages: FOREIGN_RENDERER_PACKAGES, getValue: foreignRendererValue },
   {
     packages: FRAMER_MOTION_PACKAGES,
     getValue: framerMotionValue,
@@ -103,7 +106,7 @@ const MODELED_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
 );
 
 export const isModeledLibraryPackage = (packageName: string): boolean =>
-  MODELED_PACKAGES.has(packageName);
+  MODELED_PACKAGES.has(packageName) || isPurePackage(packageName);
 
 /** An export modeled while the rest of its package is analyzed from source. */
 export const isModeledLibraryExport = (specifier: string, exportName: string): boolean =>

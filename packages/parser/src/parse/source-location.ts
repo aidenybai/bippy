@@ -12,13 +12,19 @@ const findLineIndex = (lineStarts: number[], offset: number): number => {
   return low;
 };
 
+const locationsBySpan = new WeakMap<Span, SourceLocation>();
+
 export const getSourceLocation = (file: ParsedSourceFile, span: Span): SourceLocation => {
+  const cached = locationsBySpan.get(span);
+  if (cached && cached.filePath === file.filePath) return cached;
   const lineIndex = findLineIndex(file.lineStarts, span.start);
-  return {
+  const location = {
     filePath: file.filePath,
     line: lineIndex + 1,
     column: span.start - file.lineStarts[lineIndex] + 1,
   };
+  locationsBySpan.set(span, location);
+  return location;
 };
 
 export const formatSourceLocation = (location: SourceLocation | null): string =>

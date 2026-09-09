@@ -50,16 +50,32 @@ export const REACT_HOOK_FORM_PACKAGES = ["react-hook-form"];
 
 /** `HookFormContext.displayName` is assigned since 7.58.0 (src/useFormContext.tsx). */
 const NAMED_CONTEXT_VERSIONS = ">=7.58.0";
+/** `FormProvider` nests a `HookFormControlContext.Provider` since 7.71.0 (src/useFormControlContext.tsx). */
+const CONTROL_CONTEXT_VERSIONS = ">=7.71.0";
 
-const createHookFormContext = (version: string | null): ContextDefinition => ({
-  name: "HookFormContext",
-  displayName:
-    version === null ||
-    semver.satisfies(version, NAMED_CONTEXT_VERSIONS, { includePrerelease: true })
-      ? "HookFormContext"
-      : null,
-  defaultValue: NULL_VALUE,
-  location: null,
+interface HookFormContexts {
+  form: ContextDefinition;
+  control: ContextDefinition | null;
+}
+
+const isVersionAtLeast = (version: string | null, range: string): boolean =>
+  version === null || semver.satisfies(version, range, { includePrerelease: true });
+
+const createHookFormContexts = (version: string | null): HookFormContexts => ({
+  form: {
+    name: "HookFormContext",
+    displayName: isVersionAtLeast(version, NAMED_CONTEXT_VERSIONS) ? "HookFormContext" : null,
+    defaultValue: NULL_VALUE,
+    location: null,
+  },
+  control: isVersionAtLeast(version, CONTROL_CONTEXT_VERSIONS)
+    ? {
+        name: "HookFormControlContext",
+        displayName: "HookFormControlContext",
+        defaultValue: NULL_VALUE,
+        location: null,
+      }
+    : null,
 });
 
 const ROOT_PROXY_KEYS = [
@@ -1823,20 +1839,28 @@ const createControllerStub = (useController: StaticValue): StubComponent => ({
   },
 });
 
-const createFormProviderStub = (context: ContextDefinition): StubComponent => ({
+const providerElement = (
+  context: ContextDefinition,
+  value: StaticValue,
+  children: StaticValue,
+): StaticValue =>
+  element(
+    { kind: "context-provider", context, displayName: null },
+    objectFromRecord({ value, children }),
+  );
+
+const createFormProviderStub = (contexts: HookFormContexts): StubComponent => ({
   displayName: "FormProvider",
-  render: (props) =>
-    element(
-      {
-        kind: "context-provider",
-        context,
-        displayName: null,
-      },
-      objectFromRecord({
-        value: omitProps(props, new Set(["children"])),
-        children: getObjectProperty(props, "children"),
-      }),
-    ),
+  render: (props) => {
+    const children = getObjectProperty(props, "children");
+    return providerElement(
+      contexts.form,
+      omitProps(props, new Set(["children"])),
+      contexts.control
+        ? providerElement(contexts.control, getObjectProperty(props, "control"), children)
+        : children,
+    );
+  },
 });
 
 const generateId = (): StaticValue =>
@@ -2033,7 +2057,8 @@ const get = nativeFunction("get", ([object, path, defaultValue]) => {
   return readPath(object, name, defaultValue);
 });
 
-const createHookFormLibrary = (context: ContextDefinition): ExternalValueProvider => {
+const createHookFormLibrary = (contexts: HookFormContexts): ExternalValueProvider => {
+  const context = contexts.form;
   const useWatch = createUseWatch(context);
   const useFormState = createUseFormState(context);
   const useController = createUseController(context, useWatch, useFormState);
@@ -2045,7 +2070,7 @@ const createHookFormLibrary = (context: ContextDefinition): ExternalValueProvide
     ["useController", useController],
     ["useFieldArray", createUseFieldArray(context)],
     ["Controller", stubValue(createControllerStub(useController))],
-    ["FormProvider", stubValue(createFormProviderStub(context))],
+    ["FormProvider", stubValue(createFormProviderStub(contexts))],
     ["get", get],
   ]);
   return (_specifier, importedName) => exports.get(importedName) ?? null;
@@ -2058,7 +2083,7 @@ export const reactHookFormValue: LibraryValueProvider = (specifier, importedName
   let library = libraries.get(project);
   if (!library) {
     library = createHookFormLibrary(
-      createHookFormContext(project.readPackageVersion("react-hook-form")),
+      createHookFormContexts(project.readPackageVersion("react-hook-form")),
     );
     libraries.set(project, library);
   }

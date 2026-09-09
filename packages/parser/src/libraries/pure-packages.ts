@@ -23,6 +23,8 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "tailwind-merge",
 ]);
 
+export const isPurePackage = (packageName: string): boolean => PURE_PACKAGES.has(packageName);
+
 export class PurePackages {
   private readonly installed: InstalledModules;
 
@@ -32,7 +34,7 @@ export class PurePackages {
 
   getExport(specifier: string, importedName: string): StaticValue | null {
     const packageName = getPackageNameFromSpecifier(specifier);
-    if (packageName === null || !PURE_PACKAGES.has(packageName) || importedName === "*") {
+    if (packageName === null || !isPurePackage(packageName) || importedName === "*") {
       return null;
     }
     const module = this.installed.load(specifier);
