@@ -21,7 +21,7 @@ export const createFunctionComponentDefinition = (
   isClientReference: value.isClientReference ?? false,
 });
 
-export const createClassComponentDefinition = (
+const createClassComponentDefinition = (
   value: Extract<StaticValue, { kind: "class" }>,
 ): ComponentDefinition => ({
   name: value.name,

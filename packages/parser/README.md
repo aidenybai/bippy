@@ -126,7 +126,8 @@ are treated as client components.
 
 ### Frameworks (`src/frameworks`)
 
-`renderFramework` renders a `{ framework, entry?, route? }` target:
+`renderFrameworkTarget` renders a `{ framework, entry?, route? }` target (`src/corpus/render-entry.ts`
+builds one from a corpus entry):
 
 - `spa` — the entry module's root render call (nested blocks and callbacks included).
 - `next-app` — `app/` route matching, layout/template/page/loading composition, async server
@@ -222,11 +223,13 @@ demonstrably framework machinery.
 ```
 src/parse        oxc parsing, cache, source locations
 src/graph        resolver, module records, module graph
-src/evaluate     interpreter, values, scopes, loops, hooks/React calls, class components, JSX text
+src/evaluate     interpreter, values, stubs, scopes, loops, hooks/React calls, class components, JSX text
 src/react        element-type resolution, React API recognition
+src/host         build-time realm tables (ecmascript/browser/node/react-native), host document
+src/libraries    models of library packages the interpreter does not walk
 src/materialize  StaticValue -> React elements, proxy components, markers, react-dom mount
 src/render       StaticRenderer, root render discovery
-src/frameworks   framework adapters, profiles, stubs
+src/frameworks   framework adapters, profiles
 src/harness      runtime capture, snapshots, pattern matching, comparison, report formatting
 src/corpus       manifest, dev-server control, per-entry runner, summary
 scripts/         render, capture, corpus CLIs

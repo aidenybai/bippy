@@ -1,4 +1,4 @@
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import type {
   SourceLocation,
   StaticObjectEntry,
@@ -31,19 +31,19 @@ import {
  * unknown store name may alias any store, an unknown database name any
  * database opened before or after it.
  */
-export interface IndexedDbRecord {
+interface IndexedDbRecord {
   key: StaticValue;
   value: StaticValue;
 }
 
-export interface IndexedDbStore {
+interface IndexedDbStore {
   keyPath: string | null;
   autoIncrement: boolean;
   nextKey: number;
   records: Map<string, IndexedDbRecord>;
 }
 
-export interface IndexedDbDatabase {
+interface IndexedDbDatabase {
   version: number;
   stores: Map<string, IndexedDbStore>;
   /** A store was created or written under a name the analysis cannot read. */
@@ -52,7 +52,7 @@ export interface IndexedDbDatabase {
   upgradeTransaction: TransactionModel | null;
 }
 
-export interface IndexedDbFactory {
+interface IndexedDbFactory {
   databases: Map<string, IndexedDbDatabase>;
   hasUnknownDatabase: boolean;
 }
@@ -65,7 +65,7 @@ export interface IndexedDbHost {
   location: SourceLocation | null;
 }
 
-export interface TransactionModel extends EventTargetModel {
+interface TransactionModel extends EventTargetModel {
   begin: () => void;
   end: () => void;
   fail: (error: StaticValue) => void;

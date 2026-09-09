@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
+import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");
@@ -26,9 +27,6 @@ export interface ReactRuntime {
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   version: string;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const isReactModule = (value: unknown): value is ReactModule =>
   isRecord(value) &&
@@ -85,7 +83,7 @@ const loadAct = async (
   throw new ReactRuntimeError("neither React.act nor react-dom/test-utils act is available");
 };
 
-export interface LoadReactRuntimeOptions {
+interface LoadReactRuntimeOptions {
   /** Resolves `react`/`react-dom` the way the analyzed app does; falls back to the harness's own copy. */
   resolver?: ModuleResolver;
   rootDirectory?: string;

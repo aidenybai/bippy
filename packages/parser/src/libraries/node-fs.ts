@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { getObjectProperty, listValue, primitiveValue, unknownValue } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, StaticValue } from "../types.js";
 
 // Files a server component reads from its own project directory are inputs of

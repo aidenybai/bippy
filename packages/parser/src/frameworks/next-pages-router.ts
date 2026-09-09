@@ -18,7 +18,7 @@ import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import { DEFAULT_DOCUMENT_STUB, type NextModel } from "./next-externals.js";
-import { element, stubElement } from "./stubs.js";
+import { element, stubElement } from "../evaluate/stubs.js";
 import {
   type DynamicSegment,
   classifySegment,
@@ -31,7 +31,7 @@ import {
   splitPathname,
 } from "./route-files.js";
 
-export interface NextPagesRouteOptions {
+interface NextPagesRouteOptions {
   /** URL pathname to render, e.g. `/` or `/posts/hello`. */
   route: string;
   /** Directory containing the `pages/` tree; defaults to `pages` or `src/pages` under the renderer root. */
@@ -69,7 +69,7 @@ const withReactStrictMode = (tree: StaticValue, isStrictMode: StaticValue): Stat
   });
 };
 
-export interface NextPageMatch {
+interface NextPageMatch {
   file: string;
   params: Record<string, string>;
 }

@@ -24,7 +24,8 @@ import {
   SimpleMemoComponentTag,
 } from "../work-tags.js";
 import type { HostDocument } from "../host/host-document.js";
-import type { HostRealm } from "../host/host-realm.js";
+import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
+import type { HostMember } from "../host/realm-table.js";
 import {
   type EnvironmentLookup,
   BUNDLER_INJECTED_NAMES,
@@ -44,7 +45,7 @@ import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import {
   constructNativeObject,
   fromNativeValue,
@@ -97,6 +98,7 @@ import {
   callShapedPrimitiveMethod,
   joinStrings,
   rangedNumberValue,
+  toStringValue,
 } from "./primitive-shapes.js";
 import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
@@ -120,6 +122,7 @@ import {
   branchValue,
   createSymbolValue,
   describeValue,
+  distributeObjectBranches,
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
@@ -160,8 +163,6 @@ import {
   unknownValue,
 } from "./values.js";
 
-const PROMISE_METHOD_NAMES = new Set(["then", "catch", "finally"]);
-
 const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isNaN": Number.isNaN,
   "Number.isFinite": Number.isFinite,
@@ -169,7 +170,8 @@ const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isSafeInteger": Number.isSafeInteger,
 };
 
-export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
+export const isPromiseMethodName = (name: string): boolean =>
+  loadHostRealm("ecmascript").getMember("Promise", name)?.type.kind === "function";
 
 /** A fresh deep copy of plain data (primitives, arrays, plain objects); null when some part is not statically cloneable. */
 const structuredCloneValue = (value: StaticValue): StaticValue | null => {
@@ -239,29 +241,34 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
   return { kind: "property", key: String(key.value), value };
 };
 
+/** Collection methods whose callback runs synchronously for every item, a shape the language shares across `Array`, `Map` and `Set`. */
 const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
 
-const THIS_ARG_METHOD_NAMES = new Set([
-  ...ITERATION_METHOD_NAMES,
-  "some",
-  "every",
-  "find",
-  "findIndex",
-  "findLast",
-  "findLastIndex",
-]);
+/** Collection interfaces whose signatures stand for every list-like receiver's (`Array.filter(): T[]`, `IteratorObject.take(): IteratorObject<T>`). */
+const LIST_INTERFACE_NAMES = ["Array", "IteratorObject"];
 
-/** `list.forEach(callback, thisArg)`: the callback runs with `this` set to `thisArg` (arrows keep their lexical `this`). */
+const getListMethod = (name: string): HostMember | null => {
+  const language = loadHostRealm("ecmascript");
+  for (const interfaceName of LIST_INTERFACE_NAMES) {
+    const member = language.getMember(interfaceName, name);
+    if (member?.type.kind === "function") return member;
+  }
+  return null;
+};
+
+/** `list.forEach(callback, thisArg)`: the callback runs with `this` set to the declared `thisArg` parameter (arrows keep their lexical `this`). */
 const bindCallbackThisArg = (name: string, args: StaticValue[]): StaticValue[] => {
-  const [callback, thisArg] = args;
+  const thisArgIndex = getListMethod(name)?.parameterNames?.indexOf("thisArg") ?? -1;
+  const [callback] = args;
+  const thisArg = args[thisArgIndex];
   if (
+    thisArgIndex < 1 ||
     thisArg === undefined ||
-    !THIS_ARG_METHOD_NAMES.has(name) ||
     callback?.kind !== "function" ||
     callback.boundThis
   )
     return args;
-  return [{ ...callback, boundThis: thisArg }];
+  return [{ ...callback, boundThis: thisArg }, ...args.slice(thisArgIndex + 1)];
 };
 
 /** `flatMap`/`concat` flattening: arrays contribute their items, anything else itself. */
@@ -277,21 +284,11 @@ const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): S
 
 /** Methods whose callbacks run synchronously (or on promise settlement) even when the receiver is opaque. */
 export const isModeledOpaqueMethodName = (name: string): boolean =>
-  PROMISE_METHOD_NAMES.has(name) || ITERATION_METHOD_NAMES.has(name);
+  isPromiseMethodName(name) || ITERATION_METHOD_NAMES.has(name);
 
-/** Methods whose result is a list with the items' shape preserved, so an indefinite receiver stands for its own result. */
-const LIST_PRESERVING_METHODS = new Set([
-  "filter",
-  "slice",
-  "sort",
-  "toSorted",
-  "reverse",
-  "toReversed",
-  "concat",
-  "flat",
-  "values",
-  "toArray",
-]);
+/** Methods declared to return the receiver's own items (`filter`, `slice`, `sort`), so an indefinite receiver stands for its own result. */
+const isListPreservingMethod = (name: string): boolean =>
+  getListMethod(name)?.returnsReceiverItems === true;
 
 /** `typeof <global>` in the rendering host; null when its declarations leave it open, or when only the bundler could provide it. */
 export const getGlobalTypeof = (name: string, realm: HostRealm): string | null => {
@@ -394,11 +391,6 @@ export const getBuiltinGlobal = (
   environment?: EnvironmentLookup,
 ): StaticValue | null =>
   getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
-
-const toStringValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive") return primitiveValue(String(value.value));
-  return unknownPrimitiveValue("string", `String(${describeValue(value)})`);
-};
 
 const toNumberValue = (value: StaticValue): StaticValue => {
   if (value.kind === "primitive" && typeof value.value !== "bigint")
@@ -997,7 +989,9 @@ const callGlobal = (
     case "WeakSet":
       return createCollectionValue(name, first, location);
     case "URLSearchParams":
-      return createSearchParamsValue(first, { location });
+      return mapValue(distributeObjectBranches(first ?? UNDEFINED_VALUE), (init) =>
+        createSearchParamsValue(init, { location }),
+      );
     case "URL":
       return createUrlValue(args, location);
     case "AbortController":
@@ -1089,12 +1083,18 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
-      if (!ownEntries)
-        return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
-      if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));
-      if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
-      return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
+      const inspect = (target: StaticValue): StaticValue => {
+        const ownEntries = getOwnEnumerableEntries(target);
+        if (!ownEntries) return unknownValue(`${name} of ${describeValue(target)}`, location);
+        if (name === "Object.keys")
+          return listValue(ownEntries.map(([key]) => primitiveValue(key)));
+        if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
+        return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
+      };
+      const target = first ?? UNDEFINED_VALUE;
+      return getOwnEnumerableEntries(target)
+        ? inspect(target)
+        : mapValue(distributeObjectBranches(target), inspect);
     }
     case "Object.assign":
       if (
@@ -1310,10 +1310,13 @@ const callGlobal = (
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
-      const json = first && args.length === 1 ? toJsonValue(first) : undefined;
-      return json === undefined
-        ? unknownPrimitiveValue("string", "JSON.stringify")
-        : primitiveValue(JSON.stringify(json));
+      if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
+      return mapValue(distributeObjectBranches(first), (alternative) => {
+        const json = toJsonValue(alternative);
+        return json === undefined
+          ? unknownPrimitiveValue("string", "JSON.stringify")
+          : primitiveValue(JSON.stringify(json));
+      });
     }
     case "JSON.parse":
       if (
@@ -1936,10 +1939,7 @@ const fallbackMethodResult = (
   location: SourceLocation | null,
 ): StaticValue => {
   if (name === "split") return dynamicSplitResult(location);
-  if (
-    LIST_PRESERVING_METHODS.has(name) &&
-    (receiver.kind === "unknown" || receiver.kind === "repeat")
-  ) {
+  if (isListPreservingMethod(name) && (receiver.kind === "unknown" || receiver.kind === "repeat")) {
     return receiver;
   }
   return (

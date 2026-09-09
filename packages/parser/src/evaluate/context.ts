@@ -32,7 +32,7 @@ export interface CallFrame {
   properties: Map<string, StaticValue>;
 }
 
-export interface OutcomeHandler {
+interface OutcomeHandler {
   (outcome: StatementOutcome): StatementOutcome;
 }
 

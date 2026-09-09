@@ -4,10 +4,7 @@ import { parseSync } from "oxc-parser";
 import type { ModuleBundler, ModuleTranspiler } from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
-
-const VITE_CONFIG_FILES = ["js", "mjs", "cjs", "ts", "mts", "cts"].map(
-  (extension) => `vite.config.${extension}`,
-);
+import { findViteConfig } from "./vite-config.js";
 
 /** Vite 8 transpiles with Oxc; in earlier majors these React plugins take over from `vite:esbuild`. */
 const LAST_ESBUILD_VITE_MAJOR = 7;
@@ -27,13 +24,8 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
-const findViteConfig = (rootDirectory: string): string | undefined =>
-  VITE_CONFIG_FILES.map((fileName) => path.join(rootDirectory, fileName)).find((candidate) =>
-    existsSync(candidate),
-  );
-
-export const detectModuleBundler = (rootDirectory: string): ModuleBundler =>
-  findViteConfig(rootDirectory) === undefined ? "unknown" : "vite";
+export const detectModuleBundler = (...directories: string[]): ModuleBundler =>
+  directories.some((directory) => findViteConfig(directory) !== undefined) ? "vite" : "unknown";
 
 /** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`. */
 export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
