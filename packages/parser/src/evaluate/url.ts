@@ -21,6 +21,12 @@ const nativeGetter = (name: string, read: () => StaticValue): StaticValue => ({
 
 export const isUrlValue = (value: StaticObjectValue): boolean => hrefReaders.has(value);
 
+/** The `URL` a modeled instance stands for; null for other objects or once its href is uncertain. */
+export const toNativeUrl = (value: StaticObjectValue): URL | null => {
+  const href = hrefReaders.get(value)?.() ?? null;
+  return href === null ? null : URL.parse(href);
+};
+
 const toUrlString = (value: StaticValue): string | null => {
   if (value.kind === "primitive") return String(value.value);
   const readHref = value.kind === "object" ? hrefReaders.get(value) : undefined;
@@ -67,8 +73,19 @@ export const createUrlValue = (
     const query = getSearchParamsString(searchParams);
     return query === null ? null : query === "" ? "" : `?${query}`;
   };
+  const hasAuthority = parsed.href.startsWith(`${parsed.protocol}//`);
+  const readAuthority = (): string | null => {
+    const host = readPart("host");
+    return !hasAuthority ? "" : host === null ? null : `//${host}`;
+  };
   const readHref = (): string | null => {
-    const parts = [readPart("origin"), readPart("pathname"), readSearch(), readPart("hash")];
+    const parts = [
+      readPart("protocol"),
+      readAuthority(),
+      readPart("pathname"),
+      readSearch(),
+      readPart("hash"),
+    ];
     return parts.every((part) => part !== null) ? parts.join("") : null;
   };
   const stringGetter = (name: string, read: () => string | null): StaticValue =>

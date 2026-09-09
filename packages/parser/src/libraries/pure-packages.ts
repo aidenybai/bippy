@@ -23,10 +23,12 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "lodash",
   "lodash-es",
   "node:path",
+  "node:url",
   "object.entries",
   "path",
   "path-to-regexp",
   "tailwind-merge",
+  "url",
 ]);
 
 const liftExport = (

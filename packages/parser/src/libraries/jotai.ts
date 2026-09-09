@@ -5,12 +5,13 @@ import {
   getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
+  isFunctionValue,
   isNullish,
   mapValue,
   objectFromRecord,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
   ModeledExports,
@@ -60,9 +61,6 @@ interface Store {
   changed: Set<AtomRecord>;
   pendingFunctions: Array<() => void>;
 }
-
-const isCallable = (value: StaticValue): boolean =>
-  value.kind === "function" || value.kind === "native-function";
 
 const hasInitialValue = (atom: StaticObjectValue): boolean =>
   getKnownObjectKeys(atom)?.includes("init") ?? false;
@@ -144,7 +142,7 @@ const readAtomState = (
     ),
   });
   const read = getObjectProperty(record.atom, "read");
-  const next = isCallable(read)
+  const next = isFunctionValue(read)
     ? tools.call(read, [getter, options], record.atom)
     : unknownValue("atom without a read function");
   setValue(record, next, tools);
@@ -232,7 +230,7 @@ const writeAtomState = (
     return result;
   });
   const write = getObjectProperty(record.atom, "write");
-  return isCallable(write)
+  return isFunctionValue(write)
     ? tools.call(write, [getter, setter, ...args], record.atom)
     : unknownValue("atom not writable");
 };
@@ -282,13 +280,13 @@ const mountAtom = (store: Store, record: AtomRecord, tools: StubRenderTools): Mo
   }
   record.mounted = mounted;
   const onMount = getObjectProperty(record.atom, "onMount");
-  if (hasInitialValue(record.atom) && isCallable(onMount)) {
+  if (hasInitialValue(record.atom) && isFunctionValue(onMount)) {
     store.pendingFunctions.push(() => {
       const setSelf = nativeFunction("setAtom", (args, selfTools) =>
         writeAtomState(store, record, args, selfTools),
       );
       const onUnmount = tools.call(onMount, [setSelf], record.atom);
-      if (isCallable(onUnmount)) mounted.onUnmount = onUnmount;
+      if (isFunctionValue(onUnmount)) mounted.onUnmount = onUnmount;
     });
   }
   return mounted;
@@ -347,7 +345,7 @@ const createStore = (): StaticValue => {
       atom === undefined ? UNDEFINED_VALUE : writeAtom(store, atom, args, tools),
     ),
     sub: nativeFunction("sub", ([atom, listener], tools) =>
-      atom === undefined || listener === undefined || !isCallable(listener)
+      atom === undefined || listener === undefined || !isFunctionValue(listener)
         ? UNDEFINED_VALUE
         : subscribeAtom(store, atom, listener, tools),
     ),

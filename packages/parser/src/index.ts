@@ -1,5 +1,6 @@
 export * from "./types.js";
 export * from "./work-tags.js";
+export * from "./errors.js";
 export {
   parseSourceText,
   getSourceLanguage,

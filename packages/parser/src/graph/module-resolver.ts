@@ -34,7 +34,7 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
 const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
 const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
 
-export type ImporterKind = "esm" | "commonjs";
+type ImporterKind = "esm" | "commonjs";
 
 const NODE_MODULES_SEGMENT = "/node_modules/";
 const JAVASCRIPT_CONFIG_FILE = "jsconfig.json";
@@ -93,7 +93,7 @@ export const getPackageNameFromSpecifier = (specifier: string): string | null =>
   return segments[0] || null;
 };
 
-export const getPackageNameFromFilePath = (filePath: string): string | null => {
+const getPackageNameFromFilePath = (filePath: string): string | null => {
   const posixPath = filePath.replaceAll("\\", "/");
   const index = posixPath.lastIndexOf(NODE_MODULES_SEGMENT);
   if (index === -1) return null;

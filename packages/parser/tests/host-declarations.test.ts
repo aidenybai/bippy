@@ -65,6 +65,8 @@ describe("host declaration index", () => {
     expect(getGlobal(build, "URL")).toEqual({
       type: { kind: "function", interfaceName: 'typeof "url".URL', isNullable: false },
       returnType: null,
+      parameterNames: null,
+      returnsReceiverItems: false,
     });
     expect(getGlobal(build, "URL.prototype.href")?.type.kind).toBe("string");
     expect(getGlobal(build, "localStorage")?.type).toEqual({
@@ -126,6 +128,8 @@ describe("host declaration index", () => {
     expect(getGlobal(build, "reader.read")).toEqual({
       type: { kind: "function", interfaceName: null, isNullable: false },
       returnType: { kind: "string", interfaceName: null, isNullable: false },
+      parameterNames: [],
+      returnsReceiverItems: false,
     });
     expect(getGlobal(build, "makeStream")?.type.kind).toBe("function");
     expect(getGlobal(build, "legacyVersion")?.type.kind).toBe("string");
@@ -187,7 +191,7 @@ describe("host declaration index", () => {
     expect(gapsAt(build, "globalThis.untyped")).toEqual(["declared-any"]);
   });
 
-  it("merges overload returns and unions by typeof and reports disagreement", () => {
+  it("merges overload returns to their common ancestor and reports disagreement", () => {
     const build = buildFixture(
       {
         "overloads.d.ts": `
@@ -207,9 +211,10 @@ describe("host declaration index", () => {
     );
     expect(getGlobal(build, "creator.create")?.returnType).toEqual({
       kind: "object",
-      interfaceName: null,
+      interfaceName: "ElementLike",
       isNullable: false,
     });
+    expect(gapsAt(build, "Creator.create")).toEqual([]);
     expect(getGlobal(build, "creator.pick")?.returnType?.kind).toBe("any");
     expect(gapsAt(build, "Creator.pick")).toEqual(["overloads"]);
     expect(getGlobal(build, "maybeName")?.type).toEqual({
@@ -256,5 +261,81 @@ describe("generated host realms", () => {
     expect(browser.isSubtype("HTMLDivElement", "EventTarget")).toBe(true);
     expect(browser.isSubtype("Document", "HTMLElement")).toBe(false);
     expect(browser.getMember("HTMLDivElement", "addEventListener")?.type.kind).toBe("function");
+  });
+
+  it("enumerates each platform's globals from its global object interfaces", () => {
+    expect(loadHostRealm("browser").getGlobalNames()).toEqual(
+      expect.arrayContaining(["document", "window", "navigator", "Math", "fetch"]),
+    );
+    const reactNative = loadHostRealm("react-native").getGlobalNames();
+    expect(reactNative).toContain("navigator");
+    expect(reactNative).not.toContain("document");
+    const ecmascript = loadHostRealm("ecmascript").getGlobalNames();
+    expect(ecmascript).toEqual(expect.arrayContaining(["Math", "Array", "Promise", "Intl"]));
+    expect(ecmascript).not.toContain("setTimeout");
+  });
+
+  it("summarizes method signatures: parameter names, return interface, receiver items", () => {
+    const ecmascript = loadHostRealm("ecmascript");
+    const filter = ecmascript.getMember("Array", "filter");
+    expect(filter?.parameterNames).toEqual(["predicate", "thisArg"]);
+    expect(filter?.returnType?.interfaceName).toBe("Array");
+    expect(filter?.returnsReceiverItems).toBe(true);
+    expect(ecmascript.getMember("Array", "map")?.returnsReceiverItems).toBe(false);
+    expect(ecmascript.getMember("Array", "forEach")?.returnType?.kind).toBe("undefined");
+    expect(ecmascript.getMember("Array", "some")?.returnType?.kind).toBe("boolean");
+    expect(ecmascript.getMember("Array", "slice")?.parameterNames).toEqual(["start", "end"]);
+    expect(ecmascript.getMember("Promise", "then")?.parameterNames).toEqual([
+      "onfulfilled",
+      "onrejected",
+    ]);
+    expect(ecmascript.getMember("Array", "length")).toMatchObject({
+      type: { kind: "number" },
+      returnType: null,
+      parameterNames: null,
+    });
+  });
+
+  it("keeps methods that take elements from standing for the receiver", () => {
+    const ecmascript = loadHostRealm("ecmascript");
+    for (const name of ["sort", "toSorted", "reverse", "slice"]) {
+      expect(ecmascript.getMember("Array", name)?.returnsReceiverItems, name).toBe(true);
+    }
+    for (const name of ["fill", "with", "concat", "splice"]) {
+      expect(ecmascript.getMember("Array", name)?.returnsReceiverItems, name).toBe(false);
+    }
+    expect(ecmascript.getMember("IteratorObject", "take")?.returnsReceiverItems).toBe(true);
+  });
+
+  it("derives which interface dispatches each DOM event from the event maps", () => {
+    const browser = loadHostRealm("browser");
+    expect(browser.isEventOfType("click", "MouseEvent")).toBe(true);
+    expect(browser.isEventOfType("keydown", "KeyboardEvent")).toBe(true);
+    expect(browser.isEventOfType("focus", "FocusEvent")).toBe(true);
+    expect(browser.isEventOfType("resize", "MouseEvent")).toBe(false);
+    expect(browser.isEventOfType("resize", "UIEvent")).toBe(true);
+    expect(browser.isEventOfType("load", "UIEvent")).toBe(false);
+    expect(browser.getEventTypes("my:event")).toEqual([]);
+    expect(browser.getEventTypes("click").map((type) => type.interfaceName)).toContain(
+      "PointerEvent",
+    );
+  });
+
+  it("resolves document, window and navigator member kinds from lib.dom", () => {
+    const browser = loadHostRealm("browser");
+    expect(browser.getMember("Document", "querySelector")).toMatchObject({
+      type: { kind: "function" },
+      returnType: { interfaceName: "Element", isNullable: true },
+      parameterNames: ["selectors"],
+    });
+    expect(browser.getMember("Document", "body")?.type.interfaceName).toBe("HTMLElement");
+    expect(browser.getMember("Document", "notAMember")).toBeNull();
+    expect(browser.getMember("Window", "innerWidth")?.type.kind).toBe("number");
+    expect(browser.getMember("Window", "matchMedia")?.returnType?.interfaceName).toBe(
+      "MediaQueryList",
+    );
+    expect(browser.getMember("Navigator", "userAgent")?.type.kind).toBe("string");
+    expect(browser.getMember("Navigator", "clipboard")?.type.interfaceName).toBe("Clipboard");
+    expect(browser.getGlobalTypeof("navigator.sendBeacon")).toBe("function");
   });
 });
