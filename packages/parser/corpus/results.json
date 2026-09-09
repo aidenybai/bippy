@@ -70,6 +70,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 232,
         "staticFibers": 235,
         "coverage": 1,
@@ -159,6 +160,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 798,
         "staticFibers": 790,
         "coverage": 1,
@@ -214,6 +216,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 306,
         "staticFibers": 306,
         "coverage": 1,
@@ -256,6 +259,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -268,7 +272,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -319,6 +323,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -331,7 +336,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -431,6 +436,7 @@
         ],
         "branchesResolved": 4,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 534,
         "staticFibers": 487,
         "coverage": 1,
@@ -541,6 +547,7 @@
         "wildcards": [],
         "branchesResolved": 22,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 351,
         "staticFibers": 990,
         "coverage": 1,
@@ -676,6 +683,7 @@
         ],
         "branchesResolved": 12,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 179,
         "staticFibers": 264,
         "coverage": 1,
@@ -718,8 +726,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:42.402Z",
-      "durationMs": 577,
+      "capturedAt": "2026-09-08T23:59:35.641Z",
+      "durationMs": 43441,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -764,6 +772,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 15,
         "status": "exact",
         "runtimeFibers": 203,
         "staticFibers": 203,
@@ -789,7 +798,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:49:10.139Z",
+      "note": null,
       "failure": null
     },
     {
@@ -826,6 +835,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 689,
         "matchedText": 4,
         "opaqueSubtrees": 0,
@@ -838,7 +848,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -940,6 +950,7 @@
         "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 74,
         "staticFibers": 74,
         "coverage": 1,
@@ -1017,6 +1028,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 14,
         "staticFibers": 4,
         "coverage": 1,
@@ -1098,6 +1110,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1525,
         "staticFibers": 21,
         "coverage": 1,
@@ -1149,6 +1162,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -1161,7 +1175,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -1250,6 +1264,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 172,
         "staticFibers": 33,
         "coverage": 1,
@@ -1277,7 +1292,7 @@
         "fibers": 1439,
         "commits": 25,
         "pageErrors": [
-          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved \u00b7 just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
         "title": "Free Invoice Generator | Invoify"
       },
@@ -1294,6 +1309,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1093,
         "matchedText": 51,
         "opaqueSubtrees": 0,
@@ -1306,7 +1322,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -1378,6 +1394,7 @@
         "wildcards": [],
         "branchesResolved": 5,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 84,
         "staticFibers": 104,
         "coverage": 1,
@@ -1457,6 +1474,7 @@
         ],
         "branchesResolved": 15,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 235,
         "staticFibers": 321,
         "coverage": 1,
@@ -1508,6 +1526,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1520,7 +1539,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -1608,7 +1627,7 @@
             "reason": "step budget exhausted",
             "absorbedFibers": 5,
             "heads": [
-              "\"\u00a9 2026 \"",
+              "\"© 2026 \"",
               "<LinkComponent> key=\"1/.$linkwarden-website-key\" [ForwardRef]",
               "\". All rights reserved.\""
             ]
@@ -1633,6 +1652,7 @@
         ],
         "branchesResolved": 16,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 66,
         "staticFibers": 68,
         "coverage": 1,
@@ -1715,6 +1735,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 0,
         "staticFibers": 0,
         "coverage": 0,
@@ -2158,6 +2179,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1386,
         "staticFibers": 286,
         "coverage": 1,
@@ -2697,6 +2719,7 @@
         ],
         "branchesResolved": 30,
         "repeatIterations": 4,
+        "transparentFibers": 0,
         "runtimeFibers": 1850,
         "staticFibers": 821,
         "coverage": 0.9551282051282052,
@@ -2752,6 +2775,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 139,
         "staticFibers": 139,
         "coverage": 1,
@@ -2882,6 +2906,7 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 70,
         "staticFibers": 10,
         "coverage": 1,
@@ -2942,6 +2967,7 @@
         "wildcards": [],
         "branchesResolved": 3,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 673,
         "staticFibers": 646,
         "coverage": 1,
@@ -3043,6 +3069,7 @@
         ],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 68,
         "staticFibers": 46,
         "coverage": 1,
@@ -3085,6 +3112,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 139,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -3097,7 +3125,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -3148,6 +3176,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3160,7 +3189,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -3224,6 +3253,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 121,
         "staticFibers": 121,
         "coverage": 1,
@@ -3287,6 +3317,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 0,
         "staticFibers": 0,
         "coverage": 0,
@@ -3347,6 +3378,7 @@
         "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 194,
         "staticFibers": 199,
         "coverage": 1,
@@ -3436,6 +3468,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1,
         "staticFibers": 929,
         "coverage": 0,
@@ -3532,6 +3565,7 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1961,
         "staticFibers": 1,
         "coverage": 1,
@@ -3611,6 +3645,7 @@
         ],
         "branchesResolved": 3,
         "repeatIterations": 32,
+        "transparentFibers": 0,
         "runtimeFibers": 1456,
         "staticFibers": 119,
         "coverage": 1,
@@ -3690,6 +3725,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 91,
         "staticFibers": 117,
         "coverage": 1,
@@ -3740,6 +3776,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -3752,7 +3789,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -3809,6 +3846,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3821,7 +3859,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -3887,6 +3925,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 33,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -3908,7 +3947,7 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "partial",
+        "transparentFibers": 0,
         "runtimeFibers": 5571,
         "staticFibers": 33,
         "coverage": 1,
@@ -3995,6 +4034,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 691,
         "staticFibers": 151,
         "coverage": 0,
@@ -4012,8 +4052,8 @@
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:23:59.032Z",
-      "durationMs": 1452,
+      "capturedAt": "2026-09-08T23:55:07.817Z",
+      "durationMs": 1359,
       "runtime": {
         "reactVersion": "9.6.0",
         "rendererName": "@react-three/fiber",
@@ -4042,12 +4082,13 @@
         ]
       },
       "report": {
-        "matchedFibers": 989,
+        "status": "partial",
+        "matchedFibers": 1001,
         "matchedText": 30,
         "opaqueSubtrees": 19,
-        "opaqueSkippedFibers": 89,
-        "slotsMatched": 9,
-        "slotsUnmatched": 4,
+        "opaqueSkippedFibers": 74,
+        "slotsMatched": 12,
+        "slotsUnmatched": 1,
         "opaqueRenamed": 4,
         "unmatchedSlots": [
           {
@@ -4059,39 +4100,6 @@
               "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <HeroSection> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <LoadableComponent> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <BailoutToCSR> [FunctionComponent] > <Tower> [FunctionComponent] > <View> [FunctionComponent] > <div> [HostComponent] > <Canvas> (opaque)[0]",
               "expected": "<Suspense> [SuspenseComponent]",
               "actual": "<CanvasImpl> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"tailwind\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque)",
-            "reason": "AnimatePresence from framer-motion is not analyzed",
-            "head": "<AnimatePresence> [FunctionComponent]",
-            "skippedFibers": 10,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <PlaygroundSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"tailwind\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque) > <motion.div> [ForwardRef] > <MeasureLayout> [FunctionComponent][0]",
-              "expected": "<MeasureLayoutWithContext> [FunctionComponent]",
-              "actual": "<MeasureLayoutWithContext> [ClassComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <button> key=\"Linter\" [HostComponent] > <AnimatePresence> (opaque)",
-            "reason": "AnimatePresence from framer-motion is not analyzed",
-            "head": "<AnimatePresence> [FunctionComponent]",
-            "skippedFibers": 10,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <button> key=\"Linter\" [HostComponent] > <AnimatePresence> (opaque) > <motion.div> [ForwardRef] > <MeasureLayout> [FunctionComponent][0]",
-              "expected": "<MeasureLayoutWithContext> [FunctionComponent]",
-              "actual": "<MeasureLayoutWithContext> [ClassComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"Linter\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque)",
-            "reason": "AnimatePresence from framer-motion is not analyzed",
-            "head": "<AnimatePresence> [FunctionComponent]",
-            "skippedFibers": 10,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <main> [HostComponent] > <div> [HostComponent] > <section> [HostComponent] > <InteractiveDemo> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsList> [ForwardRef] > <RovingFocusGroup> [ForwardRef] > <RovingFocusGroupCollectionProvider> [FunctionComponent] > <RovingFocusGroupCollectionProviderProvider> [FunctionComponent] > <RovingFocusGroupCollectionSlot> [ForwardRef] > <RovingFocusGroupCollectionSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionSlot.SlotClone> [ForwardRef] > <ForwardRef> [ForwardRef] > <RovingFocusGroupProvider> [FunctionComponent] > <Primitive.div> [ForwardRef] > <Primitive.div.Slot> [ForwardRef] > <Primitive.div.SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TabsTrigger> key=\"Linter\" [ForwardRef] > <RovingFocusGroupItem> [ForwardRef] > <RovingFocusGroupCollectionItemSlot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.Slot> [ForwardRef] > <RovingFocusGroupCollectionItemSlot.SlotClone> [ForwardRef] > <Primitive.span> [ForwardRef] > <Primitive.span.Slot> [ForwardRef] > <Primitive.span.SlotClone> [ForwardRef] > <Primitive.button> [ForwardRef] > <button> [HostComponent] > <AnimatePresence> (opaque) > <motion.div> [ForwardRef] > <MeasureLayout> [FunctionComponent][0]",
-              "expected": "<MeasureLayoutWithContext> [FunctionComponent]",
-              "actual": "<MeasureLayoutWithContext> [ClassComponent]"
             }
           }
         ],
@@ -4148,14 +4156,13 @@
         ],
         "branchesResolved": 24,
         "repeatIterations": 0,
-        "transparentFibers": 97,
-        "status": "partial",
-        "runtimeFibers": 5180,
+        "transparentFibers": 100,
+        "runtimeFibers": 5177,
         "staticFibers": 1197,
         "coverage": 1,
-        "strictCoverage": 0.19671814671814672,
+        "strictCoverage": 0.19915008692292835,
         "divergence": null,
-        "stepsUsed": 9761,
+        "stepsUsed": 18815,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -4188,7 +4195,7 @@
               "kind": "branch",
               "variable": "truthy(637)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977…",
               "alternativeIndex": 0,
               "alternativeCount": 2
             },
@@ -4196,7 +4203,7 @@
               "kind": "branch",
               "variable": "truthy(638)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -4212,7 +4219,7 @@
               "kind": "branch",
               "variable": "truthy(639)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977…",
               "alternativeIndex": 0,
               "alternativeCount": 2
             },
@@ -4220,7 +4227,7 @@
               "kind": "branch",
               "variable": "truthy(640)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -4228,7 +4235,7 @@
               "kind": "branch",
               "variable": "truthy(641)",
               "reason": "&& on <boolean: includes()>",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977\u2026",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-email/node_modules/.pnpm/@radix-ui+react-tabs@1.1.13_@types+react-dom@19.2.3_@types+react@19.2.14__@types+react@_2ad0945e3cb98dc5bbfaaf29c105e977…",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -4932,6 +4939,7 @@
         "wildcards": [],
         "branchesResolved": 7,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 214,
         "staticFibers": 104,
         "coverage": 1,
@@ -4949,8 +4957,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:41.667Z",
-      "durationMs": 136,
+      "capturedAt": "2026-09-08T23:56:00.160Z",
+      "durationMs": 11065,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -4969,11 +4977,12 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 5
+          "modulesLoaded": 7
         },
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -4986,7 +4995,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 14,
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -5011,7 +5020,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
+      "note": null,
       "failure": null
     },
     {
@@ -5077,6 +5086,7 @@
         ],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 40,
         "staticFibers": 16,
         "coverage": 1,
@@ -5141,6 +5151,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 54,
         "staticFibers": 54,
         "coverage": 1,
@@ -5183,6 +5194,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 6,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -5195,7 +5207,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -5267,6 +5279,7 @@
         "wildcards": [],
         "branchesResolved": 6,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 592,
         "staticFibers": 598,
         "coverage": 1,
@@ -5406,6 +5419,7 @@
         "wildcards": [],
         "branchesResolved": 5,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 747,
         "staticFibers": 823,
         "coverage": 1,
@@ -5669,6 +5683,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -5681,7 +5696,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -5963,6 +5978,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 1057,
         "staticFibers": 824,
         "coverage": 1,
@@ -5980,8 +5996,8 @@
       "id": "shadcn-ui",
       "revision": "7c9eaba1c0a6404c990c144a654792e3313c650d",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:23:44.613Z",
-      "durationMs": 5601,
+      "capturedAt": "2026-09-08T23:55:00.856Z",
+      "durationMs": 5868,
       "runtime": {
         "reactVersion": "19.3.0-canary-28cd4bb0-20260723",
         "rendererName": "react-dom",
@@ -6108,6 +6124,7 @@
         "wildcards": [],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 5,
         "staticFibers": 77,
         "coverage": 1,
@@ -6125,8 +6142,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:42.040Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-08T23:56:18.098Z",
+      "durationMs": 17137,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -6150,6 +6167,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -6162,7 +6180,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 15,
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -6181,7 +6199,7 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
+      "note": null,
       "failure": null
     },
     {
@@ -6213,6 +6231,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 215,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -6225,7 +6244,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -6276,6 +6295,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -6288,7 +6308,7 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
+        "transparentFibers": 0,
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -6358,6 +6378,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 191,
         "staticFibers": 201,
         "coverage": 1,
@@ -6429,6 +6450,7 @@
         ],
         "branchesResolved": 23,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 481,
         "staticFibers": 494,
         "coverage": 1,
@@ -6776,6 +6798,7 @@
         ],
         "branchesResolved": 2,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 3748,
         "staticFibers": 104,
         "coverage": 1,
@@ -6862,6 +6885,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 86,
         "staticFibers": 1293,
         "coverage": 1,
@@ -6948,6 +6972,7 @@
         ],
         "branchesResolved": 6,
         "repeatIterations": 0,
+        "transparentFibers": 0,
         "runtimeFibers": 62,
         "staticFibers": 58,
         "coverage": 1,
