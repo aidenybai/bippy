@@ -1,4 +1,11 @@
 import type { ComponentDefinition, StaticElementType, StaticValue } from "../types.js";
+import { primitiveValue } from "../evaluate/values.js";
+
+export const toElementKey = (key: StaticValue | null): StaticValue | null => {
+  if (key?.kind !== "primitive") return key;
+  if (key.value === undefined) return null;
+  return primitiveValue(String(key.value));
+};
 
 export const createFunctionComponentDefinition = (
   value: Extract<StaticValue, { kind: "function" }>,

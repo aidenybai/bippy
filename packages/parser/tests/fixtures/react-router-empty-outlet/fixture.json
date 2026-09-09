@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A layout route with only non-index children rendered at its own path: `useOutlet` returns null there, so neither `<Outlet>` nor the hook mounts an OutletContext provider."
+}

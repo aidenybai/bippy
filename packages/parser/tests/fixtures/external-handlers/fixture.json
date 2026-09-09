@@ -2,5 +2,5 @@
   "expectedStatus": "partial",
   "minCoverage": 1,
   "expectedStats": { "branchCount": 1, "opaqueCount": 2 },
-  "notes": "ui-kit is opaque. Its `onClick`/`onPointerDownCapture` props only run for a user, so the counter stays at its initial state; `onChange` may be called by the component at mount (Field does), so that setter escapes into an honest branch. The unknown text is `<code>`'s textContent, which React writes without a fiber, so it is no branch of the fiber tree."
+  "notes": "ui-kit is opaque. Its `onClick`/`onPointerDownCapture` props only run for a user, so the counter stays at its initial state; `onChange` may be called by the component at mount (Field does), so that setter escapes into an honest branch; the false arm narrows `trimmed` to the unknown text."
 }

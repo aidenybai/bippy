@@ -13,6 +13,7 @@ export type FrameworkKind = "spa" | "next-app" | "next-pages" | "react-router";
 // `Router`) are common application component names.
 export interface FrameworkProfile {
   kind: FrameworkKind;
+  /** Spliced out by the comparison wherever the static tree has no fiber for them. */
   transparentRuntimeFibers: ReadonlySet<string>;
   transparentRuntimeProviders: ReadonlySet<string>;
   /**
@@ -35,14 +36,14 @@ export interface FrameworkProfile {
   defaultAnchor: string | null;
 }
 
-const isReExportWrapper = (
-  fiber: RuntimeFiberSnapshot,
-  children: RuntimeFiberSnapshot[],
-): boolean =>
+// A bundled module re-exporting a same-named component gets its own renamed
+// wrapper (`RouterProvider2` rendering `RouterProvider`); only the wrapped one
+// exists in the source.
+const isReExportWrapper = (fiber: RuntimeFiberSnapshot): boolean =>
   fiber.name !== null &&
-  children.length === 1 &&
-  children[0].name !== null &&
-  isBundlerDedupedName(children[0].name, fiber.name);
+  fiber.children.length === 1 &&
+  fiber.children[0].name !== null &&
+  isBundlerDedupedName(fiber.children[0].name, fiber.name);
 
 const isTransparentRuntimeFiber = (
   fiber: RuntimeFiberSnapshot,
@@ -54,50 +55,73 @@ const isTransparentRuntimeFiber = (
     : profile.transparentRuntimeFibers.has(name);
 };
 
-const flattenFiber = (
+/**
+ * What a framework wrapper stands in for where the static tree has no fiber for
+ * it: its children, with the pairs it renders directly around them spliced
+ * along. Null for any other fiber.
+ */
+export const unwrapTransparentRuntimeFiber = (
   fiber: RuntimeFiberSnapshot,
   profile: FrameworkProfile,
-  wrapperName: string | null,
+): RuntimeFiberSnapshot[] | null => {
+  if (!isTransparentRuntimeFiber(fiber, profile) && !isReExportWrapper(fiber)) return null;
+  const wrapped = profile.transparentRuntimeWrapperChildren.get(fiber.name ?? fiber.tag);
+  const unwrap = (children: RuntimeFiberSnapshot[]): RuntimeFiberSnapshot[] =>
+    children.flatMap((child) =>
+      wrapped?.has(child.name ?? child.tag) ? unwrap(child.children) : [child],
+    );
+  return unwrap(fiber.children);
+};
+
+const dropInjectedFiber = (
+  fiber: RuntimeFiberSnapshot,
+  profile: FrameworkProfile,
 ): RuntimeFiberSnapshot[] => {
   if (profile.isInjectedRuntimeFiber(fiber)) return [];
-  const name = fiber.name ?? fiber.tag;
+  const children = dropInjectedList(fiber.children, profile);
   const isInjectionWrapper =
     fiber.name === null && fiber.children.some(profile.isInjectedRuntimeFiber);
-  if (isInjectionWrapper || isTransparentRuntimeFiber(fiber, profile)) {
-    return flattenList(fiber.children, profile, name);
-  }
-  if (
-    wrapperName !== null &&
-    profile.transparentRuntimeWrapperChildren.get(wrapperName)?.has(name)
-  ) {
-    return flattenList(fiber.children, profile, wrapperName);
-  }
-  const children = flattenList(fiber.children, profile, null);
-  if (isReExportWrapper(fiber, children)) return children;
-  return [{ ...fiber, children }];
+  return isInjectionWrapper ? children : [{ ...fiber, children }];
 };
 
-const flattenList = (
+const dropInjectedList = (
   fibers: RuntimeFiberSnapshot[],
   profile: FrameworkProfile,
-  wrapperName: string | null,
-): RuntimeFiberSnapshot[] => {
-  const result: RuntimeFiberSnapshot[] = [];
-  for (const fiber of fibers) result.push(...flattenFiber(fiber, profile, wrapperName));
-  return result;
-};
+): RuntimeFiberSnapshot[] => fibers.flatMap((fiber) => dropInjectedFiber(fiber, profile));
 
-/** Splices out transparent framework wrappers and drops injected subtrees so the runtime tree describes the application hierarchy. */
+const mapRoots = (
+  snapshot: RuntimeSnapshot,
+  mapChildren: (children: RuntimeFiberSnapshot[]) => RuntimeFiberSnapshot[],
+): RuntimeSnapshot => ({
+  ...snapshot,
+  roots: snapshot.roots.map((root) => ({ ...root, children: mapChildren(root.children) })),
+});
+
+/** Drops the subtrees the framework injects with no application counterpart; transparent wrappers stay for the comparison to splice where the static tree lacks them. */
+export const dropInjectedFibers = (
+  snapshot: RuntimeSnapshot,
+  profile: FrameworkProfile,
+): RuntimeSnapshot => mapRoots(snapshot, (children) => dropInjectedList(children, profile));
+
+const spliceTransparentList = (
+  fibers: RuntimeFiberSnapshot[],
+  profile: FrameworkProfile,
+): RuntimeFiberSnapshot[] =>
+  fibers.flatMap((fiber) => {
+    const unwrapped = unwrapTransparentRuntimeFiber(fiber, profile);
+    return unwrapped
+      ? spliceTransparentList(unwrapped, profile)
+      : [{ ...fiber, children: spliceTransparentList(fiber.children, profile) }];
+  });
+
+/** The application hierarchy alone: injected subtrees dropped and every transparent wrapper spliced out. */
 export const flattenTransparentFibers = (
   snapshot: RuntimeSnapshot,
   profile: FrameworkProfile,
-): RuntimeSnapshot => ({
-  ...snapshot,
-  roots: snapshot.roots.map((root) => ({
-    ...root,
-    children: flattenList(root.children, profile, null),
-  })),
-});
+): RuntimeSnapshot =>
+  mapRoots(dropInjectedFibers(snapshot, profile), (children) =>
+    spliceTransparentList(children, profile),
+  );
 
 const neverInjected = (): boolean => false;
 

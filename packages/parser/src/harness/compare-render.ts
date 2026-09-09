@@ -6,6 +6,7 @@ import {
   DEFAULT_STATE_SPACE_BUDGET,
   enumerateStateSpace,
   matchStateSpace,
+  summarizeOmissions,
   type ClosestState,
   type MatchedState,
   type StateSpaceBudget,
@@ -178,6 +179,7 @@ const skipped = (
     wildcards: [],
     branchesResolved: 0,
     repeatIterations: 0,
+    transparentFibers: 0,
     runtimeFibers: 0,
     staticFibers: 0,
     coverage: 0,
@@ -268,7 +270,7 @@ export const summarizeStateSpace = (comparison: CompareRenderResult): StateSpace
   states: comparison.stateSpace.states.length,
   matchedState: comparison.matchedState,
   closestState: comparison.closestState,
-  omitted: comparison.stateSpace.omitted,
+  omitted: summarizeOmissions(comparison.stateSpace.omitted),
 });
 
 export const formatCompareRenderResult = (comparison: CompareRenderResult): string =>

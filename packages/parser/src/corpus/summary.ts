@@ -54,6 +54,7 @@ const reportSchema: z.ZodType<ComparisonReport> = z.object({
   ),
   branchesResolved: z.number(),
   repeatIterations: z.number(),
+  transparentFibers: z.number().default(0),
   runtimeFibers: z.number(),
   staticFibers: z.number(),
   coverage: z.number(),
@@ -108,7 +109,7 @@ const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z.object({
     .object({ index: z.number().nullable(), conditions: z.array(stateConditionSchema) })
     .nullable(),
   closestState: z.object({ index: z.number(), divergence: divergenceSchema }).nullable(),
-  omitted: z.object({ omissions: z.array(stateOmissionSchema) }).nullable(),
+  omitted: z.object({ total: z.number(), omissions: z.array(stateOmissionSchema) }).nullable(),
 });
 
 const runtimeSummarySchema: z.ZodType<CorpusRuntimeSummary> = z.object({
@@ -193,7 +194,7 @@ const describeStateSpace = (stateSpace: StateSpaceSummary): string => {
   } else if (stateSpace.closestState) {
     parts.push(`closest #${stateSpace.closestState.index + 1}`);
   }
-  if (stateSpace.omitted) parts.push(`${stateSpace.omitted.omissions.length} omitted`);
+  if (stateSpace.omitted) parts.push(`${stateSpace.omitted.total} omitted`);
   return parts.join(", ");
 };
 

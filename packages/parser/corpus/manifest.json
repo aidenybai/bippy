@@ -412,6 +412,7 @@
       "static": {
         "rootDirectory": "apps/web",
         "route": "/",
+        "externalPackageAllowList": ["@react-email/*", "@radix-ui/*", "lucide-react", "vaul"],
         "maxFiberCount": 20000
       }
     },
@@ -462,6 +463,7 @@
       "framework": "next-app",
       "workingDirectory": "apps/v4",
       "install": "pnpm install",
+      "setup": ["pnpm --filter=v4 registry:build --style all"],
       "dev": "pnpm dev",
       "url": "http://localhost:4000/",
       "readyTimeoutMs": 900000,
@@ -469,6 +471,24 @@
       "static": {
         "rootDirectory": "apps/v4",
         "route": "/",
+        "externalPackageAllowList": [
+          "@shadcn/*",
+          "radix-ui",
+          "@radix-ui/*",
+          "@base-ui/*",
+          "@floating-ui/*",
+          "next-themes",
+          "nuqs",
+          "cmdk",
+          "sonner",
+          "lucide-react",
+          "@tabler/icons-react",
+          "@hugeicons/*",
+          "@vercel/analytics",
+          "@ai-sdk/*",
+          "ai",
+          "zod"
+        ],
         "maxFiberCount": 20000
       }
     },
@@ -1704,6 +1724,573 @@
         ]
       },
       "notes": "`/` redirects unauthenticated visitors to `/auth/sign-in` (`src/app/page.tsx`), which is captured directly. Clerk runs in keyless development mode; the embedded `<SignIn />` is a third-party opaque subtree."
+    },
+    {
+      "id": "blocknote",
+      "description": "BlockNote playground (Vite SPA over the @blocknote/* workspace packages, pnpm workspaces, Mantine)",
+      "repository": "https://github.com/TypeCellOS/BlockNote",
+      "revision": "c255558b2d4f2be6453c67df81bb702a1a586909",
+      "framework": "react-router",
+      "workingDirectory": "playground",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "playground",
+        "aliases": {
+          "@blocknote/core": "../packages/core/src",
+          "@blocknote/react": "../packages/react/src",
+          "@blocknote/ariakit": "../packages/ariakit/src",
+          "@blocknote/mantine": "../packages/mantine/src",
+          "@blocknote/shadcn": "../packages/shadcn/src",
+          "@blocknote/xl-ai": "../packages/xl-ai/src",
+          "@blocknote/xl-docx-exporter": "../packages/xl-docx-exporter/src",
+          "@blocknote/xl-odt-exporter": "../packages/xl-odt-exporter/src",
+          "@blocknote/xl-pdf-exporter": "../packages/xl-pdf-exporter/src",
+          "@shared": "../shared",
+          "@blocknote/xl-multi-column": "../packages/xl-multi-column/src",
+          "@blocknote/xl-email-exporter": "../packages/xl-email-exporter/src"
+        },
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": ["@blocknote/*", "@mantine/*"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "mdx-editor",
+      "description": "MDXEditor \"Bare\" Ladle story (Lexical editor, Gurx realm, Vite/Ladle dev server)",
+      "repository": "https://github.com/mdx-editor/editor",
+      "revision": "869f769bbe289b44ea5620f4491e90f37e3d1073",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npx ladle dev --port 61000",
+      "url": "http://localhost:61000/?story=basics--bare&mode=preview",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/examples/basics.tsx",
+        "rootComponent": "Bare",
+        "anchor": "Bare",
+        "externalPackageAllowList": ["@mdxeditor/gurx", "lexical", "@lexical/*"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "plate-playground",
+      "description": "Plate playground template editor page (Next app router, Slate/Plate plugins, shadcn/ui, Bun)",
+      "repository": "https://github.com/udecode/plate-playground-template",
+      "revision": "c59bd401b13011e418e75256a08fe7cafbfc177b",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bun install --ignore-scripts",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/editor",
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/editor",
+        "externalPackageAllowList": ["lucide-react", "radix-ui", "@radix-ui/*", "cmdk", "sonner"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "excalidraw-clone",
+      "description": "Excalidraw clone (Vite SPA, MUI, roughjs canvas)",
+      "repository": "https://github.com/mirayatech/excalidraw-clone",
+      "revision": "c5d7b14929b18a9a5cf57dd9fae5ef2ce2a021e7",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "react-icons",
+          "react-icons/*",
+          "@tippyjs/react",
+          "tippy.js"
+        ]
+      }
+    },
+    {
+      "id": "draw",
+      "description": "draw whiteboard (Vite SPA, TanStack Router + Query, Supabase client with placeholder env)",
+      "repository": "https://github.com/macintushar/draw",
+      "revision": "2d6c73c381473034b83440c66a65184084ad0f5c",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": [
+        "test -f .env || printf 'VITE_SUPABASE_URL=http://localhost:54321\\nVITE_SUPABASE_ANON_KEY=corpus-anon-key\\n' > .env"
+      ],
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "lucide-react",
+          "sonner",
+          "next-themes",
+          "@radix-ui/*"
+        ],
+        "envFiles": [".env"]
+      }
+    },
+    {
+      "id": "pixel-art-react",
+      "description": "Pixel Art React (webpack 5 dev server, React 16, react-redux + Immutable store, redux-undo)",
+      "repository": "https://github.com/jvalen/pixel-art-react",
+      "revision": "73b57b6b2305146b5a9f94ec9786ea701749c356",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --ignore-scripts --no-engine-strict",
+      "dev": "npx webpack-dev-server --hot --port 8087",
+      "url": "http://localhost:8087/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.jsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "redux-undo",
+          "immutable",
+          "react-is",
+          "hoist-non-react-statics",
+          "@babel/runtime/*",
+          "prop-types",
+          "react-color",
+          "react-cookie-consent",
+          "react-modal",
+          "exenv",
+          "warning",
+          "react-helmet",
+          "react-transition-group",
+          "react-custom-scrollbars",
+          "object-assign",
+          "tinykeys",
+          "body-scroll-lock"
+        ]
+      }
+    },
+    {
+      "id": "2048-in-react",
+      "description": "2048 in React (Next pages router, useReducer board state, react-responsive)",
+      "repository": "https://github.com/mateuszsokola/2048-in-react",
+      "revision": "4c27093929b4293c2c873b3ed75b18671b5be6cb",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["react-responsive"]
+      }
+    },
+    {
+      "id": "word-master",
+      "description": "Word Master (Create React App, React 17, headlessui modals, localStorage state)",
+      "repository": "https://github.com/octokatherine/word-master",
+      "revision": "5790198fd926d19d716a57cc59ed0359057733c9",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3006"
+      },
+      "url": "http://localhost:3006/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["@headlessui/react", "react-modal", "exenv"]
+      }
+    },
+    {
+      "id": "shadcn-landing-page",
+      "repository": "https://github.com/leoMirandaa/shadcn-landing-page",
+      "revision": "ae3716dbce5c8a26815222bb743994b5717938f1",
+      "description": "shadcn/ui landing page template (Vite SPA, React 18, radix primitives, ThemeProvider over localStorage)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 5000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@radix-ui/*", "@floating-ui/*", "lucide-react"]
+      }
+    },
+    {
+      "id": "shadcn-landing-page-nobruf",
+      "repository": "https://github.com/nobruf/shadcn-landing-page",
+      "revision": "ec8e18e8ed56ed6636023ced09948515c19258cc",
+      "description": "shadcn/ui landing page template (Next 14 app router, next-themes, radix primitives)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@radix-ui/*", "@floating-ui/*", "lucide-react", "next-themes"]
+      }
+    },
+    {
+      "id": "magicui-portfolio",
+      "repository": "https://github.com/magicuidesign/portfolio",
+      "revision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+      "description": "Magic UI portfolio template (Next 16 app router, motion, next-themes, content-collections blog)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm --ignore-workspace dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "motion",
+          "framer-motion",
+          "react-markdown"
+        ]
+      },
+      "notes": "The app has no pnpm-workspace.yaml, so pnpm must not attach the clone to the parser workspace above `.corpus/`."
+    },
+    {
+      "id": "magic-portfolio",
+      "repository": "https://github.com/once-ui-system/magic-portfolio",
+      "revision": "2a55890c38f18e0ad1e267748373bfb703ce146a",
+      "description": "Once UI Magic Portfolio template (Next 16 app router, @once-ui-system/core design system, MDX content)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@once-ui-system/*"]
+      }
+    },
+    {
+      "id": "next-landing-starter",
+      "repository": "https://github.com/ixartz/Next-JS-Landing-Page-Starter-Template",
+      "revision": "cd6694e6c69efad1128c1ed732188389182789df",
+      "description": "Next-JS-Landing-Page-Starter-Template (Next 14 pages router, Tailwind, trailingSlash)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/pages",
+        "route": "/"
+      }
+    },
+    {
+      "id": "tremor-dashboard",
+      "repository": "https://github.com/tremorlabs/template-dashboard-oss",
+      "revision": "a20f619680e4582122c331bacf2efdef6daf460f",
+      "description": "Tremor dashboard template overview page (Next 14 app router, Tremor Raw components over radix, recharts, next-themes)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm --ignore-workspace dev",
+      "url": "http://localhost:3000/overview",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/overview",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "next-themes",
+          "@remixicon/react"
+        ]
+      },
+      "notes": "`/` is a permanent redirect to `/overview` in next.config.mjs, so the overview page is captured directly. The app has no pnpm-workspace.yaml, so pnpm must not attach the clone to the parser workspace above `.corpus/`."
+    },
+    {
+      "id": "data-table-filters",
+      "repository": "https://github.com/openstatusHQ/data-table-filters",
+      "revision": "27e165378fa6f58dab0486cd06b078b6956230f2",
+      "description": "openstatus data-table-filters default demo (Next 16 app router, React Compiler, TanStack Table, nuqs + zustand adapters, pnpm + turbo workspace)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/default",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/default",
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "@dtf/registry",
+          "radix-ui",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "next-plausible",
+          "nuqs"
+        ]
+      },
+      "notes": "The `/default` route renders the data table over the checked-in mock dataset without a database; `/infinite` and `/drizzle` need Postgres and are not captured."
+    },
+    {
+      "id": "shadcn-chat",
+      "repository": "https://github.com/jakobhoeg/shadcn-chat",
+      "revision": "47e5f8af020b6eacbd4cbd6ad5f6ff8d60e76aa8",
+      "description": "shadcn-chat www demo (Next 14 app router over the @shadcn-chat/ui workspace package, npm workspaces + turbo)",
+      "framework": "next-app",
+      "workingDirectory": "apps/www",
+      "install": "npm install",
+      "setup": ["npm run build --prefix ../../packages/ui"],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "notes": "apps/www resolves @shadcn-chat/ui from the workspace package's dist, which the turbo dev task does not build; the setup step builds it once.",
+      "static": {
+        "rootDirectory": "apps/www",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "framer-motion"
+        ]
+      }
+    },
+    {
+      "id": "glide-data-grid",
+      "repository": "https://github.com/glideapps/glide-data-grid",
+      "revision": "0875d78cc41535a39f8b417ff88ce1ebe129c363",
+      "description": "Glide Data Grid next-gdg test project (Next 12 pages router, React 17)",
+      "framework": "next-pages",
+      "workingDirectory": "test-projects/next-gdg",
+      "install": "npm install --no-audit --no-fund && npm run build -w packages/core",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/glide-data-grid-setup.sh\""],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": "test-projects/next-gdg",
+        "route": "/",
+        "aliases": {
+          "@glideapps/glide-data-grid": "../../packages/core/src"
+        },
+        "externalPackageAllowList": [
+          "@glideapps/glide-data-grid",
+          "@linaria/react",
+          "canvas-hypertxt",
+          "react-number-format",
+          "marked",
+          "react-responsive-carousel",
+          "lodash",
+          "lodash/*"
+        ]
+      },
+      "notes": "The project's package-lock pins the published @glideapps/glide-data-grid@3.4.1, which no longer exports the dist/index.css _app.tsx imports, so like test-projects/bootstrap-projects.sh the setup symlinks the built packages/core into node_modules (`--legacy-peer-deps`: the lock pairs marked@16 with a marked@^4 peer range) and additionally aliases react/react-dom in next.config.js to the project's React 17 so core's dist does not load the repository root's React 19. The static side aliases the package to packages/core/src so both trees come from the same revision."
+    },
+    {
+      "id": "react-datasheet-grid",
+      "repository": "https://github.com/nick-keller/react-datasheet-grid",
+      "revision": "862a1bb7777550fa04445fb283fa035a759c7c22",
+      "description": "react-datasheet-grid example app (Vite, React 18) importing the library from ../../src",
+      "framework": "spa",
+      "workingDirectory": "example",
+      "install": "npm install --no-audit --no-fund && cd example && npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "example",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@tanstack/react-virtual", "react-resize-detector"]
+      }
+    },
+    {
+      "id": "material-react-table",
+      "repository": "https://github.com/KevinVandy/material-react-table",
+      "revision": "a16bafe78a547c423a72eff1dd000f3875885f86",
+      "description": "Material React Table docs site home page (Next 14 pages router, React 19, MUI)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/material-react-table-docs",
+      "install": "pnpm install && pnpm --use-node-version=20.19.5 --filter material-react-table lib:build-lib",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/next-cjs-externals-setup.sh\" next.config.js"],
+      "dev": "pnpm docs:dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": "apps/material-react-table-docs",
+        "route": "/",
+        "aliases": {
+          "material-react-table": "../../packages/material-react-table/src"
+        },
+        "externalPackageAllowList": [
+          "material-react-table",
+          "@mui/*",
+          "@emotion/*",
+          "@tanstack/*",
+          "highlight-words"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The docs app consumes the workspace package's dist build, whose rollup config uses `assert { type: 'json' }` import assertions that Node 22 rejects, so the library is built under Node 20. Next 14 externalizes the pnpm-hoisted @mui/* server modules as ESM and Node rejects their directory subpath imports (ERR_UNSUPPORTED_DIR_IMPORT on @mui/utils/formatMuiErrorMessage), so setup turns off experimental.esmExternals in next.config.js; the static side aliases material-react-table to packages/material-react-table/src."
+    },
+    {
+      "id": "mantine-react-table",
+      "repository": "https://github.com/KevinVandy/mantine-react-table",
+      "revision": "d338579598b52a93045a96c55eacadfc8db331bb",
+      "description": "Mantine React Table docs site home page (Next 14 pages router, React 18, Mantine)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/mantine-react-table-docs",
+      "install": "pnpm install && pnpm --use-node-version=20.19.5 --filter mantine-react-table lib:build-lib",
+      "dev": "pnpm docs:dev",
+      "url": "http://localhost:3001/",
+      "static": {
+        "rootDirectory": "apps/mantine-react-table-docs",
+        "route": "/",
+        "aliases": {
+          "mantine-react-table": "../../packages/mantine-react-table/src"
+        },
+        "externalPackageAllowList": [
+          "mantine-react-table",
+          "@mantine/*",
+          "@tabler/icons-react",
+          "@tanstack/*",
+          "clsx",
+          "dayjs"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The docs app consumes the workspace package's dist build, whose rollup config uses `assert { type: 'json' }` import assertions that Node 22 rejects, so the library is built under Node 20; the static side aliases mantine-react-table to packages/mantine-react-table/src."
+    },
+    {
+      "id": "react-data-table-component",
+      "repository": "https://github.com/jbetancur/react-data-table-component",
+      "revision": "3c080557be7723f6815a7dc9555f21df1164c11f",
+      "description": "react-data-table-component Storybook story rendered in the preview iframe (Storybook 7, React 18)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run storybook -- --ci --no-open",
+      "url": "http://localhost:6006/iframe.html?id=sorting-basic--basic&viewMode=story",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "stories/DataTable/sorting/basic.stories.js",
+        "rootComponent": "Basic",
+        "anchor": "DataTable"
+      },
+      "notes": "The repository has no app; Storybook's preview iframe is the only runnable React root. Both trees are anchored on the library's DataTable component so Storybook's decorators stay outside the comparison."
+    },
+    {
+      "id": "react-arborist",
+      "repository": "https://github.com/jameskerr/react-arborist",
+      "revision": "ab6a0031f536ec7a411b01dc26012065e2ae849b",
+      "description": "react-arborist showcase cities demo (Next 14 pages router, React 18)",
+      "framework": "next-pages",
+      "workingDirectory": "modules/showcase",
+      "install": "yarn install && yarn build-lib",
+      "dev": "yarn start",
+      "url": "http://localhost:3000/cities",
+      "static": {
+        "rootDirectory": "modules/showcase",
+        "route": "/cities",
+        "aliases": {
+          "react-arborist": "../react-arborist/src"
+        },
+        "externalPackageAllowList": [
+          "react-arborist",
+          "react-window",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "dnd-core",
+          "redux",
+          "use-sync-external-store",
+          "react-icons",
+          "react-icons/*",
+          "clsx"
+        ]
+      },
+      "notes": "The showcase consumes the workspace package's dist build; the static side aliases react-arborist to modules/react-arborist/src."
+    },
+    {
+      "id": "react-virtuoso",
+      "repository": "https://github.com/petyosi/react-virtuoso",
+      "revision": "b7feb0c2415044a99c75c7c8d03f5f7c14342038",
+      "description": "react-virtuoso hello example rendered by Ladle in preview mode (React 19)",
+      "framework": "spa",
+      "workingDirectory": "packages/react-virtuoso",
+      "install": "pnpm install",
+      "dev": "pnpm ladle",
+      "url": "http://localhost:61000/?story=hello--example&mode=preview",
+      "static": {
+        "rootDirectory": "packages/react-virtuoso",
+        "entry": "examples/hello.tsx",
+        "rootComponent": "Example",
+        "anchor": "Example"
+      },
+      "notes": "The repository has no app; the library's Ladle examples are the runnable React roots. Both trees are anchored on the example component so Ladle's providers stay outside the comparison."
+    },
+    {
+      "id": "tanstack-table",
+      "repository": "https://github.com/TanStack/table",
+      "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
+      "description": "TanStack Table v9 composable-tables example (Vite, React 19, React Compiler)",
+      "framework": "spa",
+      "workingDirectory": "examples/react/composable-tables",
+      "install": "pnpm install",
+      "setup": [
+        "CI=1 NX_DAEMON=false pnpm nx run-many --target=build --projects=@tanstack/react-table,@tanstack/table-core --skipRemoteCache"
+      ],
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "examples/react/composable-tables",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-table",
+          "@tanstack/table-core",
+          "@tanstack/react-store",
+          "@tanstack/store"
+        ]
+      },
+      "notes": "Workspace packages must be built before Vite can resolve @tanstack/react-table; the setup builds the example's dependency closure."
     },
     {
       "id": "remix-shadcn",

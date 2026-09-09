@@ -717,17 +717,26 @@ const ROUTE_STUB: StubComponent = {
   render: () => NULL_VALUE,
 };
 
-/** `<Outlet>` renders the parent match's outlet inside an `OutletContext` provider (`useOutlet`). */
+/** `useOutlet`: a truthy outlet renders inside an `OutletContext` provider; a null one renders as is. */
+const outletValue = (tools: StubRenderTools, context: StaticValue): StaticValue => {
+  const outlet = readRouteContext(tools, "outlet");
+  const provided = element(
+    { kind: "context-provider", context: OUTLET_CONTEXT, displayName: null },
+    objectFromRecord({ value: context, children: outlet }),
+  );
+  switch (getTruthiness(outlet)) {
+    case true:
+      return provided;
+    case false:
+      return outlet;
+    default:
+      return branchValue([provided, outlet], "react-router: outlet is not known statically");
+  }
+};
+
 const OUTLET_STUB: StubComponent = {
   displayName: "Outlet",
-  render: (props, tools) =>
-    element(
-      { kind: "context-provider", context: OUTLET_CONTEXT, displayName: null },
-      objectFromRecord({
-        value: getObjectProperty(props, "context"),
-        children: readRouteContext(tools, "outlet"),
-      }),
-    ),
+  render: (props, tools) => outletValue(tools, getObjectProperty(props, "context")),
 };
 
 const ABSOLUTE_URL = /^(?:[a-z][a-z0-9+.-]*:|[\\/]{2})/i;
@@ -1216,7 +1225,9 @@ const routerHookValue = (
     case "useParams":
       return nativeFunction(importedName, (_args, tools) => readRouteContext(tools, "params"));
     case "useOutlet":
-      return nativeFunction(importedName, (_args, tools) => readRouteContext(tools, "outlet"));
+      return nativeFunction(importedName, ([context = UNDEFINED_VALUE], tools) =>
+        outletValue(tools, context),
+      );
     case "useOutletContext":
       return nativeFunction(importedName, (_args, tools) => tools.readContext(OUTLET_CONTEXT));
     case "useAsyncValue":

@@ -517,7 +517,7 @@ export interface RootObservations extends CapturedQueryCaches {
   stores?: CapturedValue[];
 }
 
-/** The origin's persisted state (`document.cookie`, Web Storage) as the settled page held it. */
+/** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
 export interface CapturedPageState {
   cookie: string;
   /** `window.name`; absent in captures taken before it was recorded. */
@@ -569,10 +569,24 @@ export interface StaticAccessor {
   set: StaticValue | null;
 }
 
-/** An accessor entry's `value` is the uncertain stand-in helpers see without calling the getter. */
-export type StaticObjectEntry =
-  | { kind: "property"; key: string; value: StaticValue; accessor?: StaticAccessor }
-  | { kind: "spread"; value: StaticValue };
+/**
+ * An accessor entry's `value` is the uncertain stand-in helpers see without calling the getter.
+ * `isEnumerable` is false for properties `Object.defineProperty` created without `enumerable: true`.
+ */
+export interface StaticPropertyEntry {
+  kind: "property";
+  key: string;
+  value: StaticValue;
+  accessor?: StaticAccessor;
+  isEnumerable?: boolean;
+}
+
+export interface StaticSpreadEntry {
+  kind: "spread";
+  value: StaticValue;
+}
+
+export type StaticObjectEntry = StaticPropertyEntry | StaticSpreadEntry;
 
 /** `constructedBy` is the class whose `new` produced the object, so `instanceof` and its prototype resolve. */
 export interface StaticObjectValue {
@@ -658,6 +672,8 @@ export interface StaticListValue {
   allocation?: number;
   /** Named properties an array carries besides its indices, like `index` on a match or `t` on a `useTranslation()` result. */
   properties?: Map<string, StaticValue>;
+  /** Keys in `properties` that `Object.defineProperty` created without `enumerable: true`. */
+  nonEnumerableKeys?: Set<string>;
   isFrozen?: boolean;
 }
 

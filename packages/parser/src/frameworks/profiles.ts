@@ -102,6 +102,7 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
+  "_PathnameContextProviderAdapter",
   "ErrorBoundary",
   "HotReload",
   "ReactDevOverlay",
@@ -140,7 +141,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(NEXT_PAGES_RUNTIME_PROVIDERS),
   transparentRuntimeWrapperChildren: new Map(),
-  transparentStaticFibers: new Set(["Fragment"]),
+  transparentStaticFibers: new Set(["Fragment", "StrictMode"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
 };

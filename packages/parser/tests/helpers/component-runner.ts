@@ -27,6 +27,7 @@ export interface ComponentFixtureModule {
   default: ComponentType;
   minCoverage?: number;
   isExact?: boolean;
+  isPartial?: boolean;
 }
 
 export interface ComponentRunResult {
@@ -35,6 +36,7 @@ export interface ComponentRunResult {
   comparison: CompareRenderResult;
   minCoverage: number;
   isExact: boolean;
+  isPartial: boolean;
 }
 
 export const COMPONENTS_DIRECTORY = resolve(import.meta.dirname, "../components");
@@ -119,6 +121,7 @@ export const runComponentFixture = async (
     comparison,
     minCoverage: loaded.minCoverage ?? 1,
     isExact: loaded.isExact ?? false,
+    isPartial: loaded.isPartial ?? false,
   };
 };
 

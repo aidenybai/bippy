@@ -12,3 +12,5 @@ Card.displayName = "Card";
 export const CardTitle = React.memo(({ children }: { children: React.ReactNode }) => (
   <h3>{children}</h3>
 ));
+
+export const Badge = React.memo(({ label }: { label: string }) => <span>{label}</span>);

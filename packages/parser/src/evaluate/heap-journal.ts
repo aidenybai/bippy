@@ -24,6 +24,7 @@ type PendingUpdates = Map<StateCell, StaticValue | null>;
 interface ListState {
   items: StaticValue[];
   properties: Map<string, StaticValue> | undefined;
+  nonEnumerableKeys: Set<string> | undefined;
 }
 
 interface HeapPath {
@@ -37,11 +38,13 @@ interface HeapPath {
 const copyListState = (list: StaticListValue): ListState => ({
   items: [...list.items],
   properties: list.properties && new Map(list.properties),
+  nonEnumerableKeys: list.nonEnumerableKeys && new Set(list.nonEnumerableKeys),
 });
 
 const restoreListState = (list: StaticListValue, state: ListState): void => {
   list.items = [...state.items];
   list.properties = state.properties && new Map(state.properties);
+  list.nonEnumerableKeys = state.nonEnumerableKeys && new Set(state.nonEnumerableKeys);
 };
 
 const joinListProperties = (
@@ -141,7 +144,11 @@ export class HeapJournal {
       object.entries = [...original];
     }
     for (const [list, original] of this.lists) {
-      path.lists.set(list, { items: list.items, properties: list.properties });
+      path.lists.set(list, {
+        items: list.items,
+        properties: list.properties,
+        nonEnumerableKeys: list.nonEnumerableKeys,
+      });
       restoreListState(list, original);
     }
     for (const [state, original] of this.states) {
@@ -222,6 +229,9 @@ export class HeapJournal {
         location,
         preferredPath,
       );
+      const nonEnumerableKeys = pathStates.flatMap((state) => [...(state.nonEnumerableKeys ?? [])]);
+      list.nonEnumerableKeys =
+        nonEnumerableKeys.length > 0 ? new Set(nonEnumerableKeys) : undefined;
       const pathItems = pathStates.map((state) => state.items);
       if (isUnchanged(pathItems, original.items)) continue;
       const agreedItems = getAgreedState(pathItems);

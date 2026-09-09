@@ -15,11 +15,11 @@ import {
 } from "./hoist-non-react-statics.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
+import { LINARIA_PACKAGES, linariaValue } from "./linaria.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
 import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
-import { isPurePackage } from "./pure-packages.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
@@ -64,6 +64,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
   { packages: JED_PACKAGES, getValue: jedValue },
   { packages: KEA_PACKAGES, getValue: keaValue },
+  { packages: LINARIA_PACKAGES, getValue: linariaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },
   {
     packages: LODASH_PACKAGES,
@@ -106,7 +107,7 @@ const MODELED_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
 );
 
 export const isModeledLibraryPackage = (packageName: string): boolean =>
-  MODELED_PACKAGES.has(packageName) || isPurePackage(packageName);
+  MODELED_PACKAGES.has(packageName);
 
 /** An export modeled while the rest of its package is analyzed from source. */
 export const isModeledLibraryExport = (specifier: string, exportName: string): boolean =>

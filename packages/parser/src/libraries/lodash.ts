@@ -1,18 +1,29 @@
-import { UNDEFINED_VALUE, compareDeeply, decidedBooleanValue } from "../evaluate/values.js";
+import { hasNamedProperty } from "../evaluate/has-property.js";
+import {
+  compareDeeply,
+  decidedBooleanValue,
+  getObjectProperty,
+  getTruthiness,
+  UNDEFINED_VALUE,
+  unknownValue,
+} from "../evaluate/values.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import type { ExternalValueProvider, ModeledExports, StaticValue } from "../types.js";
 
-// Lodash wrappers that return the wrapped function's own result on first call:
-// a render sees the same value whether or not the call was cached. `isEqual` is
-// decided over static values directly rather than through lodash's own
-// Stack/MapCache machinery. Every other helper is analyzed from lodash's
-// source when the package is allow-listed.
+// Lodash function wrappers: `memoize`/`once` return the wrapped function's own
+// result on first call, `debounce`/`throttle` decide from their options whether
+// the first call runs synchronously. `isEqual` is decided over static values
+// directly rather than through lodash's own Stack/MapCache machinery. Every
+// other helper runs from lodash's own source as a pure package or is analyzed
+// when the package is allow-listed.
 
 export const LODASH_PACKAGES = ["lodash", "lodash-es"];
 
 const TRANSPARENT_WRAPPERS = ["memoize", "once"];
 
-const MODELED_HELPERS = [...TRANSPARENT_WRAPPERS, "isEqual"];
+const RATE_LIMITERS = ["debounce", "throttle"];
+
+const MODELED_HELPERS = [...TRANSPARENT_WRAPPERS, ...RATE_LIMITERS, "isEqual"];
 
 export const LODASH_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
   LODASH_PACKAGES.flatMap((packageName): Array<[string, string[]]> => [
@@ -34,6 +45,56 @@ const isEqual = nativeFunction("isEqual", ([left, right]) =>
   ),
 );
 
+/**
+ * `debounce` reads `!!options.leading` (false without options); `throttle`
+ * defaults it to true unless `'leading' in options`. Null when the options'
+ * shape is not decided by the source.
+ */
+const readLeadingOption = (
+  helperName: string,
+  options: StaticValue | undefined,
+): boolean | null => {
+  const isThrottle = helperName === "throttle";
+  if (options === undefined || options.kind === "primitive") return isThrottle;
+  if (options.kind !== "object") return null;
+  if (isThrottle) {
+    const isDeclared = hasNamedProperty("leading", options);
+    if (isDeclared === null) return null;
+    const hasLeading = getTruthiness(isDeclared);
+    if (hasLeading === null) return null;
+    if (!hasLeading) return true;
+  }
+  return getTruthiness(getObjectProperty(options, "leading"));
+};
+
+/**
+ * `debounced` from lodash's source: the first call runs `func` synchronously
+ * only on the leading edge, every other invocation waits on a timer, so the
+ * wrapped function escapes to code that runs after the render.
+ */
+const rateLimiter = (helperName: string): StaticValue =>
+  nativeFunction(helperName, ([wrapped, , options], tools) => {
+    const isLeading = readLeadingOption(helperName, options);
+    let hasTimer = false;
+    return {
+      kind: "native-function",
+      name: `${helperName}d`,
+      call: (args) => {
+        const isFirstCall = !hasTimer;
+        hasTimer = true;
+        if (isFirstCall && isLeading === true) return tools.call(wrapped, args);
+        tools.markEscaped(wrapped);
+        if (isFirstCall && isLeading === false) return UNDEFINED_VALUE;
+        return unknownValue(
+          isFirstCall
+            ? `leading edge of a ${helperName}d call with uncertain options`
+            : `later call of a ${helperName}d function`,
+        );
+      },
+      onEscape: () => tools.markEscaped(wrapped),
+    };
+  });
+
 export const lodashValue: ExternalValueProvider = (specifier, importedName) => {
   const [packageName, ...modulePath] = specifier.split("/");
   if (!LODASH_PACKAGES.includes(packageName)) return null;
@@ -42,5 +103,6 @@ export const lodashValue: ExternalValueProvider = (specifier, importedName) => {
       ? modulePath[0].replace(/\.js$/, "")
       : importedName;
   if (helperName === "isEqual") return isEqual;
-  return TRANSPARENT_WRAPPERS.includes(helperName) ? transparentWrapper(helperName) : null;
+  if (TRANSPARENT_WRAPPERS.includes(helperName)) return transparentWrapper(helperName);
+  return RATE_LIMITERS.includes(helperName) ? rateLimiter(helperName) : null;
 };
