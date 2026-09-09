@@ -8,12 +8,13 @@ const { values, positionals } = parseArgs({
   options: {
     packages: { type: "string", multiple: true, default: [] },
     "all-packages": { type: "boolean", default: false },
+    route: { type: "string" },
   },
 });
 const [rootArg, entryArg, exportName] = positionals;
 if (!rootArg || !entryArg) {
   console.error(
-    "usage: tsx scripts/render.ts [--packages <name>]... [--all-packages] <root> <entry> [exportName]",
+    "usage: tsx scripts/render.ts [--packages <name>]... [--all-packages] [--route <path>] <root> <entry> [exportName]",
   );
   process.exit(1);
 }
@@ -23,6 +24,7 @@ const renderer = createStaticRenderer({
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,
   resolveExternalPackages: values["all-packages"],
+  route: values.route,
 });
 const result = await (exportName
   ? renderer.renderComponent(entryArg, { exportName })

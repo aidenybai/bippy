@@ -134,6 +134,8 @@ export interface ModuleRecord {
   dependencies: string[];
   /** Top-level statements that run when the module is evaluated (`X.displayName = ...`, `registry.set(...)`, `const x = create()`). */
   sideEffectStatements: Statement[];
+  /** Bindings whose initializer hands another top-level binding to a call (`const re = pathToRegexp(path, keys)`), which may fill it in: they are initialized with the module. */
+  outParameterBindings: string[];
   /** Exports were collected from `exports.x = ` / `module.exports` assignments rather than ESM syntax. */
   isCommonJs: boolean;
   /** The `value` of `module.exports = value`, whose runtime members are the exports a bundler imports. */
@@ -167,6 +169,7 @@ export type ResolvedSymbol =
   | {
       kind: "expression";
       module: ModuleRecord;
+      exportedName: string;
       expression: Expression;
       isClientReference: boolean;
     }
@@ -178,7 +181,16 @@ export type ResolvedSymbol =
       exportedName: string;
       isClientReference: boolean;
     }
-  | { kind: "external"; packageName: string; imported: ImportedName; specifier: string }
+  | {
+      kind: "external";
+      packageName: string;
+      imported: ImportedName;
+      specifier: string;
+      /** The installed file the import resolves to; null when the package is not installed. */
+      filePath: string | null;
+    }
+  | { kind: "stylesheet"; filePath: string; imported: ImportedName }
+  | { kind: "asset"; filePath: string; imported: ImportedName }
   | { kind: "unresolved"; reason: string };
 
 export interface ComponentDefinition {
@@ -358,6 +370,8 @@ export interface StubRenderTools {
   recordStateMutation: (state: JournaledState<unknown>) => void;
   /** The host whose globals the calling code sees. */
   realm: HostRealm;
+  /** Appends to a modeled list as `Array.prototype.push` would, undone on the other paths of an enclosing fork like any heap write. */
+  pushItems: (list: StaticListValue, items: readonly StaticValue[]) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -401,12 +415,16 @@ export type ModuleBundler = "vite" | "unknown";
 export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
   rootDirectory: string | null;
+  /** Directory the dev server serves at the URL root (Vite `root`); `null` when analyzing loose modules. */
+  servedDirectory: string | null;
   hasDeclaredDependency: (packageName: string) => boolean;
   /** The installed version of a package as resolved from the root; `null` when it is not installed. */
   readPackageVersion: (packageName: string) => string | null;
   transpiler: ModuleTranspiler;
   bundler: ModuleBundler;
-  /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
+  /** The value an `import` of a static asset file (image, font, ...) evaluates to: the URL the bundler serves it at. */
+  getImportedAssetUrl: (filePath: string) => StaticValue;
+  /** The text the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
   findQuery: (queryHash: string) => CapturedQuery | null;
@@ -548,9 +566,10 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
-  /** `navigator.userAgent` and `navigator.language`; absent in older captures. */
+  /** `navigator.userAgent`, `navigator.language` and `navigator.maxTouchPoints`; absent in older captures. */
   userAgent?: string;
   language?: string;
+  maxTouchPoints?: number;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }
@@ -673,6 +692,17 @@ export interface StringShape {
   length: number | null;
 }
 
+/**
+ * An unknown string that reads `prefix + source + suffix`: strings composed
+ * alike from the same `source` (one `Math.random()`-derived id, say) are the
+ * same string, so a property written under one is read back under the other.
+ */
+export interface StringComposition {
+  prefix: string;
+  source: StaticUnknownPrimitiveValue;
+  suffix: string;
+}
+
 /** Inclusive bounds of an unknown number. */
 export interface NumberRange {
   min: number;
@@ -685,6 +715,7 @@ export interface StaticUnknownPrimitiveValue {
   reason: string;
   clock?: ClockReading;
   stringShape?: StringShape;
+  composition?: StringComposition;
   numberRange?: NumberRange;
 }
 
@@ -862,6 +893,8 @@ export interface StaticNativeFunctionValue {
    * function is handed over as a value and may be called with anything.
    */
   onEscape?: (argumentValues: (StaticValue | null)[] | null) => void;
+  /** An own property of the function this stands for (`pathToRegexp.parse`); `undefined` when it has none by that name. */
+  getOwnProperty?: (key: string) => StaticValue | undefined;
 }
 
 export type StaticValue =
@@ -936,6 +969,7 @@ export type ReactApi =
   | "startTransition"
   | "createPortal"
   | "flushSync"
+  | "batchedUpdates"
   | "createRoot"
   | "hydrateRoot"
   | "render"
@@ -970,6 +1004,10 @@ export interface StaticRenderResult {
 
 export interface StaticRendererOptions {
   rootDirectory: string;
+  /** The bundler's served root (Vite `root`), relative to `rootDirectory`; `rootDirectory` itself by default. */
+  servedDirectory?: string;
+  /** Directory served as-is at the URL root (Vite `publicDir`), relative to `rootDirectory`; `public/` under the served root by default. */
+  publicDirectory?: string;
   tsconfigPath?: string;
   /** Bundler `resolve.alias` entries, targets relative to `rootDirectory`. */
   aliases?: Record<string, string>;
@@ -1006,8 +1044,6 @@ export interface StaticRendererOptions {
   route?: string;
   /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */
   origin?: string;
-  /** Directory the dev server serves at the URL root, relative to `rootDirectory`; `public` unless the bundler is configured otherwise. */
-  publicDirectory?: string;
   /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
   transpiler?: ModuleTranspiler;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */

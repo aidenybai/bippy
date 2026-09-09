@@ -26,13 +26,13 @@ import {
   queueStateUpdate,
 } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
+import { isElementValue } from "./type-predicates.js";
 import type { Interpreter } from "./interpreter.js";
 import {
   branchValue,
   componentReference,
   describeValue,
   FALSE_VALUE,
-  getKnownObjectKeys,
   getObjectProperty,
   isCallable,
   isNullish,
@@ -49,37 +49,17 @@ import {
   type CallableValue,
 } from "./values.js";
 
-const ELEMENT_TYPE_TAG_KEY = "$$typeof";
-
 const IDENTITY_MAPPER: StaticNativeFunctionValue = {
   kind: "native-function",
   name: "toArray",
   call: ([child = NULL_VALUE]) => child,
 };
 
-/** `isValidElement`: `object.$$typeof === REACT_ELEMENT_TYPE`, so a program object whose keys are known and lack the tag is decided. */
 const isValidElementValue = (value: StaticValue): StaticValue => {
-  switch (value.kind) {
-    case "element":
-      return primitiveValue(true);
-    case "object": {
-      const keys = getKnownObjectKeys(value);
-      return keys !== null && !keys.includes(ELEMENT_TYPE_TAG_KEY)
-        ? FALSE_VALUE
-        : unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
-    }
-    case "unknown":
-    case "optional":
-    case "external":
-    case "proxy":
-      return unknownPrimitiveValue("boolean", "isValidElement on dynamic value");
-    case "unknown-primitive":
-      return value.primitiveType === "any"
-        ? unknownPrimitiveValue("boolean", "isValidElement on dynamic value")
-        : FALSE_VALUE;
-    default:
-      return FALSE_VALUE;
-  }
+  const verdict = isElementValue(value);
+  return verdict === null
+    ? unknownPrimitiveValue("boolean", "isValidElement on dynamic value")
+    : primitiveValue(verdict);
 };
 
 /** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
@@ -373,7 +353,7 @@ const countChildren = (children: StaticValue): StaticValue => {
 const createReactRoot = (interpreter: Interpreter): StaticValue =>
   objectFromRecord({
     render: nativeFunction("render", ([element]) => {
-      interpreter.rootRenders.push(element ?? UNDEFINED_VALUE);
+      interpreter.recordRootRender(element ?? UNDEFINED_VALUE);
       return UNDEFINED_VALUE;
     }),
     unmount: nativeFunction("unmount", () => UNDEFINED_VALUE),
@@ -616,14 +596,18 @@ export const evaluateReactApiCall = (
       return first?.kind === "function"
         ? interpreter.callFunction(first, [], context)
         : UNDEFINED_VALUE;
+    case "batchedUpdates":
+      return first
+        ? interpreter.callValue(first, second ? [second] : [], context, location)
+        : UNDEFINED_VALUE;
     case "createRoot":
       return createReactRoot(interpreter);
     case "hydrateRoot":
-      interpreter.rootRenders.push(second ?? UNDEFINED_VALUE);
+      interpreter.recordRootRender(second ?? UNDEFINED_VALUE);
       return createReactRoot(interpreter);
     case "render":
     case "hydrate":
-      interpreter.rootRenders.push(first ?? UNDEFINED_VALUE);
+      interpreter.recordRootRender(first ?? UNDEFINED_VALUE);
       return unknownValue(`${api}() root`, location);
     case "Children.map":
       return mapChildren(interpreter, first, second, third, context);

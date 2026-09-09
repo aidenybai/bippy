@@ -88,15 +88,16 @@ export class StaticRenderer {
     const { rootDirectory } = this.options;
     const bundler = detectModuleBundler(rootDirectory);
     this.documentShell = readDocumentShell(rootDirectory, bundler);
-    this.project = createProjectContext(
+    this.project = createProjectContext({
       rootDirectory,
-      this.resolver,
-      this.options.observations,
-      this.options.origin ?? null,
-      this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
+      resolver: this.resolver,
+      servedDirectory: this.resolveOptionalPath(options.servedDirectory),
+      publicDirectory: this.resolveOptionalPath(options.publicDirectory),
+      observations: this.options.observations,
+      origin: this.options.origin ?? null,
+      transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
       bundler,
-      this.options.publicDirectory,
-    );
+    });
     this.reactVersion = this.project.readPackageVersion("react");
     const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
     this.graph = new ModuleGraph({
@@ -111,6 +112,10 @@ export class StaticRenderer {
     return path.isAbsolute(filePath)
       ? filePath
       : path.resolve(this.options.rootDirectory, filePath);
+  }
+
+  private resolveOptionalPath(filePath: string | undefined): string | undefined {
+    return filePath === undefined ? undefined : this.resolvePath(filePath);
   }
 
   loadModule(filePath: string): ModuleRecord | null {
@@ -272,8 +277,7 @@ export class StaticRenderer {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.initializeModule(module);
-      const [rootElement] = interpreter.rootRenders;
-      if (rootElement) return rootElement;
+      if (interpreter.rootRender.element) return interpreter.rootRender.element;
       interpreter.report(
         "no-root-render",
         `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,

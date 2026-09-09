@@ -6,6 +6,7 @@ import type {
   PatternFiber,
   PatternNode,
   PatternOpaque,
+  PatternWildcard,
 } from "../src/harness/static-pattern.js";
 
 const runtimeFiber = (
@@ -19,6 +20,11 @@ const patternFiber = (
   children: PatternNode[] = [],
   tag: PatternFiber["tag"] = "FunctionComponent",
 ): PatternFiber => ({ kind: "fiber", tag, name, key: null, children });
+
+const runtimeClass = (name: string): RuntimeFiberSnapshot =>
+  runtimeFiber(name, [], "ClassComponent");
+
+const patternClass = (name: string): PatternFiber => patternFiber(name, [], "ClassComponent");
 
 const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiberSnapshot =>
   runtimeFiber(name, children, "HostComponent");
@@ -43,6 +49,21 @@ const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque
   reason: `${name} is not analyzed`,
   passedChildren,
 });
+
+const patternBranch = (alternatives: PatternNode[][]): PatternBranch => ({
+  kind: "branch",
+  variable: "choice",
+  reason: "unknown flag",
+  location: null,
+  preferredIndex: 0,
+  alternatives,
+});
+
+const patternWildcard: PatternWildcard = {
+  kind: "wildcard",
+  reason: "unknown children",
+  isTruncated: false,
+};
 
 describe("comparePatternToRuntime", () => {
   it("accepts a bundler-deconflicted `$N` suffix on the runtime name", () => {
@@ -91,6 +112,53 @@ describe("comparePatternToRuntime", () => {
 
   it("does not equate names that differ beyond a `$N` suffix", () => {
     const report = comparePatternToRuntime([patternFiber("Dialog")], [runtimeFiber("Dialog$1x")]);
+    expect(report.status).toBe("mismatch");
+  });
+
+  it("matches a class whose bundler lowered its name to a placeholder", () => {
+    for (const placeholder of ["_a", "_a2", "_class", "_class1"]) {
+      const report = comparePatternToRuntime([patternClass("App")], [runtimeClass(placeholder)]);
+      expect(report.status, placeholder).toBe("exact");
+    }
+  });
+
+  it("matches a component the bundler renamed with a dedupe suffix", () => {
+    for (const renamed of ["SnackbarProvider2", "SnackbarProvider$1"]) {
+      const report = comparePatternToRuntime(
+        [patternClass("SnackbarProvider")],
+        [runtimeClass(renamed)],
+      );
+      expect(report.status, renamed).toBe("exact");
+    }
+    expect(
+      comparePatternToRuntime([patternClass("Snackbar")], [runtimeClass("SnackbarProvider")])
+        .status,
+    ).toBe("mismatch");
+  });
+
+  it("matches a wrapper display name whose wrapped component the bundler renamed", () => {
+    for (const renamed of ["SideEffect(NullComponent2)", "SideEffect(NullComponent$1)"]) {
+      const report = comparePatternToRuntime(
+        [patternClass("SideEffect(NullComponent)")],
+        [runtimeClass(renamed)],
+      );
+      expect(report.status, renamed).toBe("exact");
+    }
+    for (const other of [
+      "SideEffect(Other)",
+      "Effect(NullComponent2)",
+      "SideEffect2(NullComponent)",
+    ]) {
+      expect(
+        comparePatternToRuntime([patternClass("SideEffect(NullComponent)")], [runtimeClass(other)])
+          .status,
+        other,
+      ).toBe("mismatch");
+    }
+  });
+
+  it("keeps disagreeing class names a mismatch", () => {
+    const report = comparePatternToRuntime([patternClass("App")], [runtimeClass("Shell")]);
     expect(report.status).toBe("mismatch");
   });
 
@@ -143,6 +211,33 @@ describe("comparePatternToRuntime", () => {
     expect(report.slotsMatched).toBe(2);
     expect(report.slotsUnmatched).toBe(0);
     expect(report.opaqueRenamed).toBe(0);
+  });
+
+  it("matches a wide list of decision-free siblings beside a decision without deep recursion", () => {
+    const rows = Array.from({ length: 6000 }, () =>
+      patternFiber("Row", [patternFiber("td", [], "HostComponent")]),
+    );
+    const runtimeRows = rows.map(() =>
+      runtimeFiber("Row", [runtimeFiber("td", [], "HostComponent")]),
+    );
+    const report = comparePatternToRuntime(
+      [patternFiber("Table", [patternBranch([[patternFiber("Header")], []]), ...rows])],
+      [runtimeFiber("Table", runtimeRows)],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(1 + rows.length * 2);
+  });
+
+  it("counts a slot's consumed fibers once when its passed children backtrack", () => {
+    const report = comparePatternToRuntime(
+      [opaqueFiber("Layout", [patternBranch([[patternWildcard], [patternFiber("Page")]])])],
+      [runtimeFiber("Layout", [runtimeFiber("Page")])],
+    );
+    expect(report.status).toBe("partial");
+    expect(report.matchedFibers).toBe(1);
+    expect(report.wildcardAbsorbedFibers).toBe(0);
+    expect(report.opaqueSkippedFibers).toBe(1);
+    expect(report.coverage).toBe(1);
   });
 
   it("prefers the slot explaining the most runtime fibers over one that hides them in an unmatched slot", () => {

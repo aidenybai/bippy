@@ -2,6 +2,7 @@ import type {
   NumberRange,
   StaticUnknownPrimitiveValue,
   StaticValue,
+  StringComposition,
   StringShape,
 } from "../types.js";
 import { distributeBinary, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
@@ -30,17 +31,43 @@ const getConcatenationShape = (value: StaticValue): StringShape => {
   return UNKNOWN_STRING_SHAPE;
 };
 
+const getCompleteText = (value: StaticValue): string | null =>
+  value.kind === "primitive" && typeof value.value !== "symbol" ? String(value.value) : null;
+
+const getConcatenationComposition = (value: StaticValue): StringComposition | null =>
+  value.kind === "unknown-primitive"
+    ? (value.composition ?? { prefix: "", source: value, suffix: "" })
+    : null;
+
+const composeStrings = (left: StaticValue, right: StaticValue): StringComposition | null => {
+  const leftText = getCompleteText(left);
+  const rightText = getCompleteText(right);
+  if (leftText !== null) {
+    const composition = getConcatenationComposition(right);
+    return composition && { ...composition, prefix: leftText + composition.prefix };
+  }
+  if (rightText !== null) {
+    const composition = getConcatenationComposition(left);
+    return composition && { ...composition, suffix: composition.suffix + rightText };
+  }
+  return null;
+};
+
 export const concatenateStrings = (left: StaticValue, right: StaticValue): StaticValue => {
   const leftShape = getConcatenationShape(left);
   const rightShape = getConcatenationShape(right);
   const isLeftComplete = leftShape.length === leftShape.prefix.length;
-  return shapedStringValue("+ on dynamic values", {
+  const concatenated = shapedStringValue("+ on dynamic values", {
     prefix: isLeftComplete ? leftShape.prefix + rightShape.prefix : leftShape.prefix,
     length:
       leftShape.length === null || rightShape.length === null
         ? null
         : leftShape.length + rightShape.length,
   });
+  const composition = composeStrings(left, right);
+  return concatenated.kind === "unknown-primitive" && composition
+    ? { ...concatenated, composition }
+    : concatenated;
 };
 
 /** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */

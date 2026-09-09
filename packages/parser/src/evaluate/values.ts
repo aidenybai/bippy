@@ -28,6 +28,7 @@ import type {
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
   StaticValue,
+  StringComposition,
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
@@ -488,6 +489,34 @@ export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | nu
   return keys && [...keys.keys()];
 };
 
+const spreadHasOwnKey = (spread: StaticValue, key: string): boolean | null => {
+  switch (spread.kind) {
+    case "object":
+      return hasOwnKey(spread, key);
+    case "primitive":
+      return false;
+    case "branch": {
+      const verdicts = spread.alternatives.map((alternative) => spreadHasOwnKey(alternative, key));
+      if (verdicts.every((verdict) => verdict === true)) return true;
+      return verdicts.every((verdict) => verdict === false) ? false : null;
+    }
+    default:
+      return null;
+  }
+};
+
+/** Whether `key` is an own property; null when a spread may or may not carry it. */
+export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null => {
+  let verdict: boolean | null = false;
+  for (const entry of object.entries) {
+    const entryVerdict =
+      entry.kind === "property" ? entry.key === key : spreadHasOwnKey(entry.value, key);
+    if (entryVerdict === true) return true;
+    if (entryVerdict === null) verdict = null;
+  }
+  return verdict;
+};
+
 /** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
 export const getOwnPropertyDescriptor = (
   object: StaticObjectValue,
@@ -745,14 +774,23 @@ export const componentReference = (type: StaticElementType): StaticValue => ({
   type,
 });
 
-const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
+/** `===` between two values analysis knows completely: the same allocation, primitive, or external binding. */
+export const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
   if (left === right) return true;
   if (left.kind === "primitive" && right.kind === "primitive") {
     return Object.is(left.value, right.value);
   }
   if (left.kind === "global" && right.kind === "global") return left.name === right.name;
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
-  return false;
+  if (left.kind === "react-api" && right.kind === "react-api") return left.api === right.api;
+  return (
+    left.kind === "external" &&
+    right.kind === "external" &&
+    left.origin === "binding" &&
+    right.origin === "binding" &&
+    left.packageName === right.packageName &&
+    left.importedName === right.importedName
+  );
 };
 
 const CALLABLE_KINDS = new Set<StaticValue["kind"]>([
@@ -933,6 +971,19 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
     : null;
 };
 
+const INTRINSIC_GLOBAL_NAME = /^[A-Z]\w*(\.prototype)?$/;
+const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.test(name);
+
+export const isSameComposition = (
+  left: StringComposition | undefined,
+  right: StringComposition | undefined,
+): boolean =>
+  left !== undefined &&
+  right !== undefined &&
+  left.source === right.source &&
+  left.prefix === right.prefix &&
+  left.suffix === right.suffix;
+
 /**
  * `===` between two values, or null when analysis cannot decide. Import
  * bindings of the same external export are the same object; a primitive can
@@ -941,6 +992,12 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  if (
+    left.kind === "unknown-primitive" &&
+    right.kind === "unknown-primitive" &&
+    isSameComposition(left.composition, right.composition)
+  )
+    return true;
   if (left.kind === "function" && right.kind === "function" && left.scope !== right.scope) {
     return false;
   }
@@ -950,12 +1007,11 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
-  if (left.kind === "namespace" && right.kind === "namespace") {
+  if (left.kind === "namespace" && right.kind === "namespace")
     return left.module.filePath === right.module.filePath;
-  }
   if (left.kind === "global" && right.kind === "global") {
     if (left.name === right.name) return true;
-    if (left.name.endsWith(".prototype") && right.name.endsWith(".prototype")) return false;
+    if (isIntrinsicGlobalName(left.name) && isIntrinsicGlobalName(right.name)) return false;
   }
   if (
     (left.kind === "global" && isProgramAllocated(right)) ||
@@ -1192,6 +1248,8 @@ const haveSameShape = (
 ): boolean =>
   left.stringShape?.prefix === right.stringShape?.prefix &&
   left.stringShape?.length === right.stringShape?.length &&
+  (left.composition === right.composition ||
+    isSameComposition(left.composition, right.composition)) &&
   left.numberRange?.min === right.numberRange?.min &&
   left.numberRange?.max === right.numberRange?.max;
 
@@ -1338,19 +1396,13 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "primitive":
       return Boolean(value.value);
-    case "branch": {
-      const truthiness = getTruthiness(value.alternatives[0]);
-      return value.alternatives.every((alternative) => getTruthiness(alternative) === truthiness)
-        ? truthiness
-        : null;
-    }
+    case "branch":
+      return getAgreedTruthiness(value.alternatives);
     case "unknown-primitive":
       return getShapedTruthiness(value);
     case "unknown":
     case "optional":
       return null;
-    case "branch":
-      return getAgreedTruthiness(value.alternatives);
     case "external":
       return value.origin === "derived" ? null : true;
     case "element":
@@ -1413,7 +1465,20 @@ export const isNullish = (value: StaticValue): boolean | null => {
   return false;
 };
 
+/** The alternatives of `value` that can be truthy; `value` itself when it is not a branch. */
+export const truthyCounterpart = (value: StaticValue): StaticValue => {
+  if (value.kind !== "branch") return value;
+  const truthy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== false);
+  return truthy.length === 0 ? value : branchValue(truthy, value.reason, value.location);
+};
+
 export const falsyCounterpart = (value: StaticValue): StaticValue => {
+  if (value.kind === "branch") {
+    const falsy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== true);
+    return falsy.length === 0
+      ? UNDEFINED_VALUE
+      : branchValue(falsy.map(falsyCounterpart), value.reason, value.location);
+  }
   if (value.kind === "primitive") return value;
   if (value.kind === "unknown-primitive") {
     switch (value.primitiveType) {

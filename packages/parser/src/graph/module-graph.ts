@@ -10,7 +10,9 @@ import type {
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isPurePackage } from "../libraries/pure-packages.js";
+import { isAssetPath } from "./asset-module.js";
 import { readAssetModuleSource } from "./asset-modules.js";
+import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
@@ -45,16 +47,21 @@ export class ModuleGraph {
   private readonly resolveExternalPackages: boolean;
   private readonly externalPackageAllowList: Set<string>;
   private readonly externalScopeAllowList: Set<string>;
+  /** `prefix-*` entries: unscoped workspace packages sharing a name prefix. */
+  private readonly externalPackagePrefixes: string[];
 
   constructor(options: ModuleGraphOptions) {
     this.resolver = options.resolver;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
     const allowList = options.externalPackageAllowList ?? [];
-    this.externalPackageAllowList = new Set(allowList.filter((name) => !name.endsWith("/*")));
+    this.externalPackageAllowList = new Set(allowList.filter((name) => !name.endsWith("*")));
     this.externalScopeAllowList = new Set(
       allowList.filter((name) => name.endsWith("/*")).map((name) => name.slice(0, -2)),
     );
+    this.externalPackagePrefixes = allowList
+      .filter((name) => name.endsWith("*") && !name.endsWith("/*"))
+      .map((name) => name.slice(0, -1));
   }
 
   get loadedModuleCount(): number {
@@ -179,7 +186,8 @@ export class ModuleGraph {
     if (isCompilerHelperPackage(packageName) || isModeledLibraryPackage(packageName)) return false;
     if (
       this.externalPackageAllowList.has(packageName) ||
-      this.externalScopeAllowList.has(packageName.split("/")[0])
+      this.externalScopeAllowList.has(packageName.split("/")[0]) ||
+      this.externalPackagePrefixes.some((prefix) => packageName.startsWith(prefix))
     ) {
       return true;
     }
@@ -198,7 +206,13 @@ export class ModuleGraph {
       imported.kind !== "namespace" &&
       isModeledLibraryExport(specifier, describeImportedName(imported))
     ) {
-      return { kind: "external", packageName: resolution.packageName, imported, specifier };
+      return {
+        kind: "external",
+        packageName: resolution.packageName,
+        imported,
+        specifier,
+        filePath: resolution.filePath,
+      };
     }
     const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
@@ -210,6 +224,12 @@ export class ModuleGraph {
       case "builtin":
         return externalSymbol(target, imported, specifier);
       case "internal":
+        if (isCssModulePath(target.filePath)) {
+          return { kind: "stylesheet", filePath: target.filePath, imported };
+        }
+        if (isAssetPath(target.filePath)) {
+          return { kind: "asset", filePath: target.filePath, imported };
+        }
         return { kind: "unresolved", reason: `unsupported module ${target.filePath}` };
       case "unresolved":
         return { kind: "unresolved", reason: `cannot resolve "${specifier}": ${target.error}` };
@@ -276,6 +296,7 @@ export class ModuleGraph {
             return {
               kind: "expression",
               module,
+              exportedName,
               expression: entry.expression,
               isClientReference: false,
             };
@@ -348,4 +369,5 @@ const externalSymbol = (
   packageName: target.kind === "external" ? target.packageName : target.specifier,
   imported,
   specifier,
+  filePath: target.kind === "external" ? target.filePath : null,
 });

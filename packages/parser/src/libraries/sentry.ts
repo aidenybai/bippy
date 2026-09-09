@@ -53,6 +53,16 @@ const withProfiler = (): StaticValue =>
     return stubValue(wrapped);
   });
 
+const withSentryRouting = (): StaticValue =>
+  nativeFunction("withSentryRouting", ([route]) => {
+    const inner = toElementType(route, null);
+    const wrapped: StubComponent = {
+      displayName: `sentryRoute(${getComponentDisplayName(inner, undefined)})`,
+      render: (props) => element(inner, objectValue([{ kind: "spread", value: props }])),
+    };
+    return stubValue(wrapped);
+  });
+
 const getComponentDisplayName = (
   type: StaticElementType,
   options: StaticValue | undefined,
@@ -91,6 +101,8 @@ export const sentryValue: ExternalValueProvider = (specifier, importedName) => {
       return stubValue(PROFILER_STUB);
     case "withProfiler":
       return withProfiler();
+    case "withSentryRouting":
+      return withSentryRouting();
     default:
       return null;
   }

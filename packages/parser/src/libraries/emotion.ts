@@ -3,10 +3,7 @@ import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
-  describeElementType,
-  getKnownObjectKeys,
   getObjectProperty,
-  getStubDisplayName,
   getTruthiness,
   isNullish,
   listValue,
@@ -17,6 +14,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { hasProperty } from "../evaluate/has-property.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
@@ -32,6 +30,7 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
+import { describeTag } from "./component-name.js";
 
 // Emotion's fiber-visible surface. A styled component is a `forwardRef`
 // (`withEmotionCache`) rendering a null-returning placeholder (the styles go to
@@ -57,6 +56,7 @@ export const EMOTION_PACKAGES = [
 
 const LABEL_PLUGIN_PACKAGES = [
   "@emotion/babel-plugin",
+  "@emotion/babel-preset-css-prop",
   "@swc/plugin-emotion",
   "babel-plugin-emotion",
 ];
@@ -197,38 +197,6 @@ const forwardsProp = (
     if (verdict === null) isUnknown = true;
   }
   return isUnknown ? null : true;
-};
-
-const getStringProperty = (
-  properties: ReadonlyMap<string, StaticValue>,
-  key: string,
-): string | null => {
-  const value = properties.get(key);
-  return value?.kind === "primitive" && typeof value.value === "string" ? value.value : null;
-};
-
-/** `tag.displayName || tag.name || 'Component'`: wrapper objects have no `name`. */
-const describeTag = (tag: StaticValue): string => {
-  const type = toElementType(tag, null);
-  switch (type.kind) {
-    case "host":
-      return type.tagName;
-    case "function":
-    case "class":
-      return (
-        getStringProperty(type.component.properties, "displayName") ??
-        type.component.name ??
-        "Component"
-      );
-    case "memo":
-    case "forward-ref":
-    case "lazy":
-      return type.displayName ?? "Component";
-    case "stub":
-      return getStubDisplayName(type.stub) ?? "Component";
-    default:
-      return describeElementType(type);
-  }
 };
 
 const forwardedProps = (
@@ -434,8 +402,8 @@ const cssPropStub = (runtime: EmotionRuntime): StubComponent => ({
 
 const hasCssProp = (props: StaticValue): boolean | null => {
   if (isNullish(props) === true) return false;
-  if (props.kind !== "object") return null;
-  return getKnownObjectKeys(props)?.includes("css") ?? null;
+  const verdict = hasProperty(primitiveValue("css"), props);
+  return verdict === null ? null : getTruthiness(verdict);
 };
 
 const CSS_PROP_STUBS = new WeakMap<EmotionRuntime, StubComponent>();
@@ -535,13 +503,13 @@ const JSX_RUNTIME_SPECIFIERS: ReadonlyMap<string, ReactApi> = new Map([
 export const emotionValue: LibraryValueProvider = (specifier, importedName, project) => {
   const isMacro = specifier.endsWith(MACRO_SUFFIX);
   const packageName = isMacro ? specifier.slice(0, -MACRO_SUFFIX.length) : specifier;
-  if (packageName === "@emotion/styled") {
+  if (packageName === "@emotion/styled" || packageName === "@emotion/styled/base") {
     if (importedName !== "default") return null;
     return styledValue({
       hasAutoLabel:
         isMacro ||
         LABEL_PLUGIN_PACKAGES.some((pluginName) => project.hasDeclaredDependency(pluginName)),
-      runtime: readRuntime(project, packageName),
+      runtime: readRuntime(project, "@emotion/styled"),
     });
   }
   if (packageName === "@emotion/core") return reactValue(importedName, EMOTION_10);
@@ -549,8 +517,11 @@ export const emotionValue: LibraryValueProvider = (specifier, importedName, proj
     return reactValue(importedName, readRuntime(project, packageName));
   }
   const runtimeApi = JSX_RUNTIME_SPECIFIERS.get(specifier);
-  if (runtimeApi !== undefined && (importedName === "jsx" || importedName === "jsxs")) {
-    return jsxFactory(runtimeApi, readRuntime(project, "@emotion/react"));
+  if (runtimeApi !== undefined) {
+    if (importedName === "jsx" || importedName === "jsxs" || importedName === "jsxDEV") {
+      return jsxFactory(runtimeApi, readRuntime(project, "@emotion/react"));
+    }
+    if (importedName === "Fragment") return { kind: "react-api", api: "Fragment" };
   }
   if (specifier === "@emotion/is-prop-valid" && importedName === "default") {
     return nativeFunction("isPropValid", ([key]) =>

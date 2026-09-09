@@ -134,6 +134,28 @@ const Immediate = () => {
   );
 };
 
+/** The awaited promise comes from outside the analysis; the update after it lands late but with a known value. */
+const Deferred = () => {
+  const [items, setItems] = useState<string[]>([]);
+  useEffect(() => {
+    const run = async () => {
+      await navigator.clipboard.readText();
+      setItems(["clip", "board"]);
+    };
+    run();
+  }, []);
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item}>
+          {item}
+          <span />
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 export default function AsyncEffects() {
   return (
     <main>
@@ -143,6 +165,7 @@ export default function AsyncEffects() {
       <Failing />
       <Returned />
       <Immediate />
+      <Deferred />
     </main>
   );
 }

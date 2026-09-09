@@ -1,8 +1,12 @@
 import type {
   StaticListValue,
+  StaticNativeFunctionValue,
   StaticNativeObjectValue,
   StaticObjectEntry,
+  StaticUnknownPrimitiveValue,
   StaticValue,
+  StringComposition,
+  StubRenderTools,
 } from "../types.js";
 import { element, nativeFunction } from "../frameworks/stubs.js";
 import type { HostDocument } from "../host/host-document.js";
@@ -11,13 +15,16 @@ import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import {
+  branchValue,
   getKnownObjectKeys,
   getObjectProperty,
   hasDefiniteItems,
+  isSameComposition,
   listValue,
   nativeObjectValue,
   objectValue,
   primitiveValue,
+  UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
@@ -29,6 +36,72 @@ const uncertainNativeObjects = new WeakSet<object>();
 
 /** Properties the program adds to DOM nodes (`node.__lexicalKey`): interpreter values that never reach the native object. */
 const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
+
+/** Expandos written under a key composed from a dynamic string (`node[\`__lexicalKey_${editorKey}\`]`). */
+const composedExpandoProperties = new WeakMap<object, ComposedExpando[]>();
+
+interface ComposedExpando {
+  key: StringComposition;
+  value: StaticValue;
+}
+
+const matchesComposition = (name: string, composition: StringComposition): boolean =>
+  name.length >= composition.prefix.length + composition.suffix.length &&
+  name.startsWith(composition.prefix) &&
+  name.endsWith(composition.suffix);
+
+const hasMemberMatching = (
+  object: StaticNativeObjectValue,
+  composition: StringComposition,
+): boolean => {
+  for (const name of expandoProperties.get(object.value)?.keys() ?? []) {
+    if (matchesComposition(name, composition)) return true;
+  }
+  for (
+    let prototype: object | null = object.value;
+    prototype !== null;
+    prototype = Object.getPrototypeOf(prototype)
+  ) {
+    if (
+      Reflect.ownKeys(prototype).some(
+        (name) => typeof name === "string" && matchesComposition(name, composition),
+      )
+    )
+      return true;
+  }
+  return false;
+};
+
+const isEitherPrefix = (left: string, right: string): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isEitherSuffix = (left: string, right: string): boolean =>
+  left.endsWith(right) || right.endsWith(left);
+
+/** Whether some string could read as both compositions, so a write under one may be read under the other. */
+const mayOverlap = (left: StringComposition, right: StringComposition): boolean =>
+  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
+
+const findComposedExpando = (
+  object: StaticNativeObjectValue,
+  composition: StringComposition,
+): ComposedExpando | undefined =>
+  composedExpandoProperties
+    .get(object.value)
+    ?.find((expando) => isSameComposition(expando.key, composition));
+
+const getOverlappingComposedExpandos = (
+  object: StaticNativeObjectValue,
+  composition: StringComposition,
+): ComposedExpando[] =>
+  (composedExpandoProperties.get(object.value) ?? []).filter((expando) =>
+    mayOverlap(expando.key, composition),
+  );
+
+const mayReadComposedExpando = (object: StaticNativeObjectValue, name: string): boolean =>
+  composedExpandoProperties
+    .get(object.value)
+    ?.some((expando) => matchesComposition(name, expando.key)) === true;
 
 /**
  * Members whose runtime value depends on layout, which the static document
@@ -198,6 +271,26 @@ export interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
+/** Items a callee appended to an array argument (`pathToRegexp(path, keys)`), written back to the list it stood for. */
+const writeBackAppendedItems = (
+  args: StaticValue[],
+  natives: unknown[],
+  name: string,
+  host: HostDocument | null,
+  tools: StubRenderTools,
+): void => {
+  args.forEach((argument, index) => {
+    const native = natives[index];
+    if (argument.kind !== "list" || !Array.isArray(native)) return;
+    const appended = native
+      .slice(argument.items.length)
+      .map((item, offset) =>
+        fromNativeValue(item, `${name}()[${argument.items.length + offset}]`, host),
+      );
+    if (appended.length > 0) tools.pushItems(argument, appended);
+  });
+};
+
 /**
  * `callee` as a function the interpreter may invoke: it runs natively once every
  * argument is known, and yields `onUncertain(args)` otherwise. Exceptions are
@@ -210,17 +303,26 @@ export const pureNativeFunction = (
   thisValue: unknown,
   host: HostDocument | null,
   onUncertain: NativeCallFallback,
-): StaticValue =>
-  nativeFunction(name, (args, tools) => {
+): StaticNativeFunctionValue => ({
+  kind: "native-function",
+  name,
+  call: (args, tools) => {
     const natives = toNativeArguments(args, host);
     if (natives === null) {
       for (const argument of args) tools.markEscaped(argument);
       return onUncertain(args);
     }
-    return guardNativeCall(name, () =>
-      fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host),
-    );
-  });
+    return guardNativeCall(name, () => {
+      const result = fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
+      writeBackAppendedItems(args, natives, name, host, tools);
+      return result;
+    });
+  },
+  getOwnProperty: (key) =>
+    Object.prototype.propertyIsEnumerable.call(callee, key)
+      ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
+      : undefined,
+});
 
 const isReactElementTag = (tag: unknown): boolean =>
   typeof tag === "symbol" &&
@@ -332,6 +434,9 @@ export const getNativeObjectMember = (
   const name = describeMember(object, key);
   const expando = expandoProperties.get(object.value)?.get(key);
   if (expando) return expando;
+  if (mayReadComposedExpando(object, key)) {
+    return unknownValue(`${name} may be a property written under a dynamic key`);
+  }
   if (uncertainNativeObjects.has(object.value)) {
     return unknownValue(`${name} after a mutation on dynamic arguments`);
   }
@@ -385,6 +490,66 @@ export const deleteNativeObjectMember = (object: StaticNativeObjectValue, key: s
   expandoProperties.get(object.value)?.delete(key);
 };
 
+export const getNativeObjectComposedMember = (
+  object: StaticNativeObjectValue,
+  key: StaticUnknownPrimitiveValue,
+): StaticValue => {
+  const name = `${getNativeInterfaceName(object.value)}[${key.reason}]`;
+  if (!key.composition) return unknownValue(`${name}: dynamic key`);
+  const expando = findComposedExpando(object, key.composition);
+  if (expando) return expando.value;
+  if (uncertainNativeObjects.has(object.value)) {
+    return unknownValue(`${name} after a mutation on dynamic arguments`);
+  }
+  const overlapping = getOverlappingComposedExpandos(object, key.composition);
+  if (overlapping.length > 0 || hasMemberMatching(object, key.composition)) {
+    return unknownValue(`${name}: dynamic key`);
+  }
+  return UNDEFINED_VALUE;
+};
+
+export const setNativeObjectComposedMember = (
+  object: StaticNativeObjectValue,
+  key: StaticUnknownPrimitiveValue,
+  value: StaticValue,
+): void => {
+  if (!key.composition || hasMemberMatching(object, key.composition)) {
+    uncertainNativeObjects.add(object.value);
+    return;
+  }
+  const expando = findComposedExpando(object, key.composition);
+  if (expando) {
+    expando.value = value;
+    return;
+  }
+  for (const overlapping of getOverlappingComposedExpandos(object, key.composition)) {
+    overlapping.value = branchValue(
+      [overlapping.value, value],
+      "a write under a dynamic key may have replaced it",
+    );
+  }
+  let expandos = composedExpandoProperties.get(object.value);
+  if (!expandos) {
+    expandos = [];
+    composedExpandoProperties.set(object.value, expandos);
+  }
+  expandos.push({ key: key.composition, value });
+};
+
+export const deleteNativeObjectComposedMember = (
+  object: StaticNativeObjectValue,
+  key: StaticUnknownPrimitiveValue,
+): void => {
+  const expandos = composedExpandoProperties.get(object.value);
+  if (!expandos) return;
+  if (!key.composition) {
+    if (expandos.length > 0) uncertainNativeObjects.add(object.value);
+    return;
+  }
+  const index = expandos.findIndex((expando) => isSameComposition(expando.key, key.composition));
+  if (index !== -1) expandos.splice(index, 1);
+};
+
 export const hasNativeObjectMember = (
   object: StaticNativeObjectValue,
   key: string | symbol,
@@ -396,7 +561,11 @@ export const hasNativeObjectMember = (
 export const getNativeOwnEntries = (
   object: StaticNativeObjectValue,
 ): [key: string, value: StaticValue][] | null => {
-  if (uncertainNativeObjects.has(object.value)) return null;
+  if (
+    uncertainNativeObjects.has(object.value) ||
+    (composedExpandoProperties.get(object.value)?.length ?? 0) > 0
+  )
+    return null;
   const name = getNativeInterfaceName(object.value);
   return [
     ...Object.entries(object.value).map(([key, item]): [string, StaticValue] => [

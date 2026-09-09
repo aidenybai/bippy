@@ -19,13 +19,10 @@ import { hasNativeObjectMember } from "./native-values.js";
 import {
   branchValue,
   FALSE_VALUE,
-  getKnownObjectKeys,
-  getKnownObjectSymbols,
   getPropertyName,
-  getSymbolPropertyKey,
   hasDefiniteItems,
+  hasOwnKey,
   isIndefiniteItem,
-  isSymbolPropertyKey,
   TRUE_VALUE,
   primitiveValue,
   thrownValue,
@@ -40,12 +37,9 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
-const SYMBOL_KEY_PREFIX = "@@Symbol.";
-
-const toRuntimePropertyKey = (name: string): string | symbol => {
-  if (!name.startsWith(SYMBOL_KEY_PREFIX)) return name;
-  const wellKnown = Reflect.get(Symbol, name.slice(SYMBOL_KEY_PREFIX.length));
-  return typeof wellKnown === "symbol" ? wellKnown : name;
+const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
+  const languageKey = toLanguagePropertyKey(name);
+  return languageKey !== null && languageKey in intrinsic;
 };
 
 /** Own keys every function object has without source assigning them; arrows have no `prototype`. */
@@ -103,16 +97,11 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     case "element":
       return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;
     case "object": {
-      const keys = isSymbolPropertyKey(name)
-        ? getKnownObjectSymbols(target)?.map(getSymbolPropertyKey)
-        : getKnownObjectKeys(target);
-      if (!keys) return null;
-      if (keys.includes(name)) return TRUE_VALUE;
+      const isOwn = hasOwnKey(target, name);
+      if (isOwn === null) return null;
+      if (isOwn) return TRUE_VALUE;
       if (target.prototype) return hasNamedProperty(name, target.prototype);
-      const languageKey = toLanguagePropertyKey(name);
-      return languageKey !== null && languageKey in (getPrototypeWitness(target) ?? {})
-        ? TRUE_VALUE
-        : FALSE_VALUE;
+      return hasIntrinsicMember(getPrototypeWitness(target) ?? {}, name) ? TRUE_VALUE : FALSE_VALUE;
     }
     case "function":
     case "class": {
@@ -120,7 +109,9 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         target.kind === "class"
           ? getStaticProperty(target, name) !== null
           : target.properties.has(name);
-      return isOwn || isIntrinsicFunctionKey(target, name) || name in Function.prototype
+      return isOwn ||
+        isIntrinsicFunctionKey(target, name) ||
+        hasIntrinsicMember(Function.prototype, name)
         ? TRUE_VALUE
         : FALSE_VALUE;
     }
@@ -131,14 +122,16 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         : FALSE_VALUE;
     }
     case "native-function":
-      return name in Function.prototype ? TRUE_VALUE : FALSE_VALUE;
+      return hasIntrinsicMember(Function.prototype, name) || target.getOwnProperty?.(name)
+        ? TRUE_VALUE
+        : FALSE_VALUE;
     case "global": {
       const witness = getPrototypeWitness(target);
       if (witness === null) return null;
-      return toRuntimePropertyKey(name) in witness ? TRUE_VALUE : FALSE_VALUE;
+      return hasIntrinsicMember(witness, name) ? TRUE_VALUE : FALSE_VALUE;
     }
     case "list": {
-      if (name in Array.prototype) return TRUE_VALUE;
+      if (hasIntrinsicMember(Array.prototype, name)) return TRUE_VALUE;
       const index = Number(name);
       if (!Number.isInteger(index) || index < 0) return FALSE_VALUE;
       const isReachable = target.items.slice(0, index + 1).every((item) => !isIndefiniteItem(item));

@@ -37,6 +37,12 @@ const flattened = ([] as number[]).concat.apply([], [[1], [2, 3]]);
 const shout = "".toUpperCase.call("abc");
 const firstOf = [].at.bind(["x", "y"], 0);
 
+const collect = function (this: unknown, ...values: number[]) {
+  return (
+    [].slice.call(arguments).length + [].map.apply(values, [(value: number) => value * 2]).length
+  );
+};
+
 export default function BoundFunctions() {
   return (
     <ul>
@@ -72,6 +78,12 @@ export default function BoundFunctions() {
       </li>
       <li>
         {firstOf()} <em>ok</em>
+      </li>
+      <li>
+        {collect(4, 5, 6)} <em>ok</em>
+      </li>
+      <li>
+        {[].slice.call(["a", "b", "c"], 1).join("")} <em>ok</em>
       </li>
     </ul>
   );
