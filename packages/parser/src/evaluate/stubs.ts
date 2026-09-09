@@ -44,6 +44,9 @@ export const nativeFunction = (
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue,
 ): StaticValue => ({ kind: "native-function", name, call });
 
+export const noopFunction = (name: string): StaticValue =>
+  nativeFunction(name, () => UNDEFINED_VALUE);
+
 /** `target` with properties computed on access (a store's `values`), as `new Proxy(target, { get })` would. */
 export const lazyProperties = (
   target: StaticValue,

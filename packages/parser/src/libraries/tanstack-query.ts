@@ -3,13 +3,16 @@ import {
   NULL_VALUE,
   TRUE_VALUE,
   UNDEFINED_VALUE,
+  booleanValue,
   branchValue,
   capturedValue,
   compareIdentity,
   getObjectProperty,
   getTruthiness,
   hasDefiniteItems,
+  isFunctionValue,
   isNullish,
+  isUndefinedValue,
   listValue,
   mapValue,
   objectFromRecord,
@@ -62,28 +65,20 @@ const unknownBoolean = (reason: string): StaticValue =>
 const unknownCount = (reason: string): StaticValue =>
   branchValue([primitiveValue(0), unknownPrimitiveValue("number", reason)], reason);
 
-const isCallable = (value: StaticValue): boolean =>
-  value.kind === "function" || value.kind === "native-function";
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
-
-const booleanValue = (value: boolean): StaticValue => (value ? TRUE_VALUE : FALSE_VALUE);
-
 const isQueryDisabled = (options: StaticObjectValue, tools: StubRenderTools): boolean | null => {
   if (compareIdentity(getObjectProperty(options, "queryFn"), SKIP_TOKEN) === true) return true;
   const enabled = getObjectProperty(options, "enabled");
-  const resolved = isCallable(enabled)
+  const resolved = isFunctionValue(enabled)
     ? tools.call(enabled, [unknownValue("the query observed by `enabled`")])
     : enabled;
-  if (isUndefined(resolved)) return false;
+  if (isUndefinedValue(resolved)) return false;
   const truthiness = getTruthiness(resolved);
   return truthiness === null ? null : !truthiness;
 };
 
 const selectData = (options: StaticObjectValue, data: StaticValue, tools: StubRenderTools) => {
   const select = getObjectProperty(options, "select");
-  return isCallable(select) ? tools.call(select, [data]) : data;
+  return isFunctionValue(select) ? tools.call(select, [data]) : data;
 };
 
 const findCapturedQuery = (
@@ -106,7 +101,7 @@ const hasMorePages = (
     options,
     direction === "next" ? "getNextPageParam" : "getPreviousPageParam",
   );
-  if (data.kind !== "object" || !isCallable(getPageParam)) return FALSE_VALUE;
+  if (data.kind !== "object" || !isFunctionValue(getPageParam)) return FALSE_VALUE;
   const pages = getObjectProperty(data, "pages");
   const pageParams = getObjectProperty(data, "pageParams");
   if (!hasDefiniteItems(pages) || !hasDefiniteItems(pageParams)) {
@@ -149,19 +144,19 @@ const capturedQueryResult = (
     captured.data === undefined ? UNDEFINED_VALUE : capturedValue(captured.data, queryName);
   let isPlaceholderData = false;
   const placeholderData = getObjectProperty(options, "placeholderData");
-  if (captured.data === undefined && status === "pending" && !isUndefined(placeholderData)) {
-    const placeholder = isCallable(placeholderData)
+  if (captured.data === undefined && status === "pending" && !isUndefinedValue(placeholderData)) {
+    const placeholder = isFunctionValue(placeholderData)
       ? tools.call(placeholderData, [UNDEFINED_VALUE, UNDEFINED_VALUE])
       : placeholderData;
-    if (!isUndefined(placeholder)) {
+    if (!isUndefinedValue(placeholder)) {
       status = "success";
       data = placeholder;
       isPlaceholderData = true;
     }
   }
   const extra = isInfinite ? capturedInfiniteQueryExtra(options, data, tools) : {};
-  if (!isUndefined(data)) data = selectData(options, data, tools);
-  const hasData = !isUndefined(data);
+  if (!isUndefinedValue(data)) data = selectData(options, data, tools);
+  const hasData = !isUndefinedValue(data);
   const isFetching = captured.fetchStatus === "fetching";
   const isPending = status === "pending";
   const isError = status === "error";
@@ -339,7 +334,7 @@ const useQueries = (hookName: string, project: ProjectContext): StaticValue =>
         ? listValue(queries.items.map((query) => queryResult(itemHook, query, tools, project)))
         : unknownValue(`${hookName} over an unknown list of queries`);
       const combine = getObjectProperty(alternative, "combine");
-      return isCallable(combine) ? tools.call(combine, [results]) : results;
+      return isFunctionValue(combine) ? tools.call(combine, [results]) : results;
     }),
   );
 
@@ -418,7 +413,7 @@ const findCapturedMutation = (
 ): CapturedMutation | null => {
   if (options.kind !== "object") return null;
   const mutationKey = getObjectProperty(options, "mutationKey");
-  const keyless = isUndefined(mutationKey);
+  const keyless = isUndefinedValue(mutationKey);
   const jsonKey = keyless ? undefined : toJsonValue(mutationKey);
   if (!keyless && jsonKey === undefined) return null;
   const matches = project.findMutations(keyless ? null : hashKey(jsonKey));

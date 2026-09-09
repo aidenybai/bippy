@@ -1,3 +1,4 @@
+import { describeError } from "../errors.js";
 import type {
   StaticListValue,
   StaticNativeFunctionValue,
@@ -255,9 +256,6 @@ const isPlainObject = (value: object): boolean => {
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };
-
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
   try {

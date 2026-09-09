@@ -13,8 +13,10 @@ import {
   getObjectAccessor,
   getObjectProperty,
   getTruthiness,
+  isFunctionValue,
   isKnownString,
   isNullish,
+  isUndefinedValue,
   listValue,
   mapValue,
   objectFromRecord,
@@ -161,12 +163,6 @@ const ruleRegistrations = new WeakMap<StaticObjectValue, boolean>();
 
 const reactApi = (api: ReactApi): StaticValue => ({ kind: "react-api", api });
 
-const isUndefined = (value: StaticValue | undefined): boolean =>
-  value === undefined || (value.kind === "primitive" && value.value === undefined);
-
-const isCallable = (value: StaticValue | undefined): value is StaticValue =>
-  value?.kind === "function" || value?.kind === "native-function";
-
 const knownString = (value: StaticValue | undefined): string | null =>
   value !== undefined && isKnownString(value) ? value.value : null;
 
@@ -303,7 +299,7 @@ const readPath = (
     current = readKey(current, key);
     if (isNullish(current) === true) break;
   }
-  return isUndefined(current) ? defaultValue : current;
+  return isUndefinedValue(current) ? defaultValue : current;
 };
 
 /** `set(object, path, value)` on a copy, so the store's previous snapshot stays intact. */
@@ -534,7 +530,7 @@ const getWatch = (
   const name = knownString(names);
   const source = control.isMounted
     ? readStore(control, "formValues")
-    : isUndefined(defaultValue)
+    : isUndefinedValue(defaultValue)
       ? readStore(control, "defaultValues")
       : name !== null
         ? objectFromRecord({ [name]: defaultValue })
@@ -544,7 +540,7 @@ const getWatch = (
 
 const getValues = (control: FormControl, fieldNames: StaticValue | undefined): StaticValue => {
   const values = spreadCopy(readStore(control, control.isMounted ? "formValues" : "defaultValues"));
-  if (fieldNames === undefined || isUndefined(fieldNames)) return values;
+  if (fieldNames === undefined || isUndefinedValue(fieldNames)) return values;
   const name = knownString(fieldNames);
   if (name !== null) return readPath(values, name);
   const names = nameList(fieldNames);
@@ -591,7 +587,7 @@ const runSchema = (
   tools: StubRenderTools,
 ): StaticValue | null => {
   const resolver = getObjectProperty(control.options, "resolver");
-  if (!isCallable(resolver)) return null;
+  if (!isFunctionValue(resolver)) return null;
   const result = tools.callAwaited(resolver, [
     readStore(control, "formValues"),
     getObjectProperty(control.options, "context"),
@@ -634,7 +630,7 @@ const updateValidAndValue = (
   const defaultValue = readPath(
     formValues,
     name,
-    isUndefined(value) ? readPath(readStore(control, "defaultValues"), name) : value,
+    isUndefinedValue(value) ? readPath(readStore(control, "defaultValues"), name) : value,
   );
   writeStore(control, "formValues", writePath(formValues, toPath(name), defaultValue), tools);
   if (control.isMounted) setValid(control, false, tools);
@@ -870,7 +866,7 @@ const register = (
     control.fields.add(name);
     control.names.mount.add(name);
     if (isRegistered) {
-      setDisabledField(control, name, isUndefined(disabled) ? formDisabled : disabled);
+      setDisabledField(control, name, isUndefinedValue(disabled) ? formDisabled : disabled);
     } else {
       updateValidAndValue(control, name, propertyOf(options, "value"), tools);
     }
@@ -901,7 +897,9 @@ const getFieldState = (
   const name = knownString(nameValue);
   if (name === null) return unknownValue(`field state of ${describeValue(nameValue)}`);
   const source =
-    formState === undefined || isUndefined(formState) ? readStore(control, "formState") : formState;
+    formState === undefined || isUndefinedValue(formState)
+      ? readStore(control, "formState")
+      : formState;
   const read = (key: string): StaticValue => readPath(readProperty(source, key, tools), name);
   const truthy = (value: StaticValue, reason: string): StaticValue =>
     booleanValue(getTruthiness(value), reason);
@@ -1108,7 +1106,7 @@ const initialFormState = (
   withDefaultValues: boolean,
 ): StaticObjectValue => {
   const defaultValues = getObjectProperty(props, "defaultValues");
-  const isDefaultsFunction = isCallable(defaultValues);
+  const isDefaultsFunction = isFunctionValue(defaultValues);
   return objectFromRecord({
     submitCount: primitiveValue(0),
     isDirty: FALSE_VALUE,
@@ -1140,7 +1138,7 @@ const initialDefaultValues = (props: StaticObjectValue): StaticValue => {
   const values = getObjectProperty(props, "values");
   const source = orValue(defaultValues, values);
   if (source.kind === "object") return cloneValue(source);
-  if (isCallable(source) || isNullish(source) === true) return objectValue();
+  if (isFunctionValue(source) || isNullish(source) === true) return objectValue();
   return unknownValue(`default values are ${describeValue(source)}`);
 };
 
@@ -1148,14 +1146,14 @@ const handleSubmit = (control: FormControl): StaticValue =>
   nativeFunction("handleSubmit", ([onValid, onInvalid]) =>
     nativeFunction("onSubmit", ([event], tools) => {
       const preventDefault = propertyOf(event, "preventDefault");
-      if (isCallable(preventDefault)) tools.call(preventDefault, []);
+      if (isFunctionValue(preventDefault)) tools.call(preventDefault, []);
       notifyState(control, { isSubmitting: TRUE_VALUE }, tools);
       const errors = runSchema(control, [...control.names.mount], tools);
       const isValid = errors === null ? null : isEmptyObject(errors);
-      if (isValid === true && isCallable(onValid)) {
+      if (isValid === true && isFunctionValue(onValid)) {
         notifyState(control, { errors: objectValue() }, tools);
         tools.callAwaited(onValid, [readStore(control, "formValues"), event ?? UNDEFINED_VALUE]);
-      } else if (isValid === false && isCallable(onInvalid) && errors) {
+      } else if (isValid === false && isFunctionValue(onInvalid) && errors) {
         tools.callAwaited(onInvalid, [errors, event ?? UNDEFINED_VALUE]);
       }
       notifyState(
@@ -1273,7 +1271,7 @@ const createFormControl = (props: StaticObjectValue): FormControl => {
       register: registerFunction,
       handleSubmit: submit,
       watch: nativeFunction("watch", ([name, defaultValue]) =>
-        isCallable(name)
+        isFunctionValue(name)
           ? subscribeValueWatcher(control, {
               callback: name,
               defaultValue: defaultValue ?? UNDEFINED_VALUE,
@@ -1294,7 +1292,7 @@ const createFormControl = (props: StaticObjectValue): FormControl => {
       reset: nativeFunction("reset", ([formValues, options], callTools) => {
         resetForm(
           control,
-          isCallable(formValues)
+          isFunctionValue(formValues)
             ? callTools.call(formValues, [readStore(control, "formValues")])
             : formValues,
           options,
@@ -1306,10 +1304,10 @@ const createFormControl = (props: StaticObjectValue): FormControl => {
         const fieldName = knownString(name);
         if (fieldName === null || !control.fields.has(fieldName)) return UNDEFINED_VALUE;
         const defaultValue = propertyOf(options, "defaultValue");
-        const value = isUndefined(defaultValue)
+        const value = isUndefinedValue(defaultValue)
           ? cloneValue(readPath(readStore(control, "defaultValues"), fieldName))
           : defaultValue;
-        if (!isUndefined(defaultValue)) {
+        if (!isUndefinedValue(defaultValue)) {
           writeStore(
             control,
             "defaultValues",
@@ -1378,7 +1376,7 @@ const toSubscription = (
         : control.proxyFormState,
     isRoot: isTruthy(propertyOf(subscription, "reRenderRoot")),
     notify: (payload, tools) => {
-      if (isCallable(callback)) tools.call(callback, [subscriptionPayload(control, payload)]);
+      if (isFunctionValue(callback)) tools.call(callback, [subscriptionPayload(control, payload)]);
     },
   };
 };
@@ -1461,7 +1459,7 @@ const resolveControl = (
 ): FormControl | null => {
   const explicit = propertyOf(props, "control");
   if (explicit.kind === "object") return formControls.get(explicit) ?? null;
-  if (!isUndefined(explicit)) return null;
+  if (!isUndefinedValue(explicit)) return null;
   const methods = tools.readContext(context);
   const fromContext = propertyOf(methods, "control");
   return fromContext.kind === "object" ? (formControls.get(fromContext) ?? null) : null;
@@ -1473,7 +1471,7 @@ const missingControl = (hook: string, props: StaticValue | undefined): StaticVal
   );
 
 const useForm = nativeFunction("useForm", ([propsArg], tools) => {
-  if (propsArg !== undefined && propsArg.kind !== "object" && !isUndefined(propsArg)) {
+  if (propsArg !== undefined && propsArg.kind !== "object" && !isUndefinedValue(propsArg)) {
     return unknownValue(`useForm options are ${describeValue(propsArg)}`);
   }
   const props = propsArg?.kind === "object" ? propsArg : objectValue();
@@ -1534,7 +1532,7 @@ const useForm = nativeFunction("useForm", ([propsArg], tools) => {
   });
   const values = getObjectProperty(props, "values");
   useEffectHook(tools, "useEffect", [...controlDeps, values], (effectTools) => {
-    if (isUndefined(values)) return;
+    if (isUndefinedValue(values)) return;
     if (instance.lastValues && compareDeeply(values, instance.lastValues) === true) return;
     resetForm(
       control,
@@ -1588,7 +1586,7 @@ const createUseWatch = (context: ContextDefinition): StaticValue =>
       computedValue: null,
     }));
     const applyCompute = (value: StaticValue, computeTools: StubRenderTools): StaticValue =>
-      isCallable(compute) ? computeTools.call(compute, [value]) : value;
+      isFunctionValue(compute) ? computeTools.call(compute, [value]) : value;
     const [value, updateValue] = useStateValue(
       tools,
       applyCompute(getWatch(control, name, instance.defaultValue, false), tools),
@@ -1612,7 +1610,7 @@ const createUseWatch = (context: ContextDefinition): StaticValue =>
               false,
               instance.defaultValue,
             );
-            if (!isCallable(compute)) {
+            if (!isFunctionValue(compute)) {
               notifyTools.call(updateValue, [formValues]);
               return;
             }
@@ -1796,7 +1794,7 @@ const createUseController = (
             writePath(readStore(control, "defaultValues"), toPath(name), optionDefault),
             effectTools,
           );
-          if (isUndefined(readPath(readStore(control, "formValues"), name))) {
+          if (isUndefinedValue(readPath(readStore(control, "formValues"), name))) {
             writeStore(
               control,
               "formValues",
@@ -1833,7 +1831,7 @@ const createControllerStub = (useController: StaticValue): StubComponent => ({
   render: (props, tools) => {
     const render = getObjectProperty(props, "render");
     const controller = tools.call(useController, [props]);
-    return isCallable(render)
+    return isFunctionValue(render)
       ? tools.call(render, [controller])
       : unknownValue(`Controller render prop is ${describeValue(render)}`);
   },
@@ -2018,7 +2016,7 @@ const createUseFieldArray = (context: ContextDefinition): StaticValue =>
         return added && [...items, ...added];
       }),
       remove: arrayMethod("remove", (items, [index]) => {
-        if (index === undefined || isUndefined(index)) return [];
+        if (index === undefined || isUndefinedValue(index)) return [];
         const indexes = index.kind === "list" ? index.items.map(knownIndex) : [knownIndex(index)];
         return indexes.includes(null)
           ? null

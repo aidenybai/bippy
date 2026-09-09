@@ -17,6 +17,9 @@ export class SchemaError extends ParserError {
   }
 }
 
+export const describeError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 export const parseWithSchema = <Output>(
   schema: z.ZodType<Output>,
   value: unknown,

@@ -7,7 +7,7 @@ import {
   objectFromRecord,
   primitiveValue,
 } from "../evaluate/values.js";
-import { lazyProperties, nativeFunction, stubValue } from "../evaluate/stubs.js";
+import { lazyProperties, nativeFunction, noopFunction, stubValue } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
   StaticObjectValue,
@@ -31,8 +31,6 @@ const USE_STATE: StaticReactApiValue = { kind: "react-api", api: "useState" };
 const identity = (name: string): StaticValue =>
   nativeFunction(name, ([first]) => first ?? UNDEFINED_VALUE);
 
-const noop = (name: string): StaticValue => nativeFunction(name, () => UNDEFINED_VALUE);
-
 const callFirst = (name: string): StaticValue =>
   nativeFunction(name, ([first], tools) => (first ? tools.call(first, []) : UNDEFINED_VALUE));
 
@@ -55,7 +53,7 @@ const computed = (): StaticValue =>
       : (derive ?? UNDEFINED_VALUE),
   );
 
-const disposer = (): StaticValue => noop("dispose");
+const disposer = (): StaticValue => noopFunction("dispose");
 
 const reaction = (): StaticValue =>
   nativeFunction("reaction", ([expression, effect, options], tools) => {
@@ -114,7 +112,7 @@ const getMobxExport = (importedName: string): StaticValue | null => {
     case "autorun":
       return autorun();
     case "configure":
-      return noop(importedName);
+      return noopFunction(importedName);
     default:
       return null;
   }
@@ -136,7 +134,7 @@ const getMobxReactExport = (importedName: string): StaticValue | null => {
     case "enableStaticRendering":
     case "useStaticRendering":
     case "observerBatching":
-      return noop(importedName);
+      return noopFunction(importedName);
     case "isUsingStaticRendering":
       return nativeFunction(importedName, () => FALSE_VALUE);
     default:

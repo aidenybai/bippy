@@ -5,6 +5,7 @@ import {
   branchValue,
   getObjectProperty,
   isKnownString,
+  isUndefinedValue,
   listValue,
   objectFromRecord,
   objectValue,
@@ -94,9 +95,6 @@ interface LinguiModel {
 
 const UNKNOWN_TRANSLATION = "translation comes from the runtime message catalog";
 const UNIT_SEPARATOR = "\u001F";
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
 
 const isNull = (value: StaticValue): boolean => value.kind === "primitive" && value.value === null;
 
@@ -228,7 +226,7 @@ const descriptorObject = (descriptor: MessageDescriptor | null): StaticObjectVal
 /** `msg({ message, context })` without an id: the macro adds the id it hashes from them. */
 const withGeneratedId = (descriptor: StaticObjectValue): StaticObjectValue => {
   const message = getObjectProperty(descriptor, "message");
-  if (!isUndefined(getObjectProperty(descriptor, "id")) || !isKnownString(message)) {
+  if (!isUndefinedValue(getObjectProperty(descriptor, "id")) || !isKnownString(message)) {
     return descriptor;
   }
   const context = getObjectProperty(descriptor, "context");
@@ -494,14 +492,14 @@ const createLinguiModel = (catalog: CapturedLinguiCatalog | null): LinguiModel =
       if (render.kind === "function" || render.kind === "native-function") {
         return tools.call(render, [translationProps]);
       }
-      if (!isUndefined(component)) {
+      if (!isUndefinedValue(component)) {
         return element(toElementType(component, null), translationProps);
       }
       const defaultComponent = getObjectProperty(
         asObject(getObjectProperty(props, "lingui")),
         "defaultComponent",
       );
-      return isUndefined(defaultComponent)
+      return isUndefinedValue(defaultComponent)
         ? stubElement(RENDER_FRAGMENT_STUB, { children: translated })
         : element(toElementType(defaultComponent, null), translationProps);
     },

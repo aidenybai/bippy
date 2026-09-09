@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
+import { CorpusRevisionError, NoCommitsError, describeError, parseWithSchema } from "../errors.js";
 import { renderCorpusEntry } from "./render-entry.js";
 import {
   dropInjectedFibers,
@@ -151,9 +151,6 @@ const summarizeRuntime = (capture: BrowserCaptureResult): CorpusRuntimeSummary =
   pageErrors: capture.pageErrors,
   title: capture.title,
 });
-
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);

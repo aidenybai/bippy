@@ -49,6 +49,17 @@ export const primitiveValue = (value: StaticPrimitive): StaticPrimitiveValue => 
   value,
 });
 
+export const booleanValue = (value: boolean): StaticPrimitiveValue =>
+  value ? TRUE_VALUE : FALSE_VALUE;
+
+export const isUndefinedValue = (value: StaticValue | undefined): boolean =>
+  value === undefined || (value.kind === "primitive" && value.value === undefined);
+
+export const isFunctionValue = (
+  value: StaticValue | undefined,
+): value is Extract<StaticValue, { kind: "function" | "native-function" }> =>
+  value?.kind === "function" || value?.kind === "native-function";
+
 export const unknownValue = (
   reason: string,
   location: SourceLocation | null = null,
