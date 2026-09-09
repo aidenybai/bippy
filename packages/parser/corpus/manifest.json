@@ -2952,6 +2952,150 @@
         "tsconfig": "jsconfig.json"
       },
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
+    },
+    {
+      "id": "planka",
+      "repository": "https://github.com/plankanban/planka",
+      "revision": "26b512193a6a726e4de46dcdbf21ddb1c34c365b",
+      "description": "PLANKA client login page (React 18 SPA on react-redux + redux-saga + react-router v7 + semantic-ui-react, Vite dev server proxying to the Sails server over a local PostgreSQL container)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --prefix client --no-audit --no-fund && npm install --prefix server --no-audit --no-fund",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-corpus-planka 54331 planka"],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/planka-setup.sh\""],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/planka-dev.sh\"",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "react-redux",
+          "use-sync-external-store",
+          "use-sync-external-store/*",
+          "@gravity-ui/uikit",
+          "semantic-ui-react",
+          "@fluentui/react-component-ref",
+          "react-is",
+          "react-i18next",
+          "i18next",
+          "i18next-browser-languagedetector",
+          "html-parse-stringify",
+          "void-elements"
+        ]
+      }
+    },
+    {
+      "id": "navidrome",
+      "repository": "https://github.com/navidrome/navidrome",
+      "revision": "bea9715001abc956c712f76bf87cd93fd41bd6f1",
+      "description": "Navidrome UI login page (React 17 SPA on react-admin 3 + Material-UI 4 + react-final-form + redux-saga, hash history, Vite dev server without the Go backend)",
+      "framework": "spa",
+      "workingDirectory": "ui",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm start",
+      "url": "http://localhost:4533/#/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "ui",
+        "entry": "src/index.jsx",
+        "route": "/login",
+        "defines": {
+          "process.env": {}
+        },
+        "externalPackageAllowList": [
+          "react-admin",
+          "ra-core",
+          "ra-ui-materialui",
+          "ra-i18n-polyglot",
+          "@material-ui/*",
+          "react-final-form",
+          "final-form",
+          "react-redux",
+          "react-hotkeys",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "connected-react-router",
+          "history",
+          "react-router-dom",
+          "react-router",
+          "navidrome-music-player",
+          "react-transition-group",
+          "node-polyglot",
+          "warning",
+          "object-assign",
+          "hasown",
+          "has-symbols",
+          "deepmerge",
+          "react-is",
+          "hoist-non-react-statics",
+          "prop-types",
+          "clsx",
+          "@babel/runtime/*",
+          "lodash",
+          "lodash/*",
+          "inflection",
+          "query-string",
+          "react-error-boundary"
+        ]
+      },
+      "notes": "`index.html` is a Go `html/template`; the Vite dev server serves it verbatim, so the inline `window.__APP_CONFIG__ = {{ .AppConfig }}` script is a syntax error and `src/config.js` falls back to its development defaults (`firstTime: false`), exactly as `make dev` behaves before the Go server answers. The Go backend (Go 1.27, cgo/taglib) is not started: the login page issues no request until the form is submitted; `/auth` and `/api` proxy targets are simply unreachable."
+    },
+    {
+      "id": "answer",
+      "repository": "https://github.com/apache/answer",
+      "revision": "3b9f1370612e690a0b7f230f05e688930db4c6d3",
+      "description": "Apache Answer login page (React 18 CRA/react-app-rewired SPA on react-router v7 createBrowserRouter + react-bootstrap + zustand + react-i18next, dev server proxying to the Go backend from the apache/answer image built at this revision with an auto-installed SQLite site)",
+      "framework": "react-router",
+      "workingDirectory": "ui",
+      "install": "cd ui && pnpm install --frozen-lockfile",
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/answer-backend.sh\" bippy-corpus-answer 9080 apache/answer:latest"
+      ],
+      "dev": "pnpm start",
+      "env": {
+        "PORT": "3010",
+        "BROWSER": "none",
+        "CI": "true",
+        "REACT_APP_API_URL": "http://localhost:9080"
+      },
+      "url": "http://localhost:3010/users/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "ui",
+        "entry": "src/index.tsx",
+        "route": "/users/login",
+        "aliases": {
+          "@": "src",
+          "@i18n": "../i18n",
+          "buffer": "buffer"
+        },
+        "envFiles": [".env.development"],
+        "externalPackageAllowList": [
+          "react-bootstrap",
+          "@restart/*",
+          "zustand",
+          "react-i18next",
+          "i18next",
+          "react-helmet-async",
+          "swr",
+          "classnames",
+          "@react-aria/ssr",
+          "uncontrollable",
+          "dom-helpers",
+          "prop-types-extra",
+          "warning",
+          "invariant",
+          "react-transition-group",
+          "html-parse-stringify",
+          "void-elements"
+        ]
+      },
+      "notes": "The `apache/answer:latest` image is built from revision 3b9f137 (v2.0.2), so the Go backend behind the CRA proxy is the exact same commit as the UI; `AUTO_INSTALL` provisions the SQLite site (name `Bippy Corpus`) so `/users/login` renders the real Layout + login form. CRA inlines shell variables over `.env.development`, hence `REACT_APP_API_URL` in `env`."
     }
   ]
 }

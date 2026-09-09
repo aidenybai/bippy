@@ -566,9 +566,12 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
-  /** `navigator.userAgent`, `navigator.language` and `navigator.maxTouchPoints`; absent in older captures. */
+  /** Every name `in navigator` (vendor members such as `userLanguage`); absent in older captures. */
+  navigatorKeys?: string[];
+  /** `navigator.userAgent`, `navigator.language(s)` and `navigator.maxTouchPoints`; absent in older captures. */
   userAgent?: string;
   language?: string;
+  languages?: string[];
   maxTouchPoints?: number;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;

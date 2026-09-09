@@ -3,11 +3,13 @@ import type {
   ClassBody,
   ClassFunctionMember,
   ClassMember,
+  ComponentDefinition,
   FunctionLikeNode,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
   StaticNativeFunctionValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
   SuperBinding,
@@ -124,6 +126,13 @@ const bindMethods = (
   seen: Set<string>,
 ): InstanceMembers => {
   const members: InstanceMembers = { constructor: null, fields: [], getters: [] };
+  for (const entry of getPrototypeAssignments(classValue)) {
+    if (entry.kind === "property") {
+      if (seen.has(entry.key)) continue;
+      seen.add(entry.key);
+    }
+    target.entries.push(entry);
+  }
   const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
     const functionValue = interpreter.createFunctionValue(member.functionNode, methodContext, name);
     return functionValue.kind === "function"
@@ -186,8 +195,18 @@ export const getSuperObject = (
   return prototype;
 };
 
-const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
+/** Keyed by the evaluated class body, which a class value and the component definition derived from it share. */
+const classPrototypes = new WeakMap<ClassBody, StaticObjectValue>();
 const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
+/** How many entries each `Class.prototype` held once its own members were bound; later ones were assigned onto it. */
+const prototypeMemberCounts = new WeakMap<StaticObjectValue, number>();
+
+/** Members written onto `Class.prototype` after the class was defined (`Class.prototype.render = …`), which instances inherit like its own. */
+const getPrototypeAssignments = (classValue: StaticClassValue): StaticObjectEntry[] => {
+  const prototype = classPrototypes.get(classValue.body);
+  const memberCount = prototype && prototypeMemberCounts.get(prototype);
+  return prototype && memberCount !== undefined ? prototype.entries.slice(memberCount) : [];
+};
 
 /** The class whose `.prototype` this object is, or null for any other object. */
 export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
@@ -208,12 +227,12 @@ export const getClassPrototypeObject = (
   classValue: StaticClassValue,
   context: EvaluationContext,
 ): StaticObjectValue => {
-  const cached = classPrototypes.get(classValue);
+  const cached = classPrototypes.get(classValue.body);
   if (cached) return cached;
   const superValue = classValue.body.superValue;
   const prototype = objectFromRecord({ constructor: classValue });
   if (superValue?.kind === "class") prototype.constructedBy = superValue;
-  classPrototypes.set(classValue, prototype);
+  classPrototypes.set(classValue.body, prototype);
   prototypeOwners.set(prototype, classValue);
   const seen = new Set<string>();
   for (const current of collectClassChain(classValue)) {
@@ -225,6 +244,7 @@ export const getClassPrototypeObject = (
       );
     }
   }
+  prototypeMemberCounts.set(prototype, prototype.entries.length);
   return prototype;
 };
 
@@ -262,6 +282,20 @@ export const getStaticProperty = (
     if (property) return property;
   }
   return null;
+};
+
+/**
+ * `Component.key` as React reads statics such as `defaultProps`: the component's
+ * own property, or for a class one inherited through the constructor chain.
+ */
+export const getComponentProperty = (
+  component: ComponentDefinition,
+  key: string,
+): StaticValue | null => {
+  const own = component.properties.get(key);
+  if (own) return own;
+  const superValue = component.classBody?.superValue;
+  return superValue?.kind === "class" ? getStaticProperty(superValue, key) : null;
 };
 
 /** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */

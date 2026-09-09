@@ -12,6 +12,7 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import {
   createDomHostDocument,
   ensureDomGlobals,
@@ -102,7 +103,10 @@ export class StaticRenderer {
     const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
     this.graph = new ModuleGraph({
       resolver: this.resolver,
-      sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+      sourceFileCache: new SourceFileCache([
+        ...(svgrTransform ? [svgrTransform] : []),
+        ...createYamlSourceTransforms(rootDirectory),
+      ]),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
     });

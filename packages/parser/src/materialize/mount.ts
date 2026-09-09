@@ -40,10 +40,9 @@ export const mountNode = async (
   });
   const uncaughtErrors: unknown[] = [];
   const caughtErrors: unknown[] = [];
-  const root = runtime.domClient.createRoot(container, {
+  const root = runtime.createRoot(container, {
     onUncaughtError: (error) => uncaughtErrors.push(error),
     onCaughtError: (error) => caughtErrors.push(error),
-    onRecoverableError: () => {},
   });
   const { error: consoleError, warn: consoleWarn } = console;
   // HACK: React DOM's dev warnings (missing keys on materialized lists, DOM nesting

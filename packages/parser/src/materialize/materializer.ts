@@ -1,6 +1,7 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
+  getComponentProperty,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
@@ -371,22 +372,22 @@ const textContentToNull = (value: StaticValue): StaticValue => {
 };
 
 const getComponentDisplayName = (component: ComponentDefinition): string | null => {
-  const displayName = component.properties.get("displayName");
+  const displayName = getComponentProperty(component, "displayName");
   if (displayName?.kind === "primitive" && typeof displayName.value === "string")
     return displayName.value;
   return component.name;
 };
 
 const hasDefaultProps = (component: ComponentDefinition): boolean => {
-  const defaults = component.properties.get("defaultProps");
-  return defaults !== undefined && isNonNullish(defaults);
+  const defaults = getComponentProperty(component, "defaultProps");
+  return defaults !== null && isNonNullish(defaults);
 };
 
 const applyDefaultProps = (
   component: ComponentDefinition,
   props: StaticObjectValue,
 ): StaticObjectValue => {
-  const defaults = component.properties.get("defaultProps");
+  const defaults = getComponentProperty(component, "defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
   return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
 };

@@ -126,6 +126,7 @@ import {
   constructClassInstance,
   getClassLength,
   getClassPrototypeObject,
+  getComponentProperty,
   getFunctionLength,
   getStaticProperty,
   getSuperObject,
@@ -404,6 +405,12 @@ const isAnonymousFunctionOrClass = (node: Expression): boolean => {
       return false;
   }
 };
+
+/** A `const f = () => {}` closes over its module like a declaration and creates nothing else. */
+const isClosureBinding = (binding: TopLevelBinding): boolean =>
+  binding.kind === "variable" &&
+  binding.declarationKind === "const" &&
+  isFunctionLikeExpression(binding.init);
 
 /** Callees that ignore `this`: one call covers every receiver alternative that resolves to them. */
 const isReceiverIndependent = (callee: StaticValue): boolean =>
@@ -946,7 +953,7 @@ export class Interpreter {
     if (!binding) return null;
     const cached = this.getModuleValues(module).get(name);
     if (cached) return cached === IN_PROGRESS ? null : cached;
-    return binding.kind === "function" || binding.kind === "class"
+    return binding.kind === "function" || binding.kind === "class" || isClosureBinding(binding)
       ? this.evaluateDeclaredBinding(module, binding)
       : null;
   }
@@ -1505,6 +1512,21 @@ export class Interpreter {
       : !windowKeys.includes(name);
   }
 
+  /** A member the captured page's `navigator` lacked (vendor properties such as `userLanguage`). */
+  private isAbsentHostMember(
+    objectName: string,
+    key: string,
+    environment: RenderEnvironment | null,
+  ): boolean {
+    const navigatorKeys = this.pageState?.navigatorKeys;
+    return (
+      environment !== "server" &&
+      navigatorKeys !== undefined &&
+      this.getRealm(environment).normalizeGlobalName(objectName) === "navigator" &&
+      !navigatorKeys.includes(key)
+    );
+  }
+
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
@@ -1554,6 +1576,10 @@ export class Interpreter {
         return this.pageState.language === undefined
           ? null
           : primitiveValue(this.pageState.language);
+      case "navigator.languages":
+        return this.pageState.languages === undefined
+          ? null
+          : listValue(this.pageState.languages.map((language) => primitiveValue(language)));
       case "navigator.maxTouchPoints":
         return this.pageState.maxTouchPoints === undefined
           ? null
@@ -2508,7 +2534,7 @@ export class Interpreter {
         return prototypeMember(receiver, Object.prototype, key);
       case "function":
       case "class": {
-        const property = type.component.properties.get(key);
+        const property = getComponentProperty(type.component, key);
         if (property) return property;
         if (key === "name") return primitiveValue(type.component.name ?? "");
         if (type.kind === "class" || FUNCTION_OWN_KEYS.has(key)) {
@@ -2728,6 +2754,7 @@ export class Interpreter {
           return primitiveValue(intrinsic[key]);
         const declaredMember = this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
+        if (this.isAbsentHostMember(object.name, key, context.environment)) return UNDEFINED_VALUE;
         const isOpenMember =
           !isCallableProtocolKey(key) &&
           this.getRealm(context.environment).hasGlobal(object.name) &&
@@ -2793,8 +2820,9 @@ export class Interpreter {
           : this.callValue(trap, [object.target, primitiveValue(key), object], context, location);
       }
       case "unknown":
-        if (object === CHAIN_SHORT_CIRCUIT) return object;
-        return object.thrown ? object : unknownValue(object.reason, location);
+        if (object === CHAIN_SHORT_CIRCUIT || object.thrown) return object;
+        if (isModeledOpaqueMethodName(key)) return { kind: "method", receiver: object, name: key };
+        return unknownValue(object.reason, location);
     }
   }
 

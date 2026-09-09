@@ -10,6 +10,7 @@ import type {
   ReactApi,
   SourceLocation,
   StaticElementType,
+  StaticElementValue,
   StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticValue,
@@ -308,27 +309,46 @@ const mapUncertainChildren = (
   };
 };
 
+/** `cloneElement(object)` reads `type`, `key` and `props` off any non-nullish object, element or not (react/src/jsx/ReactJSXElement.js). */
+const toCloneSource = (
+  element: StaticValue,
+  location: SourceLocation | null,
+): StaticElementValue | null => {
+  if (element.kind === "element") return element;
+  if (element.kind !== "object") return null;
+  const type = getObjectProperty(element, "type");
+  const key = getObjectProperty(element, "key");
+  return {
+    kind: "element",
+    type: toElementType(type, null),
+    key: isNullish(key) === true ? null : key,
+    props: objectValue([{ kind: "spread", value: getObjectProperty(element, "props") }]),
+    location,
+    environment: null,
+  };
+};
+
 const cloneElement = (
   element: StaticValue,
   props: StaticValue | undefined,
   children: StaticValue[],
   location: SourceLocation | null,
 ): StaticValue => {
-  if (element.kind !== "element")
-    return unknownValue(`cloneElement of ${describeValue(element)}`, location);
+  const source = toCloneSource(element, location);
+  if (source === null) return unknownValue(`cloneElement of ${describeValue(element)}`, location);
   const { entries, key } = propsFromValue(props, true);
-  const merged = objectValue([{ kind: "spread", value: element.props }, ...entries]);
+  const merged = objectValue([{ kind: "spread", value: source.props }, ...entries]);
   if (children.length === 1)
     merged.entries.push({ kind: "property", key: "children", value: children[0] });
   if (children.length > 1)
     merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
   return {
     kind: "element",
-    type: element.type,
-    key: toElementKey(key) ?? element.key,
+    type: source.type,
+    key: toElementKey(key) ?? source.key,
     props: merged,
-    location: element.location,
-    environment: element.environment,
+    location: source.location,
+    environment: source.environment,
   };
 };
 

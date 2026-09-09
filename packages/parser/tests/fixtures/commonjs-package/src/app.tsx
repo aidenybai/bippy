@@ -5,6 +5,7 @@ import { Spinner, useDelayed } from "umd-kit";
 import urlJoin from "umd-join";
 import { Registry, defaultLimit } from "cjs-statics";
 import { createRegistry, Stack, version as umdVersion } from "umd-return-kit";
+import { Tag, buildKind } from "env-switch-kit";
 
 const registry = new Registry().register("seen").register("caught");
 
@@ -48,6 +49,7 @@ export const App = () => {
         <ul />
       </Panel>
       <Banner tone="info">bundled {version}</Banner>
+      <Tag>{buildKind} build</Tag>
     </LabelContext.Provider>
   );
 };

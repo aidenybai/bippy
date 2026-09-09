@@ -206,6 +206,18 @@ class StaticCollection implements JournaledState<CollectionState> {
       return branchValue([...stored, UNDEFINED_VALUE], reason, this.location);
     }
     const entry = this.find(key);
+    if (this.isExternallyMutable) {
+      const reason = this.describeUncertainty("get");
+      return branchValue(
+        [
+          ...(entry ? [entry.value] : []),
+          unknownValue(reason, this.location),
+          ...(entry?.isDefinite ? [] : [UNDEFINED_VALUE]),
+        ],
+        reason,
+        this.location,
+      );
+    }
     if (!entry) return UNDEFINED_VALUE;
     return entry.isDefinite
       ? entry.value
@@ -218,7 +230,7 @@ class StaticCollection implements JournaledState<CollectionState> {
 
   has(key: StaticValue): StaticValue {
     return mapValue(key, (alternative) => {
-      if (!this.isExact(alternative)) {
+      if (!this.isExact(alternative) || this.isExternallyMutable) {
         return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
       }
       const entry = this.find(alternative);

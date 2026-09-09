@@ -92,6 +92,7 @@ import { createNumberFormat } from "./intl-format.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
+  getCoercedText,
   joinStrings,
   rangedNumberValue,
 } from "./primitive-shapes.js";
@@ -531,6 +532,30 @@ const defineOwnProperties = (
 };
 
 const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+
+const INTRINSIC_PROTOTYPE_GLOBAL = /^([A-Z]\w*)\.prototype$/;
+
+/**
+ * `Object.create(Iterator.prototype)` and the like: an object inheriting an
+ * intrinsic prototype the analysis does not model, whose members are unknown
+ * rather than absent (tslib's `__generator` builds its iterators this way).
+ */
+const getIntrinsicPrototypeObject = (globalName: string): StaticObjectValue | null => {
+  const constructorName = INTRINSIC_PROTOTYPE_GLOBAL.exec(globalName)?.[1];
+  const constructor: unknown = constructorName
+    ? Reflect.get(globalThis, constructorName)
+    : undefined;
+  if (typeof constructor !== "function") return null;
+  const prototype: unknown = constructor.prototype;
+  if (typeof prototype !== "object" || prototype === null) return null;
+  return objectFromRecord(
+    Object.fromEntries(
+      Object.getOwnPropertyNames(prototype)
+        .filter((key) => key !== "constructor")
+        .map((key) => [key, unknownValue(`${globalName}.${key}`, null)]),
+    ),
+  );
+};
 
 /** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
 const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
@@ -1159,12 +1184,18 @@ const callGlobal = (
         const isNull = prototype.kind === "primitive" && prototype.value === null;
         const isIntrinsicPrototype =
           prototype.kind === "global" && INTRINSIC_PROTOTYPE_NAMES.has(prototype.name);
-        if (!isNull && !isIntrinsicPrototype && prototype.kind !== "object")
+        const intrinsicPrototype =
+          prototype.kind === "global" && !isIntrinsicPrototype
+            ? getIntrinsicPrototypeObject(prototype.name)
+            : null;
+        if (!isNull && !isIntrinsicPrototype && !intrinsicPrototype && prototype.kind !== "object")
           return unknownValue(`Object.create with ${describeValue(prototype)}`, location);
         const created: StaticObjectValue =
           prototype.kind === "object"
             ? { ...objectValue(), prototype }
-            : { ...objectValue(), hasNullPrototype: isNull };
+            : intrinsicPrototype
+              ? { ...objectValue(), prototype: intrinsicPrototype }
+              : { ...objectValue(), hasNullPrototype: isNull };
         if (second?.kind === "object") {
           defineOwnProperties(interpreter, created, second, context, location);
         }
@@ -1279,14 +1310,14 @@ const callGlobal = (
         ? unknownPrimitiveValue("string", "JSON.stringify")
         : primitiveValue(JSON.stringify(json));
     }
-    case "JSON.parse":
+    case "JSON.parse": {
+      const text = first ?? UNDEFINED_VALUE;
       if (
-        first?.kind === "primitive" &&
-        typeof first.value === "string" &&
+        text.kind === "primitive" &&
         (second === undefined || (second.kind === "primitive" && second.value === undefined))
       ) {
         try {
-          return jsonValue(JSON.parse(first.value));
+          return jsonValue(JSON.parse(String(text.value)));
         } catch (error) {
           return thrownValue(
             "JSON.parse of invalid JSON",
@@ -1300,6 +1331,7 @@ const callGlobal = (
         }
       }
       return unknownValue("JSON.parse", location);
+    }
     case "structuredClone":
       return (
         (first && args.length === 1 ? structuredCloneValue(first) : null) ??
@@ -1363,6 +1395,27 @@ const callGlobal = (
       break;
   }
   if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
+  if (name === "Intl.getCanonicalLocales") {
+    const natives = toNativeArguments(args, null);
+    if (natives === null) return unknownValue(`${name}() with dynamic arguments`, location);
+    try {
+      return fromNativeValue(
+        Reflect.apply(Intl.getCanonicalLocales, Intl, natives),
+        `${name}()`,
+        null,
+      );
+    } catch (error) {
+      return thrownValue(
+        `${name}() with an invalid language tag`,
+        createErrorValue(
+          "RangeError",
+          [primitiveValue(error instanceof Error ? error.message : String(error))],
+          location,
+        ),
+        location,
+      );
+    }
+  }
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
@@ -1777,6 +1830,10 @@ const callStringMethod = (
     const matched = regExp.exec(receiver);
     return matched ? matchResultValue(matched, receiver) : NULL_VALUE;
   }
+  if (name === "concat") {
+    const texts = args.map(getCoercedText);
+    return texts.every((text) => text !== null) ? primitiveValue(receiver + texts.join("")) : null;
+  }
   if (!allKnown) return null;
   const position = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
   switch (name) {
@@ -1797,6 +1854,8 @@ const callStringMethod = (
           ? receiver.slice(Number(primitiveArgs[0] ?? 0), position)
           : receiver.substring(Number(primitiveArgs[0] ?? 0), position),
       );
+    case "substr":
+      return primitiveValue(receiver.substr(Number(primitiveArgs[0] ?? 0), position));
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "charCodeAt":
@@ -1830,8 +1889,6 @@ const callStringMethod = (
     case "toString":
     case "valueOf":
       return primitiveValue(receiver);
-    case "concat":
-      return primitiveValue(receiver + primitiveArgs.map(String).join(""));
     case "repeat":
       return primitiveValue(receiver.repeat(Number(primitiveArgs[0] ?? 0)));
     case "localeCompare":
