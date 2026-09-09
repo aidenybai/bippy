@@ -1920,6 +1920,183 @@
         "entry": "src/index.tsx",
         "externalPackageAllowList": ["@headlessui/react", "react-modal", "exenv"]
       }
+    },
+    {
+      "id": "shadcn-landing-page",
+      "repository": "https://github.com/leoMirandaa/shadcn-landing-page",
+      "revision": "ae3716dbce5c8a26815222bb743994b5717938f1",
+      "description": "shadcn/ui landing page template (Vite SPA, React 18, radix primitives, ThemeProvider over localStorage)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 5000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@radix-ui/*", "@floating-ui/*", "lucide-react"]
+      }
+    },
+    {
+      "id": "shadcn-landing-page-nobruf",
+      "repository": "https://github.com/nobruf/shadcn-landing-page",
+      "revision": "ec8e18e8ed56ed6636023ced09948515c19258cc",
+      "description": "shadcn/ui landing page template (Next 14 app router, next-themes, radix primitives)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@radix-ui/*", "@floating-ui/*", "lucide-react", "next-themes"]
+      }
+    },
+    {
+      "id": "magicui-portfolio",
+      "repository": "https://github.com/magicuidesign/portfolio",
+      "revision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+      "description": "Magic UI portfolio template (Next 16 app router, motion, next-themes, content-collections blog)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm --ignore-workspace dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "motion",
+          "framer-motion",
+          "react-markdown"
+        ]
+      },
+      "notes": "The app has no pnpm-workspace.yaml, so pnpm must not attach the clone to the parser workspace above `.corpus/`."
+    },
+    {
+      "id": "magic-portfolio",
+      "repository": "https://github.com/once-ui-system/magic-portfolio",
+      "revision": "2a55890c38f18e0ad1e267748373bfb703ce146a",
+      "description": "Once UI Magic Portfolio template (Next 16 app router, @once-ui-system/core design system, MDX content)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["@once-ui-system/*"]
+      }
+    },
+    {
+      "id": "next-landing-starter",
+      "repository": "https://github.com/ixartz/Next-JS-Landing-Page-Starter-Template",
+      "revision": "cd6694e6c69efad1128c1ed732188389182789df",
+      "description": "Next-JS-Landing-Page-Starter-Template (Next 14 pages router, Tailwind, trailingSlash)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/pages",
+        "route": "/"
+      }
+    },
+    {
+      "id": "tremor-dashboard",
+      "repository": "https://github.com/tremorlabs/template-dashboard-oss",
+      "revision": "a20f619680e4582122c331bacf2efdef6daf460f",
+      "description": "Tremor dashboard template overview page (Next 14 app router, Tremor Raw components over radix, recharts, next-themes)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm --ignore-workspace dev",
+      "url": "http://localhost:3000/overview",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/overview",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "next-themes",
+          "@remixicon/react"
+        ]
+      },
+      "notes": "`/` is a permanent redirect to `/overview` in next.config.mjs, so the overview page is captured directly. The app has no pnpm-workspace.yaml, so pnpm must not attach the clone to the parser workspace above `.corpus/`."
+    },
+    {
+      "id": "data-table-filters",
+      "repository": "https://github.com/openstatusHQ/data-table-filters",
+      "revision": "27e165378fa6f58dab0486cd06b078b6956230f2",
+      "description": "openstatus data-table-filters default demo (Next 16 app router, React Compiler, TanStack Table, nuqs + zustand adapters, pnpm + turbo workspace)",
+      "framework": "next-app",
+      "workingDirectory": "apps/web",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/default",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/default",
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "@dtf/registry",
+          "radix-ui",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "next-plausible",
+          "nuqs"
+        ]
+      },
+      "notes": "The `/default` route renders the data table over the checked-in mock dataset without a database; `/infinite` and `/drizzle` need Postgres and are not captured."
+    },
+    {
+      "id": "shadcn-chat",
+      "repository": "https://github.com/jakobhoeg/shadcn-chat",
+      "revision": "47e5f8af020b6eacbd4cbd6ad5f6ff8d60e76aa8",
+      "description": "shadcn-chat www demo (Next 14 app router over the @shadcn-chat/ui workspace package, npm workspaces + turbo)",
+      "framework": "next-app",
+      "workingDirectory": "apps/www",
+      "install": "npm install",
+      "setup": ["npm run build --prefix ../../packages/ui"],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "notes": "apps/www resolves @shadcn-chat/ui from the workspace package's dist, which the turbo dev task does not build; the setup step builds it once.",
+      "static": {
+        "rootDirectory": "apps/www",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "framer-motion"
+        ]
+      }
     }
   ]
 }

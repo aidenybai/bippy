@@ -1494,6 +1494,32 @@ export const callUncertainCallback = (
     null,
   );
 
+const sortListItems = (
+  interpreter: Interpreter,
+  items: StaticValue[],
+  comparator: StaticValue | undefined,
+  context: EvaluationContext,
+): StaticValue[] | null => {
+  if (items.length < 2) return items;
+  if (comparator === undefined) {
+    const primitives: StaticPrimitive[] = [];
+    for (const item of items) {
+      if (item.kind !== "primitive") return null;
+      primitives.push(item.value);
+    }
+    return primitives.sort().map(primitiveValue);
+  }
+  if (!isCallable(comparator)) return null;
+  let isDecidable = true;
+  const sorted = [...items].sort((left, right) => {
+    const verdict = callCallback(interpreter, comparator, [left, right], context);
+    if (verdict.kind === "primitive" && typeof verdict.value === "number") return verdict.value;
+    isDecidable = false;
+    return 0;
+  });
+  return isDecidable ? sorted : null;
+};
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -2092,8 +2118,20 @@ export const evaluateBuiltinCall = (
           receiver.items.map((item, index) => listValue([primitiveValue(index), item])),
         );
       case "sort":
-      case "toSorted":
+      case "toSorted": {
+        if (!isKnownList(receiver)) return receiver;
+        const sorted = sortListItems(interpreter, receiver.items, first, context);
+        if (sorted === null) {
+          return unknownValue(
+            `${name} whose item order is not statically decidable (${first ? describeValue(first) : "default comparison"})`,
+            location,
+          );
+        }
+        if (name === "toSorted") return listValue(sorted);
+        interpreter.recordHeapMutation(receiver);
+        receiver.items.splice(0, receiver.items.length, ...sorted);
         return receiver;
+      }
       case "flat": {
         const items: StaticValue[] = [];
         for (const item of receiver.items) {

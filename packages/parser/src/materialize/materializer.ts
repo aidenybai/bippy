@@ -67,6 +67,7 @@ import {
   UnknownMarker,
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
+import { ServerEnvironmentStamper } from "./server-environment.js";
 
 /**
  * Whether React would take the input for the proxy's `current` props: the same
@@ -447,6 +448,7 @@ export class Materializer {
   private readonly maxElementCount: number;
   private readonly maxRecursionPerComponent: number;
   private readonly serverComponents: boolean;
+  private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
   private isPassivePhasePending = false;
@@ -675,7 +677,22 @@ export class Materializer {
       const serverNode = this.serverElementToNode(element, context, isTopLevel);
       if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
-    return this.createNode(element.type, element.key, element.props, element.location, context);
+    if (!this.isServerEnvironment(element, context)) {
+      return this.createNode(element.type, element.key, element.props, element.location, context);
+    }
+    if (this.isFlightUnwrappedFragment(element)) {
+      return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
+    }
+    const props = this.serverEnvironment.stampProps(element.props);
+    return this.createNode(element.type, element.key, props, element.location, context);
+  }
+
+  /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
+  private isFlightUnwrappedFragment(element: StaticElementValue): boolean {
+    return (
+      element.type.kind === "fragment" &&
+      this.keyToString(element.key, element.location) === undefined
+    );
   }
 
   /**
