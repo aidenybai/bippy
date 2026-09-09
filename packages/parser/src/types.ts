@@ -122,8 +122,16 @@ export type TopLevelBinding =
       span: Span;
     };
 
+/**
+ * The bundle a module is instantiated in. React Server Components resolve
+ * packages with the `react-server` export condition, and a module without a
+ * `"use client"` directive is instantiated once per layer that imports it.
+ */
+export type ModuleLayer = "client" | "react-server";
+
 export interface ModuleRecord {
   filePath: string;
+  layer: ModuleLayer;
   file: ParsedSourceFile;
   /** Leading string directives such as `"use client"` or `"use strict"`. */
   directives: string[];
@@ -188,6 +196,7 @@ export type ResolvedSymbol =
       specifier: string;
       /** The installed file the import resolves to; null when the package is not installed. */
       filePath: string | null;
+      layer: ModuleLayer;
     }
   | { kind: "stylesheet"; filePath: string; imported: ImportedName }
   | {
@@ -367,7 +376,7 @@ export interface StubRenderTools {
   markEscaped: (value: StaticValue) => void;
   /** Runs `task` once the current task's synchronous work ends, as `queueMicrotask` would. */
   queueMicrotask: (task: () => void) => void;
-  /** True while the caller runs at an unknown time relative to the captured commit (past an `await` the analysis cannot see settle, or in such a promise's continuation): the state it updates escapes. */
+  /** True while the caller runs past an `await` the analysis cannot see settle, at an unknown time relative to the captured commit: the state it updates escapes. */
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
@@ -839,6 +848,8 @@ export interface StaticExternalValue {
    * member of one (`useQuery()`, `api.error`), whose truthiness is unknown.
    */
   origin: ExternalValueOrigin;
+  /** The importing module's layer: React's `react-server` build exports a subset of the client one. */
+  layer?: ModuleLayer;
 }
 
 export type ExternalValueOrigin = "binding" | "instance" | "derived";
@@ -976,6 +987,7 @@ export type ReactApi =
   | "useOptimistic"
   | "useActionState"
   | "useMemoCache"
+  | "cache"
   | "startTransition"
   | "createPortal"
   | "flushSync"

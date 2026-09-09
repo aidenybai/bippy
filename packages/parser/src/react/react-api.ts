@@ -1,4 +1,4 @@
-import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
+import type { ModuleLayer, ReactApi, StaticExternalValue, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
 const REACT_DOM_PACKAGES = new Set(["react-dom", "preact/compat"]);
@@ -46,7 +46,36 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "useOptimistic",
   "useActionState",
   "useMemoCache",
+  "cache",
   "startTransition",
+  "jsx",
+  "jsxs",
+  "jsxDEV",
+]);
+
+/** What `react`'s `react-server` build exports (packages/react/src/ReactServer.js plus its jsx runtimes). */
+const REACT_SERVER_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
+  "Children",
+  "Activity",
+  "Fragment",
+  "Profiler",
+  "StrictMode",
+  "Suspense",
+  "ViewTransition",
+  "cloneElement",
+  "createElement",
+  "createRef",
+  "use",
+  "forwardRef",
+  "isValidElement",
+  "lazy",
+  "memo",
+  "useId",
+  "useCallback",
+  "useDebugValue",
+  "useMemo",
+  "useMemoCache",
+  "cache",
   "jsx",
   "jsxs",
   "jsxDEV",
@@ -98,6 +127,12 @@ export const resolveReactApi = (
   return null;
 };
 
+/** The API as the importing layer sees it: a missing export of the server build reads as `undefined`. */
+export const getReactApiValue = (api: ReactApi, layer: ModuleLayer = "client"): StaticValue =>
+  layer === "client" || REACT_SERVER_API_NAMES.has(api)
+    ? { kind: "react-api", api }
+    : { kind: "primitive", value: undefined };
+
 const SYMBOL_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
   "Fragment",
   "StrictMode",
@@ -123,7 +158,7 @@ export const getExternalMember = (object: StaticExternalValue, key: string): Sta
     (object.importedName === "*" || object.importedName === "default")
   ) {
     const api = resolveReactApi(object.packageName, key);
-    if (api) return { kind: "react-api", api };
+    if (api) return getReactApiValue(api, object.layer);
   }
   return {
     kind: "external",

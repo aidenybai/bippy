@@ -16,7 +16,7 @@ import {
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult, StaticValue } from "../types.js";
-import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
+import { applyNextConfig, evaluateNextConfig } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import { element } from "../evaluate/stubs.js";
 import {
@@ -156,7 +156,7 @@ export const renderNextPagesRoute = (
     : findFirstDirectory(renderer.options.rootDirectory, ["pages", "src/pages"]);
 
   return renderer.renderWith((interpreter) => {
-    applyNextCompilerOptions(renderer, interpreter);
+    applyNextConfig(renderer, interpreter);
     if (!pagesDirectory) {
       interpreter.report(
         "next-pages-missing",

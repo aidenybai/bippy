@@ -8,7 +8,7 @@ import {
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { ComponentKindError } from "../errors.js";
-import { getRepeatCountPredicate } from "../evaluate/predicates.js";
+import { createPathPredicate, getRepeatCountPredicate } from "../evaluate/predicates.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -22,7 +22,7 @@ import {
   runChangedEffects,
   unmountAllEffects,
 } from "../evaluate/hooks.js";
-import type { Interpreter } from "../evaluate/interpreter.js";
+import type { AlternativeCondition, Interpreter } from "../evaluate/interpreter.js";
 import { getModeledPromise, type ModeledPromise, onPromiseSettled } from "../evaluate/promises.js";
 import { describeThrow, findThrown, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
 import {
@@ -35,11 +35,11 @@ import {
   mapValue,
   NULL_VALUE,
   omitObjectKeys,
+  UNDEFINED_VALUE,
   unknownValue,
   nativeObjectValue,
 } from "../evaluate/values.js";
 import { formatSourceLocation } from "../parse/source-location.js";
-import { isClientModule } from "../graph/module-record.js";
 import { getFunctionComponent } from "../react/element-type.js";
 import type {
   ComponentDefinition,
@@ -135,6 +135,8 @@ interface MaterializeContext {
   ignoresMaybeThrows: boolean;
   /** How many non-preferred branch alternatives enclose this node. */
   alternativeDepth: number;
+  /** The innermost branch alternative enclosing this node. */
+  alternative: AlternativeCondition | null;
   /** The component whose render produced this position; host refs are committed into it. */
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
@@ -240,9 +242,30 @@ interface MaterializedElement {
 /** The callback React sees for one static ref; its identity is what decides whether React re-attaches. */
 interface HostRefBinding {
   owner: EvaluationContext;
+  alternative: AlternativeCondition | null;
   location: SourceLocation | null;
   callback: (node: Element | null) => void;
 }
+
+const getAlternativeConditions = (
+  context: MaterializeContext,
+  count: number,
+  reason: string,
+  location: SourceLocation | null,
+  preferredIndex: number,
+  predicate: string | null,
+): AlternativeCondition[] => {
+  const decision = predicate ?? createPathPredicate();
+  return Array.from({ length: count }, (_, index) => ({
+    index,
+    count,
+    reason,
+    location,
+    preferredIndex,
+    predicate: decision,
+    parent: context.alternative,
+  }));
+};
 
 const isSameFrame = (first: CompositeFrame, second: CompositeFrame): boolean =>
   first.node === second.node && first.scope === second.scope && first.props === second.props;
@@ -270,7 +293,7 @@ class StaticThrowError extends Error {
 }
 
 const isClientComponent = (component: ComponentDefinition): boolean =>
-  component.isClientReference || isClientModule(component.module);
+  component.isClientReference || component.module.layer === "client";
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
@@ -327,7 +350,8 @@ const describeComponent = (component: ComponentDefinition): string =>
 const isEmptyChild = (value: StaticValue): boolean =>
   (value.kind === "primitive" &&
     (value.value === null || value.value === undefined || typeof value.value === "boolean")) ||
-  (value.kind === "unknown-primitive" && value.primitiveType === "boolean");
+  (value.kind === "unknown-primitive" && value.primitiveType === "boolean") ||
+  (value.kind === "branch" && value.alternatives.every(isEmptyChild));
 
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));
@@ -506,6 +530,7 @@ export class Materializer {
       errorBoundaryDepth: 0,
       ignoresMaybeThrows: false,
       alternativeDepth: 0,
+      alternative: null,
       owner: null,
       isStrictMode: false,
     };
@@ -553,28 +578,48 @@ export class Materializer {
           predicate: getRepeatCountPredicate(value),
           children: [this.toNode(value.item, context, false)],
         });
-      case "branch":
+      case "branch": {
         if (value.alternatives.every(isEmptyChild)) return null;
+        const conditions = getAlternativeConditions(
+          context,
+          value.alternatives.length,
+          value.reason,
+          value.location,
+          value.preferredIndex,
+          value.predicate,
+        );
         return this.branchNode(
           value.alternatives.map((alternative, index) =>
-            this.alternativeNode(alternative, index === value.preferredIndex, context, isTopLevel),
+            this.alternativeNode(alternative, conditions[index], context, isTopLevel),
           ),
           value.reason,
           value.preferredIndex,
           isTopLevel,
           value.location,
-          value.predicate,
+          conditions[0].predicate,
         );
-      case "optional":
-        return this.branchNode(
-          [this.toNode(value.value, context, isTopLevel), null],
+      }
+      case "optional": {
+        const preferredIndex = value.isAbsentPreferred ? 1 : 0;
+        const [present] = getAlternativeConditions(
+          context,
+          2,
           value.reason,
-          value.isAbsentPreferred ? 1 : 0,
+          value.location,
+          preferredIndex,
+          null,
+        );
+        return this.branchNode(
+          [this.alternativeNode(value.value, present, context, isTopLevel), null],
+          value.reason,
+          preferredIndex,
           isTopLevel,
           value.location,
+          present.predicate,
         );
+      }
       case "unknown":
-        return this.unknownNode(value.reason);
+        return this.unknownNode(value.thrown ? describeThrow(value) : value.reason);
       case "external":
         return this.unknownElementNode(
           `value from ${value.packageName} (${value.importedName})`,
@@ -587,12 +632,12 @@ export class Materializer {
 
   private alternativeNode(
     value: StaticValue,
-    isPreferred: boolean,
+    alternative: AlternativeCondition,
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    if (isPreferred) return this.toNode(value, context, isTopLevel);
-    if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
+    const isPreferred = alternative.index === alternative.preferredIndex;
+    if (!isPreferred && context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
       return this.unknownNode(
         `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
         true,
@@ -600,7 +645,11 @@ export class Materializer {
     }
     return this.toNode(
       value,
-      { ...context, alternativeDepth: context.alternativeDepth + 1 },
+      {
+        ...context,
+        alternative,
+        alternativeDepth: isPreferred ? context.alternativeDepth : context.alternativeDepth + 1,
+      },
       isTopLevel,
     );
   }
@@ -1075,18 +1124,22 @@ export class Materializer {
     const existing = this.hostRefs.get(ref);
     if (existing) {
       existing.owner = owner;
+      existing.alternative = context.alternative;
       existing.location = location;
       return existing.callback;
     }
     const binding: HostRefBinding = {
       owner,
+      alternative: context.alternative,
       location,
       callback: (node) => {
-        this.interpreter.assignRef(
-          ref,
-          this.hostInstanceValue(node),
-          binding.owner,
-          binding.location,
+        this.interpreter.runInAlternative(binding.alternative, binding.owner.scope, () =>
+          this.interpreter.assignRef(
+            ref,
+            this.hostInstanceValue(node),
+            binding.owner,
+            binding.location,
+          ),
         );
       },
     };
@@ -1389,7 +1442,7 @@ export class Materializer {
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
-      isDeferred: () => this.interpreter.timers.isDeferred,
+      isDeferred: () => false,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       project: this.interpreter.project,
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
@@ -1568,7 +1621,14 @@ export class Materializer {
     const withEffectCall = (run: (call: EffectCall) => void): void => {
       const { componentContext } = rendered;
       if (!componentContext) return;
-      run((callback) => this.interpreter.callValue(callback, [], componentContext, location));
+      run(
+        (callback) =>
+          this.interpreter.runInAlternative(
+            rendered.context.alternative,
+            componentContext.scope,
+            () => this.interpreter.callValue(callback, [], componentContext, location),
+          ) ?? UNDEFINED_VALUE,
+      );
     };
     const mount = (isLayout: boolean): void => {
       instance.committed = rendered;

@@ -1,5 +1,14 @@
 import { StateSpaceError } from "../errors.js";
 import {
+  FALSY_OUTCOME,
+  TRUTHY_OUTCOME,
+  getCountVariable,
+  parseCountVariable,
+  parsePredicate,
+  readPolarity,
+  type CountPredicate,
+} from "../evaluate/predicates.js";
+import {
   matchPatternToRuntime,
   type ComparisonDivergence,
   type ComparisonOptions,
@@ -119,11 +128,45 @@ export const DEFAULT_STATE_SPACE_BUDGET: StateSpaceBudget = { maxStates: 256, ma
 
 const STATE_PREDICATE_PREFIX = "state(";
 
-type ConditionMap = ReadonlyMap<string, StateCondition>;
+/**
+ * A predicate that branches derive from (a state cell's value, a comparison)
+ * took one alternative. Decided while enumerating, but not part of a state:
+ * the runtime tree only shows which alternatives the branches took.
+ */
+interface DecisionCondition {
+  kind: "decision";
+  variable: string;
+  alternativeIndex: number;
+  alternativeCount: number;
+}
+
+type Decided = BranchCondition | DecisionCondition;
+
+type ConditionMap = ReadonlyMap<string, StateCondition | DecisionCondition>;
 
 interface Emit {
   (nodes: PatternNode[], conditions: ConditionMap): void;
 }
+
+interface OnDecided {
+  (alternativeIndex: number, conditions: ConditionMap): void;
+}
+
+interface OnTruthiness {
+  (isTruthy: boolean, conditions: ConditionMap): void;
+}
+
+const isDecided = (
+  condition: StateCondition | DecisionCondition | undefined | null,
+): condition is Decided =>
+  condition !== undefined &&
+  condition !== null &&
+  condition.kind !== "repeat" &&
+  condition.kind !== "transition";
+
+const isStateCondition = (
+  condition: StateCondition | DecisionCondition,
+): condition is StateCondition => condition.kind !== "decision";
 
 const branchCondition = (node: PatternBranch, alternativeIndex: number): BranchCondition => ({
   kind: node.variable.startsWith(STATE_PREDICATE_PREFIX) ? "state-update" : "branch",
@@ -148,9 +191,132 @@ const transitionCondition = (commit: number, commitCount: number): TransitionCon
 const iterationScope = (node: PatternRepeat, iteration: number): string =>
   `${node.variable}[${iteration}]`;
 
+const SCOPE_SEPARATOR = "@";
+
+/**
+ * The decision taken for `variable` in the iteration named by `scope`, or in
+ * an enclosing iteration or outside every repeat when the variable was
+ * decided there (a value from outside a loop tested inside it).
+ */
+const findCondition = (
+  variable: string,
+  scope: string,
+  conditions: ConditionMap,
+): StateCondition | DecisionCondition | null => {
+  for (let suffix = scope; ; suffix = suffix.slice(0, suffix.lastIndexOf(SCOPE_SEPARATOR))) {
+    const condition = conditions.get(`${variable}${suffix}`);
+    if (condition) return condition;
+    if (!suffix.includes(SCOPE_SEPARATOR)) return null;
+  }
+};
+
+const findDecision = (variable: string, scope: string, conditions: ConditionMap): Decided | null => {
+  const condition = findCondition(variable, scope, conditions);
+  return isDecided(condition) ? condition : null;
+};
+
+interface CountDecision {
+  predicate: CountPredicate;
+  isAbove: boolean;
+}
+
+/** The `countAbove` decisions taken in `scope` about the repeat count `subject`. */
+const getCountDecisions = (
+  subject: string,
+  scope: string,
+  conditions: ConditionMap,
+): CountDecision[] => {
+  const decisions: CountDecision[] = [];
+  for (const condition of conditions.values()) {
+    if (!isDecided(condition)) continue;
+    const parsed = parsePredicate(condition.variable);
+    if (
+      parsed?.predicate.kind === "count" &&
+      parsed.predicate.subject === subject &&
+      parsed.scope === scope
+    ) {
+      decisions.push({ predicate: parsed.predicate, isAbove: condition.alternativeIndex === 0 });
+    }
+  }
+  return decisions;
+};
+
+/** Whether a repeat can have `count` items given what was decided about its count before it was reached. */
+const isCountAllowed = (node: PatternRepeat, count: number, conditions: ConditionMap): boolean => {
+  const parsed = parseCountVariable(node.variable);
+  if (!parsed) return true;
+  return getCountDecisions(parsed.subject, parsed.scope, conditions).every(
+    ({ predicate, isAbove }) => count > predicate.threshold === isAbove,
+  );
+};
+
+const resolveCount = (
+  { subject, threshold }: CountPredicate,
+  scope: string,
+  conditions: ConditionMap,
+): boolean | null => {
+  const repeat = findCondition(getCountVariable(subject), scope, conditions);
+  if (repeat?.kind === "repeat") return repeat.count > threshold;
+  for (const { predicate, isAbove } of getCountDecisions(subject, scope, conditions)) {
+    if (isAbove && predicate.threshold >= threshold) return true;
+    if (!isAbove && predicate.threshold <= threshold) return false;
+  }
+  return null;
+};
+
+const resolveOutcome = (outcome: string, scope: string, conditions: ConditionMap): boolean | null => {
+  if (outcome === TRUTHY_OUTCOME) return true;
+  if (outcome === FALSY_OUTCOME) return false;
+  const { predicate, isNegated } = readPolarity(outcome);
+  const truthiness = resolveTruthiness(predicate, scope, conditions);
+  return truthiness === null ? null : truthiness !== isNegated;
+};
+
+/**
+ * Whether a truthiness predicate already follows from the decisions taken: a
+ * two-way branch on it took its truthy (first) alternative, the value it
+ * derives from is decided, a strict comparison of the same value with a
+ * different literal already holds, or the repeat count it compares is known.
+ */
+const resolveTruthiness = (
+  predicate: string,
+  scope: string,
+  conditions: ConditionMap,
+): boolean | null => {
+  const decided = findDecision(predicate, scope, conditions);
+  if (decided && decided.alternativeCount === 2) return decided.alternativeIndex === 0;
+  const parsed = parsePredicate(predicate);
+  if (!parsed) return null;
+  const innerScope = `${parsed.scope}${scope}`;
+  if (parsed.predicate.kind === "derived") {
+    const decision = findDecision(parsed.predicate.decision, innerScope, conditions);
+    if (!decision) return null;
+    const outcome = parsed.predicate.outcomes[decision.alternativeIndex];
+    return outcome === undefined ? null : resolveOutcome(outcome, innerScope, conditions);
+  }
+  if (parsed.predicate.kind === "count") return resolveCount(parsed.predicate, innerScope, conditions);
+  const { subject, key, isNegated } = parsed.predicate;
+  for (const condition of conditions.values()) {
+    if (!isDecided(condition)) continue;
+    const other = parsePredicate(condition.variable);
+    if (
+      other?.predicate.kind !== "equality" ||
+      other.predicate.subject !== subject ||
+      other.scope !== innerScope
+    ) {
+      continue;
+    }
+    const isEqual = (condition.alternativeIndex === 0) !== other.predicate.isNegated;
+    if (other.predicate.key === key) return isEqual !== isNegated;
+    if (isEqual) return isNegated;
+  }
+  return null;
+};
+
 class StateEnumerator {
   readonly states: StaticState[] = [];
   private readonly omissions = new Map<string, StateOmission>();
+  private readonly stateKeys = new Set<string>();
   private isExhausted = false;
 
   constructor(private readonly budget: StateSpaceBudget) {}
@@ -162,9 +328,10 @@ class StateEnumerator {
   enumerate(pattern: PatternNode[], transition: TransitionCondition | null): void {
     this.isExhausted = this.states.length >= this.budget.maxStates;
     this.expandList(pattern, 0, [], new Map(), (tree, conditions) => {
-      const stateConditions = transition
-        ? [transition, ...conditions.values()]
-        : [...conditions.values()];
+      const decided = [...conditions.values()].filter(isStateCondition);
+      const stateConditions = transition ? [transition, ...decided] : decided;
+      const key = describeConditions(stateConditions);
+      if (this.stateKeys.has(key)) return;
       if (this.states.length >= this.budget.maxStates) {
         this.isExhausted = true;
         this.omit(`state|${describeConditions(stateConditions)}`, {
@@ -173,6 +340,7 @@ class StateEnumerator {
         });
         return;
       }
+      this.stateKeys.add(key);
       this.states.push({ tree, conditions: stateConditions });
     });
   }
@@ -189,7 +357,7 @@ class StateEnumerator {
     conditions: ConditionMap,
     omission: OmittedBranchStates | OmittedRepeatStates,
   ): void {
-    const under = [...conditions.values()];
+    const under = [...conditions.values()].filter(isStateCondition);
     const subject =
       omission.kind === "branch"
         ? `${omission.variable}|${omission.alternativeIndex}`
@@ -248,26 +416,100 @@ class StateEnumerator {
   }
 
   private expandBranch(node: PatternBranch, conditions: ConditionMap, emit: Emit): void {
+    this.decideBranch(node, conditions, (alternativeIndex, decided) => {
+      const next = new Map(decided).set(node.variable, branchCondition(node, alternativeIndex));
+      this.expandList(node.alternatives[alternativeIndex] ?? [], 0, [], next, emit);
+    });
+  }
+
+  /**
+   * The alternative a branch takes under the decisions made so far; a branch on
+   * a predicate derived from other decisions (the truthiness of a state cell's
+   * value) is settled by enumerating those, so every branch reading the same
+   * decision follows it.
+   */
+  private decideBranch(node: PatternBranch, conditions: ConditionMap, onDecided: OnDecided): void {
     const decided = conditions.get(node.variable);
-    if (decided && decided.kind !== "repeat" && decided.kind !== "transition") {
-      this.expandList(node.alternatives[decided.alternativeIndex] ?? [], 0, [], conditions, emit);
+    if (isDecided(decided)) {
+      onDecided(decided.alternativeIndex, conditions);
       return;
     }
-    node.alternatives.forEach((alternative, alternativeIndex) => {
+    if (node.alternatives.length === 2) {
+      this.enumerateTruthiness(node.variable, "", node, conditions, (isTruthy, next) =>
+        onDecided(isTruthy ? 0 : 1, next),
+      );
+      return;
+    }
+    this.enumerateDecision(node.variable, node.alternatives.length, node, conditions, onDecided);
+  }
+
+  private enumerateTruthiness(
+    predicate: string,
+    scope: string,
+    node: PatternBranch,
+    conditions: ConditionMap,
+    onDecided: OnTruthiness,
+  ): void {
+    const known = resolveTruthiness(predicate, scope, conditions);
+    if (known !== null) {
+      onDecided(known, conditions);
+      return;
+    }
+    const parsed = parsePredicate(predicate);
+    if (parsed?.predicate.kind !== "derived") {
+      this.enumerateDecision(`${predicate}${scope}`, 2, node, conditions, (index, next) =>
+        onDecided(index === 0, next),
+      );
+      return;
+    }
+    const { decision, outcomes } = parsed.predicate;
+    const innerScope = `${parsed.scope}${scope}`;
+    this.enumerateDecision(
+      `${decision}${innerScope}`,
+      outcomes.length,
+      node,
+      conditions,
+      (index, next) => {
+        const outcome = outcomes[index];
+        if (outcome === TRUTHY_OUTCOME || outcome === FALSY_OUTCOME) {
+          onDecided(outcome === TRUTHY_OUTCOME, next);
+          return;
+        }
+        const { predicate: outcomePredicate, isNegated } = readPolarity(outcome);
+        this.enumerateTruthiness(outcomePredicate, innerScope, node, next, (isTruthy, after) =>
+          onDecided(isTruthy !== isNegated, after),
+        );
+      },
+    );
+  }
+
+  private enumerateDecision(
+    variable: string,
+    alternativeCount: number,
+    node: PatternBranch,
+    conditions: ConditionMap,
+    onDecided: OnDecided,
+  ): void {
+    for (let alternativeIndex = 0; alternativeIndex < alternativeCount; alternativeIndex++) {
       if (this.isExhausted) {
         this.omitUnderBudget(conditions, {
           kind: "branch",
-          variable: node.variable,
+          variable,
           reason: node.reason,
           location: node.location,
           alternativeIndex,
           conditions: [],
         });
-        return;
+        continue;
       }
-      const next = new Map(conditions).set(node.variable, branchCondition(node, alternativeIndex));
-      this.expandList(alternative, 0, [], next, emit);
-    });
+      const next = new Map(conditions).set(variable, {
+        kind: "decision",
+        variable,
+        alternativeIndex,
+        alternativeCount,
+      });
+      onDecided(alternativeIndex, next);
+    }
   }
 
   private expandRepeat(node: PatternRepeat, conditions: ConditionMap, emit: Emit): void {
@@ -291,6 +533,7 @@ class StateEnumerator {
       this.omit(node.variable, omittedCounts(enumeratedMax));
     }
     for (let count = min; count <= enumeratedMax; count++) {
+      if (!isCountAllowed(node, count, conditions)) continue;
       if (this.isExhausted) {
         this.omitUnderBudget(conditions, omittedCounts(count - 1));
         return;

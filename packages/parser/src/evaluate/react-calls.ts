@@ -512,7 +512,9 @@ export const evaluateReactApiCall = (
             ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
         (action, current) =>
-          first ? interpreter.callValue(first, [current, action ?? UNDEFINED_VALUE], context, location) : null,
+          first
+            ? interpreter.callValue(first, [current, action ?? UNDEFINED_VALUE], context, location)
+            : null,
       );
     }
     case "useMemo": {
@@ -562,6 +564,8 @@ export const evaluateReactApiCall = (
     case "useImperativeHandle":
     case "useDebugValue":
       return UNDEFINED_VALUE;
+    case "cache":
+      return first ?? UNDEFINED_VALUE;
     case "startTransition":
       return first ? interpreter.callValue(first, [], context, location) : UNDEFINED_VALUE;
     case "useId": {

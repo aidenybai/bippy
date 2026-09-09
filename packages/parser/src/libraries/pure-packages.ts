@@ -1,3 +1,4 @@
+import path from "node:path";
 import { fromNativeValue, pureNativeFunction } from "../evaluate/native-values.js";
 import { getPackageNameFromSpecifier } from "../graph/module-resolver.js";
 import type { StaticValue } from "../types.js";
@@ -73,6 +74,14 @@ const IMPURE_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
 
 export const isPurePackage = (packageName: string): boolean => PURE_PACKAGES.has(packageName);
 
+const NODE_PATH_PACKAGES: ReadonlySet<string> = new Set(["path", "node:path"]);
+
+/** `path.resolve` starts from `process.cwd()`, which the analyzed app's dev server runs in `rootDirectory`. */
+const withProjectWorkingDirectory = (pathModule: object, rootDirectory: string): object => ({
+  ...pathModule,
+  resolve: (...segments: string[]): string => path.resolve(rootDirectory, ...segments),
+});
+
 /** The helper a `lodash/isNil`-style deep import names; the imported binding otherwise. */
 const getExportName = (specifier: string, packageName: string, importedName: string): string =>
   importedName === "default" && specifier.length > packageName.length
@@ -81,9 +90,11 @@ const getExportName = (specifier: string, packageName: string, importedName: str
 
 export class PurePackages {
   private readonly installed: InstalledModules;
+  private readonly rootDirectory: string;
 
   constructor(rootDirectory: string) {
     this.installed = getInstalledModules(rootDirectory);
+    this.rootDirectory = rootDirectory;
   }
 
   /** `filePath` is the installed file the import resolved to, so a nested copy (a dependency's own `path-to-regexp`) is the one that runs. */
@@ -109,8 +120,12 @@ export class PurePackages {
   private loadPure(specifier: string, filePath: string | null): object | null {
     const packageName = getPackageNameFromSpecifier(specifier);
     if (packageName === null || !isPurePackage(packageName)) return null;
-    return filePath === null
-      ? this.installed.load(specifier)
-      : this.installed.loadBeside(specifier, filePath);
+    const module =
+      filePath === null
+        ? this.installed.load(specifier)
+        : this.installed.loadBeside(specifier, filePath);
+    return module !== null && NODE_PATH_PACKAGES.has(packageName)
+      ? withProjectWorkingDirectory(module, this.rootDirectory)
+      : module;
   }
 }

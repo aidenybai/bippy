@@ -1,7 +1,13 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { getObjectProperty, listValue, primitiveValue, unknownValue } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
+import {
+  getObjectProperty,
+  listValue,
+  objectValue,
+  primitiveValue,
+  unknownValue,
+} from "../evaluate/values.js";
+import { lazyProperties, nativeFunction } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, StaticValue } from "../types.js";
 
 // Files a server component reads from its own project directory are inputs of
@@ -73,7 +79,19 @@ const getFsExport = (rootDirectory: string, name: string): StaticValue | null =>
 };
 
 export const nodeFsValue: LibraryValueProvider = (specifier, importedName, project) => {
-  if (!NODE_FS_PACKAGES.includes(specifier) || project.rootDirectory === null) return null;
-  if (importedName === "default" || importedName === "*") return null;
-  return getFsExport(project.rootDirectory, importedName);
+  const { rootDirectory } = project;
+  if (!NODE_FS_PACKAGES.includes(specifier) || rootDirectory === null) return null;
+  if (importedName === "default" || importedName === "*") {
+    return lazyProperties(
+      objectValue(),
+      (key) =>
+        getFsExport(rootDirectory, key) ?? {
+          kind: "external",
+          packageName: specifier,
+          importedName: key,
+          origin: "binding",
+        },
+    );
+  }
+  return getFsExport(rootDirectory, importedName);
 };

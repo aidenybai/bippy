@@ -1006,8 +1006,7 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
-  if (left.kind === "namespace" && right.kind === "namespace")
-    return left.module.filePath === right.module.filePath;
+  if (left.kind === "namespace" && right.kind === "namespace") return left.module === right.module;
   if (left.kind === "global" && right.kind === "global") {
     if (left.name === right.name) return true;
     if (isIntrinsicGlobalName(left.name) && isIntrinsicGlobalName(right.name)) return false;
@@ -1319,41 +1318,63 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
  */
 const MAX_BRANCH_ALTERNATIVES = 64;
 
+interface BranchLeaf {
+  value: StaticValue;
+  isPreferred: boolean;
+}
+
+const collectBranchLeaves = (value: StaticValue, isPreferred: boolean): BranchLeaf[] =>
+  value.kind === "branch"
+    ? value.alternatives.flatMap((alternative, index) =>
+        collectBranchLeaves(alternative, isPreferred && index === value.preferredIndex),
+      )
+    : [{ value, isPreferred }];
+
+/** An alternative re-deciding the decision that selected it resolves to the alternative of the same index. */
+const resolveSameDecision = (value: StaticValue, index: number, predicate: string): StaticValue =>
+  value.kind === "branch" &&
+  value.predicate === predicate &&
+  index < value.alternatives.length
+    ? resolveSameDecision(value.alternatives[index], index, predicate)
+    : value;
+
+/**
+ * Alternatives stay positional while the predicate names their decision, so a
+ * value derived from a decided value keeps deciding with it; otherwise the
+ * leaves are flattened and merged, which bounds a value joined at every
+ * iteration of a loop.
+ */
 export const branchValue = (
-  alternatives: StaticValue[],
+  candidates: StaticValue[],
   reason: string,
   location: SourceLocation | null = null,
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
-  if (alternatives.length > 0 && alternatives.every((alternative) => alternative === alternatives[0]))
+  const alternatives =
+    predicate === null
+      ? candidates
+      : candidates.map((candidate, index) => resolveSameDecision(candidate, index, predicate));
+  if (
+    alternatives.length > 0 &&
+    alternatives.every((alternative) => alternative === alternatives[0])
+  )
     return alternatives[0];
+  const leaves = alternatives.flatMap((alternative, index) =>
+    collectBranchLeaves(alternative, index === preferredIndex),
+  );
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
-  const add = (value: StaticValue): number => {
-    const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
-    if (existing !== -1) return existing;
-    flattened.push(value);
-    return flattened.length - 1;
-  };
-  alternatives.forEach((alternative, index) => {
-    if (alternative.kind === "branch") {
-      alternative.alternatives.forEach((inner, innerIndex) => {
-        const position = add(inner);
-        if (index === preferredIndex && innerIndex === alternative.preferredIndex) {
-          resolvedPreferred = position;
-        }
-      });
-    } else {
-      const position = add(alternative);
-      if (index === preferredIndex) resolvedPreferred = position;
-    }
-  });
+  for (const leaf of leaves) {
+    let position = flattened.findIndex((candidate) => isInterchangeable(candidate, leaf.value));
+    if (position === -1) position = flattened.push(leaf.value) - 1;
+    if (leaf.isPreferred) resolvedPreferred = position;
+  }
   if (flattened.length === 1) return flattened[0];
   if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
     return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
-  if (predicate !== null && alternatives.every((alternative) => alternative.kind !== "branch")) {
+  if (predicate !== null) {
     return { kind: "branch", alternatives, preferredIndex, reason, location, predicate };
   }
   return {

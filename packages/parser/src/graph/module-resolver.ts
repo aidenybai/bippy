@@ -3,7 +3,7 @@ import { isBuiltin } from "node:module";
 import path from "node:path";
 import { ResolverFactory, type ResolveResult } from "oxc-resolver";
 import { z } from "zod";
-import type { ModuleResolution } from "../types.js";
+import type { ModuleLayer, ModuleResolution } from "../types.js";
 
 export interface ModuleResolverOptions {
   /** Path alias config; a sibling `jsconfig.json` stands in when this file does not exist. */
@@ -29,8 +29,9 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
   ".cjs": [".cjs", ".cts"],
 };
 
-const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
-const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
+const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "development", "default"];
+const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "development", "default"];
+const REACT_SERVER_CONDITION_NAME = "react-server";
 
 type ImporterKind = "esm" | "commonjs";
 
@@ -108,18 +109,38 @@ interface ResolverPair {
 }
 
 export class ModuleResolver {
-  private readonly resolvers: Record<ImporterKind, ResolverPair>;
+  private resolvers: Record<ModuleLayer, Record<ImporterKind, ResolverPair>>;
   private readonly cache = new Map<string, ModuleResolution>();
+  private readonly options: ModuleResolverOptions;
+  private aliases: Record<string, string>;
   readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
+    this.options = options;
+    this.aliases = { ...options.aliases };
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
+    this.resolvers = this.createResolvers();
+  }
+
+  /** Bundler aliases discovered after construction (a framework config's `resolve.alias`). */
+  addAliases(aliases: Record<string, string>): void {
+    const added = Object.entries(aliases).filter(
+      ([specifier, target]) => this.aliases[specifier] !== target,
+    );
+    if (added.length === 0) return;
+    this.aliases = { ...this.aliases, ...Object.fromEntries(added) };
+    this.resolvers = this.createResolvers();
+    this.cache.clear();
+  }
+
+  private createResolvers(): Record<ModuleLayer, Record<ImporterKind, ResolverPair>> {
+    const { options } = this;
     const createPair = (conditionNames: string[]): ResolverPair => {
       const baseOptions = {
         extensions: SOURCE_EXTENSIONS,
         extensionAlias: EXTENSION_ALIAS,
         alias: Object.fromEntries(
-          Object.entries(options.aliases ?? {}).map(([specifier, target]) => [specifier, [target]]),
+          Object.entries(this.aliases).map(([specifier, target]) => [specifier, [target]]),
         ),
         conditionNames,
         mainFields: ["browser", "module", "main"],
@@ -136,17 +157,30 @@ export class ModuleResolver {
         fallback: new ResolverFactory(baseOptions),
       };
     };
-    this.resolvers = {
-      esm: createPair(options.conditionNames ?? DEFAULT_CONDITION_NAMES),
-      commonjs: createPair(options.requireConditionNames ?? DEFAULT_REQUIRE_CONDITION_NAMES),
+    const conditionNames = options.conditionNames ?? DEFAULT_CONDITION_NAMES;
+    const requireConditionNames = options.requireConditionNames ?? DEFAULT_REQUIRE_CONDITION_NAMES;
+    return {
+      client: {
+        esm: createPair(conditionNames),
+        commonjs: createPair(requireConditionNames),
+      },
+      "react-server": {
+        esm: createPair([REACT_SERVER_CONDITION_NAME, ...conditionNames]),
+        commonjs: createPair([REACT_SERVER_CONDITION_NAME, ...requireConditionNames]),
+      },
     };
   }
 
-  resolve(specifier: string, fromFile: string, importer: ImporterKind = "esm"): ModuleResolution {
-    const cacheKey = `${importer}\u0000${fromFile}\u0000${specifier}`;
+  resolve(
+    specifier: string,
+    fromFile: string,
+    importer: ImporterKind = "esm",
+    layer: ModuleLayer = "client",
+  ): ModuleResolution {
+    const cacheKey = `${layer}\u0000${importer}\u0000${fromFile}\u0000${specifier}`;
     const cached = this.cache.get(cacheKey);
     if (cached) return cached;
-    const resolution = this.resolveUncached(specifier, fromFile, importer);
+    const resolution = this.resolveUncached(specifier, fromFile, importer, layer);
     this.cache.set(cacheKey, resolution);
     return resolution;
   }
@@ -155,8 +189,9 @@ export class ModuleResolver {
     specifier: string,
     fromFile: string,
     importer: ImporterKind,
+    layer: ModuleLayer,
   ): ModuleResolution {
-    const { primary, fallback } = this.resolvers[importer];
+    const { primary, fallback } = this.resolvers[layer][importer];
     const bareSpecifier = specifier.replace(/^node:/, "");
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };

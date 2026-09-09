@@ -6,8 +6,11 @@ import type {
   SnapshotPropValue,
   SnapshotWorkTag,
 } from "./snapshot.js";
+import { MARKER_NAMES } from "../materialize/markers.js";
 
 const MAX_STRING_PROP_LENGTH = 200;
+// Markers carry the analysis's own decision identities, which must survive verbatim.
+const VERBATIM_PROP_NAMES = new Set<string>(Object.values(MARKER_NAMES));
 // Vite's SSR transform names an anonymous `export default` after its export slot.
 const VITE_SSR_DEFAULT_EXPORT_NAME = "__vite_ssr_export_default__";
 
@@ -58,10 +61,10 @@ const buildTagLookup = (workTags: Readonly<ReactWorkTagMap>): Map<number, Snapsh
   return lookup;
 };
 
-const toPropValue = (value: unknown): SnapshotPropValue | undefined => {
+const toPropValue = (value: unknown, isVerbatim: boolean): SnapshotPropValue | undefined => {
   switch (typeof value) {
     case "string":
-      return value.length > MAX_STRING_PROP_LENGTH
+      return value.length > MAX_STRING_PROP_LENGTH && !isVerbatim
         ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…`
         : value;
     case "number":
@@ -82,12 +85,15 @@ const toPropValue = (value: unknown): SnapshotPropValue | undefined => {
   }
 };
 
-const snapshotProps = (memoizedProps: unknown): Record<string, SnapshotPropValue> => {
+const snapshotProps = (
+  memoizedProps: unknown,
+  isVerbatim: boolean,
+): Record<string, SnapshotPropValue> => {
   const result: Record<string, SnapshotPropValue> = {};
   if (typeof memoizedProps !== "object" || memoizedProps === null) return result;
   for (const [key, value] of Object.entries(memoizedProps)) {
     if (key === "children") continue;
-    const propValue = toPropValue(value);
+    const propValue = toPropValue(value, isVerbatim);
     if (propValue !== undefined) result[key] = propValue;
   }
   return result;
@@ -155,12 +161,16 @@ const snapshotFiber = (
     child = child.sibling;
   }
   const key = fiber.key;
+  const name = getFiberName(fiber, tag);
   return {
     tag,
-    name: getFiberName(fiber, tag),
+    name,
     key: typeof key === "string" ? key : null,
     text: tag === "HostText" ? String(fiber.memoizedProps) : null,
-    props: tag === "HostText" ? {} : snapshotProps(fiber.memoizedProps),
+    props:
+      tag === "HostText"
+        ? {}
+        : snapshotProps(fiber.memoizedProps, name !== null && VERBATIM_PROP_NAMES.has(name)),
     children,
   };
 };

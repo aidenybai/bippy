@@ -75,6 +75,7 @@ import {
 import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
+  getReactApiValue,
   isReactLikePackage,
   REACT_MEMO_CACHE_SENTINEL_KEY,
   resolveReactApi,
@@ -263,7 +264,6 @@ import {
   getSpreadEntries,
   getSymbolDescription,
   getListItem,
-  getListLength,
   getFunctionPrototype,
   getObjectAccessor,
   getObjectProperty,
@@ -299,6 +299,9 @@ import {
 import {
   createPathPredicate,
   getTruthinessPredicate,
+  getRepeatCountComparison,
+  getCountedListLength,
+  getRepeatLength,
   getUncertainEquality,
   recordNegation,
 } from "./predicates.js";
@@ -348,6 +351,17 @@ interface JsxFactory {
 }
 
 const REACT_FRAGMENT: StaticValue = { kind: "react-api", api: "Fragment" };
+
+/** The branch alternative a materialized position sits in, innermost last along `parent`. */
+export interface AlternativeCondition {
+  index: number;
+  count: number;
+  reason: string;
+  location: SourceLocation | null;
+  preferredIndex: number;
+  predicate: string;
+  parent: AlternativeCondition | null;
+}
 
 interface CallValueOptions {
   thisValue?: StaticValue | null;
@@ -405,6 +419,19 @@ export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
 const USE_STRICT_DIRECTIVE = "use strict";
+
+const getModuleExpressionCache = <T>(
+  caches: Map<ModuleRecord, WeakMap<Expression, T>>,
+  module: ModuleRecord,
+): WeakMap<Expression, T> => {
+  let cache = caches.get(module);
+  if (!cache) {
+    cache = new WeakMap();
+    caches.set(module, cache);
+  }
+  return cache;
+};
+
 const FS_URL_PREFIX = "/@fs/";
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
 
@@ -737,18 +764,22 @@ export class Interpreter {
   private readonly reactVersion: string | null;
   readonly doesStrictModeDoubleInvokeHookFactories: boolean;
   private readonly maxSteps: number;
-  private readonly moduleScopes = new Map<string, Scope>();
-  private readonly moduleValues = new Map<string, ModuleValues>();
-  private readonly initializedModules = new Set<string>();
+  private readonly moduleScopes = new Map<ModuleRecord, Scope>();
+  private readonly moduleValues = new Map<ModuleRecord, ModuleValues>();
+  private readonly initializedModules = new Set<ModuleRecord>();
   /** Module bindings mutated by closures that escaped before the binding was evaluated. */
   /** Module variables mutated by escaped closures before the variable was evaluated, by file, name and property key. */
-  private readonly escapedMutations = new Map<string, Map<string, Set<EscapedMutation>>>();
-  private readonly exportExpressionValues = new WeakMap<
-    Expression,
-    StaticValue | typeof IN_PROGRESS
+  private readonly escapedMutations = new Map<ModuleRecord, Map<string, Set<EscapedMutation>>>();
+  /** Per module instance: a source file shared by two layers is evaluated once in each. */
+  private readonly exportExpressionValues = new Map<
+    ModuleRecord,
+    WeakMap<Expression, StaticValue | typeof IN_PROGRESS>
   >();
   /** One evaluation per destructuring declarator, shared by every name it binds. */
-  private readonly destructuredInitValues = new WeakMap<Expression, StaticValue>();
+  private readonly destructuredInitValues = new Map<
+    ModuleRecord,
+    WeakMap<Expression, StaticValue>
+  >();
   private readonly diagnosticKeys = new Set<string>();
   /** The `super(...)` each instance under construction runs, for lowered constructors calling it through `Reflect.construct`. */
   readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
@@ -874,10 +905,10 @@ export class Interpreter {
   }
 
   getModuleScope(module: ModuleRecord): Scope {
-    let scope = this.moduleScopes.get(module.filePath);
+    let scope = this.moduleScopes.get(module);
     if (!scope) {
       scope = createScope(null);
-      this.moduleScopes.set(module.filePath, scope);
+      this.moduleScopes.set(module, scope);
     }
     return scope;
   }
@@ -941,10 +972,10 @@ export class Interpreter {
   }
 
   private getModuleValues(module: ModuleRecord): ModuleValues {
-    let values = this.moduleValues.get(module.filePath);
+    let values = this.moduleValues.get(module);
     if (!values) {
       values = new Map();
-      this.moduleValues.set(module.filePath, values);
+      this.moduleValues.set(module, values);
     }
     return values;
   }
@@ -992,7 +1023,7 @@ export class Interpreter {
     values.set(name, value);
     this.escapeWalk.memo.invalidate(module, name);
     this.journalLazyBindingValue(value);
-    for (const mutation of this.escapedMutations.get(module.filePath)?.get(name) ?? []) {
+    for (const mutation of this.escapedMutations.get(module)?.get(name) ?? []) {
       markEscapedMutation(value, mutation);
     }
     return value;
@@ -1018,8 +1049,8 @@ export class Interpreter {
     module: ModuleRecord,
     sideEffectStatements: Statement[] = module.sideEffectStatements,
   ): void {
-    if (this.initializedModules.has(module.filePath)) return;
-    this.initializedModules.add(module.filePath);
+    if (this.initializedModules.has(module)) return;
+    this.initializedModules.add(module);
     this.initializeDependencies(module);
     const context = this.createModuleContext(module);
     let pendingStatements: Statement[] = [];
@@ -1080,7 +1111,7 @@ export class Interpreter {
         if (helper) return helper;
         if (symbol.imported.kind === "named") {
           const api = resolveReactApi(symbol.packageName, symbol.imported.name, symbol.specifier);
-          if (api) return { kind: "react-api", api };
+          if (api) return getReactApiValue(api, symbol.layer);
           const version = this.getReactVersionExport(symbol.packageName, symbol.imported.name);
           if (version) return version;
         }
@@ -1095,6 +1126,7 @@ export class Interpreter {
           packageName: symbol.packageName,
           importedName,
           origin: "binding",
+          layer: symbol.layer,
         };
       }
       case "stylesheet":
@@ -1136,7 +1168,8 @@ export class Interpreter {
     exportedName: string | null,
   ): StaticValue {
     const nameHint = isAnonymousFunctionOrClass(expression) ? exportedName : null;
-    const cached = this.exportExpressionValues.get(expression);
+    const values = getModuleExpressionCache(this.exportExpressionValues, module);
+    const cached = values.get(expression);
     if (cached === IN_PROGRESS) {
       return unknownValue(
         "cyclic module-level evaluation of an export",
@@ -1144,9 +1177,9 @@ export class Interpreter {
       );
     }
     if (cached) return cached;
-    this.exportExpressionValues.set(expression, IN_PROGRESS);
+    values.set(expression, IN_PROGRESS);
     const value = this.evaluateExpression(expression, this.createModuleContext(module), nameHint);
-    this.exportExpressionValues.set(expression, value);
+    values.set(expression, value);
     return value;
   }
 
@@ -1177,6 +1210,34 @@ export class Interpreter {
       default:
         return;
     }
+  }
+
+  /**
+   * Runs commit-time work of a position inside branch alternatives (a ref
+   * commit, an effect) as the path those alternatives select, so the state it
+   * changes stays conditional on the same decisions.
+   */
+  runInAlternative<Result>(
+    condition: AlternativeCondition | null,
+    scope: Scope,
+    run: () => Result,
+  ): Result | undefined {
+    if (!condition) return run();
+    return this.runInAlternative(
+      condition.parent,
+      scope,
+      () =>
+        this.forkValues(
+          scope,
+          Array.from({ length: condition.count }, (_, pathIndex) =>
+            pathIndex === condition.index ? run : (): Result | undefined => undefined,
+          ),
+          condition.reason,
+          condition.location,
+          condition.preferredIndex,
+          condition.predicate,
+        )[condition.index],
+    );
   }
 
   /** `target[propertyName] = value`; returns the value the binding should now hold (wrappers are re-created for `displayName`). */
@@ -1380,10 +1441,11 @@ export class Interpreter {
   }
 
   private evaluateDestructuredInit(init: Expression, context: EvaluationContext): StaticValue {
-    const cached = this.destructuredInitValues.get(init);
+    const values = getModuleExpressionCache(this.destructuredInitValues, context.module);
+    const cached = values.get(init);
     if (cached) return cached;
     const value = this.evaluateExpression(init, context, null);
-    this.destructuredInitValues.set(init, value);
+    values.set(init, value);
     return value;
   }
 
@@ -2103,7 +2165,7 @@ export class Interpreter {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
-    predicate: string,
+    predicate: string | null,
   ): Result[] {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
@@ -2620,7 +2682,7 @@ export class Interpreter {
       case "list": {
         const binaryMember = getBinaryMember(object, key);
         if (binaryMember) return binaryMember;
-        if (key === "length") return getListLength(object);
+        if (key === "length") return getCountedListLength(object);
         const index = toIndexKey(key);
         if (index !== null) return getListItem(object.items, index, location);
         return (
@@ -2713,6 +2775,7 @@ export class Interpreter {
               imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
               specifier: object.packageName,
               filePath: null,
+              layer: object.layer ?? "client",
             },
             null,
           );
@@ -2815,7 +2878,7 @@ export class Interpreter {
       case "component-reference":
         return this.readComponentProperty(object, object.type, key, location);
       case "repeat":
-        if (key === "length") return unknownPrimitiveValue("number", "length of a repeated list");
+        if (key === "length") return getRepeatLength(object);
         return { kind: "method", receiver: object, name: key };
       case "method":
       case "native-function": {
@@ -2886,6 +2949,7 @@ export class Interpreter {
           imported: { kind: "namespace" },
           specifier,
           filePath,
+          layer: context.module.layer,
         },
         null,
       );
@@ -2952,9 +3016,11 @@ export class Interpreter {
     const getCallee = (target: StaticValue): StaticValue => {
       if (target === CHAIN_SHORT_CIRCUIT) return target;
       if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
-      return key.kind === "primitive"
-        ? this.getProperty(target, String(key.value), context, location, member.optional)
-        : unknownValue("computed method call", location);
+      if (key.kind !== "primitive") return unknownValue("computed method call", location);
+      const name = String(key.value);
+      if (target.kind === "unknown" && !target.thrown && isPromiseMethodName(name))
+        return { kind: "method", receiver: target, name };
+      return this.getProperty(target, name, context, location, member.optional);
     };
     const receivers = receiver.kind === "branch" ? receiver.alternatives : [receiver];
     const callees = receivers.map(getCallee);
@@ -3042,7 +3108,7 @@ export class Interpreter {
           captured: (captured, name) => this.captured(captured, name),
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
-          isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
+          isDeferred: () => context.hooks?.isDeferred ?? false,
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           project: this.project,
           recordStateMutation: (state) => this.recordStateMutation(state),
@@ -3174,10 +3240,10 @@ export class Interpreter {
         continue;
       }
       if (mutation.target.length !== 1 || module.bindings.get(root)?.kind !== "variable") continue;
-      let mutationsByName = this.escapedMutations.get(module.filePath);
+      let mutationsByName = this.escapedMutations.get(module);
       if (!mutationsByName) {
         mutationsByName = new Map();
-        this.escapedMutations.set(module.filePath, mutationsByName);
+        this.escapedMutations.set(module, mutationsByName);
       }
       let mutations = mutationsByName.get(root);
       if (!mutations) {
@@ -3313,7 +3379,7 @@ export class Interpreter {
    * it writes may or may not have changed by the captured commit, untouched
    * preferred.
    */
-  private runDeferred<Result>(
+  runDeferred<Result>(
     context: EvaluationContext,
     location: SourceLocation | null,
     run: () => Result,
@@ -4719,6 +4785,8 @@ const applyBinaryOperator = (
   const ordered =
     compareNumberRanges(operator, left, right) ?? applyNumberRangeOperator(operator, left, right);
   if (ordered) return ordered;
+  const counted = getRepeatCountComparison(operator, left, right);
+  if (counted) return counted;
   switch (operator) {
     case "==":
     case "!=":

@@ -25,7 +25,7 @@ export const narrowedByMethodCall = () => {
   return color.charAt(0) === "#" ? color.slice(1) : color;
 };
 
-export const notNarrowedByFunctionCall = () => {
+export const correlatedThroughFunctionCall = () => {
   const size = isWide ? "lg" : "sm";
   return isLarge(size) ? size.toUpperCase() : size;
 };
@@ -127,13 +127,13 @@ describe("branch-valued primitives", () => {
       "narrowedByEquality",
       "narrowedByDiscriminant",
       "narrowedByMethodCall",
-      "notNarrowedByFunctionCall",
+      "correlatedThroughFunctionCall",
     ]);
     expect(results).toEqual({
       narrowedByEquality: 'branch("LG" | "sm")',
       narrowedByDiscriminant: "branch(1 | 2)",
       narrowedByMethodCall: 'branch("fff" | "rgb(0, 0, 0)")',
-      notNarrowedByFunctionCall: 'branch("LG" | "SM" | "lg" | "sm")',
+      correlatedThroughFunctionCall: 'branch("LG" | "sm")',
     });
   });
 

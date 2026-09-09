@@ -404,6 +404,33 @@ describe("next app router with next-intl", () => {
   });
 });
 
+describe("next app router with conditional package exports", () => {
+  const target = () =>
+    render("next-app-conditional-exports", { framework: "next-app", route: "/" }, ["greeting-kit"]);
+
+  it("resolves the react-server export in server modules and the default export behind `use client`", async () => {
+    const { result, tree, errors } = await target();
+    expect(errors).toEqual([]);
+    expect(tree).not.toContain("?unknown");
+    const serverBuildFlags: Record<string, unknown> = {};
+    const visit = (fiber: (typeof result.snapshot.roots)[number]) => {
+      if ("data-server-build" in fiber.props)
+        serverBuildFlags[fiber.name ?? ""] = fiber.props["data-server-build"];
+      fiber.children.forEach(visit);
+    };
+    result.snapshot.roots.forEach(visit);
+    expect(serverBuildFlags).toEqual({ body: true, h1: false });
+  });
+
+  it("applies the aliases next.config declares, resolving its filesystem lookups from the project root", async () => {
+    const { tree } = await target();
+    expect(tree).toMatch(
+      /<GreetingProvider>\n\s+<ContextProvider>\n\s+<main>\n\s+<Banner>\n\s+<h1>\n\s+"Greeting: "\n\s+"Hello from the aliased config"/,
+    );
+    expect(tree).not.toContain("greeting-kit config");
+  });
+});
+
 describe("next pages router", () => {
   it("wraps the page in _app with Component/pageProps", async () => {
     const { tree, errors } = await render("next-pages", { framework: "next-pages", route: "/" });

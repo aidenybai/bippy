@@ -114,7 +114,13 @@ export class StaticRenderer {
       sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
+      serverComponents: options.serverComponents,
     });
+  }
+
+  /** Bundler aliases the analyzed app's framework config declares, resolved from the project root. */
+  addAliases(aliases: Record<string, string>): void {
+    this.resolver.addAliases(aliases);
   }
 
   resolvePath(filePath: string): string {

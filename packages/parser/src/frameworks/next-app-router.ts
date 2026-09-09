@@ -4,7 +4,7 @@ import type { Interpreter } from "../evaluate/interpreter.js";
 import { objectFromRecord, objectValue, primitiveValue, unknownValue } from "../evaluate/values.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue } from "../types.js";
-import { applyNextCompilerOptions } from "./next-config.js";
+import { applyNextConfig } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import {
   classifySegment,
@@ -163,20 +163,15 @@ const loadDefaultExport = (
 const componentName = (filePath: string): string => path.basename(filePath, path.extname(filePath));
 
 /**
- * Runs `next.config.*` the way `next dev` does at startup so plugins register
- * what they alias (next-intl's request configuration module), then loads that
- * module's default export into the model.
+ * Loads the request configuration module the modeled next-intl plugin
+ * registered while `next.config.*` ran into the model.
  */
-const loadNextConfig = (
+const loadIntlRequestConfig = (
   renderer: StaticRenderer,
   interpreter: Interpreter,
   model: NextModel,
 ): void => {
   const rootDirectory = renderer.options.rootDirectory;
-  const configPath = findRouteFile(rootDirectory, "next.config");
-  if (!configPath) return;
-  const config = loadDefaultExport(renderer, interpreter, configPath);
-  if (!config) return;
   const requestConfigPath = model.intl.getRequestConfigPath();
   if (requestConfigPath === null) return;
   const requestModulePath = path.resolve(rootDirectory, requestConfigPath);
@@ -213,7 +208,7 @@ export const renderNextAppRoute = (
     : findFirstDirectory(renderer.options.rootDirectory, ["app", "src/app"]);
 
   return renderer.renderWith((interpreter) => {
-    applyNextCompilerOptions(renderer, interpreter);
+    applyNextConfig(renderer, interpreter);
     if (!appDirectory) {
       interpreter.report("next-app-missing", "no app/ or src/app directory found", null, "error");
       return unknownValue("next app directory not found");
@@ -232,7 +227,7 @@ export const renderNextAppRoute = (
 
     const leaf = segments[segments.length - 1];
     Object.assign(model.params, leaf.params);
-    loadNextConfig(renderer, interpreter, model);
+    loadIntlRequestConfig(renderer, interpreter, model);
     const pagePath = findPageFile(leaf.directory);
     if (!pagePath) return unknownValue(`no page for ${options.route}`);
 

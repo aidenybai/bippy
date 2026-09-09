@@ -1951,7 +1951,7 @@ const indexedDbHost = (
     schedule: (task) =>
       interpreter.timers.schedule(
         interpreter.timers.createHandle("IndexedDB request"),
-        isDeferred ? () => interpreter.timers.runDeferred(task) : task,
+        isDeferred ? () => interpreter.runDeferred(context, location, task) : task,
       ),
     call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
     setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
