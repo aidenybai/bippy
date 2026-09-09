@@ -92,7 +92,13 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         if (!result) return null;
         results.push(result);
       }
-      return branchValue(results, target.reason, target.location, target.preferredIndex);
+      return branchValue(
+        results,
+        target.reason,
+        target.location,
+        target.preferredIndex,
+        target.predicate,
+      );
     }
     case "element":
       return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;

@@ -784,6 +784,8 @@ export interface StaticOptionalValue {
   location: SourceLocation | null;
   /** The analysis prefers the position to be empty, as when the preferred alternative of the item failed a filter. */
   isAbsentPreferred?: boolean;
+  /** Identity of the decision that keeps the item present, as a branch's predicate. */
+  predicate: string | null;
 }
 
 export interface StaticRegExpValue {

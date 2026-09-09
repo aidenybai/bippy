@@ -13,6 +13,7 @@ import type {
   Scope,
   SourceLocation,
   StaticAccessor,
+  StaticBranchValue,
   StaticClassValue,
   StaticElementType,
   StaticFunctionValue,
@@ -33,6 +34,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
+import { getNegatedPredicate, getNullishTest, resolveNegations } from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -43,6 +45,8 @@ export const UNDEFINED_VALUE: StaticPrimitiveValue = { kind: "primitive", value:
 export const NULL_VALUE: StaticPrimitiveValue = { kind: "primitive", value: null };
 export const TRUE_VALUE: StaticPrimitiveValue = { kind: "primitive", value: true };
 export const FALSE_VALUE: StaticPrimitiveValue = { kind: "primitive", value: false };
+/** What a plain object inherits as `constructor` from `Object.prototype`. */
+const OBJECT_CONSTRUCTOR_VALUE: StaticValue = { kind: "global", name: "Object" };
 
 export const primitiveValue = (value: StaticPrimitive): StaticPrimitiveValue => ({
   kind: "primitive",
@@ -381,9 +385,10 @@ const getInheritedProperty = (
   key: string,
 ): StaticValue => {
   if (key === "constructor" && object.constructedBy) return object.constructedBy;
-  return object.prototype
-    ? getMemoizedObjectProperty(memo, object.prototype, key, object.prototype.entries.length)
-    : UNDEFINED_VALUE;
+  if (object.prototype)
+    return getMemoizedObjectProperty(memo, object.prototype, key, object.prototype.entries.length);
+  if (key === "constructor" && !object.hasNullPrototype) return OBJECT_CONSTRUCTOR_VALUE;
+  return UNDEFINED_VALUE;
 };
 
 /** What `{...spread}[key]` contributes, or `null` for a spread whose keys are unknowable. */
@@ -1327,6 +1332,8 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const [first, ...rest] = alternatives;
+  if (first && rest.every((alternative) => isInterchangeable(alternative, first))) return first;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1444,11 +1451,29 @@ export const toBooleanValue = (value: StaticValue): StaticValue =>
     return truthiness ? TRUE_VALUE : FALSE_VALUE;
   });
 
-/** Truthiness along the alternative analysis prefers, so nested forks pick a consistent side. */
-export const getPreferredTruthiness = (value: StaticValue): boolean | null =>
-  value.kind === "branch"
-    ? getPreferredTruthiness(value.alternatives[value.preferredIndex])
-    : getTruthiness(value);
+const negatePreferredTruthiness = (truthiness: boolean | null): boolean =>
+  truthiness === null ? false : !truthiness;
+
+/**
+ * Truthiness along the alternative analysis prefers, so nested forks pick a
+ * consistent side. An unknown is preferred truthy (callers take the consequent
+ * for null), so its negation is preferred falsy and it is preferred non-nullish:
+ * `if (!x)`, `if (x)`, `if (x === null)` and `if (x != null)` agree.
+ */
+export const getPreferredTruthiness = (value: StaticValue): boolean | null => {
+  const { subject, isNegated } = resolveNegations(value);
+  const truthiness = getPreferredSubjectTruthiness(subject);
+  return isNegated ? negatePreferredTruthiness(truthiness) : truthiness;
+};
+
+const getPreferredSubjectTruthiness = (subject: StaticValue): boolean | null => {
+  if (subject.kind === "branch")
+    return getPreferredTruthiness(subject.alternatives[subject.preferredIndex]);
+  const nullishTest = getNullishTest(subject);
+  if (!nullishTest) return getTruthiness(subject);
+  const isOperandNullish = getPreferredTruthiness(nullishTest.operand) === false ? null : false;
+  return nullishTest.isEquality ? isOperandNullish : negatePreferredTruthiness(isOperandNullish);
+};
 
 export type CallableValue = Extract<
   StaticValue,
@@ -1622,7 +1647,21 @@ export const optionalValue = (
   reason: string,
   location: SourceLocation | null = null,
   isAbsentPreferred = false,
-): StaticOptionalValue => ({ kind: "optional", value, reason, location, isAbsentPreferred });
+  predicate: string | null = null,
+): StaticOptionalValue => ({
+  kind: "optional",
+  value,
+  reason,
+  location,
+  isAbsentPreferred,
+  predicate,
+});
+
+/** The predicate keeping the single item of a two-way branch over `[x]` and `[]` present. */
+const presencePredicate = (branch: StaticBranchValue, lists: StaticListValue[]): string | null => {
+  if (branch.predicate === null || lists.length !== 2) return null;
+  return lists[0].items.length > 0 ? branch.predicate : getNegatedPredicate(branch.predicate);
+};
 
 /**
  * Items contributed by `...value` inside an array literal (also `concat`,
@@ -1643,7 +1682,13 @@ export const spreadListItems = (
     return spreadListItems(value.value, location).map((item) =>
       item.kind === "repeat"
         ? item
-        : optionalValue(item, value.reason, value.location, value.isAbsentPreferred),
+        : optionalValue(
+            item,
+            value.reason,
+            value.location,
+            value.isAbsentPreferred,
+            value.predicate,
+          ),
     );
   }
   if (value.kind === "branch" && value.alternatives.every(hasDefiniteItems)) {
@@ -1674,6 +1719,7 @@ export const spreadListItems = (
           value.reason,
           value.location,
           lists[value.preferredIndex].items.length === 0,
+          presencePredicate(value, lists),
         ),
       ];
     }

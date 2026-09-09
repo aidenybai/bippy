@@ -68,7 +68,7 @@ const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
 const haveSameKeys = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((key) => right.includes(key));
 
-/** The recorded state of the one store built from exactly these slice reducers; `undefined` when none or several were. */
+/** The recorded state of the store built from exactly these slice reducers; `undefined` when none was, or several disagree. */
 const findStoreState = (
   states: readonly CapturedValue[],
   reducerKeys: readonly string[],
@@ -76,17 +76,33 @@ const findStoreState = (
   const matches = states.filter(
     (state) => isCapturedRecord(state) && haveSameKeys(Object.keys(state), reducerKeys),
   );
-  return matches.length === 1 ? matches[0] : undefined;
+  const distinct = new Set(matches.map(hashKey));
+  return distinct.size === 1 ? matches[0] : undefined;
 };
 
-const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
-  const combined = nativeFunction("combination", () =>
-    unknownValue("state produced by a combined reducer"),
-  );
-  const keys = reducers === undefined ? null : getReducerKeys(reducers);
-  if (keys) reducerKeysByReducer.set(combined, keys);
-  return combined;
-});
+const findRecordedState = (
+  project: ProjectContext,
+  reducer: StaticValue,
+): CapturedValue | undefined => {
+  const reducerKeys = getReducerKeys(reducer);
+  return reducerKeys && project.storeStates
+    ? findStoreState(project.storeStates, reducerKeys)
+    : undefined;
+};
+
+/** The combination reduces to the state the page recorded for exactly these slices, however the store around it was built. */
+const combineReducers = (project: ProjectContext): StaticValue =>
+  nativeFunction("combineReducers", ([reducers]) => {
+    const combined = nativeFunction("combination", (_args, tools) => {
+      const state = findRecordedState(project, combined);
+      return state === undefined
+        ? unknownValue("state produced by a combined reducer")
+        : tools.captured(state, "the Redux store's state");
+    });
+    const keys = reducers === undefined ? null : getReducerKeys(reducers);
+    if (keys) reducerKeysByReducer.set(combined, keys);
+    return combined;
+  });
 
 const actionCreator = (type: string, prepare: StaticValue | null): StaticValue =>
   nativeFunction(type, (args, tools) => {
@@ -184,11 +200,7 @@ const bindActionCreators = nativeFunction("bindActionCreators", ([creators, disp
 
 /** A store whose state is the one the page recorded for exactly these reducer keys; the store is otherwise opaque. */
 const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue => {
-  const reducerKeys = getReducerKeys(reducer);
-  const state =
-    reducerKeys && project.storeStates
-      ? findStoreState(project.storeStates, reducerKeys)
-      : undefined;
+  const state = findRecordedState(project, reducer);
   return objectFromRecord({
     getState: nativeFunction("getState", (_args, tools) =>
       state === undefined
@@ -449,7 +461,7 @@ export const reduxValue: LibraryValueProvider = (specifier, importedName, projec
   if (!REDUX_PACKAGES.includes(specifier)) return null;
   switch (importedName) {
     case "combineReducers":
-      return combineReducers;
+      return combineReducers(project);
     case "createStore":
     case "legacy_createStore":
       return createStore(project, importedName);
@@ -462,7 +474,7 @@ export const reduxToolkitValue: LibraryValueProvider = (specifier, importedName,
   if (!REDUX_TOOLKIT_PACKAGES.includes(specifier)) return null;
   switch (importedName) {
     case "combineReducers":
-      return combineReducers;
+      return combineReducers(project);
     case "createAction":
       return createAction;
     case "createSlice":

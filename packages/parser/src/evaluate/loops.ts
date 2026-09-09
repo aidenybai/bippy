@@ -87,7 +87,9 @@ const iterationValues = (
       return [...right.value].map(primitiveValue);
     return null;
   }
-  const enumerated = getEnumerationTarget(right);
+  const enumerated = getEnumerationTarget(
+    right.kind === "namespace" ? interpreter.materializeNamespace(right.module) : right,
+  );
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);
   return entries ? entries.map(([key]) => primitiveValue(key)) : null;

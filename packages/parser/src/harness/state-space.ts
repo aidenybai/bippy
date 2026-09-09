@@ -19,7 +19,9 @@ import {
 // A static render describes a set of concrete fiber trees, one per assignment
 // of its decision variables (branches, repeat counts) per committed render.
 // The set is enumerated here, bounded by a budget, and every state left out is
-// recorded so the enumeration is never mistaken for complete.
+// recorded so the enumeration is never mistaken for complete. The budget left
+// at a branch is shared among its alternatives so one alternative whose
+// sub-space explodes cannot starve its siblings of every state.
 
 /** A branch predicate took one alternative; `state-update` when the predicate is a state cell's value. */
 export interface BranchCondition {
@@ -150,22 +152,35 @@ const iterationScope = (node: PatternRepeat, iteration: number): string =>
 class StateEnumerator {
   readonly states: StaticState[] = [];
   private readonly omissions = new Map<string, StateOmission>();
-  private isExhausted = false;
+  /** States the subtree being expanded may bring the total up to. */
+  private limit: number;
 
-  constructor(private readonly budget: StateSpaceBudget) {}
+  constructor(private readonly budget: StateSpaceBudget) {
+    this.limit = budget.maxStates;
+  }
 
   get omitted(): OmittedStateSpace | null {
     return this.omissions.size === 0 ? null : { omissions: [...this.omissions.values()] };
   }
 
-  enumerate(pattern: PatternNode[], transition: TransitionCondition | null): void {
-    this.isExhausted = this.states.length >= this.budget.maxStates;
+  private get isExhausted(): boolean {
+    return this.states.length >= this.limit;
+  }
+
+  enumerate(commits: PatternNode[][]): void {
+    commits.forEach((pattern, commit) => {
+      this.shareBudget(commits.length - commit, () =>
+        this.enumerateCommit(pattern, transitionCondition(commit, commits.length)),
+      );
+    });
+  }
+
+  private enumerateCommit(pattern: PatternNode[], transition: TransitionCondition | null): void {
     this.expandList(pattern, 0, [], new Map(), (tree, conditions) => {
       const stateConditions = transition
         ? [transition, ...conditions.values()]
         : [...conditions.values()];
-      if (this.states.length >= this.budget.maxStates) {
-        this.isExhausted = true;
+      if (this.isExhausted) {
         this.omit(`state|${describeConditions(stateConditions)}`, {
           kind: "state",
           conditions: stateConditions,
@@ -174,6 +189,15 @@ class StateEnumerator {
       }
       this.states.push({ tree, conditions: stateConditions });
     });
+  }
+
+  /** Runs `expand` with an even share of the remaining budget for one of `alternativeCount` siblings. */
+  private shareBudget(alternativeCount: number, expand: () => void): void {
+    const outerLimit = this.limit;
+    this.limit =
+      this.states.length + Math.ceil((outerLimit - this.states.length) / alternativeCount);
+    expand();
+    this.limit = outerLimit;
   }
 
   private omit(key: string, omission: StateOmission): void {
@@ -265,7 +289,9 @@ class StateEnumerator {
         return;
       }
       const next = new Map(conditions).set(node.variable, branchCondition(node, alternativeIndex));
-      this.expandList(alternative, 0, [], next, emit);
+      this.shareBudget(node.alternatives.length - alternativeIndex, () =>
+        this.expandList(alternative, 0, [], next, emit),
+      );
     });
   }
 
@@ -290,7 +316,9 @@ class StateEnumerator {
         return;
       }
       const next = new Map(conditions).set(node.variable, repeatCondition(node, count));
-      this.expandIterations(node, count, 0, [], next, emit);
+      this.shareBudget(enumeratedMax - count + 1, () =>
+        this.expandIterations(node, count, 0, [], next, emit),
+      );
     }
   }
 
@@ -341,9 +369,7 @@ export const enumerateStateSpace = (
 ): StaticStateSpace => {
   const commits = dedupeCommits(commitPatterns);
   const enumerator = new StateEnumerator(budget);
-  commits.forEach((pattern, commit) => {
-    enumerator.enumerate(pattern, transitionCondition(commit, commits.length));
-  });
+  enumerator.enumerate(commits);
   return { states: enumerator.states, budget, omitted: enumerator.omitted, commits };
 };
 

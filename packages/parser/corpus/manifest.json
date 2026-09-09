@@ -789,6 +789,8 @@
         "externalPackageAllowList": [
           "@chakra-ui/*",
           "@emotion/*",
+          "lodash.mergewith",
+          "react-fast-compare",
           "next-redux-wrapper",
           "react-redux",
           "redux",
@@ -797,8 +799,14 @@
           "redux-persist/*",
           "react-dnd",
           "react-dnd-html5-backend",
-          "@rematch/*"
-        ]
+          "@rematch/*",
+          "@bugsnag/*",
+          "framer-motion",
+          "react-icons",
+          "react-icons/*",
+          "coloreact"
+        ],
+        "envFiles": [".env"]
       }
     },
     {
@@ -941,7 +949,7 @@
         "rootDirectory": "web",
         "entry": "src/main.tsx",
         "route": "/",
-        "externalPackageAllowList": ["antd", "@ant-design/*"]
+        "externalPackageAllowList": ["antd", "@ant-design/*", "@rc-component/*"]
       }
     },
     {
@@ -1010,6 +1018,8 @@
           "react-i18next",
           "next-auth",
           "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@tanstack/query-devtools",
           "react-hot-toast",
           "@radix-ui/*"
         ],
@@ -1772,7 +1782,18 @@
         "entry": "src/examples/basics.tsx",
         "rootComponent": "Bare",
         "anchor": "Bare",
-        "externalPackageAllowList": ["@mdxeditor/gurx", "lexical", "@lexical/*"],
+        "externalPackageAllowList": [
+          "@mdxeditor/gurx",
+          "lexical",
+          "@lexical/*",
+          "mdast-util-*",
+          "micromark*",
+          "unist-util-*",
+          "estree-util-*",
+          "decode-named-character-reference",
+          "vfile-message",
+          "devlop"
+        ],
         "maxFiberCount": 20000
       }
     },

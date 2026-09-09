@@ -199,13 +199,17 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   private getOne(key: StaticValue): StaticValue {
+    const entry = isDefiniteKey(key) ? this.find(key) : null;
     if (!this.isExact(key)) {
       const reason = this.describeUncertainty("get");
-      const stored = [...this.entries.values()].map((entry) => entry.value);
+      const stored = [...this.entries.values()]
+        .filter((candidate) => candidate !== entry)
+        .map((candidate) => candidate.value);
       if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
-      return branchValue([...stored, UNDEFINED_VALUE], reason, this.location);
+      return entry?.isDefinite
+        ? branchValue([entry.value, ...stored], reason, this.location)
+        : branchValue([...stored, UNDEFINED_VALUE], reason, this.location);
     }
-    const entry = this.find(key);
     if (!entry) return UNDEFINED_VALUE;
     return entry.isDefinite
       ? entry.value
@@ -216,16 +220,16 @@ class StaticCollection implements JournaledState<CollectionState> {
         );
   }
 
+  /** A write under a dynamic key never removes a member, so a member set on every path stays present. */
   has(key: StaticValue): StaticValue {
     return mapValue(key, (alternative) => {
+      const entry = isDefiniteKey(alternative) ? this.find(alternative) : null;
+      if (entry?.isDefinite) return TRUE_VALUE;
       if (!this.isExact(alternative)) {
         return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
       }
-      const entry = this.find(alternative);
       if (!entry) return FALSE_VALUE;
-      return entry.isDefinite
-        ? TRUE_VALUE
-        : unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
+      return unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
     });
   }
 
@@ -273,6 +277,8 @@ class StaticCollection implements JournaledState<CollectionState> {
     }
     if (!this.isExact(key)) {
       this.hasDynamicKeys = true;
+      for (const existing of this.entries.values())
+        this.replace({ ...existing, isDefinite: false });
       return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
     const existing = this.find(key);

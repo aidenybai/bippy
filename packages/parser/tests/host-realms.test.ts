@@ -56,6 +56,9 @@ export const navigatorProduct = () => navigator.product;
 export const mathMax = () => Math.max(1, 2);
 export const documentInWindow = () => "document" in window;
 export const processInGlobal = () => "process" in globalThis;
+export const globalProcessType = () => typeof globalThis.process;
+export const windowBufferType = () => typeof window.Buffer;
+export const globalMapType = () => typeof globalThis.Map;
 export const readDocument = () => document;
 export const windowDocumentBody = () => window.document.body;
 export const selfLocation = () => typeof self.location;
@@ -104,6 +107,13 @@ describe("host realms in the interpreter", () => {
     expect(values.processInGlobal).toBe("false");
   });
 
+  it("reads bundler-provided names as free identifiers only, not global object properties", async () => {
+    const values = await evaluateExports(PROBE);
+    expect(values.globalProcessType).toBe('"undefined"');
+    expect(values.windowBufferType).toBe('"undefined"');
+    expect(values.globalMapType).toBe('"function"');
+  });
+
   it("makes browser globals undefined on the server", async () => {
     const values = await evaluateExports(PROBE, { environment: "server" });
     expect(values.windowType).toBe('"undefined"');
@@ -112,6 +122,7 @@ describe("host realms in the interpreter", () => {
     expect(values.nodeEnv).toBe('"development"');
     expect(values.readDocument).toBe("unknown(`document` is not defined)");
     expect(values.processInGlobal).toBe("true");
+    expect(values.globalProcessType).toBe('"object"');
   });
 
   it("makes browser globals undefined in React Native without a document", async () => {

@@ -1,0 +1,7 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 1,
+  "notes": "framer-motion 7.3.0's motion component: a `VisualElementHandler` class around the renderless feature components `loadFeatures` enables from the props (keyed by feature name) and the `MotionContext` provider. A pared-down copy of `createMotionComponent`, `featureDefinitions`, `loadFeatures` and `VisualElementHandler` so the version-gated tree shape is exercised at runtime."
+}

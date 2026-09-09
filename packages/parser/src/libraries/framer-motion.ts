@@ -35,8 +35,11 @@ import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 // render function `MotionComponent` names it) rendering `MotionContext.Provider`
 // around an optional `MeasureLayout` (only with `layout`/`layoutId`/`drag`/
 // `dragControls`) and the wrapped component with the motion props filtered out
-// (`filterProps`). A motion value's current value is animation state only the
-// runtime knows; its identity is what `filterProps` and `useRender` test.
+// (`filterProps`). From 5.0.0 to 9.0.2 (`useFeatures`, then `loadFeatures`) it
+// instead rendered a `VisualElementHandler` class around the array of enabled
+// features, each a renderless component keyed by its name, and the provider.
+// A motion value's current value is animation state only the runtime knows; its
+// identity is what `filterProps` and `useRender` test.
 
 export const FRAMER_MOTION_PACKAGES = ["framer-motion", "motion"];
 
@@ -123,6 +126,50 @@ const isValidMotionProp = (key: string): boolean =>
   VALID_MOTION_PROPS.has(key);
 
 const MEASURE_LAYOUT_PROPS = ["layout", "layoutId", "drag", "dragControls"];
+
+const RENDERLESS_FEATURE_VERSIONS = ">=5.0.0 <9.0.3";
+
+const IN_VIEW_FEATURE_VERSIONS = ">=5.3.0";
+
+interface FeatureDefinition {
+  name: string;
+  propNames: readonly string[];
+}
+
+/** `featureDefinitions`, in the order `loadFeatures` walks them; `inView` and `whileInView` arrived in 5.3.0. */
+const getFeatureDefinitions = (hasInView: boolean): FeatureDefinition[] => [
+  { name: "measureLayout", propNames: ["layout", "layoutId", "drag"] },
+  {
+    name: "animation",
+    propNames: [
+      "animate",
+      "exit",
+      "variants",
+      "whileHover",
+      "whileTap",
+      "whileFocus",
+      "whileDrag",
+      ...(hasInView ? ["whileInView"] : []),
+    ],
+  },
+  { name: "exit", propNames: ["exit"] },
+  { name: "drag", propNames: ["drag", "dragControls"] },
+  { name: "focus", propNames: ["whileFocus"] },
+  { name: "hover", propNames: ["whileHover", "onHoverStart", "onHoverEnd"] },
+  { name: "tap", propNames: ["whileTap", "onTap", "onTapStart", "onTapCancel"] },
+  { name: "pan", propNames: ["onPan", "onPanStart", "onPanSessionStart", "onPanEnd"] },
+  ...(hasInView
+    ? [{ name: "inView", propNames: ["whileInView", "onViewportEnter", "onViewportLeave"] }]
+    : []),
+];
+
+interface MotionComponentShape {
+  hasDisplayName: boolean;
+  /** The feature components rendered ahead of the provider; `null` once features stopped being components. */
+  features: readonly FeatureDefinition[] | null;
+  /** `motion` bundles every feature; `m` renders only those a `LazyMotion` loaded. */
+  preloadsFeatures: boolean;
+}
 
 const MOTION_VALUES = new WeakSet<StaticObjectValue>();
 
@@ -228,9 +275,10 @@ const MEASURE_LAYOUT_STUB: StubComponent = {
   render: () => element({ kind: "stub", stub: MEASURE_LAYOUT_WITH_CONTEXT_STUB }, objectValue()),
 };
 
-const measuresLayout = (props: StaticObjectValue): boolean | null => {
+/** `propNames.some((name) => !!props[name])`. */
+const hasTruthyProp = (props: StaticObjectValue, propNames: readonly string[]): boolean | null => {
   let isUnknown = false;
-  for (const key of MEASURE_LAYOUT_PROPS) {
+  for (const key of propNames) {
     const truthiness = getTruthiness(getObjectProperty(props, key));
     if (truthiness === true) return true;
     if (truthiness === null) isUnknown = true;
@@ -239,7 +287,7 @@ const measuresLayout = (props: StaticObjectValue): boolean | null => {
 };
 
 const measureLayoutElement = (props: StaticObjectValue): StaticValue => {
-  const isMeasured = measuresLayout(props);
+  const isMeasured = hasTruthyProp(props, MEASURE_LAYOUT_PROPS);
   const measured = element({ kind: "stub", stub: MEASURE_LAYOUT_STUB }, objectValue());
   if (isMeasured === true) return measured;
   if (isMeasured === false) return NULL_VALUE;
@@ -247,6 +295,28 @@ const measureLayoutElement = (props: StaticObjectValue): StaticValue => {
     [NULL_VALUE, measured],
     "whether the motion component has layout or drag props is not statically known",
   );
+};
+
+const RENDERLESS_FEATURE_STUB: StubComponent = { displayName: null, render: () => NULL_VALUE };
+
+const VISUAL_ELEMENT_HANDLER_STUB: StubComponent = {
+  displayName: "VisualElementHandler",
+  tag: ClassComponentTag,
+  render: (props) => getObjectProperty(props, "children"),
+};
+
+/** `createElement(Component, { key: name, ...props, visualElement })` for each feature `isEnabled(props)` and loaded. */
+const featureElement = (definition: FeatureDefinition, props: StaticObjectValue): StaticValue => {
+  const isEnabled = hasTruthyProp(props, definition.propNames);
+  if (isEnabled === false) return NULL_VALUE;
+  const stub = definition.name === "measureLayout" ? MEASURE_LAYOUT_STUB : RENDERLESS_FEATURE_STUB;
+  const rendered = element({ kind: "stub", stub }, objectValue(), primitiveValue(definition.name));
+  return isEnabled === true
+    ? rendered
+    : branchValue(
+        [NULL_VALUE, rendered],
+        `whether the motion component has ${definition.name} props is not statically known`,
+      );
 };
 
 const describeMotionComponent = (
@@ -258,14 +328,23 @@ const describeMotionComponent = (
   return wrappedType.kind === "host" ? `motion.${wrapped}` : `motion.create(${wrapped})`;
 };
 
+const motionContextProvider = (children: StaticValue[]): StaticValue =>
+  element(
+    { kind: "context-provider", context: MOTION_CONTEXT, displayName: null },
+    objectFromRecord({
+      value: unknownValue("motion tree variants"),
+      children: listValue(children),
+    }),
+  );
+
 const createMotionComponent = (
   wrapped: StaticValue,
   forwardMotionProps: boolean,
-  hasDisplayName: boolean,
+  shape: MotionComponentShape,
 ): StaticValue => {
   const wrappedType = toElementType(wrapped, null);
   const stub: StubComponent = {
-    displayName: describeMotionComponent(wrappedType, hasDisplayName),
+    displayName: describeMotionComponent(wrappedType, shape.hasDisplayName),
     tag: ForwardRefTag,
     render: (props) => {
       const children = getObjectProperty(props, "children");
@@ -278,15 +357,15 @@ const createMotionComponent = (
           value: isMotionValue(children) ? unknownValue("motion value rendered as text") : children,
         },
       );
+      const rendered = element(wrappedType, objectValue(entries));
+      if (shape.features === null)
+        return motionContextProvider([measureLayoutElement(props), rendered]);
+      const features = shape.preloadsFeatures
+        ? listValue(shape.features.map((definition) => featureElement(definition, props)))
+        : unknownValue("features a LazyMotion loaded");
       return element(
-        { kind: "context-provider", context: MOTION_CONTEXT, displayName: null },
-        objectFromRecord({
-          value: unknownValue("motion tree variants"),
-          children: listValue([
-            measureLayoutElement(props),
-            element(wrappedType, objectValue(entries)),
-          ]),
-        }),
+        { kind: "stub", stub: VISUAL_ELEMENT_HANDLER_STUB },
+        objectFromRecord({ children: listValue([features, motionContextProvider([rendered])]) }),
       );
     },
   };
@@ -300,19 +379,34 @@ const forwardsMotionProps = (options: StaticValue | undefined): boolean =>
 /** `motion/index.mjs` names the component (`motion.div`) since 11.16.1; before, only the render function (`MotionComponent`). */
 const NAMED_MOTION_COMPONENT_VERSIONS = ">=11.16.1";
 
-const hasMotionDisplayName = (specifier: string, project: ProjectContext): boolean => {
+const satisfies = (version: string | null, range: string): boolean =>
+  version === null || semver.satisfies(version, range, { includePrerelease: true });
+
+const getMotionComponentShape = (
+  specifier: string,
+  project: ProjectContext,
+  preloadsFeatures: boolean,
+): MotionComponentShape => {
   const version = project.readPackageVersion(specifier.split("/")[0]);
-  return (
-    version === null ||
-    semver.satisfies(version, NAMED_MOTION_COMPONENT_VERSIONS, { includePrerelease: true })
-  );
+  return {
+    hasDisplayName: satisfies(version, NAMED_MOTION_COMPONENT_VERSIONS),
+    features:
+      version !== null && satisfies(version, RENDERLESS_FEATURE_VERSIONS)
+        ? getFeatureDefinitions(satisfies(version, IN_VIEW_FEATURE_VERSIONS))
+        : null,
+    preloadsFeatures,
+  };
 };
 
 /** `motion.div`, `motion.create(Component, options?)`, and the deprecated `motion(Component)`. */
-const motionProxy = (specifier: string, project: ProjectContext): StaticValue => {
-  const hasDisplayName = hasMotionDisplayName(specifier, project);
+const motionProxy = (
+  specifier: string,
+  project: ProjectContext,
+  preloadsFeatures: boolean,
+): StaticValue => {
+  const shape = getMotionComponentShape(specifier, project, preloadsFeatures);
   const create = nativeFunction("motion.create", ([wrapped = UNDEFINED_VALUE, options]) =>
-    createMotionComponent(wrapped, forwardsMotionProps(options), hasDisplayName),
+    createMotionComponent(wrapped, forwardsMotionProps(options), shape),
   );
   return {
     kind: "proxy",
@@ -323,7 +417,7 @@ const motionProxy = (specifier: string, project: ProjectContext): StaticValue =>
           return unknownValue("motion tag name");
         return key.value === "create"
           ? create
-          : createMotionComponent(primitiveValue(key.value), false, hasDisplayName);
+          : createMotionComponent(primitiveValue(key.value), false, shape);
       }),
     }),
   };
@@ -349,8 +443,9 @@ export const framerMotionValue: LibraryValueProvider = (specifier, importedName,
     return nativeFunction(importedName, () => motionValue(importedName));
   switch (importedName) {
     case "motion":
+      return motionProxy(specifier, project, true);
     case "m":
-      return motionProxy(specifier, project);
+      return motionProxy(specifier, project, false);
     case "useReducedMotion":
       return nativeFunction("useReducedMotion", () =>
         primitiveValue(evaluateMediaQuery("(prefers-reduced-motion)") === true),

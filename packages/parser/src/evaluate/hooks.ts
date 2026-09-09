@@ -154,7 +154,9 @@ const escapedStateValue = (cell: StateCell): StaticValue =>
 /**
  * The value the next pass commits: an escaped cell takes every value it may
  * hold; a cell with deferred updates holds the synchronous state or any value
- * a continuation of unknown timing may have set by the commit.
+ * a continuation of unknown timing may have set by the commit. A capture waits
+ * for the settled tree, in which the continuation has run, so its first value
+ * is the preferred alternative.
  */
 const pendingStateValue = (cell: StateCell): StaticValue | null => {
   if (cell.isEscaped) return escapedStateValue(cell);
@@ -163,7 +165,7 @@ const pendingStateValue = (cell: StateCell): StaticValue | null => {
     [cell.next ?? cell.current, ...cell.deferred],
     "state set by a continuation that may run after the commit",
     null,
-    0,
+    1,
     getStatePredicate(cell),
   );
 };

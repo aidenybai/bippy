@@ -14,7 +14,7 @@ import { getObjectProperty } from "./values.js";
 
 type BuiltinConstructor = abstract new (...args: never[]) => unknown;
 
-const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
+const ECMASCRIPT_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   Object,
   Function,
   Array,
@@ -35,6 +35,13 @@ const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   String,
   Number,
   Boolean,
+  ArrayBuffer,
+  DataView,
+  ...TYPED_ARRAY_CONSTRUCTORS,
+};
+
+const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
+  ...ECMASCRIPT_CONSTRUCTORS,
   Headers,
   Request,
   Response,
@@ -48,9 +55,6 @@ const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
   EventTarget,
   TextEncoder,
   TextDecoder,
-  ArrayBuffer,
-  DataView,
-  ...TYPED_ARRAY_CONSTRUCTORS,
 };
 
 /** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
@@ -70,12 +74,22 @@ const BUILTIN_PROTOTYPE_NAMES = new Map<object, string>(
 export const getBuiltinPrototypeName = (prototype: object): string | null =>
   BUILTIN_PROTOTYPE_NAMES.get(prototype) ?? null;
 
-const NAMESPACE_GLOBALS: Record<string, object> = { Math, JSON, Reflect };
+const NAMESPACE_GLOBALS: Record<string, object> = { Math, JSON, Reflect, Symbol };
 
 const getMember = (current: unknown, member: string): unknown =>
   (typeof current === "object" || typeof current === "function") && current !== null
     ? Reflect.get(current, member)
     : undefined;
+
+/**
+ * Whether the dotted global names a member of an ECMAScript intrinsic (`Function.prototype`,
+ * `Math`), whose property set the specification fixes for every host, so the local
+ * witness decides which members exist.
+ */
+export const isEcmaScriptIntrinsic = (globalName: string): boolean => {
+  const [rootName = ""] = globalName.split(".");
+  return rootName in ECMASCRIPT_CONSTRUCTORS || rootName in NAMESPACE_GLOBALS;
+};
 
 /** The native object or function a dotted builtin global such as `Object.prototype.hasOwnProperty` denotes, or null. */
 export const getBuiltinWitness = (globalName: string): object | null => {

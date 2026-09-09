@@ -4,6 +4,7 @@ import {
   enumerateStateSpace,
   matchStateSpace,
   type StateCondition,
+  type StateOmission,
 } from "../src/harness/state-space.js";
 import type {
   PatternBranch,
@@ -58,6 +59,11 @@ const describeConditions = (conditions: StateCondition[]): string =>
       }
     })
     .join(" ");
+
+const describeOmission = (omission: StateOmission): string =>
+  omission.kind === "branch"
+    ? `${omission.variable}|${omission.alternativeIndex} under ${describeConditions(omission.conditions)}`
+    : `${omission.kind} ${omission.kind === "state" ? describeConditions(omission.conditions) : ""}`;
 
 describe("enumerateStateSpace", () => {
   it("multiplies independent decisions and shares correlated ones", () => {
@@ -137,11 +143,12 @@ describe("enumerateStateSpace", () => {
       [[fiber("main", [branch("a", [fiber("x")], [fiber("y")]), branch("b", [fiber("p")], [])])]],
       { maxStates: 3, maxRepeat: 2 },
     );
-    expect(space.states).toHaveLength(3);
-    expect(space.omitted?.omissions.map((omission) => omission.kind)).toEqual(["state"]);
-    const [omission] = space.omitted?.omissions ?? [];
-    if (omission?.kind !== "state") throw new Error("expected the dropped state to be recorded");
-    expect(describeConditions(omission.conditions)).toBe("a=1 b=1");
+    expect(space.states.map((state) => describeConditions(state.conditions))).toEqual([
+      "a=0 b=0",
+      "a=0 b=1",
+      "a=1 b=0",
+    ]);
+    expect(space.omitted?.omissions.map(describeOmission)).toEqual(["b|1 under a=1"]);
 
     const cutEarly = enumerateStateSpace(
       [
@@ -157,15 +164,38 @@ describe("enumerateStateSpace", () => {
     );
     expect(cutEarly.states.map((state) => describeConditions(state.conditions))).toEqual([
       "a=0 b=0 c=0",
-      "a=0 b=0 c=1",
+      "a=1 b=0 c=0",
     ]);
-    expect(
-      cutEarly.omitted?.omissions.map((omission) =>
-        omission.kind === "branch"
-          ? `${omission.variable}|${omission.alternativeIndex} under ${describeConditions(omission.conditions)}`
-          : `${omission.kind} ${omission.kind === "state" ? describeConditions(omission.conditions) : ""}`,
-      ),
-    ).toEqual(["state a=0 b=1 c=0", "c|1 under a=0 b=1", "a|1 under "]);
+    expect(cutEarly.omitted?.omissions.map(describeOmission)).toEqual([
+      "c|1 under a=0 b=0",
+      "b|1 under a=0",
+      "c|1 under a=1 b=0",
+      "b|1 under a=1",
+    ]);
+  });
+
+  it("shares the budget so an exploding alternative cannot starve its siblings", () => {
+    const independent = Array.from({ length: 8 }, (_, index) =>
+      branch(`f${index}`, [fiber("li")], []),
+    );
+    const space = enumerateStateSpace(
+      [
+        [
+          fiber("main", [
+            branch("search", [fiber("ul", independent)], [fiber("empty")]),
+            branch("tooltip", [fiber("tip")], []),
+          ]),
+        ],
+      ],
+      { maxStates: 8, maxRepeat: 2 },
+    );
+    const conditions = space.states.map((state) => describeConditions(state.conditions));
+    expect(conditions.filter((state) => state.startsWith("search=1"))).toEqual([
+      "search=1 tooltip=0",
+      "search=1 tooltip=1",
+    ]);
+    expect(conditions.filter((state) => state.startsWith("search=0"))).toHaveLength(4);
+    expect(space.omitted?.omissions.every((omission) => omission.kind === "branch")).toBe(true);
   });
 
   it("makes each distinct committed tree a state", () => {

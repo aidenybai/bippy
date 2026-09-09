@@ -584,6 +584,7 @@ export class Materializer {
           value.isAbsentPreferred ? 1 : 0,
           isTopLevel,
           value.location,
+          value.predicate,
         );
       case "unknown":
         return this.unknownNode(value.reason);

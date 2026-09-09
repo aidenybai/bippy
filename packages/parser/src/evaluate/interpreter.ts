@@ -147,12 +147,13 @@ import {
 import {
   BUNDLER_INJECTED_NAMES,
   isBundlerUndeclaredName,
+  shimsNodeGlobal,
   getInlinedNodeEnv,
   isEnvironmentObject,
   isUnsettableDefineName,
 } from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
-import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
+import { getBuiltinWitness, isEcmaScriptIntrinsic, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
@@ -292,7 +293,12 @@ import {
   thrownValue,
   unknownValue,
 } from "./values.js";
-import { createPathPredicate, getTruthinessPredicate, recordNegation } from "./predicates.js";
+import {
+  createPathPredicate,
+  getTruthinessPredicate,
+  recordNegation,
+  recordNullishTest,
+} from "./predicates.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
@@ -905,14 +911,14 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  /** The exports of a module as an object (keys in the namespace's code-unit order), for spreads and key enumeration over a namespace. */
   materializeNamespace(module: ModuleRecord): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
     return objectValue(
-      names.map((name) => ({
+      (module.isCommonJs ? names : [...names].sort()).map((name) => ({
         kind: "property",
         key: name,
         value: this.evaluateModuleExport(module, name),
@@ -1495,10 +1501,15 @@ export class Interpreter {
    * module (`global`, `define`) are decided by the bundler alone.
    */
   private isAbsentGlobal(name: string, environment: RenderEnvironment | null): boolean {
+    if (environment !== "server" && BUNDLER_INJECTED_NAMES.has(name))
+      return isBundlerUndeclaredName(this.project.bundler, name);
+    return this.isAbsentGlobalProperty(name, environment);
+  }
+
+  /** A property the global object lacks: bundler-provided names are free identifiers only, so `globalThis.process` reads the page's own `process`. */
+  private isAbsentGlobalProperty(name: string, environment: RenderEnvironment | null): boolean {
     if (environment === "server") return this.serverRealm.isForeignGlobal(name);
     if (this.windowGlobals.has(name)) return false;
-    if (BUNDLER_INJECTED_NAMES.has(name))
-      return isBundlerUndeclaredName(this.project.bundler, name);
     const windowKeys = this.pageState?.windowKeys;
     return windowKeys === undefined
       ? this.clientRealm.isForeignGlobal(name)
@@ -1516,8 +1527,7 @@ export class Interpreter {
     const observed = realm.hasDocument ? this.getObservedPageMember(hostName) : null;
     if (observed) return observed;
     if (renderEnvironment !== "server") {
-      if (hostName === "global" && this.project.hasDeclaredDependency("webpack"))
-        return GLOBAL_OBJECT_VALUE;
+      if (hostName === "global" && shimsNodeGlobal(this.project)) return GLOBAL_OBJECT_VALUE;
       const windowGlobal = this.windowGlobals.get(hostName);
       if (windowGlobal) return windowGlobal;
     }
@@ -2392,7 +2402,8 @@ export class Interpreter {
       );
       return;
     }
-    if (context.module.bindings.get(name)?.kind !== "variable") return;
+    const bindingKind = context.module.bindings.get(name)?.kind;
+    if (bindingKind !== "variable" && bindingKind !== "function") return;
     const values = this.getModuleValues(context.module);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name);
     const previous = values.get(name);
@@ -2717,7 +2728,7 @@ export class Interpreter {
           const windowGlobal =
             context.environment === "server" ? undefined : this.windowGlobals.get(key);
           if (windowGlobal) return windowGlobal;
-          if (isSymbolPropertyKey(key) || this.isAbsentGlobal(key, context.environment))
+          if (isSymbolPropertyKey(key) || this.isAbsentGlobalProperty(key, context.environment))
             return UNDEFINED_VALUE;
           return (
             this.getGlobal(memberName, context.environment) ?? unknownValue(memberName, location)
@@ -2726,6 +2737,13 @@ export class Interpreter {
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
+        if (
+          intrinsic !== null &&
+          isEcmaScriptIntrinsic(object.name) &&
+          !isSymbolPropertyKey(key) &&
+          !(key in intrinsic)
+        )
+          return UNDEFINED_VALUE;
         const declaredMember = this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
         const isOpenMember =
@@ -2918,7 +2936,13 @@ export class Interpreter {
     const callees = receivers.map(getCallee);
     const joinAlternatives = (values: StaticValue[]): StaticValue =>
       receiver.kind === "branch"
-        ? branchValue(values, receiver.reason, receiver.location, receiver.preferredIndex)
+        ? branchValue(
+            values,
+            receiver.reason,
+            receiver.location,
+            receiver.preferredIndex,
+            receiver.predicate,
+          )
         : values[0];
     const callee = joinAlternatives(callees);
     if (isReceiverIndependent(callee)) return callWith(callee, null);
@@ -4128,10 +4152,15 @@ export class Interpreter {
         null,
       );
     }
+    const returningOutcomes = outcomes.slice(0, -1);
     const isRestPositional =
-      outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
+      returningOutcomes.every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
+    const jumped = (isRestPositional ? returningOutcomes : outcomes).map((outcome) => ({
+      ...outcome,
+      mayComplete: false,
+    }));
     return mergeOutcomes(
-      [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+      [...jumped, rest],
       reason,
       location,
       preferredOutcome,
@@ -4355,6 +4384,7 @@ export class Interpreter {
         type.reason,
         type.location,
         type.preferredIndex,
+        type.predicate,
       );
     }
     return element(type);
@@ -4669,7 +4699,13 @@ const applyBinaryOperator = (
     case "==":
     case "!=":
     case "===":
-    case "!==":
+    case "!==": {
+      const comparison = unknownPrimitiveValue("boolean", `${operator} on dynamic values`);
+      const operand = isNullish(right) ? left : isNullish(left) ? right : null;
+      return operand
+        ? recordNullishTest(comparison, operand, operator === "==" || operator === "===")
+        : comparison;
+    }
     case "<":
     case "<=":
     case ">":

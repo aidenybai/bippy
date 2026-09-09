@@ -1,6 +1,7 @@
 import type {
   ModuleBundler,
   ProcessEnvironment,
+  ProjectContext,
   RenderEnvironment,
   StaticValue,
 } from "../types.js";
@@ -36,6 +37,12 @@ const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "de
 
 export const isBundlerUndeclaredName = (bundler: ModuleBundler, name: string): boolean =>
   bundler === "vite" && VITE_UNDECLARED_NAMES.has(name);
+
+/** Bundlers whose client builds rewrite a free `global` to the global object: webpack's `NodeStuffPlugin` and the frameworks bundling with it or with Turbopack, which does the same. */
+const NODE_GLOBAL_SHIMMING_BUNDLERS = ["webpack", "@rspack/core", "next", "react-scripts"];
+
+export const shimsNodeGlobal = (project: ProjectContext): boolean =>
+  project.bundler !== "vite" && NODE_GLOBAL_SHIMMING_BUNDLERS.some(project.hasDeclaredDependency);
 
 const VITE_ENVIRONMENT: Record<string, StaticValue> = {
   MODE: primitiveValue(DEV_SERVER_MODE),

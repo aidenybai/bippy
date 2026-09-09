@@ -1,3 +1,4 @@
+import { parseDerivedPredicate } from "../evaluate/predicates.js";
 import { MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import type {
@@ -110,6 +111,31 @@ const normalizeNegatedBranch = (branch: PatternBranch): PatternBranch => {
   };
 };
 
+/**
+ * `truthy(P?T:F:x) ? A : B` is decided by `P`: its alternatives show A where
+ * `P`'s alternative is truthy, B where falsy, and decide `x` themselves elsewhere.
+ */
+const deriveBranch = (branch: PatternBranch): PatternBranch => {
+  const derived = parseDerivedPredicate(branch.variable);
+  if (!derived || branch.alternatives.length !== 2) return branch;
+  const [whenTruthy, whenFalsy] = branch.alternatives;
+  const preferredIndex =
+    branch.preferredIndex === null ? -1 : derived.outcomes.indexOf(branch.preferredIndex === 0);
+  return normalizeBranch({
+    ...branch,
+    variable: derived.subject,
+    preferredIndex: preferredIndex === -1 ? null : preferredIndex,
+    alternatives: derived.outcomes.map((outcome) => {
+      if (outcome === true) return whenTruthy;
+      if (outcome === false) return whenFalsy;
+      return [normalizeBranch({ ...branch, variable: outcome })];
+    }),
+  });
+};
+
+const normalizeBranch = (branch: PatternBranch): PatternBranch =>
+  deriveBranch(normalizeNegatedBranch(branch));
+
 class PatternReader {
   private anonymousDecisions = 0;
 
@@ -122,7 +148,7 @@ class PatternReader {
     switch (fiber.name) {
       case MARKER_NAMES.branch:
         return [
-          normalizeNegatedBranch({
+          normalizeBranch({
             kind: "branch",
             variable: readString(fiber.props, "predicate") ?? `branch#${++this.anonymousDecisions}`,
             reason: readString(fiber.props, "reason") ?? "",

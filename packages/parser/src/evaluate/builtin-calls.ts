@@ -95,6 +95,7 @@ import {
   joinStrings,
   rangedNumberValue,
 } from "./primitive-shapes.js";
+import { getTruthinessPredicate } from "./predicates.js";
 import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
@@ -227,6 +228,7 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
         pair.reason,
         pair.location,
         pair.preferredIndex,
+        pair.predicate,
       ),
     };
   }
@@ -1053,7 +1055,9 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
+      const enumerated =
+        first?.kind === "namespace" ? interpreter.materializeNamespace(first.module) : first;
+      const ownEntries = enumerated ? getOwnEnumerableEntries(enumerated) : null;
       if (!ownEntries)
         return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
       if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));
@@ -1363,6 +1367,27 @@ const callGlobal = (
       break;
   }
   if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
+  if (name === "String.fromCharCode" || name === "String.fromCodePoint") {
+    const natives = toNativeArguments(args, null);
+    if (natives === null) return unknownPrimitiveValue("string", name);
+    try {
+      return primitiveValue(
+        name === "String.fromCharCode"
+          ? String.fromCharCode(...natives.map(Number))
+          : String.fromCodePoint(...natives.map(Number)),
+      );
+    } catch (error) {
+      return thrownValue(
+        `${name} of an invalid code point`,
+        createErrorValue(
+          "RangeError",
+          [primitiveValue(error instanceof Error ? error.message : String(error))],
+          location,
+        ),
+        location,
+      );
+    }
+  }
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
@@ -1487,11 +1512,10 @@ const filterItem = (
     item.kind === "branch" && item.alternatives.length <= MAX_FILTERED_ALTERNATIVES
       ? item.alternatives
       : [item];
-  const verdicts = alternatives.map((alternative) =>
-    getTruthiness(
-      callCallback(interpreter, predicate, [alternative, primitiveValue(index), list], context),
-    ),
+  const outcomes = alternatives.map((alternative) =>
+    callCallback(interpreter, predicate, [alternative, primitiveValue(index), list], context),
   );
+  const verdicts = outcomes.map(getTruthiness);
   if (verdicts.every((verdict) => verdict === true)) return item;
   const accepted = alternatives.filter((_, position) => verdicts[position] !== false);
   if (accepted.length === 0) return null;
@@ -1501,7 +1525,13 @@ const filterItem = (
     item.kind === "branch"
       ? branchValue(accepted, item.reason, item.location, Math.max(0, accepted.indexOf(preferred)))
       : item;
-  return optionalValue(kept, "uncertain filter", null, verdicts[preferredIndex] === false);
+  return optionalValue(
+    kept,
+    "uncertain filter",
+    null,
+    verdicts[preferredIndex] === false,
+    item.kind === "branch" ? null : getTruthinessPredicate(outcomes[0]),
+  );
 };
 
 const MAX_JOINED_COMBINATIONS = 16;
@@ -1621,6 +1651,8 @@ const mapList = (
             ),
             item.reason,
             item.location,
+            item.isAbsentPreferred,
+            item.predicate,
           );
         }
         return callCallback(
@@ -1986,12 +2018,8 @@ const callPromiseMethod = (
 
 const MAX_DISTRIBUTED_ALTERNATIVES = 8;
 
-const isPrimitiveBranch = (value: StaticValue): boolean =>
-  value.kind === "branch" &&
-  value.alternatives.length <= MAX_DISTRIBUTED_ALTERNATIVES &&
-  value.alternatives.every(
-    (alternative) => alternative.kind === "primitive" || alternative.kind === "regexp",
-  );
+const isDistributableBranch = (value: StaticValue): boolean =>
+  value.kind === "branch" && value.alternatives.length <= MAX_DISTRIBUTED_ALTERNATIVES;
 
 export const evaluateBuiltinCall = (
   interpreter: Interpreter,
@@ -2099,7 +2127,7 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "primitive") {
-    const branchIndex = args.findIndex(isPrimitiveBranch);
+    const branchIndex = args.findIndex(isDistributableBranch);
     if (branchIndex !== -1 && args.filter((argument) => argument.kind === "branch").length === 1) {
       return mapValue(args[branchIndex], (alternative) =>
         evaluateBuiltinCall(
