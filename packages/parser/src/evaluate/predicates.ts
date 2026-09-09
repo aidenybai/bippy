@@ -1,4 +1,5 @@
 import type { StaticValue } from "../types.js";
+import { getTruthiness } from "./values.js";
 
 // A branch predicate names the decision that picks an alternative. Two
 // branches over the same decision (the same uncertain value tested twice, both
@@ -26,8 +27,18 @@ export const recordNegation = (negated: StaticValue, operand: StaticValue): Stat
 
 const NEGATED_PREFIX = "!";
 
+const getNegatedPredicate = (predicate: string): string =>
+  predicate.startsWith(NEGATED_PREFIX)
+    ? predicate.slice(NEGATED_PREFIX.length)
+    : `${NEGATED_PREFIX}${predicate}`;
+
 /** The predicate of a branch whose first alternative is taken when `test` is truthy. */
 export const getTruthinessPredicate = (test: StaticValue): string => {
+  if (test.kind === "branch" && test.predicate !== null && test.alternatives.length === 2) {
+    const [whenFirst, whenSecond] = test.alternatives.map(getTruthiness);
+    if (whenFirst === true && whenSecond === false) return test.predicate;
+    if (whenFirst === false && whenSecond === true) return getNegatedPredicate(test.predicate);
+  }
   let subject = test;
   let isNegated = false;
   for (let operand = negations.get(subject); operand; operand = negations.get(subject)) {

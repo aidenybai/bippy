@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Points a cal.diy clone at the corpus PostgreSQL container and seeds it.
-# Runs after `yarn install` from anywhere inside the clone.
+# Runs after `yarn install`, from anywhere inside the clone.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"

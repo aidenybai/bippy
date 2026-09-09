@@ -9,6 +9,7 @@ import {
   type HostRealmTable,
   type HostType,
   type HostValueKind,
+  propertyMember,
 } from "./realm-table.js";
 
 /** Declared names include `constructor` and `toString`, which plain-object indexing would find on `Object.prototype`. */
@@ -28,6 +29,9 @@ export const HOST_PLATFORMS: readonly HostPlatform[] = [
   "react-native",
 ];
 
+/** The platform the analysis itself runs on, whose intrinsics stand in for the analyzed host's shared ones. */
+export const EVALUATOR_HOST_PLATFORM: HostPlatform = "node";
+
 export const REALMS_DIRECTORY = path.join(import.meta.dirname, "realms");
 
 export const getRealmTablePath = (platform: HostPlatform): string =>
@@ -45,6 +49,7 @@ export const getRealmGapReportPath = (platform: HostPlatform): string =>
 export class HostRealm {
   private readonly memberCache = new Map<string, HostMember | null>();
   private memberReturnKinds: Map<string, HostValueKind | null> | null = null;
+  private eventTypes: Map<string, HostType[]> | null = null;
 
   constructor(
     readonly platform: HostPlatform,
@@ -58,7 +63,7 @@ export class HostRealm {
 
   /** A global by dotted path (`Intl.DateTimeFormat`, `window.document.body`); `null` when undeclared. */
   getGlobal(name: string): HostMember | null {
-    let member: HostMember | null = { type: GLOBAL_OBJECT_TYPE, returnType: null };
+    let member: HostMember | null = propertyMember(GLOBAL_OBJECT_TYPE);
     for (const key of name.split(".")) {
       const interfaceName: string | null = member.type.interfaceName;
       if (interfaceName === null) return null;
@@ -72,6 +77,15 @@ export class HostRealm {
 
   hasGlobal(name: string): boolean {
     return this.getGlobal(name) !== null;
+  }
+
+  /** Every top-level global the host declares. */
+  getGlobalNames(): string[] {
+    const names = new Set<string>();
+    for (const interfaceName of [...this.table.globalObjectInterfaces, GLOBAL_INTERFACE_NAME]) {
+      for (const name of this.getMemberNames(interfaceName)) names.add(name);
+    }
+    return [...names];
   }
 
   /** The `typeof` a declared global evaluates to, `"undefined"` for another host's global, null when open. */
@@ -127,6 +141,35 @@ export class HostRealm {
   getMemberReturnKind(memberName: string): HostValueKind | null {
     this.memberReturnKinds ??= this.collectMemberReturnKinds();
     return this.memberReturnKinds.get(memberName) ?? null;
+  }
+
+  /** Every event type the host's `addEventListener` maps declare under `eventName`; empty when no target dispatches it. */
+  getEventTypes(eventName: string): HostType[] {
+    this.eventTypes ??= this.collectEventTypes();
+    return this.eventTypes.get(eventName) ?? [];
+  }
+
+  /** Whether some declared target dispatches `eventName` as an instance of `ancestorName` (`MouseEvent`). */
+  isEventOfType(eventName: string, ancestorName: string): boolean {
+    return this.getEventTypes(eventName).some(
+      (type) => type.interfaceName !== null && this.isSubtype(type.interfaceName, ancestorName),
+    );
+  }
+
+  /** Names of every member an interface declares or inherits. */
+  getMemberNames(interfaceName: string): string[] {
+    const names = new Set<string>();
+    const pending = [interfaceName];
+    const seen = new Set<string>();
+    for (let current = pending.pop(); current !== undefined; current = pending.pop()) {
+      if (seen.has(current)) continue;
+      seen.add(current);
+      const record = this.getInterface(current);
+      if (!record) continue;
+      for (const name of Object.keys(record.members)) names.add(name);
+      pending.push(...record.extendsNames);
+    }
+    return [...names];
   }
 
   /** A member declared on an interface or inherited from what it extends. */
@@ -198,8 +241,24 @@ export class HostRealm {
     return kinds;
   }
 
+  private collectEventTypes(): Map<string, HostType[]> {
+    const types = new Map<string, HostType[]>();
+    for (const record of Object.values(this.table.interfaces)) {
+      if (record.eventMapName === null) continue;
+      for (const eventName of this.getMemberNames(record.eventMapName)) {
+        const member = this.getMember(record.eventMapName, eventName);
+        if (member === null) continue;
+        const known = types.get(eventName) ?? [];
+        if (!known.some((type) => type.interfaceName === member.type.interfaceName)) {
+          types.set(eventName, [...known, member.type]);
+        }
+      }
+    }
+    return types;
+  }
+
   private getGlobalObjectMember(key: string): HostMember | null {
-    if (key === GLOBAL_INTERFACE_NAME) return { type: GLOBAL_OBJECT_TYPE, returnType: null };
+    if (key === GLOBAL_INTERFACE_NAME) return propertyMember(GLOBAL_OBJECT_TYPE);
     for (const interfaceName of this.table.globalObjectInterfaces) {
       const member = this.getMember(interfaceName, key);
       if (member) return member;

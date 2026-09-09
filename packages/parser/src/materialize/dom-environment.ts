@@ -99,6 +99,7 @@ export const createDomHostDocument = (hasKnownMarkup: boolean): HostDocument => 
   ensureDomGlobals();
   const browser = loadHostRealm("browser");
   return {
+    realm: browser,
     document,
     globalObject: window,
     hasKnownMarkup,

@@ -1,93 +1,81 @@
 import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
+import { EVALUATOR_HOST_PLATFORM, loadHostRealm } from "../host/host-realm.js";
+import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { getAbortWitness } from "./abort-controller.js";
 import { isBlobValue } from "./blob.js";
 import { getPrototypeOwner } from "./class-component.js";
 import { isClockDateValue } from "./clock-date.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
+import { isObjectLike } from "./host-globals.js";
 import { isNativeInstanceOf } from "./native-values.js";
 import { getModeledPromise } from "./promises.js";
-import { getBinaryWitness, TYPED_ARRAY_CONSTRUCTORS } from "./typed-arrays.js";
+import { getBinaryWitness } from "./typed-arrays.js";
 import { isSearchParamsValue } from "./url-search-params.js";
 import { isHeadersValue } from "./headers.js";
 import { isUrlValue } from "./url.js";
 import { getObjectProperty } from "./values.js";
 
-type BuiltinConstructor = abstract new (...args: never[]) => unknown;
+/**
+ * The object or function this process holds under a global name the analyzed
+ * host shares with it: every language global (this process implements the same
+ * language), and every constructor its own host declares too (`URL`, `Blob`,
+ * `Event`), whose prototype chains the analysis builds its witnesses from. The
+ * global object itself is the host's own, never this process's.
+ */
+const getSharedGlobal = (name: string): object | null => {
+  if (name === GLOBAL_INTERFACE_NAME) return null;
+  const value: unknown = Reflect.get(globalThis, name);
+  if (!isObjectLike(value)) return null;
+  if (loadHostRealm("ecmascript").hasGlobal(name)) return value;
+  return typeof value === "function" && loadHostRealm(EVALUATOR_HOST_PLATFORM).hasGlobal(name)
+    ? value
+    : null;
+};
 
-const BUILTIN_CONSTRUCTORS: Record<string, BuiltinConstructor> = {
-  Object,
-  Function,
-  Array,
-  Map,
-  Set,
-  WeakMap,
-  WeakSet,
-  Date,
-  RegExp,
-  Error,
-  TypeError,
-  RangeError,
-  SyntaxError,
-  ReferenceError,
-  EvalError,
-  URIError,
-  Promise,
-  String,
-  Number,
-  Boolean,
-  Headers,
-  Request,
-  Response,
-  FormData,
-  Blob,
-  URL,
-  URLSearchParams,
-  AbortController,
-  AbortSignal,
-  Event,
-  EventTarget,
-  TextEncoder,
-  TextDecoder,
-  ArrayBuffer,
-  DataView,
-  ...TYPED_ARRAY_CONSTRUCTORS,
+/** The constructor this process implements under a shared global name, or null; `Function.prototype` itself is callable. */
+export const getBuiltinConstructor = (name: string): Function | null => {
+  const shared = getSharedGlobal(name);
+  return typeof shared === "function" && isObjectLike(shared.prototype) ? shared : null;
 };
 
 /** The native prototype object a `<Constructor>.prototype` global denotes, or null for other names. */
 const getBuiltinPrototype = (globalName: string): object | null => {
-  const [constructorName, member, ...rest] = globalName.split(".");
-  if (member !== "prototype" || rest.length > 0 || constructorName === undefined) return null;
-  return BUILTIN_CONSTRUCTORS[constructorName]?.prototype ?? null;
+  const [constructorName = "", member, ...rest] = globalName.split(".");
+  if (member !== "prototype" || rest.length > 0) return null;
+  const prototype: unknown = getBuiltinConstructor(constructorName)?.prototype;
+  return isObjectLike(prototype) ? prototype : null;
 };
 
-const BUILTIN_PROTOTYPE_NAMES = new Map<object, string>(
-  Object.entries(BUILTIN_CONSTRUCTORS).flatMap(([name, constructor]) =>
-    constructor.prototype === null ? [] : [[constructor.prototype, `${name}.prototype`]],
-  ),
-);
+let builtinPrototypeNames: Map<object, string> | null = null;
 
-/** The `<Constructor>.prototype` global name of a native prototype object, or null when it is not a modeled builtin. */
-export const getBuiltinPrototypeName = (prototype: object): string | null =>
-  BUILTIN_PROTOTYPE_NAMES.get(prototype) ?? null;
+const collectBuiltinPrototypeNames = (): Map<object, string> => {
+  const names = new Map<object, string>();
+  const globalNames = new Set([
+    ...loadHostRealm("ecmascript").getGlobalNames(),
+    ...loadHostRealm(EVALUATOR_HOST_PLATFORM).getGlobalNames(),
+  ]);
+  for (const name of globalNames) {
+    const prototype = getBuiltinPrototype(`${name}.prototype`);
+    if (prototype !== null && !names.has(prototype)) names.set(prototype, `${name}.prototype`);
+  }
+  return names;
+};
 
-const NAMESPACE_GLOBALS: Record<string, object> = { Math, JSON, Reflect };
+/** The `<Constructor>.prototype` global name of a native prototype object, or null when it is not a shared builtin's. */
+export const getBuiltinPrototypeName = (prototype: object): string | null => {
+  builtinPrototypeNames ??= collectBuiltinPrototypeNames();
+  return builtinPrototypeNames.get(prototype) ?? null;
+};
 
 const getMember = (current: unknown, member: string): unknown =>
-  (typeof current === "object" || typeof current === "function") && current !== null
-    ? Reflect.get(current, member)
-    : undefined;
+  isObjectLike(current) ? Reflect.get(current, member) : undefined;
 
 /** The native object or function a dotted builtin global such as `Object.prototype.hasOwnProperty` denotes, or null. */
 export const getBuiltinWitness = (globalName: string): object | null => {
   const [rootName = "", ...members] = globalName.split(".");
-  const witness = members.reduce<unknown>(
-    getMember,
-    BUILTIN_CONSTRUCTORS[rootName] ?? NAMESPACE_GLOBALS[rootName],
-  );
-  return (typeof witness === "object" || typeof witness === "function") && witness !== null
-    ? witness
-    : null;
+  const witness = members.reduce<unknown>(getMember, getSharedGlobal(rootName));
+  return isObjectLike(witness) ? witness : null;
 };
 
 /** `Function.prototype.toString` of the native function a dotted global such as `Object.prototype.hasOwnProperty` denotes, or null. */
@@ -96,11 +84,17 @@ export const getBuiltinFunctionSource = (globalName: string): string | null => {
   return typeof witness === "function" ? Function.prototype.toString.call(witness) : null;
 };
 
-const COLLECTION_WITNESSES: Record<string, object> = {
-  Map: new Map(),
-  Set: new Set(),
-  WeakMap: new WeakMap(),
-  WeakSet: new WeakSet(),
+const collectionWitnesses = new Map<string, object>();
+
+/** An empty collection of the kind (`Map`, `WeakSet`), constructed once. */
+const getCollectionWitness = (collectionKind: string): object | null => {
+  const known = collectionWitnesses.get(collectionKind);
+  if (known) return known;
+  const constructor = getBuiltinConstructor(collectionKind);
+  if (constructor === null) return null;
+  const witness = Reflect.construct(constructor, []);
+  collectionWitnesses.set(collectionKind, witness);
+  return witness;
 };
 
 /**
@@ -115,7 +109,7 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
     case "object": {
       if (value.hasNullPrototype) return Object.create(null);
       const collectionKind = getCollectionKind(value);
-      if (collectionKind !== null) return COLLECTION_WITNESSES[collectionKind];
+      if (collectionKind !== null) return getCollectionWitness(collectionKind);
       if (isSearchParamsValue(value)) return new URLSearchParams();
       if (isHeadersValue(value)) return new Headers();
       if (isUrlValue(value)) return new URL("http://witness.invalid");
@@ -256,9 +250,12 @@ export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | n
       : null;
   }
   if (right.kind !== "global") return null;
-  const constructor = BUILTIN_CONSTRUCTORS[right.name];
-  if (!constructor)
-    return left.kind === "native-object" ? isNativeInstanceOf(left, right.name) : null;
+  if (left.kind === "native-object") {
+    const native = isNativeInstanceOf(left, right.name);
+    if (native !== null) return native;
+  }
+  const constructor = getBuiltinConstructor(right.name);
+  if (constructor === null) return null;
   if (isPrimitiveLike(left)) return false;
   const witness = getPrototypeWitness(left);
   return witness === null ? null : witness instanceof constructor;

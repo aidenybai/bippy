@@ -22,11 +22,17 @@ export interface HostMember {
   type: HostType;
   /** Resolved for methods whose overloads agree on one return type. */
   returnType: HostType | null;
+  /** Declared parameter names of the widest overload; null for non-methods. */
+  parameterNames: string[] | null;
+  /** The method returns `this` or a list/iterator of the receiver's own element type (`filter(): T[]`). */
+  returnsReceiverItems: boolean;
 }
 
 export interface HostInterface {
   extendsNames: string[];
   members: Record<string, HostMember>;
+  /** The `addEventListener` event map (`HTMLElementEventMap`) whose keys are the events this target dispatches. */
+  eventMapName: string | null;
 }
 
 export interface HostRealmTable {
@@ -44,6 +50,13 @@ export const GLOBAL_OBJECT_TYPE: HostType = {
   interfaceName: GLOBAL_INTERFACE_NAME,
   isNullable: false,
 };
+
+export const propertyMember = (type: HostType): HostMember => ({
+  type,
+  returnType: null,
+  parameterNames: null,
+  returnsReceiverItems: false,
+});
 
 const HOST_VALUE_KINDS = [
   "undefined",
@@ -80,35 +93,52 @@ const hostTypeSchema = z.string().transform((encoded, context): HostType => {
   };
 });
 
-/** `type` or `type>returnType`, e.g. `function>object:MediaQueryList`. */
-const encodeMember = (member: HostMember): string =>
-  member.returnType === null
-    ? encodeType(member.type)
-    : `${encodeType(member.type)}>${encodeType(member.returnType)}`;
+/**
+ * `type` for properties; `type(param,param)>returnType` for methods, with a
+ * trailing `*` when the return carries the receiver's items, e.g.
+ * `function(predicate,thisArg)>object:Array*`.
+ */
+const encodeMember = (member: HostMember): string => {
+  const parameters = member.parameterNames === null ? "" : `(${member.parameterNames.join(",")})`;
+  const returnType =
+    member.returnType === null
+      ? ""
+      : `>${encodeType(member.returnType)}${member.returnsReceiverItems ? "*" : ""}`;
+  return `${encodeType(member.type)}${parameters}${returnType}`;
+};
+
+const MEMBER_PATTERN = /^([^(>]+)(?:\(([^)]*)\))?(?:>([^*]+)(\*)?)?$/;
 
 const hostMemberSchema = z.string().transform((encoded, context): HostMember => {
-  const [type, returnType, ...rest] = encoded.split(">");
-  if (rest.length > 0 || type === undefined) {
+  const malformed = (): never => {
     context.addIssue({ code: "custom", message: `malformed host member "${encoded}"` });
     return z.NEVER;
-  }
+  };
+  const match = MEMBER_PATTERN.exec(encoded);
+  if (!match) return malformed();
+  const [, type, parameters, returnType, receiverItems] = match;
   const parsedType = hostTypeSchema.safeParse(type);
   const parsedReturn = returnType === undefined ? null : hostTypeSchema.safeParse(returnType);
-  if (!parsedType.success || (parsedReturn !== null && !parsedReturn.success)) {
-    context.addIssue({ code: "custom", message: `malformed host member "${encoded}"` });
-    return z.NEVER;
-  }
-  return { type: parsedType.data, returnType: parsedReturn === null ? null : parsedReturn.data };
+  if (!parsedType.success || (parsedReturn !== null && !parsedReturn.success)) return malformed();
+  return {
+    type: parsedType.data,
+    returnType: parsedReturn === null ? null : parsedReturn.data,
+    parameterNames:
+      parameters === undefined ? null : parameters === "" ? [] : parameters.split(","),
+    returnsReceiverItems: receiverItems !== undefined,
+  };
 });
 
 const hostInterfaceSchema = z
   .object({
     extends: z.array(z.string()).default([]),
     members: z.record(z.string(), hostMemberSchema).default({}),
+    events: z.string().nullable().default(null),
   })
   .transform((encoded): HostInterface => ({
     extendsNames: encoded.extends,
     members: encoded.members,
+    eventMapName: encoded.events,
   }));
 
 const hostRealmTableSchema = z.object({
@@ -119,6 +149,7 @@ const hostRealmTableSchema = z.object({
 interface EncodedHostInterface {
   extends?: string[];
   members?: Record<string, string>;
+  events?: string;
 }
 
 interface EncodedHostRealmTable {
@@ -133,6 +164,7 @@ export const encodeHostRealmTable = (table: HostRealmTable): EncodedHostRealmTab
   )) {
     const encoded: EncodedHostInterface = {};
     if (record.extendsNames.length > 0) encoded.extends = record.extendsNames;
+    if (record.eventMapName !== null) encoded.events = record.eventMapName;
     const memberNames = Object.keys(record.members).sort();
     if (memberNames.length > 0) {
       encoded.members = Object.fromEntries(

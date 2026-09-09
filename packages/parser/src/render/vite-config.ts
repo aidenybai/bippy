@@ -1,3 +1,4 @@
+import { DEV_SERVER_MODE } from "../evaluate/bundler-globals.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { stringifyJson } from "../evaluate/json-stringify.js";
 import { awaitedValue } from "../evaluate/promises.js";
@@ -23,23 +24,25 @@ import type { ModuleRecord, StaticValue } from "../types.js";
 // yields whatever expression it spells.
 
 /** Vite's `ConfigEnv` for the dev server. */
-const DEV_CONFIG_ENV = objectFromRecord({
-  command: primitiveValue("serve"),
-  mode: primitiveValue("development"),
-  isSsrBuild: primitiveValue(false),
-  isPreview: primitiveValue(false),
-});
+const devConfigEnv = (mode: string): StaticValue =>
+  objectFromRecord({
+    command: primitiveValue("serve"),
+    mode: primitiveValue(mode),
+    isSsrBuild: primitiveValue(false),
+    isPreview: primitiveValue(false),
+  });
 
 /** The config's default export resolved as Vite loads it: a callback is called with the dev `ConfigEnv`, a promise awaited. */
 export const evaluateViteConfig = (
   interpreter: Interpreter,
   configModule: ModuleRecord,
+  mode = DEV_SERVER_MODE,
 ): StaticValue => {
   const exported = interpreter.evaluateModuleExport(configModule, "default");
   const context = interpreter.createModuleContext(configModule, undefined, "server");
   const config =
     exported.kind === "function"
-      ? interpreter.callValue(exported, [DEV_CONFIG_ENV], context, null)
+      ? interpreter.callValue(exported, [devConfigEnv(mode)], context, null)
       : exported;
   return awaitedValue(config, null, () => interpreter.timers.drainMicrotasks());
 };
@@ -90,8 +93,12 @@ const evaluateDefineValue = (
 };
 
 /** Installs the config's `define` entries on the window as `@vite/env` does before the app's modules run. */
-export const applyViteDefines = (interpreter: Interpreter, configModule: ModuleRecord): void => {
-  const config = evaluateViteConfig(interpreter, configModule);
+export const applyViteDefines = (
+  interpreter: Interpreter,
+  configModule: ModuleRecord,
+  mode: string,
+): void => {
+  const config = evaluateViteConfig(interpreter, configModule, mode);
   if (config.kind !== "object") return;
   const defines = getObjectProperty(config, "define");
   if (defines.kind !== "object") return;
