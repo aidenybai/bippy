@@ -443,8 +443,8 @@ export const createSymbolValue = (description: string | undefined): StaticSymbol
 export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefined =>
   unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
 
-/** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
-export const SYMBOL_PROPERTY_KEY_PREFIX = "@@";
+/** Symbol-keyed properties are stored under a private-use-character prefix no program string key starts with; enumeration skips them like `Object.keys` does. */
+export const SYMBOL_PROPERTY_KEY_PREFIX = "\uE000symbol:";
 
 export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
   `${SYMBOL_PROPERTY_KEY_PREFIX}${symbol.key}`;

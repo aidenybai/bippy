@@ -1053,7 +1053,9 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
+      const target =
+        first?.kind === "namespace" ? interpreter.materializeNamespace(first.module) : first;
+      const ownEntries = target ? getOwnEnumerableEntries(target) : null;
       if (!ownEntries)
         return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
       if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));

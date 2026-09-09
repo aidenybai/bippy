@@ -273,6 +273,3100 @@
       "failure": null
     },
     {
+      "id": "ant-design-pro",
+      "revision": "adfd44085738ca953573a13322c1ba84aca8b9e3",
+      "framework": "spa",
+      "capturedAt": "2026-09-09T15:31:59.862Z",
+      "durationMs": 126545,
+      "runtime": {
+        "reactVersion": "19.2.7",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 440,
+        "commits": 12,
+        "pageErrors": [],
+        "title": "Login - Ant Design Pro"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 738,
+          "textCount": 3,
+          "branchCount": 80,
+          "repeatCount": 47,
+          "opaqueCount": 0,
+          "unknownCount": 84,
+          "modulesLoaded": 4361
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 20
+          },
+          {
+            "code": "dynamic-key",
+            "count": 5
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 439,
+        "staticFibers": 45,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <Browser> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AntdProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <Fragment> [Fragment] > <ErrorBoundary> [ClassComponent] > <Fragment> key=\"0\" [Fragment] > <ProviderWrapper> [FunctionComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <InitialStateProvider> [FunctionComponent][0]",
+          "expected": "<Loading> [FunctionComponent]",
+          "actual": "<Provider> [FunctionComponent]"
+        },
+        "stepsUsed": 31,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "matchedState": null,
+        "closestState": {
+          "index": 7,
+          "divergence": {
+            "path": "root > <Browser> [FunctionComponent] > <ContextProvider> [ContextProvider] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AntdProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <Fragment> [Fragment] > <ErrorBoundary> [ClassComponent] > <Fragment> key=\"0\" [Fragment] > <ProviderWrapper> [FunctionComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <InitialStateProvider> [FunctionComponent][0]",
+            "expected": "<Loading> [FunctionComponent]",
+            "actual": "<Provider> [FunctionComponent]"
+          }
+        },
+        "omitted": {
+          "total": 52,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#8",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#9",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#11",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#13",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#15",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#18",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#19",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#21",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#23",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#25",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#27",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#28",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#30",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#32",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#34",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "transition",
+                  "commit": 1,
+                  "commitCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#31@repeat#30[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#32",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[1]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#34",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#35@repeat#34[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#35@repeat#34[1]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#35@repeat#34[1]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#31@repeat#30[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#32",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[1]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#34",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#35@repeat#34[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#35@repeat#34[0]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#31@repeat#30[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#32",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[1]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#34",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#33@repeat#32[1]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#31@repeat#30[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#32",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#33@repeat#32[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#33@repeat#32[0]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#31@repeat#30[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#32",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#33@repeat#32[0]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#31@repeat#30[0]",
+                  "reason": "if (branch(<boolean> | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#32",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#31@repeat#30[0]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "branch#31@repeat#30[0]",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:25:3",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#30",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#30",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#28",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#28",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#27",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#27",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(142575)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(142575)",
+              "reason": "conditional on branch(true | <boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#25",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#25",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#23",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#23",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#21",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#21",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#19",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "repeat#19",
+              "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "branch#1",
+                  "reason": "if (branch(false | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#2",
+                  "reason": "if (<boolean: navigator.onLine>)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/OfflineBanner/index.tsx:24:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#4",
+                  "reason": "if (branch(true | <boolean>))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/src/components/ErrorBoundary/index.tsx:147:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131444)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#5",
+                  "reason": "if (unknown(dynamic object key: more than 64 alternatives))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/react-intl/lib/formatters/message.js:39:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(131448)",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:141:15",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#6",
+                  "reason": "&& on branch(<boolean> | true | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/result/index.js:138:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#7",
+                  "reason": "uncertain filter",
+                  "location": null,
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(133867)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#8",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#9",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#11",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#13",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#15",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:70:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "branch#17",
+                  "reason": "if (branch(false | true))",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:297:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(138204)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/Button.js:271:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "repeat#18",
+                  "location": "/home/ubuntu/bippy-corpus/ant-design-pro/node_modules/antd/es/button/buttonHelpers.js:75:7",
+                  "count": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T14:08:32.681Z",
+      "failure": null
+    },
+    {
       "id": "app-router-playground",
       "revision": "e7414970453d7fe2415adca2f34fc4d83ad2f46f",
       "framework": "next-app",
@@ -3929,6 +7023,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 191,
         "matchedText": 5,
         "opaqueSubtrees": 0,
@@ -3942,7 +7037,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 196,
         "staticFibers": 196,
         "coverage": 1,

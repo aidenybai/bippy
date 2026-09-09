@@ -11,12 +11,13 @@ const { values, positionals } = parseArgs({
     packages: { type: "string", multiple: true, default: [] },
     route: { type: "string" },
     capture: { type: "string" },
+    alias: { type: "string", multiple: true, default: [] },
   },
 });
 const [rootArg, fileArg, exportName = "default"] = positionals;
 if (!rootArg || !fileArg) {
   console.error(
-    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--route <path>] [--capture <capture.json>] <root> <file> [exportName]",
+    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--alias <specifier>=<path>]... [--route <path>] [--capture <capture.json>] <root> <file> [exportName]",
   );
   process.exit(1);
 }
@@ -28,10 +29,18 @@ const observations =
         JSON.parse(readFileSync(values.capture, "utf8")).observations,
         values.capture,
       );
+const aliases = Object.fromEntries(
+  values.alias.map((entry) => {
+    const separator = entry.indexOf("=");
+    if (separator === -1) throw new Error(`--alias expects <specifier>=<path>, got ${entry}`);
+    return [entry.slice(0, separator), entry.slice(separator + 1)];
+  }),
+);
 const renderer = await createStaticRenderer({
   rootDirectory,
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,
+  aliases,
   route: values.route,
   observations,
 });
@@ -64,5 +73,8 @@ const result = await renderer.renderWith((interpreter) => {
   return exported;
 });
 for (const diagnostic of result.diagnostics) {
-  console.log(`[${diagnostic.severity}] ${diagnostic.code}: ${diagnostic.message}`);
+  const location = diagnostic.location
+    ? ` (${diagnostic.location.filePath}:${diagnostic.location.line}:${diagnostic.location.column})`
+    : "";
+  console.log(`[${diagnostic.severity}] ${diagnostic.code}: ${diagnostic.message}${location}`);
 }

@@ -905,14 +905,19 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  /**
+   * The exports of a module as an object, for `{ ...m }` / `Object.keys(m)`
+   * over a namespace. An ESM namespace lists its exports in code-unit order;
+   * a CommonJS `exports` object keeps assignment order.
+   */
   materializeNamespace(module: ModuleRecord): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
+    const orderedNames = module.isCommonJs ? names : [...names].sort();
     return objectValue(
-      names.map((name) => ({
+      orderedNames.map((name) => ({
         kind: "property",
         key: name,
         value: this.evaluateModuleExport(module, name),
@@ -2392,7 +2397,8 @@ export class Interpreter {
       );
       return;
     }
-    if (context.module.bindings.get(name)?.kind !== "variable") return;
+    const bindingKind = context.module.bindings.get(name)?.kind;
+    if (bindingKind !== "variable" && bindingKind !== "function" && bindingKind !== "class") return;
     const values = this.getModuleValues(context.module);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name);
     const previous = values.get(name);
