@@ -118,7 +118,9 @@ const getHelperName = (specifier: string, importedName: string): string | null =
       : importedName;
   }
   if (modulePath.length > 0 || importedName !== "default") return null;
-  return MODELED_HELPERS.find((helperName) => getMethodPackageName(helperName) === specifier) ?? null;
+  return (
+    MODELED_HELPERS.find((helperName) => getMethodPackageName(helperName) === specifier) ?? null
+  );
 };
 
 export const lodashValue: ExternalValueProvider = (specifier, importedName) => {

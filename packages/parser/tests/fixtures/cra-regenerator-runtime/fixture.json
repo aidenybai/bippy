@@ -13,7 +13,16 @@
       "cookie": "",
       "localStorage": {},
       "sessionStorage": {},
-      "windowKeys": ["window", "document", "navigator", "location", "history", "setTimeout", "clearTimeout", "Promise"]
+      "windowKeys": [
+        "window",
+        "document",
+        "navigator",
+        "location",
+        "history",
+        "setTimeout",
+        "clearTimeout",
+        "Promise"
+      ]
     }
   }
 }

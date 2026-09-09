@@ -150,6 +150,7 @@ import {
   objectValue,
   optionalValue,
   primitiveValue,
+  regExpToString,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -395,6 +396,7 @@ export const getBuiltinGlobal = (
 
 const toStringValue = (value: StaticValue): StaticValue => {
   if (value.kind === "primitive") return primitiveValue(String(value.value));
+  if (value.kind === "regexp") return primitiveValue(regExpToString(value));
   return unknownPrimitiveValue("string", `String(${describeValue(value)})`);
 };
 
@@ -1886,7 +1888,7 @@ const callRegExpMethod = (
   const [first] = args;
   const regExp = toRegExp(receiver);
   if (!regExp) return unknownValue(`invalid RegExp /${receiver.pattern}/`, location);
-  if (name === "toString") return primitiveValue(regExp.toString());
+  if (name === "toString") return primitiveValue(regExpToString(receiver));
   if (name !== "test" && name !== "exec") return unknownValue(`RegExp.${name}()`, location);
   if (first?.kind === "branch" && !regExp.global && !regExp.sticky) {
     return mapValue(first, (alternative) =>

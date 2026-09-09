@@ -245,8 +245,7 @@ const updateListener = (
     return;
   }
   const target = toNativeEventTarget(receiver, interpreter.hostDocument);
-  const typeName =
-    type?.kind === "primitive" && typeof type.value === "string" ? type.value : null;
+  const typeName = type?.kind === "primitive" && typeof type.value === "string" ? type.value : null;
   if (
     receiver.kind === "native-object" &&
     typeName !== null &&

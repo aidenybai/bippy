@@ -738,6 +738,15 @@ describe("react router data router with JSX routes", () => {
     expect(tree).toMatch(/<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<h1>/);
     expect(tree).toMatch(/\|1\n\s+\?unknown\(react-router: route path is unknown\(JSON\.parse\)\)/);
   });
+
+  it("calls <NavLink> render-prop children and className with the resolved active state", async () => {
+    const { tree, errors } = await target("/about");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<nav>\n\s+<NavLink>\n\s+<Link>\n\s+<a>\n\s+<span>\n\s+<NavLink>\n\s+<Link>\n\s+<a>\n\s+<i>\n\s+<Outlet>/,
+    );
+    expect(tree).not.toContain("?unknown(NavLink");
+  });
 });
 
 describe("remix classic compiler (remix.config.js, no client entry)", () => {

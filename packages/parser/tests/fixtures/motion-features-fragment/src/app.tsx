@@ -4,7 +4,12 @@ const items = ["alpha", "beta"];
 
 export const App = () => (
   <main>
-    <motion.div className="menu" variants={{ enter: { opacity: 1 } }} initial="exit" animate="enter">
+    <motion.div
+      className="menu"
+      variants={{ enter: { opacity: 1 } }}
+      initial="exit"
+      animate="enter"
+    >
       <h1>Animated</h1>
     </motion.div>
     <motion.section layout drag="x" whileHover={{ scale: 1.1 }}>

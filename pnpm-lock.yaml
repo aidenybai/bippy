@@ -1301,6 +1301,9 @@ importers:
       array.prototype.foreach:
         specifier: 1.0.7
         version: 1.0.7
+      deepmerge:
+        specifier: 4.3.1
+        version: 4.3.1
       fake-indexeddb:
         specifier: 6.2.4
         version: 6.2.4

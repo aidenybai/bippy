@@ -702,6 +702,32 @@ class CommonJsCollector {
     }
   }
 
+  /**
+   * Export assignments and calls a minifier folded into one statement:
+   * `exports.a = 1, exports.b = 2` or `(exports.default = X).propTypes = {}`.
+   */
+  private collectExpression(expression: Expression): void {
+    switch (expression.type) {
+      case "SequenceExpression":
+        for (const item of expression.expressions) this.collectExpression(item);
+        return;
+      case "ParenthesizedExpression":
+        this.collectExpression(expression.expression);
+        return;
+      case "AssignmentExpression":
+        this.collectAssignment(expression, null);
+        if (expression.left.type === "MemberExpression") {
+          this.collectExpression(expression.left.object);
+        }
+        return;
+      case "MemberExpression":
+        this.collectExpression(expression.object);
+        return;
+      case "CallExpression":
+        this.collectCall(expression);
+    }
+  }
+
   /** Follows `exports.a = exports.b = value` chains; returns the innermost value. */
   collectAssignment(expression: Expression, localName: string | null): Expression {
     if (expression.type !== "AssignmentExpression" || expression.operator !== "=") {
@@ -767,7 +793,7 @@ class CommonJsCollector {
       if (args.length === 2) this.collectExportStar(args[0], args[1]);
       return;
     }
-    if (callee.type === "Identifier" && /^_*__export$/.test(callee.name) && args.length === 2) {
+    if (callee.type === "Identifier" && /^_+export$/.test(callee.name) && args.length === 2) {
       const [target, members] = args;
       if (target.type !== "Identifier" || members.type !== "ObjectExpression") return;
       if (isExportsObject(target)) this.collectObjectGetters(members);
@@ -837,9 +863,7 @@ class CommonJsCollector {
       return;
     }
     if (statement.type === "ExpressionStatement") {
-      const { expression } = statement;
-      if (expression.type === "AssignmentExpression") this.collectAssignment(expression, null);
-      else if (expression.type === "CallExpression") this.collectCall(expression);
+      this.collectExpression(statement.expression);
       return;
     }
     if (statement.type !== "VariableDeclaration") return;

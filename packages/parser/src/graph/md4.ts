@@ -40,7 +40,8 @@ const rotateLeft = (value: number, shift: number): number =>
   (value << shift) | (value >>> (32 - shift));
 
 const padMessage = (content: Buffer): Buffer => {
-  const paddedLength = (Math.floor((content.length + LENGTH_BYTES) / BLOCK_BYTES) + 1) * BLOCK_BYTES;
+  const paddedLength =
+    (Math.floor((content.length + LENGTH_BYTES) / BLOCK_BYTES) + 1) * BLOCK_BYTES;
   const padded = Buffer.alloc(paddedLength);
   content.copy(padded);
   padded[content.length] = 0x80;

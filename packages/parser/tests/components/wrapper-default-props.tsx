@@ -25,9 +25,7 @@ const ButtonRender = (
 const Button = forwardRef<HTMLElement, ButtonProps>(ButtonRender);
 Button.defaultProps = { tag: "button", size: "regular", block: false };
 
-const Badge = memo(({ type, children }: BadgeProps) => (
-  <span className={type}>{children}</span>
-));
+const Badge = memo(({ type, children }: BadgeProps) => <span className={type}>{children}</span>);
 Badge.defaultProps = { type: "primary" };
 
 export const isExact = true;

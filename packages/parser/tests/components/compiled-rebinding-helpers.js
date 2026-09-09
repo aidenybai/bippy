@@ -51,7 +51,9 @@ export default function CompiledRebindingHelpers() {
     React.createElement(Chart, { id: "sales", type: "bar" }),
     React.createElement(Chart, { id: "visits" }),
     options.legend ? React.createElement("aside", null, "legend") : null,
-    typeOfHelper(options) === "object" ? React.createElement("p", null, options.series.length) : null,
+    typeOfHelper(options) === "object"
+      ? React.createElement("p", null, options.series.length)
+      : null,
   );
 }
 

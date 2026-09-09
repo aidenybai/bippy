@@ -5,6 +5,7 @@ import { Spinner, useDelayed } from "umd-kit";
 import urlJoin from "umd-join";
 import { Registry, defaultLimit } from "cjs-statics";
 import pathToPattern from "path-kit";
+import Chip, { chipCount, tones } from "min-kit";
 import { createRegistry, Stack, version as umdVersion } from "umd-return-kit";
 
 const registry = new Registry().register("seen").register("caught");
@@ -53,6 +54,8 @@ export const App = () => {
       <Panel title="Moves">
         <ul />
       </Panel>
+      <Chip>{chipCount}</Chip>
+      <Chip tone={tones[1]}>{Chip.defaultProps.tone}</Chip>
       <Banner tone="info">bundled {version}</Banner>
     </LabelContext.Provider>
   );

@@ -1,22 +1,23 @@
 import {
-  getKnownObjectKeys,
-  getObjectAccessor,
-  getObjectProperty,
-  hasDefiniteItems,
   listValue,
-  objectValue,
   primitiveValue,
-  toIndexKey,
   UNDEFINED_VALUE,
   unknownValue,
+  isCallable,
+  isUndefinedValue,
 } from "../evaluate/values.js";
+import type { MutableHeapValue } from "../evaluate/heap-journal.js";
 import { nativeFunction } from "../frameworks/stubs.js";
-import type {
-  StaticListValue,
-  StaticObjectValue,
-  StaticValue,
-  StubRenderTools,
-} from "../types.js";
+import type { StaticValue, StubRenderTools } from "../types.js";
+import {
+  cloneContainer,
+  getContainerKeys,
+  isContainer,
+  isDecided,
+  isPlainObjectValue,
+  readMember,
+  writeMember,
+} from "./merge-containers.js";
 
 // Mirrors lodash's `baseMerge`/`baseMergeDeep`: a plain-object or array source
 // merges recursively into the destination's existing value (cloned when the
@@ -24,82 +25,8 @@ import type {
 // a customizer's non-undefined result wins. The destination is mutated in place
 // and returned, as lodash does.
 
-type MergeContainer = StaticObjectValue | StaticListValue;
-
-const isCallable = (value: StaticValue | undefined): boolean =>
-  value?.kind === "function" || value?.kind === "native-function";
-
-const isPlainObjectValue = (value: StaticValue): value is StaticObjectValue =>
-  value.kind === "object" && value.constructedBy === undefined && value.prototype === undefined;
-
-/** False for values whose lodash `isObject`/`isPlainObject` verdict the analysis cannot settle. */
-const isDecided = (value: StaticValue): boolean => {
-  switch (value.kind) {
-    case "unknown":
-    case "branch":
-    case "repeat":
-    case "optional":
-    case "external":
-    case "proxy":
-    case "element":
-      return false;
-    case "unknown-primitive":
-      return value.primitiveType !== "any";
-    default:
-      return true;
-  }
-};
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
-
-const getContainerKeys = (container: MergeContainer): string[] | null => {
-  if (container.kind === "object") return getKnownObjectKeys(container);
-  if (!hasDefiniteItems(container)) return null;
-  const propertyKeys = [...(container.properties?.keys() ?? [])].filter(
-    (key) => !container.nonEnumerableKeys?.has(key),
-  );
-  return [...container.items.map((_, index) => String(index)), ...propertyKeys];
-};
-
-const readMember = (container: MergeContainer, key: string): StaticValue | null => {
-  if (container.kind === "object") {
-    return getObjectAccessor(container, key) ? null : getObjectProperty(container, key);
-  }
-  const index = toIndexKey(key);
-  if (index === null) return container.properties?.get(key) ?? UNDEFINED_VALUE;
-  if (!hasDefiniteItems(container)) return null;
-  return container.items[index] ?? UNDEFINED_VALUE;
-};
-
-const writeMember = (
-  container: MergeContainer,
-  key: string,
-  value: StaticValue,
-  tools: StubRenderTools,
-): boolean => {
-  if (container.kind === "object") {
-    tools.setProperty(container, key, value);
-    return true;
-  }
-  const index = toIndexKey(key);
-  if (index === null) return false;
-  tools.setItem(container, index, value);
-  return true;
-};
-
-const cloneContainer = (source: MergeContainer): MergeContainer => {
-  if (source.kind === "list") return listValue([]);
-  const clone = objectValue();
-  if (source.hasNullPrototype) clone.hasNullPrototype = true;
-  return clone;
-};
-
-const isContainer = (value: StaticValue): value is MergeContainer =>
-  value.kind === "list" || value.kind === "object";
-
 /** What `baseMergeDeep` recurses into: arrays and plain objects. */
-const isMergeableSource = (value: StaticValue): value is MergeContainer =>
+const isMergeableSource = (value: StaticValue): value is MutableHeapValue =>
   value.kind === "list" || isPlainObjectValue(value);
 
 class StaticMerger {
@@ -111,7 +38,7 @@ class StaticMerger {
   ) {}
 
   /** False when the merge touches values whose shape or identity the source does not decide. */
-  merge(destination: MergeContainer, source: MergeContainer): boolean {
+  merge(destination: MutableHeapValue, source: MutableHeapValue): boolean {
     if (destination === source) return true;
     if (this.visiting.has(source)) return false;
     const keys = getContainerKeys(source);
@@ -127,15 +54,15 @@ class StaticMerger {
     }
   }
 
-  private mergeKey(destination: MergeContainer, source: MergeContainer, key: string): boolean {
+  private mergeKey(destination: MutableHeapValue, source: MutableHeapValue, key: string): boolean {
     const sourceValue = readMember(source, key);
     const destinationValue = readMember(destination, key);
     if (sourceValue === null || destinationValue === null || !isDecided(sourceValue)) return false;
     const customized = this.customize(destinationValue, sourceValue, key, destination, source);
     if (customized === null) return false;
-    if (!isUndefined(customized)) return writeMember(destination, key, customized, this.tools);
+    if (!isUndefinedValue(customized)) return writeMember(destination, key, customized, this.tools);
     if (!isMergeableSource(sourceValue)) {
-      if (isUndefined(sourceValue) && !isUndefined(destinationValue)) return true;
+      if (isUndefinedValue(sourceValue) && !isUndefinedValue(destinationValue)) return true;
       return writeMember(destination, key, sourceValue, this.tools);
     }
     const target = this.chooseTarget(destinationValue, sourceValue);
@@ -146,8 +73,8 @@ class StaticMerger {
   /** The container a nested source merges into: the destination's own when it holds one, else a fresh clone. */
   private chooseTarget(
     destinationValue: StaticValue,
-    sourceValue: MergeContainer,
-  ): MergeContainer | null {
+    sourceValue: MutableHeapValue,
+  ): MutableHeapValue | null {
     if (sourceValue.kind === "list") {
       return destinationValue.kind === "list" ? destinationValue : listValue([]);
     }
@@ -170,8 +97,8 @@ class StaticMerger {
     destinationValue: StaticValue,
     sourceValue: StaticValue,
     key: string,
-    destination: MergeContainer,
-    source: MergeContainer,
+    destination: MutableHeapValue,
+    source: MutableHeapValue,
   ): StaticValue | null {
     if (this.customizer === undefined) return UNDEFINED_VALUE;
     const result = this.tools.call(this.customizer, [

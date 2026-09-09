@@ -24,6 +24,7 @@ import type {
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticRegExpValue,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
@@ -568,11 +569,15 @@ export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolVa
     : null;
 };
 
+/** Own enumerable string and symbol keys, as `Object.keys` followed by the enumerable `Object.getOwnPropertySymbols`; null when the shape is not fully known. */
+export const getKnownEnumerableOwnKeys = (object: StaticObjectValue): string[] | null =>
+  getEnumerableKeys(getKnownOwnKeys(object, () => true));
+
 /** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
     case "object":
-      return getEnumerableKeys(getKnownOwnKeys(spread, () => true));
+      return getKnownEnumerableOwnKeys(spread);
     case "primitive":
       return [];
     case "branch": {
@@ -1457,6 +1462,10 @@ export type CallableValue = Extract<
 
 export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
+
+/** `RegExp.prototype.toString`, the string a RegExp coerces to. */
+export const regExpToString = (value: StaticRegExpValue): string =>
+  `/${value.pattern}/${value.flags}`;
 
 export const isUndefinedValue = (value: StaticValue): boolean =>
   value.kind === "primitive" && value.value === undefined;

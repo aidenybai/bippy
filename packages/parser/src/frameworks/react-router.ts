@@ -1,12 +1,15 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import {
+  FALSE_VALUE,
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
+  decidedBooleanValue,
   describeValue,
   getObjectProperty,
   getTruthiness,
+  isCallable,
   listValue,
   objectFromRecord,
   objectValue,
@@ -880,7 +883,26 @@ const createLinkStubs = (
   const navLink: StubComponent = {
     displayName: "NavLink",
     tag: ForwardRefTag,
-    render: (props) => {
+    render: (props, tools) => {
+      const resolved = resolveTarget(
+        getObjectProperty(props, "to"),
+        readParentMatch(tools),
+        locationPathname,
+      );
+      const isEnd = getTruthiness(getObjectProperty(props, "end"));
+      const isCaseSensitive = getTruthiness(getObjectProperty(props, "caseSensitive"));
+      const isActive =
+        resolved === null || isEnd === null || isCaseSensitive === null
+          ? null
+          : isNavLinkActive(resolved.pathname, locationPathname, isEnd, isCaseSensitive);
+      const renderProps = objectFromRecord({
+        isActive: decidedBooleanValue(isActive, "NavLink active state depends on the location"),
+        isPending: FALSE_VALUE,
+        isTransitioning: FALSE_VALUE,
+      });
+      const ariaCurrentProp = getObjectProperty(props, "aria-current");
+      const className = getObjectProperty(props, "className");
+      const style = getObjectProperty(props, "style");
       const children = getObjectProperty(props, "children");
       return element(
         { kind: "stub", stub: link },
@@ -888,11 +910,31 @@ const createLinkStubs = (
           { kind: "spread", value: omitProps(props, NAV_LINK_PROPS) },
           {
             kind: "property",
+            key: "aria-current",
+            value: mapNavLinkActive(isActive, (isActiveNow) =>
+              isActiveNow
+                ? isDefined(ariaCurrentProp)
+                  ? ariaCurrentProp
+                  : primitiveValue("page")
+                : UNDEFINED_VALUE,
+            ),
+          },
+          {
+            kind: "property",
+            key: "className",
+            value: isCallable(className)
+              ? tools.call(className, [renderProps])
+              : joinNavLinkClassName(className, isActive),
+          },
+          {
+            kind: "property",
+            key: "style",
+            value: isCallable(style) ? tools.call(style, [renderProps]) : style,
+          },
+          {
+            kind: "property",
             key: "children",
-            value:
-              children.kind === "function"
-                ? unknownValue("NavLink children render function")
-                : children,
+            value: isCallable(children) ? tools.call(children, [renderProps]) : children,
           },
         ]),
       );
@@ -929,7 +971,45 @@ const createLinkStubs = (
   return { link, navLink, form, fetcherForm };
 };
 
-const NAV_LINK_PROPS = new Set(["className", "style", "end", "caseSensitive", "children"]);
+const NAV_LINK_PROPS = new Set([
+  "aria-current",
+  "className",
+  "style",
+  "end",
+  "caseSensitive",
+  "children",
+]);
+
+const isNavLinkActive = (
+  toPathname: string,
+  locationPathname: string,
+  isEnd: boolean,
+  isCaseSensitive: boolean,
+): boolean => {
+  const target = isCaseSensitive ? toPathname : toPathname.toLowerCase();
+  const location = isCaseSensitive ? locationPathname : locationPathname.toLowerCase();
+  return (
+    location === target ||
+    (!isEnd && location.startsWith(target) && location.charAt(target.length) === "/")
+  );
+};
+
+const mapNavLinkActive = (
+  isActive: boolean | null,
+  select: (isActiveNow: boolean) => StaticValue,
+): StaticValue =>
+  isActive === null
+    ? unknownValue("NavLink active state depends on the location")
+    : select(isActive);
+
+/** `[className, isActive ? "active" : null].filter(Boolean).join(" ")`. */
+const joinNavLinkClassName = (className: StaticValue, isActive: boolean | null): StaticValue => {
+  const base = isDefined(className) ? readString(className) : "";
+  if (base === null) return unknownPrimitiveValue("string", "NavLink className");
+  return mapNavLinkActive(isActive, (isActiveNow) =>
+    primitiveValue([base, isActiveNow ? "active" : null].filter(Boolean).join(" ")),
+  );
+};
 
 /**
  * `@remix-run/react` v2 wraps react-router-dom's `Link`/`NavLink` in

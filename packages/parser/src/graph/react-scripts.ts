@@ -10,9 +10,14 @@ const REACT_APP_VARIABLE = /^REACT_APP_/i;
 const STUB_DOMAIN = "https://create-react-app.dev";
 
 /** `react-dev-utils/getPublicUrlOrPath` in development: `PUBLIC_URL` over the manifest `homepage`, always an absolute path ending in `/`. */
-const getPublicUrlOrPath = (rootDirectory: string, environment: ProcessEnvironment | null): string => {
+const getPublicUrlOrPath = (
+  rootDirectory: string,
+  environment: ProcessEnvironment | null,
+): string => {
   const manifestPath = path.join(rootDirectory, "package.json");
-  const homepage = existsSync(manifestPath) ? readPackageManifest(manifestPath).homepage : undefined;
+  const homepage = existsSync(manifestPath)
+    ? readPackageManifest(manifestPath).homepage
+    : undefined;
   const source = environment?.variables.PUBLIC_URL || homepage;
   if (!source) return "/";
   const withTrailingSlash = source.endsWith("/") ? source : `${source}/`;

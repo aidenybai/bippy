@@ -292,6 +292,7 @@ import {
   omitObjectKeys,
   partialJsonValue,
   primitiveValue,
+  regExpToString,
   setListItem,
   setListLength,
   toIndexKey,
@@ -4709,6 +4710,9 @@ const applyBinaryOperator = (
   if (distributed) return distributed;
   const thrownOperand = getThrownOperand([left, right]);
   if (thrownOperand) return thrownOperand;
+  if (operator === "+" && (left.kind === "regexp" || right.kind === "regexp")) {
+    return applyBinaryOperator(operator, toCoercedOperand(left), toCoercedOperand(right), realm);
+  }
   if (left.kind === "primitive" && right.kind === "primitive") {
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
@@ -4751,6 +4755,10 @@ const applyBinaryOperator = (
       return unknownPrimitiveValue("number", `${operator} on dynamic values`);
   }
 };
+
+/** `ToPrimitive` of a RegExp operand: `RegExp.prototype.toString`. */
+const toCoercedOperand = (value: StaticValue): StaticValue =>
+  value.kind === "regexp" ? primitiveValue(regExpToString(value)) : value;
 
 /** A value that is a number for sure, known or not. */
 const isNumberValue = (value: StaticValue): boolean =>

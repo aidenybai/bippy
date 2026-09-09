@@ -1,6 +1,7 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../frameworks/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import { DEEPMERGE_PACKAGES, deepmergeValue } from "./deepmerge.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
@@ -66,6 +67,7 @@ interface LibraryModel {
 }
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
+  { packages: DEEPMERGE_PACKAGES, getValue: deepmergeValue },
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
   { packages: FOREIGN_RENDERER_PACKAGES, getValue: foreignRendererValue },

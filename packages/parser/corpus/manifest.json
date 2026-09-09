@@ -3016,7 +3016,29 @@
         "rootDirectory": ".",
         "tsconfig": "jsconfig.json",
         "entry": "src/index.js",
-        "route": "/dashboard"
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "chroma-js",
+          "prop-types",
+          "react-chartjs-2",
+          "chart.js",
+          "react-countup",
+          "countup.js",
+          "react-flatpickr",
+          "flatpickr",
+          "stylis",
+          "stylis-plugin-rtl",
+          "clsx",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "hoist-non-react-statics",
+          "uuid"
+        ],
+        "maxFiberCount": 20000
       },
       "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19, on which the template crashes at mount (theme palette lookup `undefined.main`); the install pins the React 18.2 the template shipped against."
     },
@@ -3202,7 +3224,20 @@
         "route": "/dashboard/home",
         "aliases": {
           "@": "src"
-        }
+        },
+        "externalPackageAllowList": [
+          "@material-tailwind/react",
+          "@heroicons/react",
+          "@heroicons/react/*",
+          "prop-types",
+          "react-apexcharts",
+          "framer-motion",
+          "@floating-ui/*",
+          "material-ripple-effects",
+          "tailwind-merge",
+          "deepmerge",
+          "classnames"
+        ]
       }
     },
     {
@@ -3222,7 +3257,29 @@
         "route": "/",
         "aliases": {
           "@mocks": "public/mocks"
-        }
+        },
+        "externalPackageAllowList": [
+          "antd",
+          "@ant-design/*",
+          "rc-*",
+          "@rc-component/*",
+          "react-redux",
+          "redux-persist",
+          "@reduxjs/toolkit",
+          "react-helmet-async",
+          "@tanstack/react-query",
+          "react-i18next",
+          "i18next",
+          "react-countup",
+          "countup.js",
+          "react-fast-marquee",
+          "react-responsive",
+          "@tanem/react-nprogress",
+          "react-transition-group",
+          "framer-motion",
+          "classnames",
+          "dayjs"
+        ]
       }
     }
   ]
