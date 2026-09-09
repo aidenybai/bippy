@@ -17,7 +17,7 @@ import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 
-export interface ExportNameSet {
+interface ExportNameSet {
   names: string[];
   complete: boolean;
 }
@@ -29,7 +29,7 @@ export interface ModuleGraphOptions {
   externalPackageAllowList?: string[];
 }
 
-export const describeImportedName = (imported: ImportedName): string => {
+const describeImportedName = (imported: ImportedName): string => {
   switch (imported.kind) {
     case "default":
       return "default";

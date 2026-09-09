@@ -22,7 +22,7 @@ import { element, hostElement, omitProps, stubElement } from "./stubs.js";
 // for `priority`. 12.2 moved the `<img>`/`<noscript>` pair into an
 // `ImageElement` component and wrapped everything in a Fragment.
 
-export interface LegacyImageShape {
+interface LegacyImageShape {
   hasImageElement: boolean;
   head: StubComponent;
 }

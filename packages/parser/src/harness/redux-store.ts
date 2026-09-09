@@ -1,5 +1,6 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
+import { isRecord } from "../observations.js";
 import type { CapturedValue } from "../types.js";
 import type { ExportIndex } from "./module-exports.js";
 import { toCapturedValue } from "./query-cache.js";
@@ -14,9 +15,6 @@ interface StoreCreator {
 interface StoreEnhancer {
   (createStore: StoreCreator): StoreCreator;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 export const isReduxStore = (value: unknown): value is ReduxStoreLike =>
   isRecord(value) && typeof value.getState === "function" && typeof value.subscribe === "function";

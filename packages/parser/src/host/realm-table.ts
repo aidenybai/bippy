@@ -111,17 +111,17 @@ const hostInterfaceSchema = z
     members: encoded.members,
   }));
 
-export const hostRealmTableSchema = z.object({
+const hostRealmTableSchema = z.object({
   globalObjectInterfaces: z.array(z.string()),
   interfaces: z.record(z.string(), hostInterfaceSchema),
 });
 
-export interface EncodedHostInterface {
+interface EncodedHostInterface {
   extends?: string[];
   members?: Record<string, string>;
 }
 
-export interface EncodedHostRealmTable {
+interface EncodedHostRealmTable {
   globalObjectInterfaces: string[];
   interfaces: Record<string, EncodedHostInterface>;
 }

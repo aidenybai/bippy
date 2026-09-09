@@ -42,7 +42,7 @@ import { formatIcuMessage } from "./icu-message-format.js";
 // Components. Translations resolve from the configured messages; what only the
 // request decides (a negotiated locale, the current time) stays uncertain.
 
-export interface NextIntlModelOptions {
+interface NextIntlModelOptions {
   /** The `next/link` component navigation links render through. */
   link: StubComponent;
   /** `next/navigation` exports the navigation hooks wrap. */

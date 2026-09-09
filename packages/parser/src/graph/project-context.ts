@@ -32,7 +32,7 @@ export const readDeclaredDependencies = (manifestPath: string): string[] => {
  * use it, so what the project itself declares in the manifests from the root
  * upwards (its workspace root included) is the signal.
  */
-export interface ProjectContextOptions {
+interface ProjectContextOptions {
   rootDirectory: string;
   resolver: ModuleResolver;
   /** The bundler's served root (Vite `root`) when it is not `rootDirectory`. */

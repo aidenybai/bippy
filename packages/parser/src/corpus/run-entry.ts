@@ -29,7 +29,7 @@ import {
   type DiagnosticCount,
 } from "./manifest.js";
 
-export interface RunEntryOptions {
+interface RunEntryOptions {
   corpusDirectory: string;
   /** Helper scripts manifest commands may call through `$BIPPY_CORPUS_SCRIPTS`. */
   scriptsDirectory: string;

@@ -37,12 +37,6 @@ export const getTruthinessPredicate = (test: StaticValue): string => {
   return `${isNegated ? NEGATED_PREFIX : ""}truthy(${getSubjectId(subject)})`;
 };
 
-/** The predicate of a two-way branch taking the opposite side of `predicate`. */
-export const getNegatedPredicate = (predicate: string): string =>
-  predicate.startsWith(NEGATED_PREFIX)
-    ? predicate.slice(NEGATED_PREFIX.length)
-    : `${NEGATED_PREFIX}${predicate}`;
-
 /** The predicate of a fork whose paths are decided by something the analysis cannot see. */
 export const createPathPredicate = (): string => `path(${++nextSubjectId})`;
 

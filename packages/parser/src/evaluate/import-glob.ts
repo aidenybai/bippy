@@ -8,14 +8,14 @@ import { isModuleRecord } from "../graph/module-graph.js";
 import { resolvedPromiseValue } from "./promises.js";
 import { describeValue, getObjectProperty, objectValue, unknownValue } from "./values.js";
 
-export interface ImportGlobOptions {
+interface ImportGlobOptions {
   isEager: boolean;
   importedName: string | null;
   query: string;
   base: string | null;
 }
 
-export interface ImportGlobFile {
+interface ImportGlobFile {
   key: string;
   specifier: string;
 }
@@ -106,7 +106,7 @@ const globAbsolute = (absolutePattern: string): string[] => {
 const withRelativePrefix = (relativePath: string): string =>
   RELATIVE_PREFIX.test(relativePath) ? relativePath : `./${relativePath}`;
 
-export const listImportGlobFiles = (
+const listImportGlobFiles = (
   patterns: string[],
   options: ImportGlobOptions,
   importerPath: string,

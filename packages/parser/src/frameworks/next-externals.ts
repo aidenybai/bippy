@@ -63,7 +63,7 @@ export interface NextModel {
   intl: NextIntlModel;
 }
 
-export type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
+type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
 
 const LINK_ONLY_PROPS: ReadonlySet<string> = new Set([
   "href",
@@ -566,7 +566,7 @@ const pagesRouterValue = (
   return importedName === "useRouter" ? nativeFunction(importedName, () => router) : router;
 };
 
-export interface NextModelOptions {
+interface NextModelOptions {
   kind: NextRouterKind;
   /** The URL being rendered (pathname plus search). */
   route: string;

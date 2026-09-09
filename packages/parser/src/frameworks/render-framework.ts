@@ -2,7 +2,7 @@ import path from "node:path";
 import { getSettleMs, type CorpusEntry } from "../corpus/manifest.js";
 import { readProcessEnvironment } from "../corpus/process-environment.js";
 import { FrameworkTargetError } from "../errors.js";
-import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
+import { createStaticRenderer } from "../render/static-renderer.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
@@ -152,11 +152,6 @@ const getPageRoute = (url: string): string => {
   const { pathname, search, hash } = new URL(url);
   return `${pathname}${search}${hash}`;
 };
-
-export const createRendererForEntry = (
-  entry: CorpusEntry,
-  cloneDirectory: string,
-): StaticRenderer => createStaticRenderer(rendererOptionsForEntry(entry, cloneDirectory));
 
 export const renderFramework = (
   entry: CorpusEntry,

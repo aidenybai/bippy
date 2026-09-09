@@ -145,7 +145,7 @@ export const partialJsonValue = (json: JsonValue, name: string): StaticValue => 
 };
 
 /** Evaluates the module export a captured node referenced; null when the module is not part of the analyzed project. */
-export interface CapturedExportResolver {
+interface CapturedExportResolver {
   (reference: CapturedExportReference): StaticValue | null;
 }
 
@@ -542,19 +542,6 @@ export const getOwnPropertyDescriptor = (
     enumerable: primitiveValue(isEnumerable),
     configurable: isConfigurable,
   });
-};
-
-/** `Object.getOwnPropertyDescriptors(object)`, or null when a dynamic spread could own a key. */
-export const getOwnPropertyDescriptors = (object: StaticObjectValue): StaticObjectValue | null => {
-  const ownKeys = getKnownOwnKeys(object, () => true);
-  if (!ownKeys) return null;
-  const descriptors: Record<string, StaticValue> = {};
-  for (const key of ownKeys.keys()) {
-    const descriptor = getOwnPropertyDescriptor(object, key);
-    if (descriptor === null) return null;
-    descriptors[key] = descriptor;
-  }
-  return objectFromRecord(descriptors);
 };
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
@@ -1365,15 +1352,6 @@ export const branchValue = (
   };
 };
 
-export const isRenderableValue = (value: StaticValue): boolean =>
-  value.kind === "element" ||
-  value.kind === "list" ||
-  value.kind === "repeat" ||
-  value.kind === "primitive" ||
-  value.kind === "unknown-primitive" ||
-  value.kind === "branch" ||
-  value.kind === "unknown";
-
 const getAgreedTruthiness = (alternatives: StaticValue[]): boolean | null => {
   const truthiness = alternatives.map(getTruthiness);
   return truthiness.every((entry) => entry === truthiness[0]) ? (truthiness[0] ?? null) : null;
@@ -1530,9 +1508,6 @@ export const distributeBinary = (
   }
   return null;
 };
-
-export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>
-  value.kind === "primitive" ? value.value : undefined;
 
 export const isIndefiniteItem = (item: StaticValue): boolean =>
   item.kind === "repeat" || item.kind === "optional";

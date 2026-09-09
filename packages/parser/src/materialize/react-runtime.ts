@@ -80,7 +80,7 @@ const loadAct = async (
   throw new ReactRuntimeError("neither React.act nor react-dom/test-utils act is available");
 };
 
-export interface LoadReactRuntimeOptions {
+interface LoadReactRuntimeOptions {
   /** Resolves `react`/`react-dom` the way the analyzed app does; falls back to the harness's own copy. */
   resolver?: ModuleResolver;
   rootDirectory?: string;

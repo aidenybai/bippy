@@ -66,20 +66,20 @@ export type MemberDeclaration =
   | { form: "method"; returnType: TSType | null; scope: Scope }
   | { form: "reference"; type: HostType };
 
-export interface HeritageReference {
+interface HeritageReference {
   name: string[];
   scope: Scope;
   /** `class B extends A` also inherits `A`'s static side. */
   isStatic: boolean;
 }
 
-export interface InterfaceRecord {
+interface InterfaceRecord {
   heritage: HeritageReference[];
   members: Map<string, MemberDeclaration[]>;
   isCallable: boolean;
 }
 
-export interface AliasRecord {
+interface AliasRecord {
   type: TSType;
   typeParameters: string[];
   scope: Scope;

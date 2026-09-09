@@ -174,7 +174,7 @@ const PURE_METHOD_PREFIXES = [
 ];
 
 /** The interface name of a native object, read off its prototype: a `Proxy` over a DOM map (`dataset`) answers `constructor` as a lookup. */
-export const getNativeInterfaceName = (value: object): string => {
+const getNativeInterfaceName = (value: object): string => {
   const prototype = Reflect.getPrototypeOf(value);
   const constructor: unknown =
     prototype === null ? undefined : Reflect.get(prototype, "constructor");
@@ -267,7 +267,7 @@ const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => 
   }
 };
 
-export interface NativeCallFallback {
+interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
@@ -600,7 +600,7 @@ const NATIVE_CONSTRUCTORS = {
   ...INTL_CONSTRUCTORS,
 } satisfies Record<string, Function>;
 
-export type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
+type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
 
 export const isNativeConstructorName = (name: string): name is NativeConstructorName =>
   Object.hasOwn(NATIVE_CONSTRUCTORS, name);
