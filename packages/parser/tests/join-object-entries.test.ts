@@ -26,7 +26,10 @@ describe("joinObjectEntries", () => {
     const original = [property("a", 1)];
     const joined = joinObjectEntries(
       original,
-      [[...original, dynamicWrite()], [...original, property("b", 2)]],
+      [
+        [...original, dynamicWrite()],
+        [...original, property("b", 2)],
+      ],
       "if (isWide)",
       null,
       0,

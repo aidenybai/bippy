@@ -2,8 +2,14 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
-import { renderFramework } from "../frameworks/render-framework.js";
+import {
+  CorpusRevisionError,
+  NoCommitsError,
+  StaleCaptureError,
+  describeError,
+  parseWithSchema,
+} from "../errors.js";
+import { renderCorpusEntry } from "./render-entry.js";
 import {
   dropInjectedFibers,
   unwrapTransparentRuntimeFiber,
@@ -29,7 +35,7 @@ import {
   type DiagnosticCount,
 } from "./manifest.js";
 
-export interface RunEntryOptions {
+interface RunEntryOptions {
   corpusDirectory: string;
   /** Helper scripts manifest commands may call through `$BIPPY_CORPUS_SCRIPTS`. */
   scriptsDirectory: string;
@@ -152,9 +158,6 @@ const summarizeRuntime = (capture: BrowserCaptureResult): CorpusRuntimeSummary =
   title: capture.title,
 });
 
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);
 
@@ -171,7 +174,7 @@ const savedCaptureSchema = z.object({
 
 // A browser capture saved by an earlier live run; static-only passes replay it so
 // evaluator changes are re-verified against the same runtime tree without a dev server.
-const readSavedCapture = (
+export const readSavedCapture = (
   outputDirectory: string,
   entry: CorpusEntry,
 ): BrowserCaptureResult | null => {
@@ -182,7 +185,9 @@ const readSavedCapture = (
     JSON.parse(readFileSync(filePath, "utf8")),
     filePath,
   );
-  if (saved.revision !== entry.revision) return null;
+  if (saved.revision !== entry.revision) {
+    throw new StaleCaptureError(filePath, saved.revision, entry.revision);
+  }
   return {
     snapshot: readSnapshot(saved.snapshot),
     commits: saved.commits,
@@ -332,7 +337,7 @@ export const runCorpusEntry = async (
     runtime: BrowserCaptureResult | null,
   ): Promise<StaticRenderResult> => {
     log("static render");
-    staticResult = await renderFramework(entry, directory, runtime?.observations);
+    staticResult = await renderCorpusEntry(entry, directory, runtime?.observations);
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),

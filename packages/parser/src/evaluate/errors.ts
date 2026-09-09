@@ -17,12 +17,10 @@ const ERROR_CONSTRUCTORS = {
   URIError,
 };
 
-export type ErrorConstructorName = keyof typeof ERROR_CONSTRUCTORS;
+type ErrorConstructorName = keyof typeof ERROR_CONSTRUCTORS;
 
 /** A runtime instance with the same prototype chain as each modeled error object, for `instanceof`. */
 const errorWitnesses = new WeakMap<StaticObjectValue, Error>();
-
-export const ERROR_CONSTRUCTOR_NAMES = Object.keys(ERROR_CONSTRUCTORS);
 
 export const isErrorConstructorName = (name: string): name is ErrorConstructorName =>
   Object.hasOwn(ERROR_CONSTRUCTORS, name);

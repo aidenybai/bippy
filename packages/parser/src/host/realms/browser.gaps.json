@@ -1,9 +1,9 @@
 {
-  "total": 265,
+  "total": 214,
   "byReason": {
-    "type-parameter": 130,
-    "declared-any": 80,
-    "mixed-union": 45,
+    "type-parameter": 76,
+    "declared-any": 81,
+    "mixed-union": 47,
     "overloads": 9,
     "conditional": 1
   },
@@ -56,17 +56,7 @@
     {
       "site": "Array.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "Array.find",
-      "reason": "type-parameter",
       "detail": "T"
-    },
-    {
-      "site": "Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Array.findLast",
@@ -104,17 +94,7 @@
       "detail": "T"
     },
     {
-      "site": "ArrayBufferView.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
       "site": "AsyncDisposableStack.adopt",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "AsyncDisposableStack.use",
       "reason": "type-parameter",
       "detail": "T"
     },
@@ -169,16 +149,6 @@
       "detail": "any"
     },
     {
-      "site": "BigInt64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "BigInt64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "BigInt64Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -187,16 +157,6 @@
       "site": "BigInt64Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "BigUint64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "BigUint64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "BigUint64Array.reduce",
@@ -237,11 +197,6 @@
       "site": "ComputedEffectTiming.startTime",
       "reason": "mixed-union",
       "detail": "number | object"
-    },
-    {
-      "site": "Crypto.getRandomValues",
-      "reason": "type-parameter",
-      "detail": "T"
     },
     {
       "site": "CSPViolationReportBody.toJSON",
@@ -289,37 +244,7 @@
       "detail": "T"
     },
     {
-      "site": "DataView.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
       "site": "DisposableStack.adopt",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "DisposableStack.use",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "Document.adoptNode",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "Document.createElement",
-      "reason": "type-parameter",
-      "detail": "K"
-    },
-    {
-      "site": "Document.createElementNS",
-      "reason": "type-parameter",
-      "detail": "K"
-    },
-    {
-      "site": "Document.importNode",
       "reason": "type-parameter",
       "detail": "T"
     },
@@ -349,16 +274,6 @@
       "detail": "number | object | string"
     },
     {
-      "site": "Element.closest",
-      "reason": "type-parameter",
-      "detail": "K"
-    },
-    {
-      "site": "Element.closest",
-      "reason": "type-parameter",
-      "detail": "E"
-    },
-    {
       "site": "Error.cause",
       "reason": "declared-any",
       "detail": "unknown"
@@ -374,16 +289,6 @@
       "detail": "string | object"
     },
     {
-      "site": "Float16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Float16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -394,16 +299,6 @@
       "detail": "U"
     },
     {
-      "site": "Float32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Float32Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -412,16 +307,6 @@
       "site": "Float32Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Float64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Float64Array.reduce",
@@ -494,16 +379,6 @@
       "detail": "any"
     },
     {
-      "site": "HTMLCollectionOf.item",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "HTMLCollectionOf.namedItem",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
       "site": "IDBCursor.key",
       "reason": "mixed-union",
       "detail": "number | string | object | object | object"
@@ -544,16 +419,6 @@
       "detail": "T"
     },
     {
-      "site": "Int16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Int16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -564,16 +429,6 @@
       "detail": "U"
     },
     {
-      "site": "Int32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Int32Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -582,16 +437,6 @@
       "site": "Int32Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Int8Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int8Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Int8Array.reduce",
@@ -642,11 +487,6 @@
       "site": "Iterator.throw",
       "reason": "type-parameter",
       "detail": "TReturn"
-    },
-    {
-      "site": "IteratorObject.find",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "IteratorObject.find",
@@ -786,11 +626,6 @@
     {
       "site": "namespace Reflect.get",
       "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "namespace Reflect.get",
-      "reason": "type-parameter",
       "detail": "P"
     },
     {
@@ -804,34 +639,9 @@
       "detail": "any"
     },
     {
-      "site": "Node.appendChild",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "Node.insertBefore",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "Node.removeChild",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "Node.replaceChild",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
       "site": "NodeIterator.filter",
       "reason": "mixed-union",
       "detail": "function | object"
-    },
-    {
-      "site": "NodeListOf.item",
-      "reason": "type-parameter",
-      "detail": "TNode"
     },
     {
       "site": "Notification.data",
@@ -840,8 +650,8 @@
     },
     {
       "site": "ObjectConstructor.assign",
-      "reason": "type-parameter",
-      "detail": "T"
+      "reason": "declared-any",
+      "detail": "{}"
     },
     {
       "site": "ObjectConstructor.assign",
@@ -895,8 +705,8 @@
     },
     {
       "site": "ObjectConstructor.groupBy",
-      "reason": "type-parameter",
-      "detail": "K"
+      "reason": "mixed-union",
+      "detail": "string | number | symbol"
     },
     {
       "site": "ObjectConstructor.preventExtensions",
@@ -912,16 +722,6 @@
       "site": "ObjectConstructor.setPrototypeOf",
       "reason": "declared-any",
       "detail": "any"
-    },
-    {
-      "site": "ParentNode.querySelector",
-      "reason": "type-parameter",
-      "detail": "K"
-    },
-    {
-      "site": "ParentNode.querySelector",
-      "reason": "type-parameter",
-      "detail": "E"
     },
     {
       "site": "PaymentAddress.toJSON",
@@ -999,11 +799,6 @@
       "detail": "any"
     },
     {
-      "site": "ProgressEvent.target",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
       "site": "PromiseRejectionEvent.reason",
       "reason": "declared-any",
       "detail": "any"
@@ -1036,17 +831,7 @@
     {
       "site": "ReadonlyArray.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "ReadonlyArray.find",
-      "reason": "type-parameter",
       "detail": "T"
-    },
-    {
-      "site": "ReadonlyArray.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "ReadonlyArray.findLast",
@@ -1114,16 +899,6 @@
       "detail": "T"
     },
     {
-      "site": "Uint16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Uint16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -1132,16 +907,6 @@
       "site": "Uint16Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Uint32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Uint32Array.reduce",
@@ -1154,16 +919,6 @@
       "detail": "U"
     },
     {
-      "site": "Uint8Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint8Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Uint8Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -1172,16 +927,6 @@
       "site": "Uint8Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Uint8ClampedArray.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint8ClampedArray.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Uint8ClampedArray.reduce",
@@ -1210,8 +955,8 @@
     },
     {
       "site": "WeakRef.deref",
-      "reason": "type-parameter",
-      "detail": "T"
+      "reason": "mixed-union",
+      "detail": "object | symbol"
     },
     {
       "site": "WebAssembly.Global.value",

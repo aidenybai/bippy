@@ -17,6 +17,9 @@ export class SchemaError extends ParserError {
   }
 }
 
+export const describeError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
 export const parseWithSchema = <Output>(
   schema: z.ZodType<Output>,
   value: unknown,
@@ -83,6 +86,19 @@ export class CorpusRevisionError extends ParserError {
   }
 }
 
+/** A saved capture from another revision than the manifest pins; replaying it would compare unrelated trees. */
+export class StaleCaptureError extends ParserError {
+  constructor(
+    readonly filePath: string,
+    readonly captured: string,
+    readonly pinned: string,
+  ) {
+    super(
+      `${filePath} was captured at ${captured.slice(0, 10)} but the manifest pins ${pinned.slice(0, 10)}; recapture it without --static-only`,
+    );
+  }
+}
+
 export class NoCommitsError extends ParserError {
   constructor(
     readonly url: string,
@@ -107,6 +123,9 @@ export class BundleError extends ParserError {}
 
 /** The worker running the app's Vite plugins stopped answering. */
 export class VitePluginError extends ParserError {}
+
+/** A state space asked to match commits it enumerated none for. */
+export class StateSpaceError extends ParserError {}
 
 export class ReactRuntimeError extends ParserError {}
 

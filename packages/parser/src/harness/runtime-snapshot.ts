@@ -6,6 +6,7 @@ import type {
   SnapshotPropValue,
   SnapshotWorkTag,
 } from "./snapshot.js";
+import { isMarkerName } from "../materialize/markers.js";
 
 const MAX_STRING_PROP_LENGTH = 200;
 // Vite's SSR transform names an anonymous `export default` after its export slot.
@@ -58,10 +59,10 @@ const buildTagLookup = (workTags: Readonly<ReactWorkTagMap>): Map<number, Snapsh
   return lookup;
 };
 
-const toPropValue = (value: unknown): SnapshotPropValue | undefined => {
+const toPropValue = (value: unknown, isUntruncated: boolean): SnapshotPropValue | undefined => {
   switch (typeof value) {
     case "string":
-      return value.length > MAX_STRING_PROP_LENGTH
+      return value.length > MAX_STRING_PROP_LENGTH && !isUntruncated
         ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…`
         : value;
     case "number":
@@ -82,12 +83,16 @@ const toPropValue = (value: unknown): SnapshotPropValue | undefined => {
   }
 };
 
-const snapshotProps = (memoizedProps: unknown): Record<string, SnapshotPropValue> => {
+/** Marker props carry serialized guards the pattern reader parses back, so they are kept whole. */
+const snapshotProps = (
+  memoizedProps: unknown,
+  isMarker: boolean,
+): Record<string, SnapshotPropValue> => {
   const result: Record<string, SnapshotPropValue> = {};
   if (typeof memoizedProps !== "object" || memoizedProps === null) return result;
   for (const [key, value] of Object.entries(memoizedProps)) {
     if (key === "children") continue;
-    const propValue = toPropValue(value);
+    const propValue = toPropValue(value, isMarker);
     if (propValue !== undefined) result[key] = propValue;
   }
   return result;
@@ -155,12 +160,13 @@ const snapshotFiber = (
     child = child.sibling;
   }
   const key = fiber.key;
+  const name = getFiberName(fiber, tag);
   return {
     tag,
-    name: getFiberName(fiber, tag),
+    name,
     key: typeof key === "string" ? key : null,
     text: tag === "HostText" ? String(fiber.memoizedProps) : null,
-    props: tag === "HostText" ? {} : snapshotProps(fiber.memoizedProps),
+    props: tag === "HostText" ? {} : snapshotProps(fiber.memoizedProps, isMarkerName(name)),
     children,
   };
 };
@@ -168,7 +174,7 @@ const snapshotFiber = (
 export const snapshotFiberTree = (rootFiber: Fiber): RuntimeFiberSnapshot =>
   snapshotFiber(rootFiber, buildTagLookup(getReactWorkTagsForFiber(rootFiber)));
 
-export interface RuntimeSnapshotSource {
+interface RuntimeSnapshotSource {
   roots: FiberRoot[];
   renderer: ReactRenderer | null;
 }

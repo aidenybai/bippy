@@ -8,7 +8,7 @@ import {
   omitObjectKeys,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, stubValue } from "../frameworks/stubs.js";
+import { element, stubValue } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
   ModeledExports,

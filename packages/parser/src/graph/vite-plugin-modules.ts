@@ -6,7 +6,7 @@ import { transformSync } from "esbuild";
 import { VitePluginError } from "../errors.js";
 import { getInstalledModules } from "../libraries/installed-modules.js";
 import type { ModuleBundler } from "../types.js";
-import { findViteConfig } from "./module-transpiler.js";
+import { findViteConfig } from "./vite-config.js";
 import type {
   VitePluginRequest,
   VitePluginResponse,
@@ -49,7 +49,9 @@ export class VitePluginModules {
     this.getWorker();
     this.port.postMessage(request);
     if (Atomics.wait(this.signal, 0, 0, RESPONSE_TIMEOUT_MS) === "timed-out") {
-      throw new VitePluginError(`Vite plugins did not answer for ${id} within ${RESPONSE_TIMEOUT_MS}ms`);
+      throw new VitePluginError(
+        `Vite plugins did not answer for ${id} within ${RESPONSE_TIMEOUT_MS}ms`,
+      );
     }
     const reply = receiveMessageOnPort(this.port);
     if (!reply) throw new VitePluginError(`Vite plugins signalled without a reply for ${id}`);

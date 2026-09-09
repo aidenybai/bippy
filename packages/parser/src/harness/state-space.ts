@@ -1,27 +1,40 @@
+import { StateSpaceError } from "../errors.js";
 import {
   matchPatternToRuntime,
   type ComparisonDivergence,
   type ComparisonOptions,
   type ComparisonReport,
   type ComparisonStatus,
+  type DecisionConstraint,
   type MatchDecision,
   type PatternMatch,
 } from "./compare.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import {
-  hasPatternDecisions,
-  scopePatternVariables,
-  type PatternBranch,
-  type PatternNode,
-  type PatternRepeat,
-} from "./static-pattern.js";
+  branchCondition,
+  conditionValue,
+  enumerateClusters,
+  enumerateCommitStates,
+  repeatCondition,
+  stateIndexOf,
+  type CommitStateSpace,
+  type GuardCluster,
+} from "./enumerate-states.js";
+import { GuardSolver } from "./guard-solver.js";
+import type { PatternNode } from "./static-pattern.js";
+import type { GuardCoverage } from "./guard-coverage.js";
+import {
+  buildSymbolicTree,
+  decisionGuard,
+  type SymbolicTree,
+  type SymbolicTreeStats,
+} from "./symbolic-tree.js";
 
 // A static render describes a set of concrete fiber trees, one per assignment
 // of its decision variables (branches, repeat counts) per committed render.
-// The set is enumerated here, bounded by a budget, and every state left out is
-// recorded so the enumeration is never mistaken for complete. The budget left
-// at a branch is shared among its alternatives so one alternative whose
-// sub-space explodes cannot starve its siblings of every state.
+// The symbolic tree is the artifact; the states are a view derived from it on
+// demand, bounded by a budget, and every state left out is recorded so the
+// view is never mistaken for complete.
 
 /** A branch predicate took one alternative; `state-update` when the predicate is a state cell's value. */
 export interface BranchCondition {
@@ -104,247 +117,31 @@ export type StateOmission =
   | OmittedSubtree;
 
 export interface OmittedStateSpace {
+  /** What the tree itself lacks: alternatives, repeat counts, cluster states or subtrees never enumerated. */
   omissions: StateOmission[];
+  /** Whole states of a complete tree beyond `budget.maxStates`, counted without being instantiated. */
+  droppedStates: number;
 }
 
 export interface StaticStateSpace {
-  states: StaticState[];
-  budget: StateSpaceBudget;
-  /** Non-null whenever some reachable state is not in `states`. */
-  omitted: OmittedStateSpace | null;
-  /** The distinct committed patterns the states were expanded from, in commit order. */
+  tree: SymbolicTree;
+  /** The distinct committed patterns, in commit order; the trees of `tree.commits`. */
   commits: PatternNode[][];
+  /** Per commit, its independent guard clusters, each enumerated within the budget. */
+  commitStates: CommitStateSpace[];
+  budget: StateSpaceBudget;
+  /** Consistent states over all commits, whether or not `states` holds them. */
+  stateCount: number;
+  /** The first `budget.maxStates` states, instantiated when first read. */
+  readonly states: StaticState[];
+  /** Non-null whenever some reachable state is not in `states`. */
+  readonly omitted: OmittedStateSpace | null;
 }
 
 export const DEFAULT_STATE_SPACE_BUDGET: StateSpaceBudget = { maxStates: 256, maxRepeat: 2 };
 
-const STATE_PREDICATE_PREFIX = "state(";
-
-type ConditionMap = ReadonlyMap<string, StateCondition>;
-
-interface Emit {
-  (nodes: PatternNode[], conditions: ConditionMap): void;
-}
-
-const branchCondition = (node: PatternBranch, alternativeIndex: number): BranchCondition => ({
-  kind: node.variable.startsWith(STATE_PREDICATE_PREFIX) ? "state-update" : "branch",
-  variable: node.variable,
-  reason: node.reason,
-  location: node.location,
-  alternativeIndex,
-  alternativeCount: node.alternatives.length,
-});
-
-const repeatCondition = (node: PatternRepeat, count: number): RepeatCondition => ({
-  kind: "repeat",
-  variable: node.variable,
-  location: node.location,
-  count,
-});
-
-/** A single commit needs no transition to select it. */
-const transitionCondition = (commit: number, commitCount: number): TransitionCondition | null =>
-  commitCount > 1 ? { kind: "transition", commit, commitCount } : null;
-
-const iterationScope = (node: PatternRepeat, iteration: number): string =>
-  `${node.variable}[${iteration}]`;
-
-class StateEnumerator {
-  readonly states: StaticState[] = [];
-  private readonly omissions = new Map<string, StateOmission>();
-  /** States the subtree being expanded may bring the total up to. */
-  private limit: number;
-
-  constructor(private readonly budget: StateSpaceBudget) {
-    this.limit = budget.maxStates;
-  }
-
-  get omitted(): OmittedStateSpace | null {
-    return this.omissions.size === 0 ? null : { omissions: [...this.omissions.values()] };
-  }
-
-  private get isExhausted(): boolean {
-    return this.states.length >= this.limit;
-  }
-
-  enumerate(commits: PatternNode[][]): void {
-    commits.forEach((pattern, commit) => {
-      this.shareBudget(commits.length - commit, () =>
-        this.enumerateCommit(pattern, transitionCondition(commit, commits.length)),
-      );
-    });
-  }
-
-  private enumerateCommit(pattern: PatternNode[], transition: TransitionCondition | null): void {
-    this.expandList(pattern, 0, [], new Map(), (tree, conditions) => {
-      const stateConditions = transition
-        ? [transition, ...conditions.values()]
-        : [...conditions.values()];
-      if (this.isExhausted) {
-        this.omit(`state|${describeConditions(stateConditions)}`, {
-          kind: "state",
-          conditions: stateConditions,
-        });
-        return;
-      }
-      this.states.push({ tree, conditions: stateConditions });
-    });
-  }
-
-  /** Runs `expand` with an even share of the remaining budget for one of `alternativeCount` siblings. */
-  private shareBudget(alternativeCount: number, expand: () => void): void {
-    const outerLimit = this.limit;
-    this.limit =
-      this.states.length + Math.ceil((outerLimit - this.states.length) / alternativeCount);
-    expand();
-    this.limit = outerLimit;
-  }
-
-  private omit(key: string, omission: StateOmission): void {
-    const existing = this.omissions.get(key);
-    if (existing?.kind === "repeat" && omission.kind === "repeat") {
-      omission = { ...omission, countsAbove: Math.min(existing.countsAbove, omission.countsAbove) };
-    }
-    this.omissions.set(key, omission);
-  }
-
-  private omitUnderBudget(
-    conditions: ConditionMap,
-    omission: OmittedBranchStates | OmittedRepeatStates,
-  ): void {
-    const under = [...conditions.values()];
-    const subject =
-      omission.kind === "branch"
-        ? `${omission.variable}|${omission.alternativeIndex}`
-        : omission.variable;
-    this.omit(`${subject}|${describeConditions(under)}`, { ...omission, conditions: under });
-  }
-
-  private expandList(
-    nodes: PatternNode[],
-    index: number,
-    prefix: PatternNode[],
-    conditions: ConditionMap,
-    emit: Emit,
-  ): void {
-    if (this.isExhausted) return;
-    const expanded = [...prefix];
-    let cursor = index;
-    while (cursor < nodes.length && !hasPatternDecisions(nodes[cursor])) {
-      expanded.push(nodes[cursor++]);
-    }
-    if (cursor === nodes.length) {
-      emit(expanded, conditions);
-      return;
-    }
-    this.expandNode(nodes[cursor], conditions, (expandedNode, next) =>
-      this.expandList(nodes, cursor + 1, [...expanded, ...expandedNode], next, emit),
-    );
-  }
-
-  private expandNode(node: PatternNode, conditions: ConditionMap, emit: Emit): void {
-    switch (node.kind) {
-      case "text":
-        emit([node], conditions);
-        return;
-      case "wildcard":
-        if (node.isTruncated) this.omit(node.reason, { kind: "subtree", reason: node.reason });
-        emit([node], conditions);
-        return;
-      case "fiber":
-        this.expandList(node.children, 0, [], conditions, (children, next) =>
-          emit([{ ...node, children }], next),
-        );
-        return;
-      case "opaque":
-        this.expandList(node.passedChildren, 0, [], conditions, (passedChildren, next) =>
-          emit([{ ...node, passedChildren }], next),
-        );
-        return;
-      case "branch":
-        this.expandBranch(node, conditions, emit);
-        return;
-      case "repeat":
-        this.expandRepeat(node, conditions, emit);
-        return;
-    }
-  }
-
-  private expandBranch(node: PatternBranch, conditions: ConditionMap, emit: Emit): void {
-    const decided = conditions.get(node.variable);
-    if (decided && decided.kind !== "repeat" && decided.kind !== "transition") {
-      this.expandList(node.alternatives[decided.alternativeIndex] ?? [], 0, [], conditions, emit);
-      return;
-    }
-    node.alternatives.forEach((alternative, alternativeIndex) => {
-      if (this.isExhausted) {
-        this.omitUnderBudget(conditions, {
-          kind: "branch",
-          variable: node.variable,
-          reason: node.reason,
-          location: node.location,
-          alternativeIndex,
-          conditions: [],
-        });
-        return;
-      }
-      const next = new Map(conditions).set(node.variable, branchCondition(node, alternativeIndex));
-      this.shareBudget(node.alternatives.length - alternativeIndex, () =>
-        this.expandList(alternative, 0, [], next, emit),
-      );
-    });
-  }
-
-  private expandRepeat(node: PatternRepeat, conditions: ConditionMap, emit: Emit): void {
-    const { min, max } = node.count;
-    const enumeratedMax =
-      max === null ? min + this.budget.maxRepeat : Math.min(max, min + this.budget.maxRepeat);
-    const omittedCounts = (countsAbove: number): OmittedRepeatStates => ({
-      kind: "repeat",
-      variable: node.variable,
-      location: node.location,
-      countsAbove,
-      max,
-      conditions: [],
-    });
-    if (max === null || max > enumeratedMax) {
-      this.omit(node.variable, omittedCounts(enumeratedMax));
-    }
-    for (let count = min; count <= enumeratedMax; count++) {
-      if (this.isExhausted) {
-        this.omitUnderBudget(conditions, omittedCounts(count - 1));
-        return;
-      }
-      const next = new Map(conditions).set(node.variable, repeatCondition(node, count));
-      this.shareBudget(enumeratedMax - count + 1, () =>
-        this.expandIterations(node, count, 0, [], next, emit),
-      );
-    }
-  }
-
-  private expandIterations(
-    node: PatternRepeat,
-    count: number,
-    iteration: number,
-    prefix: PatternNode[],
-    conditions: ConditionMap,
-    emit: Emit,
-  ): void {
-    if (this.isExhausted) return;
-    if (iteration === count) {
-      emit(prefix, conditions);
-      return;
-    }
-    this.expandList(
-      scopePatternVariables(node.children, iterationScope(node, iteration)),
-      0,
-      [],
-      conditions,
-      (nodes, next) =>
-        this.expandIterations(node, count, iteration + 1, [...prefix, ...nodes], next, emit),
-    );
-  }
-}
+/** Omissions kept verbatim in a summary; the rest are only counted in `total`. */
+const MAX_SUMMARIZED_OMISSIONS = 32;
 
 const dedupeCommits = (commits: PatternNode[][]): PatternNode[][] => {
   const seen = new Set<string>();
@@ -356,25 +153,54 @@ const dedupeCommits = (commits: PatternNode[][]): PatternNode[][] => {
   });
 };
 
+class DerivedStateSpace implements StaticStateSpace {
+  readonly commits: PatternNode[][];
+  readonly commitStates: CommitStateSpace[];
+  readonly stateCount: number;
+  private enumerated: StaticState[] | null = null;
+  private omittedView: OmittedStateSpace | null | undefined;
+
+  constructor(
+    readonly tree: SymbolicTree,
+    readonly budget: StateSpaceBudget,
+  ) {
+    this.commits = tree.commits.map((commit) => commit.tree);
+    this.commitStates = enumerateClusters(tree, budget);
+    this.stateCount = this.commitStates.reduce((sum, commit) => sum + commit.stateCount, 0);
+  }
+
+  get states(): StaticState[] {
+    this.enumerated ??= [...enumerateCommitStates(this.commitStates, this.budget)];
+    return this.enumerated;
+  }
+
+  get omitted(): OmittedStateSpace | null {
+    if (this.omittedView === undefined) {
+      const droppedStates = Math.max(0, this.stateCount - this.budget.maxStates);
+      const omissions = this.commitStates.flatMap((commit) => commit.omissions);
+      this.omittedView =
+        omissions.length === 0 && droppedStates === 0 ? null : { omissions, droppedStates };
+    }
+    return this.omittedView;
+  }
+}
+
 /**
- * Expands every committed pattern into the concrete trees it stands for.
- * Independent decisions multiply; a variable met again inside one tree takes
- * the value already chosen for it; decisions inside a repeat are made per
- * iteration. Enumeration stops at `budget.maxStates` and repeat counts stop at
+ * The state space of the committed patterns, derived from their symbolic tree.
+ * Independent clusters of decisions are enumerated apart and only multiplied
+ * into whole states on demand; a variable met again inside one tree takes the
+ * value already chosen for it; decisions inside a repeat are made per
+ * iteration. Whole states stop at `budget.maxStates` and repeat counts at
  * `budget.maxRepeat` above the known minimum, and both are reported in `omitted`.
  */
 export const enumerateStateSpace = (
   commitPatterns: PatternNode[][],
   budget: StateSpaceBudget = DEFAULT_STATE_SPACE_BUDGET,
-): StaticStateSpace => {
-  const commits = dedupeCommits(commitPatterns);
-  const enumerator = new StateEnumerator(budget);
-  enumerator.enumerate(commits);
-  return { states: enumerator.states, budget, omitted: enumerator.omitted, commits };
-};
+): StaticStateSpace =>
+  new DerivedStateSpace(buildSymbolicTree(dedupeCommits(commitPatterns)), budget);
 
 export interface MatchedState {
-  /** Index into `states`; null when the runtime tree lies in the omitted part of the state space. */
+  /** Index into `states`; null when the state lies beyond the budget or in the omitted part of the space. */
   index: number | null;
   conditions: StateCondition[];
 }
@@ -392,9 +218,6 @@ export interface StateSpaceMatch {
   closest: ClosestState | null;
 }
 
-/** Omissions kept verbatim in a summary; the rest are only counted in `total`. */
-const MAX_SUMMARIZED_OMISSIONS = 32;
-
 export interface OmittedStateSummary {
   total: number;
   omissions: StateOmission[];
@@ -402,15 +225,21 @@ export interface OmittedStateSummary {
 
 /** What a comparison learned about the state space, small enough to persist alongside the report. */
 export interface StateSpaceSummary {
+  /** States instantiated within the budget. */
   states: number;
+  /** Consistent states in the tree, counted from its clusters. */
+  stateCount: number;
+  clusters: number;
+  tree: SymbolicTreeStats;
   matchedState: MatchedState | null;
   closestState: ClosestState | null;
   omitted: OmittedStateSummary | null;
+  coverage: GuardCoverage;
 }
 
 export const summarizeOmissions = (omitted: OmittedStateSpace | null): OmittedStateSummary | null =>
   omitted && {
-    total: omitted.omissions.length,
+    total: omitted.omissions.length + omitted.droppedStates,
     omissions: omitted.omissions.slice(0, MAX_SUMMARIZED_OMISSIONS),
   };
 
@@ -419,72 +248,100 @@ const toCondition = (decision: MatchDecision): StateCondition =>
     ? branchCondition(decision.node, decision.choice)
     : repeatCondition(decision.node, decision.choice);
 
-const conditionValue = (condition: StateCondition): number => {
-  switch (condition.kind) {
-    case "branch":
-    case "state-update":
-      return condition.alternativeIndex;
-    case "repeat":
-      return condition.count;
-    case "transition":
-      return condition.commit;
-  }
-};
-
 const conditionKey = (condition: StateCondition): string =>
   condition.kind === "transition" ? "transition" : condition.variable;
 
-const describeConditions = (conditions: StateCondition[]): string =>
-  conditions
-    .map((condition) => `${conditionKey(condition)}=${conditionValue(condition)}`)
-    .join(",");
+const conditionValues = (conditions: StateCondition[]): Map<string, number> =>
+  new Map(conditions.map((condition) => [conditionKey(condition), conditionValue(condition)]));
 
-const haveSameConditions = (left: StateCondition[], right: StateCondition[]): boolean => {
-  if (left.length !== right.length) return false;
-  const values = new Map(
-    left.map((condition) => [conditionKey(condition), conditionValue(condition)]),
-  );
-  return right.every(
-    (condition) => values.get(conditionKey(condition)) === conditionValue(condition),
-  );
-};
+const isSubsetOf = (state: StateCondition[], values: ReadonlyMap<string, number>): boolean =>
+  state.every((condition) => values.get(conditionKey(condition)) === conditionValue(condition));
 
-const findState = (states: StaticState[], conditions: StateCondition[]): number | null => {
-  const index = states.findIndex((state) => haveSameConditions(state.conditions, conditions));
+/** The index of the cluster state whose decisions `values` all carries; null when the cluster enumerated none such. */
+const findClusterState = (
+  cluster: GuardCluster,
+  values: ReadonlyMap<string, number>,
+): number | null => {
+  const index = cluster.states.findIndex((state) => isSubsetOf(state, values));
   return index === -1 ? null : index;
 };
 
-const stateCommit = (state: StaticState): number =>
-  state.conditions.find((condition) => condition.kind === "transition")?.commit ?? 0;
+const commitOffset = (stateSpace: StaticStateSpace, commit: number): number =>
+  stateSpace.commitStates.slice(0, commit).reduce((sum, earlier) => sum + earlier.stateCount, 0);
 
-const findClosestState = (
-  states: StaticState[],
-  assignment: ReadonlyMap<string, number>,
+interface StatePosition {
+  /** Whether every cluster enumerated the decisions taken: the state exists, in `states` or beyond the budget. */
+  isMember: boolean;
+  index: number | null;
+}
+
+/** Where the state deciding exactly `conditions` sits among all states, located cluster by cluster without instantiating any. */
+const findState = (
+  stateSpace: StaticStateSpace,
   commit: number,
-): number | null => {
-  let closest: number | null = null;
-  let closestAgreement = -1;
-  states.forEach((state, index) => {
-    if (stateCommit(state) !== commit) return;
-    const agreement = state.conditions.filter(
-      (condition) =>
-        condition.kind !== "transition" &&
-        assignment.get(condition.variable) === conditionValue(condition),
-    ).length;
-    if (agreement > closestAgreement) {
-      closest = index;
-      closestAgreement = agreement;
-    }
-  });
-  return closest;
+  conditions: StateCondition[],
+): StatePosition => {
+  const commitStates = stateSpace.commitStates[commit];
+  const values = conditionValues(conditions);
+  const indices: number[] = [];
+  let covered = 0;
+  for (const cluster of commitStates.clusters) {
+    const index = findClusterState(cluster, values);
+    if (index === null) return { isMember: false, index: null };
+    indices.push(index);
+    covered += cluster.states[index].length;
+  }
+  if (covered !== conditions.length) return { isMember: false, index: null };
+  const index = commitOffset(stateSpace, commit) + stateIndexOf(commitStates, indices);
+  return { isMember: true, index: index < stateSpace.budget.maxStates ? index : null };
 };
 
+const agreement = (state: StateCondition[], assignment: ReadonlyMap<string, number>): number =>
+  state.filter((condition) => assignment.get(conditionKey(condition)) === conditionValue(condition))
+    .length;
+
+/** The enumerated state agreeing with `assignment` on the most decisions, cluster by cluster. */
+const findClosestState = (
+  stateSpace: StaticStateSpace,
+  commit: number,
+  assignment: ReadonlyMap<string, number>,
+): number | null => {
+  const commitStates = stateSpace.commitStates[commit];
+  const indices = commitStates.clusters.map((cluster) => {
+    let closest = 0;
+    let closestAgreement = -1;
+    cluster.states.forEach((state, index) => {
+      const agreed = agreement(state, assignment);
+      if (agreed > closestAgreement) {
+        closest = index;
+        closestAgreement = agreed;
+      }
+    });
+    return closest;
+  });
+  if (commitStates.clusters.some((cluster) => cluster.states.length === 0)) return null;
+  const index = commitOffset(stateSpace, commit) + stateIndexOf(commitStates, indices);
+  return index < stateSpace.budget.maxStates ? index : null;
+};
+
+/** A member of a tree whose clusters are complete is exact even when whole states were dropped from `states`; anything missing from the tree itself is a truncation. */
 const classifyMatch = (
   report: ComparisonReport,
   stateSpace: StaticStateSpace,
+  position: StatePosition,
 ): ComparisonStatus => {
   if (report.status !== "exact") return report.status;
-  return stateSpace.omitted ? "truncated" : "exact";
+  if (!position.isMember) return "truncated";
+  return (stateSpace.omitted?.omissions.length ?? 0) > 0 ? "truncated" : "exact";
+};
+
+/** Lets the comparer take only decisions whose guards are jointly satisfiable. */
+const guardedDecisions = (): DecisionConstraint => {
+  const solver = new GuardSolver();
+  return {
+    decide: (node, choice) => solver.push(decisionGuard(node, choice)),
+    release: () => solver.pop(),
+  };
 };
 
 interface CommitAttempt {
@@ -493,10 +350,12 @@ interface CommitAttempt {
 }
 
 /**
- * Decides whether the runtime tree is one of the enumerated states. The
- * latest commit is tried first, as a settled runtime most often shows it.
- * A runtime tree that matches under decisions no enumerated state carries lies
- * in the omitted part of the space and is reported as such, never as exact.
+ * Decides whether the runtime tree is a state of the symbolic tree by walking
+ * both together and taking only decisions whose guards stay jointly
+ * satisfiable; no whole state is instantiated. The latest commit is tried
+ * first, as a settled runtime most often shows it. A member beyond
+ * `budget.maxStates` is reported with `index: null`; a runtime tree that
+ * matches only under decisions the tree omitted is `truncated`, never exact.
  */
 export const matchStateSpace = (
   stateSpace: StaticStateSpace,
@@ -505,20 +364,20 @@ export const matchStateSpace = (
 ): StateSpaceMatch => {
   let furthest: CommitAttempt | null = null;
   for (let commit = stateSpace.commits.length - 1; commit >= 0; commit--) {
-    const match = matchPatternToRuntime(stateSpace.commits[commit], runtime, options);
+    const match = matchPatternToRuntime(stateSpace.commits[commit], runtime, {
+      ...options,
+      constraint: guardedDecisions(),
+    });
     if (match.report.status !== "mismatch") {
-      const transition = transitionCondition(commit, stateSpace.commits.length);
-      const conditions: StateCondition[] = [
-        ...(transition ? [transition] : []),
-        ...match.decisions.map(toCondition),
-      ];
-      const index = findState(stateSpace.states, conditions);
-      const classified = classifyMatch(match.report, stateSpace);
-      const status = index === null && classified === "exact" ? "truncated" : classified;
+      const transition = stateSpace.commitStates[commit].transition;
+      const decided = match.decisions.map(toCondition);
+      const conditions: StateCondition[] = [...(transition ? [transition] : []), ...decided];
+      const position = findState(stateSpace, commit, decided);
+      const status = classifyMatch(match.report, stateSpace, position);
       return {
         status,
         report: { ...match.report, status },
-        matched: { index, conditions },
+        matched: { index: position.index, conditions },
         closest: null,
       };
     }
@@ -528,11 +387,13 @@ export const matchStateSpace = (
     }
   }
   if (!furthest) {
-    throw new Error("a state space needs at least one committed pattern to match against");
+    throw new StateSpaceError(
+      "a state space needs at least one committed pattern to match against",
+    );
   }
   const { failure } = furthest.match;
   const closestIndex = failure
-    ? findClosestState(stateSpace.states, failure.assignment, furthest.commit)
+    ? findClosestState(stateSpace, furthest.commit, failure.assignment)
     : null;
   return {
     status: "mismatch",

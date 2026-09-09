@@ -60,6 +60,8 @@ export default function EffectBudgetExhausted() {
   );
   if (!editor) return <div className="loading" />;
   return (
-    <main>{crashingError ? <Crash crashingError={crashingError} /> : <Canvas editor={editor} />}</main>
+    <main>
+      {crashingError ? <Crash crashingError={crashingError} /> : <Canvas editor={editor} />}
+    </main>
   );
 }

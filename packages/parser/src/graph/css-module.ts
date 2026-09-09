@@ -14,7 +14,7 @@ const EXPORT_BLOCK = /:export\s*\{((?:#\{[^}]*\}|[^}])*)\}/g;
 const EXPORT_ENTRY = /([\w-]+)\s*:\s*([^;]+?)\s*(?:;|$)/g;
 const CLASS_SELECTOR = /\.(-?[_a-zA-Z][\w-]*)/g;
 
-export interface CssModuleExports {
+interface CssModuleExports {
   classNames: string[];
   /** `:export { name: value }` entries; null when the value is computed by the preprocessor. */
   values: Map<string, string | null>;

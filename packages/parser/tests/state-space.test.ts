@@ -4,14 +4,8 @@ import {
   enumerateStateSpace,
   matchStateSpace,
   type StateCondition,
-  type StateOmission,
 } from "../src/harness/state-space.js";
-import type {
-  PatternBranch,
-  PatternFiber,
-  PatternNode,
-  PatternRepeat,
-} from "../src/harness/static-pattern.js";
+import { anonymousRepeat, choiceBranch, patternHost } from "./helpers/pattern-builders.js";
 
 const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiberSnapshot => ({
   tag: "HostComponent",
@@ -22,28 +16,9 @@ const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiber
   children,
 });
 
-const fiber = (name: string, children: PatternNode[] = []): PatternFiber => ({
-  kind: "fiber",
-  tag: "HostComponent",
-  name,
-  key: null,
-  children,
-});
-
-const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
-  kind: "branch",
-  variable,
-  reason: variable,
-  location: null,
-  preferredIndex: 0,
-  alternatives,
-});
-
-const repeat = (
-  variable: string,
-  children: PatternNode[],
-  count: PatternRepeat["count"] = { min: 0, max: null },
-): PatternRepeat => ({ kind: "repeat", variable, location: null, count, children });
+const fiber = patternHost;
+const branch = choiceBranch;
+const repeat = anonymousRepeat;
 
 const describeConditions = (conditions: StateCondition[]): string =>
   conditions
@@ -59,11 +34,6 @@ const describeConditions = (conditions: StateCondition[]): string =>
       }
     })
     .join(" ");
-
-const describeOmission = (omission: StateOmission): string =>
-  omission.kind === "branch"
-    ? `${omission.variable}|${omission.alternativeIndex} under ${describeConditions(omission.conditions)}`
-    : `${omission.kind} ${omission.kind === "state" ? describeConditions(omission.conditions) : ""}`;
 
 describe("enumerateStateSpace", () => {
   it("multiplies independent decisions and shares correlated ones", () => {
@@ -114,6 +84,7 @@ describe("enumerateStateSpace", () => {
           conditions: [],
         },
       ],
+      droppedStates: 0,
     });
 
     const known = enumerateStateSpace([
@@ -138,17 +109,14 @@ describe("enumerateStateSpace", () => {
     ]);
   });
 
-  it("stops at the state budget and reports every alternative it could not expand", () => {
+  it("stops at the state budget and counts the whole states it dropped without listing them", () => {
     const space = enumerateStateSpace(
       [[fiber("main", [branch("a", [fiber("x")], [fiber("y")]), branch("b", [fiber("p")], [])])]],
       { maxStates: 3, maxRepeat: 2 },
     );
-    expect(space.states.map((state) => describeConditions(state.conditions))).toEqual([
-      "a=0 b=0",
-      "a=0 b=1",
-      "a=1 b=0",
-    ]);
-    expect(space.omitted?.omissions.map(describeOmission)).toEqual(["b|1 under a=1"]);
+    expect(space.states).toHaveLength(3);
+    expect(space.stateCount).toBe(4);
+    expect(space.omitted).toEqual({ omissions: [], droppedStates: 1 });
 
     const cutEarly = enumerateStateSpace(
       [
@@ -164,38 +132,32 @@ describe("enumerateStateSpace", () => {
     );
     expect(cutEarly.states.map((state) => describeConditions(state.conditions))).toEqual([
       "a=0 b=0 c=0",
-      "a=1 b=0 c=0",
+      "a=0 b=0 c=1",
     ]);
-    expect(cutEarly.omitted?.omissions.map(describeOmission)).toEqual([
-      "c|1 under a=0 b=0",
-      "b|1 under a=0",
-      "c|1 under a=1 b=0",
-      "b|1 under a=1",
-    ]);
+    expect(cutEarly.stateCount).toBe(8);
+    expect(cutEarly.omitted).toEqual({ omissions: [], droppedStates: 6 });
   });
 
-  it("shares the budget so an exploding alternative cannot starve its siblings", () => {
-    const independent = Array.from({ length: 8 }, (_, index) =>
-      branch(`f${index}`, [fiber("li")], []),
-    );
-    const space = enumerateStateSpace(
-      [
-        [
-          fiber("main", [
-            branch("search", [fiber("ul", independent)], [fiber("empty")]),
-            branch("tooltip", [fiber("tip")], []),
-          ]),
-        ],
-      ],
-      { maxStates: 8, maxRepeat: 2 },
-    );
-    const conditions = space.states.map((state) => describeConditions(state.conditions));
-    expect(conditions.filter((state) => state.startsWith("search=1"))).toEqual([
-      "search=1 tooltip=0",
-      "search=1 tooltip=1",
+  it("reports the alternatives a single cluster could not expand within the budget", () => {
+    const cluster = fiber("main", [
+      branch(
+        "a",
+        [branch("b", [fiber("x")], [fiber("y")]), branch("c", [fiber("s")], [fiber("t")])],
+        [fiber("z")],
+      ),
     ]);
-    expect(conditions.filter((state) => state.startsWith("search=0"))).toHaveLength(4);
-    expect(space.omitted?.omissions.every((omission) => omission.kind === "branch")).toBe(true);
+    const space = enumerateStateSpace([[cluster]], { maxStates: 2, maxRepeat: 2 });
+    expect(space.states.map((state) => describeConditions(state.conditions))).toEqual([
+      "a=0 b=0 c=0",
+      "a=0 b=0 c=1",
+    ]);
+    expect(
+      space.omitted?.omissions.map((omission) =>
+        omission.kind === "branch"
+          ? `${omission.variable}|${omission.alternativeIndex} under ${describeConditions(omission.conditions)}`
+          : `${omission.kind} ${omission.kind === "state" ? describeConditions(omission.conditions) : ""}`,
+      ),
+    ).toEqual(["state a=0 b=1 c=0", "c|1 under a=0 b=1", "a|1 under "]);
   });
 
   it("makes each distinct committed tree a state", () => {

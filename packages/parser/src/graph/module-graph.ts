@@ -10,7 +10,7 @@ import type {
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isPurePackage } from "../libraries/pure-packages.js";
-import { isAssetPath } from "./asset-module.js";
+import { isAssetImport, isUrlImport } from "./asset-module.js";
 import { readAssetModuleSource } from "./asset-modules.js";
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
@@ -18,7 +18,7 @@ import { createModuleRecord, isClientModule } from "./module-record.js";
 import { ModuleResolver } from "./module-resolver.js";
 import type { VitePluginModules } from "./vite-plugin-modules.js";
 
-export interface ExportNameSet {
+interface ExportNameSet {
   names: string[];
   complete: boolean;
 }
@@ -32,10 +32,12 @@ export interface ModuleGraphOptions {
 }
 
 /** A file only a bundler plugin can turn into a module: no source language, stylesheet, or asset loader handles it. */
-const isBundlerPluginPath = (filePath: string): boolean =>
-  getSourceLanguage(filePath) === null && !isCssModulePath(filePath) && !isAssetPath(filePath);
+const isBundlerPluginPath = (filePath: string, specifier: string): boolean =>
+  getSourceLanguage(filePath) === null &&
+  !isCssModulePath(filePath) &&
+  !isAssetImport(filePath, specifier);
 
-export const describeImportedName = (imported: ImportedName): string => {
+const describeImportedName = (imported: ImportedName): string => {
   switch (imported.kind) {
     case "default":
       return "default";
@@ -122,10 +124,11 @@ export class ModuleGraph {
     if (resolution.filePath === null) return resolution;
     const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
+    if (isUrlImport(specifier)) return resolution;
     if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
       return resolution;
     }
-    if (resolution.kind === "internal" && isBundlerPluginPath(resolution.filePath)) {
+    if (resolution.kind === "internal" && isBundlerPluginPath(resolution.filePath, specifier)) {
       return this.getPluginModule(resolution.filePath, specifier) ?? resolution;
     }
     return this.getModule(resolution.filePath) ?? resolution;
@@ -252,6 +255,13 @@ export class ModuleGraph {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
       return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);
     }
+    if (
+      (target.kind === "internal" || target.kind === "external") &&
+      target.filePath !== null &&
+      isAssetImport(target.filePath, specifier)
+    ) {
+      return { kind: "asset", filePath: target.filePath, specifier, imported };
+    }
     switch (target.kind) {
       case "external":
       case "builtin":
@@ -259,9 +269,6 @@ export class ModuleGraph {
       case "internal":
         if (isCssModulePath(target.filePath)) {
           return { kind: "stylesheet", filePath: target.filePath, imported };
-        }
-        if (isAssetPath(target.filePath)) {
-          return { kind: "asset", filePath: target.filePath, imported };
         }
         return { kind: "unresolved", reason: this.describeUnsupportedModule(target.filePath) };
       case "unresolved":

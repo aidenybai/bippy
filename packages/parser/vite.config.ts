@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transform as transformSvgr } from "@svgr/core";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
-import { docsMetadataPlugin } from "./tests/fixtures/vite-plugin-modules/docs-metadata-plugin";
+import { docsMetadataPlugin } from "./tests/fixtures/vite-plugin-modules/docs-metadata-plugin.js";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");

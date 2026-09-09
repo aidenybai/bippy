@@ -5,15 +5,18 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   describeValue,
+  distributeObjectBranches,
   getObjectProperty,
   getTruthiness,
   listValue,
+  mapValue,
   objectFromRecord,
   objectValue,
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { recordInputSource } from "../evaluate/predicates.js";
 import { createSearchParamsValue, getSearchParamsString } from "../evaluate/url-search-params.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
@@ -53,11 +56,18 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { findRouteFile, routeIdFromFile, splitPathname } from "./route-files.js";
-import { element, emptyStub, hostElement, nativeFunction, omitProps, stubValue } from "./stubs.js";
+import {
+  element,
+  emptyStub,
+  hostElement,
+  nativeFunction,
+  omitProps,
+  stubValue,
+} from "../evaluate/stubs.js";
 
 const SCROLL_RESTORATION_PROPS: ReadonlySet<string> = new Set(["getKey", "storageKey"]);
 
-export interface ReactRouterRouteOptions {
+interface ReactRouterRouteOptions {
   /**
    * Module that boots the router. Either an entry with a root render call
    * (`<RouterProvider router={router} />` or `<BrowserRouter><Routes>…`) or a
@@ -75,7 +85,7 @@ export interface ReactRouterRouteOptions {
  * an `ExternalValueProvider` that models the router's exports, and the route
  * renderer for framework-mode projects.
  */
-export interface ReactRouterModel {
+interface ReactRouterModel {
   pathname: string;
   /** Captured data-router state for this URL, when a runtime capture supplied one. */
   observed: ObservedRouterState | null;
@@ -109,6 +119,8 @@ interface FrameworkState extends FrameworkDocument {
   hasInlinedCriticalCss: boolean;
   /** `remix.config.*` drives the esbuild-based compiler (dev live reload over a socket, no critical CSS). */
   isClassicCompiler: boolean;
+  /** A matched route's `handle`: the route module's `handle` export in framework mode. */
+  readRouteHandle: ((routeId: string) => StaticValue) | null;
 }
 
 interface DiscoveredTargets {
@@ -188,7 +200,7 @@ const ROUTE_CONFIG_PACKAGE = "@react-router/dev/routes";
  * matched child route, the params accumulated down to this match, the route id
  * that keys loader data, and the URL prefix descendant `<Routes>` match after.
  */
-export const ROUTE_CONTEXT: ContextDefinition = {
+const ROUTE_CONTEXT: ContextDefinition = {
   name: "RouteContext",
   displayName: "Route",
   defaultValue: NULL_VALUE,
@@ -1127,6 +1139,7 @@ const runtimeOnlyHook = (importedName: string): StaticValue =>
 const observedHookValue = (
   importedName: string,
   observed: ObservedRouterState,
+  readRouteHandle: (routeId: string) => StaticValue,
 ): StaticValue | null => {
   switch (importedName) {
     case "useLoaderData":
@@ -1151,7 +1164,7 @@ const observedHookValue = (
           : observed.loaderData(routeId);
       });
     case "useMatches":
-      return nativeFunction(importedName, () => observed.matches);
+      return nativeFunction(importedName, () => observed.matches(readRouteHandle));
     case "unstable_useRoute":
       return nativeFunction(importedName, (args, tools) => {
         const routeId = args[0] ? readString(args[0]) : readString(readRouteContext(tools, "id"));
@@ -1160,7 +1173,7 @@ const observedHookValue = (
         }
         return observed.isMatched(routeId)
           ? objectFromRecord({
-              handle: unknownValue(`handle export of route ${routeId}`),
+              handle: readRouteHandle(routeId),
               loaderData: observed.loaderData(routeId),
               actionData: observed.actionData(routeId),
             })
@@ -1233,6 +1246,7 @@ const createRouterHookValues = (
   location: StaticValue,
   search: string,
   observed: ObservedRouterState | null,
+  readRouteHandle: (routeId: string) => StaticValue,
   fetcherForm: StubComponent,
 ): ((importedName: string) => StaticValue | null) => {
   const navigate = nativeFunction("navigate", () => UNDEFINED_VALUE);
@@ -1295,7 +1309,8 @@ const createRouterHookValues = (
       default:
         if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
         return (
-          (observed && observedHookValue(importedName, observed)) ?? runtimeOnlyHook(importedName)
+          (observed && observedHookValue(importedName, observed, readRouteHandle)) ??
+          runtimeOnlyHook(importedName)
         );
     }
   };
@@ -1402,6 +1417,14 @@ export const createReactRouterModel = (
   const observed = observeRouterState(routerState, pathname);
   const location = locationValue(routeLocation, observed);
   const withRenderedRoute = hasRenderedRoute(rootDirectory);
+  const renderRouteConfig = (
+    config: StaticValue,
+    parent: ParentMatch,
+    readRoutes: (alternative: StaticValue) => RouteRecord[],
+  ): StaticValue =>
+    mapValue(distributeObjectBranches(config), (alternative) =>
+      renderMatchedRoutes(readRoutes(alternative), pathname, parent, withRenderedRoute),
+    );
   const hasCriticalCss = observed?.hasCriticalCss ?? null;
   const clearsCriticalCss: UncertainFlag = { value: hasCriticalCss, reason: CRITICAL_CSS_REASON };
   const framework: FrameworkState = {
@@ -1415,7 +1438,10 @@ export const createReactRouterModel = (
     isRerenderedAfterHydration: clearsCriticalCss,
     hasInlinedCriticalCss: false,
     isClassicCompiler: false,
+    readRouteHandle: null,
   };
+  const readRouteHandle = (routeId: string): StaticValue =>
+    framework.readRouteHandle?.(routeId) ?? unknownValue(`handle of route ${routeId}`);
   const linkStubs = createLinkStubs(
     {
       register: (target) => {
@@ -1429,6 +1455,7 @@ export const createReactRouterModel = (
     location,
     observed?.search ?? routeLocation.search,
     observed,
+    readRouteHandle,
     linkStubs.fetcherForm,
   );
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
@@ -1650,11 +1677,8 @@ export const createReactRouterModel = (
       }
       const resolveLazy: LazyResolver = (lazy) => tools.callAwaited(lazy, []);
       return withinRouter(
-        renderMatchedRoutes(
-          readRouteList(getObjectProperty(router, "routes"), resolveLazy),
-          pathname,
-          ROOT_PARENT_MATCH,
-          withRenderedRoute,
+        renderRouteConfig(getObjectProperty(router, "routes"), ROOT_PARENT_MATCH, (routes) =>
+          readRouteList(routes, resolveLazy),
         ),
         location,
       );
@@ -1671,13 +1695,8 @@ export const createReactRouterModel = (
       if (!parent) {
         return unknownValue("react-router: the enclosing route's match is not static");
       }
-      return renderMatchedRoutes(
-        readRouteElements(getObjectProperty(props, "children"), (lazy) =>
-          tools.callAwaited(lazy, []),
-        ),
-        pathname,
-        parent,
-        withRenderedRoute,
+      return renderRouteConfig(getObjectProperty(props, "children"), parent, (children) =>
+        readRouteElements(children, (lazy) => tools.callAwaited(lazy, [])),
       );
     },
   };
@@ -1710,11 +1729,8 @@ export const createReactRouterModel = (
           if (!parent) {
             return unknownValue("react-router: the enclosing route's match is not static");
           }
-          return renderMatchedRoutes(
-            readRouteList(args[0] ?? listValue([]), (lazy) => tools.callAwaited(lazy, [])),
-            pathname,
-            parent,
-            withRenderedRoute,
+          return renderRouteConfig(args[0] ?? listValue([]), parent, (routes) =>
+            readRouteList(routes, (lazy) => tools.callAwaited(lazy, [])),
           );
         });
       case "Route":
@@ -1949,16 +1965,6 @@ const renderFrameworkRoutes = (
       return unknownValue(`react-router: no route matches ${model.pathname}`);
     }
     const { observed } = model;
-    const loaderDataFor = (routeId: string): StaticValue =>
-      observed?.loaderData(routeId) ?? unknownValue("loader data is only known at request time");
-    const matchesValue = (): StaticValue =>
-      observed?.matches ?? unknownValue("route matches are only known at request time");
-    const routeProps = (params: RouteParams, routeId: string | null): StaticObjectValue =>
-      objectFromRecord({
-        loaderData: routeId === null ? unknownValue("route without an id") : loaderDataFor(routeId),
-        params: paramsValue(params),
-        matches: matchesValue(),
-      });
     const leafParams = chain[chain.length - 1].params;
     const routeModules = new Map<RouteRecord, ModuleRecord>();
     const loadRouteModule = (route: RouteRecord): ModuleRecord | null => {
@@ -1970,6 +1976,41 @@ const renderFrameworkRoutes = (
       else interpreter.report("react-router-parse", `could not parse ${route.file}`, null, "error");
       return module;
     };
+    // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
+    const matchedModules: MatchedRouteModule[] = [
+      ...(rootModule ? [{ module: rootModule, params: {}, routeId: ROOT_ROUTE_ID }] : []),
+      ...chain.flatMap((match) => {
+        const module = loadRouteModule(match.route);
+        const routeId = match.route.id;
+        return module && routeId !== null ? [{ module, params: match.params, routeId }] : [];
+      }),
+    ];
+    const readRouteHandle = (routeId: string): StaticValue => {
+      const matchedModule = matchedModules.find((candidate) => candidate.routeId === routeId);
+      if (!matchedModule) return unknownValue(`handle of unmatched route ${routeId}`);
+      const { module } = matchedModule;
+      return interpreter.graph.listExportNames(module).includes("handle")
+        ? interpreter.evaluateModuleExport(module, "handle")
+        : UNDEFINED_VALUE;
+    };
+    model.framework.readRouteHandle = readRouteHandle;
+    const loaderDataFor = (routeId: string): StaticValue =>
+      observed?.loaderData(routeId) ??
+      recordInputSource(
+        unknownValue("loader data is only known at request time"),
+        "loader",
+        null,
+        `loaderData(${routeId})`,
+      );
+    const matchesValue = (): StaticValue =>
+      observed?.matches(readRouteHandle) ??
+      unknownValue("route matches are only known at request time");
+    const routeProps = (params: RouteParams, routeId: string | null): StaticObjectValue =>
+      objectFromRecord({
+        loaderData: routeId === null ? unknownValue("route without an id") : loaderDataFor(routeId),
+        params: paramsValue(params),
+        matches: matchesValue(),
+      });
     const renderRoute = (route: RouteRecord, outlet: StaticValue): StaticValue => {
       if (!route.file) return outlet;
       const module = loadRouteModule(route);
@@ -1992,15 +2033,6 @@ const renderFrameworkRoutes = (
     const matched = composeChain(chain, model.pathname, renderRoute);
     if (!rootModule) return matched;
 
-    // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
-    const matchedModules: MatchedRouteModule[] = [
-      { module: rootModule, params: {}, routeId: ROOT_ROUTE_ID },
-      ...chain.flatMap((match) => {
-        const module = loadRouteModule(match.route);
-        const routeId = match.route.id;
-        return module && routeId !== null ? [{ module, params: match.params, routeId }] : [];
-      }),
-    ];
     const callExport = (
       module: ModuleRecord,
       name: string,

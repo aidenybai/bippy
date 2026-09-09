@@ -677,7 +677,7 @@
       "description": "PostHog login scene (React 18 SPA on kea + kea-router, Vite dev server behind a stand-in for the Django app server that renders the boot HTML)",
       "framework": "spa",
       "workingDirectory": ".",
-      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile && bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 --filter '@posthog/quill...' build",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,

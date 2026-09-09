@@ -1,5 +1,5 @@
 import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import type { EvaluationContext } from "./context.js";
 import { createDomExceptionValue } from "./errors.js";
 import type { Interpreter } from "./interpreter.js";
@@ -158,7 +158,8 @@ export const createBroadcastChannel = (
       kind: "property",
       key: "removeEventListener",
       value: nativeFunction("removeEventListener", ([type, listener]) => {
-        const index = listener && isMessageEventType(type) ? record.listeners.indexOf(listener) : -1;
+        const index =
+          listener && isMessageEventType(type) ? record.listeners.indexOf(listener) : -1;
         if (index !== -1) record.listeners.splice(index, 1);
         return UNDEFINED_VALUE;
       }),

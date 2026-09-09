@@ -1,9 +1,9 @@
 {
-  "total": 160,
+  "total": 123,
   "byReason": {
-    "declared-any": 30,
-    "type-parameter": 116,
-    "mixed-union": 3,
+    "declared-any": 33,
+    "type-parameter": 72,
+    "mixed-union": 7,
     "overloads": 10,
     "conditional": 1
   },
@@ -14,24 +14,14 @@
       "detail": "any"
     },
     {
-      "site": "\"async_hooks\".AsyncResource.bind",
-      "reason": "type-parameter",
-      "detail": "Func"
-    },
-    {
       "site": "\"async_hooks\".AsyncResource.runInAsyncScope",
       "reason": "type-parameter",
       "detail": "Result"
     },
     {
-      "site": "\"crypto\".webcrypto.Crypto.getRandomValues",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "\"perf_hooks\".Performance.timerify",
-      "reason": "type-parameter",
-      "detail": "T"
+      "site": "\"net\".Socket.address",
+      "reason": "declared-any",
+      "detail": "{}"
     },
     {
       "site": "\"perf_hooks\".Performance.toJSON",
@@ -59,16 +49,6 @@
       "detail": "any"
     },
     {
-      "site": "\"stream\".Stream.compose",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "\"stream\".Stream.pipe",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
       "site": "\"stream\".Stream.Readable.read",
       "reason": "declared-any",
       "detail": "any"
@@ -94,6 +74,11 @@
       "detail": "string | object"
     },
     {
+      "site": "\"undici-types/websocket\".ErrorEvent.error",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
       "site": "\"undici-types/websocket\".MessageEvent.data",
       "reason": "type-parameter",
       "detail": "T"
@@ -106,17 +91,7 @@
     {
       "site": "Array.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "Array.find",
-      "reason": "type-parameter",
       "detail": "T"
-    },
-    {
-      "site": "Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Array.findLast",
@@ -154,17 +129,7 @@
       "detail": "T"
     },
     {
-      "site": "ArrayBufferView.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
       "site": "AsyncDisposableStack.adopt",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "AsyncDisposableStack.use",
       "reason": "type-parameter",
       "detail": "T"
     },
@@ -214,16 +179,6 @@
       "detail": "number | bigint"
     },
     {
-      "site": "BigInt64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "BigInt64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "BigInt64Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -232,16 +187,6 @@
       "site": "BigInt64Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "BigUint64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "BigUint64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "BigUint64Array.reduce",
@@ -254,17 +199,7 @@
       "detail": "U"
     },
     {
-      "site": "DataView.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
       "site": "DisposableStack.adopt",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "DisposableStack.use",
       "reason": "type-parameter",
       "detail": "T"
     },
@@ -279,16 +214,6 @@
       "detail": "any"
     },
     {
-      "site": "Float16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Float16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -299,16 +224,6 @@
       "detail": "U"
     },
     {
-      "site": "Float32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Float32Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -317,16 +232,6 @@
       "site": "Float32Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Float64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Float64Array.reduce",
@@ -374,16 +279,6 @@
       "detail": "T"
     },
     {
-      "site": "Int16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Int16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -394,16 +289,6 @@
       "detail": "U"
     },
     {
-      "site": "Int32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Int32Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -412,16 +297,6 @@
       "site": "Int32Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Int8Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int8Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Int8Array.reduce",
@@ -476,11 +351,6 @@
     {
       "site": "IteratorObject.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "IteratorObject.find",
-      "reason": "type-parameter",
       "detail": "T"
     },
     {
@@ -526,11 +396,6 @@
     {
       "site": "namespace Reflect.get",
       "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "namespace Reflect.get",
-      "reason": "type-parameter",
       "detail": "P"
     },
     {
@@ -560,13 +425,18 @@
     },
     {
       "site": "NodeJS.Process.getBuiltinModule",
-      "reason": "type-parameter",
-      "detail": "ID"
+      "reason": "mixed-union",
+      "detail": "function | function | function | function | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | function | function | object | object | object | object | object | object | object | object | object | object | object | object | object | object | function | function | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | function | function | object | object | object | object | object | object | object | object | function | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object | object"
+    },
+    {
+      "site": "NodeJS.ReadableStream.read",
+      "reason": "mixed-union",
+      "detail": "string | object"
     },
     {
       "site": "ObjectConstructor.assign",
-      "reason": "type-parameter",
-      "detail": "T"
+      "reason": "declared-any",
+      "detail": "{}"
     },
     {
       "site": "ObjectConstructor.assign",
@@ -620,8 +490,8 @@
     },
     {
       "site": "ObjectConstructor.groupBy",
-      "reason": "type-parameter",
-      "detail": "K"
+      "reason": "mixed-union",
+      "detail": "string | number | symbol"
     },
     {
       "site": "ObjectConstructor.preventExtensions",
@@ -656,17 +526,7 @@
     {
       "site": "ReadonlyArray.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "ReadonlyArray.find",
-      "reason": "type-parameter",
       "detail": "T"
-    },
-    {
-      "site": "ReadonlyArray.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "ReadonlyArray.findLast",
@@ -714,21 +574,6 @@
       "detail": "T"
     },
     {
-      "site": "typeof \"async_hooks\".AsyncResource.bind",
-      "reason": "type-parameter",
-      "detail": "Func"
-    },
-    {
-      "site": "Uint16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Uint16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -737,16 +582,6 @@
       "site": "Uint16Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Uint32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Uint32Array.reduce",
@@ -759,16 +594,6 @@
       "detail": "U"
     },
     {
-      "site": "Uint8Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint8Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Uint8Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -777,16 +602,6 @@
       "site": "Uint8Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Uint8ClampedArray.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint8ClampedArray.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Uint8ClampedArray.reduce",
@@ -805,8 +620,8 @@
     },
     {
       "site": "WeakRef.deref",
-      "reason": "type-parameter",
-      "detail": "T"
+      "reason": "mixed-union",
+      "detail": "object | symbol"
     }
   ]
 }
