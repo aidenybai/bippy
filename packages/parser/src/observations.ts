@@ -6,6 +6,7 @@ import type {
   CapturedLinguiCatalog,
   CapturedMutation,
   CapturedPageState,
+  CapturedPromiseSettlement,
   CapturedRequest,
   CapturedQuery,
   CapturedRouteMatch,
@@ -17,6 +18,7 @@ import type {
 const OPAQUE_CAPTURE_KEY = "$bippyOpaque";
 const EXPORT_CAPTURE_KEY = "$bippyExport";
 const DATE_CAPTURE_KEY = "$bippyDate";
+const PROMISE_CAPTURE_KEY = "$bippyPromise";
 
 export const EMPTY_OBSERVATIONS: RuntimeObservations = { globals: {}, queries: [] };
 
@@ -42,6 +44,10 @@ export const hashKey = (key: unknown): string =>
   );
 
 const capturedValueSchema: z.ZodType<CapturedValue> = z.json();
+const capturedPromiseSettlementSchema: z.ZodType<CapturedPromiseSettlement> = z.object({
+  isFulfilled: z.boolean(),
+  outcome: capturedValueSchema,
+});
 const capturedValueRecordSchema = z.record(z.string(), capturedValueSchema);
 const stringRecordSchema = z.record(z.string(), z.string());
 
@@ -159,6 +165,19 @@ export const getCapturedDate = (value: CapturedValue): Date | null => {
   if (Object.keys(value).length !== 1 || !(DATE_CAPTURE_KEY in value)) return null;
   const time = value[DATE_CAPTURE_KEY];
   return new Date(typeof time === "number" ? time : Number.NaN);
+};
+
+/** A promise that had settled by capture time, with what it fulfilled to or rejected with. */
+export const promiseCapture = (settlement: CapturedPromiseSettlement): CapturedValue => ({
+  [PROMISE_CAPTURE_KEY]: { isFulfilled: settlement.isFulfilled, outcome: settlement.outcome },
+});
+
+export const getCapturedPromise = (value: CapturedValue): CapturedPromiseSettlement | null => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const settlement = value[PROMISE_CAPTURE_KEY];
+  if (Object.keys(value).length !== 1 || !isRecord(settlement)) return null;
+  const parsed = capturedPromiseSettlementSchema.safeParse(settlement);
+  return parsed.success ? parsed.data : null;
 };
 
 export const exportCapture = (reference: CapturedExportReference): CapturedValue => ({

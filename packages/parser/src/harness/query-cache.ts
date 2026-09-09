@@ -1,7 +1,15 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
-import { dateCapture, hashKey, isPlainObject, isRecord, opaqueCapture } from "../observations.js";
+import {
+  dateCapture,
+  hashKey,
+  isPlainObject,
+  isRecord,
+  opaqueCapture,
+  promiseCapture,
+} from "../observations.js";
 import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
+import { getSettledPromise } from "./promise-outcomes.js";
 import type {
   CapturedMutation,
   CapturedQuery,
@@ -53,6 +61,14 @@ export const toCapturedValue = (
   if (value instanceof Date) return dateCapture(value);
   if (seen.has(value)) return opaqueCapture("cycle");
   seen.add(value);
+  if (value instanceof Promise) {
+    const settled = getSettledPromise(value);
+    if (!settled) return opaqueCapture("Promise");
+    return promiseCapture({
+      isFulfilled: settled.isFulfilled,
+      outcome: toCapturedValue(settled.outcome, exports, seen) ?? null,
+    });
+  }
   if (value instanceof Error) {
     const entries: Record<string, CapturedValue> = { name: value.name, message: value.message };
     for (const [key, item] of Object.entries(value)) {

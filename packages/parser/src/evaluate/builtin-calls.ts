@@ -393,16 +393,19 @@ export const getBuiltinGlobal = (
 ): StaticValue | null =>
   getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
 
-const toStringValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive") return primitiveValue(String(value.value));
-  return unknownPrimitiveValue("string", `String(${describeValue(value)})`);
-};
+const toStringValue = (value: StaticValue): StaticValue =>
+  mapValue(value, (alternative) =>
+    alternative.kind === "primitive"
+      ? primitiveValue(String(alternative.value))
+      : unknownPrimitiveValue("string", `String(${describeValue(alternative)})`),
+  );
 
-const toNumberValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive" && typeof value.value !== "bigint")
-    return primitiveValue(Number(value.value));
-  return unknownPrimitiveValue("number", `Number(${describeValue(value)})`);
-};
+const toNumberValue = (value: StaticValue): StaticValue =>
+  mapValue(value, (alternative) =>
+    alternative.kind === "primitive" && typeof alternative.value !== "bigint"
+      ? primitiveValue(Number(alternative.value))
+      : unknownPrimitiveValue("number", `Number(${describeValue(alternative)})`),
+  );
 
 const getDescriptorAccessor = (descriptor: StaticObjectValue): StaticAccessor | null => {
   const keys = getKnownObjectKeys(descriptor);
@@ -1286,11 +1289,10 @@ const callGlobal = (
     case "JSON.parse":
       if (
         first?.kind === "primitive" &&
-        typeof first.value === "string" &&
         (second === undefined || (second.kind === "primitive" && second.value === undefined))
       ) {
         try {
-          return jsonValue(JSON.parse(first.value));
+          return jsonValue(JSON.parse(String(first.value)));
         } catch (error) {
           return thrownValue(
             "JSON.parse of invalid JSON",

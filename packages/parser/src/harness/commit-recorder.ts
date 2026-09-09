@@ -1,6 +1,7 @@
 import { _fiberRoots, getRDTHook, instrument, type FiberRoot, type ReactRenderer } from "bippy";
 import type { RootObservations } from "../types.js";
 import type { ExportIndex } from "./module-exports.js";
+import { captureWithSettledPromises } from "./promise-outcomes.js";
 import { readRootObservations } from "./provider-state.js";
 import type { ReduxStoreLike } from "./redux-store.js";
 import { createRuntimeSnapshot } from "./runtime-snapshot.js";
@@ -69,8 +70,10 @@ export const createCommitRecorder = ({
   return {
     snapshot,
     commits: () => [...committedSnapshots],
-    observations: async () =>
-      readRootObservations(liveRoots(), await reduxStores?.(), await moduleExports?.()),
+    observations: () =>
+      captureWithSettledPromises(async () =>
+        readRootObservations(liveRoots(), await reduxStores?.(), await moduleExports?.()),
+      ),
     commitCount: () => commits,
     waitForCommit: (timeoutMs = DEFAULT_COMMIT_TIMEOUT_MS) =>
       new Promise<void>((resolve, reject) => {

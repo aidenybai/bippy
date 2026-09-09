@@ -1,3 +1,4 @@
+import { capturedValue } from "../evaluate/captured.js";
 import {
   FALSE_VALUE,
   NULL_VALUE,
@@ -5,7 +6,6 @@ import {
   UNDEFINED_VALUE,
   booleanValue,
   branchValue,
-  capturedValue,
   compareIdentity,
   getObjectProperty,
   getTruthiness,

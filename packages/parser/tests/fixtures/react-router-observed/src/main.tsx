@@ -16,6 +16,7 @@ const router = createBrowserRouter([
           title: `Post ${params.slug}`,
           tags: ["react", "router"],
           publishedAt: null,
+          author: new Promise<string>((resolve) => setTimeout(() => resolve("Anonymous"), 10)),
         }),
         element: <Post />,
       },

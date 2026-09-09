@@ -59,6 +59,15 @@ export interface StepBudget {
   remaining: number;
 }
 
+/**
+ * The innermost enclosing `try` with a handler; its block told it when an
+ * `await` there resumed from a promise the analysis cannot see settle, which
+ * may as well have rejected into the handler.
+ */
+export interface RejectionObserver {
+  mayReject: boolean;
+}
+
 export interface EvaluationContext {
   module: ModuleRecord;
   scope: Scope;
@@ -72,7 +81,14 @@ export interface EvaluationContext {
   environment: RenderEnvironment | null;
   hooks: HookFrame | null;
   suspension: SuspensionPoint | null;
+  rejectionObserver: RejectionObserver | null;
 }
+
+/** Records that an `await` resumed from a promise the analysis cannot see settle: what follows runs late, and may not run at all. */
+export const noteDeferredAwait = (context: EvaluationContext): void => {
+  if (context.hooks) context.hooks.isDeferred = true;
+  if (context.rejectionObserver) context.rejectionObserver.mayReject = true;
+};
 
 export const withScope = (context: EvaluationContext, scope: Scope): EvaluationContext => ({
   ...context,

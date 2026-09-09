@@ -5,6 +5,7 @@ import type { CapturedPageState, CapturedValue, RootObservations } from "../type
 import { createCommitRecorder } from "./commit-recorder.js";
 import { readKeaStores } from "./kea-store.js";
 import { readModuleExports } from "./module-exports.js";
+import { captureWithSettledPromises } from "./promise-outcomes.js";
 import { toCapturedValue } from "./query-cache.js";
 import { installReduxStoreHook } from "./redux-store.js";
 import type { RuntimeSnapshot } from "./snapshot.js";
@@ -19,15 +20,16 @@ export interface HarnessGlobals {
 
 const RESOURCE_TIMING_BUFFER_SIZE = 100_000;
 
-const readWindowGlobals = async (names: string[]): Promise<Record<string, CapturedValue>> => {
-  const exports = await readModuleExports();
-  const values: Record<string, CapturedValue> = {};
-  for (const name of names) {
-    const captured = toCapturedValue(Object(globalThis)[name], exports);
-    if (captured !== undefined) values[name] = captured;
-  }
-  return values;
-};
+const readWindowGlobals = (names: string[]): Promise<Record<string, CapturedValue>> =>
+  captureWithSettledPromises(async () => {
+    const exports = await readModuleExports();
+    const values: Record<string, CapturedValue> = {};
+    for (const name of names) {
+      const captured = toCapturedValue(Object(globalThis)[name], exports);
+      if (captured !== undefined) values[name] = captured;
+    }
+    return values;
+  });
 
 const readStorageArea = (area: Storage): Record<string, string> => {
   const entries: Record<string, string> = {};

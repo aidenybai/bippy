@@ -1,0 +1,11 @@
+{
+  "name": "fixture-redux-thunk-observed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@reduxjs/toolkit": "2.12.0",
+    "react-redux": "9.3.0",
+    "redux": "5.0.1",
+    "redux-thunk": "3.1.0"
+  }
+}

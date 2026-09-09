@@ -16,6 +16,7 @@ interface PostData {
   title: string;
   tags: string[];
   publishedAt: string | null;
+  author: Promise<string>;
 }
 
 interface ShellData {
@@ -55,6 +56,9 @@ export const Post = () => {
         </Await>
         <Await resolve={post.tags}>
           <TagCount />
+        </Await>
+        <Await resolve={post.author} errorElement={<b>no author</b>}>
+          {(author) => <address>{author}</address>}
         </Await>
       </Suspense>
       <ul>

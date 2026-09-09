@@ -470,6 +470,12 @@ export interface CapturedExportReference {
   name: string;
 }
 
+/** A promise the page held that had settled by capture time: what it fulfilled to, or what it rejected with. */
+export interface CapturedPromiseSettlement {
+  isFulfilled: boolean;
+  outcome: CapturedValue;
+}
+
 /** One entry of a TanStack Query cache (`Query.state`) as it stood when the page was captured. */
 export interface CapturedQuery {
   queryHash: string;

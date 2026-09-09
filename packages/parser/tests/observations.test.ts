@@ -1,6 +1,9 @@
 import { hashKey as tanstackHashKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vite-plus/test";
 import { SchemaError } from "../src/errors.js";
+import { capturedValue } from "../src/evaluate/captured.js";
+import { getModeledPromise, isThrownOutcome } from "../src/evaluate/promises.js";
+import { captureWithSettledPromises } from "../src/harness/promise-outcomes.js";
 import { toCapturedValue } from "../src/harness/query-cache.js";
 import {
   EMPTY_OBSERVATIONS,
@@ -8,6 +11,7 @@ import {
   getOpaqueCaptureDescription,
   hashKey,
   opaqueCapture,
+  promiseCapture,
   readObservationsJson,
 } from "../src/observations.js";
 import { describeFixtureRun, listFixtures, runFixture } from "./helpers/fixture-runner.js";
@@ -46,6 +50,37 @@ describe("runtime observations", () => {
     expect(getOpaqueCaptureDescription(opaqueCapture("Date"))).toBe("Date");
     expect(getOpaqueCaptureDescription({ $bippyOpaque: "Date", extra: 1 })).toBeNull();
     expect(getOpaqueCaptureDescription({ name: "x" })).toBeNull();
+  });
+
+  it("records how promises the page holds had settled by capture time", async () => {
+    const held = {
+      name: Promise.resolve("Anonymous"),
+      nested: Promise.resolve({ items: [1, 2] }),
+      rejected: Promise.reject(new Error("denied")),
+      pending: new Promise<never>(() => {}),
+    };
+    const captured = await captureWithSettledPromises(async () => toCapturedValue(held));
+    expect(captured).toEqual({
+      name: promiseCapture({ isFulfilled: true, outcome: "Anonymous" }),
+      nested: promiseCapture({ isFulfilled: true, outcome: { items: [1, 2] } }),
+      rejected: promiseCapture({
+        isFulfilled: false,
+        outcome: { name: "Error", message: "denied" },
+      }),
+      pending: opaqueCapture("Promise"),
+    });
+    const fulfilled = getModeledPromise(
+      capturedValue(promiseCapture({ isFulfilled: true, outcome: "Anonymous" }), "name"),
+    );
+    expect(fulfilled?.settled).toEqual({ kind: "primitive", value: "Anonymous" });
+    const failed = getModeledPromise(
+      capturedValue(promiseCapture({ isFulfilled: false, outcome: "denied" }), "rejected"),
+    );
+    expect(failed?.settled && isThrownOutcome(failed.settled)).toBe(true);
+    expect(capturedValue(opaqueCapture("Promise"), "pending")).toMatchObject({
+      kind: "unknown",
+      reason: "pending: Promise recorded from the page",
+    });
   });
 
   it("reads saved observations and rejects malformed ones", () => {

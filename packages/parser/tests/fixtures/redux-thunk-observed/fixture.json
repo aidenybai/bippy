@@ -1,0 +1,11 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["react-redux", "redux"],
+  "notes": "Thunks dispatched through redux-thunk run statically with the store's dispatch, getState and extra argument: configureStore's default middleware (with a `thunk.extraArgument` option) composed with a middleware from the app's own source, and redux's applyMiddleware(withExtraArgument()) enhancer on legacy_createStore. A plain action comes back from dispatch as itself; the recorded state answers getState().",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "stores": [{ "server": { "label": "api", "isChecked": true } }]
+  }
+}

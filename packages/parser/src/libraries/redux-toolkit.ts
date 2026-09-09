@@ -9,8 +9,10 @@ import {
   getObjectProperty,
   getTruthiness,
   isCallable,
+  isKnownList,
   isKnownString,
   isUndefinedValue,
+  listValue,
   mapValue,
   objectFromRecord,
   objectValue,
@@ -26,6 +28,7 @@ import type {
   LibraryValueProvider,
   ModeledExports,
   ProjectContext,
+  StaticNativeFunctionValue,
   StaticObjectValue,
   StaticSymbolValue,
   StaticValue,
@@ -41,8 +44,10 @@ export const REDUX_TOOLKIT_PACKAGES = [
 /** Plain `redux` stores are as opaque as toolkit ones: their state is whatever the page recorded. */
 export const REDUX_PACKAGES = ["redux"];
 
+export const REDUX_THUNK_PACKAGES = ["redux-thunk"];
+
 export const REDUX_MODELED_EXPORTS: ModeledExports = {
-  redux: ["createStore", "legacy_createStore", "combineReducers"],
+  redux: ["applyMiddleware", "createStore", "legacy_createStore", "combineReducers"],
 };
 
 const SKIP_TOKEN: StaticSymbolValue = { kind: "symbol", key: "@reduxjs/toolkit/query/skipToken" };
@@ -179,20 +184,96 @@ const bindActionCreators = nativeFunction("bindActionCreators", ([creators, disp
   );
 });
 
+/**
+ * redux-thunk's middleware: a function action is called with `(dispatch,
+ * getState, extraArgument)` and its result returned; anything else goes to `next`.
+ */
+const createThunkMiddleware = (extraArgument: StaticValue): StaticNativeFunctionValue => ({
+  kind: "native-function",
+  name: "thunk",
+  call: ([middlewareApi = UNDEFINED_VALUE]) => {
+    const dispatch = getOptionalProperty(middlewareApi, "dispatch");
+    const getState = getOptionalProperty(middlewareApi, "getState");
+    return nativeFunction("thunk", ([next = UNDEFINED_VALUE]) =>
+      nativeFunction("thunk", ([action = UNDEFINED_VALUE], tools) => {
+        if (isCallable(action)) return tools.call(action, [dispatch, getState, extraArgument]);
+        if (action.kind === "unknown" || action.kind === "branch") {
+          return unknownValue("action dispatched through redux-thunk is not statically known");
+        }
+        return tools.call(next, [action]);
+      }),
+    );
+  },
+});
+
+const WITH_EXTRA_ARGUMENT = nativeFunction(
+  "withExtraArgument",
+  ([extraArgument = UNDEFINED_VALUE]) => createThunkMiddleware(extraArgument),
+);
+
+const THUNK_MIDDLEWARE: StaticNativeFunctionValue = {
+  ...createThunkMiddleware(UNDEFINED_VALUE),
+  getOwnProperty: (key) => (key === "withExtraArgument" ? WITH_EXTRA_ARGUMENT : undefined),
+};
+
+/** The middlewares an `applyMiddleware()` enhancer installs. */
+const middlewaresByEnhancer = new WeakMap<StaticValue, readonly StaticValue[]>();
+
+const applyMiddleware = nativeFunction("applyMiddleware", (middlewares) => {
+  const enhancer = nativeFunction("applyMiddleware", () =>
+    unknownValue("applyMiddleware() enhancer applied outside createStore()"),
+  );
+  middlewaresByEnhancer.set(enhancer, middlewares);
+  return enhancer;
+});
+
+/** redux's `createStore` dispatch: a plain action with a `type` goes through the reducer and is returned. */
+const baseDispatch = nativeFunction("dispatch", ([action = UNDEFINED_VALUE]) => {
+  if (action.kind !== "object" || isUndefinedValue(getObjectProperty(action, "type"))) {
+    return unknownValue("result of dispatching an action that is not a plain typed object");
+  }
+  return action;
+});
+
+/** `applyMiddleware`'s chain: each middleware sees the final `dispatch` and `getState`, composed right to left over the store's own dispatch. */
+const composeDispatch = (
+  middlewares: readonly StaticValue[],
+  getState: StaticValue,
+  tools: StubRenderTools,
+): StaticValue => {
+  let composed: StaticValue = unknownValue("dispatching while constructing middleware");
+  const middlewareApi = objectFromRecord({
+    getState,
+    dispatch: nativeFunction("dispatch", (args, callTools) => callTools.call(composed, args)),
+  });
+  const chain = middlewares.map((middleware) => tools.call(middleware, [middlewareApi]));
+  composed = chain.reduceRight((next, middleware) => tools.call(middleware, [next]), baseDispatch);
+  return composed;
+};
+
 /** A store whose state is the one the page recorded for exactly these reducer keys; the store is otherwise opaque. */
-const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue => {
+const storeValue = (
+  project: ProjectContext,
+  reducer: StaticValue,
+  middlewares: readonly StaticValue[] | null,
+  tools: StubRenderTools,
+): StaticValue => {
   const reducerKeys = getReducerKeys(reducer);
   const state =
     reducerKeys && project.storeStates
       ? findStoreState(project.storeStates, reducerKeys)
       : undefined;
+  const getState = nativeFunction("getState", (_args, callTools) =>
+    state === undefined
+      ? unknownValue("state of a Redux store the page did not record")
+      : callTools.captured(state, "the Redux store's state"),
+  );
   return objectFromRecord({
-    getState: nativeFunction("getState", (_args, tools) =>
-      state === undefined
-        ? unknownValue("state of a Redux store the page did not record")
-        : tools.captured(state, "the Redux store's state"),
-    ),
-    dispatch: nativeFunction("dispatch", () => unknownValue("result of dispatching at runtime")),
+    getState,
+    dispatch:
+      middlewares === null
+        ? nativeFunction("dispatch", () => unknownValue("result of dispatching at runtime"))
+        : composeDispatch(middlewares, getState, tools),
     subscribe: nativeFunction("subscribe", () =>
       nativeFunction("unsubscribe", () => UNDEFINED_VALUE),
     ),
@@ -200,13 +281,58 @@ const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue 
   });
 };
 
+/** `getDefaultMiddleware()`: thunk, with the development-only invariant checks that only pass actions along. */
+const getDefaultMiddleware = nativeFunction(
+  "getDefaultMiddleware",
+  ([options = UNDEFINED_VALUE]) => {
+    const thunk = getOptionalProperty(options, "thunk");
+    if (getTruthiness(thunk) === false) return listValue([]);
+    if (isUndefinedValue(thunk) || getTruthiness(thunk) === true) {
+      return listValue([
+        thunk.kind === "object"
+          ? createThunkMiddleware(getObjectProperty(thunk, "extraArgument"))
+          : THUNK_MIDDLEWARE,
+      ]);
+    }
+    return unknownValue("getDefaultMiddleware() with a thunk option that is not statically known");
+  },
+);
+
+const DEFAULT_MIDDLEWARES: readonly StaticValue[] = [THUNK_MIDDLEWARE];
+
+/** The `middleware` option of `configureStore`: the default array, the given one, or the one a builder callback returns. */
+const configuredMiddlewares = (
+  option: StaticValue,
+  tools: StubRenderTools,
+): readonly StaticValue[] | null => {
+  if (isUndefinedValue(option)) return DEFAULT_MIDDLEWARES;
+  const middlewares = isCallable(option) ? tools.call(option, [getDefaultMiddleware]) : option;
+  return isKnownList(middlewares) ? middlewares.items : null;
+};
+
 const configureStore = (project: ProjectContext): StaticValue =>
-  nativeFunction("configureStore", ([options]) =>
-    storeValue(project, getOptionalProperty(options, "reducer")),
+  nativeFunction("configureStore", ([options], tools) =>
+    storeValue(
+      project,
+      getOptionalProperty(options, "reducer"),
+      isUndefinedValue(getOptionalProperty(options, "enhancers"))
+        ? configuredMiddlewares(getOptionalProperty(options, "middleware"), tools)
+        : null,
+      tools,
+    ),
   );
 
+/** `createStore(reducer, [preloadedState], [enhancer])`: an `applyMiddleware()` enhancer installs its chain; any other enhancer leaves dispatch opaque. */
 const createStore = (project: ProjectContext, name: string): StaticValue =>
-  nativeFunction(name, ([reducer = UNDEFINED_VALUE]) => storeValue(project, reducer));
+  nativeFunction(name, ([reducer = UNDEFINED_VALUE, preloadedState, enhancer], tools) => {
+    const storeEnhancer =
+      isCallable(preloadedState) && enhancer === undefined ? preloadedState : enhancer;
+    const middlewares =
+      storeEnhancer === undefined || isUndefinedValue(storeEnhancer)
+        ? []
+        : (middlewaresByEnhancer.get(storeEnhancer) ?? null);
+    return storeValue(project, reducer, middlewares, tools);
+  });
 
 const baseQueryFactory = (name: string): StaticValue =>
   nativeFunction(name, () =>
@@ -445,11 +571,26 @@ const createApi = (project: ProjectContext): StaticValue =>
 export const reduxValue: LibraryValueProvider = (specifier, importedName, project) => {
   if (!REDUX_PACKAGES.includes(specifier)) return null;
   switch (importedName) {
+    case "applyMiddleware":
+      return applyMiddleware;
     case "combineReducers":
       return combineReducers;
     case "createStore":
     case "legacy_createStore":
       return createStore(project, importedName);
+    default:
+      return null;
+  }
+};
+
+export const reduxThunkValue: LibraryValueProvider = (specifier, importedName) => {
+  if (!REDUX_THUNK_PACKAGES.includes(specifier)) return null;
+  switch (importedName) {
+    case "default":
+    case "thunk":
+      return THUNK_MIDDLEWARE;
+    case "withExtraArgument":
+      return WITH_EXTRA_ARGUMENT;
     default:
       return null;
   }
@@ -468,6 +609,8 @@ export const reduxToolkitValue: LibraryValueProvider = (specifier, importedName,
       return bindActionCreators;
     case "configureStore":
       return configureStore(project);
+    case "getDefaultMiddleware":
+      return getDefaultMiddleware;
     case "createApi":
       return createApi(project);
     case "fetchBaseQuery":

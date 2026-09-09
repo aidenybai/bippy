@@ -31,7 +31,9 @@ import {
 import {
   REDUX_MODELED_EXPORTS,
   REDUX_PACKAGES,
+  REDUX_THUNK_PACKAGES,
   REDUX_TOOLKIT_PACKAGES,
+  reduxThunkValue,
   reduxToolkitValue,
   reduxValue,
 } from "./redux-toolkit.js";
@@ -91,6 +93,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
   },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
+  { packages: REDUX_THUNK_PACKAGES, getValue: reduxThunkValue },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },

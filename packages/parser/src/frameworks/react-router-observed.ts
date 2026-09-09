@@ -1,7 +1,7 @@
+import { capturedValue } from "../evaluate/captured.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
-  capturedValue,
   listValue,
   objectFromRecord,
   primitiveValue,

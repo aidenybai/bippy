@@ -1,3 +1,4 @@
+import { capturedValue } from "./captured.js";
 import type {
   Argument,
   ArrayExpression,
@@ -197,9 +198,21 @@ import {
   DEFAULT_STYLED_COMPONENTS_TRANSFORM,
   STYLED_COMPONENTS_MACRO_SPECIFIER,
 } from "./styled-components-transform.js";
-import type { CallFrame, ContextReader, EvaluationContext, StepBudget } from "./context.js";
+import type {
+  CallFrame,
+  ContextReader,
+  EvaluationContext,
+  RejectionObserver,
+  StepBudget,
+} from "./context.js";
 import type { StateCell } from "./hooks.js";
-import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
+import {
+  NO_PROVIDERS,
+  noteDeferredAwait,
+  withOutcomeHandler,
+  withScope,
+  withoutSuspension,
+} from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
@@ -274,7 +287,6 @@ import {
   mapValue,
   distributeBinary,
   NULL_VALUE,
-  capturedValue,
   isJsonRecord,
   jsonValue,
   objectFromRecord,
@@ -850,6 +862,7 @@ export class Interpreter {
       environment,
       hooks: null,
       suspension: null,
+      rejectionObserver: null,
     };
   }
 
@@ -1635,7 +1648,7 @@ export class Interpreter {
         if (resolved) return resolved;
         const operand = this.evaluateExpression(node.argument, context, nameHint);
         const awaited = awaitedValue(operand, location, () => this.timers.drainMicrotasks());
-        if (context.hooks && isAwaitDeferred(operand, awaited)) context.hooks.isDeferred = true;
+        if (isAwaitDeferred(operand, awaited)) noteDeferredAwait(context);
         return awaited;
       }
       case "MemberExpression":
@@ -3357,7 +3370,7 @@ export class Interpreter {
         return true;
       }
       const awaited = awaitedValue(value, location, drainMicrotasks);
-      if (context.hooks && isAwaitDeferred(value, awaited)) context.hooks.isDeferred = true;
+      if (isAwaitDeferred(value, awaited)) noteDeferredAwait(context);
       this.resolvedAwaits.set(node, awaited);
     }
   }
@@ -3499,6 +3512,7 @@ export class Interpreter {
       environment: context.environment,
       hooks: context.hooks,
       suspension: call ? { call, outcomeHandlers: [] } : null,
+      rejectionObserver: null,
     };
     if (functionValue.node.type === "FunctionExpression" && functionValue.node.id) {
       declareInScope(scope, functionValue.node.id.name, functionValue);
@@ -3956,9 +3970,13 @@ export class Interpreter {
       return mergeOutcomes([outcome, { ...exit, mayComplete: false }], "finally", location);
     };
     const handler = statement.handler;
+    const rejectionObserver: RejectionObserver | null = handler ? { mayReject: false } : null;
     const afterBody = (outcome: StatementOutcome): StatementOutcome => {
       const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
-      if (thrown === null || !handler) {
+      const rejection = rejectionObserver?.mayReject
+        ? unknownValue("rejection of a promise settled outside the analysis", location)
+        : null;
+      if (!handler || (thrown === null && rejection === null)) {
         if (!outcome.mayComplete) return finishExit(outcome, withoutSuspension(context));
         return mergeOutcomes(
           [{ ...outcome, mayComplete: false }, finish(withoutSuspension(context))],
@@ -3974,15 +3992,18 @@ export class Interpreter {
             ? withoutThrows(outcome.returned)
             : null,
       };
+      const caughtValues = [
+        ...(thrown ? [getCaughtValue(thrown, location)] : []),
+        ...(rejection ? [rejection] : []),
+      ];
+      const caught =
+        caughtValues.length === 1
+          ? caughtValues[0]
+          : branchValue(caughtValues, "caught error", location);
       const catches: StatementContinuation = (pathContext) => {
         const handlerContext = withScope(pathContext, createScope(pathContext.scope));
         if (handler.param) {
-          this.bindPattern(
-            handler.param,
-            getCaughtValue(thrown, location),
-            handlerContext.scope,
-            handlerContext,
-          );
+          this.bindPattern(handler.param, caught, handlerContext.scope, handlerContext);
         }
         return finishExit(
           this.evaluateBlock(handler.body.body, handlerContext, false),
@@ -3994,13 +4015,16 @@ export class Interpreter {
         isPassFeasible ? [(pathContext) => finishExit(passes, pathContext), catches] : [catches],
         context,
         finish,
-        `${describeValue(thrown)} caught`,
+        `${describeValue(thrown ?? caught)} caught`,
         location,
       );
     };
     const outcome = this.evaluateBlock(
       statement.block.body,
-      withOutcomeHandler(context, afterBody),
+      withOutcomeHandler(
+        rejectionObserver ? { ...context, rejectionObserver } : context,
+        afterBody,
+      ),
       true,
     );
     return outcome.isSuspended ? outcome : afterBody(outcome);

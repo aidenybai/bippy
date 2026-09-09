@@ -1,8 +1,8 @@
+import { capturedValue } from "./captured.js";
 import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
-  capturedValue,
   isNullish,
   unknownPrimitiveValue,
   unknownValue,
