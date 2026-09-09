@@ -1,6 +1,6 @@
-import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
+import { objectValue } from "../evaluate/values.js";
 import { lazyProperties } from "../frameworks/stubs.js";
-import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import type { LibraryValueProvider, ModeledExports, StaticValue } from "../types.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
@@ -133,10 +133,17 @@ export const getLibraryValue: LibraryValueProvider = (specifier, importedName, p
   }
   if (importedName !== "*" || !MODELED_PACKAGES.has(specifier)) return null;
   const defaultExport = getLibraryValue(specifier, "default", project);
+  const unmodeledExport = (key: string): StaticValue => ({
+    kind: "external",
+    packageName: specifier,
+    specifier,
+    importedName: key,
+    origin: "binding",
+  });
   return lazyProperties(
     defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
       ? defaultExport
       : objectValue(),
-    (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
+    (key) => getLibraryValue(specifier, key, project) ?? unmodeledExport(key),
   );
 };

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getInstalledModules } from "../libraries/installed-modules.js";
-import type { ProjectContext, SourceTransform, TransformedSource } from "../types.js";
+import type { JsonValue, ProjectContext, SourceTransform, TransformedSource } from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 
@@ -21,10 +21,11 @@ interface SvgrState {
   filePath: string;
 }
 
-/** How a bundler's config invokes svgr: the loader options and the module the loader before it emitted. */
+/** How a bundler's config invokes svgr: the loader options, whether the caller supplies default plugins, and the module the loader before it emitted. */
 interface SvgrLoaderRule {
   bundlerPackage: string;
-  options: Record<string, boolean>;
+  options: Record<string, JsonValue>;
+  hasDefaultPlugins: boolean;
   getPreviousExport: ((filePath: string) => string) | null;
 }
 
@@ -36,6 +37,7 @@ interface SvgrLoaderRule {
 const REACT_SCRIPTS_RULE: SvgrLoaderRule = {
   bundlerPackage: "@svgr/webpack",
   options: { prettier: false, svgo: false, titleProp: true, ref: true },
+  hasDefaultPlugins: true,
   getPreviousExport: (filePath) =>
     `export default require(${JSON.stringify(`file-loader!${filePath}`)});`,
 };
@@ -76,11 +78,13 @@ const createTransform = (rootDirectory: string, rule: SvgrLoaderRule): SourceTra
   const loadConfig = core && getSyncExport(core, "loadConfig");
   const transform = core && (getSyncExport(core, "transform") ?? getSyncExport(core, "default"));
   const defaultPlugins: SyncCall[] = [];
-  for (const packageName of SVGR_DEFAULT_PLUGIN_PACKAGES) {
-    const plugin = installed.load(packageName, rule.bundlerPackage);
-    const pluginFunction = plugin && getDefaultExport(plugin);
-    if (pluginFunction === null) return null;
-    defaultPlugins.push(pluginFunction);
+  if (rule.hasDefaultPlugins) {
+    for (const packageName of SVGR_DEFAULT_PLUGIN_PACKAGES) {
+      const plugin = installed.load(packageName, rule.bundlerPackage);
+      const pluginFunction = plugin && getDefaultExport(plugin);
+      if (pluginFunction === null) return null;
+      defaultPlugins.push(pluginFunction);
+    }
   }
   if (!loadConfig || !transform) return null;
   return {
@@ -103,25 +107,40 @@ const createTransform = (rootDirectory: string, rule: SvgrLoaderRule): SourceTra
   };
 };
 
+/**
+ * A bundler plugin that calls `@svgr/core`'s `transform(svg, options, { filePath })`
+ * itself (`esbuild-plugin-svgr`, `vite-plugin-svgr`) supplies no default plugins:
+ * `options.plugins` decides the pipeline, and without it the SVG text passes through.
+ */
+const directTransformRule = (options: Record<string, JsonValue>): SvgrLoaderRule => ({
+  bundlerPackage: SVGR_CORE_PACKAGE,
+  options,
+  hasDefaultPlugins: false,
+  getPreviousExport: null,
+});
+
 const findLoaderRule = (
   project: ProjectContext,
   resolver: ModuleResolver,
   rootDirectory: string,
+  options: Record<string, JsonValue> | undefined,
 ): SvgrLoaderRule | null => {
+  if (options !== undefined) return directTransformRule(options);
   if (project.hasDeclaredDependency(REACT_SCRIPTS_PACKAGE)) return REACT_SCRIPTS_RULE;
   const bundlerPackage = SVGR_BUNDLER_PACKAGES.find(
     (packageName) => readInstalledPackage(resolver, rootDirectory, packageName) !== null,
   );
   return bundlerPackage === undefined
     ? null
-    : { bundlerPackage, options: {}, getPreviousExport: null };
+    : { bundlerPackage, options: {}, hasDefaultPlugins: true, getPreviousExport: null };
 };
 
 export const createSvgrSourceTransform = (
   project: ProjectContext,
   resolver: ModuleResolver,
   rootDirectory: string,
+  options: Record<string, JsonValue> | undefined,
 ): SourceTransform | null => {
-  const rule = findLoaderRule(project, resolver, rootDirectory);
+  const rule = findLoaderRule(project, resolver, rootDirectory, options);
   return rule === null ? null : createTransform(rootDirectory, rule);
 };

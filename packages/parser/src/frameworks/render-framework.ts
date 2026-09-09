@@ -138,6 +138,7 @@ const rendererOptionsForEntry = (
     bootstrap: entry.static.bootstrap,
     globals: entry.static.globals,
     defines: entry.static.defines,
+    svgr: entry.static.svgr,
     environment: readProcessEnvironment(entry, rootDirectory),
     origin: new URL(entry.url).origin,
     observations,

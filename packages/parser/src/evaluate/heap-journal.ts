@@ -11,8 +11,11 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   getAllocationCount,
+  isIndefiniteItem,
   isSameValue,
   joinObjectEntries,
+  listValue,
+  spreadListItems,
 } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
@@ -204,8 +207,9 @@ export class HeapJournal {
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    isRepeated = false,
   ): void {
-    this.applyJoin(this.paths, reason, location, preferredPath, predicate);
+    this.applyJoin(this.paths, reason, location, preferredPath, predicate, isRepeated);
   }
 
   /**
@@ -222,7 +226,7 @@ export class HeapJournal {
   ): void {
     const selected = indices.map((index) => this.paths[index]);
     this.paths = this.paths.filter((_, index) => !indices.includes(index));
-    this.applyJoin(selected, reason, location, preferredPath, predicate);
+    this.applyJoin(selected, reason, location, preferredPath, predicate, false);
   }
 
   private applyJoin(
@@ -231,6 +235,7 @@ export class HeapJournal {
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    isRepeated: boolean,
   ): void {
     for (const [cell, original] of this.updates) {
       const pathUpdates = paths.map((path) =>
@@ -293,9 +298,18 @@ export class HeapJournal {
         continue;
       }
       const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original.items));
-      const uncertainItems = isEveryPathAppending
-        ? pathItems.flatMap((items) => items.slice(original.items.length))
-        : pathItems.flat();
+      const appendedItems = pathItems.map((items) => items.slice(original.items.length));
+      if (isEveryPathAppending && !isRepeated && !appendedItems.flat().some(isIndefiniteItem)) {
+        list.items = [
+          ...original.items,
+          ...spreadListItems(
+            branchValue(appendedItems.map(listValue), reason, location, preferredPath, predicate),
+            location,
+          ),
+        ];
+        continue;
+      }
+      const uncertainItems = isEveryPathAppending ? appendedItems.flat() : pathItems.flat();
       list.items = isEveryPathAppending ? [...original.items] : [];
       if (uncertainItems.length > 0) {
         list.items.push({

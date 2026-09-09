@@ -204,15 +204,9 @@ export class ModuleGraph {
     if (
       resolution.kind === "external" &&
       imported.kind !== "namespace" &&
-      isModeledLibraryExport(specifier, describeImportedName(imported))
+      isModeledLibraryExport(resolution.specifier, describeImportedName(imported))
     ) {
-      return {
-        kind: "external",
-        packageName: resolution.packageName,
-        imported,
-        specifier,
-        filePath: resolution.filePath,
-      };
+      return externalSymbol(resolution, imported);
     }
     const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
@@ -222,7 +216,7 @@ export class ModuleGraph {
     switch (target.kind) {
       case "external":
       case "builtin":
-        return externalSymbol(target, imported, specifier);
+        return externalSymbol(target, imported);
       case "internal":
         if (isCssModulePath(target.filePath)) {
           return { kind: "stylesheet", filePath: target.filePath, imported };
@@ -315,22 +309,17 @@ export class ModuleGraph {
       const externalSources: ResolvedSymbol[] = [];
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
-        if (isModeledLibraryExport(entry.specifier, exportedName)) {
-          const resolution = this.resolveSpecifier(entry.specifier, module);
-          if (resolution.kind === "external") {
-            return externalSymbol(
-              resolution,
-              { kind: "named", name: exportedName },
-              entry.specifier,
-            );
-          }
+        const resolution = this.resolveSpecifier(entry.specifier, module);
+        if (
+          resolution.kind === "external" &&
+          isModeledLibraryExport(resolution.specifier, exportedName)
+        ) {
+          return externalSymbol(resolution, { kind: "named", name: exportedName });
         }
         const target = this.resolveImportedModule(entry.specifier, module);
         if (!isModuleRecord(target)) {
           if (target.kind === "external" || target.kind === "builtin") {
-            externalSources.push(
-              externalSymbol(target, { kind: "named", name: exportedName }, entry.specifier),
-            );
+            externalSources.push(externalSymbol(target, { kind: "named", name: exportedName }));
           }
           continue;
         }
@@ -363,11 +352,10 @@ const toClientReferenceSymbol = (symbol: ResolvedSymbol): ResolvedSymbol =>
 const externalSymbol = (
   target: ExternalModuleResolution | BuiltinModuleResolution,
   imported: ImportedName,
-  specifier: string,
 ): ResolvedSymbol => ({
   kind: "external",
   packageName: target.kind === "external" ? target.packageName : target.specifier,
   imported,
-  specifier,
+  specifier: target.specifier,
   filePath: target.kind === "external" ? target.filePath : null,
 });

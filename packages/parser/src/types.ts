@@ -152,6 +152,8 @@ export interface ExternalModuleResolution {
   kind: "external";
   packageName: string;
   filePath: string | null;
+  /** The specifier by which the module is known (`next/script` for an import of `next/script.js`). */
+  specifier: string;
 }
 
 export interface BuiltinModuleResolution {
@@ -822,6 +824,8 @@ export interface StaticReactApiValue {
 export interface StaticExternalValue {
   kind: "external";
   packageName: string;
+  /** The module specifier the binding was imported from (`next/script`), which may name a subpath of `packageName`. */
+  specifier: string;
   importedName: string;
   /**
    * `binding` is the import itself, `instance` a `new` of one (an object, so
@@ -1038,6 +1042,8 @@ export interface StaticRendererOptions {
   globals?: Record<string, JsonValue>;
   /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable or bundler shim (`global`) given `null` is left unset. */
   defines?: Record<string, JsonValue>;
+  /** The config the bundler's svgr plugin hands `@svgr/core` (`plugins`, `svgo`, `dimensions`, ...); unset, the `@svgr/webpack`/`@svgr/rollup` loader defaults apply. */
+  svgr?: Record<string, JsonValue>;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;
   /** URL path (pathname, search, hash) the page is rendered at; `location` reads it. */

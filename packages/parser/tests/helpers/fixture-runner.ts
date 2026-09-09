@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
+  JsonValue,
   RootObservations,
   RuntimeObservations,
   StaticRenderResult,
@@ -43,6 +44,8 @@ export interface FixtureManifest {
   route?: string;
   anchor?: string;
   externalPackages?: string[];
+  /** The config the fixture's bundler hands `@svgr/core` for `.svg` imports; unset, `react-scripts` semantics apply. */
+  svgr?: Record<string, JsonValue>;
   /** Runtime state replayed into the static render, as a live capture would record it. */
   observations?: RuntimeObservations;
   /** Uncertainty the static tree must report exactly, e.g. `{ "branchCount": 1 }`. */
@@ -160,6 +163,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       rootDirectory: fixture.directory,
       tsconfigPath: join(fixture.directory, "tsconfig.json"),
       externalPackageAllowList: fixture.manifest.externalPackages,
+      svgr: fixture.manifest.svgr,
       observations: fixture.manifest.observations,
       settleMs: SETTLE_QUIET_MS,
       timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,

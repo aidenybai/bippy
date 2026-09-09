@@ -20,6 +20,8 @@ export interface ModuleResolverOptions {
   rootDirectory?: string;
 }
 
+const SCRIPT_EXTENSIONS = new Set([".js", ".mjs", ".cjs"]);
+
 const SOURCE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".cjs", ".mts", ".cts", ".json"];
 
 const EXTENSION_ALIAS: Record<string, string[]> = {
@@ -177,14 +179,49 @@ export class ModuleResolver {
         getPackageNameFromFilePath(filePath) ??
         (specifierPackage !== null && this.isOutsideRoot(filePath) ? specifierPackage : null);
       if (packageName) {
-        return { kind: "external", packageName, filePath };
+        return {
+          kind: "external",
+          packageName,
+          filePath,
+          specifier: this.canonicalizeExternalSpecifier(
+            cleanSpecifier,
+            filePath,
+            fromFile,
+            importer,
+          ),
+        };
       }
       return { kind: "internal", filePath };
     }
     if (specifierPackage) {
-      return { kind: "external", packageName: specifierPackage, filePath: null };
+      return {
+        kind: "external",
+        packageName: specifierPackage,
+        filePath: null,
+        specifier: cleanSpecifier,
+      };
     }
     return { kind: "unresolved", specifier, error: result.error ?? "not found" };
+  }
+
+  /**
+   * `next/script.js` and `next/script` load the same file (`LOAD_AS_FILE` probes the
+   * extension), so the extensionless form names the module wherever it is modeled.
+   */
+  private canonicalizeExternalSpecifier(
+    specifier: string,
+    filePath: string,
+    fromFile: string,
+    importer: ImporterKind,
+  ): string {
+    const extension = path.extname(specifier);
+    if (!SCRIPT_EXTENSIONS.has(extension)) return specifier;
+    const extensionless = specifier.slice(0, -extension.length);
+    if (getPackageNameFromSpecifier(extensionless) === extensionless) return specifier;
+    const resolution = this.resolve(extensionless, fromFile, importer);
+    return resolution.kind === "external" && resolution.filePath === filePath
+      ? extensionless
+      : specifier;
   }
 
   private isOutsideRoot(filePath: string): boolean {

@@ -1073,6 +1073,7 @@ export class Interpreter {
         return {
           kind: "external",
           packageName: symbol.packageName,
+          specifier: symbol.specifier,
           importedName,
           origin: "binding",
         };
@@ -2200,6 +2201,7 @@ export class Interpreter {
       return (
         hasProperty(left, right) ??
         this.hasGlobalObjectProperty(left, right, context.environment) ??
+        this.hasExternalExport(left, right, context) ??
         applyBinaryOperator("in", left, right)
       );
     }
@@ -2227,6 +2229,23 @@ export class Interpreter {
     const declared = realm.getGlobal(name);
     if (declared !== null) return declared.type.isNullable ? null : TRUE_VALUE;
     return realm.isForeignGlobal(name) ? FALSE_VALUE : null;
+  }
+
+  /**
+   * `name in ns` on an external module's exports: known to exist when the export is
+   * modeled (or is the `__esModule` marker), otherwise the package's surface is unknown.
+   */
+  private hasExternalExport(
+    key: StaticValue,
+    target: StaticValue,
+    context: EvaluationContext,
+  ): StaticValue | null {
+    if (target.kind !== "external" || target.importedName !== "*" || target.origin !== "binding")
+      return null;
+    const name = getPropertyName(key);
+    if (name === null) return null;
+    const member = this.getProperty(target, name, context, null);
+    return member.kind === "external" && member.origin === "binding" ? null : TRUE_VALUE;
   }
 
   private evaluateUpdateExpression(
@@ -2671,7 +2690,7 @@ export class Interpreter {
               kind: "external",
               packageName: object.packageName,
               imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
-              specifier: object.packageName,
+              specifier: object.specifier,
               filePath: null,
             },
             null,
@@ -2680,7 +2699,7 @@ export class Interpreter {
         if (object.origin !== "binding" && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
         if (object.importedName === "default" && object.origin === "binding") {
-          const modeled = this.getModeledExternal(object.packageName, key);
+          const modeled = this.getModeledExternal(object.specifier, key);
           if (modeled) return modeled;
         }
         if (object.importedName === "*" || object.importedName === "default") {
@@ -2834,7 +2853,7 @@ export class Interpreter {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;
       const filePath = target.kind === "external" ? target.filePath : null;
       if (isRequire) {
-        const required = this.purePackages?.getRequired(specifier, filePath);
+        const required = this.purePackages?.getRequired(target.specifier, filePath);
         if (required) return required;
       }
       return this.resolvedSymbolToValue(
@@ -2842,7 +2861,7 @@ export class Interpreter {
           kind: "external",
           packageName,
           imported: { kind: "namespace" },
-          specifier,
+          specifier: target.specifier,
           filePath,
         },
         null,
@@ -2976,6 +2995,7 @@ export class Interpreter {
         return {
           kind: "external",
           packageName: callee.packageName,
+          specifier: callee.specifier,
           importedName: `${callee.importedName}()`,
           origin: "derived",
         };
@@ -3184,6 +3204,7 @@ export class Interpreter {
       return {
         kind: "external",
         packageName: callee.packageName,
+        specifier: callee.specifier,
         importedName: `new ${callee.importedName}`,
         origin: "instance",
       };
@@ -3993,7 +4014,8 @@ export class Interpreter {
    * iteration of a loop whose count is unknown, a callback for an item that
    * may not exist). Reads inside see its own writes; afterwards every binding,
    * object and list it changed holds both the changed and the untouched state,
-   * the changed one preferred unless `isLikelyRun` is false.
+   * the changed one preferred unless `isLikelyRun` is false. `isRepeated` marks
+   * code that may also run more than once.
    */
   runMaybe<Result>(
     scope: Scope,
@@ -4001,6 +4023,7 @@ export class Interpreter {
     reason: string,
     location: SourceLocation | null,
     isLikelyRun = true,
+    isRepeated = false,
   ): Result {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
@@ -4015,7 +4038,7 @@ export class Interpreter {
       this.heapJournals.pop();
       const preferredPath = isLikelyRun ? 0 : 1;
       const predicate = createPathPredicate();
-      journal.join(reason, location, preferredPath, predicate);
+      journal.join(reason, location, preferredPath, predicate, isRepeated);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
     }
   }

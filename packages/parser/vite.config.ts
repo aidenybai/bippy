@@ -57,30 +57,48 @@ const fixtureAliasPlugin = (): Plugin => ({
   },
 });
 
-// What `react-scripts` makes of an `.svg` import (its webpack config chains
-// `@svgr/webpack` after `file-loader`), so fixtures render the real svgr output.
+interface FixtureSvgrManifest {
+  svgr?: Record<string, unknown>;
+}
+
+const readFixtureSvgrConfig = (id: string): Record<string, unknown> | null => {
+  const [fixtureName] = relative(fixturesDirectory, id).split(sep);
+  const manifestPath = join(fixturesDirectory, fixtureName, "fixture.json");
+  if (!existsSync(manifestPath)) return null;
+  const manifest: FixtureSvgrManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  return manifest.svgr ?? null;
+};
+
+// What the fixture's bundler makes of an `.svg` import: a `fixture.json` `svgr`
+// config goes straight to `@svgr/core` (as `vite-plugin-svgr` does), otherwise
+// `react-scripts` semantics (`@svgr/webpack` chained after `file-loader`).
 const fixtureSvgrPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-svgr",
   enforce: "pre",
   async load(id) {
     if (!id.endsWith(".svg") || relative(fixturesDirectory, id).startsWith("..")) return null;
-    const componentCode = await transformSvgr(
-      readFileSync(id, "utf8"),
-      {
-        plugins: ["@svgr/plugin-jsx"],
-        svgo: false,
-        prettier: false,
-        titleProp: true,
-        ref: true,
-      },
-      {
-        filePath: id,
-        caller: {
-          name: "@svgr/webpack",
-          previousExport: `export default ${JSON.stringify(`/static/media/${basename(id)}`)}`,
-        },
-      },
-    );
+    const svgText = readFileSync(id, "utf8");
+    const svgrConfig = readFixtureSvgrConfig(id);
+    const componentCode =
+      svgrConfig === null
+        ? await transformSvgr(
+            svgText,
+            {
+              plugins: ["@svgr/plugin-jsx"],
+              svgo: false,
+              prettier: false,
+              titleProp: true,
+              ref: true,
+            },
+            {
+              filePath: id,
+              caller: {
+                name: "@svgr/webpack",
+                previousExport: `export default ${JSON.stringify(`/static/media/${basename(id)}`)}`,
+              },
+            },
+          )
+        : await transformSvgr(svgText, svgrConfig, { filePath: id });
     return transformWithOxc(componentCode, `${id}.jsx`, { jsx: { runtime: "automatic" } });
   },
 });

@@ -36,6 +36,8 @@ export interface CorpusStaticTarget {
   globals?: Record<string, JsonValue>;
   /** Expressions the dev build inlines (`DefinePlugin`, Vite `define`), keyed by source text. */
   defines?: Record<string, JsonValue>;
+  /** The config the bundler's svgr plugin hands `@svgr/core` (`plugins`, `svgo`, `dimensions`, ...), when it is not the `@svgr/webpack`/`@svgr/rollup` loader default. */
+  svgr?: Record<string, JsonValue>;
   /** dotenv files the server loads, relative to `rootDirectory`, highest precedence first; with them the environment is whole and other variables are unset. */
   envFiles?: string[];
   /** Interpreter step budget per entry (one component render, module initialization or callback). */
@@ -136,6 +138,7 @@ const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
   bootstrap: z.array(z.string()).optional(),
   globals: jsonRecordSchema.optional(),
   defines: jsonRecordSchema.optional(),
+  svgr: jsonRecordSchema.optional(),
   envFiles: z.array(z.string()).optional(),
   envPrefix: z.string().optional(),
   maxSteps: z.number().optional(),

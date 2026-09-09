@@ -41,6 +41,7 @@ const liftExport = (
     ? pureNativeFunction(name, exported, undefined, null, () => ({
         kind: "external",
         packageName,
+        specifier,
         importedName: `${exportedName}()`,
         origin: "derived",
       }))

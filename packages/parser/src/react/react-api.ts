@@ -128,6 +128,7 @@ export const getExternalMember = (object: StaticExternalValue, key: string): Sta
   return {
     kind: "external",
     packageName: object.packageName,
+    specifier: object.specifier,
     importedName: `${object.importedName}.${key}`,
     origin: "derived",
   };

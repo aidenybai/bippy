@@ -217,6 +217,8 @@ const evaluateUncertainTail = (
     () => runBody(interpreter, statement.body, loopContext),
     "loop iterations are uncertain",
     location,
+    true,
+    true,
   );
   interpreter.widenLoopCarriedBindings(
     context.scope,

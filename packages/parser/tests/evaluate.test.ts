@@ -180,3 +180,25 @@ describe("list mutation and uncertain loops", () => {
     });
   });
 });
+
+const EXTERNAL_NAMESPACE_SOURCE = `
+import * as React from "react";
+import * as unmodeled from "some-unmodeled-package";
+
+export const knownExport = () => "createElement" in React;
+export const interopMarker = () => "__esModule" in React;
+export const unknownExport = () => "default" in unmodeled;
+`;
+
+describe("external namespaces", () => {
+  it("answers `in` for exports the namespace is known to provide and leaves the rest open", async () => {
+    const results = await evaluateExports(EXTERNAL_NAMESPACE_SOURCE, [
+      "knownExport",
+      "interopMarker",
+      "unknownExport",
+    ]);
+    expect(results.knownExport).toBe("true");
+    expect(results.interopMarker).toBe("true");
+    expect(results.unknownExport).toMatch(/^<boolean: /);
+  });
+});

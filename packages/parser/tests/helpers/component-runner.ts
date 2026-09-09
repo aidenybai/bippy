@@ -28,6 +28,7 @@ export interface ComponentFixtureModule {
   minCoverage?: number;
   isExact?: boolean;
   isPartial?: boolean;
+  isEnumerated?: boolean;
 }
 
 export interface ComponentRunResult {
@@ -37,6 +38,7 @@ export interface ComponentRunResult {
   minCoverage: number;
   isExact: boolean;
   isPartial: boolean;
+  isEnumerated: boolean;
 }
 
 export const COMPONENTS_DIRECTORY = resolve(import.meta.dirname, "../components");
@@ -122,6 +124,7 @@ export const runComponentFixture = async (
     minCoverage: loaded.minCoverage ?? 1,
     isExact: loaded.isExact ?? false,
     isPartial: loaded.isPartial ?? false,
+    isEnumerated: loaded.isEnumerated ?? false,
   };
 };
 

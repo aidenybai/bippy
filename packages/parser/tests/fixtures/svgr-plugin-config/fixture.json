@@ -1,0 +1,7 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "svgr": { "plugins": ["@svgr/plugin-jsx"], "dimensions": false },
+  "notes": "esbuild-plugin-svgr hands its options straight to @svgr/core with no caller: only the listed plugins run, so svgo never strips <title>/<style> and the SVG keeps its source child order."
+}

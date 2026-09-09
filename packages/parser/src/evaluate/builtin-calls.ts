@@ -1025,11 +1025,14 @@ const callGlobal = (
     case "Array.from": {
       const source =
         first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
-      if (source?.kind === "list" || source?.kind === "repeat") {
-        if (isCallable(second)) return mapList(interpreter, source, second, context, location);
-        return source;
+      if (!source || (source.kind === "primitive" && typeof source.value !== "string")) {
+        return unknownValue("Array.from of a non-iterable", location);
       }
-      return unknownValue("Array.from of dynamic iterable", location);
+      const items =
+        source.kind === "list" || source.kind === "repeat"
+          ? source
+          : listValue(spreadListItems(source, location));
+      return isCallable(second) ? mapList(interpreter, items, second, context, location) : items;
     }
     case "Int8Array.from":
     case "Uint8Array.from":
@@ -1560,6 +1563,8 @@ export const callUncertainCallback = (
     () => callCallback(interpreter, callback, args, context),
     "callback for an item that may not occur",
     null,
+    true,
+    true,
   );
 
 const sortListItems = (
@@ -1730,6 +1735,8 @@ const replaceWithCallback = (
   return isKnown ? primitiveValue(replaced) : null;
 };
 
+const UNICODE_NORMALIZATION_FORMS = new Set(["NFC", "NFD", "NFKC", "NFKD"]);
+
 const callStringMethod = (
   interpreter: Interpreter,
   receiver: string,
@@ -1790,6 +1797,12 @@ const callStringMethod = (
       return primitiveValue(receiver.trimStart());
     case "trimEnd":
       return primitiveValue(receiver.trimEnd());
+    case "normalize": {
+      const form = primitiveArgs[0] === undefined ? "NFC" : String(primitiveArgs[0]);
+      return UNICODE_NORMALIZATION_FORMS.has(form)
+        ? primitiveValue(receiver.normalize(form))
+        : null;
+    }
     case "slice":
     case "substring":
       return primitiveValue(

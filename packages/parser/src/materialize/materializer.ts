@@ -46,6 +46,7 @@ import type {
   RenderEnvironment,
   Scope,
   SourceLocation,
+  StaticBranchValue,
   StaticClassValue,
   StaticElementType,
   StaticElementValue,
@@ -349,6 +350,27 @@ const isEmptyChild = (value: StaticValue): boolean =>
     (value.value === null || value.value === undefined || typeof value.value === "boolean")) ||
   (value.kind === "unknown-primitive" && value.primitiveType === "boolean");
 
+/** Alternatives that all render nothing (`false`, `null`, `undefined`, an unknown boolean) are one child-list outcome, so a branch without a shared predicate keeps only the first of them. */
+const collapseEmptyAlternatives = (
+  value: StaticBranchValue,
+): Pick<StaticBranchValue, "alternatives" | "preferredIndex"> => {
+  if (value.predicate !== null) return value;
+  const alternatives: StaticValue[] = [];
+  let preferredIndex = 0;
+  let emptyIndex = -1;
+  value.alternatives.forEach((alternative, index) => {
+    let position = alternatives.length;
+    if (isEmptyChild(alternative)) {
+      if (emptyIndex === -1) {
+        emptyIndex = position;
+        alternatives.push(alternative);
+      } else position = emptyIndex;
+    } else alternatives.push(alternative);
+    if (index === value.preferredIndex) preferredIndex = position;
+  });
+  return { alternatives, preferredIndex };
+};
+
 const isNonNullish = (value: StaticValue): boolean =>
   !(value.kind === "primitive" && (value.value === null || value.value === undefined));
 
@@ -565,18 +587,20 @@ export class Materializer {
           countMax: value.count?.max ?? null,
           children: [this.toNode(value.item, context, false)],
         });
-      case "branch":
+      case "branch": {
         if (value.alternatives.every(isEmptyChild)) return null;
+        const { alternatives, preferredIndex } = collapseEmptyAlternatives(value);
         return this.branchNode(
-          value.alternatives.map((alternative, index) =>
-            this.alternativeNode(alternative, index === value.preferredIndex, context, isTopLevel),
+          alternatives.map((alternative, index) =>
+            this.alternativeNode(alternative, index === preferredIndex, context, isTopLevel),
           ),
           value.reason,
-          value.preferredIndex,
+          preferredIndex,
           isTopLevel,
           value.location,
           value.predicate,
         );
+      }
       case "optional":
         return this.branchNode(
           [this.toNode(value.value, context, isTopLevel), null],

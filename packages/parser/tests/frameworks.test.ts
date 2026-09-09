@@ -272,6 +272,17 @@ describe("next app router", () => {
     expect(tree).not.toContain("unsupported module");
   });
 
+  it("resolves the default of a `require`d next subpath through CommonJS interop", async () => {
+    const { tree, errors } = await render(
+      "next-app",
+      { framework: "next-app", route: "/analytics" },
+      ["analytics-kit"],
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<section>\n\s+<Script>\n\s+<script>$/);
+    expect(tree).not.toContain("<default>");
+  });
+
   it("models next/dynamic as the loaded LoadableComponent tree", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/about" });
     expect(tree).toMatch(

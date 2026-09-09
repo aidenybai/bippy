@@ -48,6 +48,8 @@ interface BootstrapCall {
 }
 
 const BOOTSTRAP_PATTERN = /^(.+)#([^#()]+?)(?:\(([^()]*)\))?$/;
+/** Timer tasks an entry may run before its root render, matching the mount's settle rounds. */
+const MAX_BOOTSTRAP_TASKS = 512;
 
 const parseBootstrap = (bootstrap: string): BootstrapCall | null => {
   const match = BOOTSTRAP_PATTERN.exec(bootstrap);
@@ -99,7 +101,12 @@ export class StaticRenderer {
       bundler,
     });
     this.reactVersion = this.project.readPackageVersion("react");
-    const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
+    const svgrTransform = createSvgrSourceTransform(
+      this.project,
+      this.resolver,
+      rootDirectory,
+      options.svgr,
+    );
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
@@ -269,14 +276,25 @@ export class StaticRenderer {
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
    * with the statements that lead up to it. An entry without such a call (it
-   * mounts through an imported function) runs whole, and the element the first
-   * evaluated root render received is used. Null (with a diagnostic) when no
-   * root render happens.
+   * mounts through an imported function, possibly from a timer task or a
+   * promise reaction) runs whole, then its queued tasks run until one renders,
+   * and the element the first evaluated root render received is used. Null
+   * (with a diagnostic) when no root render happens.
    */
   evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.initializeModule(module);
+      const { timers } = interpreter;
+      for (
+        let round = 0;
+        interpreter.rootRender.element === null &&
+        round < MAX_BOOTSTRAP_TASKS &&
+        (timers.hasTasks() || timers.hasMicrotasks());
+        round++
+      ) {
+        timers.runNextTask();
+      }
       if (interpreter.rootRender.element) return interpreter.rootRender.element;
       interpreter.report(
         "no-root-render",

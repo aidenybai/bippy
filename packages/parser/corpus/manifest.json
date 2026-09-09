@@ -628,6 +628,7 @@
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
       "env": {
+        "CI": "",
         "SENTRY_UI_DEV_ONLY": "1",
         "SENTRY_WEBPACK_PROXY_PORT": "7999"
       },
@@ -677,6 +678,7 @@
       "framework": "spa",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 quill:build"],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
@@ -2952,6 +2954,299 @@
         "tsconfig": "jsconfig.json"
       },
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
+    },
+    {
+      "id": "ens-app-v3",
+      "repository": "https://github.com/ensdomains/ens-app-v3",
+      "revision": "89f8681d524e9f40511dadd016ee95a6abff346d",
+      "description": "ENS Manager App v3 landing page (Next 13.5 pages router, styled-components + thorin, wagmi/RainbowKit, TanStack Query, i18next, pnpm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.23.0 install --frozen-lockfile",
+      "dev": "npx -y pnpm@10.23.0 exec next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["@ensdomains/*"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "heyform",
+      "repository": "https://github.com/heyform/heyform",
+      "revision": "92aa9f4269a8f6b61d5154d00f8a3ca11d5c5ee3",
+      "description": "HeyForm webapp login page (Vite + React 19 SPA, @heyooo-inc/react-router over react-router-dom v6, react-i18next, Radix UI, pnpm workspaces)",
+      "framework": "spa",
+      "workingDirectory": "packages/webapp",
+      "install": "npx -y pnpm@9 install --frozen-lockfile",
+      "setup": ["cp -n .env.example .env; true"],
+      "dev": "npx -y pnpm@9 exec vite --port 3000",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/webapp",
+        "entry": "src/main.tsx",
+        "route": "/login",
+        "aliases": {
+          "@": "src",
+          "@heyform-inc/form-renderer": "../form-renderer/src/index.ts"
+        },
+        "externalPackageAllowList": [
+          "@heyooo-inc/*",
+          "@heyform-inc/*",
+          "@radix-ui/*",
+          "react-i18next",
+          "i18next",
+          "react-error-boundary",
+          "react-router-dom",
+          "react-router",
+          "@remix-run/router"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The webapp's own API (NestJS on 127.0.0.1:9157 behind the Vite proxy) is not started: main.tsx swallows the failed GET /api/config and mounts anyway, and `/login` needs no query on mount."
+    },
+    {
+      "id": "open-tacos",
+      "repository": "https://github.com/OpenBeta/open-tacos",
+      "revision": "30aa8c7f2843f077842b3ae34fb8d6845fa942b3",
+      "description": "OpenBeta climbing catalog home page (Next 14.2 app router under src/app with route groups, async server components over the staging GraphQL API, next-auth, Tailwind/daisyUI, Yarn 1, Node 20)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@heroicons/*",
+          "@openbeta/*",
+          "@radix-ui/*",
+          "@phosphor-icons/react",
+          "@headlessui/react",
+          "react-toastify",
+          "next-auth",
+          "swr",
+          "underscore",
+          "@apollo/*"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The committed .env points the dev server at OpenBeta's public staging API (stg-api.openbeta.io) and OpenCollective; server components fetch from them at request time, so their rows are network data."
+    },
+    {
+      "id": "sqlrooms-ai-agent",
+      "repository": "https://github.com/sqlrooms/sqlrooms",
+      "revision": "e32002430a308284ef021c9345aeb12fdc87ff42",
+      "description": "SQLRooms ai-agent example (Vite + React 19 SPA over the @sqlrooms/* workspace packages: zustand room store, DuckDB-wasm, Radix UI, ai-sdk; pnpm 11, Node 24)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.1.2 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.1.2 exec turbo build --filter=ai-agent-example^..."
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.1.2 --filter ai-agent-example exec vite --port 5173 --strictPort",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "examples/ai-agent",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@sqlrooms/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "@dnd-kit/*",
+          "react-markdown",
+          "zustand"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "Workspace packages are built with tsc (dist/*.js keeps component names) before the example's Vite server starts; the example needs no backend (DuckDB runs in-browser, AI providers are only contacted after the user configures a key)."
+    },
+    {
+      "id": "openstatus",
+      "repository": "https://github.com/openstatusHQ/openstatus",
+      "revision": "e89b614b7b838e4831699c5789cd68f17fa8fbd6",
+      "description": "OpenStatus marketing site home page (Next 16.3 app router with route groups, MDX content rendered by server components, @openstatus/ui shadcn/Radix primitives, next-themes, nuqs, tRPC/TanStack Query providers; pnpm 11, Node 24)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.2.1 install --frozen-lockfile",
+      "setup": ["cp -n apps/web/.env.example apps/web/.env; true"],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.2.1 --filter @openstatus/web exec next dev --port 3000",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "appDirectory": "src/app",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@openstatus/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "nuqs",
+          "next-themes",
+          "@tanstack/react-query",
+          "@trpc/*",
+          "next-plausible",
+          "@openpanel/nextjs",
+          "sonner",
+          "@t3-oss/*",
+          "zod",
+          "next-mdx-remote",
+          "slugify",
+          "@tanstack/react-query-devtools"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The home page is filesystem MDX content plus static header/footer data; .env is the repository's placeholder example (env validation is skipped), so no Turso/Tinybird/Stripe service is contacted on this route."
+    },
+    {
+      "id": "excel-collab",
+      "repository": "https://github.com/nusr/excel",
+      "revision": "0bcd8992021db01f28285c307a9ac4d2793d1217",
+      "description": "nusr/excel demo frontend (Vite + React 19 SPA that mounts the excel-collab spreadsheet library from source through a Vite alias; Yarn 1 workspaces + lerna). packages/excel-collab itself is a library and renders no page, so the demo that embeds it is the target.",
+      "framework": "spa",
+      "workingDirectory": "packages/demo/frontend",
+      "install": "yarn install --frozen-lockfile --ignore-scripts",
+      "dev": "yarn vite dev --mode development --port 3000 --strictPort",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/demo/frontend",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "aliases": {
+          "excel-collab": "../../excel-collab/src"
+        },
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": ["excel-collab", "zustand"]
+      },
+      "notes": "No env file: VITE_BACKEND_URL/VITE_WEBSOCKET_URL are unset so the demo uses its localStorage LocalProvider and seeds a template document from scripts/model.json before mounting."
+    },
+    {
+      "id": "bldrs-share",
+      "repository": "https://github.com/bldrs-ai/Share",
+      "revision": "4e1443551d84a24e669bbdc699f48b0ff87947ac",
+      "description": "Bldrs Share CAD viewer, /share/about page (esbuild-bundled React 18 SPA served through the repository's own esbuild+proxy dev server; react-router-dom v6, MUI, Auth0, Zustand, Sentry, flagged-feature-flags; Yarn 1)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "setup": [
+        "mkdir -p docs/static/js && cp node_modules/@bldrs-ai/conway/compiled/dependencies/conway-geom/Dist/* docs/static/js"
+      ],
+      "env": {
+        "SHARE_CONFIG": "dev",
+        "MINIFY": "false",
+        "USE_WEBIFC_SHIM": "true",
+        "serveHttps": "false"
+      },
+      "dev": "node tools/esbuild/serve.js",
+      "url": "http://localhost:8080/share/about",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.jsx",
+        "route": "/share/about",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@auth0/auth0-react",
+          "flagged",
+          "react-helmet-async",
+          "@sentry/react",
+          "zustand",
+          "react-transition-group",
+          "react-feature-flags"
+        ],
+        "maxFiberCount": 20000,
+        "svgr": {
+          "plugins": ["@svgr/plugin-jsx"],
+          "dimensions": false
+        },
+        "defines": {
+          "process.env.APPS_IS_ENABLED": true,
+          "process.env.AUTH0_DOMAIN": "https://bldrs.us.auth0.com.msw",
+          "process.env.OAUTH2_CLIENT_ID": "cypresstestaudience",
+          "process.env.OAUTH2_REDIRECT_URI": null,
+          "process.env.CORS_PROXY_HOST": "http://localhost:8090",
+          "process.env.CORS_PROXY_PATH": "/.netlify/functions/proxy-handler",
+          "process.env.GITHUB_API_TOKEN": null,
+          "process.env.GITHUB_BASE_URL": "https://git.bldrs.dev.msw/p/gh",
+          "process.env.GITHUB_BASE_URL_UNAUTHENTICATED": "https://api.github.com.msw",
+          "process.env.NODE_ENV": "development",
+          "process.env.SENTRY_DSN": null,
+          "process.env.SENTRY_ENVIRONMENT": null,
+          "process.env.OPFS_IS_ENABLED": true,
+          "process.env.THEME_IS_ENABLED": true,
+          "process.env.USE_WEBIFC_SHIM": true,
+          "process.env.GOOGLE_API_KEY": "test-key-12345",
+          "process.env.GOOGLE_OAUTH2_CLIENT_ID": "test-oauth-client-id",
+          "process.env.GOOGLE_APP_ID": "test-app-id",
+          "process.env.GH_OAUTH_CLIENT_ID": "test-gh-client-id",
+          "process.env.OPENROUTER_BASE_URL": "https://localhost/openrouter",
+          "process.env.MSW_IS_ENABLED": true,
+          "process.env.THREE_PDB_IS_ENABLED": false,
+          "process.env.PLATFORM": "web",
+          "process.env.FORCE_SINGLE_THREAD": "false",
+          "process.env.ESBUILD_WATCH": true
+        }
+      },
+      "notes": "tools/esbuild/serve.js bundles src/index.jsx into docs/ (copying public/ alongside) and fronts esbuild's server with the repo's SPA-fallback proxy on 8080; MINIFY=false keeps component names in the bundle. The Conway wasm copy mirrors `build-share-copy-wasm-conway-MT`; the marketing overlay is not built so /share/about is the SPA's own About page. `static.defines` is the output of tools/esbuild/defines.js under the entry env (SHARE_CONFIG=dev), which the runtime bundle inlines."
+    },
+    {
+      "id": "standardnotes",
+      "repository": "https://github.com/standardnotes/app",
+      "revision": "6fcb991e626b0388a2220fa0d94815bf6c0c9f8d",
+      "description": "Standard Notes web client (webpack-dev-server React 18 SPA in packages/web; the app boots a WebApplicationGroup from @standardnotes/snjs and renders ApplicationGroupView; Yarn 3 workspaces, Node 20)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --immutable",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn workspaces foreach -pt --topological-dev -R --from @standardnotes/web --exclude @standardnotes/web run build"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn workspace @standardnotes/web start --port 3001",
+      "url": "http://localhost:3001/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 15000,
+      "static": {
+        "rootDirectory": "packages/web",
+        "entry": "src/javascripts/index.ts",
+        "route": "/",
+        "aliases": {
+          "@": "src/javascripts",
+          "@Controllers": "src/javascripts/Controllers"
+        },
+        "externalPackageAllowList": ["@standardnotes/*", "@ariakit/*", "@reach/*"],
+        "maxFiberCount": 20000,
+        "defines": {
+          "__WEB_VERSION__": "3.202.4"
+        },
+        "globals": {
+          "defaultSyncServer": "https://api.standardnotes.com",
+          "defaultFilesHost": "https://files.standardnotes.com",
+          "enabledUnfinishedFeatures": false,
+          "websocketUrl": "wss://sockets.standardnotes.com",
+          "purchaseUrl": "https://standardnotes.com/purchase",
+          "plansUrl": "https://standardnotes.com/plans",
+          "dashboardUrl": "https://standardnotes.com/dashboard"
+        }
+      },
+      "notes": "The web package imports its @standardnotes/* siblings through their built dist, so the workspace dependency graph is built first. The client points at api.standardnotes.com from src/index.html; with no account the first render is the sign-in/launch UI, and the sync server is not contacted before that."
     }
   ]
 }
