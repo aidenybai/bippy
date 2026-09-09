@@ -42,11 +42,13 @@ export const ensureDomGlobals = (): void => {
  * each analyzed program must start from the DOM a browser would give it, not
  * from what the previous program left behind.
  */
-export const resetDomGlobals = (): void => {
-  if (installedWindow !== null || typeof globalThis.document === "undefined") installWindow();
+export const resetDomGlobals = (initialMarkup: string | null = null): void => {
+  if (installedWindow !== null || typeof globalThis.document === "undefined") {
+    installWindow(initialMarkup);
+  }
 };
 
-const installWindow = (): void => {
+const installWindow = (initialMarkup: string | null = null): void => {
   void installedWindow?.happyDOM.abort();
   const window = new Window({
     url: "http://localhost:3000",
@@ -59,6 +61,7 @@ const installWindow = (): void => {
       disableErrorCapturing: true,
     },
   });
+  if (initialMarkup !== null) window.document.write(initialMarkup);
   for (const key of collectPropertyNames(window)) {
     if (!WINDOW_GLOBALS.includes(key) && !installedKeys.has(key) && key in globalThis) continue;
     const existing = Object.getOwnPropertyDescriptor(globalThis, key);
@@ -92,12 +95,13 @@ const isDomObject = (value: object): boolean => {
 };
 
 /** The installed DOM as the document React DOM renders into and interpreted code reads from. */
-export const createDomHostDocument = (): HostDocument => {
+export const createDomHostDocument = (hasKnownMarkup: boolean): HostDocument => {
   ensureDomGlobals();
   const browser = loadHostRealm("browser");
   return {
     document,
     globalObject: window,
+    hasKnownMarkup,
     isInstanceOf: (value, interfaceName) => {
       if (browser.getInterface(interfaceName) === null) return null;
       const installed: unknown = Reflect.get(window, interfaceName);

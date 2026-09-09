@@ -1,24 +1,37 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { describeValue } from "../src/evaluate/values.js";
 import { createStaticRenderer } from "../src/index.js";
+import { readObservationsJson } from "../src/observations.js";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { packages: { type: "string", multiple: true, default: [] } },
+  options: {
+    packages: { type: "string", multiple: true, default: [] },
+    capture: { type: "string" },
+  },
 });
 const [rootArg, fileArg, exportName = "default"] = positionals;
 if (!rootArg || !fileArg) {
   console.error(
-    "usage: tsx scripts/debug-export.ts [--packages <name>]... <root> <file> [exportName]",
+    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--capture <capture.json>] <root> <file> [exportName]",
   );
   process.exit(1);
 }
 const rootDirectory = path.resolve(rootArg);
+const observations =
+  values.capture === undefined
+    ? undefined
+    : readObservationsJson(
+        JSON.parse(readFileSync(values.capture, "utf8")).observations,
+        values.capture,
+      );
 const renderer = createStaticRenderer({
   rootDirectory,
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,
+  observations,
 });
 const result = await renderer.renderWith((interpreter) => {
   const module = renderer.loadModule(path.resolve(rootDirectory, fileArg));
@@ -37,7 +50,7 @@ const result = await renderer.renderWith((interpreter) => {
       JSON.stringify(
         called,
         (key, value) =>
-          key === "node" || key === "location"
+          key === "node" || key === "location" || key === "module" || key === "scope"
             ? undefined
             : typeof value === "bigint"
               ? String(value)

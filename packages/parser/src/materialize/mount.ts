@@ -23,18 +23,20 @@ export interface MountResult {
  * resolutions and the static timer queue (one task per settle round) settle
  * under `act`, and returns the committed fiber tree as bippy observed it.
  * Rounds continue while tasks or the effects they trigger keep queueing more,
- * up to a bound.
+ * up to a bound; `onCommit` runs after each React commit.
  */
 export const mountNode = async (
   runtime: ReactRuntime,
   node: ReactNode,
   timers: TimerQueue,
+  onCommit: () => void,
 ): Promise<MountResult> => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
     recordCommits: true,
+    onCommit,
   });
   const uncaughtErrors: unknown[] = [];
   const caughtErrors: unknown[] = [];

@@ -1,4 +1,9 @@
-import type { ProcessEnvironment, RenderEnvironment, StaticValue } from "../types.js";
+import type {
+  ModuleBundler,
+  ProcessEnvironment,
+  RenderEnvironment,
+  StaticValue,
+} from "../types.js";
 import {
   FALSE_VALUE,
   TRUE_VALUE,
@@ -25,6 +30,12 @@ export const BUNDLER_INJECTED_NAMES = new Set([
   "__dirname",
   "__filename",
 ]);
+
+/** Of those, the names Vite leaves to the browser, where reading them throws; esbuild's CommonJS wrapper still supplies `require`. */
+const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "define"]);
+
+export const isBundlerUndeclaredName = (bundler: ModuleBundler, name: string): boolean =>
+  bundler === "vite" && VITE_UNDECLARED_NAMES.has(name);
 
 const VITE_ENVIRONMENT: Record<string, StaticValue> = {
   MODE: primitiveValue(DEV_SERVER_MODE),
@@ -70,6 +81,16 @@ const getEnvironmentVariable = (
   const reason = `environment variable ${variable}`;
   return branchValue([UNDEFINED_VALUE, unknownPrimitiveValue("string", reason)], reason, null);
 };
+
+/** Vite and webpack replace these in the source text of every client module, whether or not `process` exists at runtime. */
+const NODE_ENV_DEFINES = new Set([
+  "process.env.NODE_ENV",
+  "global.process.env.NODE_ENV",
+  "globalThis.process.env.NODE_ENV",
+]);
+
+export const getInlinedNodeEnv = (name: string): StaticValue | null =>
+  NODE_ENV_DEFINES.has(name) ? primitiveValue(DEV_SERVER_MODE) : null;
 
 const HOT_MODULE_OBJECTS = new Set(["module.hot", "import.meta.hot"]);
 
