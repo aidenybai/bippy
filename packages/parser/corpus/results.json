@@ -231,8 +231,8 @@
       "id": "bookshelf",
       "revision": "32e9e87db958de863bead65761bfbe2dec0eafd4",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:54:10.541Z",
-      "durationMs": 325,
+      "capturedAt": "2026-09-09T07:00:11.270Z",
+      "durationMs": 649,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -865,8 +865,8 @@
       "id": "ephe",
       "revision": "4ba31e6cd198491dbf4834050ae804178fb412b3",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:54:05.189Z",
-      "durationMs": 1535,
+      "capturedAt": "2026-09-09T07:00:03.476Z",
+      "durationMs": 2598,
       "runtime": {
         "reactVersion": "19.2.6",
         "rendererName": "react-dom",
@@ -879,9 +879,9 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 149,
+          "fiberCount": 146,
           "textCount": 2,
-          "branchCount": 1,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
@@ -901,35 +901,21 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 1,
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "runtimeFibers": 144,
         "staticFibers": 144,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 147,
+        "stepsUsed": 144,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 3,
+        "states": 1,
         "matchedState": {
-          "index": 1,
-          "conditions": [
-            {
-              "kind": "transition",
-              "commit": 1,
-              "commitCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(112)",
-              "reason": "conditional on branch(null | <DocumentDock>)",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/ephe/src/utils/components/footer.tsx:26:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            }
-          ]
+          "index": 0,
+          "conditions": []
         },
         "closestState": null,
         "omitted": null
@@ -1519,8 +1505,8 @@
       "id": "jsoncrack",
       "revision": "ffd250b5cbcab410a2985f9e379ad86c644d0e57",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T23:54:11.929Z",
-      "durationMs": 4089,
+      "capturedAt": "2026-09-09T07:00:13.347Z",
+      "durationMs": 4438,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
@@ -2969,8 +2955,8 @@
       "id": "mui-admin-dashboard",
       "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:53:55.603Z",
-      "durationMs": 1717,
+      "capturedAt": "2026-09-09T06:59:48.959Z",
+      "durationMs": 2156,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -2989,7 +2975,7 @@
           "repeatCount": 0,
           "opaqueCount": 3,
           "unknownCount": 0,
-          "modulesLoaded": 1248
+          "modulesLoaded": 1247
         },
         "diagnostics": []
       },
@@ -3781,8 +3767,8 @@
       "id": "openai-translator",
       "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:54:07.788Z",
-      "durationMs": 1616,
+      "capturedAt": "2026-09-09T07:00:07.542Z",
+      "durationMs": 2035,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -3801,7 +3787,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 411
+          "modulesLoaded": 409
         },
         "diagnostics": []
       },
@@ -4823,8 +4809,8 @@
       "id": "regex-vis",
       "revision": "a6d920601ca44ab2d4e9cd02306510ab6d5e4b38",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T00:03:36.016Z",
-      "durationMs": 5932,
+      "capturedAt": "2026-09-09T06:59:52.711Z",
+      "durationMs": 9296,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -4837,102 +4823,41 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 420,
-          "textCount": 4,
-          "branchCount": 11,
+          "fiberCount": 1136,
+          "textCount": 21,
+          "branchCount": 36,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 8,
-          "modulesLoaded": 4852
+          "unknownCount": 0,
+          "modulesLoaded": 4848
         },
         "diagnostics": [
           {
-            "code": "budget-exhausted",
-            "count": 37
-          },
-          {
             "code": "dynamic-key",
-            "count": 1
+            "count": 3
           }
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 326,
-        "matchedText": 1,
+        "status": "truncated",
+        "matchedFibers": 820,
+        "matchedText": 14,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 507,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 468,
-            "heads": [
-              "<div> [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 13,
-            "heads": [
-              "<SelectItem> [ForwardRef]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 13,
-            "heads": [
-              "<SelectItem> [ForwardRef]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef] > <SelectItem> [ForwardRef] > <SelectItemProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 6,
-            "heads": [
-              "<div> [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <ModeToggle> [FunctionComponent]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 4,
-            "heads": [
-              "<div> [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <a> [HostComponent] > <div> [HostComponent] > <ForwardRef> [ForwardRef]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 2,
-            "heads": [
-              "<svg> [HostComponent]"
-            ]
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectScrollDownButton> [ForwardRef]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 1,
-            "heads": [
-              "<SelectScrollDownButton> [ForwardRef]"
-            ]
-          }
-        ],
-        "branchesResolved": 11,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 36,
         "repeatIterations": 0,
         "runtimeFibers": 834,
-        "staticFibers": 377,
+        "staticFibers": 1026,
         "coverage": 1,
-        "strictCoverage": 0.3920863309352518,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 352,
+        "stepsUsed": 888,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -4942,12 +4867,12 @@
           "conditions": [
             {
               "kind": "transition",
-              "commit": 5,
-              "commitCount": 6
+              "commit": 6,
+              "commitCount": 7
             },
             {
               "kind": "branch",
-              "variable": "truthy(45891)",
+              "variable": "truthy(45763)",
               "reason": "conditional on branch(false | <boolean> | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
               "alternativeIndex": 1,
@@ -4955,7 +4880,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24583)",
+              "variable": "truthy(24581)",
               "reason": "conditional on unknown(new DocumentFragment())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
               "alternativeIndex": 0,
@@ -4963,7 +4888,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24589)",
+              "variable": "truthy(24587)",
               "reason": "conditional on branch(true | <boolean> | false)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 0,
@@ -4971,7 +4896,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(45894)",
+              "variable": "truthy(45766)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 0,
@@ -4979,7 +4904,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24597)",
+              "variable": "truthy(24595)",
               "reason": "conditional on branch(false | <boolean>)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
@@ -4987,7 +4912,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(45897)",
+              "variable": "truthy(45769)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
@@ -4995,7 +4920,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24605)",
+              "variable": "truthy(24603)",
               "reason": "conditional on branch(false | <boolean>)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
@@ -5003,7 +4928,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(45900)",
+              "variable": "truthy(45772)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
@@ -5011,7 +4936,55 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24634)",
+              "variable": "truthy(24611)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45775)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24619)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45778)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24627)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45781)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24632)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
               "alternativeIndex": 0,
@@ -5019,7 +4992,159 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(39096)",
+              "variable": "truthy(67304)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(67675)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(68279)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(68766)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(69136)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(69507)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(69878)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(70366)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(70551)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(70922)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(71108)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(71596)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(71781)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(72152)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(72639)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(73126)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(73613)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(74101)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(74286)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(39094)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
               "alternativeIndex": 1,
@@ -5027,7 +5152,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(42296)",
+              "variable": "truthy(42294)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
               "alternativeIndex": 1,
@@ -5044,11 +5169,11 @@
                 {
                   "kind": "transition",
                   "commit": 2,
-                  "commitCount": 6
+                  "commitCount": 7
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5056,7 +5181,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5064,7 +5189,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5072,7 +5197,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5080,7 +5205,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5088,7 +5213,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24601)",
+                  "variable": "truthy(24599)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5096,7 +5221,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24605)",
+                  "variable": "truthy(24603)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5104,7 +5229,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24609)",
+                  "variable": "truthy(24607)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5112,7 +5237,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24613)",
+                  "variable": "truthy(24611)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5120,7 +5245,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24617)",
+                  "variable": "truthy(24615)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5128,7 +5253,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24621)",
+                  "variable": "truthy(24619)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 1,
@@ -5136,7 +5261,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24625)",
+                  "variable": "truthy(24623)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5144,7 +5269,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24629)",
+                  "variable": "truthy(24627)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 1,
@@ -5152,7 +5277,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24633)",
+                  "variable": "truthy(24631)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5160,7 +5285,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24634)",
+                  "variable": "truthy(24632)",
                   "reason": "&& on <boolean: includes()>",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
                   "alternativeIndex": 0,
@@ -5168,7 +5293,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(39096)",
+                  "variable": "truthy(39094)",
                   "reason": "&& on <boolean: includes()>",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
                   "alternativeIndex": 1,
@@ -5176,7 +5301,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(42296)",
+                  "variable": "truthy(42294)",
                   "reason": "&& on <boolean: includes()>",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
                   "alternativeIndex": 0,
@@ -5186,14 +5311,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(42296)",
+              "variable": "truthy(42294)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5201,7 +5326,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5209,7 +5334,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5217,7 +5342,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5225,7 +5350,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5233,7 +5358,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24601)",
+                  "variable": "truthy(24599)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5241,7 +5366,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24605)",
+                  "variable": "truthy(24603)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5249,7 +5374,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24609)",
+                  "variable": "truthy(24607)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5257,7 +5382,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24613)",
+                  "variable": "truthy(24611)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5265,7 +5390,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24617)",
+                  "variable": "truthy(24615)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5273,7 +5398,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24621)",
+                  "variable": "truthy(24619)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 1,
@@ -5281,7 +5406,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24625)",
+                  "variable": "truthy(24623)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5289,7 +5414,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24629)",
+                  "variable": "truthy(24627)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 1,
@@ -5297,7 +5422,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24633)",
+                  "variable": "truthy(24631)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5305,7 +5430,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24634)",
+                  "variable": "truthy(24632)",
                   "reason": "&& on <boolean: includes()>",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
                   "alternativeIndex": 0,
@@ -5313,7 +5438,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(39096)",
+                  "variable": "truthy(39094)",
                   "reason": "&& on <boolean: includes()>",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
                   "alternativeIndex": 1,
@@ -5323,14 +5448,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24634)",
+              "variable": "truthy(24632)",
               "reason": "&& on <boolean: includes()>",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5338,7 +5463,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5346,7 +5471,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5354,7 +5479,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5362,7 +5487,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5370,7 +5495,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24601)",
+                  "variable": "truthy(24599)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5378,7 +5503,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24605)",
+                  "variable": "truthy(24603)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5386,7 +5511,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24609)",
+                  "variable": "truthy(24607)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5394,7 +5519,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24613)",
+                  "variable": "truthy(24611)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5402,23 +5527,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24617)",
-                  "reason": "conditional on branch(true | undefined)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(24621)",
-                  "reason": "conditional on branch(false | <boolean>)",
-                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(24625)",
+                  "variable": "truthy(24615)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5426,7 +5535,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24629)",
+                  "variable": "truthy(24619)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 1,
@@ -5434,7 +5543,23 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24633)",
+                  "variable": "truthy(24623)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24627)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24631)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 1,
@@ -5444,14 +5569,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24613)",
+              "variable": "truthy(24611)",
               "reason": "conditional on branch(false | <boolean>)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5459,7 +5584,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5467,7 +5592,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5475,7 +5600,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5483,7 +5608,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5491,7 +5616,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24601)",
+                  "variable": "truthy(24599)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5499,7 +5624,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24605)",
+                  "variable": "truthy(24603)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5507,7 +5632,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24609)",
+                  "variable": "truthy(24607)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5517,14 +5642,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24609)",
+              "variable": "truthy(24607)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5532,7 +5657,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5540,7 +5665,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5548,7 +5673,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5556,7 +5681,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5564,7 +5689,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24601)",
+                  "variable": "truthy(24599)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5572,7 +5697,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24605)",
+                  "variable": "truthy(24603)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5582,14 +5707,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24605)",
+              "variable": "truthy(24603)",
               "reason": "conditional on branch(false | <boolean>)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5597,7 +5722,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5605,7 +5730,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5613,7 +5738,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5621,7 +5746,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5629,7 +5754,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24601)",
+                  "variable": "truthy(24599)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5639,14 +5764,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24601)",
+              "variable": "truthy(24599)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5654,7 +5779,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5662,7 +5787,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5670,7 +5795,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5678,7 +5803,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24597)",
+                  "variable": "truthy(24595)",
                   "reason": "conditional on branch(false | <boolean>)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5688,14 +5813,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24597)",
+              "variable": "truthy(24595)",
               "reason": "conditional on branch(false | <boolean>)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5703,7 +5828,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5711,7 +5836,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5719,7 +5844,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24593)",
+                  "variable": "truthy(24591)",
                   "reason": "conditional on branch(true | undefined)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
                   "alternativeIndex": 0,
@@ -5729,14 +5854,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24593)",
+              "variable": "truthy(24591)",
               "reason": "conditional on branch(true | undefined)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5744,7 +5869,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5752,7 +5877,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24589)",
+                  "variable": "truthy(24587)",
                   "reason": "conditional on branch(true | <boolean> | false)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
                   "alternativeIndex": 0,
@@ -5762,14 +5887,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24589)",
+              "variable": "truthy(24587)",
               "reason": "conditional on branch(true | <boolean> | false)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5777,7 +5902,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "truthy(24583)",
+                  "variable": "truthy(24581)",
                   "reason": "conditional on unknown(new DocumentFragment())",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
                   "alternativeIndex": 0,
@@ -5787,14 +5912,14 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(24583)",
+              "variable": "truthy(24581)",
               "reason": "conditional on unknown(new DocumentFragment())",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
               "alternativeIndex": 1,
               "conditions": [
                 {
                   "kind": "branch",
-                  "variable": "truthy(20671)",
+                  "variable": "truthy(20669)",
                   "reason": "conditional on branch(false | <boolean> | true)",
                   "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
                   "alternativeIndex": 0,
@@ -5804,7 +5929,7 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(20671)",
+              "variable": "truthy(20669)",
               "reason": "conditional on branch(false | <boolean> | true)",
               "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
               "alternativeIndex": 1,
