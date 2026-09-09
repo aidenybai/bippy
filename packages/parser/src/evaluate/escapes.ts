@@ -72,6 +72,12 @@ export interface EscapeWalk {
 
 type RecordDependency = (dependency: EscapeDependency, key: string) => void;
 
+/** Containers one walk already traversed: in full, or only for the callables they hand to an unresolved callee. */
+interface EscapeVisits {
+  escaped: Set<StaticValue>;
+  handed: Set<StaticValue>;
+}
+
 const getStaticMemberKey = (member: MemberExpression): string | null => {
   if (!member.computed) return member.property.type === "Identifier" ? member.property.name : null;
   return member.property.type === "Literal" && typeof member.property.value === "string"
@@ -402,42 +408,38 @@ const bindArguments = (
  * walk went stale since are followed again first.
  */
 export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): void => {
-  const visited = new Set<StaticValue>();
+  const visits: EscapeVisits = { escaped: new Set(), handed: new Set() };
   for (const [closure, tuples] of walk.memo.takeStale()) {
-    for (const tuple of tuples) invokeOnce(closure, tuple, walk, visited);
+    for (const tuple of tuples) invokeOnce(closure, tuple, walk, visits);
   }
-  visitEscapedValue(value, walk, visited);
+  visitEscapedValue(value, walk, visits);
 };
 
-const visitEscapedValue = (
-  value: StaticValue,
-  walk: EscapeWalk,
-  visited: Set<StaticValue>,
-): void => {
+const visitEscapedValue = (value: StaticValue, walk: EscapeWalk, visits: EscapeVisits): void => {
   if (value.kind === "function") {
-    invokeOnce(value, null, walk, visited);
+    invokeOnce(value, null, walk, visits);
     return;
   }
-  if (visited.has(value)) return;
-  visited.add(value);
+  if (visits.escaped.has(value)) return;
+  visits.escaped.add(value);
   switch (value.kind) {
     case "native-function":
       walk.visit(value, null);
       return;
     case "object":
-      for (const entry of value.entries) visitHeldValue(entry.value, walk, visited);
+      for (const entry of value.entries) visitHeldValue(entry.value, walk, visits);
       return;
     case "list":
-      for (const item of value.items) visitHeldValue(item, walk, visited);
+      for (const item of value.items) visitHeldValue(item, walk, visits);
       return;
     case "branch":
       for (const alternative of value.alternatives) {
-        visitEscapedValue(alternative, walk, visited);
+        visitEscapedValue(alternative, walk, visits);
       }
       return;
     case "optional":
     case "repeat":
-      visitEscapedValue(value.kind === "optional" ? value.value : value.item, walk, visited);
+      visitEscapedValue(value.kind === "optional" ? value.value : value.item, walk, visits);
       return;
     default:
       return;
@@ -446,12 +448,12 @@ const visitEscapedValue = (
 
 const UNKNOWN_CALLEE_ARGUMENTS: EscapeArguments = [];
 
-const visitHeldValue = (value: StaticValue, walk: EscapeWalk, visited: Set<StaticValue>): void => {
+const visitHeldValue = (value: StaticValue, walk: EscapeWalk, visits: EscapeVisits): void => {
   if (value.kind === "function") {
-    invokeOnce(value, UNKNOWN_CALLEE_ARGUMENTS, walk, visited);
+    invokeOnce(value, UNKNOWN_CALLEE_ARGUMENTS, walk, visits);
     return;
   }
-  visitEscapedValue(value, walk, visited);
+  visitEscapedValue(value, walk, visits);
 };
 
 /**
@@ -463,14 +465,14 @@ const invokeOnce = (
   closure: StaticFunctionValue,
   argumentValues: EscapeTuple,
   walk: EscapeWalk,
-  visited: Set<StaticValue>,
+  visits: EscapeVisits,
 ): void => {
   if (!walk.memo.follow(closure, argumentValues)) return;
   forEachInvokedCallable(
     closure,
     argumentValues === null ? null : bindArguments(closure, argumentValues),
     walk,
-    visited,
+    visits,
   );
 };
 
@@ -485,24 +487,26 @@ const invokeOnce = (
 const forEachHandedCallable = (
   value: StaticValue,
   walk: EscapeWalk,
-  visited: Set<StaticValue>,
+  visits: EscapeVisits,
 ): void => {
+  if (value.kind === "native-function" || value.kind === "function") {
+    visitEscapedValue(value, walk, visits);
+    return;
+  }
+  if (visits.handed.has(value)) return;
+  visits.handed.add(value);
   switch (value.kind) {
-    case "native-function":
-    case "function":
-      visitEscapedValue(value, walk, visited);
-      return;
     case "list":
-      for (const item of value.items) forEachHandedCallable(item, walk, visited);
+      for (const item of value.items) forEachHandedCallable(item, walk, visits);
       return;
     case "branch":
       for (const alternative of value.alternatives) {
-        forEachHandedCallable(alternative, walk, visited);
+        forEachHandedCallable(alternative, walk, visits);
       }
       return;
     case "optional":
     case "repeat":
-      forEachHandedCallable(value.kind === "optional" ? value.value : value.item, walk, visited);
+      forEachHandedCallable(value.kind === "optional" ? value.value : value.item, walk, visits);
       return;
     default:
       return;
@@ -513,13 +517,13 @@ const forEachInvokedCallable = (
   closure: StaticFunctionValue,
   frame: EscapeFrame | null,
   walk: EscapeWalk,
-  visited: Set<StaticValue>,
+  visits: EscapeVisits,
 ): void => {
   walk.visit(closure, frame);
   const handPaths = (paths: AccessPath[]): void => {
     for (const path of paths) {
       for (const value of resolveAccessPath(closure, frame, path, walk)) {
-        forEachHandedCallable(value, walk, visited);
+        forEachHandedCallable(value, walk, visits);
       }
     }
   };
@@ -538,10 +542,10 @@ const forEachInvokedCallable = (
           walk.visit(callee, { arguments: argumentValues, parameters: new Map() });
           break;
         case "function":
-          invokeOnce(callee, argumentValues, walk, visited);
+          invokeOnce(callee, argumentValues, walk, visits);
           break;
         default:
-          forEachHandedCallable(callee, walk, visited);
+          forEachHandedCallable(callee, walk, visits);
       }
     }
     handPaths(callSite.nestedPaths);

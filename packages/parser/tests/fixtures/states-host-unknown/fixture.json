@@ -4,5 +4,5 @@
   "minCoverage": 1,
   "expectedStates": 2,
   "expectOmitted": false,
-  "notes": "The viewport width is a host value the analysis cannot know, so the layout conditional is enumerated as two states and the runtime selects one."
+  "notes": "The machine core count is a host value the analysis cannot know, so the layout conditional is enumerated as two states and the runtime selects one."
 }

@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { RootObservations, RuntimeObservations, StaticRenderResult } from "../../src/index.js";
+import type {
+  RootObservations,
+  RuntimeObservations,
+  StaticRenderResult,
+  StaticRenderStats,
+} from "../../src/index.js";
 import {
   flattenTransparentFibers,
   getFrameworkProfile,
@@ -39,6 +44,8 @@ export interface FixtureManifest {
   externalPackages?: string[];
   /** Runtime state replayed into the static render, as a live capture would record it. */
   observations?: RuntimeObservations;
+  /** Uncertainty the static tree must report exactly, e.g. `{ "branchCount": 1 }`. */
+  expectedStats?: Partial<StaticRenderStats>;
   skipRuntime?: boolean;
   /** Bounds on the enumerated state space; defaults are generous enough for every fixture but the budget one. */
   stateSpaceBudget?: Partial<StateSpaceBudget>;

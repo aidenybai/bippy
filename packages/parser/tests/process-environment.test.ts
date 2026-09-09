@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import type { CorpusEntry } from "../src/corpus/manifest.js";
-import { readProcessEnvironment } from "../src/corpus/process-environment.js";
+import { parseDotenv, readProcessEnvironment } from "../src/corpus/process-environment.js";
 
 const createEntry = (overrides: Partial<CorpusEntry["static"]>): CorpusEntry => ({
   id: "fixture",
@@ -52,6 +52,32 @@ describe("process environment", () => {
     expect(readProcessEnvironment(createEntry({ envFiles: [".env"] }), rootDirectory)).toEqual({
       variables: { REACT_APP_REVIEW_ID: "42", REACT_APP_BRANCH: "main", PLAIN: "value" },
       clientPrefix: "VITE_",
+    });
+  });
+
+  it("parses like dotenv: multi-line quotes, comments, last assignment wins", () => {
+    const parsed = parseDotenv(
+      [
+        "# leading comment",
+        'MODE="development"',
+        "export URL=http://localhost:3002 # trailing comment",
+        "EMPTY=",
+        "KEY='line one",
+        "line two'",
+        'ESCAPED="a\\nb"',
+        "SINGLE='a\\nb'",
+        "COLON: spaced value",
+        "URL=http://localhost:3003",
+      ].join("\r\n"),
+    );
+    expect(parsed).toEqual({
+      MODE: "development",
+      URL: "http://localhost:3003",
+      EMPTY: "",
+      KEY: "line one\nline two",
+      ESCAPED: "a\nb",
+      SINGLE: "a\\nb",
+      COLON: "spaced value",
     });
   });
 });

@@ -1,4 +1,5 @@
 import {
+  CONTEXT_OWN_KEYS,
   FUNCTION_OWN_KEYS,
   getStubOwnKeys,
   REACT_ELEMENT_OWN_KEYS,
@@ -12,6 +13,8 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
+import { toLanguagePropertyKey } from "./host-globals.js";
+import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
 import {
   branchValue,
@@ -67,6 +70,11 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
       if (!ownKeys.has(name)) return FALSE_VALUE;
       return ownKeys === FUNCTION_OWN_KEYS ? null : TRUE_VALUE;
     }
+    case "context-provider":
+    case "context-consumer":
+      if (name === "displayName") return primitiveValue(type.displayName !== null);
+      if (CONTEXT_OWN_KEYS.has(name)) return null;
+      return primitiveValue(name in Object.prototype);
     default:
       return null;
   }
@@ -93,7 +101,10 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       if (!keys) return null;
       if (keys.includes(name)) return TRUE_VALUE;
       if (target.prototype) return hasNamedProperty(name, target.prototype);
-      return name in {} && !target.hasNullPrototype ? TRUE_VALUE : FALSE_VALUE;
+      const languageKey = toLanguagePropertyKey(name);
+      return languageKey !== null && languageKey in (getPrototypeWitness(target) ?? {})
+        ? TRUE_VALUE
+        : FALSE_VALUE;
     }
     case "function":
     case "class": {
@@ -105,8 +116,12 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         ? TRUE_VALUE
         : FALSE_VALUE;
     }
-    case "native-object":
-      return hasNativeObjectMember(target, name) ? TRUE_VALUE : FALSE_VALUE;
+    case "native-object": {
+      const languageKey = toLanguagePropertyKey(name);
+      return languageKey !== null && hasNativeObjectMember(target, languageKey)
+        ? TRUE_VALUE
+        : FALSE_VALUE;
+    }
     case "native-function":
       return name in Function.prototype ? TRUE_VALUE : FALSE_VALUE;
     case "list": {
