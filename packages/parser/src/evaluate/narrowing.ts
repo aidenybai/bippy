@@ -2,6 +2,7 @@ import type { BinaryExpression, CallExpression, Expression } from "oxc-parser";
 import type { Scope, StaticObjectEntry, StaticObjectValue, StaticValue } from "../types.js";
 import { hasNamedProperty } from "./has-property.js";
 import { findOwningScope, lookupScope } from "./scope.js";
+import { getThrowCertainty } from "./thrown.js";
 import { getTypePredicate } from "./type-predicates.js";
 import {
   UNDEFINED_VALUE,
@@ -66,6 +67,18 @@ const isSameTarget = (left: NarrowingTarget, right: NarrowingTarget): boolean =>
 export interface CalleeResolver {
   (callee: Expression): StaticValue | null;
 }
+
+/** Evaluates a test expression with `name` bound to `alternative`. */
+export interface TestEvaluator {
+  (name: string, alternative: StaticValue): StaticValue;
+}
+
+interface PureTestShape {
+  identifiers: Set<string>;
+  calledRoots: Set<string>;
+}
+
+const MAX_EVALUATED_ALTERNATIVES = 8;
 
 const alternativesOf = (value: StaticValue): StaticValue[] =>
   value.kind === "branch" ? value.alternatives : [value];
@@ -315,6 +328,108 @@ export const narrowTest = (
     default:
       return null;
   }
+};
+
+const getMemberRoot = (node: Expression): string | null =>
+  node.type === "Identifier"
+    ? node.name
+    : node.type === "MemberExpression"
+      ? getMemberRoot(node.object)
+      : null;
+
+/**
+ * Collects the identifiers a test reads when it is built only from operators,
+ * property reads and method calls on one of those identifiers, so evaluating
+ * it again cannot run code the analysis has not already accounted for.
+ */
+const collectPureTestShape = (node: Expression, shape: PureTestShape): boolean => {
+  switch (node.type) {
+    case "Identifier":
+      shape.identifiers.add(node.name);
+      return true;
+    case "Literal":
+      return true;
+    case "TemplateLiteral":
+      return node.expressions.every((expression) => collectPureTestShape(expression, shape));
+    case "ParenthesizedExpression":
+    case "ChainExpression":
+      return collectPureTestShape(node.expression, shape);
+    case "MemberExpression":
+      return (
+        collectPureTestShape(node.object, shape) &&
+        (!node.computed || collectPureTestShape(node.property, shape))
+      );
+    case "UnaryExpression":
+      return node.operator !== "delete" && collectPureTestShape(node.argument, shape);
+    case "BinaryExpression":
+      return (
+        node.left.type !== "PrivateIdentifier" &&
+        collectPureTestShape(node.left, shape) &&
+        collectPureTestShape(node.right, shape)
+      );
+    case "LogicalExpression":
+      return collectPureTestShape(node.left, shape) && collectPureTestShape(node.right, shape);
+    case "ConditionalExpression":
+      return (
+        collectPureTestShape(node.test, shape) &&
+        collectPureTestShape(node.consequent, shape) &&
+        collectPureTestShape(node.alternate, shape)
+      );
+    case "CallExpression": {
+      if (node.callee.type !== "MemberExpression") return false;
+      const root = getMemberRoot(node.callee.object);
+      if (root === null) return false;
+      shape.calledRoots.add(root);
+      return (
+        collectPureTestShape(node.callee, shape) &&
+        node.arguments.every(
+          (argument) => argument.type !== "SpreadElement" && collectPureTestShape(argument, shape),
+        )
+      );
+    }
+    default:
+      return false;
+  }
+};
+
+const isPrimitiveLike = (value: StaticValue): boolean =>
+  value.kind === "primitive" || value.kind === "unknown-primitive";
+
+/**
+ * Narrows a test the syntactic rules do not cover (`x === "a"`,
+ * `x.charAt(0) === "#"`, `x.kind === "leaf"`) by evaluating it once per
+ * alternative of the single branch-valued identifier it reads. Method calls
+ * are only re-run on primitive alternatives, where they are builtins.
+ */
+export const narrowTestByEvaluation = (
+  test: Expression,
+  lookup: NarrowingLookup,
+  evaluate: TestEvaluator,
+): TestNarrowing | null => {
+  const shape: PureTestShape = { identifiers: new Set(), calledRoots: new Set() };
+  if (!collectPureTestShape(test, shape)) return null;
+  const lookupName = (name: string) => lookup({ name, key: null });
+  const branched = [...shape.identifiers].filter((name) => lookupName(name)?.kind === "branch");
+  if (branched.length !== 1) return null;
+  const [name] = branched;
+  const value = lookupName(name);
+  if (!value || value.kind !== "branch") return null;
+  if (value.alternatives.length > MAX_EVALUATED_ALTERNATIVES) return null;
+  if ([...shape.calledRoots].some((root) => root !== name)) return null;
+  if (shape.calledRoots.has(name) && !value.alternatives.every(isPrimitiveLike)) return null;
+  const verdicts = new Map<StaticValue, boolean | null>();
+  for (const alternative of value.alternatives) {
+    const result = evaluate(name, alternative);
+    verdicts.set(alternative, getThrowCertainty(result) === "never" ? getTruthiness(result) : null);
+  }
+  if ([...verdicts.values()].every((verdict) => verdict === null)) return null;
+  const [whenTrue, whenFalse] = partition(
+    value,
+    (alternative) => verdicts.get(alternative) ?? null,
+    `${name} narrowed by test`,
+    null,
+  );
+  return { target: { name, key: null }, whenTrue, whenFalse };
 };
 
 /** Records that `object` is about to change so an enclosing fork can undo it for its other paths. */

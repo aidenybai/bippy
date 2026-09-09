@@ -7,6 +7,7 @@ import type {
   StaticGlobalValue,
   StaticListValue,
   StaticObjectEntry,
+  StaticPropertyEntry,
   StaticObjectValue,
   StaticPrimitive,
   StaticRegExpValue,
@@ -117,6 +118,8 @@ import {
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
+  getKnownObjectOwnNames,
+  getOwnEnumerableEntries as getModeledOwnEnumerableEntries,
   getOwnPropertyDescriptor,
   getKnownObjectSymbols,
   getListLength,
@@ -162,6 +165,37 @@ const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
 };
 
 export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
+
+/** A fresh deep copy of plain data (primitives, arrays, plain objects); null when some part is not statically cloneable. */
+const structuredCloneValue = (value: StaticValue): StaticValue | null => {
+  switch (value.kind) {
+    case "primitive":
+      return typeof value.value === "symbol" ? null : value;
+    case "list": {
+      if (!hasDefiniteItems(value)) return null;
+      const items = value.items.map(structuredCloneValue);
+      return items.every((item) => item !== null) ? listValue(items) : null;
+    }
+    case "object": {
+      if (
+        getCollectionItems(value) ||
+        value.entries.some((entry) => entry.kind === "property" && entry.accessor)
+      )
+        return null;
+      const keys = getKnownObjectKeys(value);
+      if (keys === null) return null;
+      const entries: StaticObjectEntry[] = [];
+      for (const key of keys) {
+        const cloned = structuredCloneValue(getObjectProperty(value, key));
+        if (cloned === null) return null;
+        entries.push({ kind: "property", key, value: cloned });
+      }
+      return objectValue(entries);
+    }
+    default:
+      return null;
+  }
+};
 
 /**
  * The object entry one `Object.fromEntries` pair contributes: a pair that may
@@ -429,6 +463,10 @@ const readDescriptorValue = (
   return unknownValue(`property "${key}" defined with a dynamic descriptor`, location);
 };
 
+/** A descriptor without `enumerable` defines a non-enumerable property; an undecidable flag is taken as enumerable. */
+const isEnumerableDescriptor = (descriptor: StaticObjectValue): boolean =>
+  getTruthiness(getObjectProperty(descriptor, "enumerable")) !== false;
+
 /** `Object.defineProperty`; a function's `name` is what fibers display. */
 const defineOwnProperty = (
   interpreter: Interpreter,
@@ -438,17 +476,18 @@ const defineOwnProperty = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
+  const isEnumerable = isEnumerableDescriptor(descriptor);
+  if (target.kind === "object" || target.kind === "list") interpreter.recordHeapMutation(target);
   if (target.kind === "object") {
     const accessor = getDescriptorAccessor(descriptor);
-    target.entries.push(
-      accessor
-        ? accessorEntry(key, accessor, location)
-        : {
-            kind: "property",
-            key,
-            value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
-          },
-    );
+    const entry: StaticPropertyEntry = accessor
+      ? accessorEntry(key, accessor, location)
+      : {
+          kind: "property",
+          key,
+          value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
+        };
+    target.entries.push({ ...entry, isEnumerable });
     return;
   }
   const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
@@ -462,6 +501,13 @@ const defineOwnProperty = (
       }
       target.properties.set(key, value);
       return;
+    case "list": {
+      if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
+      target.properties ??= new Map();
+      target.properties.set(key, value);
+      if (!isEnumerable) (target.nonEnumerableKeys ??= new Set()).add(key);
+      return;
+    }
     default:
       return;
   }
@@ -526,7 +572,7 @@ const getOwnPropertyDescriptors = (
       })),
     );
   }
-  const ownKeys = target.kind === "object" ? getKnownObjectKeys(target) : null;
+  const ownKeys = target.kind === "object" ? getKnownObjectOwnNames(target) : null;
   if (target.kind !== "object" || !ownKeys) {
     return unknownValue(`Object.getOwnPropertyDescriptors of ${describeValue(target)}`, location);
   }
@@ -544,15 +590,19 @@ const getOwnPropertyDescriptors = (
 /** Own enumerable string-keyed entries in `Object.keys` order; null when the shape is not fully known. */
 const getOwnEnumerableEntries = (
   target: StaticValue,
-): [key: string, value: StaticValue][] | null => {
-  if (target.kind === "object") {
-    return getKnownObjectKeys(target)?.map((key) => [key, getObjectProperty(target, key)]) ?? null;
-  }
-  if (target.kind === "native-object") return getNativeOwnEntries(target);
+): [key: string, value: StaticValue][] | null =>
+  target.kind === "native-object"
+    ? getNativeOwnEntries(target)
+    : getModeledOwnEnumerableEntries(target);
+
+/** Own string keys including non-enumerable ones; null when the shape is not fully known. */
+const getOwnNames = (target: StaticObjectValue | StaticListValue): string[] | null => {
+  if (target.kind === "object") return getKnownObjectOwnNames(target);
   if (!hasDefiniteItems(target)) return null;
   return [
-    ...target.items.map((item, index): [string, StaticValue] => [String(index), item]),
-    ...(target.properties ?? []),
+    ...target.items.map((_, index) => String(index)),
+    "length",
+    ...(target.properties?.keys() ?? []),
   ];
 };
 
@@ -581,13 +631,21 @@ const hasOwnProperty = (
   if (receiver.kind === "object" || receiver.kind === "list") {
     if (receiver.kind === "list" && propertyName === "length")
       return primitiveValue(name === "hasOwnProperty");
-    const isOwn =
-      receiver.kind === "object"
-        ? hasOwnKey(receiver, propertyName)
-        : (getOwnEnumerableEntries(receiver)?.some(([ownKey]) => ownKey === propertyName) ?? null);
-    return isOwn === null
-      ? unknownPrimitiveValue("boolean", `${name} of a partially known target`)
-      : primitiveValue(isOwn);
+    if (receiver.kind === "object" && name === "hasOwnProperty") {
+      const isOwn = hasOwnKey(receiver, propertyName);
+      return isOwn === null
+        ? unknownPrimitiveValue("boolean", `${name} of a partially known target`)
+        : primitiveValue(isOwn);
+    }
+    const ownKeys =
+      receiver.kind === "object" && isSymbolPropertyKey(propertyName)
+        ? getKnownObjectSymbols(receiver)?.map(getSymbolPropertyKey)
+        : name === "hasOwnProperty"
+          ? getOwnNames(receiver)
+          : getOwnEnumerableEntries(receiver)?.map(([ownKey]) => ownKey);
+    return ownKeys
+      ? primitiveValue(ownKeys.includes(propertyName))
+      : unknownPrimitiveValue("boolean", `${name} of a partially known target`);
   }
   if (receiver.kind === "function" || receiver.kind === "class") {
     if (receiver.properties.has(propertyName)) {
@@ -918,13 +976,13 @@ const callGlobal = (
       if (second !== undefined && second.kind !== "primitive")
         return unknownValue("RegExp with dynamic flags", location);
       const flags = second?.value === undefined ? null : String(second.value);
-      if (first?.kind === "regexp") {
-        return { ...first, flags: flags ?? first.flags, lastIndex: 0 };
-      }
-      if (first?.kind === "primitive") {
-        return { kind: "regexp", pattern: String(first.value), flags: flags ?? "", lastIndex: 0 };
-      }
-      return unknownValue("RegExp from a dynamic pattern", location);
+      return mapValue(first ?? UNDEFINED_VALUE, (pattern) =>
+        pattern.kind === "regexp"
+          ? { ...pattern, flags: flags ?? pattern.flags, lastIndex: 0 }
+          : pattern.kind === "primitive" && pattern.value !== undefined
+            ? { kind: "regexp", pattern: String(pattern.value), flags: flags ?? "", lastIndex: 0 }
+            : unknownValue("RegExp from a dynamic pattern", location),
+      );
     }
     case "Proxy":
       return isConstructor && first && second?.kind === "object"
@@ -1068,12 +1126,7 @@ const callGlobal = (
       }
       if (first?.kind !== "object" && first?.kind !== "list")
         return unknownValue(`${name} on a dynamic target`, location);
-      const ownNames =
-        name === "Object.getOwnPropertySymbols"
-          ? []
-          : (getOwnEnumerableEntries(first)
-              ?.map(([key]) => key)
-              .concat(first.kind === "list" ? ["length"] : []) ?? null);
+      const ownNames = name === "Object.getOwnPropertySymbols" ? [] : getOwnNames(first);
       const ownSymbols =
         name === "Object.getOwnPropertyNames" || first.kind === "list"
           ? []
@@ -1140,7 +1193,6 @@ const callGlobal = (
       if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      if (first.kind === "object") interpreter.recordHeapMutation(first);
       defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
       return first;
     }
@@ -1214,6 +1266,11 @@ const callGlobal = (
         }
       }
       return unknownValue("JSON.parse", location);
+    case "structuredClone":
+      return (
+        (first && args.length === 1 ? structuredCloneValue(first) : null) ??
+        unknownValue("structuredClone of a dynamic value", location)
+      );
     case "queueMicrotask":
       if (first) {
         interpreter.timers.queueMicrotask(scheduledTask(interpreter, first, context, location));
@@ -1480,6 +1537,32 @@ export const callUncertainCallback = (
     null,
   );
 
+const sortListItems = (
+  interpreter: Interpreter,
+  items: StaticValue[],
+  comparator: StaticValue | undefined,
+  context: EvaluationContext,
+): StaticValue[] | null => {
+  if (items.length < 2) return items;
+  if (comparator === undefined) {
+    const primitives: StaticPrimitive[] = [];
+    for (const item of items) {
+      if (item.kind !== "primitive") return null;
+      primitives.push(item.value);
+    }
+    return primitives.sort().map(primitiveValue);
+  }
+  if (!isCallable(comparator)) return null;
+  let isDecidable = true;
+  const sorted = [...items].sort((left, right) => {
+    const verdict = callCallback(interpreter, comparator, [left, right], context);
+    if (verdict.kind === "primitive" && typeof verdict.value === "number") return verdict.value;
+    isDecidable = false;
+    return 0;
+  });
+  return isDecidable ? sorted : null;
+};
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -1741,6 +1824,7 @@ const callRegExpMethod = (
   const [first] = args;
   const regExp = toRegExp(receiver);
   if (!regExp) return unknownValue(`invalid RegExp /${receiver.pattern}/`, location);
+  if (name === "toString") return primitiveValue(regExp.toString());
   if (name !== "test" && name !== "exec") return unknownValue(`RegExp.${name}()`, location);
   if (first?.kind === "branch" && !regExp.global && !regExp.sticky) {
     return mapValue(first, (alternative) =>
@@ -1857,6 +1941,15 @@ const callPromiseMethod = (
   return receiver;
 };
 
+const MAX_DISTRIBUTED_ALTERNATIVES = 8;
+
+const isPrimitiveBranch = (value: StaticValue): boolean =>
+  value.kind === "branch" &&
+  value.alternatives.length <= MAX_DISTRIBUTED_ALTERNATIVES &&
+  value.alternatives.every(
+    (alternative) => alternative.kind === "primitive" || alternative.kind === "regexp",
+  );
+
 export const evaluateBuiltinCall = (
   interpreter: Interpreter,
   callee: Extract<StaticValue, { kind: "method" | "global" }>,
@@ -1961,6 +2054,19 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "primitive") {
+    const branchIndex = args.findIndex(isPrimitiveBranch);
+    if (branchIndex !== -1 && args.filter((argument) => argument.kind === "branch").length === 1) {
+      return mapValue(args[branchIndex], (alternative) =>
+        evaluateBuiltinCall(
+          interpreter,
+          callee,
+          args.with(branchIndex, alternative),
+          context,
+          location,
+          isConstructor,
+        ),
+      );
+    }
     const computed =
       typeof receiver.value === "string"
         ? callStringMethod(interpreter, receiver.value, name, args, context)
@@ -2066,9 +2172,31 @@ export const evaluateBuiltinCall = (
       }
       case "toReversed":
         return listValue([...receiver.items].reverse());
-      case "sort":
-      case "toSorted":
+      case "values":
         return receiver;
+      case "keys":
+        if (!hasDefiniteItems(receiver)) break;
+        return listValue(receiver.items.map((_item, index) => primitiveValue(index)));
+      case "entries":
+        if (!hasDefiniteItems(receiver)) break;
+        return listValue(
+          receiver.items.map((item, index) => listValue([primitiveValue(index), item])),
+        );
+      case "sort":
+      case "toSorted": {
+        if (!isKnownList(receiver)) return receiver;
+        const sorted = sortListItems(interpreter, receiver.items, first, context);
+        if (sorted === null) {
+          return unknownValue(
+            `${name} whose item order is not statically decidable (${first ? describeValue(first) : "default comparison"})`,
+            location,
+          );
+        }
+        if (name === "toSorted") return listValue(sorted);
+        interpreter.recordHeapMutation(receiver);
+        receiver.items.splice(0, receiver.items.length, ...sorted);
+        return receiver;
+      }
       case "flat": {
         const items: StaticValue[] = [];
         for (const item of receiver.items) {

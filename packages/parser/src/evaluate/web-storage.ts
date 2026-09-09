@@ -2,9 +2,9 @@ import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js
 import { NULL_VALUE, UNDEFINED_VALUE, primitiveValue, unknownValue } from "./values.js";
 
 /**
- * Web Storage as the captured page held it once settled; without a capture,
- * as a fresh browser profile holds it (empty), so only writes performed by the
- * interpreted code are observable.
+ * Web Storage as the captured page's first script found it; without a capture,
+ * as a fresh browser profile holds it (empty). Later state comes only from
+ * writes performed by the interpreted code.
  */
 export interface StorageArea {
   readonly entries: Map<string, string>;

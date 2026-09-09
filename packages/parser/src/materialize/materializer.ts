@@ -67,6 +67,7 @@ import {
   UnknownMarker,
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
+import { ServerEnvironmentStamper } from "./server-environment.js";
 
 /**
  * Whether React would take the input for the proxy's `current` props: the same
@@ -293,6 +294,24 @@ const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
 
 /**
+ * Under RSC a function component created by server code renders on the server
+ * unless its module opted into the client bundle with `"use client"`. Flight
+ * looks through `memo` and a resolved `lazy` and calls a `forwardRef` render
+ * function directly (react-server/src/ReactFlightServer.js `renderElement`), so
+ * those wrappers leave no fiber either.
+ */
+const getServerComponent = (type: StaticElementType): ComponentDefinition | null => {
+  if (type.kind === "lazy") return type.inner ? getServerComponent(type.inner) : null;
+  const component = getFunctionComponent(type);
+  return component && !isClientComponent(component) ? component : null;
+};
+
+const NOT_SERVER_RENDERED = Symbol("not-server-rendered");
+
+const isKeyless = (key: StaticValue | null): boolean =>
+  !key || (key.kind === "primitive" && (key.value === null || key.value === undefined));
+
+/**
  * A component's React identity is its closure: the same function node evaluated
  * in two scopes (e.g. a HOC applied twice) yields two distinct component types,
  * as does each `bind` of the same function.
@@ -432,6 +451,7 @@ export class Materializer {
   private readonly maxElementCount: number;
   private readonly maxRecursionPerComponent: number;
   private readonly serverComponents: boolean;
+  private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
   private isPassivePhasePending = false;
@@ -656,37 +676,65 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    const component = this.getServerComponent(element, context);
-    if (component) {
-      const server = this.evaluateComposite(
-        component,
-        element.props,
-        { ...context, environment: element.environment ?? context.environment },
-        element.location,
-        null,
-        (componentContext) =>
-          this.interpreter.callFunction(
-            toFunctionValue(component),
-            [element.props],
-            componentContext,
-            { awaited: true },
-          ),
-      );
-      return this.toNode(server.rendered, server.childContext, isTopLevel);
+    if (this.isServerEnvironment(element, context)) {
+      const serverNode = this.serverElementToNode(element, context, isTopLevel);
+      if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
-    if (
-      element.type.kind === "stub" &&
-      element.type.stub.isServerComponent === true &&
-      this.isServerEnvironment(element, context)
-    ) {
-      const serverContext = { ...context, environment: element.environment ?? context.environment };
-      const rendered = element.type.stub.render(
-        element.props,
-        this.stubTools(serverContext, element.location),
-      );
+    if (!this.isServerEnvironment(element, context)) {
+      return this.createNode(element.type, element.key, element.props, element.location, context);
+    }
+    if (this.isFlightUnwrappedFragment(element)) {
+      return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
+    }
+    const props = this.serverEnvironment.stampProps(element.props);
+    return this.createNode(element.type, element.key, props, element.location, context);
+  }
+
+  /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
+  private isFlightUnwrappedFragment(element: StaticElementValue): boolean {
+    return (
+      element.type.kind === "fragment" &&
+      this.keyToString(element.key, element.location) === undefined
+    );
+  }
+
+  /**
+   * What Flight sends the client for an element server code created: a key-less
+   * Fragment is flattened to its children (`renderElement` in
+   * react-server/src/ReactFlightServer.js), and a server component's output
+   * replaces it.
+   */
+  private serverElementToNode(
+    element: StaticElementValue,
+    context: MaterializeContext,
+    isTopLevel: boolean,
+  ): ReactNode | typeof NOT_SERVER_RENDERED {
+    const { type, props, location } = element;
+    const serverContext: MaterializeContext = {
+      ...context,
+      environment: element.environment ?? context.environment,
+    };
+    if (type.kind === "fragment" && isKeyless(element.key)) {
+      return this.toNode(getObjectProperty(props, "children"), serverContext, isTopLevel);
+    }
+    if (type.kind === "stub" && type.stub.isServerComponent) {
+      const rendered = type.stub.render(props, this.stubTools(serverContext, location));
       return this.toNode(rendered, { ...serverContext, depth: context.depth + 1 }, isTopLevel);
     }
-    return this.createNode(element.type, element.key, element.props, element.location, context);
+    const serverComponent = getServerComponent(type);
+    if (!serverComponent) return NOT_SERVER_RENDERED;
+    const server = this.evaluateComposite(
+      serverComponent,
+      props,
+      serverContext,
+      location,
+      null,
+      (componentContext) =>
+        this.interpreter.callFunction(toFunctionValue(serverComponent), [props], componentContext, {
+          awaited: true,
+        }),
+    );
+    return this.toNode(server.rendered, server.childContext, isTopLevel);
   }
 
   private createNode(
@@ -1671,23 +1719,9 @@ export class Materializer {
     return { rendered: render(componentContext), childContext, componentContext };
   }
 
-  /**
-   * Under RSC a function component created by server code renders on the server
-   * unless its module (or the module that created the element) opted into the
-   * client bundle with `"use client"`. Flight unwraps `memo` and calls a
-   * `forwardRef` render function with an undefined ref the same way.
-   */
+  /** Under RSC an element created outside a client boundary (a module with `"use client"`) is Flight's to render. */
   private isServerEnvironment(element: StaticElementValue, context: MaterializeContext): boolean {
     return this.serverComponents && (element.environment ?? context.environment) !== "client";
-  }
-
-  private getServerComponent(
-    element: StaticElementValue,
-    context: MaterializeContext,
-  ): ComponentDefinition | null {
-    if (!this.isServerEnvironment(element, context)) return null;
-    const component = getFunctionComponent(element.type);
-    return component && !isClientComponent(component) ? component : null;
   }
 
   private componentEnvironment(

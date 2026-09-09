@@ -468,9 +468,10 @@ const findFactoryCall = (
     case "CallExpression":
       return node.callee.type === "Identifier" &&
         node.callee.name === factoryName &&
-        node.arguments.some(
-          (argument) => argument.type !== "SpreadElement" && isExportsObject(argument),
-        )
+        (node.arguments.length === 0 ||
+          node.arguments.some(
+            (argument) => argument.type !== "SpreadElement" && isExportsObject(argument),
+          ))
         ? node
         : null;
     default:
@@ -481,11 +482,13 @@ const findFactoryCall = (
 /**
  * The factory body of a `(function (global, factory) { … })(this, function (exports, react) { … })`
  * UMD wrapper, binding each factory parameter to the argument the CommonJS path passes it
- * (`exports` to the exports object, `react` to `require("react")`).
+ * (`exports` to the exports object, `react` to `require("react")`). A parameterless factory
+ * (`module.exports = factory()`) exports through its `return` instead.
  */
 const getUmdFactoryBody = (
   statement: Statement,
   factoryArguments: Map<string, Expression>,
+  factoryReturns: Set<Statement>,
 ): Statement[] | null => {
   const call = getWrapperCall(statement);
   if (!call || call.arguments.length !== 2) return null;
@@ -508,6 +511,11 @@ const getUmdFactoryBody = (
     bound.set(parameter.name, argument);
   }
   for (const [name, argument] of bound) factoryArguments.set(name, argument);
+  if (factory.params.length === 0) {
+    for (const inner of factory.body.body) {
+      if (inner.type === "ReturnStatement") factoryReturns.add(inner);
+    }
+  }
   return factory.body.body;
 };
 
@@ -540,7 +548,10 @@ const collectReturningFactoryNames = (statements: Statement[], names: Set<string
  * The body of the parameterless factory a `(function (name, root, definition) { … module.exports = definition() … })("x", this, function () { … })`
  * UMD wrapper hands to `module.exports`; its `return` becomes the module's `module.exports`.
  */
-const getReturningFactoryBody = (statement: Statement): Statement[] | null => {
+const getReturningFactoryBody = (
+  statement: Statement,
+  factoryReturns: Set<Statement>,
+): Statement[] | null => {
   const call = getWrapperCall(statement);
   const wrapper = call ? getBlockFunction(call.callee) : null;
   if (!call || !wrapper || wrapper.params.length !== call.arguments.length) return null;
@@ -553,20 +564,26 @@ const getReturningFactoryBody = (statement: Statement): Statement[] | null => {
     const factory = getBlockFunction(argument);
     return factory && factory.params.length === 0 ? [factory.body.body] : [];
   });
-  return factories.length === 1 ? factories[0] : null;
+  const [body] = factories;
+  if (factories.length !== 1 || !body) return null;
+  for (const inner of body) {
+    if (inner.type === "ReturnStatement") factoryReturns.add(inner);
+  }
+  return body;
 };
 
 /** Module-level statements, with UMD/IIFE wrappers flattened so their declarations become module bindings. */
 const getModuleStatements = (
   statements: Statement[],
   factoryArguments: Map<string, Expression>,
+  factoryReturns: Set<Statement>,
 ): Statement[] =>
   statements.flatMap((statement) => {
     const body =
       getModuleWrapperBody(statement) ??
-      getUmdFactoryBody(statement, factoryArguments) ??
-      getReturningFactoryBody(statement);
-    return body ? getModuleStatements(body, factoryArguments) : [statement];
+      getUmdFactoryBody(statement, factoryArguments, factoryReturns) ??
+      getReturningFactoryBody(statement, factoryReturns);
+    return body ? getModuleStatements(body, factoryArguments, factoryReturns) : [statement];
   });
 
 /** Return expression of a `get() { return x; }` accessor or `() => x`. */
@@ -588,6 +605,7 @@ class CommonJsCollector {
   moduleExports: Expression | null = null;
 
   constructor(
+    private readonly factoryReturns: ReadonlySet<Statement>,
     private readonly requiredBindings: Map<string, string>,
     private readonly bindings: Map<string, TopLevelBinding>,
   ) {}
@@ -785,7 +803,9 @@ class CommonJsCollector {
 
   collectStatement(statement: Statement): void {
     if (statement.type === "ReturnStatement") {
-      if (statement.argument) this.setModuleExports(statement.argument);
+      if (statement.argument && this.factoryReturns.has(statement)) {
+        this.setModuleExports(statement.argument);
+      }
       return;
     }
     if (statement.type === "IfStatement") {
@@ -826,10 +846,15 @@ const collectRequiredBindings = (statements: Statement[]): Map<string, string> =
 
 const collectCommonJsExports = (
   statements: Statement[],
+  factoryReturns: ReadonlySet<Statement>,
   bindings: Map<string, TopLevelBinding>,
   exports: ExportEntry[],
 ): CommonJsCollector | null => {
-  const collector = new CommonJsCollector(collectRequiredBindings(statements), bindings);
+  const collector = new CommonJsCollector(
+    factoryReturns,
+    collectRequiredBindings(statements),
+    bindings,
+  );
   for (const statement of statements) collector.collectStatement(statement);
   if (!collector.isCommonJs) return null;
   for (const entry of collector.exports.values()) {
@@ -867,7 +892,8 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const sideEffectStatements: Statement[] = [];
   const directives: string[] = [];
   const factoryArguments = new Map<string, Expression>();
-  const statements = getModuleStatements(file.program.body, factoryArguments);
+  const factoryReturns = new Set<Statement>();
+  const statements = getModuleStatements(file.program.body, factoryArguments, factoryReturns);
   for (const [name, argument] of factoryArguments) {
     bindings.set(name, {
       kind: "variable",
@@ -900,7 +926,7 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   }
   const commonJs =
     imports.length === 0 && exports.length === 0
-      ? collectCommonJsExports(statements, bindings, exports)
+      ? collectCommonJsExports(statements, factoryReturns, bindings, exports)
       : null;
   return {
     filePath: file.filePath,

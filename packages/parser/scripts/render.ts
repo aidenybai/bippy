@@ -36,3 +36,5 @@ for (const diagnostic of result.diagnostics) {
     `[${diagnostic.severity}] ${diagnostic.code}: ${diagnostic.message}${diagnostic.location ? ` (${diagnostic.location.filePath}:${diagnostic.location.line})` : ""}`,
   );
 }
+// HACK: the scheduler of React 16/17 keeps a MessageChannel port open, holding the process alive after the work is done.
+process.exit(0);

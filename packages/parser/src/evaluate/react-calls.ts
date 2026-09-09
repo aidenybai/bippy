@@ -1,5 +1,9 @@
 import { nativeFunction } from "../frameworks/stubs.js";
-import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
+import {
+  createFunctionComponentDefinition,
+  toElementKey,
+  toElementType,
+} from "../react/element-type.js";
 import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
 import type {
   ContextDefinition,
@@ -321,7 +325,7 @@ const cloneElement = (
   return {
     kind: "element",
     type: element.type,
-    key: key ?? element.key,
+    key: toElementKey(key) ?? element.key,
     props: merged,
     location: element.location,
     environment: element.environment,
@@ -582,7 +586,7 @@ export const evaluateReactApiCall = (
       return {
         kind: "element",
         type: { kind: "portal", container: second ?? UNDEFINED_VALUE },
-        key: third ?? null,
+        key: third && isNullish(third) !== true ? toElementKey(third) : null,
         props,
         location,
         environment: context.environment,

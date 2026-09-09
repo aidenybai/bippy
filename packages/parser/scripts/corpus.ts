@@ -143,3 +143,5 @@ try {
 
 console.log(`\n${formatCorpusTable(fresh)}`);
 console.log(`\nresults merged into ${path.relative(process.cwd(), resultsPath)}`);
+// HACK: the scheduler of React 16/17 keeps a MessageChannel port open, holding the process alive after the work is done.
+process.exit(0);

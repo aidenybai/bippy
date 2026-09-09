@@ -1,6 +1,6 @@
 {
   "expectedStatus": "partial",
   "minCoverage": 1,
-  "expectedStats": { "branchCount": 2, "opaqueCount": 2 },
-  "notes": "ui-kit is opaque. Its `onClick`/`onPointerDownCapture` props only run for a user, so the counter stays at its initial state; `onChange` may be called by the component at mount (Field does), so that setter escapes into an honest branch (and a nested one for the unknown text)."
+  "expectedStats": { "branchCount": 1, "opaqueCount": 2 },
+  "notes": "ui-kit is opaque. Its `onClick`/`onPointerDownCapture` props only run for a user, so the counter stays at its initial state; `onChange` may be called by the component at mount (Field does), so that setter escapes into an honest branch; the false arm narrows `trimmed` to the unknown text."
 }

@@ -20,7 +20,7 @@ import {
 } from "./interpreter.js";
 import { createScope } from "./scope.js";
 import {
-  getKnownObjectKeys,
+  getOwnEnumerableEntries,
   getObjectProperty,
   getTruthiness,
   isKnownList,
@@ -88,9 +88,9 @@ const iterationValues = (
     return null;
   }
   const enumerated = getEnumerationTarget(right);
-  if (enumerated.kind !== "object") return null;
-  const keys = getKnownObjectKeys(enumerated);
-  return keys ? keys.map(primitiveValue) : null;
+  if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
+  const entries = getOwnEnumerableEntries(enumerated);
+  return entries ? entries.map(([key]) => primitiveValue(key)) : null;
 };
 
 const runBody = (
@@ -160,11 +160,10 @@ const unrollConditional = (
     }
   }
   const test = statement.test;
-  if (!test) return null;
   const outcomes: StatementOutcome[] = [];
   let skipFirstTest = statement.type === "DoWhileStatement";
   for (let iteration = 0; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
-    if (!skipFirstTest) {
+    if (!skipFirstTest && test) {
       const truthiness = getTruthiness(interpreter.evaluateExpression(test, loopContext));
       if (truthiness === null)
         return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
@@ -217,6 +216,11 @@ const evaluateUncertainTail = (
     context.scope,
     () => runBody(interpreter, statement.body, loopContext),
     "loop iterations are uncertain",
+    location,
+  );
+  interpreter.widenLoopCarriedBindings(
+    context.scope,
+    () => runBody(interpreter, statement.body, loopContext),
     location,
   );
   return { ...outcome, mayComplete: true, jump: null };

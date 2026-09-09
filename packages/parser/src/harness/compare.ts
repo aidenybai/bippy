@@ -9,6 +9,8 @@ import {
   type PatternNode,
   type PatternOpaque,
   type PatternRepeat,
+  type PatternText,
+  type PatternWildcard,
 } from "./static-pattern.js";
 
 /**
@@ -28,9 +30,13 @@ export type ComparisonStatus =
 // esbuild lowers `class X { static … }` to `var _a; _a = class {…}`, so pre-bundled
 // library components can surface as `_a`, `_a2`, … with no identity to compare; swc
 // lowers `const X = class { static … }` to `var _class; X = (_class = function _class …`.
+// A class body that refers to its own name is lowered to `var X = class _X {…}`.
 const BUNDLER_PLACEHOLDER_NAME = /^_([a-z]\d*|class\d*)$/;
 
 const isBundlerPlaceholderName = (name: string): boolean => BUNDLER_PLACEHOLDER_NAME.test(name);
+
+const isBundlerClassName = (name: string, expected: string): boolean =>
+  isBundlerPlaceholderName(name) || name === `_${expected}`;
 
 // A binding that collides with another in the bundled scope is renamed with a
 // counter: `Toaster2` by esbuild (Vite dev pre-bundling), `Toaster$1` by rollup.
@@ -61,6 +67,14 @@ export interface ComparisonOptions {
   compareTags?: boolean;
   compareText?: boolean;
   maxSteps?: number;
+  /**
+   * Framework wrappers the runtime may insert anywhere without a static
+   * counterpart, mapped to the fibers they stand in for (null for any other
+   * fiber). They are spliced out only where the static tree does not account
+   * for them, so an application component sharing a wrapper's name still
+   * matches its own fiber.
+   */
+  unwrapTransparentRuntimeFiber?: (fiber: RuntimeFiberSnapshot) => RuntimeFiberSnapshot[] | null;
 }
 
 export interface ComparisonDivergence {
@@ -110,16 +124,17 @@ export interface ComparisonTally {
   wildcards: WildcardAbsorption[];
   branchesResolved: number;
   repeatIterations: number;
+  /** Framework wrappers spliced out of the runtime tree because the static tree had no fiber for them. */
+  transparentFibers: number;
 }
 
 interface MatchTally extends ComparisonTally {
   decisions: MatchDecision[];
-  /** Runtime fibers the innermost open slot's passed children consumed; zeroed once that slot is tallied. */
-  slotConsumedFibers: number;
 }
 
 export interface ComparisonReport extends ComparisonTally {
   status: ComparisonStatus;
+  /** Runtime fibers left once spliced-out framework wrappers are set aside. */
   runtimeFibers: number;
   staticFibers: number;
   /** Explained fibers over the runtime fibers left after opaque and wildcard subtrees are set aside. */
@@ -146,8 +161,8 @@ const EMPTY_TALLY: MatchTally = {
   wildcards: [],
   branchesResolved: 0,
   repeatIterations: 0,
+  transparentFibers: 0,
   decisions: [],
-  slotConsumedFibers: 0,
 };
 
 const addTally = (left: MatchTally, right: Partial<MatchTally>): MatchTally => ({
@@ -165,12 +180,12 @@ const addTally = (left: MatchTally, right: Partial<MatchTally>): MatchTally => (
   wildcards: right.wildcards ? [...right.wildcards, ...left.wildcards] : left.wildcards,
   branchesResolved: left.branchesResolved + (right.branchesResolved ?? 0),
   repeatIterations: left.repeatIterations + (right.repeatIterations ?? 0),
+  transparentFibers: left.transparentFibers + (right.transparentFibers ?? 0),
   decisions: right.decisions ? [...right.decisions, ...left.decisions] : left.decisions,
-  slotConsumedFibers: left.slotConsumedFibers + (right.slotConsumedFibers ?? 0),
 });
 
 interface Continuation {
-  (runtimeIndex: number): MatchTally | null;
+  (runtime: RuntimeFiberSnapshot[], runtimeIndex: number): MatchTally | null;
 }
 
 /** Where matching got furthest before failing, with the decisions in force there. */
@@ -302,12 +317,16 @@ class Matcher {
   private readonly compareTags: boolean;
   private readonly compareText: boolean;
   private readonly maxSteps: number;
+  private readonly unwrapTransparentRuntimeFiber: (
+    fiber: RuntimeFiberSnapshot,
+  ) => RuntimeFiberSnapshot[] | null;
 
   constructor(options: ComparisonOptions) {
     this.compareKeys = options.compareKeys ?? true;
     this.compareTags = options.compareTags ?? true;
     this.compareText = options.compareText ?? true;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
+    this.unwrapTransparentRuntimeFiber = options.unwrapTransparentRuntimeFiber ?? (() => null);
   }
 
   get stepsUsed(): number {
@@ -329,8 +348,7 @@ class Matcher {
     expected: PatternNode | null,
   ): void {
     const actual = runtime[index];
-    const position =
-      (actual ? this.positions.start.get(actual) : this.positions.end.get(runtime)) ?? 0;
+    const position = this.positionAt(runtime, index);
     const level = this.furthest.length - 1;
     const current = this.furthest[level];
     if (current && current.position >= position) return;
@@ -343,6 +361,11 @@ class Matcher {
       },
       assignment: new Map(this.assignment),
     };
+  }
+
+  private positionAt(runtime: RuntimeFiberSnapshot[], index: number): number {
+    const fiber = runtime[index];
+    return (fiber ? this.positions.start.get(fiber) : this.positions.end.get(runtime)) ?? 0;
   }
 
   private tick(): void {
@@ -370,27 +393,72 @@ class Matcher {
   ): MatchTally | null {
     let prefix = EMPTY_TALLY;
     let nextIndex = index;
+    let remaining = runtime;
     let nextRuntimeIndex = runtimeIndex;
     while (nextIndex < patterns.length && !hasPatternDecisions(patterns[nextIndex])) {
       const nodeTally = this.matchNode(
         patterns[nextIndex],
-        runtime,
+        remaining,
         nextRuntimeIndex,
         path,
-        () => EMPTY_TALLY,
+        (nextRuntime, advancedIndex) => {
+          remaining = nextRuntime;
+          nextRuntimeIndex = advancedIndex;
+          return EMPTY_TALLY;
+        },
       );
       if (!nodeTally) return null;
       prefix = addTally(prefix, nodeTally);
       nextIndex++;
-      nextRuntimeIndex++;
     }
     const rest =
       nextIndex === patterns.length
-        ? continuation(nextRuntimeIndex)
-        : this.matchNode(patterns[nextIndex], runtime, nextRuntimeIndex, path, (restIndex) =>
-            this.matchList(patterns, nextIndex + 1, runtime, restIndex, path, continuation),
+        ? continuation(remaining, nextRuntimeIndex)
+        : this.matchNode(
+            patterns[nextIndex],
+            remaining,
+            nextRuntimeIndex,
+            path,
+            (nextRuntime, restIndex) =>
+              this.matchList(patterns, nextIndex + 1, nextRuntime, restIndex, path, continuation),
           );
     return rest ? addTally(rest, prefix) : null;
+  }
+
+  /** The runtime list with the wrapper at `runtimeIndex` replaced by what it stands in for, and the number of fibers that removed. */
+  private spliceTransparentFiber(
+    runtime: RuntimeFiberSnapshot[],
+    runtimeIndex: number,
+  ): { spliced: RuntimeFiberSnapshot[]; transparentFibers: number } | null {
+    const wrapper = runtime[runtimeIndex];
+    const unwrapped = wrapper ? this.unwrapTransparentRuntimeFiber(wrapper) : null;
+    if (!unwrapped) return null;
+    const spliced = [
+      ...runtime.slice(0, runtimeIndex),
+      ...unwrapped,
+      ...runtime.slice(runtimeIndex + 1),
+    ];
+    this.positions.end.set(spliced, this.positions.end.get(runtime) ?? 0);
+    const transparentFibers =
+      countSnapshotFibers(wrapper) -
+      unwrapped.reduce((sum, fiber) => sum + countSnapshotFibers(fiber), 0);
+    return { spliced, transparentFibers };
+  }
+
+  /** The pattern is exhausted: only framework wrappers with nothing left inside may remain. */
+  matchEnd(
+    runtime: RuntimeFiberSnapshot[],
+    runtimeIndex: number,
+    path: string[],
+  ): MatchTally | null {
+    if (runtimeIndex === runtime.length) return EMPTY_TALLY;
+    const transparent = this.spliceTransparentFiber(runtime, runtimeIndex);
+    if (transparent) {
+      const rest = this.matchEnd(transparent.spliced, runtimeIndex, path);
+      if (rest) return addTally(rest, { transparentFibers: transparent.transparentFibers });
+    }
+    this.recordFailure(path, runtime, runtimeIndex, null);
+    return null;
   }
 
   // Nothing backtracks into a decision-free subtree, so matching it eagerly
@@ -402,16 +470,17 @@ class Matcher {
     path: string[],
   ): MatchTally | null {
     let tally = EMPTY_TALLY;
+    let remaining = runtime;
     for (const [index, pattern] of patterns.entries()) {
-      const nodeTally = this.matchNode(pattern, runtime, index, path, () => EMPTY_TALLY);
+      const nodeTally = this.matchNode(pattern, remaining, index, path, (nextRuntime) => {
+        remaining = nextRuntime;
+        return EMPTY_TALLY;
+      });
       if (!nodeTally) return null;
       tally = addTally(tally, nodeTally);
     }
-    if (patterns.length !== runtime.length) {
-      this.recordFailure(path, runtime, patterns.length, null);
-      return null;
-    }
-    return tally;
+    const end = this.matchEnd(remaining, patterns.length, path);
+    return end ? addTally(tally, end) : null;
   }
 
   private matchNode(
@@ -422,111 +491,12 @@ class Matcher {
     continuation: Continuation,
   ): MatchTally | null {
     this.tick();
-    const actual = runtime[runtimeIndex];
     switch (pattern.kind) {
-      case "fiber": {
-        if (!actual || !this.headMatches(pattern, actual)) {
-          this.recordFailure(path, runtime, runtimeIndex, pattern);
-          return null;
-        }
-        const childPath = [...path, describePatternNode(pattern)];
-        if (!hasPatternDecisions(pattern)) {
-          const children = this.matchDecisionFreeList(pattern.children, actual.children, childPath);
-          if (!children) return null;
-          const rest = continuation(runtimeIndex + 1);
-          return rest ? addTally(addTally(rest, children), { matchedFibers: 1 }) : null;
-        }
-        const tally = this.matchList(
-          pattern.children,
-          0,
-          actual.children,
-          0,
-          childPath,
-          (nextIndex) => {
-            if (nextIndex === actual.children.length) return continuation(runtimeIndex + 1);
-            this.recordFailure(childPath, actual.children, nextIndex, null);
-            return null;
-          },
-        );
-        return tally ? addTally(tally, { matchedFibers: 1 }) : null;
-      }
-      case "text": {
-        if (
-          !actual ||
-          actual.tag !== "HostText" ||
-          (this.compareText && pattern.text !== null && pattern.text !== actual.text)
-        ) {
-          this.recordFailure(path, runtime, runtimeIndex, pattern);
-          return null;
-        }
-        const rest = continuation(runtimeIndex + 1);
-        return rest ? addTally(rest, { matchedText: 1 }) : null;
-      }
-      case "opaque": {
-        if (!actual || !this.opaqueHeadMatches(pattern, actual)) {
-          this.recordFailure(path, runtime, runtimeIndex, pattern);
-          return null;
-        }
-        const rest = continuation(runtimeIndex + 1);
-        if (!rest) return null;
-        const head: Partial<MatchTally> = {
-          opaqueSubtrees: 1,
-          opaqueRenamed: this.opaqueNameAgrees(pattern, actual) ? 0 : 1,
-        };
-        const skippedFibers = countSnapshotFibers(actual);
-        if (pattern.passedChildren.length === 0) {
-          return addTally(rest, { ...head, opaqueSkippedFibers: skippedFibers });
-        }
-        const slotPath = [...path, describePatternNode(pattern)];
-        const slot = this.matchSlot(pattern, actual, slotPath);
-        if (slot.match) {
-          return addTally(addTally(rest, slot.match.tally), {
-            ...head,
-            slotsMatched: 1,
-            opaqueSkippedFibers: skippedFibers - slot.match.consumedFibers,
-          });
-        }
-        return addTally(rest, {
-          ...head,
-          slotsUnmatched: 1,
-          opaqueSkippedFibers: skippedFibers,
-          unmatchedSlots: [
-            {
-              path: slotPath.join(" > "),
-              reason: pattern.reason,
-              head: describeRuntimeFiber(actual),
-              skippedFibers,
-              divergence: slot.divergence,
-            },
-          ],
-        });
-      }
-      case "wildcard": {
-        for (let absorbed = 0; runtimeIndex + absorbed <= runtime.length; absorbed++) {
-          const rest = continuation(runtimeIndex + absorbed);
-          if (rest) {
-            const absorbedRun = runtime.slice(runtimeIndex, runtimeIndex + absorbed);
-            const absorbedFibers = absorbedRun.reduce(
-              (total, fiber) => total + countSnapshotFibers(fiber),
-              0,
-            );
-            if (absorbedFibers === 0) return rest;
-            return addTally(rest, {
-              wildcardAbsorbedFibers: absorbedFibers,
-              wildcards: [
-                {
-                  path: path.join(" > "),
-                  reason: pattern.reason,
-                  absorbedFibers,
-                  heads: absorbedRun.map(describeRuntimeFiber),
-                },
-              ],
-            });
-          }
-        }
-        this.recordFailure(path, runtime, runtimeIndex, pattern);
-        return null;
-      }
+      case "fiber":
+      case "text":
+      case "opaque":
+      case "wildcard":
+        return this.matchLeaf(pattern, runtime, runtimeIndex, path, continuation);
       case "branch": {
         const decided = this.assignment.get(pattern.variable);
         if (decided !== undefined) {
@@ -573,24 +543,31 @@ class Matcher {
       case "repeat": {
         // Longest run first; every iteration gets its own copies of the
         // decision variables inside, as each item decides for itself.
-        const iterate = (start: number, iteration: number): MatchTally | null => {
+        const iterate = (
+          iterationRuntime: RuntimeFiberSnapshot[],
+          start: number,
+          iteration: number,
+        ): MatchTally | null => {
           const canIterate = pattern.count.max === null || iteration < pattern.count.max;
           const more = canIterate
             ? this.matchList(
                 this.iterationChildren(pattern, iteration),
                 0,
-                runtime,
+                iterationRuntime,
                 start,
                 path,
-                (nextIndex) => (nextIndex === start ? null : iterate(nextIndex, iteration + 1)),
+                (nextRuntime, nextIndex) =>
+                  nextRuntime === iterationRuntime && nextIndex === start
+                    ? null
+                    : iterate(nextRuntime, nextIndex, iteration + 1),
               )
             : null;
           if (more) return more;
           if (iteration < pattern.count.min) {
-            this.recordFailure(path, runtime, start, pattern);
+            this.recordFailure(path, iterationRuntime, start, pattern);
             return null;
           }
-          const rest = continuation(start);
+          const rest = continuation(iterationRuntime, start);
           return rest
             ? addTally(rest, {
                 repeatIterations: iteration,
@@ -598,7 +575,137 @@ class Matcher {
               })
             : null;
         };
-        return iterate(runtimeIndex, 0);
+        return iterate(runtime, runtimeIndex, 0);
+      }
+    }
+  }
+
+  // A framework wrapper is spliced out first, as the static tree rarely renders
+  // one; when its children do not explain the pattern, the wrapper itself is
+  // matched, which is how an application fiber sharing the name is found.
+  private matchLeaf(
+    pattern: PatternFiber | PatternText | PatternOpaque | PatternWildcard,
+    runtime: RuntimeFiberSnapshot[],
+    runtimeIndex: number,
+    path: string[],
+    continuation: Continuation,
+  ): MatchTally | null {
+    const actual = runtime[runtimeIndex];
+    const transparent = this.spliceTransparentFiber(runtime, runtimeIndex);
+    if (transparent) {
+      const spliced = this.matchLeaf(
+        pattern,
+        transparent.spliced,
+        runtimeIndex,
+        path,
+        continuation,
+      );
+      if (spliced) return addTally(spliced, { transparentFibers: transparent.transparentFibers });
+    }
+    switch (pattern.kind) {
+      case "fiber": {
+        if (!actual || !this.headMatches(pattern, actual)) {
+          this.recordFailure(path, runtime, runtimeIndex, pattern);
+          return null;
+        }
+        const childPath = [...path, describePatternNode(pattern)];
+        if (!hasPatternDecisions(pattern)) {
+          const children = this.matchDecisionFreeList(pattern.children, actual.children, childPath);
+          if (!children) return null;
+          const rest = continuation(runtime, runtimeIndex + 1);
+          return rest ? addTally(addTally(rest, children), { matchedFibers: 1 }) : null;
+        }
+        const tally = this.matchList(
+          pattern.children,
+          0,
+          actual.children,
+          0,
+          childPath,
+          (childRuntime, nextIndex) => {
+            const end = this.matchEnd(childRuntime, nextIndex, childPath);
+            if (!end) return null;
+            const rest = continuation(runtime, runtimeIndex + 1);
+            return rest ? addTally(rest, end) : null;
+          },
+        );
+        return tally ? addTally(tally, { matchedFibers: 1 }) : null;
+      }
+      case "text": {
+        if (
+          !actual ||
+          actual.tag !== "HostText" ||
+          (this.compareText && pattern.text !== null && pattern.text !== actual.text)
+        ) {
+          this.recordFailure(path, runtime, runtimeIndex, pattern);
+          return null;
+        }
+        const rest = continuation(runtime, runtimeIndex + 1);
+        return rest ? addTally(rest, { matchedText: 1 }) : null;
+      }
+      case "opaque": {
+        if (!actual || !this.opaqueHeadMatches(pattern, actual)) {
+          this.recordFailure(path, runtime, runtimeIndex, pattern);
+          return null;
+        }
+        const rest = continuation(runtime, runtimeIndex + 1);
+        if (!rest) return null;
+        const head: Partial<MatchTally> = {
+          opaqueSubtrees: 1,
+          opaqueRenamed: this.opaqueNameAgrees(pattern, actual) ? 0 : 1,
+        };
+        const skippedFibers = countSnapshotFibers(actual);
+        if (pattern.passedChildren.length === 0) {
+          return addTally(rest, { ...head, opaqueSkippedFibers: skippedFibers });
+        }
+        const slotPath = [...path, describePatternNode(pattern)];
+        const slot = this.matchSlot(pattern, actual, slotPath);
+        if (slot.match) {
+          return addTally(addTally(rest, slot.match.tally), {
+            ...head,
+            slotsMatched: 1,
+            opaqueSkippedFibers: skippedFibers - slot.match.consumedFibers,
+          });
+        }
+        return addTally(rest, {
+          ...head,
+          slotsUnmatched: 1,
+          opaqueSkippedFibers: skippedFibers,
+          unmatchedSlots: [
+            {
+              path: slotPath.join(" > "),
+              reason: pattern.reason,
+              head: describeRuntimeFiber(actual),
+              skippedFibers,
+              divergence: slot.divergence,
+            },
+          ],
+        });
+      }
+      case "wildcard": {
+        for (let absorbed = 0; runtimeIndex + absorbed <= runtime.length; absorbed++) {
+          const rest = continuation(runtime, runtimeIndex + absorbed);
+          if (rest) {
+            const absorbedRun = runtime.slice(runtimeIndex, runtimeIndex + absorbed);
+            const absorbedFibers = absorbedRun.reduce(
+              (total, fiber) => total + countSnapshotFibers(fiber),
+              0,
+            );
+            if (absorbedFibers === 0) return rest;
+            return addTally(rest, {
+              wildcardAbsorbedFibers: absorbedFibers,
+              wildcards: [
+                {
+                  path: path.join(" > "),
+                  reason: pattern.reason,
+                  absorbedFibers,
+                  heads: absorbedRun.map(describeRuntimeFiber),
+                },
+              ],
+            });
+          }
+        }
+        this.recordFailure(path, runtime, runtimeIndex, pattern);
+        return null;
       }
     }
   }
@@ -626,8 +733,11 @@ class Matcher {
     )
       return false;
     if (pattern.name === null || actual.name === null || pattern.name === actual.name) return true;
-    if (isBundlerRenamedName(pattern.name, actual.name)) return true;
-    return isClassTag(actual.tag) && isBundlerPlaceholderName(actual.name);
+    if (isHostTag(actual.tag)) return false;
+    return (
+      isBundlerRenamedName(pattern.name, actual.name) ||
+      (isClassTag(actual.tag) && isBundlerClassName(actual.name, pattern.name))
+    );
   }
 
   // An opaque component's runtime identity is whatever non-host fiber sits in its
@@ -696,16 +806,20 @@ class Matcher {
     start: number,
     path: string[],
   ): SlotMatch | null {
-    const tally = this.matchList(pattern.passedChildren, 0, siblings, start, path, (nextIndex) => {
-      if (nextIndex === start && siblings.length > 0) return null;
-      const slotConsumedFibers = siblings
-        .slice(start, nextIndex)
-        .reduce((total, sibling) => total + countSnapshotFibers(sibling), 0);
-      return { ...EMPTY_TALLY, slotConsumedFibers };
-    });
-    return tally
-      ? { tally: { ...tally, slotConsumedFibers: 0 }, consumedFibers: tally.slotConsumedFibers }
-      : null;
+    let consumedFibers = 0;
+    const startPosition = this.positionAt(siblings, start);
+    const tally = this.matchList(
+      pattern.passedChildren,
+      0,
+      siblings,
+      start,
+      path,
+      (nextSiblings, nextIndex) => {
+        consumedFibers = this.positionAt(nextSiblings, nextIndex) - startPosition;
+        return consumedFibers === 0 && siblings.length > 0 ? null : EMPTY_TALLY;
+      },
+    );
+    return tally ? { tally, consumedFibers } : null;
   }
 }
 
@@ -736,30 +850,29 @@ export const matchPatternToRuntime = (
   let tally: MatchTally | null = null;
   let budgetExhausted = false;
   try {
-    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (nextIndex) => {
-      if (nextIndex === runtime.length) return EMPTY_TALLY;
-      matcher.recordFailure(["root"], runtime, nextIndex, null);
-      return null;
-    });
+    tally = matcher.matchList(patterns, 0, runtime, 0, ["root"], (rest, nextIndex) =>
+      matcher.matchEnd(rest, nextIndex, ["root"]),
+    );
   } catch (error) {
     if (!(error instanceof BudgetExceeded)) throw error;
     budgetExhausted = true;
   }
-  const { decisions, slotConsumedFibers: _slotConsumedFibers, ...base } = tally ?? EMPTY_TALLY;
+  const { decisions, ...base } = tally ?? EMPTY_TALLY;
+  const applicationFibers = runtimeFibers - base.transparentFibers;
   const denominator = Math.max(
     1,
-    runtimeFibers - base.opaqueSkippedFibers - base.wildcardAbsorbedFibers,
+    applicationFibers - base.opaqueSkippedFibers - base.wildcardAbsorbedFibers,
   );
   const failure = tally ? null : matcher.failure;
   return {
     report: {
       ...base,
       status: tally ? classify(tally) : "mismatch",
-      runtimeFibers,
+      runtimeFibers: applicationFibers,
       staticFibers,
       coverage: tally ? (base.matchedFibers + base.matchedText) / denominator : 0,
       strictCoverage: tally
-        ? (base.matchedFibers + base.matchedText) / Math.max(1, runtimeFibers)
+        ? (base.matchedFibers + base.matchedText) / Math.max(1, applicationFibers)
         : 0,
       divergence: failure?.divergence ?? null,
       stepsUsed: matcher.stepsUsed,

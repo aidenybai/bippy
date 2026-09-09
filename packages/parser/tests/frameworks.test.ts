@@ -1,8 +1,21 @@
+import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { renderFrameworkTarget, type FrameworkRenderTarget } from "../src/frameworks/index.js";
+import {
+  flattenTransparentFibers,
+  getFrameworkProfile,
+  renderFrameworkTarget,
+  type FrameworkRenderTarget,
+} from "../src/frameworks/index.js";
 import { createNextModel } from "../src/frameworks/next-externals.js";
-import { formatPattern, getRenderPattern, getRenderRootChildren } from "../src/harness/index.js";
+import {
+  formatPattern,
+  getRenderPattern,
+  getRenderRootChildren,
+  type PatternNode,
+} from "../src/harness/index.js";
+import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
 import { readInstalledVersion } from "../src/libraries/installed-version.js";
 import { ForwardRefTag } from "../src/work-tags.js";
 
@@ -26,6 +39,44 @@ const render = async (fixture: string, target: FrameworkRenderTarget) => {
 };
 
 const lines = (tree: string): string[] => tree.split("\n").map((line) => line.trim());
+
+/** A copy of `fixture` whose `node_modules/<packageName>/package.json` reports `version`. */
+const withInstalledPackage = async (
+  fixture: string,
+  packageName: string,
+  version: string,
+): Promise<string> => {
+  const rootDirectory = await mkdtemp(join(tmpdir(), `bippy-${fixture}-`));
+  await cp(join(FIXTURES, fixture), rootDirectory, { recursive: true });
+  const packageDirectory = join(rootDirectory, "node_modules", packageName);
+  await mkdir(packageDirectory, { recursive: true });
+  await writeFile(
+    join(packageDirectory, "package.json"),
+    JSON.stringify({ name: packageName, version }),
+  );
+  return rootDirectory;
+};
+
+const renderPagesWithNext = async (version: string, route: string) => {
+  const rootDirectory = await withInstalledPackage("next-pages", "next", version);
+  const result = await renderFrameworkTarget(
+    { framework: "next-pages", route },
+    { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+  );
+  const pattern = getRenderPattern(result);
+  return {
+    pattern,
+    tree: formatPattern(pattern),
+    errors: result.diagnostics.filter((diagnostic) => diagnostic.severity === "error"),
+  };
+};
+
+const findFiberTags = (nodes: PatternNode[], name: string): SnapshotWorkTag[] =>
+  nodes.flatMap((node) =>
+    node.kind === "fiber"
+      ? [...(node.name === name ? [node.tag] : []), ...findFiberTags(node.children, name)]
+      : [],
+  );
 
 describe("next app router", () => {
   it("composes root layout, elides server components, keeps client boundaries", async () => {
@@ -64,9 +115,63 @@ describe("next app router", () => {
     expect(tree).toMatch(/<h1>\n\s+<Counter>\n\s+<button>/);
   });
 
+  it("calls forwardRef and memo wrappers as plain functions on the server", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Counter>\n\s+<button>\n(\s+(<[^>]+>|"[^"]*")\n)*\s+<div>\n\s+<span>\n\s+<Toaster>/,
+    );
+    expect(tree).not.toContain("<Card>");
+    expect(tree).not.toContain("<Badge>");
+  });
+
+  it('treats exports of a "use client" module as client references even when defined elsewhere', async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<TogglePrimitive>\n\s+<button>\n\s+<LabelPrimitive>\n\s+<label>\n/);
+  });
+
+  it("unwraps key-less server fragments the way Flight serializes them", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<label>\n\s+<h2>\n\s+<h3>\n\s+"Static tagline"$/);
+  });
+
+  it("renders module-scope elements on the server only when a server component passes them as props", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/social" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<section>\n\s+<SocialLinks>\n\s+<ul>\n\s+<li> key="Website"\n\s+<svg>\n\s+<ClientSocial>/,
+    );
+    expect(tree).toMatch(
+      /<ClientSocial>\n\s+<SocialLinks>\n\s+<ul>\n\s+<li> key="Website"\n\s+<GlobeIcon>\n\s+<svg>/,
+    );
+  });
+
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
+  });
+
+  it("answers `in` checks against a modeled component's statics", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<Slot>\n\s+<i>\n\s+<LinkComponent>/);
+    expect(tree).toMatch(/<Slot>\n\s+<b>\n\s+<Slottable>/);
+    expect(tree).not.toContain("__radixId");
+  });
+
+  it("elides server components wrapped in memo, like Flight does", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<Slottable> key="\.0"\n\s+"slotted"\n\s+<header>\n\s+<ForwardRef>/);
+    expect(tree).not.toContain("<Hero>");
+    expect(tree).not.toContain("Memo");
+  });
+
+  it("models next/image as ForwardRef -> ForwardRef -> <img>, preloading only priority images", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(
+      /<header>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<main>/,
+    );
   });
 
   it("models next/form as Form -> <form> in the App Router and a forwardRef in the Pages Router", async () => {
@@ -306,10 +411,7 @@ describe("next pages router", () => {
   });
 
   it("models next/image priority as ImagePreload -> Head -> SideEffect", async () => {
-    const { tree, errors } = await render("next-pages", {
-      framework: "next-pages",
-      route: "/gallery",
-    });
+    const { tree, errors } = await renderPagesWithNext("15.5.0", "/gallery");
     expect(errors).toEqual([]);
     expect(tree).toMatch(
       /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<Script>$/,
@@ -320,6 +422,13 @@ describe("next pages router", () => {
     const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
     expect(tree).toContain("<Script>");
     expect(tree).not.toContain("<script>");
+  });
+
+  it("preloads next/image through next/head instead of ReactDOM.preload", async () => {
+    const { tree } = await renderPagesWithNext("15.5.0", "/");
+    expect(tree).toMatch(
+      /<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>/,
+    );
   });
 
   it("feeds dynamic segments into useRouter().query", async () => {
@@ -352,6 +461,101 @@ describe("next pages router", () => {
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
+  });
+
+  it("mounts without StrictMode when next.config does not enable it", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(tree).not.toContain("<StrictMode>");
+    expect(lines(tree).slice(0, 2)).toEqual(["<HostRoot>", "<App>"]);
+  });
+
+  it("wraps the tree in StrictMode when a next.config function sets reactStrictMode", async () => {
+    const { tree, errors } = await render("next-pages-strict", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("keeps StrictMode a branch when a config plugin hides reactStrictMode", async () => {
+    const { tree } = await render("next-pages-plugin-config", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(tree).toMatch(/^<HostRoot>\n\s+\?branch\(next\.config reactStrictMode is /);
+    expect(tree).toContain("<StrictMode>");
+  });
+
+  it("models next/head, next/image and next/legacy/image after the current next", async () => {
+    const { tree, errors } = await renderPagesWithNext("15.5.0", "/media");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>/);
+    expect(tree).toMatch(
+      /<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<ImageElement>\n\s+<img>\n\s+<noscript>/,
+    );
+    expect(tree).toMatch(
+      /<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<SideEffect>/,
+    );
+  });
+
+  it("follows the installed next version: 12.1 renders head through a class and images inline", async () => {
+    const { pattern, tree } = await renderPagesWithNext("12.1.0", "/media");
+    expect(tree).toMatch(
+      /<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<img>\n\s+<noscript>/,
+    );
+    expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
+    expect(tree).not.toContain("<ImageElement>");
+    expect(findFiberTags(pattern, "_class")).toEqual(["ClassComponent", "ClassComponent"]);
+  });
+
+  it("splices out the client bootstrap around _app: StrictMode, the head commit hook and the route announcer portal", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+      props: RuntimeFiberSnapshot["props"] = {},
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props, children });
+    const appHead = fiber("Head", "FunctionComponent", [fiber("SideEffect", "FunctionComponent")]);
+    const page = fiber("Home", "FunctionComponent", [fiber("div", "HostComponent")]);
+    const runtime = {
+      reactVersion: null,
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("Root", "FunctionComponent", [
+            fiber("StrictMode", "Mode", [
+              fiber("Head", "FunctionComponent", [], { callback: "[function]" }),
+              fiber("AppContainer", "FunctionComponent", [
+                fiber("Container", "ClassComponent", [
+                  fiber("RouterContext", "ContextProvider", [
+                    fiber("MyApp", "FunctionComponent", [appHead, page]),
+                    fiber(
+                      "Portal",
+                      "FunctionComponent",
+                      [
+                        fiber("Portal", "HostPortal", [
+                          fiber("RouteAnnouncer", "FunctionComponent", [
+                            fiber("p", "HostComponent"),
+                          ]),
+                        ]),
+                      ],
+                      { type: "next-route-announcer" },
+                    ),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("next-pages"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("MyApp", "FunctionComponent", [appHead, page]),
+    ]);
   });
 });
 

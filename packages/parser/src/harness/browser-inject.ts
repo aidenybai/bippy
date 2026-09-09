@@ -40,6 +40,8 @@ const readStorageArea = (area: Storage): Record<string, string> => {
 };
 
 const initialHistoryState = toCapturedValue(history.state) ?? null;
+const initialLocalStorage = readStorageArea(localStorage);
+const initialSessionStorage = readStorageArea(sessionStorage);
 
 const readWindowKeys = (): string[] => {
   const names = new Set<string>();
@@ -58,8 +60,8 @@ const readPageState = (): CapturedPageState => ({
   userAgent: navigator.userAgent,
   language: navigator.language,
   maxTouchPoints: navigator.maxTouchPoints,
-  localStorage: readStorageArea(localStorage),
-  sessionStorage: readStorageArea(sessionStorage),
+  localStorage: initialLocalStorage,
+  sessionStorage: initialSessionStorage,
 });
 
 // The default resource timing buffer (250 entries) holds a fraction of a dev
