@@ -27,8 +27,18 @@ export const recordNegation = (negated: StaticValue, operand: StaticValue): Stat
 
 const NEGATED_PREFIX = "!";
 
+const getNegatedPredicate = (predicate: string): string =>
+  predicate.startsWith(NEGATED_PREFIX)
+    ? predicate.slice(NEGATED_PREFIX.length)
+    : `${NEGATED_PREFIX}${predicate}`;
+
 /** The predicate of a branch whose first alternative is taken when `test` is truthy. */
 export const getTruthinessPredicate = (test: StaticValue): string => {
+  if (test.kind === "branch" && test.predicate !== null && test.alternatives.length === 2) {
+    const [whenFirst, whenSecond] = test.alternatives.map(getTruthiness);
+    if (whenFirst === true && whenSecond === false) return test.predicate;
+    if (whenFirst === false && whenSecond === true) return getNegatedPredicate(test.predicate);
+  }
   let subject = test;
   let isNegated = false;
   for (let operand = negations.get(subject); operand; operand = negations.get(subject)) {
@@ -48,12 +58,6 @@ const getDecidedPredicate = (subject: StaticValue): string | null => {
   if (first === false && second === true) return getNegatedPredicate(subject.predicate);
   return null;
 };
-
-/** The predicate of a two-way branch taking the opposite side of `predicate`. */
-export const getNegatedPredicate = (predicate: string): string =>
-  predicate.startsWith(NEGATED_PREFIX)
-    ? predicate.slice(NEGATED_PREFIX.length)
-    : `${NEGATED_PREFIX}${predicate}`;
 
 /** The predicate of a fork whose paths are decided by something the analysis cannot see. */
 export const createPathPredicate = (): string => `path(${++nextSubjectId})`;

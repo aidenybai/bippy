@@ -1,17 +1,11 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import type { SourceLocation, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
 import type { Interpreter } from "./interpreter.js";
-import {
-  describeValue,
-  listValue,
-  primitiveValue,
-  thrownValue,
-  unknownValue,
-} from "./values.js";
+import { describeValue, listValue, primitiveValue, thrownValue, unknownValue } from "./values.js";
 
 /** webpack's `require.context` default filter: every module under the directory. */
 const DEFAULT_FILTER = /^\.\/.*$/;

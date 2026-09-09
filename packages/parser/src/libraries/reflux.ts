@@ -1,5 +1,5 @@
-import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { objectValue } from "../evaluate/values.js";
+import { nativeFunction, noopFunction } from "../evaluate/stubs.js";
 import type { ExternalValueProvider, StaticObjectEntry, StaticValue } from "../types.js";
 
 // `createStore(definition)` (reflux-core) copies the definition onto a store
@@ -8,15 +8,17 @@ import type { ExternalValueProvider, StaticObjectEntry, StaticValue } from "../t
 
 export const REFLUX_PACKAGES = ["reflux"];
 
-const noop = (name: string): StaticValue => nativeFunction(name, () => UNDEFINED_VALUE);
-
 const createStore = (): StaticValue =>
   nativeFunction("createStore", ([definition], tools) => {
     const store = objectValue([
-      { kind: "property", key: "listen", value: nativeFunction("listen", () => noop("unlisten")) },
-      { kind: "property", key: "listenTo", value: noop("listenTo") },
-      { kind: "property", key: "listenToMany", value: noop("listenToMany") },
-      { kind: "property", key: "trigger", value: noop("trigger") },
+      {
+        kind: "property",
+        key: "listen",
+        value: nativeFunction("listen", () => noopFunction("unlisten")),
+      },
+      { kind: "property", key: "listenTo", value: noopFunction("listenTo") },
+      { kind: "property", key: "listenToMany", value: noopFunction("listenToMany") },
+      { kind: "property", key: "trigger", value: noopFunction("trigger") },
     ]);
     if (definition?.kind !== "object") return store;
     for (const entry of definition.entries) store.entries.push(bindToStore(entry, store));

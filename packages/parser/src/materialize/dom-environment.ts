@@ -8,7 +8,7 @@ const WINDOW_GLOBALS = ["window", "self", "document", "navigator", "location", "
 // happy-dom never fires load/error on `<link rel="preload">`, but React DOM
 // suspends the commit of a `<link rel="stylesheet" precedence>` on exactly that
 // event. Resolve preloads the way a browser with no network would: with an error.
-export const settlePreloadLinks = (nodes: NodeList): void => {
+const settlePreloadLinks = (nodes: NodeList): void => {
   nodes.forEach((node) => {
     if (!(node instanceof HTMLLinkElement) || node.rel !== "preload") return;
     const view = node.ownerDocument.defaultView;
@@ -17,7 +17,7 @@ export const settlePreloadLinks = (nodes: NodeList): void => {
   });
 };
 
-export const observePreloadLinks = (): void => {
+const observePreloadLinks = (): void => {
   new MutationObserver((mutations) => {
     for (const mutation of mutations) settlePreloadLinks(mutation.addedNodes);
   }).observe(document, { childList: true, subtree: true });
@@ -99,6 +99,7 @@ export const createDomHostDocument = (hasKnownMarkup: boolean): HostDocument => 
   ensureDomGlobals();
   const browser = loadHostRealm("browser");
   return {
+    realm: browser,
     document,
     globalObject: window,
     hasKnownMarkup,

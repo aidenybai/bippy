@@ -130,7 +130,10 @@ const getBaseUrl = (config: ExpoConfig): string =>
  * `expo-router-plugin` outputs for the options `@expo/cli` derives from the
  * app config.
  */
-export const getExpoDefines = (rootDirectory: string, platform: string): Record<string, JsonValue> => {
+export const getExpoDefines = (
+  rootDirectory: string,
+  platform: string,
+): Record<string, JsonValue> => {
   const config = readExpoConfig(rootDirectory) ?? {};
   const defines: Record<string, JsonValue> = {
     __DEV__: true,

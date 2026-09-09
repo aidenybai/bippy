@@ -14,7 +14,7 @@ import {
   unknownPrimitiveValue,
 } from "./values.js";
 
-const DEV_SERVER_MODE = "development";
+export const DEV_SERVER_MODE = "development";
 
 const ENVIRONMENT_OBJECTS = ["process.env", "import.meta.env"];
 
@@ -37,12 +37,12 @@ const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "de
 export const isBundlerUndeclaredName = (bundler: ModuleBundler, name: string): boolean =>
   bundler === "vite" && VITE_UNDECLARED_NAMES.has(name);
 
+const DEFAULT_BASE_URL = "/";
+
 const VITE_ENVIRONMENT: Record<string, StaticValue> = {
-  MODE: primitiveValue(DEV_SERVER_MODE),
   DEV: TRUE_VALUE,
   PROD: FALSE_VALUE,
   SSR: FALSE_VALUE,
-  BASE_URL: primitiveValue("/"),
 };
 
 export interface EnvironmentLookup {
@@ -50,6 +50,10 @@ export interface EnvironmentLookup {
   renderEnvironment: RenderEnvironment | null;
   /** Environment objects a `define` replaced wholesale, so undeclared variables read `undefined`. */
   definedObjects?: ReadonlySet<string>;
+  /** The public base path the dev server serves under (Vite `base`); `import.meta.env.BASE_URL` reads it. */
+  baseUrl?: string;
+  /** The mode the dev server runs in (Vite `--mode`); `import.meta.env.MODE` reads it. */
+  mode?: string;
 }
 
 const NO_ENVIRONMENT: EnvironmentLookup = { declared: null, renderEnvironment: null };
@@ -73,8 +77,11 @@ const getEnvironmentVariable = (
   environment: EnvironmentLookup,
 ): StaticValue => {
   if (variable === "NODE_ENV") return primitiveValue(DEV_SERVER_MODE);
-  if (objectName === "import.meta.env" && variable in VITE_ENVIRONMENT)
-    return VITE_ENVIRONMENT[variable];
+  if (objectName === "import.meta.env") {
+    if (variable === "BASE_URL") return primitiveValue(environment.baseUrl ?? DEFAULT_BASE_URL);
+    if (variable === "MODE") return primitiveValue(environment.mode ?? DEV_SERVER_MODE);
+    if (variable in VITE_ENVIRONMENT) return VITE_ENVIRONMENT[variable];
+  }
   const declared = getDeclaredVariable(environment, variable);
   if (declared !== null) return declared;
   if (environment.definedObjects?.has(objectName)) return UNDEFINED_VALUE;
@@ -116,7 +123,7 @@ const HOT_MODULE_HANDLER_METHODS = new Set([
 export const isEnvironmentObject = (globalName: string): boolean =>
   ENVIRONMENT_OBJECTS.includes(globalName);
 
-export const isEnvironmentVariableName = (name: string): boolean =>
+const isEnvironmentVariableName = (name: string): boolean =>
   ENVIRONMENT_OBJECTS.some((objectName) => name.startsWith(`${objectName}.`));
 
 /** A define of `null` for these means the bundler leaves the name unset rather than inlining `null`. */

@@ -1,6 +1,6 @@
 import type { SourceLocation, StaticValue } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
-import type { HostRealm } from "../host/host-realm.js";
+import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
 import { toNativeArguments } from "./native-values.js";
@@ -8,66 +8,30 @@ import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
 import { UNDEFINED_VALUE, getObjectProperty, unknownValue } from "./values.js";
 
 /**
- * Events only a user gesture dispatches; none fires before the runtime snapshot
- * is captured. Pointer arrival events (`pointerover`, `pointerenter`,
- * `pointermove` and their mouse twins) are included: Chromium only synthesizes
+ * Event interfaces only an input device dispatches (lib.dom's `UIEvent` family
+ * minus `UIEvent` itself, which also types `resize` and `load`): whichever
+ * event the DOM declares with one of them never fires before the runtime
+ * snapshot. Pointer arrival events (`pointerover`, `pointerenter`,
+ * `pointermove` and their mouse twins) are covered: Chromium only synthesizes
  * them once a real pointer event has told it where the pointer is, which never
- * happens in the headless capture.
+ * happens in the headless capture. Focus moves only for a user or a script
+ * (`element.focus()`); script moves reach the native listeners below.
  */
-const USER_GESTURE_EVENTS = new Set([
-  "keydown",
-  "keyup",
-  "keypress",
-  "click",
-  "dblclick",
-  "auxclick",
-  "contextmenu",
-  "mousedown",
-  "mouseup",
-  "mousemove",
-  "mouseenter",
-  "mouseleave",
-  "mouseover",
-  "mouseout",
-  "pointerdown",
-  "pointerup",
-  "pointermove",
-  "pointerenter",
-  "pointerleave",
-  "pointerover",
-  "pointerout",
-  "pointercancel",
-  "touchstart",
-  "touchend",
-  "touchmove",
-  "touchcancel",
-  "gesturestart",
-  "gesturechange",
-  "gestureend",
-  "wheel",
-  "drag",
-  "dragstart",
-  "dragend",
-  "dragenter",
-  "dragleave",
-  "dragover",
-  "drop",
-  "input",
-  "beforeinput",
-  "change",
-  "compositionstart",
-  "compositionupdate",
-  "compositionend",
-  "copy",
-  "cut",
-  "paste",
-]);
+const INPUT_DEVICE_EVENT_INTERFACES = [
+  "KeyboardEvent",
+  "MouseEvent",
+  "TouchEvent",
+  "InputEvent",
+  "CompositionEvent",
+  "ClipboardEvent",
+  "FocusEvent",
+];
 
 /** Events the browser dispatches only when the page is being left, after any snapshot. */
 const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
 
 /** Fires after `requestFullscreen()`/`exitFullscreen()`, which need transient user activation. */
-const FULLSCREEN_EVENTS = new Set(["fullscreenchange", "webkitfullscreenchange"]);
+const FULLSCREEN_EVENTS = new Set(["fullscreenchange"]);
 
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
@@ -96,29 +60,39 @@ const isCapturingListenerOption = (options: StaticValue | undefined): boolean =>
 /** A freshly loaded page sits at its initial scroll offset until a user or script scrolls it. */
 const SCROLL_EVENTS = new Set(["scroll", "scrollend"]);
 
-/** Focus and selection move only for a user or a script (`element.focus()`, `Selection.addRange()`); script moves reach the native listeners below. */
-const FOCUS_EVENTS = new Set([
-  "focus",
-  "blur",
-  "focusin",
-  "focusout",
-  "select",
-  "selectionchange",
-  "selectstart",
+/** The selection moves only for a user or a script (`Selection.addRange()`), declared as plain `Event`s. */
+const SELECTION_EVENTS = new Set(["select", "selectionchange", "selectstart"]);
+
+/** Components may report a value they settle on at mount through these, unlike a real DOM event. */
+const VALUE_EVENTS = new Set(["input", "beforeinput", "change", "select"]);
+
+/** WebKit-only gesture and fullscreen events lib.dom leaves undeclared. */
+const VENDOR_USER_EVENTS = new Set([
+  "gesturestart",
+  "gesturechange",
+  "gestureend",
+  "webkitfullscreenchange",
 ]);
 
 /** Browser-dispatched event types are bare words; namespaced names are app-defined and only fire on `dispatchEvent`. */
 const isCustomEventType = (type: string): boolean => /[^a-zA-Z]/.test(type);
 
+/** Which interface an event is dispatched with is the DOM's own declaration (lib.dom), whichever host runs the program. */
+const isInputDeviceEventType = (type: string): boolean => {
+  const dom = loadHostRealm("browser");
+  return INPUT_DEVICE_EVENT_INTERFACES.some((interfaceName) =>
+    dom.isEventOfType(type, interfaceName),
+  );
+};
+
 const isUserDrivenEventType = (type: string): boolean =>
-  USER_GESTURE_EVENTS.has(type) ||
+  isInputDeviceEventType(type) ||
+  VALUE_EVENTS.has(type) ||
   PAGE_UNLOAD_EVENTS.has(type) ||
   SCROLL_EVENTS.has(type) ||
-  FOCUS_EVENTS.has(type) ||
-  FULLSCREEN_EVENTS.has(type);
-
-/** Components may report a value they settle on at mount through these, unlike a real DOM event. */
-const VALUE_EVENTS = new Set(["input", "beforeinput", "change", "select"]);
+  SELECTION_EVENTS.has(type) ||
+  FULLSCREEN_EVENTS.has(type) ||
+  VENDOR_USER_EVENTS.has(type);
 
 /**
  * `onClick`, `onKeyDownCapture`, `onDoubleClick`: a React event handler prop
@@ -133,7 +107,7 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
   return isUserDrivenEventType(type) && !VALUE_EVENTS.has(type);
 };
 
-export interface NativeEventTarget {
+interface NativeEventTarget {
   addEventListener(type: string, listener: () => void): void;
   removeEventListener(type: string, listener: () => void): void;
 }
@@ -207,7 +181,7 @@ export const EVENT_LISTENER_METHODS = new Set([
   "removeListener",
 ]);
 
-export const isEventTarget = (realm: HostRealm, receiver: StaticValue): boolean =>
+const isEventTarget = (realm: HostRealm, receiver: StaticValue): boolean =>
   isNativeEventTarget(receiver) ||
   (receiver.kind === "global" && realm.isGlobalInstanceOf(receiver.name, "EventTarget"));
 

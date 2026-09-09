@@ -300,7 +300,7 @@ const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue 
         { kind: "spread", value: partialState },
       ]);
 
-export interface ClassInstanceRecord {
+interface ClassInstanceRecord {
   instance: StaticObjectValue;
   stateCell: StateCell;
   isMounted: boolean;

@@ -52,6 +52,17 @@ export const primitiveValue = (value: StaticPrimitive): StaticPrimitiveValue => 
   value,
 });
 
+export const booleanValue = (value: boolean): StaticPrimitiveValue =>
+  value ? TRUE_VALUE : FALSE_VALUE;
+
+export const isUndefinedValue = (value: StaticValue | undefined): boolean =>
+  value === undefined || (value.kind === "primitive" && value.value === undefined);
+
+export const isFunctionValue = (
+  value: StaticValue | undefined,
+): value is Extract<StaticValue, { kind: "function" | "native-function" }> =>
+  value?.kind === "function" || value?.kind === "native-function";
+
 export const unknownValue = (
   reason: string,
   location: SourceLocation | null = null,
@@ -148,7 +159,7 @@ export const partialJsonValue = (json: JsonValue, name: string): StaticValue => 
 };
 
 /** Evaluates the module export a captured node referenced; null when the module is not part of the analyzed project. */
-export interface CapturedExportResolver {
+interface CapturedExportResolver {
   (reference: CapturedExportReference): StaticValue | null;
 }
 
@@ -547,19 +558,6 @@ export const getOwnPropertyDescriptor = (
     enumerable: primitiveValue(isEnumerable),
     configurable: isConfigurable,
   });
-};
-
-/** `Object.getOwnPropertyDescriptors(object)`, or null when a dynamic spread could own a key. */
-export const getOwnPropertyDescriptors = (object: StaticObjectValue): StaticObjectValue | null => {
-  const ownKeys = getKnownOwnKeys(object, () => true);
-  if (!ownKeys) return null;
-  const descriptors: Record<string, StaticValue> = {};
-  for (const key of ownKeys.keys()) {
-    const descriptor = getOwnPropertyDescriptor(object, key);
-    if (descriptor === null) return null;
-    descriptors[key] = descriptor;
-  }
-  return objectFromRecord(descriptors);
 };
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
@@ -970,13 +968,17 @@ const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boo
   if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
   if (other.kind === "primitive") {
     if (typeof other.value !== typed.primitiveType) return false;
-    return typed.stringShape && typeof other.value === "string" && !mayMatchStringShape(typed.stringShape, other.value)
+    return typed.stringShape &&
+      typeof other.value === "string" &&
+      !mayMatchStringShape(typed.stringShape, other.value)
       ? false
       : null;
   }
   if (other.kind === "unknown-primitive") {
     if (other.primitiveType !== "any" && other.primitiveType !== typed.primitiveType) return false;
-    return typed.stringShape && other.stringShape && !mayMatchStringShape(typed.stringShape, other.stringShape)
+    return typed.stringShape &&
+      other.stringShape &&
+      !mayMatchStringShape(typed.stringShape, other.stringShape)
       ? false
       : null;
   }
@@ -1017,7 +1019,10 @@ const isEitherSuffix = (left: string, right: string): boolean =>
   left.endsWith(right) || right.endsWith(left);
 
 /** Whether some string could read as both compositions, so a write under one may be read under the other. */
-export const mayOverlapCompositions = (left: StringComposition, right: StringComposition): boolean =>
+export const mayOverlapCompositions = (
+  left: StringComposition,
+  right: StringComposition,
+): boolean =>
   isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
 
 /**
@@ -1084,7 +1089,13 @@ const getComposedSpreadProperty = (
         alternative === "absent" ? UNDEFINED_VALUE : alternative,
       );
       return values.every((value) => value !== null)
-        ? branchValue(values, spread.reason, spread.location, spread.preferredIndex, spread.predicate)
+        ? branchValue(
+            values,
+            spread.reason,
+            spread.location,
+            spread.preferredIndex,
+            spread.predicate,
+          )
         : null;
     }
     default:
@@ -1469,12 +1480,19 @@ const compareEquivalence = (
       return (
         right.kind === "list" &&
         left.items.length === right.items.length &&
-        left.items.every((item, index) => areValuesEquivalent(item, right.items[index], depth + 1, compared))
+        left.items.every((item, index) =>
+          areValuesEquivalent(item, right.items[index], depth + 1, compared),
+        )
       );
     case "repeat":
-      return right.kind === "repeat" && areValuesEquivalent(left.item, right.item, depth + 1, compared);
+      return (
+        right.kind === "repeat" && areValuesEquivalent(left.item, right.item, depth + 1, compared)
+      );
     case "optional":
-      return right.kind === "optional" && areValuesEquivalent(left.value, right.value, depth + 1, compared);
+      return (
+        right.kind === "optional" &&
+        areValuesEquivalent(left.value, right.value, depth + 1, compared)
+      );
     case "element":
       return (
         right.kind === "element" &&
@@ -1636,15 +1654,6 @@ export const branchValue = (
   };
 };
 
-export const isRenderableValue = (value: StaticValue): boolean =>
-  value.kind === "element" ||
-  value.kind === "list" ||
-  value.kind === "repeat" ||
-  value.kind === "primitive" ||
-  value.kind === "unknown-primitive" ||
-  value.kind === "branch" ||
-  value.kind === "unknown";
-
 const getAgreedTruthiness = (alternatives: StaticValue[]): boolean | null => {
   const truthiness = alternatives.map(getTruthiness);
   return truthiness.every((entry) => entry === truthiness[0]) ? (truthiness[0] ?? null) : null;
@@ -1768,12 +1777,12 @@ export const falsyCounterpart = (value: StaticValue): StaticValue => {
 
 export const mapValue = (
   value: StaticValue,
-  transform: (alternative: StaticValue) => StaticValue,
+  transform: (alternative: StaticValue, index: number) => StaticValue,
 ): StaticValue => {
-  if (value.kind !== "branch") return transform(value);
+  if (value.kind !== "branch") return transform(value, 0);
   return branchValue(
     value.alternatives.map((alternative, index) =>
-      selectCorrelated(transform(alternative), value, index),
+      selectCorrelated(transform(alternative, index), value, index),
     ),
     value.reason,
     value.location,
@@ -1838,6 +1847,17 @@ export const distributeBinary = (
   right: StaticValue,
   operation: (leftAlternative: StaticValue, rightAlternative: StaticValue) => StaticValue,
 ): StaticValue | null => {
+  if (
+    left.kind === "branch" &&
+    right.kind === "branch" &&
+    left.predicate !== null &&
+    left.predicate === right.predicate &&
+    left.alternatives.length === right.alternatives.length
+  ) {
+    return mapValue(left, (alternative, index) =>
+      operation(alternative, right.alternatives[index]),
+    );
+  }
   if (countAlternatives(left) * countAlternatives(right) > MAX_DISTRIBUTED_ALTERNATIVES)
     return null;
   if (left.kind === "branch") {
@@ -1849,8 +1869,155 @@ export const distributeBinary = (
   return null;
 };
 
-export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>
-  value.kind === "primitive" ? value.value : undefined;
+type StructureDecision = string | StaticBranchValue;
+
+interface StructureInstance {
+  value: StaticValue;
+  decisions: Map<StructureDecision, number>;
+  isPreferred: boolean;
+}
+
+interface SequenceInstance {
+  values: StaticValue[];
+  decisions: Map<StructureDecision, number>;
+  isPreferred: boolean;
+}
+
+interface StructureExpansion {
+  limit: number;
+  firstBranch: StaticBranchValue | null;
+}
+
+const expandSequence = (
+  values: StaticValue[],
+  decisions: Map<StructureDecision, number>,
+  isPreferred: boolean,
+  expansion: StructureExpansion,
+): SequenceInstance[] | null => {
+  let partials: SequenceInstance[] = [{ values: [], decisions, isPreferred }];
+  for (const value of values) {
+    const next: SequenceInstance[] = [];
+    for (const partial of partials) {
+      const instances = expandStructure(value, partial.decisions, partial.isPreferred, expansion);
+      if (instances === null) return null;
+      for (const instance of instances) {
+        next.push({
+          values: [...partial.values, instance.value],
+          decisions: instance.decisions,
+          isPreferred: instance.isPreferred,
+        });
+      }
+      if (next.length > expansion.limit) return null;
+    }
+    partials = next;
+  }
+  return partials;
+};
+
+const expandStructure = (
+  value: StaticValue,
+  decisions: Map<StructureDecision, number>,
+  isPreferred: boolean,
+  expansion: StructureExpansion,
+): StructureInstance[] | null => {
+  switch (value.kind) {
+    case "branch": {
+      expansion.firstBranch ??= value;
+      const key: StructureDecision = value.predicate ?? value;
+      const decided = decisions.get(key);
+      if (decided !== undefined && decided < value.alternatives.length) {
+        return expandStructure(value.alternatives[decided], decisions, isPreferred, expansion);
+      }
+      const instances: StructureInstance[] = [];
+      for (const [index, alternative] of value.alternatives.entries()) {
+        const chosen = new Map(decisions).set(key, index);
+        const expanded = expandStructure(
+          alternative,
+          chosen,
+          isPreferred && index === value.preferredIndex,
+          expansion,
+        );
+        if (expanded === null) return null;
+        instances.push(...expanded);
+        if (instances.length > expansion.limit) return null;
+      }
+      return instances;
+    }
+    case "object": {
+      const expanded = expandSequence(
+        value.entries.map((entry) => entry.value),
+        decisions,
+        isPreferred,
+        expansion,
+      );
+      return (
+        expanded?.map((instance) => ({
+          value: instance.values.every(
+            (entryValue, index) => entryValue === value.entries[index].value,
+          )
+            ? value
+            : {
+                ...value,
+                entries: value.entries.map((entry, index) => ({
+                  ...entry,
+                  value: instance.values[index],
+                })),
+              },
+          decisions: instance.decisions,
+          isPreferred: instance.isPreferred,
+        })) ?? null
+      );
+    }
+    case "list": {
+      const expanded = expandSequence(value.items, decisions, isPreferred, expansion);
+      return (
+        expanded?.map((instance) => ({
+          value: instance.values.every((item, index) => item === value.items[index])
+            ? value
+            : { ...value, items: instance.values },
+          decisions: instance.decisions,
+          isPreferred: instance.isPreferred,
+        })) ?? null
+      );
+    }
+    default:
+      return [{ value, decisions, isPreferred }];
+  }
+};
+
+/**
+ * Hoists branches nested anywhere inside an object or list into one branch of
+ * fully concrete structures. Branches sharing a predicate take the same
+ * alternative in every instance. Past `limit` instances the value is returned
+ * as is, still holding its branches.
+ */
+export const distributeObjectBranches = (
+  value: StaticValue,
+  limit = MAX_DISTRIBUTED_ALTERNATIVES,
+): StaticValue => {
+  const expansion: StructureExpansion = { limit, firstBranch: null };
+  const instances = expandStructure(value, new Map(), true, expansion);
+  if (instances === null || instances.length < 2 || expansion.firstBranch === null) return value;
+  if (
+    value.kind === "branch" &&
+    instances.every((instance, index) => instance.value === value.alternatives[index])
+  ) {
+    return value;
+  }
+  const keys = new Set(instances.flatMap((instance) => [...instance.decisions.keys()]));
+  const [onlyKey] = keys;
+  const predicate = keys.size === 1 && typeof onlyKey === "string" ? onlyKey : null;
+  return branchValue(
+    instances.map((instance) => instance.value),
+    expansion.firstBranch.reason,
+    expansion.firstBranch.location,
+    Math.max(
+      0,
+      instances.findIndex((instance) => instance.isPreferred),
+    ),
+    predicate,
+  );
+};
 
 export const isIndefiniteItem = (item: StaticValue): boolean =>
   item.kind === "repeat" || item.kind === "optional";

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { parseWithSchema } from "./errors.js";
 
-export interface PackageManifest {
+interface PackageManifest {
   name?: string;
   version?: string;
   dependencies?: Record<string, string>;

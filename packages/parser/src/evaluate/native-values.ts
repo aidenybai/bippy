@@ -1,3 +1,4 @@
+import { describeError } from "../errors.js";
 import type {
   StaticListValue,
   StaticNativeFunctionValue,
@@ -8,12 +9,14 @@ import type {
   StringComposition,
   StubRenderTools,
 } from "../types.js";
-import { element, nativeFunction } from "../frameworks/stubs.js";
+import { element, nativeFunction } from "./stubs.js";
 import type { HostDocument } from "../host/host-document.js";
-import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
+import type { HostRealm } from "../host/host-realm.js";
+import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
+import { isUrlValue, toNativeUrl } from "./url.js";
 import {
   branchValue,
   getKnownObjectKeys,
@@ -90,42 +93,71 @@ const mayReadComposedExpando = (object: StaticNativeObjectValue, name: string): 
     .get(object.value)
     ?.some((expando) => matchesComposition(name, expando.key)) === true;
 
+/** Members by name and the interfaces declaring them, from `Interface.member` entries. */
+const classifyMembers = (entries: string[]): ReadonlyMap<string, string[]> => {
+  const byMember = new Map<string, string[]>();
+  for (const entry of entries) {
+    const separator = entry.lastIndexOf(".");
+    const memberName = entry.slice(separator + 1);
+    byMember.set(memberName, [...(byMember.get(memberName) ?? []), entry.slice(0, separator)]);
+  }
+  return byMember;
+};
+
+/** Whether the realm declares `interfaceName` to inherit `memberName` from an interface the classification names. */
+const isClassifiedMember = (
+  realm: HostRealm,
+  classification: ReadonlyMap<string, string[]>,
+  interfaceName: string,
+  memberName: string,
+): boolean =>
+  classification
+    .get(memberName)
+    ?.some((declaringInterface) => realm.isSubtype(interfaceName, declaringInterface)) === true;
+
 /**
  * Members whose runtime value depends on layout, which the static document
  * never performs: every box is zero-sized here, so reading one is a guess.
  */
-const LAYOUT_MEMBERS = new Set([
-  "getBoundingClientRect",
-  "getClientRects",
-  "offsetWidth",
-  "offsetHeight",
-  "offsetTop",
-  "offsetLeft",
-  "offsetParent",
-  "clientWidth",
-  "clientHeight",
-  "clientTop",
-  "clientLeft",
-  "scrollWidth",
-  "scrollHeight",
-  "scrollTop",
-  "scrollLeft",
-  "checkVisibility",
-  "elementFromPoint",
-  "elementsFromPoint",
-  "caretRangeFromPoint",
-  "caretPositionFromPoint",
+export const LAYOUT_MEMBERS = classifyMembers([
+  "Element.getBoundingClientRect",
+  "Element.getClientRects",
+  "Element.checkVisibility",
+  "Element.clientWidth",
+  "Element.clientHeight",
+  "Element.clientTop",
+  "Element.clientLeft",
+  "Element.scrollWidth",
+  "Element.scrollHeight",
+  "Element.scrollTop",
+  "Element.scrollLeft",
+  "HTMLElement.offsetWidth",
+  "HTMLElement.offsetHeight",
+  "HTMLElement.offsetTop",
+  "HTMLElement.offsetLeft",
+  "HTMLElement.offsetParent",
+  "Range.getBoundingClientRect",
+  "Range.getClientRects",
+  "DocumentOrShadowRoot.elementFromPoint",
+  "DocumentOrShadowRoot.elementsFromPoint",
+  "Document.caretRangeFromPoint",
+  "Document.caretPositionFromPoint",
 ]);
 
 /** Canvas members whose value comes from rasterizing, which the static document only answers with placeholders. */
-const RASTER_MEMBERS = new Set([
-  "getContext",
-  "toDataURL",
-  "toBlob",
-  "captureStream",
-  "transferControlToOffscreen",
+export const RASTER_MEMBERS = classifyMembers([
+  "HTMLCanvasElement.getContext",
+  "HTMLCanvasElement.toDataURL",
+  "HTMLCanvasElement.toBlob",
+  "HTMLCanvasElement.captureStream",
+  "HTMLCanvasElement.transferControlToOffscreen",
 ]);
 
+/**
+ * Declarations do not say whether a method mutates its receiver; a method
+ * named like an accessor is trusted to leave it as it was, any other one run
+ * on arguments the analysis cannot see makes the receiver unknown.
+ */
 const PURE_METHOD_PREFIXES = [
   "get",
   "has",
@@ -203,6 +235,7 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
       return items;
     }
     case "object": {
+      if (isUrlValue(value)) return toNativeUrl(value) ?? UNCERTAIN;
       const keys = getKnownObjectKeys(value);
       if (keys === null) return UNCERTAIN;
       const record: Record<string, unknown> = {};
@@ -243,9 +276,6 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
   try {
     return call();
@@ -254,7 +284,7 @@ const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => 
   }
 };
 
-export interface NativeCallFallback {
+interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
@@ -434,19 +464,60 @@ export const getNativeObjectMember = (
   } catch (error) {
     return unknownValue(`${name} threw: ${describeError(error)}`);
   }
-  if (LAYOUT_MEMBERS.has(key)) {
-    return typeof member === "function"
-      ? nativeFunction(name, () => unknownValue(`${name}() depends on layout`))
-      : unknownPrimitiveValue("number", `${name} depends on layout`);
-  }
-  if (RASTER_MEMBERS.has(key) && typeof member === "function") {
-    return nativeFunction(name, () => unknownValue(`${name}() depends on rasterization`));
+  if (object.host !== null) {
+    const declared = getDeclaredMember(object.host.realm, object.value, key);
+    if (declared !== null) {
+      const classified = getClassifiedMember(object.host.realm, declared, name);
+      if (classified) return classified;
+      if (member === undefined) {
+        return unknownValue(`${name} is not implemented by the static document`);
+      }
+    }
   }
   if (typeof member !== "function") return fromNativeValue(member, name, object.host);
   return pureNativeFunction(name, member, object.value, object.host, () => {
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
     return unknownValue(`${name}() on dynamic arguments`);
   });
+};
+
+interface DeclaredMember {
+  interfaceName: string;
+  memberName: string;
+  member: HostMember;
+}
+
+/** What the host's declarations say of a member of a native object; null for objects of no declared interface. */
+const getDeclaredMember = (realm: HostRealm, value: object, key: string): DeclaredMember | null => {
+  const interfaceName = getNativeInterfaceName(value);
+  const member = realm.getMember(interfaceName, key);
+  return member === null ? null : { interfaceName, memberName: key, member };
+};
+
+/**
+ * The stand-in for a member the static document cannot answer (layout,
+ * rasterization), shaped by its declared kind; null for members it answers.
+ */
+const getClassifiedMember = (
+  realm: HostRealm,
+  { interfaceName, memberName, member }: DeclaredMember,
+  name: string,
+): StaticValue | null => {
+  if (isClassifiedMember(realm, LAYOUT_MEMBERS, interfaceName, memberName)) {
+    if (member.type.kind === "function") {
+      return nativeFunction(name, () => unknownValue(`${name}() depends on layout`));
+    }
+    return member.type.kind === "number"
+      ? unknownPrimitiveValue("number", `${name} depends on layout`)
+      : unknownValue(`${name} depends on layout`);
+  }
+  if (
+    member.type.kind === "function" &&
+    isClassifiedMember(realm, RASTER_MEMBERS, interfaceName, memberName)
+  ) {
+    return nativeFunction(name, () => unknownValue(`${name}() depends on rasterization`));
+  }
+  return null;
 };
 
 /**
@@ -580,6 +651,11 @@ export const isNativeInstanceOf = (
   interfaceName: string,
 ): boolean | null => object.host?.isInstanceOf(object.value, interfaceName) ?? null;
 
+/**
+ * Language constructors run natively because their result is a pure function
+ * of their arguments (and locale data): declarations say these exist, not
+ * that they are deterministic, which is why the list is kept by hand.
+ */
 const NATIVE_CONSTRUCTORS = {
   Date,
   ArrayBuffer,
@@ -587,7 +663,7 @@ const NATIVE_CONSTRUCTORS = {
   ...INTL_CONSTRUCTORS,
 } satisfies Record<string, Function>;
 
-export type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
+type NativeConstructorName = keyof typeof NATIVE_CONSTRUCTORS;
 
 export const isNativeConstructorName = (name: string): name is NativeConstructorName =>
   Object.hasOwn(NATIVE_CONSTRUCTORS, name);
@@ -606,7 +682,12 @@ export const constructNativeObject = (
   }
 };
 
-const DOCUMENT_NATIVE_MEMBERS = new Set([
+/**
+ * `Document` members the static document answers like a fresh page's: its tree
+ * roots and node factories, parser facts, and the focus and selection nothing
+ * has touched. Page state (`cookie`, `title`, `readyState`) stays modeled.
+ */
+export const DOCUMENT_SERVED_MEMBERS = new Set([
   "body",
   "documentElement",
   "head",
@@ -633,18 +714,8 @@ const DOCUMENT_NATIVE_MEMBERS = new Set([
   "adoptNode",
 ]);
 
-/** Queries the page's own markup answers; without the page's HTML shell the static document only holds what React rendered, so an empty answer is a guess. */
-const DOCUMENT_QUERY_METHODS = new Set([
-  "getElementById",
-  "querySelector",
-  "querySelectorAll",
-  "getElementsByTagName",
-  "getElementsByClassName",
-  "getElementsByName",
-]);
-
-/** Members the host window answers for a freshly loaded page at the configured viewport. */
-const WINDOW_NATIVE_MEMBERS = new Set([
+/** `Window` members the host window answers for a freshly loaded page at the configured viewport. */
+export const WINDOW_SERVED_MEMBERS = new Set([
   "getSelection",
   "innerWidth",
   "innerHeight",
@@ -657,6 +728,17 @@ const WINDOW_NATIVE_MEMBERS = new Set([
   "scrollY",
 ]);
 
+/** A method declared to answer with the nodes it finds: a nullable node or a node collection. */
+const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
+  const { returnType } = member;
+  if (member.type.kind !== "function" || returnType === null || returnType.interfaceName === null)
+    return false;
+  return returnType.isNullable
+    ? realm.isSubtype(returnType.interfaceName, "Node")
+    : realm.isSubtype(returnType.interfaceName, "NodeList") ||
+        realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
+};
+
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||
   (typeof value === "object" && value !== null && Reflect.get(value, "length") === 0);
@@ -665,6 +747,8 @@ const isEmptyQueryResult = (value: unknown): boolean =>
  * A member of `document` or the global object (`objectPath` empty) served by the
  * host document React renders into, so nodes, ranges and selections the program
  * creates are the real ones; null for members the interpreter models itself.
+ * Without the page's HTML shell the static document only holds what React
+ * rendered, so a tree query finding nothing is a guess.
  */
 export const getHostDocumentMember = (
   host: HostDocument,
@@ -675,26 +759,30 @@ export const getHostDocumentMember = (
   if (!isDocument && objectPath !== "") return null;
   const target = isDocument ? host.document : host.globalObject;
   const name = isDocument ? `document.${member}` : member;
-  if (isDocument && DOCUMENT_QUERY_METHODS.has(member)) {
-    const query: unknown = Reflect.get(target, member);
-    if (typeof query !== "function") return null;
-    return nativeFunction(name, (args) => {
-      const natives = toNativeArguments(args, host);
-      if (natives === null) return unknownValue(`${name}() on dynamic arguments`);
-      return guardNativeCall(name, () => {
-        const found: unknown = Reflect.apply(query, target, natives);
-        return isEmptyQueryResult(found) && !host.hasKnownMarkup
-          ? unknownValue(`${name}() finds nothing in the static document`)
-          : fromNativeValue(found, `${name}()`, host);
-      });
-    });
-  }
-  if (!(isDocument ? DOCUMENT_NATIVE_MEMBERS : WINDOW_NATIVE_MEMBERS).has(member)) return null;
+  const declared = getDeclaredMember(host.realm, target, member);
+  if (declared === null) return null;
+  const isQuery = isDocument && isTreeQuery(host.realm, declared.member);
+  if (!isQuery && !(isDocument ? DOCUMENT_SERVED_MEMBERS : WINDOW_SERVED_MEMBERS).has(member))
+    return null;
+  const classified = getClassifiedMember(host.realm, declared, name);
+  if (classified) return classified;
   const value: unknown = Reflect.get(target, member);
   if (value === undefined) return null;
-  return typeof value === "function"
-    ? pureNativeFunction(name, value, target, host, () =>
-        unknownValue(`${name}() on dynamic arguments`),
-      )
-    : fromNativeValue(value, name, host);
+  if (declared.member.type.kind !== "function") return fromNativeValue(value, name, host);
+  if (typeof value !== "function") return null;
+  if (!isQuery) {
+    return pureNativeFunction(name, value, target, host, () =>
+      unknownValue(`${name}() on dynamic arguments`),
+    );
+  }
+  return nativeFunction(name, (args) => {
+    const natives = toNativeArguments(args, host);
+    if (natives === null) return unknownValue(`${name}() on dynamic arguments`);
+    return guardNativeCall(name, () => {
+      const found: unknown = Reflect.apply(value, target, natives);
+      return isEmptyQueryResult(found) && !host.hasKnownMarkup
+        ? unknownValue(`${name}() finds nothing in the static document`)
+        : fromNativeValue(found, `${name}()`, host);
+    });
+  });
 };

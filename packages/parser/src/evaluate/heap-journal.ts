@@ -117,11 +117,11 @@ const isUnchanged = <Item>(paths: Item[][], original: Item[]): boolean =>
 const isEquivalentEntry = (left: StaticObjectEntry, right: StaticObjectEntry): boolean =>
   left.kind === "property" && right.kind === "property"
     ? left.key === right.key &&
-        left.isEnumerable === right.isEnumerable &&
-        areValuesEquivalent(left.value, right.value)
+      left.isEnumerable === right.isEnumerable &&
+      areValuesEquivalent(left.value, right.value)
     : left.kind === "spread" &&
-        right.kind === "spread" &&
-        areValuesEquivalent(left.value, right.value);
+      right.kind === "spread" &&
+      areValuesEquivalent(left.value, right.value);
 
 const isEquivalentPending = (left: PendingUpdate, right: PendingUpdate): boolean =>
   (left.next === null || right.next === null
@@ -131,8 +131,11 @@ const isEquivalentPending = (left: PendingUpdate, right: PendingUpdate): boolean
 
 const isEquivalentListState = (left: ListState, right: ListState): boolean =>
   isSameState(left.items, right.items, areValuesEquivalent) &&
-  isSameState([...(left.properties ?? [])], [...(right.properties ?? [])], ([leftKey, leftValue], [rightKey, rightValue]) =>
-    leftKey === rightKey && areValuesEquivalent(leftValue, rightValue),
+  isSameState(
+    [...(left.properties ?? [])],
+    [...(right.properties ?? [])],
+    ([leftKey, leftValue], [rightKey, rightValue]) =>
+      leftKey === rightKey && areValuesEquivalent(leftValue, rightValue),
   );
 
 /** The state every path left, when the paths agree on it. */

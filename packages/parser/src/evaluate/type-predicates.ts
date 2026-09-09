@@ -4,7 +4,7 @@ import { getKnownObjectKeys } from "./values.js";
 const ELEMENT_TYPE_TAG_KEY = "$$typeof";
 
 /** Whether `value` satisfies a runtime type test; `null` when the value does not decide it. */
-export interface TypePredicate {
+interface TypePredicate {
   (value: StaticValue): boolean | null;
 }
 
@@ -34,7 +34,7 @@ export const isElementValue: TypePredicate = (value) => {
 export const isArrayValue: TypePredicate = (value) =>
   value.kind === "list" || value.kind === "repeat" ? true : isUndecided(value) ? null : false;
 
-export interface CalleeTypePredicate {
+interface CalleeTypePredicate {
   name: string;
   test: TypePredicate;
 }

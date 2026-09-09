@@ -10,10 +10,7 @@ import {
 } from "./expo-bundler.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver, ModuleResolverOptions } from "./module-resolver.js";
-
-const VITE_CONFIG_FILES = ["js", "mjs", "cjs", "ts", "mts", "cts"].map(
-  (extension) => `vite.config.${extension}`,
-);
+import { findViteConfig } from "./vite-config.js";
 
 /** Vite 8 transpiles with Oxc; in earlier majors these React plugins take over from `vite:esbuild`. */
 const LAST_ESBUILD_VITE_MAJOR = 7;
@@ -33,14 +30,11 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
-const findViteConfig = (rootDirectory: string): string | undefined =>
-  VITE_CONFIG_FILES.map((fileName) => path.join(rootDirectory, fileName)).find((candidate) =>
-    existsSync(candidate),
-  );
-
-export const detectModuleBundler = (rootDirectory: string): ModuleBundler => {
-  if (findViteConfig(rootDirectory) !== undefined) return "vite";
-  return findExpoCliDirectory(rootDirectory) === null ? "unknown" : "expo";
+export const detectModuleBundler = (...directories: string[]): ModuleBundler => {
+  if (directories.some((directory) => findViteConfig(directory) !== undefined)) return "vite";
+  return directories.some((directory) => findExpoCliDirectory(directory) !== null)
+    ? "expo"
+    : "unknown";
 };
 
 /** The Metro platform a bundler targets when the entry does not say: Expo's dev server serves the `web` bundle to browsers. */
@@ -62,7 +56,9 @@ export const getBundlerResolverOptions = (
 export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
   if (bundler === "expo") {
     const expoCliDirectory = findExpoCliDirectory(rootDirectory);
-    return expoCliDirectory === null ? null : readExpoDocumentShell(rootDirectory, expoCliDirectory);
+    return expoCliDirectory === null
+      ? null
+      : readExpoDocumentShell(rootDirectory, expoCliDirectory);
   }
   if (bundler !== "vite") return null;
   const indexPath = path.join(rootDirectory, "index.html");

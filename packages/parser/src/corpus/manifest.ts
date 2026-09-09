@@ -78,7 +78,7 @@ export interface CorpusEntry {
   notes?: string;
 }
 
-export interface CorpusManifest {
+interface CorpusManifest {
   entries: CorpusEntry[];
 }
 
