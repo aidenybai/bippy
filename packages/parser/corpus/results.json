@@ -97,7 +97,7 @@
         "fibers": 1000,
         "commits": 32,
         "pageErrors": [],
-        "title": "Dashboard \u2014 Free Tailwind 4 React Next Typescript dashboard template"
+        "title": "Dashboard — Free Tailwind 4 React Next Typescript dashboard template"
       },
       "static": {
         "stats": {
@@ -231,8 +231,8 @@
       "id": "bookshelf",
       "revision": "32e9e87db958de863bead65761bfbe2dec0eafd4",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T19:53:46.215Z",
-      "durationMs": 331,
+      "capturedAt": "2026-09-08T23:54:10.541Z",
+      "durationMs": 325,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -256,6 +256,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 64,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -267,9 +268,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 64,
         "staticFibers": 64,
         "coverage": 1,
@@ -278,10 +277,24 @@
         "stepsUsed": 64,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 3,
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": "AppProviders",
       "note": "runtime replayed from 2026-09-08T13:28:16.674Z",
-      "failure": null,
-      "stateSpace": null
+      "failure": null
     },
     {
       "id": "bulletproof-react",
@@ -312,6 +325,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -324,7 +338,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -375,6 +388,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -387,7 +401,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -774,8 +787,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:42.402Z",
-      "durationMs": 577,
+      "capturedAt": "2026-09-09T00:10:37.019Z",
+      "durationMs": 72881,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -845,15 +858,15 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:49:10.139Z",
+      "note": null,
       "failure": null
     },
     {
       "id": "ephe",
       "revision": "4ba31e6cd198491dbf4834050ae804178fb412b3",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T19:55:02.504Z",
-      "durationMs": 1422,
+      "capturedAt": "2026-09-08T23:54:05.189Z",
+      "durationMs": 1535,
       "runtime": {
         "reactVersion": "19.2.6",
         "rendererName": "react-dom",
@@ -866,23 +879,19 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 262,
+          "fiberCount": 149,
           "textCount": 2,
-          "branchCount": 20,
-          "repeatCount": 1,
+          "branchCount": 1,
+          "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 12,
+          "unknownCount": 0,
           "modulesLoaded": 5215
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 2
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "matchedFibers": 137,
+        "status": "exact",
+        "matchedFibers": 142,
         "matchedText": 2,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
@@ -890,33 +899,44 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 5,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <EditorPage> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MultiDocumentEditor> [FunctionComponent] > <div> [HostComponent] > <AnimatePresence> [FunctionComponent] > <PresenceChild> [FunctionComponent] > <ContextProvider> [ContextProvider] > <PopChild> [FunctionComponent] > <PopChildMeasure> [ClassComponent]",
-            "reason": "child",
-            "absorbedFibers": 5,
-            "heads": [
-              "<motion.div> key=\"doc-0\" [ForwardRef]"
-            ]
-          }
-        ],
-        "branchesResolved": 10,
-        "branchDeviations": [],
-        "repeatIterations": 1,
-        "status": "partial",
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
         "runtimeFibers": 144,
-        "staticFibers": 170,
+        "staticFibers": 144,
         "coverage": 1,
-        "strictCoverage": 0.9652777777777778,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 153,
+        "stepsUsed": 147,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(112)",
+              "reason": "conditional on branch(null | <DocumentDock>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/ephe/src/utils/components/footer.tsx:26:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T13:28:01.716Z",
-      "failure": null,
-      "stateSpace": null
+      "failure": null
     },
     {
       "id": "epic-stack",
@@ -952,6 +972,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 689,
         "matchedText": 4,
         "opaqueSubtrees": 0,
@@ -964,7 +985,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -1275,6 +1295,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -1287,7 +1308,6 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -1403,7 +1423,7 @@
         "fibers": 1439,
         "commits": 25,
         "pageErrors": [
-          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved \u00b7 just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Home>\n      <main className=\"container ...\">\n        <WizardProvider>\n          <InvoiceMain>\n            <FormProvider control={{...}} subscribe={function subscribe} trigger={function trigger} ...>\n              <form onSubmit={function}>\n                <div className=\"grid grid-...\">\n                  <InvoiceForm>\n                    <div className=\"@container...\">\n                      <div className=\"mx-auto ma...\">\n                        <div className=\"mb-4 flex ...\">\n                          <AutosaveIndicator>\n                          <span\n+                           className=\"text-sm font-medium text-muted-foreground\"\n-                           className=\"flex items-center gap-1.5 text-xs text-muted-foreground\"\n                          >\n+                           New Invoice\n-                           Saved · just now\n                        ...\n                  ...\n                ...\n      ...\n    ...\n"
         ],
         "title": "Free Invoice Generator | Invoify"
       },
@@ -1420,6 +1440,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1093,
         "matchedText": 51,
         "opaqueSubtrees": 0,
@@ -1432,7 +1453,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -1464,8 +1484,8 @@
       "id": "jsoncrack",
       "revision": "ffd250b5cbcab410a2985f9e379ad86c644d0e57",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T19:53:47.664Z",
-      "durationMs": 4044,
+      "capturedAt": "2026-09-08T23:54:11.929Z",
+      "durationMs": 4089,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
@@ -1491,6 +1511,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1014,
         "matchedText": 9,
         "opaqueSubtrees": 0,
@@ -1502,9 +1523,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 1023,
         "staticFibers": 1023,
         "coverage": 1,
@@ -1513,10 +1532,27 @@
         "stepsUsed": 1024,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "default for stars",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T13:28:34.875Z",
-      "failure": null,
-      "stateSpace": null
+      "failure": null
     },
     {
       "id": "karakeep",
@@ -1692,6 +1728,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1704,7 +1741,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -1792,7 +1828,7 @@
             "reason": "step budget exhausted",
             "absorbedFibers": 5,
             "heads": [
-              "\"\u00a9 2026 \"",
+              "\"© 2026 \"",
               "<LinkComponent> key=\"1/.$linkwarden-website-key\" [ForwardRef]",
               "\". All rights reserved.\""
             ]
@@ -2333,7 +2369,7 @@
             "skippedFibers": 5,
             "divergence": {
               "path": "root > <body> [HostComponent] > <DirectionProvider> (opaque) > <MantineProvider> (opaque) > <ModalsProvider> (opaque) > <AppProvider> [FunctionComponent] > <QueryClientProvider> (opaque) > <DashboardLayout> [FunctionComponent] > <AppShell> (opaque) > <AppShell.Footer> (opaque) > <Text> (opaque)[0]",
-              "expected": "\"CopyRight \u00a9 2023 Jotyy\"",
+              "expected": "\"CopyRight © 2023 Jotyy\"",
               "actual": "<footer> [HostComponent]"
             }
           }
@@ -2573,7 +2609,7 @@
             "skippedFibers": 4,
             "divergence": {
               "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Component> [FunctionComponent] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeVarsProvider> (opaque) > <Fragment> [Fragment] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <DashboardLayout> [FunctionComponent] > <LayoutSection> [FunctionComponent] > <LayoutRoot> (opaque) > <LayoutSidebarContainer> (opaque) > <MainSection> [FunctionComponent] > <MainRoot> (opaque) > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Page> [FunctionComponent] > <OverviewAnalyticsView> [FunctionComponent] > <DashboardContent> [FunctionComponent] > <Container> (opaque) > <Typography> (opaque)[0]",
-              "expected": "\"Hi, Welcome back \ud83d\udc4b\"",
+              "expected": "\"Hi, Welcome back 👋\"",
               "actual": "<MuiTypographyRoot> [ForwardRef]"
             }
           },
@@ -2898,8 +2934,8 @@
       "id": "mui-admin-dashboard",
       "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T19:53:10.781Z",
-      "durationMs": 1707,
+      "capturedAt": "2026-09-08T23:53:55.603Z",
+      "durationMs": 1717,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -2923,6 +2959,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 997,
         "matchedText": 17,
         "opaqueSubtrees": 3,
@@ -2934,9 +2971,7 @@
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
-        "branchDeviations": [],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 2101,
         "staticFibers": 1017,
         "coverage": 1,
@@ -2945,10 +2980,24 @@
         "stepsUsed": 1017,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T13:27:43.694Z",
-      "failure": null,
-      "stateSpace": null
+      "failure": null
     },
     {
       "id": "next-enterprise",
@@ -3325,6 +3374,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 139,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -3337,7 +3387,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -3388,6 +3437,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3400,7 +3450,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -3697,8 +3746,8 @@
       "id": "openai-translator",
       "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T19:53:43.736Z",
-      "durationMs": 1410,
+      "capturedAt": "2026-09-08T23:54:07.788Z",
+      "durationMs": 1616,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -3722,6 +3771,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 488,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -3742,21 +3792,7 @@
           }
         ],
         "branchesResolved": 1,
-        "branchDeviations": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TranslatorPage> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SpeechRecognitionButton> [FunctionComponent]",
-            "reason": "if (branch(<boolean> | true))",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TranslatorPage> [FunctionComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SpeechRecognitionButton> [FunctionComponent][0]",
-              "expected": "<end of children>",
-              "actual": "<Button> [ForwardRef]"
-            }
-          }
-        ],
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 495,
         "staticFibers": 494,
         "coverage": 1,
@@ -3765,10 +3801,27 @@
         "stepsUsed": 496,
         "budgetExhausted": false
       },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T13:28:08.982Z",
-      "failure": null,
-      "stateSpace": null
+      "failure": null
     },
     {
       "id": "openchakra",
@@ -4057,6 +4110,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -4069,7 +4123,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -4126,6 +4179,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -4138,7 +4192,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -4204,6 +4257,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 33,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -4225,7 +4279,6 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 5571,
         "staticFibers": 33,
         "coverage": 1,
@@ -4452,8 +4505,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T23:45:41.667Z",
-      "durationMs": 136,
+      "capturedAt": "2026-09-09T00:05:23.332Z",
+      "durationMs": 10250,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -4472,11 +4525,12 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 5
+          "modulesLoaded": 7
         },
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -4489,7 +4543,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -4514,7 +4567,7 @@
         "omitted": null
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
+      "note": null,
       "failure": null
     },
     {
@@ -4686,6 +4739,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 6,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -4698,7 +4752,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -4724,8 +4777,8 @@
       "id": "regex-vis",
       "revision": "a6d920601ca44ab2d4e9cd02306510ab6d5e4b38",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T19:53:13.577Z",
-      "durationMs": 26575,
+      "capturedAt": "2026-09-09T00:03:36.016Z",
+      "durationMs": 5932,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -4738,280 +4791,985 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 1255,
-          "textCount": 20,
-          "branchCount": 49,
+          "fiberCount": 420,
+          "textCount": 4,
+          "branchCount": 11,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 42,
+          "unknownCount": 8,
           "modulesLoaded": 4852
         },
         "diagnostics": [
           {
+            "code": "budget-exhausted",
+            "count": 37
+          },
+          {
             "code": "dynamic-key",
-            "count": 3
+            "count": 1
           }
         ]
       },
       "report": {
-        "matchedFibers": 820,
-        "matchedText": 14,
+        "status": "partial",
+        "matchedFibers": 326,
+        "matchedText": 1,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 0,
-        "wildcards": [],
-        "branchesResolved": 44,
-        "branchDeviations": [
+        "wildcardAbsorbedFibers": 507,
+        "wildcards": [
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef] > <SelectItem> [ForwardRef] > <SelectItemProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <span> [HostComponent] > <SelectItemIndicator> [ForwardRef]",
-            "reason": "conditional on branch(false | <boolean> | true)",
-            "preferredIndex": 1,
-            "chosenIndex": 0,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef] > <SelectItem> [ForwardRef] > <SelectItemProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <span> [HostComponent] > <SelectItemIndicator> [ForwardRef][0]",
-              "expected": "<end of children>",
-              "actual": "<Primitive.span> [ForwardRef]"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 468,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef] > <SelectItem> [ForwardRef] > <SelectItemProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItemText> [ForwardRef]",
-            "reason": "conditional on branch(true | undefined)",
-            "preferredIndex": 1,
-            "chosenIndex": 0,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef] > <SelectItem> [ForwardRef] > <SelectItemProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItemText> [ForwardRef][1]",
-              "expected": "<end of children>",
-              "actual": "<Portal> [HostPortal]"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 13,
+            "heads": [
+              "<SelectItem> [ForwardRef]"
+            ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Characters\" [HostComponent] > <div> [HostComponent] > <div> key=\"Direct match characters\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Characters\" [HostComponent] > <div> [HostComponent] > <div> key=\"Direct match characters\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 13,
+            "heads": [
+              "<SelectItem> [ForwardRef]"
+            ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Character classes\" [HostComponent] > <div> [HostComponent] > <div> key=\"Distinguish different types of characters\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Character classes\" [HostComponent] > <div> [HostComponent] > <div> key=\"Distinguish different types of characters\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectViewport> [ForwardRef] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectGroup> [ForwardRef] > <SelectGroupProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <SelectItem> [ForwardRef] > <SelectItem> [ForwardRef] > <SelectItemProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionItemSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <Primitive.div> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 6,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Ranges\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches any one of the enclosed characters\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Ranges\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches any one of the enclosed characters\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<foreignObject> [HostComponent]"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <ModeToggle> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 4,
+            "heads": [
+              "<div> [HostComponent]"
+            ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Ranges\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches anything that is not enclosed in the brackets\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Ranges\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches anything that is not enclosed in the brackets\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<foreignObject> [HostComponent]"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <a> [HostComponent] > <div> [HostComponent] > <ForwardRef> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 2,
+            "heads": [
+              "<svg> [HostComponent]"
+            ]
           },
           {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Choice\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches either \\\"x\\\" or \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <ChoiceName> [SimpleMemoComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Fragment> key=\"0\" [Fragment] > <Nodes> key=\"0\" [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Choice\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches either \\\"x\\\" or \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <ChoiceName> [SimpleMemoComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Fragment> key=\"0\" [Fragment] > <Nodes> key=\"0\" [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Choice\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches either \\\"x\\\" or \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <ChoiceName> [SimpleMemoComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Fragment> key=\"1\" [Fragment] > <Nodes> key=\"1\" [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Choice\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches either \\\"x\\\" or \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <ChoiceName> [SimpleMemoComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Fragment> key=\"1\" [Fragment] > <Nodes> key=\"1\" [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches x and remembers the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches x and remembers the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<foreignObject> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches x and remembers the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches x and remembers the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" but does not remember the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" but does not remember the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" but does not remember the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" but does not remember the match\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" and stores it on the groups property of the returned matches under the name specified by <Name>\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Group\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" and stores it on the groups property of the returned matches under the name specified by <Name>\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Back reference\" [HostComponent] > <div> [HostComponent] > <div> key=\"A back reference to match group #1\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Back reference\" [HostComponent] > <div> [HostComponent] > <div> key=\"A back reference to match group #1\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Back reference\" [HostComponent] > <div> [HostComponent] > <div> key=\"A back reference to match group #Name\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Back reference\" [HostComponent] > <div> [HostComponent] > <div> key=\"A back reference to match group #Name\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Assertion\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches the beginning of input\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Assertion\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches the beginning of input\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Assertion\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" only if \\\"x\\\" is followed by \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Assertion\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" only if \\\"x\\\" is followed by \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Assertion\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" only if \\\"x\\\" is followed by \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent]",
-            "reason": "&& on <boolean: !== on dynamic values>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <Legend> [FunctionComponent] > <div> [HostComponent] > <div> key=\"Assertion\" [HostComponent] > <div> [HostComponent] > <div> key=\"Matches \\\"x\\\" only if \\\"x\\\" is followed by \\\"y\\\"\" [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <Provider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrateAtoms> [FunctionComponent] > <ASTGraph> [SimpleMemoComponent] > <svg> [HostComponent] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <GroupLikeGroup> [FunctionComponent] > <Content> [FunctionComponent] > <g> [HostComponent] > <Fragment> [Fragment] > <Nodes> [SimpleMemoComponent] > <Fragment> [Fragment] > <SimpleNode> [FunctionComponent] > <NameAndQuantifier> [FunctionComponent][0]",
-              "expected": "<Fragment> [Fragment]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
-            "reason": "&& on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
-              "expected": "<EditTab> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent]",
-            "reason": "&& on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <TabsContent> [ForwardRef] > <TabsContent> [ForwardRef] > <Presence> [FunctionComponent] > <Primitive.div> [ForwardRef] > <div> [HostComponent][0]",
-              "expected": "<TestTab> [FunctionComponent]",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaScrollbar> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent]",
-            "reason": "conditional on <boolean: includes()>",
-            "preferredIndex": 0,
-            "chosenIndex": 1,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <Routes> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <Editor> [FunctionComponent] > <Tabs> [ForwardRef] > <TabsProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Tooltip> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TooltipProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ScrollArea> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaScrollbar> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
-              "expected": "<ForwardRef> [ForwardRef]",
-              "actual": "<end of children>"
-            }
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <div> [HostComponent] > <SimpleMemoComponent> [SimpleMemoComponent] > <header> [HostComponent] > <div> [HostComponent] > <LanguageSelect> [FunctionComponent] > <Select> [FunctionComponent] > <Popper> [FunctionComponent] > <PopperProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionProvider> [FunctionComponent] > <SelectCollectionProviderProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectContent> [ForwardRef] > <SelectPortal> [FunctionComponent] > <Portal> [ForwardRef] > <Portal> [HostPortal] > <Primitive.div> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <SelectContent> [ForwardRef] > <Portal> [HostPortal] > <SelectContentProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SelectCollectionSlot> [ForwardRef] > <Slot> [ForwardRef] > <SlotClone> [ForwardRef] > <div> [HostComponent] > <SelectScrollDownButton> [ForwardRef]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 1,
+            "heads": [
+              "<SelectScrollDownButton> [ForwardRef]"
+            ]
           }
         ],
+        "branchesResolved": 11,
         "repeatIterations": 0,
-        "status": "partial",
         "runtimeFibers": 834,
-        "staticFibers": 1059,
+        "staticFibers": 377,
         "coverage": 1,
-        "strictCoverage": 1,
+        "strictCoverage": 0.3920863309352518,
         "divergence": null,
-        "stepsUsed": 928,
+        "stepsUsed": 352,
         "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 5,
+              "commitCount": 6
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45891)",
+              "reason": "conditional on branch(false | <boolean> | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24583)",
+              "reason": "conditional on unknown(new DocumentFragment())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24589)",
+              "reason": "conditional on branch(true | <boolean> | false)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45894)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24597)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45897)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24605)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(45900)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24634)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(39096)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42296)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "omissions": [
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "transition",
+                  "commit": 2,
+                  "commitCount": 6
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24601)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24605)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24609)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24613)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24617)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24621)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24625)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24629)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24633)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24634)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(39096)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42296)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42296)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24601)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24605)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24609)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24613)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24617)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24621)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24625)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24629)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24633)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24634)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(39096)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24634)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24601)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24605)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24609)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24613)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24617)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24621)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24625)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24629)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24633)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24613)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24601)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24605)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24609)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24609)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24601)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24605)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24605)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24601)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24601)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24597)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24597)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24593)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24593)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24589)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24589)",
+              "reason": "conditional on branch(true | <boolean> | false)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(24583)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(24583)",
+              "reason": "conditional on unknown(new DocumentFragment())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(20671)",
+                  "reason": "conditional on branch(false | <boolean> | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(20671)",
+              "reason": "conditional on branch(false | <boolean> | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+              "alternativeIndex": 1,
+              "conditions": []
+            }
+          ]
+        }
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T13:27:51.361Z",
-      "failure": null,
-      "stateSpace": null
+      "failure": null
     },
     {
       "id": "saas-boilerplate",
@@ -5465,6 +6223,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -5477,7 +6236,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -5864,8 +6622,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T23:45:42.040Z",
-      "durationMs": 73,
+      "capturedAt": "2026-09-09T00:05:41.053Z",
+      "durationMs": 16649,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -5889,6 +6647,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -5901,7 +6660,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -5920,7 +6678,7 @@
         "omitted": null
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
+      "note": null,
       "failure": null
     },
     {
@@ -5952,6 +6710,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 215,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -5964,7 +6723,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -6015,6 +6773,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -6027,7 +6786,6 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
