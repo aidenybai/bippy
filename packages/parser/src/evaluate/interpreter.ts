@@ -293,6 +293,7 @@ import {
   jsonValue,
   objectFromRecord,
   objectValue,
+  setObjectProperty,
   deleteObjectProperty,
   omitObjectKeys,
   partialJsonValue,
@@ -819,6 +820,37 @@ export class Interpreter {
 
   getWindowGlobal(name: string): StaticValue {
     return this.windowGlobals.get(name) ?? unknownValue(`window.${name}`);
+  }
+
+  /**
+   * `globalThis.a.b.c = value` run by a script before the app's modules, as
+   * Vite's `@vite/env` installs the config's `define`s in dev: each missing
+   * intermediate object is created on the way.
+   */
+  assignWindowPath(dottedName: string, value: StaticValue): void {
+    const segments = dottedName.split(".");
+    if (segments.length > 1 && this.clientRealm.isGlobalAlias(segments[0])) segments.shift();
+    const [name, ...memberSegments] = segments;
+    if (memberSegments.length === 0) {
+      this.windowGlobals.set(name, value);
+      return;
+    }
+    let target = this.windowGlobals.get(name);
+    if (target?.kind !== "object") {
+      target = objectValue();
+      this.windowGlobals.set(name, target);
+    }
+    for (const segment of memberSegments.slice(0, -1)) {
+      const existing = getObjectProperty(target, segment);
+      if (existing.kind === "object") {
+        target = existing;
+        continue;
+      }
+      const created = objectValue();
+      setObjectProperty(target, segment, created);
+      target = created;
+    }
+    setObjectProperty(target, memberSegments[memberSegments.length - 1], value);
   }
 
   /** The host whose globals code in this rendering environment sees: server-rendered code runs in Node whatever the client host is. */

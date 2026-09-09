@@ -31,6 +31,8 @@ export interface ModuleGraphOptions {
   sourceFileCache?: SourceFileCache;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
+  /** Build tool exports the framework models natively, kept out of build-time source analysis. */
+  isModeledBuildToolExport?: (specifier: string, importedName: string) => boolean;
 }
 
 const describeImportedName = (imported: ImportedName): string => {
@@ -53,9 +55,17 @@ export class ModuleGraph {
   private readonly externalScopeAllowList: Set<string>;
   /** `prefix-*` entries: unscoped workspace packages sharing a name prefix. */
   private readonly externalPackagePrefixes: string[];
+  /**
+   * Modules Node executes at build time (bundler and framework config files and
+   * the packages they load): nothing bundles them, so every package they import
+   * is analyzed from source.
+   */
+  private readonly buildTimeModules = new Set<string>();
+  private readonly isModeledBuildToolExport: (specifier: string, importedName: string) => boolean;
 
   constructor(options: ModuleGraphOptions) {
     this.resolver = options.resolver;
+    this.isModeledBuildToolExport = options.isModeledBuildToolExport ?? (() => false);
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
     const allowList = options.externalPackageAllowList ?? [];
@@ -83,6 +93,13 @@ export class ModuleGraph {
     return record;
   }
 
+  /** A build-time module (see `buildTimeModules`); null when the file cannot be parsed. */
+  getBuildTimeModule(filePath: string): ModuleRecord | null {
+    const module = this.getModule(filePath);
+    if (module) this.buildTimeModules.add(module.filePath);
+    return module;
+  }
+
   /** A module from source text rather than disk; a path already added is returned as is. */
   addVirtualModule(filePath: string, sourceText: string): ModuleRecord | null {
     const cached = this.modules.get(filePath);
@@ -107,21 +124,30 @@ export class ModuleGraph {
     specifier: string,
     fromModule: ModuleRecord,
   ): ModuleRecord | ModuleResolution {
-    return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule), specifier);
+    return this.getResolvedModule(
+      this.resolveSpecifier(specifier, fromModule),
+      specifier,
+      fromModule,
+    );
   }
 
   private getResolvedModule(
     resolution: ModuleResolution,
     specifier: string,
+    fromModule: ModuleRecord,
   ): ModuleRecord | ModuleResolution {
     if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
     if (resolution.filePath === null) return resolution;
     const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
-    if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
-      return resolution;
-    }
-    return this.getModule(resolution.filePath) ?? resolution;
+    if (resolution.kind === "internal") return this.getModule(resolution.filePath) ?? resolution;
+    const isBuildTime = this.buildTimeModules.has(fromModule.filePath);
+    if (!this.shouldAnalyzePackage(resolution.packageName, isBuildTime)) return resolution;
+    return (
+      (isBuildTime
+        ? this.getBuildTimeModule(resolution.filePath)
+        : this.getModule(resolution.filePath)) ?? resolution
+    );
   }
 
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
@@ -186,8 +212,21 @@ export class ModuleGraph {
     return { names: [...names], complete };
   }
 
-  private shouldAnalyzePackage(packageName: string): boolean {
+  private isModeledExternalExport(
+    specifier: string,
+    importedName: string,
+    fromModule: ModuleRecord,
+  ): boolean {
+    return (
+      isModeledLibraryExport(specifier, importedName) ||
+      (this.buildTimeModules.has(fromModule.filePath) &&
+        this.isModeledBuildToolExport(specifier, importedName))
+    );
+  }
+
+  private shouldAnalyzePackage(packageName: string, isBuildTime: boolean): boolean {
     if (isCompilerHelperPackage(packageName) || isModeledLibraryPackage(packageName)) return false;
+    if (isBuildTime) return true;
     if (getModeledLibraryPackages(packageName).some((name) => this.isAllowListed(name))) {
       return true;
     }
@@ -212,7 +251,7 @@ export class ModuleGraph {
     if (
       resolution.kind === "external" &&
       imported.kind !== "namespace" &&
-      isModeledLibraryExport(specifier, describeImportedName(imported))
+      this.isModeledExternalExport(specifier, describeImportedName(imported), fromModule)
     ) {
       return {
         kind: "external",
@@ -222,7 +261,7 @@ export class ModuleGraph {
         filePath: resolution.filePath,
       };
     }
-    const target = this.getResolvedModule(resolution, specifier);
+    const target = this.getResolvedModule(resolution, specifier, fromModule);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
       return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);

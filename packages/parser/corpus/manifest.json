@@ -2021,7 +2021,8 @@
       "static": {
         "rootDirectory": ".",
         "appDirectory": "src/pages",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": ["next-seo"]
       }
     },
     {

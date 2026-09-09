@@ -583,6 +583,15 @@ describe("next pages router", () => {
     expect(tree).toContain("<StrictMode>");
   });
 
+  it("evaluates an installed config plugin from source without an allow list", async () => {
+    const { tree, errors } = await render("next-pages-plugin-installed", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
   it("models next/head, next/image and next/legacy/image after the current next", async () => {
     const { tree, errors } = await renderPagesWithNext("15.5.0", "/media");
     expect(errors).toEqual([]);

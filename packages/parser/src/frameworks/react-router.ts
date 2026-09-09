@@ -37,6 +37,7 @@ import type { Interpreter } from "../evaluate/interpreter.js";
 import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
 import { getInstalledModules } from "../libraries/installed-modules.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
+import { evaluateViteConfig } from "../render/vite-config.js";
 import type {
   CapturedRouterState,
   ContextDefinition,
@@ -1787,29 +1788,12 @@ export const createReactRouterModel = (
  * file; `app/root.tsx` is the implicit root route whose optional `Layout` export
  * wraps everything. Each route module's default export is its component.
  */
-/**
- * The options object passed to `vitePlugin()` from `@remix-run/dev` in the
- * Vite config, whose default export may be a `defineConfig` callback.
- */
+/** The options object passed to `vitePlugin()` from `@remix-run/dev` in the Vite config. */
 const readRemixPluginConfig = (
   interpreter: Interpreter,
   viteConfigModule: ModuleRecord,
 ): StaticValue => {
-  const exported = interpreter.evaluateModuleExport(viteConfigModule, "default");
-  const viteConfig =
-    exported.kind === "function"
-      ? interpreter.callValue(
-          exported,
-          [
-            objectFromRecord({
-              command: primitiveValue("serve"),
-              mode: primitiveValue("development"),
-            }),
-          ],
-          interpreter.createModuleContext(viteConfigModule),
-          null,
-        )
-      : exported;
+  const viteConfig = evaluateViteConfig(interpreter, viteConfigModule);
   if (viteConfig.kind !== "object") return viteConfig;
   const plugins = getObjectProperty(viteConfig, "plugins");
   if (plugins.kind !== "list") return plugins;
@@ -1929,7 +1913,7 @@ const renderFrameworkRoutes = (
   const projectDirectory = path.join(appDirectory, "..");
   const findProjectModule = (names: string[]): ModuleRecord | null =>
     names
-      .map((name) => renderer.loadModule(path.join(projectDirectory, name)))
+      .map((name) => renderer.loadBuildTimeModule(path.join(projectDirectory, name)))
       .find((module) => module !== null) ?? null;
   const configModule = findProjectModule(CONFIG_MODULE_NAMES);
   const viteConfigModule = findProjectModule(VITE_CONFIG_MODULE_NAMES);

@@ -5,7 +5,7 @@ import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
 import {
-  detectModuleBundler,
+  findViteConfig,
   detectModuleTranspiler,
   readDocumentShell,
 } from "../graph/module-transpiler.js";
@@ -26,6 +26,7 @@ import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
+  ModuleBundler,
   ModuleRecord,
   ProjectContext,
   StaticObjectValue,
@@ -35,6 +36,7 @@ import type {
 } from "../types.js";
 import { findRootRenderCalls } from "./find-root-elements.js";
 import { computeRenderStats } from "./render-stats.js";
+import { applyViteDefines } from "./vite-config.js";
 
 export interface RenderComponentOptions {
   exportName?: string;
@@ -72,6 +74,7 @@ export class StaticRenderer {
   private readonly reactVersion: string | null;
   private readonly project: ProjectContext;
   private readonly documentShell: string | null;
+  private readonly viteConfigPath: string | null;
 
   constructor(options: StaticRendererOptions) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
@@ -88,7 +91,8 @@ export class StaticRenderer {
       rootDirectory: this.options.rootDirectory,
     });
     const { rootDirectory } = this.options;
-    const bundler = detectModuleBundler(rootDirectory);
+    this.viteConfigPath = findViteConfig(rootDirectory) ?? null;
+    const bundler: ModuleBundler = this.viteConfigPath === null ? "unknown" : "vite";
     this.documentShell = readDocumentShell(rootDirectory, bundler);
     this.project = createProjectContext({
       rootDirectory,
@@ -110,6 +114,8 @@ export class StaticRenderer {
       sourceFileCache: new SourceFileCache(sourceTransforms),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
+      isModeledBuildToolExport: (specifier, importedName) =>
+        (options.externalValues?.(specifier, importedName) ?? null) !== null,
     });
   }
 
@@ -125,6 +131,11 @@ export class StaticRenderer {
 
   loadModule(filePath: string): ModuleRecord | null {
     return this.graph.getModule(this.resolvePath(filePath));
+  }
+
+  /** A bundler or framework config module Node executes at build time. */
+  loadBuildTimeModule(filePath: string): ModuleRecord | null {
+    return this.graph.getBuildTimeModule(this.resolvePath(filePath));
   }
 
   private createInterpreter(assumeOuterProviders = false): Interpreter {
@@ -148,6 +159,9 @@ export class StaticRenderer {
       settleMs: this.options.settleMs,
       timerUnderrunMs: this.options.timerUnderrunMs,
     });
+    const viteConfigModule =
+      this.viteConfigPath === null ? null : this.graph.getBuildTimeModule(this.viteConfigPath);
+    if (viteConfigModule) applyViteDefines(interpreter, viteConfigModule);
     for (const bootstrap of this.options.bootstrap ?? []) this.runBootstrap(interpreter, bootstrap);
     return interpreter;
   }

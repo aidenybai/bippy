@@ -34,7 +34,7 @@ export const evaluateNextConfig = (
     (candidate) => existsSync(candidate),
   );
   if (configPath === undefined) return null;
-  const module = renderer.loadModule(configPath);
+  const module = renderer.loadBuildTimeModule(configPath);
   if (!module) return unknownValue("next.config could not be parsed");
   const exported = interpreter.evaluateModuleExport(module, "default");
   if (exported.kind !== "function") return exported;

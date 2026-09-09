@@ -1,4 +1,4 @@
-import type { StaticObjectValue, StaticValue } from "../types.js";
+import type { StaticObjectValue, StaticValue, StringShape } from "../types.js";
 import { isThrownOutcome } from "./promises.js";
 import {
   getKnownObjectKeys,
@@ -27,7 +27,11 @@ interface SerializationState {
   propertyList: readonly string[] | null;
   gap: string;
   tools: JsonStringifyTools;
+  rootHolder: StaticValue;
 }
+
+/** The text of a serialized string opens with its quote, whatever the string. */
+const JSON_STRING_SHAPE: StringShape = { prefix: '"', length: null };
 
 class UncertainSerialization {
   constructor(readonly outcome: StaticValue) {}
@@ -144,6 +148,14 @@ const serializeValue = (
       return serializeArray(state, value, indent);
     case "object":
       return serializeObject(state, value, indent);
+    case "unknown-primitive": {
+      const reason = `JSON.stringify of ${value.reason}`;
+      if (value.primitiveType !== "string" || holder !== state.rootHolder) return uncertain(reason);
+      throw new UncertainSerialization({
+        ...unknownPrimitiveValue("string", reason),
+        stringShape: JSON_STRING_SHAPE,
+      });
+    }
     default:
       return uncertain(
         `JSON.stringify of ${value.kind === "unknown" ? value.reason : `a ${value.kind}`}`,
@@ -165,15 +177,17 @@ export const stringifyJson = (
   if (propertyList === undefined) {
     return unknownPrimitiveValue("string", "JSON.stringify with an uncertain replacer");
   }
+  const root = value ?? UNDEFINED_VALUE;
+  const holder = objectFromRecord({ "": root });
   const state: SerializationState = {
     replacer: replacer !== undefined && isFunctionValue(replacer) ? replacer : null,
     propertyList,
     gap,
     tools,
+    rootHolder: holder,
   };
   try {
-    const root = value ?? UNDEFINED_VALUE;
-    const serialized = serializeValue(state, "", root, objectFromRecord({ "": root }), "");
+    const serialized = serializeValue(state, "", root, holder, "");
     return serialized === undefined ? UNDEFINED_VALUE : primitiveValue(serialized);
   } catch (error) {
     if (error instanceof UncertainSerialization) return error.outcome;
