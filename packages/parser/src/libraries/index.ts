@@ -48,6 +48,7 @@ import {
   USE_SYNC_EXTERNAL_STORE_PACKAGES,
   useSyncExternalStoreValue,
 } from "./use-sync-external-store.js";
+import { VITE_PACKAGES, viteValue } from "./vite.js";
 
 // Libraries the harness models instead of analyzing: their runtime output
 // depends on a build-time transform (macros) or on data only present at runtime,
@@ -102,6 +103,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   },
   { packages: TANSTACK_STORE_PACKAGES, getValue: tanstackStoreValue },
   { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
+  { packages: VITE_PACKAGES, getValue: viteValue },
 ];
 
 const MODELED_PACKAGES: ReadonlySet<string> = new Set(

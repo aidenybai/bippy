@@ -41,6 +41,7 @@ import type {
   VariableDeclarator,
 } from "oxc-parser";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { getAssetModuleValue } from "../graph/asset-module.js";
 import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
@@ -146,6 +147,7 @@ import {
 } from "./session-history.js";
 import {
   BUNDLER_INJECTED_NAMES,
+  DEV_SERVER_MODE,
   isBundlerUndeclaredName,
   getInlinedNodeEnv,
   isEnvironmentObject,
@@ -352,9 +354,11 @@ interface PatternLeafAssigner {
   (leaf: BindingIdentifier | SimpleAssignmentTarget, value: StaticValue): void;
 }
 
-const UNKNOWN_PROJECT: ProjectContext = {
+export const UNKNOWN_PROJECT: ProjectContext = {
   rootDirectory: null,
   servedDirectory: null,
+  baseUrl: "/",
+  mode: DEV_SERVER_MODE,
   hasDeclaredDependency: () => false,
   readPackageVersion: () => null,
   getImportedAssetUrl: (filePath) => unknownValue(`URL the bundler emits for ${filePath}`),
@@ -366,6 +370,22 @@ const UNKNOWN_PROJECT: ProjectContext = {
   linguiCatalog: null,
   routerState: null,
   storeStates: null,
+};
+
+/** The per-file names Node gives a module (CommonJS wrapper and `import.meta`); Vite's config loader injects the same. */
+const getModulePathName = (name: string, filePath: string): StaticValue | null => {
+  switch (name) {
+    case "__dirname":
+    case "import.meta.dirname":
+      return primitiveValue(path.dirname(filePath));
+    case "__filename":
+    case "import.meta.filename":
+      return primitiveValue(filePath);
+    case "import.meta.url":
+      return primitiveValue(pathToFileURL(filePath).href);
+    default:
+      return null;
+  }
 };
 
 /** Vite's `vite:esbuild` default `include` filter; plain `.js` is served untransformed. */
@@ -1080,7 +1100,12 @@ export class Interpreter {
       case "stylesheet":
         return getCssModuleValue(symbol.filePath, symbol.imported);
       case "asset":
-        return getAssetModuleValue(symbol.filePath, symbol.imported, this.project);
+        return getAssetModuleValue(
+          symbol.filePath,
+          symbol.specifier,
+          symbol.imported,
+          this.project,
+        );
       case "unresolved":
         return unknownValue(symbol.reason);
     }
@@ -1483,6 +1508,8 @@ export class Interpreter {
       if (name === "exports") return exportsValue;
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
+    const modulePathName = this.getModulePathName(name, context);
+    if (modulePathName) return modulePathName;
     const global = this.getGlobal(name, context.environment);
     if (global || context.environment === "server") return global;
     return this.windowGlobals.get(name) ?? null;
@@ -1503,6 +1530,12 @@ export class Interpreter {
     return windowKeys === undefined
       ? this.clientRealm.isForeignGlobal(name)
       : !windowKeys.includes(name);
+  }
+
+  private getModulePathName(name: string, context: EvaluationContext): StaticValue | null {
+    return this.getRealm(context.environment).platform === SERVER_HOST_PLATFORM
+      ? getModulePathName(name, context.module.filePath)
+      : null;
   }
 
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
@@ -1534,6 +1567,8 @@ export class Interpreter {
         declared: this.processEnvironment,
         renderEnvironment,
         definedObjects: this.definedEnvironmentObjects,
+        baseUrl: this.project.baseUrl,
+        mode: this.project.mode,
       })
     );
   }
@@ -2726,7 +2761,9 @@ export class Interpreter {
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
-        const declaredMember = this.getGlobal(memberName, context.environment);
+        const declaredMember =
+          this.getModulePathName(memberName, context) ??
+          this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
         const isOpenMember =
           !isCallableProtocolKey(key) &&

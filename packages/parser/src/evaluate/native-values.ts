@@ -14,6 +14,7 @@ import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
+import { isUrlValue, toNativeUrl } from "./url.js";
 import {
   branchValue,
   getKnownObjectKeys,
@@ -216,6 +217,7 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
       return items;
     }
     case "object": {
+      if (isUrlValue(value)) return toNativeUrl(value) ?? UNCERTAIN;
       const keys = getKnownObjectKeys(value);
       if (keys === null) return UNCERTAIN;
       const record: Record<string, unknown> = {};
