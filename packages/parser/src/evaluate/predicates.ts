@@ -27,6 +27,11 @@ export const recordNegation = (negated: StaticValue, operand: StaticValue): Stat
 
 const NEGATED_PREFIX = "!";
 
+const getNegatedPredicate = (predicate: string): string =>
+  predicate.startsWith(NEGATED_PREFIX)
+    ? predicate.slice(NEGATED_PREFIX.length)
+    : `${NEGATED_PREFIX}${predicate}`;
+
 /** The predicate of a branch whose first alternative is taken when `test` is truthy. */
 export const getTruthinessPredicate = (test: StaticValue): string => {
   if (test.kind === "branch" && test.predicate !== null && test.alternatives.length === 2) {
