@@ -1,4 +1,9 @@
-import { MARKER_NAMES } from "../materialize/markers.js";
+import {
+  isNegatedBranchPredicate,
+  MARKER_NAMES,
+  stripNegatedPredicate,
+} from "../materialize/markers.js";
+import { MarkerDecisionError } from "../errors.js";
 import type { StaticRenderResult } from "../types.js";
 import type {
   RuntimeFiberSnapshot,
@@ -11,6 +16,8 @@ import type {
 // concrete nodes, text, alternatives, repeats, opaque subtrees and wildcards.
 // Every branch and repeat is a decision variable; branches that share a
 // predicate share the variable and are therefore always decided together.
+// A decision without a predicate is named by its materializer decision id,
+// qualified by the alternatives it is nested in, so the id stays unique.
 
 export interface PatternFiber {
   kind: "fiber";
@@ -28,6 +35,10 @@ export interface PatternText {
 export interface PatternBranch {
   kind: "branch";
   variable: string;
+  /** The materializer's id for this decision, which a replay pins it by. */
+  decision: string;
+  /** Decisions inside the alternatives were numbered in the enclosing scope (see `DecisionMarkerProps`). */
+  sharesScope: boolean;
   reason: string;
   /** Where the source branched (`file:line:column`); null for branches the materializer introduces. */
   location: string | null;
@@ -44,6 +55,8 @@ export interface RepeatBounds {
 export interface PatternRepeat {
   kind: "repeat";
   variable: string;
+  /** The materializer's id for this decision, which a replay pins it by. */
+  decision: string;
   location: string | null;
   count: RepeatBounds;
   children: PatternNode[];
@@ -95,55 +108,74 @@ const readNumber = (props: Record<string, SnapshotPropValue>, key: string): numb
   return typeof value === "number" ? value : null;
 };
 
-const NEGATED_PREDICATE_PREFIX = "!";
-
 /** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
 const normalizeNegatedBranch = (branch: PatternBranch): PatternBranch => {
-  if (!branch.variable.startsWith(NEGATED_PREDICATE_PREFIX) || branch.alternatives.length !== 2) {
-    return branch;
-  }
+  if (!isNegatedBranchPredicate(branch.variable, branch.alternatives.length)) return branch;
   return {
     ...branch,
-    variable: branch.variable.slice(NEGATED_PREDICATE_PREFIX.length),
+    variable: stripNegatedPredicate(branch.variable),
     preferredIndex: branch.preferredIndex === null ? null : 1 - branch.preferredIndex,
     alternatives: [branch.alternatives[1], branch.alternatives[0]],
   };
 };
 
-class PatternReader {
-  private anonymousDecisions = 0;
+const readDecision = (fiber: RuntimeFiberSnapshot): string => {
+  const decision = readString(fiber.props, "decision");
+  if (decision === null) throw new MarkerDecisionError(fiber.name ?? fiber.tag);
+  return decision;
+};
 
-  read(fibers: RuntimeFiberSnapshot[]): PatternNode[] {
-    return fibers.flatMap((fiber) => this.toPatternNode(fiber));
+class PatternReader {
+  read(fibers: RuntimeFiberSnapshot[], scope = ""): PatternNode[] {
+    return fibers.flatMap((fiber) => this.toPatternNode(fiber, scope));
   }
 
-  private toPatternNode(fiber: RuntimeFiberSnapshot): PatternNode[] {
+  /** A pinned marker (a replay) rendered one alternative or count only; it reads as that content. */
+  private toPatternNode(fiber: RuntimeFiberSnapshot, scope: string): PatternNode[] {
     if (fiber.tag === "HostText") return [{ kind: "text", text: fiber.text }];
     switch (fiber.name) {
-      case MARKER_NAMES.branch:
+      case MARKER_NAMES.branch: {
+        const decision = readDecision(fiber);
+        const sharesScope = fiber.props.sharesScope === true;
+        if (readNumber(fiber.props, "pinnedIndex") !== null) {
+          return fiber.children.flatMap((alternative) => this.read(alternative.children, scope));
+        }
         return [
           normalizeNegatedBranch({
             kind: "branch",
-            variable: readString(fiber.props, "predicate") ?? `branch#${++this.anonymousDecisions}`,
+            variable: readString(fiber.props, "predicate") ?? `${scope}${decision}`,
+            decision,
+            sharesScope,
             reason: readString(fiber.props, "reason") ?? "",
             location: readString(fiber.props, "location"),
             preferredIndex: readNumber(fiber.props, "preferredIndex"),
-            alternatives: fiber.children.map((alternative) => this.read(alternative.children)),
+            alternatives: fiber.children.map((alternative, index) =>
+              this.read(
+                alternative.children,
+                sharesScope ? scope : `${scope}${decision}[${index}]/`,
+              ),
+            ),
           }),
         ];
-      case MARKER_NAMES.repeat:
+      }
+      case MARKER_NAMES.repeat: {
+        const decision = readDecision(fiber);
+        if (readNumber(fiber.props, "pinnedCount") !== null)
+          return this.read(fiber.children, scope);
         return [
           {
             kind: "repeat",
-            variable: `repeat#${++this.anonymousDecisions}`,
+            variable: `${scope}${decision}`,
+            decision,
             location: readString(fiber.props, "location"),
             count: {
               min: readNumber(fiber.props, "countMin") ?? 0,
               max: readNumber(fiber.props, "countMax"),
             },
-            children: this.read(fiber.children),
+            children: this.read(fiber.children, `${scope}${decision}[]/`),
           },
         ];
+      }
       case MARKER_NAMES.opaque:
         return [
           {
@@ -155,7 +187,7 @@ class PatternReader {
             ),
             key: fiber.key,
             reason: readString(fiber.props, "reason") ?? "",
-            passedChildren: this.read(fiber.children),
+            passedChildren: this.read(fiber.children, scope),
           },
         ];
       case MARKER_NAMES.unknown:
@@ -169,7 +201,7 @@ class PatternReader {
       case MARKER_NAMES.text:
         return [{ kind: "text", text: null }];
       case MARKER_NAMES.suspenseBoundary:
-        return this.read(fiber.children);
+        return this.read(fiber.children, scope);
       case MARKER_NAMES.suspended:
         return [];
       default:
@@ -179,7 +211,7 @@ class PatternReader {
             tag: fiber.tag,
             name: fiber.name,
             key: fiber.key,
-            children: this.read(fiber.children),
+            children: this.read(fiber.children, scope),
           },
         ];
     }
@@ -190,8 +222,8 @@ class PatternReader {
  * Reads the materialized fiber tree back into a pattern: marker components
  * become branches, repeats, opaque subtrees and wildcards; everything else is
  * a concrete fiber. A tree without markers is a fully concrete pattern.
- * Decision variables are numbered in document order, so equal trees read to
- * equal patterns.
+ * Decision variables come from the markers, so equal trees read to equal
+ * patterns.
  */
 export const snapshotToPattern = (fibers: RuntimeFiberSnapshot[]): PatternNode[] =>
   new PatternReader().read(fibers);

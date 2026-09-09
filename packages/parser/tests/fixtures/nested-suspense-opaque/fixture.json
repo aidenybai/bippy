@@ -1,5 +1,6 @@
 {
   "expectedStatus": "partial",
   "minCoverage": 0.3,
-  "notes": "An inner Suspense boundary whose fallback and content are both opaque nests inside another boundary; materialization must settle instead of re-rendering forever."
+  "expectedReplayCorrections": 1,
+  "notes": "An inner Suspense boundary whose fallback and content are both opaque nests inside another boundary; materialization must settle instead of re-rendering forever. The outer boundary only becomes suspendable while the inner fallback renders, so the combined render over-approximates the state in which the inner boundary shows content while the outer shows its fallback; replaying that assignment corrects it."
 }

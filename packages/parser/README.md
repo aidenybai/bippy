@@ -168,12 +168,31 @@ framework internals; application mismatches are never hidden this way.
   back in; `unknown` is a wildcard. The report carries a tally (matched, absorbed, opaque,
   unknown), coverage, the matched state's conditions, the states never observed, the omissions,
   and on a mismatch the first divergence path with the closest enumerated state.
+- `replayEnumeratedStates` re-witnesses the enumeration (`state-replay.ts`). The states are
+  derived from one render in which every alternative was materialized together, so module state,
+  refs and effects of one alternative can leak into another's subtree. For each assignment of the
+  decision variables (the enumerated states grouped by their branch and repeat conditions, joined
+  across commits) the static tree is materialized and rendered again through a fresh interpreter
+  and materializer with those alternatives and repeat counts pinned (`PinnedDecisions`, a typed
+  `StaticRenderOptions.decisions`; branch and repeat markers carry stable decision ids so a pin
+  finds its marker in the replay), captured with bippy, and the distinct trees it commits must
+  equal, node for node, the trees the enumeration claimed for that assignment. Replays are
+  bounded by `DEFAULT_MAX_REPLAYED_ASSIGNMENTS` (16), always include the runtime-matched
+  assignment, and the result records `stateReplay: { states, assignments, replayed, maxReplayed,
+mismatched }` so a sampled replay is visible as such. Each mismatch names the assignment, the
+  claimed and replayed commit counts and the first divergence. When the replay left no decision
+  open its commits replace the contradicted states and the runtime is matched against them again;
+  a replay that met a decision the enumeration never described cannot correct anything.
 
-Statuses: `exact` (the runtime equals one enumerated state and nothing was omitted), `truncated`
-(the runtime matched but the state space is incomplete), `partial` (matched through opaque
-subtrees or wildcards), `mismatch` (no state matches), `unresolved` (the static side did not
-produce a component tree), `skipped` (no runtime root or anchor). The harness chooses the runtime
-root by explicit index, then anchor search, then the largest root.
+Statuses: `exact` (the runtime equals one enumerated state, nothing was omitted, and every
+replayed assignment reproduced its states or was corrected by its replay), `truncated` (the
+runtime matched but the state space is incomplete), `partial` (matched through opaque subtrees or
+wildcards), `unsound` (the runtime matched, but a replayed assignment could neither be reproduced
+nor corrected, so the enumeration is not trusted), `mismatch` (no state matches), `unresolved`
+(the static side did not produce a component tree), `skipped` (no runtime root or anchor). A
+state the independent replay contradicts never counts as `exact`: it is either replaced by what
+the replay witnessed or leaves the result `unsound`. The harness chooses the runtime root by
+explicit index, then anchor search, then the largest root.
 
 ## Corpus
 

@@ -19,6 +19,7 @@ import {
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
+import type { StateReplaySummary } from "./state-replay.js";
 
 export interface StaticStateSpaceOptions {
   anchor?: string;
@@ -46,6 +47,8 @@ export interface CompareRenderResult {
   closestState: ClosestState | null;
   runtimeSubtree: RuntimeFiberSnapshot[];
   note: string | null;
+  /** Null until `replayEnumeratedStates` has re-rendered the states independently. */
+  stateReplay: StateReplaySummary | null;
 }
 
 const findPatternFiber = (
@@ -193,6 +196,7 @@ const skipped = (
   closestState: null,
   runtimeSubtree: [],
   note,
+  stateReplay: null,
 });
 
 const countFibers = (fibers: RuntimeFiberSnapshot[]): number => {
@@ -263,6 +267,7 @@ export const compareStaticToRuntime = (
     closestState: match.closest,
     runtimeSubtree,
     note: null,
+    stateReplay: null,
   };
 };
 
@@ -278,4 +283,5 @@ export const formatCompareRenderResult = (comparison: CompareRenderResult): stri
     comparison.report,
     summarizeStateSpace(comparison),
     comparison.stateSpace.states,
+    comparison.stateReplay,
   );

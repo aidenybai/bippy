@@ -21,8 +21,11 @@ export {
   type ReactRouterRouteOptions,
 } from "./react-router.js";
 export {
+  createFrameworkRenderer,
+  createFrameworkRendererForEntry,
   createRendererForEntry,
   renderFramework,
   renderFrameworkTarget,
+  type FrameworkRenderer,
   type FrameworkRenderTarget,
 } from "./render-framework.js";

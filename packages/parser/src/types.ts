@@ -1049,4 +1049,29 @@ export interface StaticRendererOptions {
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;
+  /** Decisions the materializer selects instead of rendering every alternative; a replay of one enumerated state. */
+  decisions?: PinnedDecisions;
+}
+
+export interface PinnedBranchDecision {
+  /** Index into the alternatives as the pattern reader orders them (a negated predicate reads swapped). */
+  alternativeIndex: number;
+  /** Decisions inside the chosen alternative. */
+  inside: PinnedDecisions;
+}
+
+export interface PinnedRepeatDecision {
+  /** Decisions inside each iteration; the length is the pinned count. */
+  iterations: PinnedDecisions[];
+}
+
+/**
+ * The decisions of one enumerated state, keyed by the id the materializer
+ * stamps on its `$Branch` and `$Repeat` markers. Ids are numbered per
+ * decision scope (the root, one alternative, one iteration), so the nested
+ * maps follow the tree the way the materializer does.
+ */
+export interface PinnedDecisions {
+  branches: ReadonlyMap<string, PinnedBranchDecision>;
+  repeats: ReadonlyMap<string, PinnedRepeatDecision>;
 }

@@ -7,6 +7,7 @@ const STATUS_RANK: Record<ComparisonStatus, number> = {
   exact: 4,
   truncated: 3,
   partial: 2,
+  unsound: 0,
   mismatch: 0,
   unresolved: 0,
   skipped: 0,
@@ -54,6 +55,10 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
         expect(stateSpace.states.length, detail).toBeGreaterThan(0);
       }
       if (report.status === "exact") expect(stateSpace.omitted, detail).toBeNull();
+      const replay = run.comparison.stateReplay;
+      expect(replay, detail).not.toBeNull();
+      expect(replay?.mismatched.filter((mismatch) => !mismatch.isCorrected), detail).toEqual([]);
+      expect(replay?.mismatched.length, detail).toBe(fixture.manifest.expectedReplayCorrections ?? 0);
       if (fixture.manifest.expectedStates !== undefined) {
         expect(stateSpace.states.length, detail).toBe(fixture.manifest.expectedStates);
       }

@@ -32,6 +32,8 @@ const fiber = (name: string, children: PatternNode[] = []): PatternFiber => ({
 const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
   kind: "branch",
   variable,
+  decision: variable,
+  sharesScope: false,
   reason: variable,
   location: null,
   preferredIndex: 0,
@@ -42,7 +44,14 @@ const repeat = (
   variable: string,
   children: PatternNode[],
   count: PatternRepeat["count"] = { min: 0, max: null },
-): PatternRepeat => ({ kind: "repeat", variable, location: null, count, children });
+): PatternRepeat => ({
+  kind: "repeat",
+  variable,
+  decision: variable,
+  location: null,
+  count,
+  children,
+});
 
 const describeConditions = (conditions: StateCondition[]): string =>
   conditions

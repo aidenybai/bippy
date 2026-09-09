@@ -110,3 +110,10 @@ export class ReactRuntimeError extends ParserError {}
 export class FrameworkTargetError extends ParserError {}
 
 export class ComponentKindError extends ParserError {}
+
+/** A decision marker in a captured static tree lacks the id the materializer stamps on every one. */
+export class MarkerDecisionError extends ParserError {
+  constructor(readonly markerName: string) {
+    super(`${markerName} marker without a decision id`);
+  }
+}

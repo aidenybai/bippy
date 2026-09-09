@@ -7,6 +7,7 @@ import {
   type MatchDecision,
   type PatternMatch,
 } from "./compare.js";
+import type { PinnedBranchDecision, PinnedDecisions, PinnedRepeatDecision } from "../types.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   hasPatternDecisions,
@@ -45,7 +46,8 @@ export interface TransitionCondition {
   commitCount: number;
 }
 
-export type StateCondition = BranchCondition | RepeatCondition | TransitionCondition;
+export type DecisionCondition = BranchCondition | RepeatCondition;
+export type StateCondition = DecisionCondition | TransitionCondition;
 
 export interface StaticState {
   /** A concrete pattern: no branches or repeats remain, only fibers, text, opaque subtrees and wildcards. */
@@ -428,8 +430,94 @@ const findState = (states: StaticState[], conditions: StateCondition[]): number 
   return index === -1 ? null : index;
 };
 
-const stateCommit = (state: StaticState): number =>
+export const getStateCommit = (state: StaticState): number =>
   state.conditions.find((condition) => condition.kind === "transition")?.commit ?? 0;
+
+interface DecisionPins {
+  branches: Map<string, PinnedBranchDecision>;
+  repeats: Map<string, PinnedRepeatDecision>;
+}
+
+const createDecisionPins = (from?: PinnedDecisions): DecisionPins => ({
+  branches: new Map(from?.branches),
+  repeats: new Map(from?.repeats),
+});
+
+/**
+ * Walks a committed pattern along the path `conditions` select and records
+ * every decision met by its materializer id, so a replay materializes only
+ * that path. A decision the conditions do not name is left unpinned and shows
+ * up in the replay as a decision the enumerated states did not account for.
+ * Decisions met in an earlier commit are kept, so a nested decision that only
+ * exists in one commit stays pinned.
+ */
+const collectDecisionPins = (
+  nodes: PatternNode[],
+  conditions: ConditionMap,
+  pins: DecisionPins,
+): void => {
+  for (const node of nodes) {
+    if (!hasPatternDecisions(node)) continue;
+    switch (node.kind) {
+      case "fiber":
+        collectDecisionPins(node.children, conditions, pins);
+        break;
+      case "opaque":
+        collectDecisionPins(node.passedChildren, conditions, pins);
+        break;
+      case "branch": {
+        const decided = conditions.get(node.variable);
+        if (decided?.kind !== "branch" && decided?.kind !== "state-update") break;
+        const existing = pins.branches.get(node.decision);
+        const inside = node.sharesScope
+          ? pins
+          : createDecisionPins(
+              existing?.alternativeIndex === decided.alternativeIndex ? existing.inside : undefined,
+            );
+        pins.branches.set(node.decision, { alternativeIndex: decided.alternativeIndex, inside });
+        collectDecisionPins(node.alternatives[decided.alternativeIndex] ?? [], conditions, inside);
+        break;
+      }
+      case "repeat": {
+        const decided = conditions.get(node.variable);
+        if (decided?.kind !== "repeat") break;
+        const existing = pins.repeats.get(node.decision);
+        const iterations: DecisionPins[] = [];
+        for (let iteration = 0; iteration < decided.count; iteration++) {
+          const inside = createDecisionPins(
+            existing?.iterations.length === decided.count
+              ? existing.iterations[iteration]
+              : undefined,
+          );
+          iterations.push(inside);
+          collectDecisionPins(
+            scopePatternVariables(node.children, iterationScope(node, iteration)),
+            conditions,
+            inside,
+          );
+        }
+        pins.repeats.set(node.decision, { iterations });
+        break;
+      }
+      case "text":
+      case "wildcard":
+        break;
+    }
+  }
+};
+
+/** The materializer pins that make every commit follow `conditions`. */
+export const pinDecisions = (
+  stateSpace: StaticStateSpace,
+  conditions: DecisionCondition[],
+): PinnedDecisions => {
+  const pins = createDecisionPins();
+  const decided: ConditionMap = new Map(
+    conditions.map((condition) => [conditionKey(condition), condition]),
+  );
+  for (const commit of stateSpace.commits) collectDecisionPins(commit, decided, pins);
+  return pins;
+};
 
 const findClosestState = (
   states: StaticState[],
@@ -439,7 +527,7 @@ const findClosestState = (
   let closest: number | null = null;
   let closestAgreement = -1;
   states.forEach((state, index) => {
-    if (stateCommit(state) !== commit) return;
+    if (getStateCommit(state) !== commit) return;
     const agreement = state.conditions.filter(
       (condition) =>
         condition.kind !== "transition" &&

@@ -24,7 +24,9 @@ import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
+  ExternalValueProvider,
   ModuleRecord,
+  PinnedDecisions,
   ProjectContext,
   StaticObjectValue,
   StaticRenderResult,
@@ -63,6 +65,26 @@ const parseBootstrap = (bootstrap: string): BootstrapCall | null => {
   };
 };
 
+/**
+ * The parsed side of a renderer: resolution, the project and the module graph.
+ * Nothing here changes while rendering (evaluated module state lives in each
+ * `Interpreter`), so renderers over the same project share one.
+ */
+interface RendererProject {
+  resolver: ModuleResolver;
+  reactVersion: string | null;
+  project: ProjectContext;
+  documentShell: string | null;
+  graph: ModuleGraph;
+}
+
+/** Options a derived renderer may change without re-parsing the project. */
+export interface RenderTimeOptions {
+  decisions?: PinnedDecisions;
+  externalValues?: ExternalValueProvider;
+  serverComponents?: boolean;
+}
+
 export class StaticRenderer {
   readonly options: StaticRendererOptions;
   readonly graph: ModuleGraph;
@@ -71,41 +93,71 @@ export class StaticRenderer {
   private readonly project: ProjectContext;
   private readonly documentShell: string | null;
 
-  constructor(options: StaticRendererOptions) {
+  constructor(options: StaticRendererOptions, shared?: RendererProject) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
-    this.resolver = new ModuleResolver({
+    const { resolver, reactVersion, project, documentShell, graph } =
+      shared ?? this.createProject();
+    this.resolver = resolver;
+    this.reactVersion = reactVersion;
+    this.project = project;
+    this.documentShell = documentShell;
+    this.graph = graph;
+  }
+
+  private createProject(): RendererProject {
+    const { options } = this;
+    const { rootDirectory } = options;
+    const resolver = new ModuleResolver({
       tsconfigPath: options.tsconfigPath,
       aliases: Object.fromEntries(
         Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
           specifier,
-          path.resolve(this.options.rootDirectory, target),
+          path.resolve(rootDirectory, target),
         ]),
       ),
       conditionNames: options.conditionNames,
-      rootDirectory: this.options.rootDirectory,
-    });
-    const { rootDirectory } = this.options;
-    const bundler = detectModuleBundler(rootDirectory);
-    this.documentShell = readDocumentShell(rootDirectory, bundler);
-    this.project = createProjectContext({
       rootDirectory,
-      resolver: this.resolver,
+    });
+    const bundler = detectModuleBundler(rootDirectory);
+    const documentShell = readDocumentShell(rootDirectory, bundler);
+    const project = createProjectContext({
+      rootDirectory,
+      resolver,
       servedDirectory: this.resolveOptionalPath(options.servedDirectory),
       publicDirectory: this.resolveOptionalPath(options.publicDirectory),
-      observations: this.options.observations,
-      origin: this.options.origin ?? null,
-      transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
+      observations: options.observations,
+      origin: options.origin ?? null,
+      transpiler: options.transpiler ?? detectModuleTranspiler(resolver, rootDirectory),
       bundler,
     });
-    this.reactVersion = this.project.readPackageVersion("react");
-    const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
-    this.graph = new ModuleGraph({
-      resolver: this.resolver,
-      sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
-      resolveExternalPackages: options.resolveExternalPackages,
-      externalPackageAllowList: options.externalPackageAllowList,
-    });
+    const svgrTransform = createSvgrSourceTransform(project, resolver, rootDirectory);
+    return {
+      resolver,
+      reactVersion: project.readPackageVersion("react"),
+      project,
+      documentShell,
+      graph: new ModuleGraph({
+        resolver,
+        sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+        resolveExternalPackages: options.resolveExternalPackages,
+        externalPackageAllowList: options.externalPackageAllowList,
+      }),
+    };
+  }
+
+  /** A renderer over the same parsed project with some options changed; every render still gets a fresh interpreter. */
+  derive(overrides: RenderTimeOptions): StaticRenderer {
+    return new StaticRenderer(
+      { ...this.options, ...overrides },
+      {
+        resolver: this.resolver,
+        reactVersion: this.reactVersion,
+        project: this.project,
+        documentShell: this.documentShell,
+        graph: this.graph,
+      },
+    );
   }
 
   resolvePath(filePath: string): string {
@@ -187,6 +239,7 @@ export class StaticRenderer {
       maxFiberCount: this.options.maxFiberCount,
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
       serverComponents: this.options.serverComponents,
+      decisions: this.options.decisions,
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();

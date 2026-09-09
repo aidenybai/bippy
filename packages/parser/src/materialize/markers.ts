@@ -28,19 +28,42 @@ export interface MarkerChildrenProps {
   children?: ReactNode;
 }
 
-export interface BranchMarkerProps extends MarkerChildrenProps {
-  reason: string;
+/** Props every decision marker carries so a replay can find the same decision again. */
+export interface DecisionMarkerProps extends MarkerChildrenProps {
   location: string | null;
+  /** Digest of the decision's structural path, numbered per decision scope in materialization order. */
+  decision: string;
+  /** The alternatives (or iterations) were materialized in the enclosing decision scope, not one of their own. */
+  sharesScope: boolean;
+}
+
+export interface BranchMarkerProps extends DecisionMarkerProps {
+  reason: string;
   preferredIndex: number | null;
   /** Identity of the decision; branches sharing one are selected together. */
   predicate: string | null;
+  /** The only alternative rendered, when a replay pinned this branch. */
+  pinnedIndex: number | null;
 }
 
-export interface RepeatMarkerProps extends MarkerChildrenProps {
-  location: string | null;
+export interface RepeatMarkerProps extends DecisionMarkerProps {
   countMin: number;
   countMax: number | null;
+  /** How many iterations were rendered, when a replay pinned this repeat. */
+  pinnedCount: number | null;
 }
+
+const NEGATED_PREDICATE_PREFIX = "!";
+
+/** `!flag ? A : B` decides the same variable as `flag ? B : A`; the pattern reader stores such a branch as the latter. */
+export const isNegatedBranchPredicate = (
+  predicate: string | null,
+  alternativeCount: number,
+): boolean =>
+  predicate !== null && predicate.startsWith(NEGATED_PREDICATE_PREFIX) && alternativeCount === 2;
+
+export const stripNegatedPredicate = (predicate: string): string =>
+  predicate.slice(NEGATED_PREDICATE_PREFIX.length);
 
 export interface OpaqueMarkerProps extends MarkerChildrenProps {
   displayName: string | null;
