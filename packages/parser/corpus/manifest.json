@@ -1704,6 +1704,9 @@
       "workingDirectory": ".",
       "install": "npm install",
       "dev": "npm run dev",
+      "env": {
+        "CI": "false"
+      },
       "url": "http://localhost:3000/auth/sign-in",
       "readyTimeoutMs": 600000,
       "settleMs": 6000,
@@ -1723,7 +1726,7 @@
           "@tabler/icons-react"
         ]
       },
-      "notes": "`/` redirects unauthenticated visitors to `/auth/sign-in` (`src/app/page.tsx`), which is captured directly. Clerk runs in keyless development mode; the embedded `<SignIn />` is a third-party opaque subtree."
+      "notes": "`/` redirects unauthenticated visitors to `/auth/sign-in` (`src/app/page.tsx`), which is captured directly. Clerk runs in keyless development mode (its API refuses to mint keyless instances when `CI` is set, so the runner's `CI=1` is overridden); the embedded `<SignIn />` is a third-party opaque subtree."
     },
     {
       "id": "blocknote",

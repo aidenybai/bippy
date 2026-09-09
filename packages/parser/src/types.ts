@@ -46,9 +46,11 @@ export interface TransformedSource {
   lang: SourceLanguage;
 }
 
-/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+/** A bundler loader or plugin the app applies to a file extension, producing the module the bundler links in place of the file. */
 export interface SourceTransform {
   extension: string;
+  /** Whether the bundler applies the loader to the build rooted at `entryPath`; every build when omitted. */
+  appliesToEntry?: (entryPath: string) => boolean;
   transform: (filePath: string, sourceText: string) => TransformedSource | null;
 }
 

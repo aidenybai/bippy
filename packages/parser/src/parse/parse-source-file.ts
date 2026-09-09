@@ -77,14 +77,25 @@ interface CacheEntry {
 export class SourceFileCache {
   private readonly entries = new Map<string, CacheEntry>();
   private readonly transforms: SourceTransform[];
+  private activeTransforms: SourceTransform[];
 
   constructor(transforms: SourceTransform[] = []) {
     this.transforms = transforms;
+    this.activeTransforms = transforms.filter(
+      (transform) => transform.appliesToEntry === undefined,
+    );
+  }
+
+  /** Applies the transforms of the build rooted at `entryPath` to the files read from here on. */
+  selectEntry(entryPath: string): void {
+    this.activeTransforms = this.transforms.filter(
+      (transform) => transform.appliesToEntry?.(entryPath) ?? true,
+    );
   }
 
   read(filePath: string): ParsedSourceFile | null {
     const lang = getSourceLanguage(filePath);
-    const transform = this.transforms.find(
+    const transform = this.activeTransforms.find(
       (candidate) => candidate.extension === extname(filePath),
     );
     if (!lang && !transform) return null;
@@ -95,7 +106,8 @@ export class SourceFileCache {
       return cached.file;
     }
     const fileText = readFileSync(filePath, "utf8");
-    const source = lang ? { sourceText: fileText, lang } : transform?.transform(filePath, fileText);
+    const source =
+      transform?.transform(filePath, fileText) ?? (lang ? { sourceText: fileText, lang } : null);
     if (!source) return null;
     const file = parseSourceText(filePath, source.sourceText, source.lang);
     this.entries.set(filePath, { mtimeMs: stats.mtimeMs, size: stats.size, file });

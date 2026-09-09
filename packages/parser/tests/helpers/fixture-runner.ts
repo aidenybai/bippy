@@ -1,5 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { type ComponentType, createElement } from "react";
+import { createRoot } from "react-dom/client";
+import { z } from "zod";
 import type {
   RootObservations,
   RuntimeObservations,
@@ -34,6 +37,8 @@ import { installReduxStoreHook } from "../../src/harness/redux-store.js";
 
 export interface FixtureManifest {
   entry: string;
+  /** An export of `entry` mounted as the root (a Storybook story) instead of the entry's own root render call. */
+  rootComponent?: string;
   expectedStatus: ComparisonStatus;
   minCoverage: number;
   /** Runtime fibers that must match without wildcards or skipped opaque subtrees. */
@@ -85,6 +90,9 @@ const DEFAULT_MANIFEST: FixtureManifest = {
 };
 const SETTLE_QUIET_MS = 50;
 const SETTLE_TIMEOUT_MS = 2_000;
+
+const componentSchema = z.custom<ComponentType>((value) => typeof value === "function");
+const entryModuleSchema = z.record(z.string(), z.unknown());
 
 const readManifest = (directory: string): FixtureManifest => {
   const manifestPath = join(directory, "fixture.json");
@@ -139,7 +147,13 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
   });
   try {
     const commit = recorder.waitForCommit();
-    await import(/* @vite-ignore */ join(fixture.directory, fixture.manifest.entry));
+    const entryModule = entryModuleSchema.parse(
+      await import(/* @vite-ignore */ join(fixture.directory, fixture.manifest.entry)),
+    );
+    if (fixture.manifest.rootComponent !== undefined) {
+      const rootComponent = componentSchema.parse(entryModule[fixture.manifest.rootComponent]);
+      createRoot(container).render(createElement(rootComponent));
+    }
     await commit;
     await settleCommits(recorder);
     return { snapshot: recorder.snapshot(), observed: await recorder.observations() };
@@ -154,6 +168,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     {
       framework: fixture.manifest.framework,
       entry: join(fixture.directory, fixture.manifest.entry),
+      rootComponent: fixture.manifest.rootComponent,
       route: fixture.manifest.route,
     },
     {

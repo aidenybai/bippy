@@ -1,7 +1,13 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transform as transformSvgr } from "@svgr/core";
+import { withCompilerOptions as withDocgenCompilerOptions } from "react-docgen-typescript";
+import { JsxEmit, ModuleKind, ScriptTarget } from "typescript";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
+import {
+  generateStorybookDisplayNameBlock,
+  getStorybookDocgenIdentifier,
+} from "./src/graph/storybook-docgen.js";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -85,6 +91,36 @@ const fixtureSvgrPlugin = (): Plugin => ({
   },
 });
 
+// What Storybook's `@storybook/react-docgen-typescript-plugin` appends to a
+// `.tsx` module for every component react-docgen-typescript finds in it.
+const fixtureStorybookDocgenPlugin = (): Plugin => {
+  const docgenParser = withDocgenCompilerOptions(
+    { jsx: JsxEmit.React, module: ModuleKind.CommonJS, target: ScriptTarget.Latest },
+    { shouldIncludeExpression: true, savePropValueAsString: true },
+  );
+  return {
+    name: "bippy-parser-fixture-storybook-docgen",
+    enforce: "pre",
+    transform(code, id) {
+      const relativeToFixtures = relative(fixturesDirectory, id);
+      if (!id.endsWith(".tsx") || relativeToFixtures.startsWith("..")) return null;
+      const [fixtureName] = relativeToFixtures.split(sep);
+      if (!existsSync(join(fixturesDirectory, fixtureName, ".storybook/main.ts"))) return null;
+      const displayNames = docgenParser
+        .parse(id)
+        .map((componentDoc) =>
+          generateStorybookDisplayNameBlock(
+            getStorybookDocgenIdentifier(
+              componentDoc.displayName,
+              componentDoc.expression?.getName(),
+            ),
+          ),
+        );
+      return displayNames.length === 0 ? null : `${code}${displayNames.join("")}`;
+    },
+  };
+};
+
 const fixtureJsxInJsPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-jsx-in-js",
   enforce: "pre",
@@ -96,7 +132,12 @@ const fixtureJsxInJsPlugin = (): Plugin => ({
 
 export default defineConfig({
   root: parserDirectory,
-  plugins: [fixtureAliasPlugin(), fixtureSvgrPlugin(), fixtureJsxInJsPlugin()],
+  plugins: [
+    fixtureAliasPlugin(),
+    fixtureSvgrPlugin(),
+    fixtureStorybookDocgenPlugin(),
+    fixtureJsxInJsPlugin(),
+  ],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
   },

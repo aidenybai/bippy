@@ -1,0 +1,13 @@
+{
+  "name": "fixture-storybook-docgen",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "styled-components": "6.5.3"
+  },
+  "devDependencies": {
+    "@storybook/react-webpack5": "7.6.20",
+    "react-docgen-typescript": "2.4.0",
+    "typescript": "5.9.3"
+  }
+}

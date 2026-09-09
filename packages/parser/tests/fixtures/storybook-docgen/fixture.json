@@ -1,0 +1,6 @@
+{
+  "entry": "src/table.stories.tsx",
+  "rootComponent": "Basic",
+  "externalPackages": ["styled-components"],
+  "notes": "A Storybook 7 react-webpack5 project with `typescript.reactDocgen: 'react-docgen-typescript'`, rendered from a story as the preview iframe does: the docgen plugin appends `<Component>.displayName = '<Component>'` to every .tsx module for each component react-docgen-typescript finds. Named styled exports render under their binding names; a default export is named after the file (`responsivewrapper`), which is not a binding, so the assignment throws inside the plugin's try/catch and the library name stays."
+}

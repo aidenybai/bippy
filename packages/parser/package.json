@@ -66,6 +66,7 @@
     "object.entries": "1.1.9",
     "path-to-regexp": "1.9.0",
     "react": "^19.2.4",
+    "react-docgen-typescript": "2.4.0",
     "react-dom": "^19.2.4",
     "react-hook-form": "7.62.0",
     "react-native": "0.81.5",

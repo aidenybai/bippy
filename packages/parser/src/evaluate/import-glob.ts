@@ -91,7 +91,7 @@ const toAbsoluteGlob = (
   return null;
 };
 
-const globAbsolute = (absolutePattern: string): string[] => {
+export const globAbsolute = (absolutePattern: string): string[] => {
   const magicIndex = absolutePattern.search(GLOB_MAGIC);
   const staticPart = magicIndex === -1 ? absolutePattern : absolutePattern.slice(0, magicIndex);
   const cwd = staticPart.endsWith("/") ? staticPart : path.dirname(staticPart);

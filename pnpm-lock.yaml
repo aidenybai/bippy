@@ -1340,6 +1340,9 @@ importers:
       react:
         specifier: ^19.2.4
         version: 19.2.8
+      react-docgen-typescript:
+        specifier: 2.4.0
+        version: 2.4.0(typescript@5.9.3)
       react-dom:
         specifier: ^19.2.4
         version: 19.2.8(react@19.2.8)
@@ -11608,6 +11611,11 @@ packages:
         optional: true
       '@types/react':
         optional: true
+
+  react-docgen-typescript@2.4.0:
+    resolution: {integrity: sha512-ZtAp5XTO5HRzQctjPU0ybY0RRCQO19X/8fxn3w7y2VVTUbGHDKULPTL4ky3vB05euSgG5NpALhEhDPvQ56wvXg==}
+    peerDependencies:
+      typescript: '>= 4.3.x'
 
   react-dom@0.0.0-experimental-8425b691-20260904:
     resolution: {integrity: sha512-FA6e4Gyg++JhWc1ALqdz6y+TIvLuWt/eJtAo2CHUwaa7qUV8C6+I7tlVV3Kz9xA8E5F0RukewP4eqzWMHLpwow==}
@@ -26251,6 +26259,10 @@ snapshots:
       '@types/hoist-non-react-statics': 3.3.7(@types/react@19.2.18)
       '@types/node': 20.19.43
       '@types/react': 19.2.18
+
+  react-docgen-typescript@2.4.0(typescript@5.9.3):
+    dependencies:
+      typescript: 5.9.3
 
   react-dom@0.0.0-experimental-8425b691-20260904(react@19.2.8):
     dependencies:

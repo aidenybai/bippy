@@ -12,6 +12,7 @@ import {
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
+import { createStorybookDocgenTransform } from "../graph/storybook-docgen.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
 import {
   createDomHostDocument,
@@ -100,10 +101,13 @@ export class StaticRenderer {
       bundler,
     });
     this.reactVersion = this.project.readPackageVersion("react");
-    const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
+    const sourceTransforms = [
+      createSvgrSourceTransform(this.project, this.resolver, rootDirectory),
+      createStorybookDocgenTransform(this.project, rootDirectory),
+    ].filter((transform) => transform !== null);
     this.graph = new ModuleGraph({
       resolver: this.resolver,
-      sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+      sourceFileCache: new SourceFileCache(sourceTransforms),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
     });
@@ -235,6 +239,7 @@ export class StaticRenderer {
     options: RenderComponentOptions = {},
   ): Promise<StaticRenderResult> {
     const absolutePath = this.resolvePath(filePath);
+    this.graph.sourceFileCache.selectEntry(absolutePath);
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const exportName = options.exportName ?? "default";
@@ -259,6 +264,7 @@ export class StaticRenderer {
 
   renderEntry(filePath: string): Promise<StaticRenderResult> {
     const absolutePath = this.resolvePath(filePath);
+    this.graph.sourceFileCache.selectEntry(absolutePath);
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const interpreter = this.createInterpreter();
