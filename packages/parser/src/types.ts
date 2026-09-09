@@ -252,7 +252,7 @@ export type StaticElementType =
   | { kind: "view-transition" }
   | { kind: "context-provider"; context: ContextDefinition | null; displayName: string | null }
   | { kind: "context-consumer"; context: ContextDefinition | null; displayName: string | null }
-  | { kind: "portal" }
+  | { kind: "portal"; container: StaticValue }
   | { kind: "external"; packageName: string; importedName: string; displayName: string }
   | { kind: "stub"; stub: StubComponent }
   | { kind: "unknown"; displayName: string | null; reason: string };
@@ -372,6 +372,9 @@ export interface InstalledPackage {
 /** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
 export type ModuleTranspiler = "esbuild" | "name-preserving";
 
+/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers shim them. */
+export type ModuleBundler = "vite" | "unknown";
+
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
@@ -380,6 +383,7 @@ export interface ProjectContext {
   /** The installed version of a package as resolved from the root; `null` when it is not installed. */
   readPackageVersion: (packageName: string) => string | null;
   transpiler: ModuleTranspiler;
+  bundler: ModuleBundler;
   /** The text the dev server serves for a same-origin or root-relative URL from the project's static directory; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */

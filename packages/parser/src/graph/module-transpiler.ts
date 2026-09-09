@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseSync } from "oxc-parser";
-import type { ModuleTranspiler } from "../types.js";
+import type { ModuleBundler, ModuleTranspiler } from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 
@@ -27,13 +27,26 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
+const findViteConfig = (rootDirectory: string): string | undefined =>
+  VITE_CONFIG_FILES.map((fileName) => path.join(rootDirectory, fileName)).find((candidate) =>
+    existsSync(candidate),
+  );
+
+export const detectModuleBundler = (rootDirectory: string): ModuleBundler =>
+  findViteConfig(rootDirectory) === undefined ? "unknown" : "vite";
+
+/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`. */
+export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
+  if (bundler !== "vite") return null;
+  const indexPath = path.join(rootDirectory, "index.html");
+  return existsSync(indexPath) ? readFileSync(indexPath, "utf8") : null;
+};
+
 export const detectModuleTranspiler = (
   resolver: ModuleResolver,
   rootDirectory: string,
 ): ModuleTranspiler => {
-  const configPath = VITE_CONFIG_FILES.map((fileName) => path.join(rootDirectory, fileName)).find(
-    (candidate) => existsSync(candidate),
-  );
+  const configPath = findViteConfig(rootDirectory);
   if (configPath === undefined) return "name-preserving";
   const vite = readInstalledPackage(resolver, rootDirectory, "vite");
   if (vite === null || Number(vite.version.split(".")[0]) > LAST_ESBUILD_VITE_MAJOR) {

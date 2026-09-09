@@ -1,6 +1,6 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
-import { hashKey, isPlainObject, opaqueCapture } from "../observations.js";
+import { dateCapture, hashKey, isPlainObject, opaqueCapture } from "../observations.js";
 import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 import type {
   CapturedMutation,
@@ -53,6 +53,7 @@ export const toCapturedValue = (
     if (reference !== undefined) return reference;
   }
   if (!isRecord(value)) return opaqueCapture(describeOpaque(value));
+  if (value instanceof Date) return dateCapture(value);
   if (seen.has(value)) return opaqueCapture("cycle");
   seen.add(value);
   if (value instanceof Error) {

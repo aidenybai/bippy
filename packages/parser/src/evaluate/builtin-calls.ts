@@ -754,6 +754,31 @@ const callHostObjectMethod = (
       );
 };
 
+/** Builtins that only inspect their first argument, so a branch there yields a branch of per-alternative results. */
+const INSPECTING_GLOBALS = new Set([
+  "Array.isArray",
+  "ArrayBuffer.isView",
+  "Object.keys",
+  "Object.values",
+  "Object.entries",
+  "Object.getOwnPropertyNames",
+  "Object.getOwnPropertySymbols",
+  "Object.getOwnPropertyDescriptor",
+  "Object.getOwnPropertyDescriptors",
+  "Object.getPrototypeOf",
+  "Object.isFrozen",
+  "Reflect.ownKeys",
+  "Reflect.getPrototypeOf",
+  "Reflect.has",
+  "Reflect.get",
+  "isNaN",
+  "Number.isNaN",
+  "Number.isFinite",
+  "Number.isInteger",
+  "Number.isSafeInteger",
+  "JSON.stringify",
+]);
+
 const callGlobal = (
   interpreter: Interpreter,
   name: string,
@@ -771,6 +796,12 @@ const callGlobal = (
         ? callHostObjectMethod(interpreter, receiver, memberName, args, context, location)
         : null;
     if (hostResult) return hostResult;
+    const [inspected, ...rest] = args;
+    if (inspected?.kind === "branch" && INSPECTING_GLOBALS.has(name)) {
+      return mapValue(inspected, (alternative) =>
+        callGlobal(interpreter, name, [alternative, ...rest], context, location, false),
+      );
+    }
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
@@ -1236,17 +1267,31 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
 };
 
+/** ECMAScript `ToLength`: integral, clamped to `[0, 2^53 - 1]`. */
+const toLength = (value: unknown): number =>
+  Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
+
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
   const length = getObjectProperty(value, "length");
-  if (length.kind !== "primitive" || typeof length.value !== "number") {
+  if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
+    return {
+      kind: "repeat",
+      item: UNDEFINED_VALUE,
+      location: null,
+      count: length.numberRange && {
+        min: toLength(length.numberRange.min),
+        max: toLength(length.numberRange.max),
+      },
+    };
+  }
+  if (length.kind !== "primitive" || typeof length.value === "symbol") {
     return unknownValue("Array.from of an array-like with dynamic length", null);
   }
-  if (!Number.isInteger(length.value) || length.value < 0 || length.value > MAX_ARRAY_LIKE_LENGTH) {
-    return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
-  }
+  const itemCount = toLength(length.value);
+  if (itemCount > MAX_ARRAY_LIKE_LENGTH) return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
   return listValue(
-    Array.from({ length: length.value }, (_, index) => getObjectProperty(value, String(index))),
+    Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
   );
 };
 

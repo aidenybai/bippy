@@ -34,7 +34,7 @@ export interface CorpusStaticTarget {
   defines?: Record<string, JsonValue>;
   /** dotenv files the server loads, relative to `rootDirectory`, highest precedence first; with them the environment is whole and other variables are unset. */
   envFiles?: string[];
-  /** Interpreter step budget; large pages with many commits need more than the default. */
+  /** Interpreter step budget per entry (one component render, module initialization or callback). */
   maxSteps?: number;
   /** Bundler prefix of the variables the client bundle inlines (Vite `envPrefix`); defaults to the framework's. */
   envPrefix?: string;
