@@ -5,14 +5,14 @@ import { request as httpsRequest } from "node:https";
 import { setTimeout as sleep } from "node:timers/promises";
 import { CommandFailedError, CommandTimeoutError, DevServerError } from "../errors.js";
 
-export interface DevServerOptions {
+interface DevServerOptions {
   command: string;
   cwd: string;
   env?: Record<string, string>;
   logPath: string;
 }
 
-export interface RunCommandOptions {
+interface RunCommandOptions {
   command: string;
   cwd: string;
   env?: Record<string, string>;

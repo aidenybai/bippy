@@ -9,6 +9,7 @@ import type {
   ImportDeclarationSpecifier,
   MethodDefinition,
   ModuleExportName,
+  ParamPattern,
   PropertyDefinition,
   PropertyKey,
   Statement,
@@ -57,29 +58,32 @@ export interface Scope {
   /** Innermost first; names resolve against each frame's declarations and imports in turn. */
   frames: ContainerRecord[];
   file: string;
-  typeParameters: ReadonlySet<string>;
+  /** Type parameters in effect, each with its `extends` constraint. */
+  typeParameters: ReadonlyMap<string, TSType | null>;
   thisType: string | null;
+  /** The enclosing interface's first type parameter: its element type (`T` of `Array<T>`). */
+  elementTypeParameter: string | null;
 }
 
 export type MemberDeclaration =
   | { form: "property"; type: TSType | null; scope: Scope }
-  | { form: "method"; returnType: TSType | null; scope: Scope }
+  | { form: "method"; parameters: ParamPattern[]; returnType: TSType | null; scope: Scope }
   | { form: "reference"; type: HostType };
 
-export interface HeritageReference {
+interface HeritageReference {
   name: string[];
   scope: Scope;
   /** `class B extends A` also inherits `A`'s static side. */
   isStatic: boolean;
 }
 
-export interface InterfaceRecord {
+interface InterfaceRecord {
   heritage: HeritageReference[];
   members: Map<string, MemberDeclaration[]>;
   isCallable: boolean;
 }
 
-export interface AliasRecord {
+interface AliasRecord {
   type: TSType;
   typeParameters: string[];
   scope: Scope;
@@ -89,7 +93,7 @@ const NAMESPACE_PREFIX = "namespace ";
 const MODULE_PREFIX = "module ";
 export const STATIC_PREFIX = "typeof ";
 
-const EMPTY_TYPE_PARAMETERS: ReadonlySet<string> = new Set();
+const EMPTY_TYPE_PARAMETERS: ReadonlyMap<string, TSType | null> = new Map();
 
 export const getQualifiedName = (typeName: TSTypeName): string[] | null => {
   if (typeName.type === "Identifier") return [typeName.name];
@@ -148,13 +152,21 @@ const unwrapType = (type: TSType): TSType =>
 const withTypeParameters = (
   scope: Scope,
   declaration: TSTypeParameterDeclaration | null | undefined,
-  thisType: string | null = scope.thisType,
+  thisType?: string,
 ): Scope => {
-  if (!declaration?.params.length)
-    return thisType === scope.thisType ? scope : { ...scope, thisType };
-  const typeParameters = new Set(scope.typeParameters);
-  for (const parameter of declaration.params) typeParameters.add(parameter.name.name);
-  return { ...scope, typeParameters, thisType };
+  const entered =
+    thisType === undefined ? scope : { ...scope, thisType, elementTypeParameter: null };
+  if (!declaration?.params.length) return entered;
+  const typeParameters = new Map(scope.typeParameters);
+  for (const parameter of declaration.params) {
+    typeParameters.set(parameter.name.name, parameter.constraint);
+  }
+  return {
+    ...entered,
+    typeParameters,
+    elementTypeParameter:
+      thisType === undefined ? entered.elementTypeParameter : declaration.params[0].name.name,
+  };
 };
 
 /**
@@ -206,7 +218,13 @@ export class DeclarationCatalog {
     const container: ContainerRecord = {
       typePrefix,
       valueHolder,
-      scope: { frames: [], file, typeParameters: EMPTY_TYPE_PARAMETERS, thisType: null },
+      scope: {
+        frames: [],
+        file,
+        typeParameters: EMPTY_TYPE_PARAMETERS,
+        thisType: null,
+        elementTypeParameter: null,
+      },
       isModule,
       imports: new Map(),
       exportAliases: new Map(),
@@ -219,7 +237,13 @@ export class DeclarationCatalog {
   }
 
   private createScope(frames: ContainerRecord[], file: string): Scope {
-    return { frames, file, typeParameters: EMPTY_TYPE_PARAMETERS, thisType: null };
+    return {
+      frames,
+      file,
+      typeParameters: EMPTY_TYPE_PARAMETERS,
+      thisType: null,
+      elementTypeParameter: null,
+    };
   }
 
   declareInterface(name: string): void {
@@ -519,7 +543,7 @@ export class DeclarationCatalog {
     const returnType = signature.returnType?.typeAnnotation ?? null;
     switch (signature.kind) {
       case "method":
-        return { form: "method", returnType, scope: methodScope };
+        return { form: "method", parameters: signature.params, returnType, scope: methodScope };
       case "get":
         return { form: "property", type: returnType, scope: methodScope };
       case "set":
@@ -580,6 +604,7 @@ export class DeclarationCatalog {
     if (!node.id) return;
     this.addMember(scope.frames[0].valueHolder, node.id.name, {
       form: "method",
+      parameters: node.params,
       returnType: node.returnType?.typeAnnotation ?? null,
       scope: withTypeParameters(scope, node.typeParameters),
     });
@@ -645,6 +670,7 @@ export class DeclarationCatalog {
       case "method":
         return {
           form: "method",
+          parameters: element.value.params,
           returnType,
           scope: withTypeParameters(scope, element.value.typeParameters),
         };

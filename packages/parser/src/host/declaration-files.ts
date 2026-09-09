@@ -30,7 +30,7 @@ const getModuleId = (filePath: string, rootDirectory: string): string => {
   return relative.replace(DECLARATION_EXTENSIONS, "");
 };
 
-export const parseDeclarationSource = (fileName: string, sourceText: string): Program =>
+const parseDeclarationSource = (fileName: string, sourceText: string): Program =>
   parseSync(fileName, sourceText, { lang: "ts", sourceType: "module", astType: "ts" }).program;
 
 /**

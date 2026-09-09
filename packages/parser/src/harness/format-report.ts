@@ -69,7 +69,7 @@ const formatOmission = (omission: StateOmission): string => {
   }
 };
 
-export const formatStateSpaceSummary = (
+const formatStateSpaceSummary = (
   summary: StateSpaceSummary,
   states: StaticState[] = [],
 ): string[] => {

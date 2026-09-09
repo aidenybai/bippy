@@ -1,7 +1,7 @@
 import type { SourceLocation, StaticUnknownValue, StaticValue } from "../types.js";
 import { branchValue, getObjectProperty, unknownValue } from "./values.js";
 
-export type ThrowCertainty = "never" | "maybe" | "always";
+type ThrowCertainty = "never" | "maybe" | "always";
 
 const combineSiblings = (left: ThrowCertainty, right: ThrowCertainty): ThrowCertainty =>
   left === "always" || right === "always"
