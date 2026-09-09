@@ -361,9 +361,7 @@ const getAssignedMutation = (assigned: Node, bindings: ItemBinding[]): EscapedMu
   }
   if (assigned.type !== "MemberExpression") return null;
   const target = getAccessPath(assigned.object);
-  return target
-    ? { target, key: getStaticMemberKey(assigned), kind: "member", bindings }
-    : null;
+  return target ? { target, key: getStaticMemberKey(assigned), kind: "member", bindings } : null;
 };
 
 const getMutation = (node: Node, bindings: ItemBinding[]): EscapedMutation | null => {

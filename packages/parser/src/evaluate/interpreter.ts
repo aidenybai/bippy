@@ -165,7 +165,11 @@ import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness, isAbsentLanguageMember } from "./host-globals.js";
+import {
+  GLOBAL_OBJECT_VALUE,
+  getPrimitiveWitness,
+  isAbsentLanguageMember,
+} from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
@@ -3286,7 +3290,10 @@ export class Interpreter {
    * and its module's bindings; an arrow function captures its `this` too.
    * Its arguments and a method's `this` belong to whichever escaped code
    * handed them over; only a method that escaped directly, as a callback or
-   * bound method, may widen the `this` it was bound to.
+   * bound method, may widen the `this` it was bound to. Likewise only a
+   * callback handed straight to unfollowed code, which may run it at once,
+   * rebinds the variables it captures: a closure held by an escaping store
+   * or instance runs when its consumer later calls it.
    */
   private markEscapedMutations(
     functionValue: StaticFunctionValue,
@@ -3297,6 +3304,7 @@ export class Interpreter {
       const root = getAccessRoot(mutation.target, mutation.bindings);
       if (isClosureLocal(functionValue, root) || (root === "this" && frame !== null)) continue;
       if (mutation.kind === "rebinding") {
+        if (frame !== null) continue;
         const owner = findOwningScope(functionValue.scope, root);
         if (owner) {
           const current = owner.bindings.get(root);
