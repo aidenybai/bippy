@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 0.4,
+  "notes": "Opaque ui-kit content may suspend, so each boundary is a branch between its content and its fallback; the nested boundaries must settle rather than retry each other forever."
+}

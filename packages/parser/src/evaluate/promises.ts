@@ -99,8 +99,13 @@ export const awaitedValue = (
  * its outcome, resumes the continuation like any other.
  */
 export const isAwaitDeferred = (operand: StaticValue, awaited: StaticValue): boolean =>
-  !getModeledPromise(operand)?.settled &&
-  ((awaited.kind === "unknown" && !isThrownOutcome(awaited)) || awaited.kind === "external");
+  !getModeledPromise(operand)?.settled && isPossiblyUnsettled(awaited);
+
+/** A value the analysis cannot see settle: it may be a promise pending outside the analysis. */
+const isPossiblyUnsettled = (value: StaticValue): boolean =>
+  (value.kind === "unknown" && !isThrownOutcome(value)) ||
+  value.kind === "external" ||
+  (value.kind === "branch" && value.alternatives.some(isPossiblyUnsettled));
 
 /**
  * `await` on a promise that will not settle before the continuation would run:
@@ -282,7 +287,7 @@ export const combinePromises = (
     const promise = getModeledPromise(item);
     return promise && !promise.settled ? [promise] : [];
   });
-  if (pending.some((promise) => promise.isEscaped)) {
+  if (pending.some((promise) => promise.isEscaped) || items.some(isPossiblyUnsettled)) {
     return unknownValue("Promise.all of a promise settled outside the analysis", location);
   }
   const rejection = items.map(outcomeOf).find(isThrownOutcome);

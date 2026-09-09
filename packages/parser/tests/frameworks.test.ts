@@ -115,9 +115,63 @@ describe("next app router", () => {
     expect(tree).toMatch(/<h1>\n\s+<Counter>\n\s+<button>/);
   });
 
+  it("calls forwardRef and memo wrappers as plain functions on the server", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Counter>\n\s+<button>\n(\s+(<[^>]+>|"[^"]*")\n)*\s+<div>\n\s+<span>\n\s+<Toaster>/,
+    );
+    expect(tree).not.toContain("<Card>");
+    expect(tree).not.toContain("<Badge>");
+  });
+
+  it('treats exports of a "use client" module as client references even when defined elsewhere', async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<TogglePrimitive>\n\s+<button>\n\s+<LabelPrimitive>\n\s+<label>\n/);
+  });
+
+  it("unwraps key-less server fragments the way Flight serializes them", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<label>\n\s+<h2>\n\s+<h3>\n\s+"Static tagline"$/);
+  });
+
+  it("renders module-scope elements on the server only when a server component passes them as props", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/social" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<section>\n\s+<SocialLinks>\n\s+<ul>\n\s+<li> key="Website"\n\s+<svg>\n\s+<ClientSocial>/,
+    );
+    expect(tree).toMatch(
+      /<ClientSocial>\n\s+<SocialLinks>\n\s+<ul>\n\s+<li> key="Website"\n\s+<GlobeIcon>\n\s+<svg>/,
+    );
+  });
+
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
+  });
+
+  it("answers `in` checks against a modeled component's statics", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<Slot>\n\s+<i>\n\s+<LinkComponent>/);
+    expect(tree).toMatch(/<Slot>\n\s+<b>\n\s+<Slottable>/);
+    expect(tree).not.toContain("__radixId");
+  });
+
+  it("elides server components wrapped in memo, like Flight does", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(/<Slottable> key="\.0"\n\s+"slotted"\n\s+<header>\n\s+<ForwardRef>/);
+    expect(tree).not.toContain("<Hero>");
+    expect(tree).not.toContain("Memo");
+  });
+
+  it("models next/image as ForwardRef -> ForwardRef -> <img>, preloading only priority images", async () => {
+    const { tree } = await render("next-app", { framework: "next-app", route: "/" });
+    expect(tree).toMatch(
+      /<header>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<main>/,
+    );
   });
 
   it("models next/form as Form -> <form> in the App Router and a forwardRef in the Pages Router", async () => {
@@ -370,6 +424,13 @@ describe("next pages router", () => {
     expect(tree).not.toContain("<script>");
   });
 
+  it("preloads next/image through next/head instead of ReactDOM.preload", async () => {
+    const { tree } = await renderPagesWithNext("15.5.0", "/");
+    expect(tree).toMatch(
+      /<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<Head>\n\s+<SideEffect>/,
+    );
+  });
+
   it("feeds dynamic segments into useRouter().query", async () => {
     const { tree } = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
@@ -400,6 +461,30 @@ describe("next pages router", () => {
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
+  });
+
+  it("mounts without StrictMode when next.config does not enable it", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(tree).not.toContain("<StrictMode>");
+    expect(lines(tree).slice(0, 2)).toEqual(["<HostRoot>", "<App>"]);
+  });
+
+  it("wraps the tree in StrictMode when a next.config function sets reactStrictMode", async () => {
+    const { tree, errors } = await render("next-pages-strict", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("keeps StrictMode a branch when a config plugin hides reactStrictMode", async () => {
+    const { tree } = await render("next-pages-plugin-config", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(tree).toMatch(/^<HostRoot>\n\s+\?branch\(next\.config reactStrictMode is /);
+    expect(tree).toContain("<StrictMode>");
   });
 
   it("models next/head, next/image and next/legacy/image after the current next", async () => {

@@ -102,6 +102,7 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "AppContainer",
   "Container",
   "PathnameContextProviderAdapter",
+  "_PathnameContextProviderAdapter",
   "ErrorBoundary",
   "HotReload",
   "ReactDevOverlay",

@@ -2,6 +2,8 @@ import classNames from "classnames";
 import { clsx } from "clsx";
 import { format, parseISO } from "date-fns";
 import fs from "fs";
+import { flattenDeep, isEqual, isNil } from "lodash-es";
+import isEmpty from "lodash-es/isEmpty";
 import { basename, join } from "path";
 import { twMerge } from "tailwind-merge";
 
@@ -68,6 +70,45 @@ const ProjectFiles = () => {
   );
 };
 
+const BOARD_SIZE = 3;
+
+/** 2048-in-react's board: rows are assigned past the end of an empty array, then one cell is filled. */
+const createBoard = (): Array<Array<string | undefined>> => {
+  const board: Array<Array<string | undefined>> = [];
+  for (let index = 0; index < BOARD_SIZE; index += 1) {
+    board[index] = Array.from({ length: BOARD_SIZE }, () => undefined);
+  }
+  return board;
+};
+
+const Board = () => {
+  const board = createBoard();
+  board[1][2] = "tile";
+  const occupied = flattenDeep(board).filter((cell) => !isNil(cell));
+  return (
+    <table>
+      <tbody>
+        {board.map((row, rowIndex) => (
+          <tr key={rowIndex}>
+            {row.map((cell, cellIndex) => (
+              <td key={cellIndex}>{isNil(cell) ? <em>empty</em> : <strong>{cell}</strong>}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>
+            <Shown value={String(occupied.length)} />
+            {isEqual(board[1], [undefined, undefined, "tile"]) && <b>row matches</b>}
+            {isEmpty(occupied) ? <i>no tiles</i> : <i>{occupied.length} tiles</i>}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  );
+};
+
 export default function PurePackages() {
   return (
     <section>
@@ -76,6 +117,7 @@ export default function PurePackages() {
       <ClassNames isActive />
       <ClassNames isActive={false} />
       <ProjectFiles />
+      <Board />
     </section>
   );
 }

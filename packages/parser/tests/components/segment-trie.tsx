@@ -89,6 +89,18 @@ const describeTrie = (node: SegmentNode, prefix: string): string[] => {
   return lines;
 };
 
+const countNodes = (root: SegmentNode): number => {
+  const queue = [root];
+  let count = 0;
+  for (;;) {
+    const node = queue.shift();
+    if (node === void 0) break;
+    count++;
+    queue.push(...(node.static?.values() ?? []), ...(node.dynamic ?? []));
+  }
+  return count;
+};
+
 export default function SegmentTrie() {
   const data = new Uint16Array(6);
   const root = createNode();
@@ -101,7 +113,8 @@ export default function SegmentTrie() {
         <li key={line}>{line}</li>
       ))}
       <li>
-        {leaves.length} leaves, deepest {Math.max(...leaves.map((leaf) => leaf.depth))}
+        {leaves.length} leaves, deepest {Math.max(...leaves.map((leaf) => leaf.depth))},{" "}
+        {countNodes(root)} nodes
       </li>
       <li>
         {[

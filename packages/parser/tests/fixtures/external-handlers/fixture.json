@@ -2,5 +2,5 @@
   "expectedStatus": "partial",
   "minCoverage": 1,
   "expectedStats": { "branchCount": 1, "opaqueCount": 2 },
-  "notes": "ui-kit is opaque. Its `onClick`/`onPointerDownCapture` props only run for a user, so the counter stays at its initial state; `onChange` may be called by the component at mount (Field does), so that setter escapes into an honest branch. The `trimmed === \"\"` test narrows the updated alternative to a non-empty string, so `<code>{trimmed}</code>` needs no further branch."
+  "notes": "ui-kit is opaque. Its `onClick`/`onPointerDownCapture` props only run for a user, so the counter stays at its initial state; `onChange` may be called by the component at mount (Field does), so that setter escapes into an honest branch; the false arm narrows `trimmed` to the unknown text."
 }
