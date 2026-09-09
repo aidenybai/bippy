@@ -2,9 +2,10 @@ import { readFileSync, statSync } from "node:fs";
 import { extname } from "node:path";
 import { parseSync } from "oxc-parser";
 import type { ParsedSourceFile, SourceLanguage, SourceTransform } from "../types.js";
+import { readJsxPragma } from "./jsx-pragma.js";
 
 const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
-  ".js": "js",
+  ".js": "jsx",
   ".jsx": "jsx",
   ".ts": "ts",
   ".tsx": "tsx",
@@ -63,6 +64,7 @@ export const parseSourceText = (
     errors: result.errors
       .filter((error) => error.severity === "Error")
       .map((error) => error.message),
+    jsxPragma: lang === "json" ? null : readJsxPragma(result.comments),
   };
 };
 

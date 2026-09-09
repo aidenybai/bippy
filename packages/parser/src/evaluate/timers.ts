@@ -81,6 +81,11 @@ export class TimerQueue {
     });
   }
 
+  /** Queues `task` for the next round, like a short timer that cannot be cleared. */
+  enqueue(task: () => void): void {
+    this.tasks.push(task);
+  }
+
   clear(handle: StaticValue | undefined): void {
     if (handle) this.clearedHandles.add(handle);
   }

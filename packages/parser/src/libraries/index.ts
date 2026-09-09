@@ -13,7 +13,9 @@ import {
   HOIST_NON_REACT_STATICS_PACKAGES,
   hoistNonReactStaticsValue,
 } from "./hoist-non-react-statics.js";
+import { IMMER_PACKAGES, immerValue } from "./immer.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
+import { JOTAI_MODELED_EXPORTS, JOTAI_PACKAGES, jotaiValue } from "./jotai.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINARIA_PACKAGES, linariaValue } from "./linaria.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
@@ -62,7 +64,9 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
   },
   { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
+  { packages: IMMER_PACKAGES, getValue: immerValue },
   { packages: JED_PACKAGES, getValue: jedValue },
+  { packages: JOTAI_PACKAGES, getValue: jotaiValue, modeledExports: JOTAI_MODELED_EXPORTS },
   { packages: KEA_PACKAGES, getValue: keaValue },
   { packages: LINARIA_PACKAGES, getValue: linariaValue },
   { packages: LINGUI_PACKAGES, getValue: linguiValue },

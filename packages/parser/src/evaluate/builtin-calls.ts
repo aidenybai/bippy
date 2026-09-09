@@ -41,6 +41,7 @@ import {
 import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, isErrorConstructorName } from "./errors.js";
+import { callFetch } from "./fetch.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import {
   constructNativeObject,
@@ -90,6 +91,7 @@ import { createNumberFormat } from "./intl-format.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
+  joinStrings,
   rangedNumberValue,
 } from "./primitive-shapes.js";
 import { createSearchParamsValue } from "./url-search-params.js";
@@ -925,6 +927,9 @@ const callGlobal = (
     case "AbortController":
       if (isConstructor) return createAbortController(interpreter, location);
       break;
+    case "fetch":
+      if (isConstructor) break;
+      return callFetch(interpreter.project, args, location);
     case "Blob":
       if (isConstructor) return createBlobValue(args, location);
       break;
@@ -1145,6 +1150,23 @@ const callGlobal = (
           })
         : unknownValue("Reflect.apply with dynamic arguments", location);
     }
+    case "Reflect.construct": {
+      const newTarget = args[2];
+      if (!first) return unknownValue("Reflect.construct without a target", location);
+      const constructArguments =
+        second === undefined ? [] : isKnownList(second) ? second.items : null;
+      if (constructArguments === null) {
+        return unknownValue("Reflect.construct with dynamic arguments", location);
+      }
+      const superConstructed =
+        context.thisValue &&
+        interpreter.constructSuper(context.thisValue, first, constructArguments);
+      if (superConstructed) return superConstructed;
+      if (newTarget && newTarget !== first) {
+        return unknownValue("Reflect.construct with a foreign new.target", location);
+      }
+      return interpreter.construct(first, constructArguments, context, location);
+    }
     case "Object.defineProperty": {
       const descriptor = args[2];
       if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
@@ -1215,11 +1237,23 @@ const callGlobal = (
         : primitiveValue(JSON.stringify(json));
     }
     case "JSON.parse":
-      if (first?.kind === "primitive" && typeof first.value === "string" && args.length === 1) {
+      if (
+        first?.kind === "primitive" &&
+        typeof first.value === "string" &&
+        (second === undefined || (second.kind === "primitive" && second.value === undefined))
+      ) {
         try {
           return jsonValue(JSON.parse(first.value));
-        } catch {
-          return unknownValue("JSON.parse threw", location);
+        } catch (error) {
+          return thrownValue(
+            "JSON.parse of invalid JSON",
+            createErrorValue(
+              "SyntaxError",
+              [primitiveValue(error instanceof Error ? error.message : String(error))],
+              location,
+            ),
+            location,
+          );
         }
       }
       return unknownValue("JSON.parse", location);
@@ -1434,15 +1468,6 @@ interface JoinedItems {
   isPreferred: boolean;
 }
 
-const joinParts = (parts: StaticValue[], separator: string): StaticValue =>
-  parts.every((part) => part.kind === "primitive")
-    ? primitiveValue(
-        parts
-          .map((part) => (part.kind === "primitive" ? String(part.value ?? "") : ""))
-          .join(separator),
-      )
-    : unknownPrimitiveValue("string", "join of dynamic list");
-
 /** `join()` over items that may be absent: one string per combination of present items. */
 const joinListItems = (
   items: StaticValue[],
@@ -1470,7 +1495,7 @@ const joinListItems = (
     ]);
   }
   return branchValue(
-    combinations.map(({ parts }) => joinParts(parts, separator)),
+    combinations.map(({ parts }) => joinStrings(parts, separator)),
     "join of a filtered list",
     location,
     Math.max(
@@ -1610,6 +1635,27 @@ const toPattern = (value: StaticValue): string | RegExp | null => {
 const listOfStrings = (parts: (string | undefined)[]): StaticListValue =>
   listValue(parts.map((part) => (part === undefined ? UNDEFINED_VALUE : primitiveValue(part))));
 
+const matchResultValue = (matched: RegExpExecArray, input: string): StaticListValue => ({
+  ...listOfStrings([...matched]),
+  properties: new Map([
+    ["index", primitiveValue(matched.index)],
+    ["input", primitiveValue(input)],
+    [
+      "groups",
+      matched.groups
+        ? objectFromRecord(
+            Object.fromEntries(
+              Object.entries(matched.groups).map(([groupName, groupText]) => [
+                groupName,
+                groupText === undefined ? UNDEFINED_VALUE : primitiveValue(groupText),
+              ]),
+            ),
+          )
+        : UNDEFINED_VALUE,
+    ],
+  ]),
+});
+
 const dynamicSplitResult = (location: SourceLocation | null): StaticListValue =>
   listValue([
     { kind: "repeat", item: unknownPrimitiveValue("string", "split of dynamic string"), location },
@@ -1681,8 +1727,12 @@ const callStringMethod = (
   if (name === "match" && first?.kind === "regexp") {
     const regExp = toRegExp(first);
     if (!regExp) return null;
-    const matched = receiver.match(regExp);
-    return matched ? listOfStrings([...matched]) : NULL_VALUE;
+    if (regExp.global) {
+      const matched = receiver.match(regExp);
+      return matched ? listOfStrings([...matched]) : NULL_VALUE;
+    }
+    const matched = regExp.exec(receiver);
+    return matched ? matchResultValue(matched, receiver) : NULL_VALUE;
   }
   if (!allKnown) return null;
   const position = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
@@ -1798,14 +1848,7 @@ const callRegExpMethod = (
   const matched = regExp.exec(input);
   receiver.lastIndex = regExp.lastIndex;
   if (name === "test") return primitiveValue(matched !== null);
-  if (!matched) return NULL_VALUE;
-  return {
-    ...listOfStrings([...matched]),
-    properties: new Map([
-      ["index", primitiveValue(matched.index)],
-      ["input", primitiveValue(input)],
-    ]),
-  };
+  return matched ? matchResultValue(matched, input) : NULL_VALUE;
 };
 
 const fallbackMethodResult = (
@@ -1973,6 +2016,8 @@ export const evaluateBuiltinCall = (
     args,
   );
   if (listened) return listened;
+
+  if (name === "bind" && receiver.kind === "class" && args.length <= 1) return receiver;
 
   if (
     (name === "call" || name === "apply") &&

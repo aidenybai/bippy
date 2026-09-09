@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@babel/runtime": "^7.29.7",
+    "@emotion/core": "10.3.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@linaria/core": "6.3.0",
@@ -70,6 +71,7 @@
     "react-redux": "9.3.0",
     "react-router": "8.3.0",
     "string.prototype.trim": "1.2.11",
+    "styled-components": "6.5.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "use-sync-external-store": "1.6.0",

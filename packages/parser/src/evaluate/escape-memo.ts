@@ -2,12 +2,18 @@ import type {
   ModuleRecord,
   Scope,
   StaticFunctionValue,
+  StaticListValue,
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
 
-/** A container whose member an escape walk read to resolve a path in a closure body. */
-export type EscapeDependency = StaticObjectValue | StaticFunctionValue | Scope | ModuleRecord;
+/** A container whose member (or, for a list, whose items) an escape walk read to resolve a path in a closure body. */
+export type EscapeDependency =
+  | StaticObjectValue
+  | StaticListValue
+  | StaticFunctionValue
+  | Scope
+  | ModuleRecord;
 
 export type EscapeArguments = readonly (StaticValue | null)[];
 
@@ -24,12 +30,15 @@ const isSameTuple = (left: EscapeTuple, right: EscapeTuple): boolean =>
  * each walk read. A closure stays followed until one of those members is
  * reassigned; it is then stale and the next walk follows it again with the
  * same tuples, so a callback stored into a ref after the closure escaped is
- * still reached, while unrelated mutations cost nothing.
+ * still reached, while unrelated mutations cost nothing. `onStale` runs when
+ * the first closure goes stale since the last `takeStale`.
  */
 export class EscapeMemo {
   private readonly followed = new Map<StaticFunctionValue, EscapeTuple[]>();
   private readonly stale = new Map<StaticFunctionValue, EscapeTuple[]>();
   private readonly dependents = new Map<EscapeDependency, Map<string, Set<StaticFunctionValue>>>();
+
+  constructor(private readonly onStale: () => void) {}
 
   /** Records the tuple as followed; false when the closure was already followed with it. */
   follow(closure: StaticFunctionValue, tuple: EscapeTuple): boolean {
@@ -64,6 +73,7 @@ export class EscapeMemo {
         const tuples = this.followed.get(closure);
         if (!tuples) continue;
         this.followed.delete(closure);
+        if (this.stale.size === 0) this.onStale();
         this.stale.set(closure, tuples);
       }
       closures.clear();

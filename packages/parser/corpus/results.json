@@ -40123,6 +40123,1506 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:18:28.673Z",
       "failure": null
+    },
+    {
+      "id": "bookshelf",
+      "revision": "32e9e87db958de863bead65761bfbe2dec0eafd4",
+      "framework": "react-router",
+      "capturedAt": "2026-09-09T07:32:16.338Z",
+      "durationMs": 850,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 93,
+        "commits": 7,
+        "pageErrors": [],
+        "title": "The React Bookshelf App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 69,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 34
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 64,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "runtimeFibers": 64,
+        "staticFibers": 64,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 64,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": "AppProviders",
+      "note": "runtime replayed from 2026-09-08T13:28:16.674Z",
+      "failure": null
+    },
+    {
+      "id": "ephe",
+      "revision": "4ba31e6cd198491dbf4834050ae804178fb412b3",
+      "framework": "react-router",
+      "capturedAt": "2026-09-09T07:32:08.769Z",
+      "durationMs": 2708,
+      "runtime": {
+        "reactVersion": "19.2.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 148,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Ephe - Ephemeral Markdown Paper"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 146,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 5215
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 142,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "runtimeFibers": 144,
+        "staticFibers": 144,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 144,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T13:28:01.716Z",
+      "failure": null
+    },
+    {
+      "id": "jsoncrack",
+      "revision": "ffd250b5cbcab410a2985f9e379ad86c644d0e57",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-09T07:32:18.692Z",
+      "durationMs": 9540,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 1118,
+        "commits": 9,
+        "pageErrors": [
+          "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <PageLayout>\n      <Qe theme={{CRIMSON:\"#...\", ...}}>\n        <PageLayout__StyledLayoutWrapper>\n          <div className=\"PageLayout...\">\n            <Navbar>\n            <PageLayout__ContentWrapper>\n              <div className=\"PageLayout...\">\n                <Head>\n                <HeroSection>\n                <HeroPreview>\n                <Section1>\n                ...\n                  <div ref={null} style={{width:\"cal...\"}} className=\"jcode m_46...\" data-variant={undefined} ...>\n                    <@mantine/core/Input required={undefined} classNames={undefined} styles={{input:{...}}} ...>\n                      <Provider value={{size:\"sm\"}}>\n                        <@mantine/core/Box className=\"m_6c018570...\" style={{...}} mod={[...]} variant=\"default\" ...>\n                          <div ref={null} style={{...}} className=\"m_6c018570...\" data-variant=\"default\" data-size=\"sm\" ...>\n                            <@mantine/core/Box component=\"textarea\" value={\"{\\n  \\\"s...\"} onChange={function onChange} ...>\n                              <textarea\n                                ref={null}\n                                style={{border:\"none\",fontSize:12,--input-resize:undefined}}\n                                className=\"m_8fb7ebe7 mantine-Input-input mantine-JsonInput-input\"\n                                data-variant=\"default\"\n                                data-size={undefined}\n                                size={undefined}\n                                value={\"{\\n  \\\"squadName\\\": \\\"Super hero squad\\\",\\n  \\\"homeTown\\\": \\\"Metro City\\\",\\n ...\"}\n                                onChange={function onChange}\n                                onFocus={function handleFocus}\n                                onBlur={function handleBlur}\n                                rows={12}\n                                autoComplete=\"off\"\n                                data-monospace={true}\n                                required={undefined}\n                                disabled={undefined}\n                                aria-invalid={false}\n                                aria-describedby={undefined}\n+                               id=\"mantine-_R_ldld7m_\"\n-                               id=\"mantine-s4ce7axj3\"\n                              >\n                <Section3>\n                <Features>\n                <FAQ>\n                  <@mantine/core/Container id=\"faq\" component=\"section\" size=\"sm\" py={80}>\n                    <@mantine/core/Box ref={null} mod={[...]} className=\"m_7485cace...\" style={{...}} id=\"faq\" ...>\n                      <section ref={null} style={{...}} className=\"m_7485cace...\" data-variant={undefined} data-size=\"sm\" ...>\n                        <@mantine/core/Title>\n                        <@mantine/core/Accordion variant=\"separated\" styles={{panel:{...}, ...}}>\n                          <Provider value={{...}}>\n                            <@mantine/core/Box className=\"m_9bdbb667...\" style={{...}} id=\"mantine-_R...\" ...>\n                              <div\n                                ref={null}\n                                style={{--accordion-chevron-size:\"auto\"}}\n                                className=\"m_9bdbb667 mantine-Accordion-root\"\n                                data-variant=\"separated\"\n                                data-size={undefined}\n                                size={undefined}\n+                               id=\"mantine-_R_2m57m_\"\n-                               id=\"mantine-nf8wdcyjl\"\n                                data-accordion={true}\n                              >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-What is JSON Crack and what does it...\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-What is JSON Crack and what does it...\"\n+                                           id=\"mantine-_R_2m57m_-control-What is JSON Crack and what does it do?\"\n-                                           id=\"mantine-nf8wdcyjl-control-What is JSON Crack and what does it do?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-What is JSON Crack and what does it do?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-What is JSON Crack and what does it do?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-What is JSON Crack and what doe...\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-What is JSON Crack and what doe...\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-How is it different than traditiona...\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-How is it different than traditiona...\"\n+                                           id=\"mantine-_R_2m57m_-control-How is it different than traditional JSON vi...\"\n-                                           id=\"mantine-nf8wdcyjl-control-How is it different than traditional JSON vi...\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-How is it different than traditional JSON view...\"\n-                                           id=\"mantine-nf8wdcyjl-panel-How is it different than traditional JSON view...\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-How is it different than tradit...\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-How is it different than tradit...\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-Is JSON Crack free?\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-Is JSON Crack free?\"\n+                                           id=\"mantine-_R_2m57m_-control-Is JSON Crack free?\"\n-                                           id=\"mantine-nf8wdcyjl-control-Is JSON Crack free?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-Is JSON Crack free?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-Is JSON Crack free?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-Is JSON Crack free?\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-Is JSON Crack free?\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-Is my data secure?\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-Is my data secure?\"\n+                                           id=\"mantine-_R_2m57m_-control-Is my data secure?\"\n-                                           id=\"mantine-nf8wdcyjl-control-Is my data secure?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-Is my data secure?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-Is my data secure?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-Is my data secure?\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-Is my data secure?\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-Can I convert JSON to other formats...\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-Can I convert JSON to other formats...\"\n+                                           id=\"mantine-_R_2m57m_-control-Can I convert JSON to other formats using JS...\"\n-                                           id=\"mantine-nf8wdcyjl-control-Can I convert JSON to other formats using JS...\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-Can I convert JSON to other formats using JSON...\"\n-                                           id=\"mantine-nf8wdcyjl-panel-Can I convert JSON to other formats using JSON...\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-Can I convert JSON to other for...\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-Can I convert JSON to other for...\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-What kind of data formats are suppo...\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-What kind of data formats are suppo...\"\n+                                           id=\"mantine-_R_2m57m_-control-What kind of data formats are supported?\"\n-                                           id=\"mantine-nf8wdcyjl-control-What kind of data formats are supported?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-What kind of data formats are supported?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-What kind of data formats are supported?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-What kind of data formats are s...\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-What kind of data formats are s...\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-What size of data can I visualize?\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-What size of data can I visualize?\"\n+                                           id=\"mantine-_R_2m57m_-control-What size of data can I visualize?\"\n-                                           id=\"mantine-nf8wdcyjl-control-What size of data can I visualize?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-What size of data can I visualize?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-What size of data can I visualize?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-What size of data can I visualize?\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-What size of data can I visualize?\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-Can I export the generated graphs?\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-Can I export the generated graphs?\"\n+                                           id=\"mantine-_R_2m57m_-control-Can I export the generated graphs?\"\n-                                           id=\"mantine-nf8wdcyjl-control-Can I export the generated graphs?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-Can I export the generated graphs?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-Can I export the generated graphs?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-Can I export the generated graphs?\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-Can I export the generated graphs?\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls=\"mantine-_R_2m57m_-panel-How to use VS Code extension?\"\n-                                           aria-controls=\"mantine-nf8wdcyjl-panel-How to use VS Code extension?\"\n+                                           id=\"mantine-_R_2m57m_-control-How to use VS Code extension?\"\n-                                           id=\"mantine-nf8wdcyjl-control-How to use VS Code extension?\"\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id=\"mantine-_R_2m57m_-panel-How to use VS Code extension?\"\n-                                           id=\"mantine-nf8wdcyjl-panel-How to use VS Code extension?\"\n+                                           aria-labelledby=\"mantine-_R_2m57m_-control-How to use VS Code extension?\"\n-                                           aria-labelledby=\"mantine-nf8wdcyjl-control-How to use VS Code extension?\"\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n                                ...\n                                  <div ref={null} style={{...}} className=\"m_9f59b069...\" data-variant={undefined} ...>\n                                    <@mantine/core/AccordionControl>\n                                      <@mantine/core/UnstyledButton className=\"m_4ba585b8...\" style={{}} ...>\n                                        <@mantine/core/Box className=\"mantine-fo...\" style={{}} component=\"button\" ...>\n                                          <button\n                                            ref={null}\n                                            style={{}}\n                                            className=\"mantine-focus-auto m_4ba585b8 mantine-Accordion-control m_87cf2...\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            data-accordion-control={true}\n                                            data-chevron-position=\"right\"\n                                            type=\"button\"\n                                            onClick={function onClick}\n                                            aria-expanded={false}\n+                                           aria-controls={\"mantine-_R_2m57m_-panel-I've previously subscribed to the...\"}\n-                                           aria-controls={\"mantine-nf8wdcyjl-panel-I've previously subscribed to the...\"}\n+                                           id={\"mantine-_R_2m57m_-control-I've previously subscribed to the premium ...\"}\n-                                           id={\"mantine-nf8wdcyjl-control-I've previously subscribed to the premium ...\"}\n                                            onKeyDown={function}\n                                          >\n                                    <@mantine/core/AccordionPanel>\n                                      <@mantine/core/Collapse ref={null} className=\"m_df78851f...\" style={{...}} ...>\n                                        <@mantine/core/Box aria-hidden={true} ref={function} className=\"m_df78851f...\" ...>\n                                          <div\n                                            ref={function}\n                                            style={{boxSizing:\"border-box\",opacity:0,transition:\"opacity 20...\",background:\"#f9f9f9\", ...}}\n                                            className=\"m_df78851f mantine-Accordion-panel\"\n                                            data-variant={undefined}\n                                            data-size={undefined}\n                                            size={undefined}\n                                            aria-hidden={true}\n                                            role=\"region\"\n+                                           id={\"mantine-_R_2m57m_-panel-I've previously subscribed to the premium pl...\"}\n-                                           id={\"mantine-nf8wdcyjl-panel-I've previously subscribed to the premium pl...\"}\n+                                           aria-labelledby={\"mantine-_R_2m57m_-control-I've previously subscribed to...\"}\n-                                           aria-labelledby={\"mantine-nf8wdcyjl-control-I've previously subscribed to...\"}\n                                            onTransitionEnd={function handleTransitionEnd}\n                                            inert={true}\n                                          >\n            ...\n"
+        ],
+        "title": "JSON Crack | Online JSON Viewer - Transform your data into interactive graphs"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1057,
+          "textCount": 11,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 722
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 1014,
+        "matchedText": 9,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 40,
+        "runtimeFibers": 1023,
+        "staticFibers": 1023,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1024,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "default for stars",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T13:28:34.875Z",
+      "failure": null
+    },
+    {
+      "id": "mui-admin-dashboard",
+      "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
+      "framework": "react-router",
+      "capturedAt": "2026-09-09T07:31:51.194Z",
+      "durationMs": 2755,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 2105,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1019,
+          "textCount": 17,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 1248
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "partial",
+        "matchedFibers": 997,
+        "matchedText": 17,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 1087,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 3,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "runtimeFibers": 2101,
+        "staticFibers": 1017,
+        "coverage": 1,
+        "strictCoverage": 0.4826273203236554,
+        "divergence": null,
+        "stepsUsed": 1017,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T13:27:43.694Z",
+      "failure": null
+    },
+    {
+      "id": "openai-translator",
+      "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
+      "framework": "react-router",
+      "capturedAt": "2026-09-09T07:32:12.941Z",
+      "durationMs": 1804,
+      "runtime": {
+        "reactVersion": "19.2.3",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 499,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "OpenAI Translator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 502,
+          "textCount": 6,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 411
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "partial",
+        "matchedFibers": 488,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 1,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent]",
+            "reason": "`BUILD_TIME` is not defined",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"2026-09-08T13:28:04.114Z\""
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "runtimeFibers": 495,
+        "staticFibers": 494,
+        "coverage": 1,
+        "strictCoverage": 0.997979797979798,
+        "divergence": null,
+        "stepsUsed": 496,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "branch#1",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T13:28:08.982Z",
+      "failure": null
+    },
+    {
+      "id": "regex-vis",
+      "revision": "a6d920601ca44ab2d4e9cd02306510ab6d5e4b38",
+      "framework": "react-router",
+      "capturedAt": "2026-09-09T07:31:55.394Z",
+      "durationMs": 11815,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 838,
+        "commits": 9,
+        "pageErrors": [],
+        "title": "Regex Vis"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1136,
+          "textCount": 21,
+          "branchCount": 36,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4852
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 3
+          }
+        ]
+      },
+      "report": {
+        "status": "truncated",
+        "matchedFibers": 820,
+        "matchedText": 14,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 36,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "runtimeFibers": 834,
+        "staticFibers": 1026,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 888,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 6,
+              "commitCount": 7
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78319)",
+              "reason": "conditional on branch(<boolean> | false | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42439)",
+              "reason": "conditional on unknown(new DocumentFragment())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42446)",
+              "reason": "conditional on branch(true | <boolean> | false)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78323)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42456)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78327)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42466)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78331)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42476)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78335)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42486)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78339)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42496)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(78343)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42502)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(116558)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(117181)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(118281)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(119142)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(119764)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(120387)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(121010)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(121872)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(122183)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(122806)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(123118)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(123980)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(124291)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(124914)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(125775)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(126636)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(127497)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(128359)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(128670)",
+              "reason": "&& on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/src/modules/graph/name-quantifier.tsx:38:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(65616)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(71768)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 12,
+          "omissions": [
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "transition",
+                  "commit": 2,
+                  "commitCount": 7
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42461)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42466)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42471)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42476)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42481)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42486)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42491)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42496)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42501)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42502)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(65616)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(71768)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(71768)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42461)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42466)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42471)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42476)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42481)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42486)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42491)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42496)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42501)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42502)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(65616)",
+                  "reason": "&& on <boolean: includes()>",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42502)",
+              "reason": "&& on <boolean: includes()>",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-tabs/dist/index.mjs:172:19",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42461)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42466)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42471)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42476)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42481)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42486)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42491)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42496)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42501)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42476)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42461)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42466)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42471)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42471)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42461)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42466)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42466)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42461)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42461)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42456)",
+                  "reason": "conditional on branch(false | <boolean>)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42456)",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42451)",
+                  "reason": "conditional on branch(true | undefined)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42451)",
+              "reason": "conditional on branch(true | undefined)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:888:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42446)",
+                  "reason": "conditional on branch(true | <boolean> | false)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42446)",
+              "reason": "conditional on branch(true | <boolean> | false)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:898:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(42439)",
+                  "reason": "conditional on unknown(new DocumentFragment())",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(42439)",
+              "reason": "conditional on unknown(new DocumentFragment())",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:252:14",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "truthy(34729)",
+                  "reason": "conditional on branch(<boolean> | false | true)",
+                  "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(34729)",
+              "reason": "conditional on branch(<boolean> | false | true)",
+              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/regex-vis/node_modules/@radix-ui/react-select/dist/index.mjs:223:19",
+              "alternativeIndex": 1,
+              "conditions": []
+            }
+          ]
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-08T13:27:51.361Z",
+      "failure": null
     }
   ]
 }

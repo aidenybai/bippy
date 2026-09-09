@@ -254,6 +254,10 @@ export const getStaticProperty = (
   return null;
 };
 
+/** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean =>
+  collectClassChain(classValue).at(-1)?.body.superValue === null;
+
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
     name: unknownPrimitiveValue("string", "caught error name"),
@@ -560,12 +564,16 @@ const constructLayer = (
       construct: isDerived ? constructParent : null,
       parent: layer.current.body.superValue,
     };
+    const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);
+    interpreter.pendingSuperBindings.set(instance, superBinding);
     interpreter.callFunction(
       { ...layer.members.constructor, superBinding },
       args,
       { ...layer.methodContext, superBinding },
       { thisValue: instance },
     );
+    if (outerSuperBinding) interpreter.pendingSuperBindings.set(instance, outerSuperBinding);
+    else interpreter.pendingSuperBindings.delete(instance);
   }
   if (isDerived) constructParent(args);
 };

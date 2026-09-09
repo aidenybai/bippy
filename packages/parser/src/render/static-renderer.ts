@@ -95,6 +95,7 @@ export class StaticRenderer {
       this.options.origin ?? null,
       this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
       bundler,
+      this.options.publicDirectory,
     );
     this.reactVersion = this.project.readPackageVersion("react");
     const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);

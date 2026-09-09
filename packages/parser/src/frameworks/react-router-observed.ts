@@ -7,7 +7,6 @@ import {
   primitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import type { CapturedFetcher, CapturedRouterState, StaticValue } from "../types.js";
 
 /**
@@ -17,9 +16,9 @@ import type { CapturedFetcher, CapturedRouterState, StaticValue } from "../types
  */
 export interface ObservedRouterState {
   location: StaticValue;
+  search: string;
   navigation: StaticValue;
   revalidation: StaticValue;
-  searchParams: StaticValue;
   matches: StaticValue;
   isMatched: (routeId: string) => boolean;
   loaderData: (routeId: string) => StaticValue;
@@ -105,8 +104,8 @@ export const observeRouterState = (
       state.navigationState === "idle"
         ? idleNavigation()
         : unknownValue(`react-router navigation is ${state.navigationState}`),
+    search: state.location.search,
     revalidation: primitiveValue(state.revalidationState),
-    searchParams: createSearchParamsValue(primitiveValue(state.location.search)),
     matches: listValue(
       state.matches.map((match) =>
         objectFromRecord({

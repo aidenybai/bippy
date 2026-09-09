@@ -170,6 +170,34 @@ describe("comparePatternToRuntime", () => {
   });
 });
 
+/**
+ * Dependency pre-bundling renames a binding that collides in the merged chunk
+ * (rolldown: `Ae` becomes `Ae$5`; esbuild: `TextareaAutosize` becomes
+ * `TextareaAutosize2`); the static tree keeps the source name.
+ */
+describe("bundler-deduplicated component names", () => {
+  it("matches a source name against its esbuild `<n>` suffixed runtime name", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("TextareaAutosize")],
+      [runtimeFiber("TextareaAutosize2")],
+    );
+    expect(report.status).toBe("exact");
+  });
+
+  it("accepts a deduplicated runtime name for an opaque component", () => {
+    const report = comparePatternToRuntime([opaqueFiber("Menu", [])], [runtimeFiber("Menu$2")]);
+    expect(report.status).toBe("partial");
+    expect(report.opaqueSubtrees).toBe(1);
+  });
+
+  it("keeps rejecting names that merely share a prefix", () => {
+    for (const runtimeName of ["Ae$", "Ae$x", "AeX", "Ae2$1", "A"]) {
+      const report = comparePatternToRuntime([patternFiber("Ae")], [runtimeFiber(runtimeName)]);
+      expect(report.status, runtimeName).toBe("mismatch");
+    }
+  });
+});
+
 const WRAPPERS = new Set(["Root", "ErrorBoundary"]);
 const unwrapWrapper = (fiber: RuntimeFiberSnapshot): RuntimeFiberSnapshot[] | null =>
   WRAPPERS.has(fiber.name ?? fiber.tag) ? fiber.children : null;

@@ -25,11 +25,16 @@ import { ForwardRefTag } from "../src/work-tags.js";
 
 const FIXTURES = join(import.meta.dirname, "framework-fixtures");
 
-const render = async (fixture: string, target: FrameworkRenderTarget) => {
+const render = async (
+  fixture: string,
+  target: FrameworkRenderTarget,
+  externalPackageAllowList: string[] = [],
+) => {
   const rootDirectory = join(FIXTURES, fixture);
   const result = await renderFrameworkTarget(target, {
     rootDirectory,
     tsconfigPath: join(rootDirectory, "tsconfig.json"),
+    externalPackageAllowList,
   });
   return {
     result,
@@ -445,6 +450,16 @@ describe("next pages router", () => {
     expect(tree).toContain("<Docs>");
   });
 
+  it("applies next.config's compiler.styledComponents naming to the app's styled components", async () => {
+    const { tree, errors } = await render(
+      "next-pages",
+      { framework: "next-pages", route: "/styled" },
+      ["styled-components"],
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<Styled>\n\s+<styled__Page>\n\s+<main>/);
+  });
+
   it("models next@12.0 Link as a plain function cloning its child and Head's SideEffect as a class", async () => {
     const { tree, errors } = await render("next-pages", {
       framework: "next-pages",
@@ -461,6 +476,58 @@ describe("next pages router", () => {
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
+  });
+
+  it("splices out the Next 16 dev client around _app, keeping the app's own next/head", () => {
+    const fiber = (
+      name: string | null,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+      props: RuntimeFiberSnapshot["props"] = {},
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props, children });
+    const app = fiber("App", "FunctionComponent", [
+      fiber("Head", "FunctionComponent", [fiber("SideEffect", "FunctionComponent")]),
+      fiber("Portal", "FunctionComponent", [
+        fiber("Portal", "HostPortal", [fiber("div", "HostComponent")]),
+      ]),
+    ]);
+    const runtimeRoot = fiber("HostRoot", "HostRoot", [
+      fiber("Root", "FunctionComponent", [
+        fiber("Head", "FunctionComponent", [], { callback: "[function]" }),
+        fiber("AppContainer", "FunctionComponent", [
+          fiber("Container", "ClassComponent", [
+            fiber("PagesDevOverlayBridge", "FunctionComponent", [
+              fiber("PagesDevOverlayErrorBoundary", "ClassComponent", [
+                fiber("RouterContext", "ContextProvider", [
+                  app,
+                  fiber(
+                    "Portal",
+                    "FunctionComponent",
+                    [
+                      fiber("Portal", "HostPortal", [
+                        fiber("RouteAnnouncer", "FunctionComponent", [fiber("p", "HostComponent")]),
+                      ]),
+                    ],
+                    { type: "next-route-announcer" },
+                  ),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]),
+    ]);
+    const flattened = flattenTransparentFibers(
+      {
+        reactVersion: null,
+        rendererName: null,
+        buildType: null,
+        roots: [runtimeRoot],
+        capturedAt: "",
+      },
+      getFrameworkProfile("next-pages"),
+    );
+    expect(flattened.roots[0].children).toEqual([app]);
   });
 
   it("mounts without StrictMode when next.config does not enable it", async () => {

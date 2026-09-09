@@ -4,10 +4,13 @@ import {
   getCapturedExportReference,
   getOpaqueCaptureDescription,
 } from "../observations.js";
+import type { Class } from "oxc-parser";
 import type {
   CapturedExportReference,
   CapturedValue,
+  FunctionLikeNode,
   JsonValue,
+  Scope,
   SourceLocation,
   StaticAccessor,
   StaticClassValue,
@@ -25,6 +28,7 @@ import type {
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
   StaticValue,
+  StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
@@ -356,15 +360,18 @@ const lookupObjectProperty = (
     }
     const own = getSpreadProperty(memo, spread, key);
     if (own === null) {
-      const inherited = getInheritedProperty(memo, object, key);
-      return isPresent(inherited) ? inherited : unknownSpreadProperty(spread, key);
+      const fromSpread = unknownSpreadProperty(spread, key);
+      const fromEarlier = getMemoizedObjectProperty(memo, object, key, index);
+      return isPresent(fromEarlier)
+        ? branchValue([fromEarlier, fromSpread], fromSpread.reason, null)
+        : fromSpread;
     }
     if (isPresent(own)) return own;
   }
   return getInheritedProperty(memo, object, key);
 };
 
-const unknownSpreadProperty = (spread: StaticValue, key: string): StaticValue =>
+const unknownSpreadProperty = (spread: StaticValue, key: string): StaticUnknownValue =>
   unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
 
 const getInheritedProperty = (
@@ -506,6 +513,19 @@ export const getOwnPropertyDescriptor = (
     enumerable: primitiveValue(isEnumerable),
     configurable: isConfigurable,
   });
+};
+
+/** `Object.getOwnPropertyDescriptors(object)`, or null when a dynamic spread could own a key. */
+export const getOwnPropertyDescriptors = (object: StaticObjectValue): StaticObjectValue | null => {
+  const ownKeys = getKnownOwnKeys(object, () => true);
+  if (!ownKeys) return null;
+  const descriptors: Record<string, StaticValue> = {};
+  for (const key of ownKeys.keys()) {
+    const descriptor = getOwnPropertyDescriptor(object, key);
+    if (descriptor === null) return null;
+    descriptors[key] = descriptor;
+  }
+  return objectFromRecord(descriptors);
 };
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
@@ -730,6 +750,8 @@ const isSameValue = (left: StaticValue, right: StaticValue): boolean => {
   if (left.kind === "primitive" && right.kind === "primitive") {
     return Object.is(left.value, right.value);
   }
+  if (left.kind === "global" && right.kind === "global") return left.name === right.name;
+  if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
   return false;
 };
 
@@ -780,6 +802,8 @@ const getIdentityClass = (value: StaticValue): IdentityClass | null => {
   switch (value.kind) {
     case "primitive":
       return "scalar";
+    case "unknown-primitive":
+      return value.primitiveType === "any" ? null : "scalar";
     case "symbol":
       return "symbol";
     case "react-api":
@@ -795,12 +819,54 @@ const getIdentityClass = (value: StaticValue): IdentityClass | null => {
   }
 };
 
+/** The `typeof` of a scalar, when known: a typed unknown primitive can never equal a scalar of another type. */
+const getScalarTypeof = (value: StaticValue): string | null => {
+  if (value.kind === "primitive") return typeof value.value;
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  return null;
+};
+
 const isHeapValue = (value: StaticValue): value is StaticObjectValue | StaticListValue =>
   value.kind === "object" || value.kind === "list";
 
-/** Two closures or classes created from different source nodes are never the same object. */
 const isCallableValue = (value: StaticValue): value is StaticFunctionValue | StaticClassValue =>
   value.kind === "function" || value.kind === "class";
+
+interface ClosureIdentity {
+  node: FunctionLikeNode | Class;
+  scope: Scope;
+}
+
+/** The closure or class a callable or an element's `type` refers to; a bound function is a distinct object. */
+const getClosureIdentity = (value: StaticValue): ClosureIdentity | null => {
+  if (value.kind === "class") return value;
+  if (value.kind === "function") return value.boundArgs || value.boundThis ? null : value;
+  if (value.kind !== "component-reference") return null;
+  const { type } = value;
+  return type.kind === "function" || type.kind === "class" ? type.component : null;
+};
+
+/** A `forwardRef`/`memo`/`lazy` object, never identical to a closure or class. */
+const isWrapperReference = (value: StaticValue): boolean =>
+  value.kind === "component-reference" &&
+  (value.type.kind === "forward-ref" || value.type.kind === "memo" || value.type.kind === "lazy");
+
+/**
+ * Closures created from different source nodes are never the same object; the
+ * same node evaluated in the same scope is the same closure (a component
+ * declaration compared against an element's `type`).
+ */
+const compareClosureIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
+  const leftClosure = getClosureIdentity(left);
+  const rightClosure = getClosureIdentity(right);
+  if (leftClosure && rightClosure) {
+    if (leftClosure.node !== rightClosure.node) return false;
+    return leftClosure.scope === rightClosure.scope ? true : null;
+  }
+  if ((leftClosure && isWrapperReference(right)) || (rightClosure && isWrapperReference(left)))
+    return false;
+  return null;
+};
 
 /** Values the analyzed program itself creates, so never a host intrinsic such as `Function.prototype`. */
 const isProgramAllocated = (value: StaticValue): boolean =>
@@ -918,7 +984,8 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
       ? true
       : null;
   }
-  if (isCallableValue(left) && isCallableValue(right) && left.node !== right.node) return false;
+  const closureIdentity = compareClosureIdentity(left, right);
+  if (closureIdentity !== null) return closureIdentity;
   const typedVersusOther =
     compareTypedUnknownToOther(left, right) ?? compareTypedUnknownToOther(right, left);
   if (typedVersusOther !== null) return typedVersusOther;
@@ -932,6 +999,11 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   const rightClass = getIdentityClass(right);
   if (leftClass && rightClass && !canShareIdentityClass(leftClass, rightClass)) return false;
   if (leftClass === "object" && rightClass === "object" && left.kind !== right.kind) return false;
+  if (leftClass === "scalar" && rightClass === "scalar") {
+    const leftType = getScalarTypeof(left);
+    const rightType = getScalarTypeof(right);
+    return leftType !== null && rightType !== null && leftType !== rightType ? false : null;
+  }
   return null;
 };
 
@@ -1266,13 +1338,13 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
   switch (value.kind) {
     case "primitive":
       return Boolean(value.value);
+    case "branch":
+      return getAgreedTruthiness(value.alternatives);
     case "unknown-primitive":
       return getShapedTruthiness(value);
     case "unknown":
     case "optional":
       return null;
-    case "branch":
-      return getAgreedTruthiness(value.alternatives);
     case "external":
       return value.origin === "derived" ? null : true;
     case "element":
@@ -1364,6 +1436,28 @@ export const mapValue = (
     value.preferredIndex,
     value.predicate,
   );
+};
+
+const MAX_DISTRIBUTED_ALTERNATIVES = 16;
+
+export const countAlternatives = (value: StaticValue): number =>
+  value.kind === "branch" ? value.alternatives.length : 1;
+
+/** Applies a binary operation to every pair of alternatives while the product stays small; null when either operand is a branch too wide to distribute. */
+export const distributeBinary = (
+  left: StaticValue,
+  right: StaticValue,
+  operation: (leftAlternative: StaticValue, rightAlternative: StaticValue) => StaticValue,
+): StaticValue | null => {
+  if (countAlternatives(left) * countAlternatives(right) > MAX_DISTRIBUTED_ALTERNATIVES)
+    return null;
+  if (left.kind === "branch") {
+    return mapValue(left, (alternative) => operation(alternative, right));
+  }
+  if (right.kind === "branch") {
+    return mapValue(right, (alternative) => operation(left, alternative));
+  }
+  return null;
 };
 
 export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>
@@ -1624,6 +1718,14 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
   }
 };
 
+/** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */
+export const getStubDisplayName = (stub: StubComponent): string | null => {
+  const assigned = stub.properties?.get("displayName");
+  return assigned?.kind === "primitive" && typeof assigned.value === "string"
+    ? assigned.value
+    : stub.displayName;
+};
+
 export const describeElementType = (type: StaticElementType): string => {
   switch (type.kind) {
     case "host":
@@ -1660,7 +1762,7 @@ export const describeElementType = (type: StaticElementType): string => {
     case "external":
       return type.displayName;
     case "stub":
-      return type.stub.displayName ?? "anonymous stub";
+      return getStubDisplayName(type.stub) ?? "anonymous stub";
     case "unknown":
       return type.displayName ?? "unknown";
   }

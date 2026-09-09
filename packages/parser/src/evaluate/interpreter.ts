@@ -21,6 +21,7 @@ import type {
   LogicalExpression,
   MemberExpression,
   NewExpression,
+  Node,
   ObjectExpression,
   ObjectProperty,
   ParamPattern,
@@ -30,6 +31,7 @@ import type {
   Span,
   Statement,
   SwitchStatement,
+  TaggedTemplateExpression,
   TemplateLiteral,
   TryStatement,
   UnaryExpression,
@@ -41,7 +43,7 @@ import type {
 import path from "node:path";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
-import { hasExportedName } from "../graph/module-record.js";
+import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "../frameworks/stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
@@ -103,6 +105,8 @@ import type {
   StaticObjectValue,
   StaticPrimitive,
   StaticValue,
+  StyledComponentsTransformOptions,
+  SuperBinding,
   TopLevelBinding,
   UnknownPrimitiveType,
 } from "../types.js";
@@ -122,10 +126,12 @@ import {
   getFunctionLength,
   getStaticProperty,
   getSuperObject,
+  hasKnownStaticChain,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
 import { getPageLocationMember } from "./page-location.js";
+import { hasExportedName } from "../graph/module-record.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import {
@@ -150,6 +156,7 @@ import {
   applyNumberRangeOperator,
   compareNumberRanges,
   concatenateStrings,
+  getShapedStringCharacter,
   getShapedStringLength,
 } from "./primitive-shapes.js";
 import {
@@ -177,6 +184,11 @@ import {
   getStorageLength,
 } from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
+import {
+  collectStyledDisplayNames,
+  DEFAULT_STYLED_COMPONENTS_TRANSFORM,
+  STYLED_COMPONENTS_MACRO_SPECIFIER,
+} from "./styled-components-transform.js";
 import type { CallFrame, ContextReader, EvaluationContext, StepBudget } from "./context.js";
 import type { StateCell } from "./hooks.js";
 import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
@@ -188,7 +200,9 @@ import {
   type EscapedMutation,
   type EscapeFrame,
   type EscapeWalk,
+  followStaleCallables,
   forEachEscapedCallable,
+  getAccessRoot,
   getEscapedMutations,
   isClosureLocal,
   resolveAccessPath,
@@ -226,6 +240,7 @@ import {
   compareIdentity,
   completeChain,
   componentReference,
+  countAlternatives,
   describeValue,
   FALSE_VALUE,
   falsyCounterpart,
@@ -239,11 +254,13 @@ import {
   getObjectProperty,
   getPreferredTruthiness,
   getPropertyName,
+  getStubDisplayName,
   getTruthiness,
   isNullish,
   isSymbolPropertyKey,
   listValue,
   mapValue,
+  distributeBinary,
   NULL_VALUE,
   capturedValue,
   isJsonRecord,
@@ -302,6 +319,14 @@ interface JsxAttributeValues {
   props: StaticObjectValue;
   key: StaticValue | null;
 }
+
+/** What a file's JSX compiles to under its `@jsx`/`@jsxImportSource` annotation. */
+interface JsxFactory {
+  source: "classic" | "automatic";
+  callee: StaticValue;
+}
+
+const REACT_FRAGMENT: StaticValue = { kind: "react-api", api: "Fragment" };
 
 interface CallValueOptions {
   thisValue?: StaticValue | null;
@@ -371,6 +396,11 @@ const REGEXP_FLAG_ACCESSORS = new Map([
 ]);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
+const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
+
 const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
@@ -524,17 +554,24 @@ const hasSameProperties = (
  * would never bottom out (dynamic values never become more precise). Nor
  * would one that only threads unknowns forward with a changing counter
  * (`walk(node.child, depth + 1)` over an unknown `node`): every level sees
- * the same unknown data, so the result is unknown either way. A call that
- * makes progress over known data (walking a tree, re-entering a batch
- * flush after a counter changed) is followed until the call-depth limit, as
- * is a function re-entered after rewriting its own properties (a proxy that
- * swaps in the real implementation on first call and calls itself again).
+ * the same unknown data, so the result is unknown either way. Nor would one
+ * re-entered from inside a fork that opened during that activation (a
+ * recursive-descent parser's `case GroupStart: this.parseNodes()` over an
+ * unknown input): only data the analysis cannot see decides whether it
+ * recurses, so how deep it goes is unknown, as for a loop with an uncertain
+ * exit. A call that makes progress over known data (walking a tree,
+ * re-entering a batch flush after a counter changed) is followed until the
+ * call-depth limit, as is a function re-entered after rewriting its own
+ * properties (a proxy that swaps in the real implementation on first call
+ * and calls itself again).
  */
 const isNonProgressingRecursion = (
   callStack: CallFrame[],
   functionValue: StaticFunctionValue,
   args: StaticValue[],
+  thisValue: StaticValue | null,
   changeCount: number,
+  forkDepth: number,
 ): boolean => {
   const hasUnknownArgument = args.some(mayBeUnknown);
   return callStack.some(
@@ -542,7 +579,8 @@ const isNonProgressingRecursion = (
       frame.node === functionValue.node &&
       frame.scope === functionValue.scope &&
       frame.args.length === args.length &&
-      (hasUnknownArgument || frame.changeCount === changeCount) &&
+      areValuesEquivalent(frame.thisValue ?? UNDEFINED_VALUE, thisValue ?? UNDEFINED_VALUE) &&
+      (hasUnknownArgument || frame.changeCount === changeCount || frame.forkDepth < forkDepth) &&
       hasSameProperties(frame.properties, functionValue.properties) &&
       frame.args.every(
         (argument, index) =>
@@ -553,6 +591,14 @@ const isNonProgressingRecursion = (
       ),
   );
 };
+
+const getCallReceiver = (
+  functionValue: StaticFunctionValue,
+  options: CallOptions,
+): StaticValue | null =>
+  functionValue.node.type === "ArrowFunctionExpression"
+    ? functionValue.thisValue
+    : (options.thisValue ?? null);
 
 /** An unknown, a member/result of an unanalyzed external, or a branch holding one: further recursion cannot make it more precise. */
 const mayBeUnknown = (value: StaticValue): boolean =>
@@ -612,7 +658,7 @@ export class Interpreter {
   private readonly maxCallDepth: number;
   private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
-  private readonly project: ProjectContext;
+  readonly project: ProjectContext;
   readonly origin: string | null;
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
@@ -652,6 +698,11 @@ export class Interpreter {
   /** One evaluation per destructuring declarator, shared by every name it binds. */
   private readonly destructuredInitValues = new WeakMap<Expression, StaticValue>();
   private readonly diagnosticKeys = new Set<string>();
+  /** The `super(...)` each instance under construction runs, for lowered constructors calling it through `Reflect.construct`. */
+  readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
+  /** The styled-components transform the project's build applies to its own modules; `null` when it has none. */
+  styledComponentsTransform: StyledComponentsTransformOptions | null;
+  private readonly styledDisplayNames = new WeakMap<ModuleRecord, Map<Node, string>>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
     this.graph = graph;
@@ -696,6 +747,11 @@ export class Interpreter {
       this.reactVersion,
     );
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
+    this.styledComponentsTransform = this.project.hasDeclaredDependency(
+      "babel-plugin-styled-components",
+    )
+      ? DEFAULT_STYLED_COMPONENTS_TRANSFORM
+      : null;
   }
 
   /** A value recorded from the running page, with references to the project's own module exports evaluated. */
@@ -1057,7 +1113,9 @@ export class Interpreter {
         const accessor = getObjectAccessor(target, propertyName);
         if (accessor) {
           if (accessor.set) {
-            this.callValue(accessor.set, [value], context, null, { thisValue: target });
+            this.callValue(accessor.set, [value], context, null, {
+              thisValue: target,
+            });
           }
           return target;
         }
@@ -1066,8 +1124,8 @@ export class Interpreter {
       }
       case "list": {
         if (target.isFrozen) return target;
-        const index = Number(propertyName);
-        if (Number.isInteger(index) && index >= 0) {
+        const index = toIndexKey(propertyName);
+        if (index !== null) {
           this.recordHeapMutation(target);
           if (context.uncertainDepth > 0 && index >= target.items.length) {
             target.items.push({ kind: "repeat", item: value, location: null });
@@ -1296,7 +1354,10 @@ export class Interpreter {
       name,
       properties: new Map(),
     };
-    const staticContext: EvaluationContext = { ...context, thisValue: classValue };
+    const staticContext: EvaluationContext = {
+      ...context,
+      thisValue: classValue,
+    };
     for (const member of body.members) {
       if (!member.isStatic) continue;
       if (member.kind === "field") {
@@ -1322,7 +1383,9 @@ export class Interpreter {
       classValue.properties.set(
         member.key,
         member.kind === "getter"
-          ? this.callFunction(bound, [], staticContext, { thisValue: classValue })
+          ? this.callFunction(bound, [], staticContext, {
+              thisValue: classValue,
+            })
           : bound,
       );
     }
@@ -1347,7 +1410,10 @@ export class Interpreter {
     const moduleValue = this.evaluateModuleBinding(context.module, name);
     if (moduleValue) return moduleValue;
     if (context.module.isCommonJs) {
-      const exportsValue: StaticValue = { kind: "namespace", module: context.module };
+      const exportsValue: StaticValue = {
+        kind: "namespace",
+        module: context.module,
+      };
       if (name === "exports") return exportsValue;
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
@@ -1546,9 +1612,17 @@ export class Interpreter {
           ),
         );
       case "TaggedTemplateExpression": {
-        const tag = this.evaluateExpression(node.tag, context);
+        const tag = this.withStyledDisplayName(
+          this.evaluateExpression(node.tag, context),
+          node,
+          context,
+        );
         if (tag.kind === "external") {
-          return { ...tag, importedName: `${tag.importedName}\`\``, origin: "derived" };
+          return {
+            ...tag,
+            importedName: `${tag.importedName}\`\``,
+            origin: "derived",
+          };
         }
         const strings = listValue(
           node.quasi.quasis.map((quasi) => primitiveValue(quasi.value.cooked ?? quasi.value.raw)),
@@ -1622,6 +1696,7 @@ export class Interpreter {
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
     this.changeCount++;
+    if (target.kind === "list") this.escapeWalk.memo.invalidate(target, null);
     for (let index = this.heapJournals.length - 1; index >= 0; index--) {
       const journal = this.heapJournals[index];
       if (!journal.isPreexisting(target)) return;
@@ -1640,6 +1715,7 @@ export class Interpreter {
 
   /** A state update queued on one path of an enclosing fork is pending on that path only. */
   recordStateUpdate(cell: StateCell): void {
+    this.changeCount++;
     for (const journal of this.heapJournals) journal.recordStateUpdate(cell);
   }
 
@@ -1678,7 +1754,10 @@ export class Interpreter {
       }
       const key = this.evaluatePropertyKey(property.key, property.computed, context);
       if (key === null) {
-        entries.push({ kind: "spread", value: unknownValue("computed property key") });
+        entries.push({
+          kind: "spread",
+          value: unknownValue("computed property key"),
+        });
         continue;
       }
       if (property.kind !== "init") {
@@ -2331,7 +2410,7 @@ export class Interpreter {
             ? UNDEFINED_VALUE
             : primitiveValue(type.stub.displayName);
         return getStubOwnKeys(type.stub.tag).has(key)
-          ? unknownValue(`${type.stub.displayName ?? "stub"}.${key}`, location)
+          ? unknownValue(`${getStubDisplayName(type.stub) ?? "stub"}.${key}`, location)
           : UNDEFINED_VALUE;
       }
       default:
@@ -2357,7 +2436,9 @@ export class Interpreter {
         const accessor = getObjectAccessor(object, key);
         if (accessor) {
           return accessor.get
-            ? this.callValue(accessor.get, [], context, location, { thisValue: object })
+            ? this.callValue(accessor.get, [], context, location, {
+                thisValue: object,
+              })
             : UNDEFINED_VALUE;
         }
         const property = getObjectProperty(object, key);
@@ -2375,10 +2456,8 @@ export class Interpreter {
         const binaryMember = getBinaryMember(object, key);
         if (binaryMember) return binaryMember;
         if (key === "length") return getListLength(object);
-        const index = Number(key);
-        if (Number.isInteger(index) && index >= 0) {
-          return getListItem(object.items, index, location);
-        }
+        const index = toIndexKey(key);
+        if (index !== null) return getListItem(object.items, index, location);
         return (
           object.properties?.get(key) ??
           prototypeMember(object, getBinaryWitness(object) ?? Array.prototype, key)
@@ -2409,16 +2488,23 @@ export class Interpreter {
           if (optional) return CHAIN_SHORT_CIRCUIT;
           return unknownValue(`property "${key}" of ${String(object.value)}`, location);
         }
-        if (typeof object.value === "string" && key === "length")
-          return primitiveValue(object.value.length);
+        if (typeof object.value === "string") {
+          if (key === "length") return primitiveValue(object.value.length);
+          const index = toIndexKey(key);
+          if (index !== null) return primitiveValue(object.value[index]);
+        }
         return prototypeMember(object, Object.getPrototypeOf(object.value), key);
-      case "unknown-primitive":
+      case "unknown-primitive": {
         if (key === "length") {
           return object.primitiveType === "string"
             ? getShapedStringLength(object)
             : unknownPrimitiveValue("number", "length of dynamic value");
         }
+        const index = toIndexKey(key);
+        if (index !== null && object.primitiveType === "string")
+          return getShapedStringCharacter(object, index);
         return prototypeMember(object, PRIMITIVE_PROTOTYPES[object.primitiveType], key);
+      }
       case "context":
         if (key === "Provider") {
           return componentReference({
@@ -2484,7 +2570,11 @@ export class Interpreter {
         }
         if (isHistoryName(object.name)) {
           return (
-            getHistoryMember(this.history, key) ?? { kind: "method", receiver: object, name: key }
+            getHistoryMember(this.history, key) ?? {
+              kind: "method",
+              receiver: object,
+              name: key,
+            }
           );
         }
         if (isIndexedDbName(object.name)) return { kind: "method", receiver: object, name: key };
@@ -2539,7 +2629,11 @@ export class Interpreter {
         }
         if (key === "displayName") return UNDEFINED_VALUE;
         if (key === "name") return object.name ? primitiveValue(object.name) : primitiveValue("");
-        if (object.kind === "function" && !isFunctionOwnOrInheritedKey(key)) return UNDEFINED_VALUE;
+        if (
+          !isFunctionOwnOrInheritedKey(key) &&
+          (object.kind === "function" || hasKnownStaticChain(object))
+        )
+          return UNDEFINED_VALUE;
         return unknownValue(`${describeValue(object)}.${key}`, location);
       }
       case "component-reference":
@@ -2599,7 +2693,12 @@ export class Interpreter {
     if (target.kind === "external" || target.kind === "builtin") {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;
       return this.resolvedSymbolToValue(
-        { kind: "external", packageName, imported: { kind: "namespace" }, specifier },
+        {
+          kind: "external",
+          packageName,
+          imported: { kind: "namespace" },
+          specifier,
+        },
         null,
       );
     }
@@ -2640,7 +2739,16 @@ export class Interpreter {
       if (callee === CHAIN_SHORT_CIRCUIT) return callee;
       if (node.optional && isNullish(callee) === true) return CHAIN_SHORT_CIRCUIT;
       args ??= this.evaluateArguments(node.arguments, context);
-      return this.callValue(callee, args, context, location, { thisValue, nameHint });
+      return this.callValue(
+        this.withStyledDisplayName(callee, node, context),
+        args,
+        context,
+        location,
+        {
+          thisValue,
+          nameHint,
+        },
+      );
     };
     if (node.callee.type !== "MemberExpression") {
       return callWith(this.evaluateExpression(node.callee, context), null);
@@ -2721,7 +2829,10 @@ export class Interpreter {
           hooks: null,
           callAwaited: (callee, calleeArgs) =>
             this.callAwaited(callee, calleeArgs, context, location),
-          call: (callee, calleeArgs) => this.callValue(callee, calleeArgs, context, location),
+          call: (callee, calleeArgs, thisValue) =>
+            this.callValue(callee, calleeArgs, context, location, {
+              thisValue,
+            }),
           callDeferred: (callee, calleeArgs) =>
             this.callDeferred(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
@@ -2729,6 +2840,7 @@ export class Interpreter {
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+          project: this.project,
           recordStateMutation: (state) => this.recordStateMutation(state),
           realm: this.getRealm(context.environment),
           nameHint: options.nameHint ?? null,
@@ -2757,6 +2869,42 @@ export class Interpreter {
         this.markEscapes(args);
         return unknownValue(`call of ${describeValue(callee)}`, location);
     }
+  }
+
+  /** `callee.withConfig({ displayName })` when the project's styled-components transform names this call site. */
+  private withStyledDisplayName(
+    callee: StaticValue,
+    node: CallExpression | TaggedTemplateExpression,
+    context: EvaluationContext,
+  ): StaticValue {
+    if (callee.kind === "external" || callee.kind === "unknown") return callee;
+    const displayName = this.getStyledDisplayNames(context.module).get(node);
+    if (displayName === undefined) return callee;
+    const location = this.locate(context.module, node);
+    const withConfig = this.getProperty(callee, "withConfig", context, location, false);
+    const config = objectFromRecord({
+      displayName: primitiveValue(displayName),
+    });
+    return this.callValue(withConfig, [config], context, location, {
+      thisValue: callee,
+    });
+  }
+
+  private getStyledDisplayNames(module: ModuleRecord): Map<Node, string> {
+    let displayNames = this.styledDisplayNames.get(module);
+    if (!displayNames) {
+      const usesMacro = module.imports.some(
+        (binding) => binding.specifier === STYLED_COMPONENTS_MACRO_SPECIFIER,
+      );
+      const transform = usesMacro
+        ? DEFAULT_STYLED_COMPONENTS_TRANSFORM
+        : isInsideNodeModules(module.filePath)
+          ? null
+          : this.styledComponentsTransform;
+      displayNames = transform ? collectStyledDisplayNames(module, transform) : new Map();
+      this.styledDisplayNames.set(module, displayNames);
+    }
+    return displayNames;
   }
 
   private callBuiltin(
@@ -2789,14 +2937,17 @@ export class Interpreter {
       else this.markEscapedMutations(callable, frame);
     },
     resolveModuleBinding: (module, name) => this.peekModuleBinding(module, name),
-    memo: new EscapeMemo(),
+    memo: new EscapeMemo(() =>
+      this.timers.queueMicrotask(() => followStaleCallables(this.escapeWalk)),
+    ),
   };
 
   /**
    * Escaped code widens the heap it names through the variables it captures
-   * and its module's bindings. Its arguments and `this` belong to whichever
-   * escaped code handed them over; only a closure that escaped directly, as a
-   * callback or bound method, may widen the `this` it was bound to.
+   * and its module's bindings; an arrow function captures its `this` too.
+   * Its arguments and a method's `this` belong to whichever escaped code
+   * handed them over; only a method that escaped directly, as a callback or
+   * bound method, may widen the `this` it was bound to.
    */
   private markEscapedMutations(
     functionValue: StaticFunctionValue,
@@ -2804,9 +2955,15 @@ export class Interpreter {
   ): void {
     const { module } = functionValue;
     for (const mutation of getEscapedMutations(functionValue.node)) {
-      const [root] = mutation.target;
+      const root = getAccessRoot(mutation.target, mutation.bindings);
       if (isClosureLocal(functionValue, root) || (root === "this" && frame !== null)) continue;
-      const resolved = resolveAccessPath(functionValue, null, mutation.target, this.escapeWalk);
+      const resolved = resolveAccessPath(
+        functionValue,
+        null,
+        mutation.target,
+        this.escapeWalk,
+        mutation.bindings,
+      );
       if (resolved.length > 0) {
         for (const value of resolved) markEscapedMutation(value, mutation);
         continue;
@@ -2831,6 +2988,19 @@ export class Interpreter {
     const location = this.locate(context.module, node);
     const args = this.evaluateArguments(node.arguments, context);
     return this.construct(callee, args, context, location);
+  }
+
+  /** Runs the pending `super(...)` of `instance` when `superClass` is its parent; null when it is not under construction by that parent. */
+  constructSuper(
+    instance: StaticValue,
+    superClass: StaticValue,
+    args: StaticValue[],
+  ): StaticValue | null {
+    if (instance.kind !== "object") return null;
+    const binding = this.pendingSuperBindings.get(instance);
+    if (!binding?.construct || binding.parent !== superClass) return null;
+    binding.construct(args);
+    return instance;
   }
 
   construct(
@@ -2877,7 +3047,9 @@ export class Interpreter {
       return unknownValue(`new ${describeValue(callee)}`, location);
     }
     const instance: StaticObjectValue = { ...objectValue(), prototype };
-    const returned = this.callFunction(callee, args, context, { thisValue: instance });
+    const returned = this.callFunction(callee, args, context, {
+      thisValue: instance,
+    });
     if (returned.kind === "unknown") {
       return returned.thrown
         ? returned
@@ -3058,7 +3230,16 @@ export class Interpreter {
       );
       return unknownValue("call depth exceeded", location);
     }
-    if (isNonProgressingRecursion(callStack, functionValue, args, this.changeCount)) {
+    if (
+      isNonProgressingRecursion(
+        callStack,
+        functionValue,
+        args,
+        getCallReceiver(functionValue, options),
+        this.changeCount,
+        context.forkDepth,
+      )
+    ) {
       return unknownValue(
         `recursive call of ${functionValue.name ?? "anonymous function"}`,
         location,
@@ -3118,14 +3299,12 @@ export class Interpreter {
     const location = this.locate(functionValue.module, functionValue.node);
     const callStack = options.callStack ?? context.callStack;
     const scope = createScope(functionValue.scope);
+    const thisValue = getCallReceiver(functionValue, options);
     const callContext: EvaluationContext = {
       module: functionValue.module,
       scope,
       budget: context.budget,
-      thisValue:
-        functionValue.node.type === "ArrowFunctionExpression"
-          ? functionValue.thisValue
-          : (options.thisValue ?? null),
+      thisValue,
       superBinding: functionValue.superBinding,
       readContext: context.readContext,
       callStack: [
@@ -3134,7 +3313,9 @@ export class Interpreter {
           node: functionValue.node,
           scope: functionValue.scope,
           args,
+          thisValue,
           changeCount: this.changeCount,
+          forkDepth: context.forkDepth,
           properties: new Map(functionValue.properties),
         },
       ],
@@ -3173,10 +3354,15 @@ export class Interpreter {
     call: CallExpression,
     context: EvaluationContext,
   ): StaticValue {
-    const superValue = this.evaluateArguments(call.arguments, context)[0] ?? UNDEFINED_VALUE;
+    const superValue = this.evaluateArguments(call.arguments, context)[0] ?? null;
     const scope = createScope(context.scope);
     const wrapperContext: EvaluationContext = { ...context, scope };
-    this.bindParameters(compiled.wrapper.params, [superValue], scope, wrapperContext);
+    this.bindParameters(
+      compiled.wrapper.params,
+      superValue ? [superValue] : [],
+      scope,
+      wrapperContext,
+    );
     const classValue = this.defineClass(
       compiled.wrapper,
       { members: compiled.members, superValue },
@@ -3963,9 +4149,17 @@ export class Interpreter {
     context: EvaluationContext,
   ): StaticValue {
     if (children.length === 1) {
-      props.entries.push({ kind: "property", key: "children", value: children[0] });
+      props.entries.push({
+        kind: "property",
+        key: "children",
+        value: children[0],
+      });
     } else if (children.length > 1) {
-      props.entries.push({ kind: "property", key: "children", value: listValue(children) });
+      props.entries.push({
+        kind: "property",
+        key: "children",
+        value: listValue(children),
+      });
     }
     const elementKey = toElementKey(key);
     const element = (elementType: StaticValue): StaticElementValue => ({
@@ -3993,6 +4187,19 @@ export class Interpreter {
       this.getStyledJsxType(node.openingElement.name, props) ??
       this.evaluateJsxName(node.openingElement.name, context);
     const children = this.evaluateJsxChildren(node.children, context);
+    const factory = this.getJsxFactory(context, this.locate(context.module, node));
+    if (factory) {
+      return this.callJsxFactory(
+        factory,
+        type,
+        props,
+        key,
+        children,
+        node,
+        this.describeJsxName(node.openingElement.name),
+        context,
+      );
+    }
     const expandJsx = getStubExpandJsx(type);
     return this.createElement(
       type,
@@ -4018,14 +4225,121 @@ export class Interpreter {
 
   private evaluateJsxFragment(node: JSXFragment, context: EvaluationContext): StaticValue {
     const children = this.evaluateJsxChildren(node.children, context);
+    const location = this.locate(context.module, node);
+    const factory = this.getJsxFactory(context, location);
+    if (factory) {
+      const pragma = context.module.file.jsxPragma;
+      const fragmentType =
+        pragma?.fragment && factory.source === "classic"
+          ? this.evaluatePragmaMember(pragma.fragment, context, location)
+          : REACT_FRAGMENT;
+      return this.callJsxFactory(
+        factory,
+        fragmentType,
+        objectValue(),
+        null,
+        children,
+        node,
+        "Fragment",
+        context,
+      );
+    }
     return this.createElement(
-      { kind: "react-api", api: "Fragment" },
+      REACT_FRAGMENT,
       objectValue(),
       null,
       children,
-      this.locate(context.module, node),
+      location,
       "Fragment",
       context,
+    );
+  }
+
+  /**
+   * The element factory a file's `@jsx` (classic) or `@jsxImportSource`
+   * (automatic) annotation routes its JSX through; null when the JSX compiles
+   * to React's own `createElement`/`jsx`.
+   */
+  private getJsxFactory(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): JsxFactory | null {
+    const pragma = context.module.file.jsxPragma;
+    if (!pragma) return null;
+    if (pragma.factory !== null && pragma.runtime !== "automatic") {
+      const callee = this.evaluatePragmaMember(pragma.factory, context, location);
+      if (callee.kind === "react-api" && callee.api === "createElement") return null;
+      return { source: "classic", callee };
+    }
+    if (
+      pragma.importSource !== null &&
+      pragma.importSource !== "react" &&
+      pragma.runtime !== "classic"
+    ) {
+      const symbol = this.graph.resolveImportedSymbol(
+        `${pragma.importSource}/jsx-runtime`,
+        { kind: "named", name: "jsx" },
+        context.module,
+      );
+      return {
+        source: "automatic",
+        callee: this.resolvedSymbolToValue(symbol, null),
+      };
+    }
+    return null;
+  }
+
+  private evaluatePragmaMember(
+    expression: string,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const [root, ...members] = expression.split(".");
+    let value = this.lookupIdentifier(root, context);
+    for (const member of members) value = this.getProperty(value, member, context, location);
+    return value;
+  }
+
+  /** `factory(type, props, ...children)` (classic) or `jsx(type, propsWithChildren, key)` (automatic), as the JSX compiles. */
+  private callJsxFactory(
+    factory: JsxFactory,
+    type: StaticValue,
+    props: StaticObjectValue,
+    key: StaticValue | null,
+    children: StaticValue[],
+    node: JSXElement | JSXFragment,
+    nameHint: string,
+    context: EvaluationContext,
+  ): StaticValue {
+    const location = this.locate(context.module, node);
+    if (factory.source === "classic") {
+      if (key) props.entries.push({ kind: "property", key: "key", value: key });
+      const propsArgument = props.entries.length === 0 ? NULL_VALUE : props;
+      return this.callValue(factory.callee, [type, propsArgument, ...children], context, location, {
+        nameHint,
+      });
+    }
+    if (children.length === 1) {
+      props.entries.push({
+        kind: "property",
+        key: "children",
+        value: children[0],
+      });
+    } else if (children.length > 1) {
+      props.entries.push({
+        kind: "property",
+        key: "children",
+        value: listValue(children),
+      });
+    }
+    return this.callValue(
+      factory.callee,
+      [type, props, key ?? UNDEFINED_VALUE],
+      context,
+      location,
+      {
+        nameHint,
+      },
     );
   }
 }
@@ -4101,11 +4415,6 @@ const WRAPPER_SYMBOL_KEYS = {
   lazy: "react.lazy",
 } as const;
 
-const MAX_DISTRIBUTED_ALTERNATIVES = 16;
-
-const countAlternatives = (value: StaticValue): number =>
-  value.kind === "branch" ? value.alternatives.length : 1;
-
 const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
   if (value.kind === "unknown-primitive") return value.primitiveType;
   if (value.kind !== "primitive") return null;
@@ -4156,18 +4465,10 @@ const applyBinaryOperator = (
   right: StaticValue,
   realm: HostRealm | null = null,
 ): StaticValue => {
-  if (countAlternatives(left) * countAlternatives(right) <= MAX_DISTRIBUTED_ALTERNATIVES) {
-    if (left.kind === "branch") {
-      return mapValue(left, (alternative) =>
-        applyBinaryOperator(operator, alternative, right, realm),
-      );
-    }
-    if (right.kind === "branch") {
-      return mapValue(right, (alternative) =>
-        applyBinaryOperator(operator, left, alternative, realm),
-      );
-    }
-  }
+  const distributed = distributeBinary(left, right, (leftAlternative, rightAlternative) =>
+    applyBinaryOperator(operator, leftAlternative, rightAlternative, realm),
+  );
+  if (distributed) return distributed;
   const thrownOperand = getThrownOperand([left, right]);
   if (thrownOperand) return thrownOperand;
   if (left.kind === "primitive" && right.kind === "primitive") {

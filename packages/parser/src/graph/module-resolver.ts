@@ -123,6 +123,7 @@ export class ModuleResolver {
         ),
         conditionNames,
         mainFields: ["browser", "module", "main"],
+        aliasFields: ["browser"],
         nodePath: false,
       };
       return {

@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.jsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "`@jsx`/`@jsxFrag` comment pragmas route the file's JSX through a local classic factory, as Babel/esbuild/oxc compile it."
+}

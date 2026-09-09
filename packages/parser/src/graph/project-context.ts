@@ -11,11 +11,11 @@ import type {
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 
-/** Where Next, Vite and CRA dev servers serve static files from, at the URL root. */
-const PUBLIC_DIRECTORY = "public";
+/** Where Next, Vite and CRA dev servers serve static files from, at the URL root, unless configured otherwise. */
+const DEFAULT_PUBLIC_DIRECTORY = "public";
 
 const readServedAsset = (
-  rootDirectory: string,
+  publicDirectory: string,
   origin: string | null,
   url: string,
 ): string | null => {
@@ -23,13 +23,12 @@ const readServedAsset = (
   if ((origin === null && !url.startsWith("/")) || !URL.canParse(url, base)) return null;
   const parsed = new URL(url, base);
   if (origin !== null && parsed.origin !== origin) return null;
-  const publicDirectory = path.join(rootDirectory, PUBLIC_DIRECTORY);
   const assetPath = path.join(publicDirectory, decodeURIComponent(parsed.pathname));
   if (!assetPath.startsWith(publicDirectory + path.sep) || !existsSync(assetPath)) return null;
   return readFileSync(assetPath, "utf8");
 };
 
-const readDeclaredDependencies = (manifestPath: string): string[] => {
+export const readDeclaredDependencies = (manifestPath: string): string[] => {
   if (!existsSync(manifestPath)) return [];
   const manifest = readPackageManifest(manifestPath);
   return Object.keys({
@@ -52,7 +51,9 @@ export const createProjectContext = (
   origin: string | null = null,
   transpiler: ModuleTranspiler = "name-preserving",
   bundler: ModuleBundler = "unknown",
+  publicDirectory: string = DEFAULT_PUBLIC_DIRECTORY,
 ): ProjectContext => {
+  const servedDirectory = path.join(rootDirectory, publicDirectory);
   const declared = new Set<string>();
   for (let directory = rootDirectory; ; directory = path.dirname(directory)) {
     for (const packageName of readDeclaredDependencies(path.join(directory, "package.json"))) {
@@ -69,7 +70,7 @@ export const createProjectContext = (
       readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null,
     transpiler,
     bundler,
-    readServedAsset: (url) => readServedAsset(rootDirectory, origin, url),
+    readServedAsset: (url) => readServedAsset(servedDirectory, origin, url),
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>
       mutations?.filter((mutation) => mutation.mutationHash === mutationHash) ?? null,

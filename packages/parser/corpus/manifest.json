@@ -2465,6 +2465,231 @@
         "route": "/"
       },
       "notes": "TanStack Start (default `StartClient` entry, `routeTree.gen.ts`); same TanStack Router adapter gap as tanstarter: runtime captured, static render unresolved."
+    },
+    {
+      "id": "mui-admin-dashboard",
+      "repository": "https://github.com/ed-roh/react-admin-dashboard",
+      "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
+      "description": "MUI admin dashboard (CRA 5 / webpack, React 18, react-router-dom 6 declarative routes, react-pro-sidebar, nivo charts over mock data)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:5000/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/",
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "react-pro-sidebar",
+          "classnames",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*"
+        ]
+      },
+      "notes": "The start script pins PORT=5000. Everything on the dashboard route is local mock data (src/data/mockData.js); the charts are nivo components."
+    },
+    {
+      "id": "regex-vis",
+      "repository": "https://github.com/Bowen7/regex-vis",
+      "revision": "a6d920601ca44ab2d4e9cd02306510ab6d5e4b38",
+      "description": "Regex Vis (Vite 5 SPA, React 18, react-router-dom 6 declarative routes, jotai, radix/shadcn ui, i18next over HTTP backend)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm start --port 5173 --strictPort",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "aliases": {
+          "tailwind.config": "tailwind.config.ts"
+        },
+        "defines": {
+          "global": null
+        },
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "@phosphor-icons/react",
+          "jotai",
+          "jotai-immer",
+          "nanoid",
+          "react-i18next",
+          "i18next-http-backend",
+          "i18next-browser-languagedetector",
+          "i18next",
+          "react-use",
+          "usehooks-ts",
+          "lodash.debounce",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      },
+      "notes": "vite.config.ts aliases `tailwind.config` to tailwind.config.ts and defines SENTRY_DSN from an unset env var; the app reads import.meta.env.SENTRY_DSN (no VITE_ prefix, so undefined). Translations load from public/locales through i18next-http-backend at runtime."
+    },
+    {
+      "id": "ephe",
+      "repository": "https://github.com/unvalley/ephe",
+      "revision": "4ba31e6cd198491dbf4834050ae804178fb412b3",
+      "description": "Ephe markdown paper (Vite 8 SPA, React 19 with React Compiler, react-router-dom 7 declarative routes, jotai + jotai/utils storage atoms, headlessui, cmdk, sonner, CodeMirror 6)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev --port 3000 --strictPort",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "defines": {
+          "global": null
+        },
+        "externalPackageAllowList": [
+          "jotai",
+          "jotai/*",
+          "@headlessui/react",
+          "@react-aria/*",
+          "react-aria",
+          "@react-stately/*",
+          "@floating-ui/*",
+          "@tanstack/react-virtual",
+          "@tanstack/virtual-core",
+          "cmdk",
+          "@radix-ui/*",
+          "sonner",
+          "motion",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "use-debounce",
+          "@phosphor-icons/react"
+        ]
+      },
+      "notes": "`pnpm dev` first copies the dprint markdown WASM into public/wasm (node --experimental-strip-types, Node >= 22.6). The editor body is CodeMirror 6 (plain DOM under one host node); document state lives in jotai/utils atomWithStorage atoms backed by localStorage."
+    },
+    {
+      "id": "openai-translator",
+      "repository": "https://github.com/LanceMoe/openai-translator",
+      "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
+      "description": "OpenAI Translator PWA (Vite 6 with root=src, React 19 + React Compiler, react-router-dom 7 nested routes with lazy pages, react-daisyui, zustand, @tanstack/react-query, react-i18next over HTTP backend with suspense)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-workspace",
+      "dev": "pnpm dev --port 5173 --strictPort --no-open",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "aliases": {
+          "@/": "src/"
+        },
+        "entry": "src/main.tsx",
+        "route": "/",
+        "publicDirectory": "src/public",
+        "defines": {
+          "global": null
+        },
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@headlessui/react",
+          "@react-aria/*",
+          "react-aria",
+          "@react-stately/*",
+          "@floating-ui/*",
+          "@tanstack/react-virtual",
+          "@tanstack/virtual-core",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "@mantine/hooks",
+          "react-daisyui",
+          "react-hot-toast",
+          "goober",
+          "react-i18next",
+          "i18next-http-backend",
+          "i18next",
+          "react-icons",
+          "react-speech-recognition",
+          "react-string-replace",
+          "react-textarea-autosize",
+          "use-composed-ref",
+          "use-latest",
+          "use-isomorphic-layout-effect",
+          "tailwind-merge",
+          "clsx",
+          "zustand"
+        ]
+      },
+      "notes": "vite.config.ts sets `root: src` (index.html lives in src/), aliases `@/` to src/ (mirrored by tsconfig paths) and defines BUILD_TIME as `new Date().toISOString()` at dev-server start, which the Header prints as text; that timestamp differs per run so it stays unbound (one text wildcard) rather than a guessed define. No .env files exist so VITE_PUBLIC_PATH is unset and base stays `/`. Translations load from src/public/locales through i18next-http-backend with `useSuspense: true`."
+    },
+    {
+      "id": "bookshelf",
+      "repository": "https://github.com/kentcdodds/bookshelf",
+      "revision": "32e9e87db958de863bead65761bfbe2dec0eafd4",
+      "description": "Kent C. Dodds' Bookshelf workshop app, unauthenticated screen (CRA 5 / webpack, React 18, Emotion 10 `@jsx jsx` pragma with css props, react-query 2, Reach UI, MSW mock API in a service worker)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/",
+        "anchor": "AppProviders",
+        "envFiles": [".env.development", ".env"],
+        "externalPackageAllowList": ["react-query", "@reach/dialog"]
+      },
+      "notes": "CRA loads `.env.development` over `.env` and inlines `REACT_APP_*`; `jsconfig.json` sets `baseUrl: ./src`. The dev tools install a second React root, so the app root is anchored on `AppProviders`. Without a stored auth token `bootstrapAppData` resolves to no user without hitting the mock API, so the unauthenticated screen is captured."
+    },
+    {
+      "id": "jsoncrack",
+      "repository": "https://github.com/AykutSarac/jsoncrack.com",
+      "revision": "ffd250b5cbcab410a2985f9e379ad86c644d0e57",
+      "description": "JSON Crack landing page (Next 16 pages router on webpack, pnpm + turbo monorepo, React 19, Mantine 8, styled-components 6, next-seo, zustand 5)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/www",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.20.0 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.20.0 --filter jsoncrack-react build"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.20.0 dev",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/www",
+        "route": "/",
+        "envFiles": [".env.development", ".env"],
+        "externalPackageAllowList": [
+          "@mantine/*",
+          "styled-components",
+          "next-seo",
+          "react-hot-toast",
+          "nextjs-google-analytics",
+          "react-icons"
+        ]
+      },
+      "notes": "`engines.node >= 24` and `packageManager: pnpm@10.20.0`, so install/dev run through the Node wrapper. `turbo run dev` builds the `jsoncrack-react` workspace package first (`_app.tsx` imports its dist stylesheet), which the setup step reproduces; `next dev --webpack` then serves apps/www. Next loads `.env.development` over `.env` and inlines `NEXT_PUBLIC_*`. `pages/index.tsx` exports `getStaticProps` (GitHub star count fetched at build time), so `pageProps` is unknown to the static side."
     }
   ]
 }

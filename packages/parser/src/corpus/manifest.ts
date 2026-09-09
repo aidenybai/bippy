@@ -23,6 +23,8 @@ export interface CorpusStaticTarget {
   route?: string;
   /** Next: `app/` or `pages/` directory relative to `rootDirectory` when it is not directly under it. */
   appDirectory?: string;
+  /** Directory the dev server serves at the URL root, relative to `rootDirectory`, when it is not `public`. */
+  publicDirectory?: string;
   /** Component name both trees are aligned on before matching. */
   anchor?: string;
   externalPackageAllowList?: string[];
@@ -126,6 +128,7 @@ const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
   rootComponent: z.string().optional(),
   route: z.string().optional(),
   appDirectory: z.string().optional(),
+  publicDirectory: z.string().optional(),
   anchor: z.string().optional(),
   externalPackageAllowList: z.array(z.string()).optional(),
   bootstrap: z.array(z.string()).optional(),

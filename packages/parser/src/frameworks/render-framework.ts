@@ -138,6 +138,7 @@ const rendererOptionsForEntry = (
     defines: entry.static.defines,
     environment: readProcessEnvironment(entry, rootDirectory),
     origin: new URL(entry.url).origin,
+    publicDirectory: entry.static.publicDirectory,
     observations,
     maxSteps: entry.static.maxSteps,
     maxFiberCount: entry.static.maxFiberCount,

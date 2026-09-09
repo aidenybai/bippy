@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import path from "node:path";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import {
@@ -17,6 +16,7 @@ import {
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult, StaticValue } from "../types.js";
+import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import { element } from "./stubs.js";
 import {
@@ -39,39 +39,13 @@ export interface NextPagesRouteOptions {
 
 const RESERVED_PAGES = new Set(["_app", "_document", "_error", "404", "500", "api"]);
 const DATA_FETCHING_EXPORTS = ["getServerSideProps", "getStaticProps", "getInitialProps"];
-const NEXT_CONFIG_FILE_NAMES = [
-  "next.config.js",
-  "next.config.mjs",
-  "next.config.cjs",
-  "next.config.ts",
-  "next.config.mts",
-];
-
 /**
  * `reactStrictMode` from `next.config`, which the pages client reads as
- * `process.env.__NEXT_STRICT_MODE` (`false` when unset). A config exported as
- * a function receives the build phase and `defaultConfig` at build time.
+ * `process.env.__NEXT_STRICT_MODE` (`false` when unset).
  */
 const readReactStrictMode = (renderer: StaticRenderer, interpreter: Interpreter): StaticValue => {
-  const configPath = NEXT_CONFIG_FILE_NAMES.map((name) =>
-    path.join(renderer.options.rootDirectory, name),
-  ).find((candidate) => existsSync(candidate));
-  if (!configPath) return FALSE_VALUE;
-  const configModule = renderer.loadModule(configPath);
-  if (!configModule) return unknownValue("next.config could not be parsed");
-  const exported = interpreter.evaluateModuleExport(configModule, "default");
-  const config =
-    exported.kind === "function"
-      ? interpreter.callValue(
-          exported,
-          [
-            unknownValue("next build phase"),
-            objectFromRecord({ defaultConfig: unknownValue("next default config") }),
-          ],
-          interpreter.createModuleContext(configModule),
-          null,
-        )
-      : exported;
+  const config = evaluateNextConfig(renderer, interpreter);
+  if (config === null) return FALSE_VALUE;
   return mapValue(config, (alternative) => {
     if (alternative.kind !== "object") {
       return unknownValue(`next.config is ${describeValue(alternative)}`);
@@ -182,6 +156,7 @@ export const renderNextPagesRoute = (
     : findFirstDirectory(renderer.options.rootDirectory, ["pages", "src/pages"]);
 
   return renderer.renderWith((interpreter) => {
+    applyNextCompilerOptions(renderer, interpreter);
     if (!pagesDirectory) {
       interpreter.report(
         "next-pages-missing",

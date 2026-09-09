@@ -4,7 +4,7 @@ import type {
   StaticValue,
   StringShape,
 } from "../types.js";
-import { primitiveValue, unknownPrimitiveValue } from "./values.js";
+import { distributeBinary, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
 
 const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
 
@@ -43,6 +43,25 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
   });
 };
 
+/** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */
+const toJoinedItem = (item: StaticValue): StaticValue =>
+  item.kind === "primitive" && (item.value === null || item.value === undefined)
+    ? primitiveValue("")
+    : item;
+
+const concatenateAlternatives = (left: StaticValue, right: StaticValue): StaticValue =>
+  distributeBinary(left, right, concatenateAlternatives) ?? concatenateStrings(left, right);
+
+export const joinStrings = (items: StaticValue[], separator: string): StaticValue =>
+  items.reduce<StaticValue>(
+    (joined, item, index) =>
+      concatenateAlternatives(
+        index === 0 ? joined : concatenateAlternatives(joined, primitiveValue(separator)),
+        toJoinedItem(item),
+      ),
+    primitiveValue(""),
+  );
+
 const toIndexArgument = (argument: StaticValue | undefined): number | null | undefined => {
   if (argument === undefined) return undefined;
   if (argument.kind !== "primitive" || typeof argument.value !== "number") return null;
@@ -75,6 +94,17 @@ const toFixedOfRange = (range: NumberRange, digits: number): StaticValue | null 
   if (!Number.isInteger(digits) || digits < 0 || digits > 100) return null;
   if (range.min < 0 || range.max >= 9) return null;
   return shapedStringValue("toFixed()", { prefix: "", length: digits === 0 ? 1 : digits + 2 });
+};
+
+/** `text[index]`: the character when `index` falls inside the known prefix, `undefined` past a known length. */
+export const getShapedStringCharacter = (
+  receiver: StaticUnknownPrimitiveValue,
+  index: number,
+): StaticValue => {
+  const shape = receiver.stringShape ?? UNKNOWN_STRING_SHAPE;
+  if (index < shape.prefix.length) return primitiveValue(shape.prefix[index]);
+  if (shape.length !== null && index >= shape.length) return primitiveValue(undefined);
+  return unknownValue("character of dynamic string");
 };
 
 /** `.length` of a dynamic string: exact when its shape fixes it, else at least the known prefix's. */

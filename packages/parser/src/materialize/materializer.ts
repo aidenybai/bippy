@@ -22,13 +22,15 @@ import {
   unmountAllEffects,
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
-import { describeThrow, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
+import { getModeledPromise, type ModeledPromise, onPromiseSettled } from "../evaluate/promises.js";
+import { describeThrow, findThrown, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
 import {
   areValuesEquivalent,
   compareIdentity,
   compareShallowly,
   describeValue,
   getObjectProperty,
+  getStubDisplayName,
   mapValue,
   NULL_VALUE,
   omitObjectKeys,
@@ -466,6 +468,7 @@ export class Materializer {
   private readonly forwardRefProxies = new ComponentCache<Map<string, ComponentType<ProxyProps>>>();
   private readonly memoTypes = new WeakMap<object, Map<string, ComponentType<ProxyProps>>>();
   private readonly lazyTypes = new WeakMap<object, ComponentType<ProxyProps>>();
+  private readonly wakeables = new WeakMap<ModeledPromise, Promise<void>>();
   private readonly contexts = new WeakMap<
     ContextDefinition | StaticElementType,
     Context<StaticValue | null>
@@ -890,12 +893,19 @@ export class Materializer {
     context: MaterializeContext,
     location: SourceLocation | null,
   ): ReactNode {
-    if (children.kind !== "function") {
-      return this.unknownElementNode("Consumer render prop is dynamic", context);
-    }
     const contextValue = definition
       ? providedContextValue(this.interpreter, definition, provided, location)
       : unknownValue("context value from an unresolved context");
+    if (children.kind === "native-function") {
+      return this.toNode(
+        children.call([contextValue], this.stubTools(context, location)),
+        context,
+        true,
+      );
+    }
+    if (children.kind !== "function") {
+      return this.unknownElementNode("Consumer render prop is dynamic", context);
+    }
     const evaluationContext = this.interpreter.createModuleContext(children.module, (candidate) =>
       candidate === definition ? provided : null,
     );
@@ -1306,7 +1316,7 @@ export class Materializer {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
           this.renderInsideComponent(() => this.renderStub(input, stub)),
-        stub.displayName,
+        getStubDisplayName(stub),
       );
       proxy = this.stubProxyForTag(stub.tag, render);
       this.stubProxies.set(stub, proxy);
@@ -1367,9 +1377,11 @@ export class Materializer {
         providedContextValue(this.interpreter, definition, this.readContext(definition), location),
       hooks,
       callAwaited: (callee, args) => this.callAwaited(callee, args, context, location),
-      call: (callee, args) => {
+      call: (callee, args, thisValue) => {
         if (callee.kind === "function") {
-          return this.interpreter.callFunction(callee, args, this.moduleContext(callee, context));
+          return this.interpreter.callFunction(callee, args, this.moduleContext(callee, context), {
+            thisValue,
+          });
         }
         if (callee.kind === "native-function") return callee.call(args, tools);
         return unknownValue(`call of ${describeValue(callee)}`, location);
@@ -1388,6 +1400,7 @@ export class Materializer {
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
+      project: this.interpreter.project,
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       nameHint: null,
@@ -1647,7 +1660,12 @@ export class Materializer {
     input: ProxyInput,
   ): ReactNode {
     const certainty = getThrowCertainty(rendered);
-    if (certainty === "always") throw new StaticThrowError(describeThrow(rendered), false);
+    if (certainty === "always") {
+      throw (
+        this.getWakeable(rendered, input.context) ??
+        new StaticThrowError(describeThrow(rendered), false)
+      );
+    }
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
         throw new StaticThrowError(`component may throw: ${describeThrow(rendered)}`, true);
@@ -1655,6 +1673,32 @@ export class Materializer {
       return this.toNode(withoutThrows(rendered), childContext, true);
     }
     return this.toNode(rendered, childContext, true);
+  }
+
+  /**
+   * A thrown promise suspends the component; React retries it once the promise
+   * settles (a wakeable in `ReactFiberThrow`). One that escaped may settle any
+   * time before the snapshot, so it wakes in the next timer round, after the
+   * code that escaped with it.
+   */
+  private getWakeable(rendered: StaticValue, context: MaterializeContext): Promise<void> | null {
+    const thrown = findThrown(rendered)?.thrown;
+    const promise = thrown && getModeledPromise(thrown);
+    if (!promise) return null;
+    this.markMaySuspend(context);
+    let wakeable = this.wakeables.get(promise);
+    if (!wakeable) {
+      const { timers } = this.interpreter;
+      wakeable = new Promise((wake) => {
+        onPromiseSettled(
+          promise,
+          (isEscaped) => (isEscaped ? timers.enqueue(() => wake()) : wake()),
+          (task) => timers.queueMicrotask(task),
+        );
+      });
+      this.wakeables.set(promise, wakeable);
+    }
+    return wakeable;
   }
 
   private evaluateComposite(

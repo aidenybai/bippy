@@ -55,6 +55,37 @@ describe("process environment", () => {
     });
   });
 
+  it("inlines `REACT_APP_*` for create-react-app, giving the first env file precedence", () => {
+    const rootDirectory = mkdtempSync(path.join(tmpdir(), "bippy-parser-env-"));
+    writeFileSync(
+      path.join(rootDirectory, "package.json"),
+      JSON.stringify({ dependencies: { "react-scripts": "5.0.1" } }),
+    );
+    writeFileSync(
+      path.join(rootDirectory, ".env"),
+      "REACT_APP_API_URL=https://api.example\nREACT_APP_AUTH_URL=https://auth.example\n",
+    );
+    writeFileSync(
+      path.join(rootDirectory, ".env.development"),
+      "DISABLE_NEW_JSX_TRANSFORM=true\nREACT_APP_API_URL=http://localhost:8989/api\n",
+    );
+    const entry = createEntry({ envFiles: [".env.development", ".env"] });
+    expect(readProcessEnvironment(entry, rootDirectory)).toEqual({
+      variables: {
+        REACT_APP_REVIEW_ID: "42",
+        DISABLE_NEW_JSX_TRANSFORM: "true",
+        REACT_APP_API_URL: "http://localhost:8989/api",
+        REACT_APP_AUTH_URL: "https://auth.example",
+      },
+      clientPrefix: "REACT_APP_",
+    });
+  });
+
+  it("inlines `NEXT_PUBLIC_*` for Next", () => {
+    const entry: CorpusEntry = { ...createEntry({}), framework: "next-app" };
+    expect(readProcessEnvironment(entry, tmpdir())?.clientPrefix).toBe("NEXT_PUBLIC_");
+  });
+
   it("parses like dotenv: multi-line quotes, comments, last assignment wins", () => {
     const parsed = parseDotenv(
       [

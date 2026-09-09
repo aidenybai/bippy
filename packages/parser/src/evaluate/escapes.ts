@@ -30,6 +30,13 @@ export interface EscapedMutation {
   target: AccessPath;
   key: string | null;
   isMethodCall: boolean;
+  bindings: ItemBinding[];
+}
+
+/** `queue.forEach((entry) => …)`: inside the callback, `name` is an item of the list at `receiver`. */
+export interface ItemBinding {
+  name: string;
+  receiver: AccessPath;
 }
 
 /** An argument at an escaped call site: a plain path, a literal, or neither (`{ onDone: setX }`, `x + 1`). */
@@ -43,6 +50,8 @@ interface EscapedCallSite {
   arguments: EscapedArgument[];
   /** Paths inside arguments that are neither plain paths nor literals. */
   nestedPaths: AccessPath[];
+  /** The iteration callbacks the call site sits in, outermost first. */
+  bindings: ItemBinding[];
 }
 
 interface ClosureShape {
@@ -187,7 +196,55 @@ const getParameterNames = (parameters: ParamPattern[]): (string | null)[] =>
     return pattern.type === "Identifier" ? pattern.name : null;
   });
 
-const collectClosureShape = (node: Node, shape: ClosureShape): void => {
+/** Array methods that call their callback once per item, the item first. */
+const ITERATION_METHODS = new Set([
+  "forEach",
+  "map",
+  "flatMap",
+  "filter",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+  "some",
+  "every",
+]);
+
+interface IterationCallback {
+  callback: Node;
+  binding: ItemBinding;
+}
+
+const getIterationCallback = (node: Node): IterationCallback | null => {
+  if (node.type !== "CallExpression" || node.callee.type !== "MemberExpression") return null;
+  const method = node.callee.computed ? null : node.callee.property;
+  if (method?.type !== "Identifier" || !ITERATION_METHODS.has(method.name)) return null;
+  const receiver = getAccessPath(node.callee.object);
+  const [callback] = node.arguments;
+  if (
+    !receiver ||
+    !callback ||
+    (callback.type !== "FunctionExpression" && callback.type !== "ArrowFunctionExpression")
+  ) {
+    return null;
+  }
+  const [name] = getParameterNames(callback.params);
+  return name ? { callback, binding: { name, receiver } } : null;
+};
+
+/** Visits the children of `node`, the callback of an iteration call with its item bound. */
+const forEachChildWithBindings = (
+  node: Node,
+  bindings: ItemBinding[],
+  visit: (child: Node, bindings: ItemBinding[]) => void,
+): void => {
+  const iteration = getIterationCallback(node);
+  forEachChildNode(node, (child) => {
+    visit(child, iteration?.callback === child ? [...bindings, iteration.binding] : bindings);
+  });
+};
+
+const collectClosureShape = (node: Node, shape: ClosureShape, bindings: ItemBinding[]): void => {
   switch (node.type) {
     case "CallExpression":
     case "NewExpression": {
@@ -202,6 +259,7 @@ const collectClosureShape = (node: Node, shape: ClosureShape): void => {
         callee: getAccessPath(node.callee),
         arguments: escapedArguments,
         nestedPaths,
+        bindings,
       });
       break;
     }
@@ -225,7 +283,9 @@ const collectClosureShape = (node: Node, shape: ClosureShape): void => {
     default:
       break;
   }
-  forEachChildNode(node, (child) => collectClosureShape(child, shape));
+  forEachChildWithBindings(node, bindings, (child, childBindings) =>
+    collectClosureShape(child, shape, childBindings),
+  );
 };
 
 const closureShapeCache = new WeakMap<FunctionLikeNode, ClosureShape>();
@@ -238,7 +298,7 @@ const getClosureShape = (functionNode: FunctionLikeNode): ClosureShape => {
     declaredNames: new Set(),
     callSites: [],
   };
-  collectClosureShape(functionNode, shape);
+  collectClosureShape(functionNode, shape, []);
   for (const name of shape.parameterNames) {
     if (name !== null) shape.declaredNames.delete(name);
   }
@@ -262,13 +322,13 @@ const MUTATING_METHODS = new Set([
   "copyWithin",
 ]);
 
-const getMemberMutation = (member: Node): EscapedMutation | null => {
+const getMemberMutation = (member: Node, bindings: ItemBinding[]): EscapedMutation | null => {
   if (member.type !== "MemberExpression") return null;
   const target = getAccessPath(member.object);
-  return target ? { target, key: getStaticMemberKey(member), isMethodCall: false } : null;
+  return target ? { target, key: getStaticMemberKey(member), isMethodCall: false, bindings } : null;
 };
 
-const getMutation = (node: Node): EscapedMutation | null => {
+const getMutation = (node: Node, bindings: ItemBinding[]): EscapedMutation | null => {
   switch (node.type) {
     case "CallExpression": {
       const callee = node.callee;
@@ -276,23 +336,29 @@ const getMutation = (node: Node): EscapedMutation | null => {
       const method = callee.computed ? null : callee.property;
       if (method?.type !== "Identifier" || !MUTATING_METHODS.has(method.name)) return null;
       const target = getAccessPath(callee.object);
-      return target ? { target, key: null, isMethodCall: true } : null;
+      return target ? { target, key: null, isMethodCall: true, bindings } : null;
     }
     case "AssignmentExpression":
-      return getMemberMutation(node.left);
+      return getMemberMutation(node.left, bindings);
     case "UpdateExpression":
-      return getMemberMutation(node.argument);
+      return getMemberMutation(node.argument, bindings);
     case "UnaryExpression":
-      return node.operator === "delete" ? getMemberMutation(node.argument) : null;
+      return node.operator === "delete" ? getMemberMutation(node.argument, bindings) : null;
     default:
       return null;
   }
 };
 
-const collectMutations = (node: Node, mutations: EscapedMutation[]): void => {
-  const mutation = getMutation(node);
+const collectMutations = (
+  node: Node,
+  mutations: EscapedMutation[],
+  bindings: ItemBinding[],
+): void => {
+  const mutation = getMutation(node, bindings);
   if (mutation) mutations.push(mutation);
-  forEachChildNode(node, (child) => collectMutations(child, mutations));
+  forEachChildWithBindings(node, bindings, (child, childBindings) =>
+    collectMutations(child, mutations, childBindings),
+  );
 };
 
 const mutationsCache = new WeakMap<FunctionLikeNode, EscapedMutation[]>();
@@ -302,33 +368,48 @@ export const getEscapedMutations = (functionNode: FunctionLikeNode): EscapedMuta
   const cached = mutationsCache.get(functionNode);
   if (cached) return cached;
   const mutations: EscapedMutation[] = [];
-  collectMutations(functionNode, mutations);
+  collectMutations(functionNode, mutations, []);
   mutationsCache.set(functionNode, mutations);
   return mutations;
 };
 
 /**
- * The value an identifier names inside an escaped closure: an argument bound
- * along the escaped call chain, a captured variable, or a module binding.
- * Locals the closure declares itself hold values that only exist once it runs.
+ * The values an identifier names inside an escaped closure: an argument bound
+ * along the escaped call chain, the items of the list an enclosing iteration
+ * callback runs over, a captured variable, or a module binding. Locals the
+ * closure declares itself hold values that only exist once it runs.
  */
 const resolveEscapedIdentifier = (
   closure: StaticFunctionValue,
   frame: EscapeFrame | null,
   name: string,
+  bindings: ItemBinding[],
   walk: EscapeWalk,
   record: RecordDependency,
-): StaticValue | null => {
+): StaticValue[] => {
   const bound = frame?.parameters.get(name);
-  if (bound) return bound;
-  if (isClosureLocal(closure, name)) return null;
+  if (bound) return [bound];
+  const bindingIndex = bindings.findLastIndex((binding) => binding.name === name);
+  if (bindingIndex >= 0) {
+    const receivers = resolveAccessPath(
+      closure,
+      frame,
+      bindings[bindingIndex].receiver,
+      walk,
+      bindings.slice(0, bindingIndex),
+    );
+    return getItemValues(receivers, record);
+  }
+  if (isClosureLocal(closure, name)) return [];
   const owner = findOwningScope(closure.scope, name);
   if (owner) {
     record(owner, name);
-    return owner.bindings.get(name) ?? null;
+    const captured = owner.bindings.get(name);
+    return captured ? [captured] : [];
   }
   record(closure.module, name);
-  return walk.resolveModuleBinding(closure.module, name);
+  const moduleValue = walk.resolveModuleBinding(closure.module, name);
+  return moduleValue ? [moduleValue] : [];
 };
 
 /** Whether a closure declares `name` itself (a parameter or local), so the name never reaches its captured scope. */
@@ -336,6 +417,34 @@ export const isClosureLocal = (closure: StaticFunctionValue, name: string): bool
   const shape = getClosureShape(closure.node);
   return shape.declaredNames.has(name) || shape.parameterNames.includes(name);
 };
+
+/** The identifier a path is ultimately read from, through the lists its bound items come from. */
+export const getAccessRoot = (path: AccessPath, bindings: ItemBinding[]): string => {
+  const [root] = path;
+  const bindingIndex = bindings.findLastIndex((binding) => binding.name === root);
+  return bindingIndex >= 0
+    ? getAccessRoot(bindings[bindingIndex].receiver, bindings.slice(0, bindingIndex))
+    : root;
+};
+
+const LIST_ITEMS_KEY = "items";
+
+const getItemValues = (values: StaticValue[], record: RecordDependency): StaticValue[] =>
+  values.flatMap((value) => {
+    switch (value.kind) {
+      case "list":
+        record(value, LIST_ITEMS_KEY);
+        return getItemValues(value.items, record);
+      case "branch":
+        return getItemValues(value.alternatives, record);
+      case "optional":
+        return getItemValues([value.value], record);
+      case "repeat":
+        return getItemValues([value.item], record);
+      default:
+        return [value];
+    }
+  });
 
 const getMemberValues = (
   values: StaticValue[],
@@ -371,15 +480,18 @@ export const resolveAccessPath = (
   frame: EscapeFrame | null,
   path: AccessPath,
   walk: EscapeWalk,
+  bindings: ItemBinding[],
 ): StaticValue[] => {
   const record: RecordDependency = (dependency, key) =>
     walk.memo.addDependency(closure, dependency, key);
   const [root, ...members] = path;
-  const rootValue =
+  const thisValue = closure.thisValue ?? closure.boundThis;
+  let values =
     root === "this"
-      ? (closure.thisValue ?? closure.boundThis)
-      : resolveEscapedIdentifier(closure, frame, root, walk, record);
-  let values = rootValue ? [rootValue] : [];
+      ? thisValue
+        ? [thisValue]
+        : []
+      : resolveEscapedIdentifier(closure, frame, root, bindings, walk, record);
   for (const member of members) values = getMemberValues(values, member, record);
   return values;
 };
@@ -409,10 +521,18 @@ const bindArguments = (
  */
 export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): void => {
   const visits: EscapeVisits = { escaped: new Set(), handed: new Set() };
+  followStaleCallables(walk, visits);
+  visitEscapedValue(value, walk, visits);
+};
+
+/** Follows again the escaped closures whose walk went stale, as their code may run at any time. */
+export const followStaleCallables = (
+  walk: EscapeWalk,
+  visits: EscapeVisits = { escaped: new Set(), handed: new Set() },
+): void => {
   for (const [closure, tuples] of walk.memo.takeStale()) {
     for (const tuple of tuples) invokeOnce(closure, tuple, walk, visits);
   }
-  visitEscapedValue(value, walk, visits);
 };
 
 const visitEscapedValue = (value: StaticValue, walk: EscapeWalk, visits: EscapeVisits): void => {
@@ -520,20 +640,20 @@ const forEachInvokedCallable = (
   visits: EscapeVisits,
 ): void => {
   walk.visit(closure, frame);
-  const handPaths = (paths: AccessPath[]): void => {
-    for (const path of paths) {
-      for (const value of resolveAccessPath(closure, frame, path, walk)) {
-        forEachHandedCallable(value, walk, visits);
-      }
-    }
-  };
   for (const callSite of getClosureShape(closure.node).callSites) {
+    const resolve = (path: AccessPath): StaticValue[] =>
+      resolveAccessPath(closure, frame, path, walk, callSite.bindings);
+    const handPaths = (paths: AccessPath[]): void => {
+      for (const path of paths) {
+        for (const value of resolve(path)) forEachHandedCallable(value, walk, visits);
+      }
+    };
     const argumentValues = callSite.arguments.map(({ path, literal }) => {
       if (literal) return literal;
-      const [value, ...others] = path ? resolveAccessPath(closure, frame, path, walk) : [];
+      const [value, ...others] = path ? resolve(path) : [];
       return value && others.length === 0 ? value : null;
     });
-    const callees = callSite.callee ? resolveAccessPath(closure, frame, callSite.callee, walk) : [];
+    const callees = callSite.callee ? resolve(callSite.callee) : [];
     const isEveryCalleeFollowed =
       callees.length > 0 && callees.every((callee) => callee.kind === "function");
     for (const callee of callees) {

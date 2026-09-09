@@ -29,6 +29,16 @@ export interface ParsedSourceFile {
   program: Program;
   lineStarts: number[];
   errors: string[];
+  /** `@jsx`/`@jsxFrag`/`@jsxRuntime`/`@jsxImportSource` comment annotations, when the file has any. */
+  jsxPragma: JsxPragma | null;
+}
+
+export interface JsxPragma {
+  runtime: "classic" | "automatic" | null;
+  /** The classic-runtime element factory (`jsx`, `h`, `React.createElement`). */
+  factory: string | null;
+  fragment: string | null;
+  importSource: string | null;
 }
 
 export interface TransformedSource {
@@ -273,7 +283,7 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
-  /** Statics the library hangs on the component (`Styled.withComponent`). */
+  /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
   properties?: Map<string, StaticValue>;
   /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */
   isServerComponent?: boolean;
@@ -329,7 +339,8 @@ export interface StubRenderTools {
   hooks: StubHooks | null;
   /** Calls a function whose promise the framework awaits (route `lazy`), with `await x` read as `x`. */
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
-  call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  /** Calls `callee` with `thisValue` as its receiver, as `callee.call(thisValue, ...args)` would. */
+  call: (callee: StaticValue, args: StaticValue[], thisValue?: StaticValue) => StaticValue;
   /** Calls a continuation of a promise that settles outside the analysis: it runs at an unknown time, so what it updates may or may not have changed by the captured commit. */
   callDeferred: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** A value recorded from the running page, with references to the project's module exports evaluated. */
@@ -342,6 +353,7 @@ export interface StubRenderTools {
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  project: ProjectContext;
   /** Journals hidden state before a mutation, undone on the other paths of an enclosing fork like any heap write. */
   recordStateMutation: (state: JournaledState<unknown>) => void;
   /** The host whose globals the calling code sees. */
@@ -362,6 +374,16 @@ export interface StubRenderTools {
  */
 export interface ExternalValueProvider {
   (specifier: string, importedName: string): StaticValue | null;
+}
+
+/** The styled-components build transform's naming options (`displayName` on, as in development). */
+export interface StyledComponentsTransformOptions {
+  /** Prefix component names with the file's block name (`File__Component`). */
+  fileName: boolean;
+  /** File stems whose directory names the block instead (`index`). */
+  meaninglessFileNames: string[];
+  /** Import specifiers recognized as styled-components; `styled-components` and its subpaths when empty. */
+  topLevelImportPaths: string[];
 }
 
 export interface InstalledPackage {
@@ -984,6 +1006,8 @@ export interface StaticRendererOptions {
   route?: string;
   /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */
   origin?: string;
+  /** Directory the dev server serves at the URL root, relative to `rootDirectory`; `public` unless the bundler is configured otherwise. */
+  publicDirectory?: string;
   /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
   transpiler?: ModuleTranspiler;
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */

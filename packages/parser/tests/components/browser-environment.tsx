@@ -37,6 +37,25 @@ const Responsive = () => {
   );
 };
 
+const readStoredMode = (raw: string | null): string => {
+  if (raw === null) return "unset";
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return typeof parsed === "string" ? parsed : "invalid";
+  } catch (error) {
+    return error instanceof SyntaxError ? "syntax-error" : "other-error";
+  }
+};
+
+const StoredModes = () => (
+  <ol>
+    <li>{readStoredMode('"multi"') === "multi" ? <b>multi</b> : <i>other</i>}</li>
+    <li>{readStoredMode("") === "syntax-error" ? <b>threw</b> : <i>parsed</i>}</li>
+    <li>{readStoredMode("{oops") === "syntax-error" ? <b>threw</b> : <i>parsed</i>}</li>
+    <li>{readStoredMode(null)}</li>
+  </ol>
+);
+
 const CallbackRefPortal = ({ children }: { children: React.ReactNode }) => {
   const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
   const handleRef = useCallback((node: HTMLDivElement | null) => {
@@ -139,6 +158,7 @@ export default function BrowserEnvironment() {
       <AddToHomescreen />
       <VendorNavigatorPrompt />
       <Responsive />
+      <StoredModes />
       <CallbackRefPortal>
         <section>portaled</section>
       </CallbackRefPortal>

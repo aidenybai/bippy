@@ -127,7 +127,15 @@ export class ModuleGraph {
   }
 
   resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {
-    return this.resolveImportedName(binding.specifier, binding.imported, fromModule, new Set());
+    return this.resolveImportedSymbol(binding.specifier, binding.imported, fromModule);
+  }
+
+  resolveImportedSymbol(
+    specifier: string,
+    imported: ImportedName,
+    fromModule: ModuleRecord,
+  ): ResolvedSymbol {
+    return this.resolveImportedName(specifier, imported, fromModule, new Set());
   }
 
   resolveLocalName(module: ModuleRecord, localName: string): ResolvedSymbol {
@@ -286,6 +294,16 @@ export class ModuleGraph {
       const externalSources: ResolvedSymbol[] = [];
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
+        if (isModeledLibraryExport(entry.specifier, exportedName)) {
+          const resolution = this.resolveSpecifier(entry.specifier, module);
+          if (resolution.kind === "external") {
+            return externalSymbol(
+              resolution,
+              { kind: "named", name: exportedName },
+              entry.specifier,
+            );
+          }
+        }
         const target = this.resolveImportedModule(entry.specifier, module);
         if (!isModuleRecord(target)) {
           if (target.kind === "external" || target.kind === "builtin") {

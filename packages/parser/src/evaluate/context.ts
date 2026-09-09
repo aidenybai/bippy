@@ -22,8 +22,11 @@ export interface CallFrame {
   node: FunctionLikeNode;
   scope: Scope;
   args: StaticValue[];
+  thisValue: StaticValue | null;
   /** `Interpreter.changeCount` when the activation began. */
   changeCount: number;
+  /** `EvaluationContext.forkDepth` at the call site. */
+  forkDepth: number;
   /** The callee's own properties when the activation began. */
   properties: Map<string, StaticValue>;
 }

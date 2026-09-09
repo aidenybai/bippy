@@ -1,0 +1,5 @@
+{
+  "skipRuntime": true,
+  "externalPackages": ["styled-components"],
+  "notes": "Declares babel-plugin-styled-components, so styled components are named `file__Binding` as the build transform's `displayName` would; react-dom here runs untransformed source, so the names are asserted statically in styled-components-transform.test.ts."
+}

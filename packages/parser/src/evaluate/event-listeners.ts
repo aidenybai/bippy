@@ -71,6 +71,9 @@ const FULLSCREEN_EVENTS = new Set(["fullscreenchange", "webkitfullscreenchange"]
 /** The capture viewport never changes, so `window` never fires these before the snapshot. */
 const VIEWPORT_EVENTS = new Set(["resize", "orientationchange"]);
 
+/** `storage` fires only in *other* documents sharing the storage area; the capture is one document. */
+const CROSS_DOCUMENT_EVENTS = new Set(["storage"]);
+
 /** The captured page stays the visible, foreground tab from load to snapshot. */
 const DOCUMENT_VISIBILITY_EVENTS = new Set(["visibilitychange"]);
 
@@ -202,7 +205,7 @@ const isEventBeforeCapture = (
   if (
     receiver.kind === "global" &&
     realm.isGlobalAlias(receiver.name) &&
-    VIEWPORT_EVENTS.has(type.value)
+    (VIEWPORT_EVENTS.has(type.value) || CROSS_DOCUMENT_EVENTS.has(type.value))
   ) {
     return false;
   }
