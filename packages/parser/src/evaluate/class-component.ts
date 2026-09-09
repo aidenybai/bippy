@@ -303,7 +303,7 @@ const getInstanceMethod = (
 const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue =>
   isNullish(partialState) === true ? state : assignedObject([state, partialState]);
 
-export interface ClassInstanceRecord {
+interface ClassInstanceRecord {
   instance: StaticObjectValue;
   stateCell: StateCell;
   isMounted: boolean;

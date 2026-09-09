@@ -41,12 +41,13 @@ import type {
   VariableDeclarator,
 } from "oxc-parser";
 import path from "node:path";
-import { getAssetModuleValue, isAssetPath } from "../graph/asset-module.js";
+import { pathToFileURL } from "node:url";
+import { getAssetModuleValue, isAssetImport } from "../graph/asset-module.js";
 import { getCssModuleValue, isCssModulePath } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { getPackageNameFromSpecifier, isInsideNodeModules } from "../graph/module-resolver.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
@@ -153,6 +154,7 @@ import {
 } from "./session-history.js";
 import {
   BUNDLER_INJECTED_NAMES,
+  DEV_SERVER_MODE,
   isBundlerUndeclaredName,
   getInlinedNodeEnv,
   isEnvironmentObject,
@@ -163,13 +165,14 @@ import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE, isAbsentLanguageMember } from "./host-globals.js";
+import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness, isAbsentLanguageMember } from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
   concatenateStrings,
   getShapedStringCharacter,
   getShapedStringLength,
+  toStringValue,
 } from "./primitive-shapes.js";
 import {
   getCaughtValue,
@@ -275,6 +278,7 @@ import {
   getPropertyName,
   getStubDisplayName,
   getTruthiness,
+  hasDefiniteItems,
   isNullish,
   isSymbolPropertyKey,
   listValue,
@@ -359,9 +363,11 @@ interface PatternLeafAssigner {
   (leaf: BindingIdentifier | SimpleAssignmentTarget, value: StaticValue): void;
 }
 
-const UNKNOWN_PROJECT: ProjectContext = {
+export const UNKNOWN_PROJECT: ProjectContext = {
   rootDirectory: null,
   servedDirectory: null,
+  baseUrl: "/",
+  mode: DEV_SERVER_MODE,
   hasDeclaredDependency: () => false,
   readPackageVersion: () => null,
   getImportedAssetUrl: (filePath) => unknownValue(`URL the bundler emits for ${filePath}`),
@@ -373,6 +379,22 @@ const UNKNOWN_PROJECT: ProjectContext = {
   linguiCatalog: null,
   routerState: null,
   storeStates: null,
+};
+
+/** The per-file names Node gives a module (CommonJS wrapper and `import.meta`); Vite's config loader injects the same. */
+const getModulePathName = (name: string, filePath: string): StaticValue | null => {
+  switch (name) {
+    case "__dirname":
+    case "import.meta.dirname":
+      return primitiveValue(path.dirname(filePath));
+    case "__filename":
+    case "import.meta.filename":
+      return primitiveValue(filePath);
+    case "import.meta.url":
+      return primitiveValue(pathToFileURL(filePath).href);
+    default:
+      return null;
+  }
 };
 
 /** Vite's `vite:esbuild` default `include` filter; plain `.js` is served untransformed. */
@@ -387,13 +409,6 @@ const MAX_INTERVAL_TICKS = 1_000;
 const USE_STRICT_DIRECTIVE = "use strict";
 const FS_URL_PREFIX = "/@fs/";
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
-
-const PRIMITIVE_PROTOTYPES: Record<UnknownPrimitiveType, object | null> = {
-  string: String.prototype,
-  number: Number.prototype,
-  boolean: Boolean.prototype,
-  any: null,
-};
 
 const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "caller"]);
 
@@ -493,7 +508,7 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
   return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
 };
 
-export interface StatementContinuation {
+interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
 }
 
@@ -506,7 +521,7 @@ export const returnOutcome = (value: StaticValue): StatementOutcome => ({
   isSuspended: false,
 });
 
-export const outcomeToReturnValue = (
+const outcomeToReturnValue = (
   outcome: StatementOutcome,
   location: SourceLocation | null,
 ): StaticValue => {
@@ -710,7 +725,7 @@ const markEscapedMutation = (value: StaticValue, mutation: EscapedMutation): voi
   });
 };
 
-export interface CallOptions {
+interface CallOptions {
   thisValue?: StaticValue | null;
   callStack?: CallFrame[];
   /** The caller awaits the result (route `lazy`, server components), so an async body is evaluated with `await x` as `x`. */
@@ -1121,7 +1136,12 @@ export class Interpreter {
       case "stylesheet":
         return getCssModuleValue(symbol.filePath, symbol.imported);
       case "asset":
-        return getAssetModuleValue(symbol.filePath, symbol.imported, this.project);
+        return getAssetModuleValue(
+          symbol.filePath,
+          symbol.specifier,
+          symbol.imported,
+          this.project,
+        );
       case "unresolved":
         return unknownValue(symbol.reason);
     }
@@ -1598,6 +1618,8 @@ export class Interpreter {
       if (name === "exports") return exportsValue;
       if (name === "module") return objectFromRecord({ exports: exportsValue });
     }
+    const modulePathName = this.getModulePathName(name, context);
+    if (modulePathName) return modulePathName;
     const global = this.getGlobal(name, context.environment);
     if (global || context.environment === "server") return global;
     return this.windowGlobals.get(name) ?? null;
@@ -1618,6 +1640,12 @@ export class Interpreter {
     return windowKeys === undefined
       ? this.clientRealm.isForeignGlobal(name)
       : !windowKeys.includes(name);
+  }
+
+  private getModulePathName(name: string, context: EvaluationContext): StaticValue | null {
+    return this.getRealm(context.environment).platform === SERVER_HOST_PLATFORM
+      ? getModulePathName(name, context.module.filePath)
+      : null;
   }
 
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
@@ -1649,6 +1677,8 @@ export class Interpreter {
         declared: this.processEnvironment,
         renderEnvironment,
         definedObjects: this.definedEnvironmentObjects,
+        baseUrl: this.project.baseUrl,
+        mode: this.project.mode,
       })
     );
   }
@@ -2758,7 +2788,12 @@ export class Interpreter {
         const index = toIndexKey(key);
         if (index !== null && object.primitiveType === "string")
           return getShapedStringCharacter(object, index);
-        return prototypeMember(object, PRIMITIVE_PROTOTYPES[object.primitiveType], key);
+        const witness = getPrimitiveWitness(object.primitiveType);
+        return prototypeMember(
+          object,
+          witness === undefined ? null : Object.getPrototypeOf(Object(witness)),
+          key,
+        );
       }
       case "context":
         if (key === "Provider") {
@@ -2851,7 +2886,9 @@ export class Interpreter {
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
-        const declaredMember = this.getGlobal(memberName, context.environment);
+        const declaredMember =
+          this.getModulePathName(memberName, context) ??
+          this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
         if (isAbsentLanguageMember(memberName))
           return this.languageExpandos.get(memberName) ?? UNDEFINED_VALUE;
@@ -2982,8 +3019,8 @@ export class Interpreter {
     if (target.kind === "internal") {
       const imported: ImportedName = isRequire ? { kind: "default" } : { kind: "namespace" };
       if (isCssModulePath(target.filePath)) return getCssModuleValue(target.filePath, imported);
-      if (isAssetPath(target.filePath)) {
-        return getAssetModuleValue(target.filePath, imported, this.project);
+      if (isAssetImport(target.filePath, specifier)) {
+        return getAssetModuleValue(target.filePath, specifier, imported, this.project);
       }
     }
     return unknownValue(
@@ -3057,7 +3094,13 @@ export class Interpreter {
     const callees = receivers.map(getCallee);
     const joinAlternatives = (values: StaticValue[]): StaticValue =>
       receiver.kind === "branch"
-        ? branchValue(values, receiver.reason, receiver.location, receiver.preferredIndex)
+        ? branchValue(
+            values,
+            receiver.reason,
+            receiver.location,
+            receiver.preferredIndex,
+            receiver.predicate,
+          )
         : values[0];
     const callee = joinAlternatives(callees);
     if (isReceiverIndependent(callee)) return callWith(callee, null);
@@ -4556,24 +4599,22 @@ export class Interpreter {
         value: listValue(children),
       });
     }
-    const elementKey = toElementKey(key);
-    const element = (elementType: StaticValue): StaticElementValue => ({
+    const element = (
+      elementType: StaticValue,
+      elementKey: StaticValue | null,
+    ): StaticElementValue => ({
       kind: "element",
       type: toElementType(elementType, nameHint),
-      key: elementKey,
+      key: toElementKey(elementKey),
       props,
       location,
       environment: context.environment,
     });
-    if (type.kind === "branch") {
-      return branchValue(
-        type.alternatives.map(element),
-        type.reason,
-        type.location,
-        type.preferredIndex,
-      );
-    }
-    return element(type);
+    return mapValue(type, (elementType) =>
+      key?.kind === "branch"
+        ? mapValue(key, (alternative) => element(elementType, alternative))
+        : element(elementType, key),
+    );
   }
 
   private evaluateJsxElement(node: JSXElement, context: EvaluationContext): StaticValue {
@@ -4875,6 +4916,14 @@ const applyBinaryOperator = (
   right: StaticValue,
   realm: HostRealm | null = null,
 ): StaticValue => {
+  if (operator === "+" && (hasDefiniteItems(left) || hasDefiniteItems(right))) {
+    return applyBinaryOperator(
+      operator,
+      hasDefiniteItems(left) ? toStringValue(left) : left,
+      hasDefiniteItems(right) ? toStringValue(right) : right,
+      realm,
+    );
+  }
   const distributed = distributeBinary(left, right, (leftAlternative, rightAlternative) =>
     applyBinaryOperator(operator, leftAlternative, rightAlternative, realm),
   );

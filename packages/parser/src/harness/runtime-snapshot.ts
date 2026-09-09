@@ -168,7 +168,7 @@ const snapshotFiber = (
 export const snapshotFiberTree = (rootFiber: Fiber): RuntimeFiberSnapshot =>
   snapshotFiber(rootFiber, buildTagLookup(getReactWorkTagsForFiber(rootFiber)));
 
-export interface RuntimeSnapshotSource {
+interface RuntimeSnapshotSource {
   roots: FiberRoot[];
   renderer: ReactRenderer | null;
 }

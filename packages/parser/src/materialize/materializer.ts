@@ -72,6 +72,7 @@ import {
   UnknownMarker,
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
+import type { RendererHost } from "./renderer-host.js";
 import { ServerEnvironmentStamper } from "./server-environment.js";
 
 /**
@@ -97,28 +98,6 @@ const MAX_RENDER_PHASE_UPDATES = 25;
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
 
-/** Tags whose `children` React DOM either rejects (void elements) or never reconciles (`textarea`, `noscript`). */
-const CHILDLESS_HOST_TAGS = new Set([
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "keygen",
-  "link",
-  "menuitem",
-  "meta",
-  "noscript",
-  "param",
-  "source",
-  "textarea",
-  "track",
-  "wbr",
-]);
-
 export interface MaterializerOptions {
   maxComponentDepth?: number;
   maxFiberCount?: number;
@@ -131,12 +110,12 @@ export interface MaterializerOptions {
  * something in the primary subtree that can suspend, and `commit` tells the
  * boundary so in the layout phase of whichever proxy rendered it.
  */
-export interface SuspenseScope {
+interface SuspenseScope {
   maySuspend: boolean;
   commit: () => void;
 }
 
-export interface CompositeFrame {
+interface CompositeFrame {
   node: ComponentDefinition["node"];
   /** Closure the component was created in: a factory's components share a node but not a scope. */
   scope: Scope;
@@ -148,7 +127,7 @@ export interface CompositeFrame {
  * the static context values in scope, the RSC environment, and the guards
  * against runaway recursion.
  */
-export interface MaterializeContext {
+interface MaterializeContext {
   depth: number;
   componentStack: CompositeFrame[];
   suspenseScope: SuspenseScope | null;
@@ -167,7 +146,7 @@ export interface MaterializeContext {
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
-export interface ProxyInput {
+interface ProxyInput {
   props: StaticObjectValue;
   ref: StaticValue | null;
   location: SourceLocation | null;
@@ -176,7 +155,7 @@ export interface ProxyInput {
   isMemoized: boolean;
 }
 
-export interface ProxyProps {
+interface ProxyProps {
   input: ProxyInput;
 }
 
@@ -286,7 +265,7 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
   first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
 /** Thrown by a proxy whose static render evaluates to a thrown value, so React's error boundaries take over. */
-export class StaticThrowError extends Error {
+class StaticThrowError extends Error {
   readonly isMaybe: boolean;
 
   constructor(reason: string, isMaybe: boolean) {
@@ -460,6 +439,7 @@ const noop = (): void => {};
 export class Materializer {
   readonly interpreter: Interpreter;
   readonly runtime: ReactRuntime;
+  readonly host: RendererHost<Element>;
   private materializedCount = 0;
   private readonly maxComponentDepth: number;
   private readonly maxElementCount: number;
@@ -506,9 +486,15 @@ export class Materializer {
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
 
-  constructor(interpreter: Interpreter, runtime: ReactRuntime, options: MaterializerOptions = {}) {
+  constructor(
+    interpreter: Interpreter,
+    runtime: ReactRuntime,
+    host: RendererHost<Element>,
+    options: MaterializerOptions = {},
+  ) {
     this.interpreter = interpreter;
     this.runtime = runtime;
+    this.host = host;
     this.maxComponentDepth = options.maxComponentDepth ?? DEFAULT_MAX_COMPONENT_DEPTH;
     this.maxElementCount = options.maxFiberCount ?? DEFAULT_MAX_ELEMENT_COUNT;
     this.maxRecursionPerComponent =
@@ -953,7 +939,7 @@ export class Materializer {
     this.collectHostAttributes(props, result, context);
     const ref = this.hostRef(getObjectProperty(props, "ref"), location, context);
     if (ref) result.ref = ref;
-    if (CHILDLESS_HOST_TAGS.has(tagName)) return result;
+    if (this.host.isChildlessTag(tagName)) return result;
     const children = getObjectProperty(props, "children");
     if (!isNonNullish(children)) {
       const innerHtml = getObjectProperty(props, "dangerouslySetInnerHTML");
@@ -1131,12 +1117,12 @@ export class Materializer {
     }
   }
 
-  /** The document node the program portals into; a detached one stands in for a container the analysis cannot name. */
+  /** The host node the program portals into; a detached one stands in for a container the analysis cannot name. */
   private getPortalContainer(container: StaticValue): Element {
-    if (container.kind === "native-object" && container.value instanceof Element) {
+    if (container.kind === "native-object" && this.host.isContainer(container.value)) {
       return container.value;
     }
-    this.portalContainer ??= document.createElement("div");
+    this.portalContainer ??= this.host.createContainer();
     return this.portalContainer;
   }
 

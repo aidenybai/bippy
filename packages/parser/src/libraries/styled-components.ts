@@ -3,6 +3,7 @@ import {
   branchValue,
   getObjectProperty,
   getTruthiness,
+  isFunctionValue,
   listValue,
   mapValue,
   objectFromRecord,
@@ -10,7 +11,7 @@ import {
   primitiveValue,
   unknownPrimitiveValue,
 } from "../evaluate/values.js";
-import { element, lazyProperties, nativeFunction, stubValue } from "../frameworks/stubs.js";
+import { element, lazyProperties, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
@@ -66,9 +67,6 @@ const getStyledComponent = (tag: StaticValue): StyledComponent | undefined =>
     ? STYLED_COMPONENTS.get(tag.type.stub)
     : undefined;
 
-const isFunctionLike = (value: StaticValue): boolean =>
-  value.kind === "function" || value.kind === "native-function";
-
 const getHostTagName = (target: StaticValue): string | null =>
   target.kind === "primitive" && typeof target.value === "string" ? target.value : null;
 
@@ -122,7 +120,7 @@ const resolveAttrs = (
     ]);
     resolved.push({
       kind: "spread",
-      value: isFunctionLike(attr) ? tools.call(attr, [context]) : attr,
+      value: isFunctionValue(attr) ? tools.call(attr, [context]) : attr,
     });
   }
   return resolved;
@@ -224,7 +222,7 @@ const readConfig = (options: StyledOptions, config: StaticValue): StyledOptions 
   const displayName = getObjectProperty(config, "displayName");
   return {
     attrs: options.attrs,
-    shouldForwardProp: isFunctionLike(filter) ? filter : options.shouldForwardProp,
+    shouldForwardProp: isFunctionValue(filter) ? filter : options.shouldForwardProp,
     displayName:
       displayName.kind === "primitive" && typeof displayName.value === "string"
         ? displayName.value
@@ -263,7 +261,7 @@ const STYLED = lazyProperties(
 const themeProviderValue = (props: StaticObjectValue, tools: StubRenderTools): StaticValue => {
   const outerTheme = tools.readContext(THEME_CONTEXT);
   const theme = getObjectProperty(props, "theme");
-  if (isFunctionLike(theme)) return tools.call(theme, [outerTheme]);
+  if (isFunctionValue(theme)) return tools.call(theme, [outerTheme]);
   return mapValue(outerTheme, (outer) =>
     getTruthiness(outer) === false
       ? theme

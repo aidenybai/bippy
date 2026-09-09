@@ -190,7 +190,13 @@ export type ResolvedSymbol =
       filePath: string | null;
     }
   | { kind: "stylesheet"; filePath: string; imported: ImportedName }
-  | { kind: "asset"; filePath: string; imported: ImportedName }
+  | {
+      kind: "asset";
+      filePath: string;
+      /** The import specifier as written, whose query (`?url`, `?inline`, ...) selects how the bundler serves the file. */
+      specifier: string;
+      imported: ImportedName;
+    }
   | { kind: "unresolved"; reason: string };
 
 export interface ComponentDefinition {
@@ -424,13 +430,17 @@ export interface ProjectContext {
   rootDirectory: string | null;
   /** Directory the dev server serves at the URL root (Vite `root`); `null` when analyzing loose modules. */
   servedDirectory: string | null;
+  /** Public base path the dev server serves under (Vite `base`, `import.meta.env.BASE_URL`). */
+  baseUrl: string;
+  /** The mode the dev server runs in (Vite `--mode`, `import.meta.env.MODE`). */
+  mode: string;
   hasDeclaredDependency: (packageName: string) => boolean;
   /** The installed version of a package as resolved from the root; `null` when it is not installed. */
   readPackageVersion: (packageName: string) => string | null;
   transpiler: ModuleTranspiler;
   bundler: ModuleBundler;
   /** The value an `import` of a static asset file (image, font, ...) evaluates to: the URL the bundler serves it at. */
-  getImportedAssetUrl: (filePath: string) => StaticValue;
+  getImportedAssetUrl: (filePath: string, specifier: string) => StaticValue;
   /** The text the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
@@ -1047,6 +1057,10 @@ export interface StaticRendererOptions {
   defines?: Record<string, JsonValue>;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;
+  /** The command line the dev server is started with; bundler flags such as Vite's `--config`/`--mode` apply to the static render. */
+  devCommand?: string;
+  /** Directory `devCommand` runs in, where the bundler looks its config up; relative to `rootDirectory`, which it is when unset. */
+  devDirectory?: string;
   /** URL path (pathname, search, hash) the page is rendered at; `location` reads it. */
   route?: string;
   /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */

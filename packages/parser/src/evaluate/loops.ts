@@ -29,7 +29,7 @@ import {
   unknownValue,
 } from "./values.js";
 
-export type LoopStatement =
+type LoopStatement =
   | ForOfStatement
   | ForInStatement
   | ForStatement

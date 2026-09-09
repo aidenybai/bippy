@@ -2,7 +2,7 @@ import type { StaticValue, UnknownPrimitiveType } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostValueKind } from "../host/realm-table.js";
-import { getHostDocumentMember } from "./native-values.js";
+import { getHostDocumentMember, getNativeInterfaceName } from "./native-values.js";
 import {
   isSymbolPropertyKey,
   NULL_VALUE,
@@ -15,13 +15,28 @@ import {
 
 export const GLOBAL_OBJECT_VALUE: StaticValue = { kind: "global", name: GLOBAL_INTERFACE_NAME };
 
+export const isObjectLike = (value: unknown): value is object =>
+  (typeof value === "object" || typeof value === "function") && value !== null;
+
 const PRIMITIVE_KINDS = new Set<HostValueKind>(["string", "number", "boolean", "bigint"]);
 
-const PRIMITIVE_INTERFACE_NAMES: Record<string, string> = {
-  string: "String",
-  number: "Number",
-  boolean: "Boolean",
-  bigint: "BigInt",
+/** One value of each primitive type, standing for all of them wherever only the type matters. */
+const PRIMITIVE_WITNESSES: Record<string, string | number | boolean | bigint> = {
+  string: "",
+  number: 0,
+  boolean: false,
+  bigint: 0n,
+};
+
+/** A value of the primitive type (`typeof` name); undefined for `symbol` and non-primitives. */
+export const getPrimitiveWitness = (
+  primitiveType: string,
+): string | number | boolean | bigint | undefined => PRIMITIVE_WITNESSES[primitiveType];
+
+/** The interface the language wraps a primitive type's values in (`String` for strings), read off this process's own wrapper. */
+const getPrimitiveInterfaceName = (primitiveType: string): string | undefined => {
+  const witness = getPrimitiveWitness(primitiveType);
+  return witness === undefined ? undefined : getNativeInterfaceName(Object(witness));
 };
 
 const isLanguageGlobal = (name: string, value: unknown): boolean =>
@@ -56,7 +71,7 @@ const readLanguagePath = (name: string): LanguagePathReading | null => {
   if (root === undefined || !loadHostRealm("ecmascript").hasGlobal(root)) return null;
   let value: unknown = Reflect.get(globalThis, root);
   for (const key of keys) {
-    if ((typeof value !== "object" && typeof value !== "function") || value === null) return null;
+    if (!isObjectLike(value)) return null;
     value = Reflect.get(value, key);
   }
   return { value };
@@ -65,11 +80,7 @@ const readLanguagePath = (name: string): LanguagePathReading | null => {
 /** The object or function a dotted language path (`Object.defineProperty`, `Array.prototype`) denotes, or null. */
 export const getLanguageObject = (name: string): object | null => {
   const reading = readLanguagePath(name);
-  if (reading === null) return null;
-  const { value } = reading;
-  return (typeof value === "object" || typeof value === "function") && value !== null
-    ? value
-    : null;
+  return reading !== null && isObjectLike(reading.value) ? reading.value : null;
 };
 
 /** Whether a dotted path reaches a language object that lacks the final member, so only the program can give it a value. */
@@ -181,9 +192,9 @@ export const getLanguageMethodResult = (
   const language = loadHostRealm("ecmascript");
   const receiverInterface =
     receiver.kind === "unknown-primitive"
-      ? PRIMITIVE_INTERFACE_NAMES[receiver.primitiveType]
+      ? getPrimitiveInterfaceName(receiver.primitiveType)
       : receiver.kind === "primitive"
-        ? PRIMITIVE_INTERFACE_NAMES[typeof receiver.value]
+        ? getPrimitiveInterfaceName(typeof receiver.value)
         : undefined;
   const returnKind =
     receiverInterface === undefined

@@ -14,7 +14,7 @@ import type {
   StaticValue,
   StubComponent,
 } from "../types.js";
-import { element, hostElement, omitProps, stubElement } from "./stubs.js";
+import { element, hostElement, omitProps, stubElement } from "../evaluate/stubs.js";
 
 // The pre-13 `next/image` (client/image.js in next@12, client/legacy/image.js
 // since 13): a wrapper `<span>` sized by `layout`, an optional sizer `<span>`,
@@ -22,7 +22,7 @@ import { element, hostElement, omitProps, stubElement } from "./stubs.js";
 // for `priority`. 12.2 moved the `<img>`/`<noscript>` pair into an
 // `ImageElement` component and wrapped everything in a Fragment.
 
-export interface LegacyImageShape {
+interface LegacyImageShape {
   hasImageElement: boolean;
   head: StubComponent;
 }
