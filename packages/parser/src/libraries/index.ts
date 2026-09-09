@@ -34,6 +34,11 @@ import {
   reactLifecyclesCompatValue,
 } from "./react-lifecycles-compat.js";
 import {
+  REDUX_PERSIST_MODELED_EXPORTS,
+  REDUX_PERSIST_PACKAGES,
+  reduxPersistValue,
+} from "./redux-persist.js";
+import {
   REDUX_MODELED_EXPORTS,
   REDUX_PACKAGES,
   REDUX_TOOLKIT_PACKAGES,
@@ -98,6 +103,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   },
   { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
+  {
+    packages: REDUX_PERSIST_PACKAGES,
+    getValue: reduxPersistValue,
+    modeledExports: REDUX_PERSIST_MODELED_EXPORTS,
+  },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },

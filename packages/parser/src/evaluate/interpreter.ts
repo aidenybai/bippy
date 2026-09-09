@@ -121,6 +121,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import {
+  INTRINSIC_PROTOTYPE_NAMES,
   evaluateBuiltinCall,
   getBuiltinGlobal,
   getGlobalTypeof,
@@ -134,10 +135,12 @@ import {
   getClassLength,
   getClassPrototypeObject,
   getFunctionLength,
+  getReactBasePrototype,
   getStaticProperty,
   getSuperObject,
   hasKnownStaticChain,
   getValueParams,
+  isReactComponentBase,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
@@ -173,6 +176,7 @@ import {
 } from "./primitive-shapes.js";
 import {
   getCaughtValue,
+  forgetThrowCertainty,
   getThrowCertainty,
   getThrownOperand,
   getThrownPaths,
@@ -289,7 +293,7 @@ import {
   objectFromRecord,
   objectValue,
   deleteObjectProperty,
-  omitObjectKeys,
+  omitRestKeys,
   partialJsonValue,
   primitiveValue,
   regExpToString,
@@ -1815,7 +1819,10 @@ export class Interpreter {
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
     this.changeCount++;
-    if (target.kind === "list") this.escapeWalk.memo.invalidate(target, null);
+    if (target.kind === "list") {
+      forgetThrowCertainty(target);
+      this.escapeWalk.memo.invalidate(target, null);
+    }
     this.journalHeapValue(target);
   }
 
@@ -2299,7 +2306,10 @@ export class Interpreter {
     const nameHint = target.type === "Identifier" ? target.name : null;
     if (node.operator === "=") {
       const value = this.evaluateExpression(node.right, context, nameHint);
-      this.assignTarget(target, value, context);
+      const certainty = getThrowCertainty(value);
+      if (certainty !== "always") {
+        this.assignTarget(target, certainty === "never" ? value : withoutThrows(value), context);
+      }
       return value;
     }
     if (target.type === "ObjectPattern" || target.type === "ArrayPattern") {
@@ -2714,6 +2724,8 @@ export class Interpreter {
         return prototypeMember(object, Object.prototype, key);
       case "react-api": {
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
+        if (key === "prototype" && isReactComponentBase(object))
+          return getReactBasePrototype(object.api);
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
         return unknownValue(`React.${object.api}.${key}`, location);
@@ -2781,6 +2793,14 @@ export class Interpreter {
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
+        if (
+          intrinsic !== null &&
+          INTRINSIC_PROTOTYPE_NAMES.has(object.name) &&
+          !isSymbolPropertyKey(key) &&
+          !(key in intrinsic)
+        ) {
+          return UNDEFINED_VALUE;
+        }
         const declaredMember = this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
         const isOpenMember =
@@ -3723,11 +3743,7 @@ export class Interpreter {
           if (property.type === "RestElement") {
             const source =
               value.kind === "namespace" ? this.materializeNamespace(value.module) : value;
-            const rest =
-              source.kind === "object"
-                ? omitObjectKeys(source, usedKeys)
-                : unknownValue(`rest of ${describeValue(source)}`);
-            destructure(property.argument, rest);
+            destructure(property.argument, omitRestKeys(source, usedKeys));
             continue;
           }
           const key = this.evaluatePropertyKey(

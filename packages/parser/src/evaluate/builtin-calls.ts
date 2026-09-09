@@ -96,6 +96,7 @@ import {
   joinStrings,
   rangedNumberValue,
 } from "./primitive-shapes.js";
+import { memoizeScalarOperation } from "./scalar-memo.js";
 import { isArrayValue } from "./type-predicates.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
@@ -533,7 +534,7 @@ const defineOwnProperties = (
   }
 };
 
-const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+export const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
 
 /** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
 const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
@@ -2142,6 +2143,16 @@ export const evaluateBuiltinCall = (
   if (receiver.kind === "unknown-primitive") {
     const shaped = callShapedPrimitiveMethod(receiver, name, args);
     if (shaped) return shaped;
+    const declared = getLanguageMethodResult(receiver, name);
+    if (declared) {
+      return (
+        memoizeScalarOperation(
+          `${receiver.primitiveType}.${name}`,
+          [receiver, ...args],
+          () => declared,
+        ) ?? declared
+      );
+    }
   }
 
   if (name === "map" && isCallable(first)) {

@@ -53,7 +53,7 @@ const hasSource = (element: object): boolean => {
  * network, a proxy, a URL the analysis cannot read), whose outcome stays open.
  */
 const decideImageOutcome = (interpreter: Interpreter, url: string): ResourceEventType | null => {
-  if (url.startsWith("data:")) return /^data:image\//.test(url) ? "load" : "error";
+  if (url.startsWith("data:")) return url.startsWith("data:image/") ? "load" : "error";
   const filePath = interpreter.project.findServedFile(url);
   if (filePath === null) return null;
   return IMAGE_EXTENSIONS.has(path.extname(filePath).toLowerCase()) ? "load" : "error";
@@ -115,7 +115,7 @@ export const startImageLoad = (
       target: element,
       currentTarget: element,
     });
-    for (const listener of [...(state.listeners.get(outcome) ?? [])]) {
+    for (const listener of state.listeners.get(outcome) ?? []) {
       if (isDeferred) interpreter.callDeferred(listener, [event], context, null);
       else interpreter.callValue(listener, [event], context, null, { thisValue: element });
     }

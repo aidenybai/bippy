@@ -58,10 +58,22 @@ const isCapturedRecord = (value: CapturedValue): value is Record<string, Capture
 const getOptionalProperty = (options: StaticValue | undefined, key: string): StaticValue =>
   options?.kind === "object" ? getObjectProperty(options, key) : UNDEFINED_VALUE;
 
-const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
+/** The keys of the state a reducer (or a map of slice reducers) produces; null when not statically known. */
+export const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
   reducer.kind === "object"
     ? getKnownObjectKeys(reducer)
     : (reducerKeysByReducer.get(reducer) ?? null);
+
+/** An opaque reducer whose state is known to have exactly `keys` (none recorded when null). */
+export const opaqueReducer = (
+  name: string,
+  keys: readonly string[] | null,
+  description: string,
+): StaticValue => {
+  const reducer = nativeFunction(name, () => unknownValue(description));
+  if (keys) reducerKeysByReducer.set(reducer, keys);
+  return reducer;
+};
 
 const haveSameKeys = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((key) => right.includes(key));
@@ -77,14 +89,13 @@ const findStoreState = (
   return matches.length === 1 ? matches[0] : undefined;
 };
 
-const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
-  const combined = nativeFunction("combination", () =>
-    unknownValue("state produced by a combined reducer"),
-  );
-  const keys = reducers === undefined ? null : getReducerKeys(reducers);
-  if (keys) reducerKeysByReducer.set(combined, keys);
-  return combined;
-});
+const combineReducers = nativeFunction("combineReducers", ([reducers]) =>
+  opaqueReducer(
+    "combination",
+    reducers === undefined ? null : getReducerKeys(reducers),
+    "state produced by a combined reducer",
+  ),
+);
 
 const actionCreator = (type: string, prepare: StaticValue | null): StaticValue =>
   nativeFunction(type, (args, tools) => {

@@ -1364,6 +1364,9 @@ importers:
       redux:
         specifier: 5.0.1
         version: 5.0.1
+      redux-persist:
+        specifier: 6.0.0
+        version: 6.0.0(react@19.2.8)(redux@5.0.1)
       string.prototype.trim:
         specifier: 1.2.11
         version: 1.2.11
@@ -12134,6 +12137,15 @@ packages:
       react: ^19.2.4
       react-dom: ^19.2.4
       react-is: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  redux-persist@6.0.0:
+    resolution: {integrity: sha512-71LLMbUq2r02ng2We9S215LtPu3fY0KgaGE0k8WRgl6RkqxtGfl7HUozz1Dftwsb0D/5mZ8dwAaPbtnzfvbEwQ==}
+    peerDependencies:
+      react: ^19.2.4
+      redux: '>4.0.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   redux-thunk@3.1.0:
     resolution: {integrity: sha512-NW2r5T6ksUKXCabzhL9z+h206HQw/NJkcLm1GPImRQ8IzfXwRGqjVhKJGauHirT0DAuyy6hjdnMZaRoAcy0Klw==}
@@ -26982,6 +26994,12 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
       - redux
+
+  redux-persist@6.0.0(react@19.2.8)(redux@5.0.1):
+    dependencies:
+      redux: 5.0.1
+    optionalDependencies:
+      react: 19.2.8
 
   redux-thunk@3.1.0(redux@5.0.1):
     dependencies:

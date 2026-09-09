@@ -700,12 +700,13 @@ export interface StringShape {
 
 /**
  * An unknown string that reads `prefix + source + suffix`: strings composed
- * alike from the same `source` (one `Math.random()`-derived id, say) are the
- * same string, so a property written under one is read back under the other.
+ * alike from the same `source` (one `Math.random()`-derived id, or one result
+ * of an external call, say) are the same string, so a property written under
+ * one is read back under the other.
  */
 export interface StringComposition {
   prefix: string;
-  source: StaticUnknownPrimitiveValue;
+  source: StaticUnknownPrimitiveValue | StaticExternalValue;
   suffix: string;
 }
 

@@ -628,6 +628,7 @@
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
       "env": {
+        "CI": "",
         "SENTRY_UI_DEV_ONLY": "1",
         "SENTRY_WEBPACK_PROXY_PORT": "7999"
       },
@@ -667,7 +668,7 @@
         },
         "maxFiberCount": 20000
       },
-      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints."
+      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints. rspack.config.ts turns Emotion's autoLabel off when CI is set, so the harness's CI=1 is cleared to keep the `styled` display names the label plugin produces (`MainContainer` rather than `Styled(div)`)."
     },
     {
       "id": "posthog",
@@ -677,6 +678,9 @@
       "framework": "spa",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 --filter '@posthog/quill...' build"
+      ],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
@@ -3268,6 +3272,7 @@
           "@reduxjs/toolkit",
           "react-helmet-async",
           "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
           "react-i18next",
           "i18next",
           "react-countup",

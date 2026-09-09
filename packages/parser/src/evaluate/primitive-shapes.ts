@@ -34,10 +34,14 @@ const getConcatenationShape = (value: StaticValue): StringShape => {
 const getCompleteText = (value: StaticValue): string | null =>
   value.kind === "primitive" && typeof value.value !== "symbol" ? String(value.value) : null;
 
-const getConcatenationComposition = (value: StaticValue): StringComposition | null =>
-  value.kind === "unknown-primitive"
-    ? (value.composition ?? { prefix: "", source: value, suffix: "" })
+const getConcatenationComposition = (value: StaticValue): StringComposition | null => {
+  if (value.kind === "unknown-primitive") {
+    return value.composition ?? { prefix: "", source: value, suffix: "" };
+  }
+  return value.kind === "external" && value.origin === "derived"
+    ? { prefix: "", source: value, suffix: "" }
     : null;
+};
 
 const composeStrings = (left: StaticValue, right: StaticValue): StringComposition | null => {
   const leftText = getCompleteText(left);

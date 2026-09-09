@@ -1,6 +1,7 @@
 import { fromNativeValue, pureNativeFunction } from "../evaluate/native-values.js";
+import { memoizeScalarOperation } from "../evaluate/scalar-memo.js";
 import { getPackageNameFromSpecifier } from "../graph/module-resolver.js";
-import type { StaticValue } from "../types.js";
+import type { StaticExternalValue, StaticValue } from "../types.js";
 import {
   getDefaultExport,
   getInstalledModules,
@@ -14,6 +15,7 @@ import {
 // Exports that read the clock, randomness or module state are excluded.
 
 const PURE_PACKAGES: ReadonlySet<string> = new Set([
+  "@emotion/hash",
   "class-variance-authority",
   "classnames",
   "clsx",
@@ -37,14 +39,16 @@ const liftExport = (
   const packageName = getPackageNameFromSpecifier(specifier);
   if (packageName === null || exported === undefined) return null;
   const name = `${specifier}#${exportedName}`;
-  return typeof exported === "function"
-    ? pureNativeFunction(name, exported, undefined, null, () => ({
-        kind: "external",
-        packageName,
-        importedName: `${exportedName}()`,
-        origin: "derived",
-      }))
-    : fromNativeValue(exported, name, null);
+  if (typeof exported !== "function") return fromNativeValue(exported, name, null);
+  return pureNativeFunction(name, exported, undefined, null, (args) => {
+    const derive = (): StaticExternalValue => ({
+      kind: "external",
+      packageName,
+      importedName: `${exportedName}()`,
+      origin: "derived",
+    });
+    return memoizeScalarOperation(exported, args, derive) ?? derive();
+  });
 };
 
 const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([

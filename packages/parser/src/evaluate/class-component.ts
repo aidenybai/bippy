@@ -4,6 +4,7 @@ import type {
   ClassFunctionMember,
   ClassMember,
   FunctionLikeNode,
+  ReactApi,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
@@ -37,6 +38,7 @@ import {
   objectFromRecord,
   objectValue,
   setObjectProperty,
+  TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
@@ -265,8 +267,26 @@ export const getStaticProperty = (
   return null;
 };
 
-const isReactComponentBase = (value: StaticValue | null): boolean =>
+export const isReactComponentBase = (value: StaticValue | null): boolean =>
   value?.kind === "react-api" && (value.api === "Component" || value.api === "PureComponent");
+
+const reactBasePrototypes = new Map<ReactApi, StaticObjectValue>();
+
+/** `Component.prototype` / `PureComponent.prototype` as `ReactBaseClasses.js` builds them: the `isReactComponent` marker, the updater methods, and `isPureReactComponent` on the pure variant. */
+export const getReactBasePrototype = (api: ReactApi): StaticObjectValue => {
+  const cached = reactBasePrototypes.get(api);
+  if (cached) return cached;
+  const constructor: StaticValue = { kind: "react-api", api };
+  const prototype = objectFromRecord({
+    constructor,
+    isReactComponent: objectValue(),
+    setState: unknownValue(`${api}.prototype.setState`),
+    forceUpdate: unknownValue(`${api}.prototype.forceUpdate`),
+    ...(api === "PureComponent" ? { isPureReactComponent: TRUE_VALUE } : {}),
+  });
+  reactBasePrototypes.set(api, prototype);
+  return prototype;
+};
 
 /** Whether every class up the `extends` chain is known (ending in nothing or `React.Component`, which has no statics), so a missing static is `undefined`. */
 export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {

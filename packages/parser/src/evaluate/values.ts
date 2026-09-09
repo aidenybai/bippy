@@ -699,6 +699,26 @@ export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>):
   return rest === object ? objectValue([...object.entries]) : rest;
 };
 
+/**
+ * The rest of destructuring `source`: its own enumerable keys minus `omitted`.
+ * A primitive has none but a string's indices, so its rest is a fresh object.
+ */
+export const omitRestKeys = (source: StaticValue, omitted: Set<string>): StaticValue => {
+  if (source.kind === "object") return omitObjectKeys(source, omitted);
+  if (source.kind !== "primitive" || source.value === null || source.value === undefined) {
+    return unknownValue(`rest of ${describeValue(source)}`);
+  }
+  return typeof source.value === "string"
+    ? objectValue(
+        [...source.value].flatMap((character, index) =>
+          omitted.has(String(index))
+            ? []
+            : [{ kind: "property", key: String(index), value: primitiveValue(character) }],
+        ),
+      )
+    : objectValue();
+};
+
 const omitObjectKeysShared = (
   object: StaticObjectValue,
   omitted: Set<string>,
@@ -988,6 +1008,32 @@ export const isSameComposition = (
   left.source === right.source &&
   left.prefix === right.prefix &&
   left.suffix === right.suffix;
+
+export const matchesComposition = (name: string, composition: StringComposition): boolean =>
+  name.length >= composition.prefix.length + composition.suffix.length &&
+  name.startsWith(composition.prefix) &&
+  name.endsWith(composition.suffix);
+
+const isEitherPrefix = (left: string, right: string): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isEitherSuffix = (left: string, right: string): boolean =>
+  left.endsWith(right) || right.endsWith(left);
+
+/** Whether some string could read as both compositions, so a write under one may be read under the other. */
+export const mayOverlapCompositions = (
+  left: StringComposition,
+  right: StringComposition,
+): boolean =>
+  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
+
+/** Whether the dynamic string `value` may read as `text`, given the prefix, length or composition it is known to have. */
+export const mayReadAsText = (value: StaticUnknownPrimitiveValue, text: string): boolean => {
+  if (value.composition && !matchesComposition(text, value.composition)) return false;
+  const shape = value.stringShape;
+  if (!shape) return true;
+  return text.startsWith(shape.prefix) && (shape.length === null || text.length === shape.length);
+};
 
 /**
  * `===` between two values, or null when analysis cannot decide. Import
