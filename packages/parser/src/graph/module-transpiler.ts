@@ -35,9 +35,8 @@ export const findViteConfig = (rootDirectory: string): string | undefined =>
 export const detectModuleBundler = (rootDirectory: string): ModuleBundler =>
   findViteConfig(rootDirectory) === undefined ? "unknown" : "vite";
 
-/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`. */
-export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
-  if (bundler !== "vite") return null;
+/** The HTML Vite's dev server answers a page request with before its plugins transform it: the root `index.html`. */
+export const readDocumentShell = (rootDirectory: string): string | null => {
   const indexPath = path.join(rootDirectory, "index.html");
   return existsSync(indexPath) ? readFileSync(indexPath, "utf8") : null;
 };

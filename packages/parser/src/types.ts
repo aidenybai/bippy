@@ -48,12 +48,12 @@ export interface TransformedSource {
 
 /**
  * A bundler plugin the app configures, producing the module the bundler links
- * for a file (or for a `?query` import of it) in place of its text. A loader
- * for a non-JavaScript `extension` sees only files with that extension; a
- * source rewriter (`extension: null`) is offered every JavaScript module.
+ * for a file (or for a `?query` import of it) in place of its text. `appliesTo`
+ * picks the files it sees by extension and by the language the parser reads
+ * them as (`null` for assets it cannot read itself).
  */
 export interface SourceTransform {
-  extension: string | null;
+  appliesTo: (extension: string, lang: SourceLanguage | null) => boolean;
   transform: (
     filePath: string,
     sourceText: string,

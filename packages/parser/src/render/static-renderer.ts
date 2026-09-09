@@ -3,16 +3,17 @@ import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
-import {
-  detectModuleBundler,
-  detectModuleTranspiler,
-  readDocumentShell,
-} from "../graph/module-transpiler.js";
+import { detectModuleBundler, detectModuleTranspiler } from "../graph/module-transpiler.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
 import { createTanStackRouterTransform } from "../graph/tanstack-router-plugin.js";
+import {
+  createViteAssetTransform,
+  loadViteUserPlugins,
+  readViteDocumentShell,
+} from "../graph/vite-asset-transform.js";
 import {
   createDomHostDocument,
   ensureDomGlobals,
@@ -73,8 +74,15 @@ export class StaticRenderer {
   private readonly project: ProjectContext;
   private readonly documentShell: string | null;
 
-  /** `bundlerTransforms` are the app's own bundler plugins, prepared by `createStaticRenderer`. */
-  constructor(options: StaticRendererOptions, bundlerTransforms: SourceTransform[] = []) {
+  /**
+   * `bundlerTransforms` are the app's own bundler plugins and `documentShell`
+   * the page HTML its dev server serves, both prepared by `createStaticRenderer`.
+   */
+  constructor(
+    options: StaticRendererOptions,
+    bundlerTransforms: SourceTransform[] = [],
+    documentShell: string | null = null,
+  ) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
     this.resolver = new ModuleResolver({
@@ -90,7 +98,7 @@ export class StaticRenderer {
     });
     const { rootDirectory } = this.options;
     const bundler = detectModuleBundler(rootDirectory);
-    this.documentShell = readDocumentShell(rootDirectory, bundler);
+    this.documentShell = documentShell;
     this.project = createProjectContext({
       rootDirectory,
       resolver: this.resolver,
@@ -325,6 +333,19 @@ const describeError = (error: unknown): string =>
 export const createStaticRenderer = async (
   options: StaticRendererOptions,
 ): Promise<StaticRenderer> => {
-  const routerTransform = await createTanStackRouterTransform(realpathSync(options.rootDirectory));
-  return new StaticRenderer(options, routerTransform ? [routerTransform] : []);
+  const rootDirectory = realpathSync(options.rootDirectory);
+  const viteUserPlugins = await loadViteUserPlugins(rootDirectory);
+  const transforms = [
+    await createTanStackRouterTransform(rootDirectory),
+    viteUserPlugins === null ? null : createViteAssetTransform(viteUserPlugins),
+  ];
+  const documentShell =
+    detectModuleBundler(rootDirectory) === "vite"
+      ? await readViteDocumentShell(rootDirectory, viteUserPlugins, options.route ?? "/")
+      : null;
+  return new StaticRenderer(
+    options,
+    transforms.filter((transform) => transform !== null),
+    documentShell,
+  );
 };

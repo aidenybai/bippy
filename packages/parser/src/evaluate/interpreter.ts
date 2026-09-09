@@ -74,6 +74,7 @@ import {
 import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
 import {
   getExternalMember,
+  getReactApiTypeof,
   isReactLikePackage,
   REACT_MEMO_CACHE_SENTINEL_KEY,
   resolveReactApi,
@@ -94,6 +95,7 @@ import type {
   ModuleRecord,
   ProjectContext,
   ProcessEnvironment,
+  ReactApi,
   RenderEnvironment,
   ResolvedSymbol,
   Scope,
@@ -102,6 +104,7 @@ import type {
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticGlobalValue,
   StaticAccessor,
   StaticListValue,
   StaticObjectEntry,
@@ -134,7 +137,7 @@ import {
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
-import { getPageLocationMember } from "./page-location.js";
+import { getDocumentBaseUri, getPageLocationMember } from "./page-location.js";
 import { hasExportedName } from "../graph/module-record.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
@@ -151,7 +154,7 @@ import {
   isEnvironmentObject,
   isUnsettableDefineName,
 } from "./bundler-globals.js";
-import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
+import { hasIntrinsicMember, hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
@@ -412,6 +415,12 @@ const isReceiverIndependent = (callee: StaticValue): boolean =>
 /** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
 const isFunctionOwnOrInheritedKey = (key: string): boolean =>
   isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
+
+/** React's own functions are plain functions: only the intrinsic names exist until source defines more. */
+const isReactApiFunctionKey = (key: string): boolean =>
+  isSymbolPropertyKey(key)
+    ? hasIntrinsicMember(Function.prototype, key)
+    : isFunctionOwnOrInheritedKey(key);
 
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
@@ -696,6 +705,10 @@ export class Interpreter {
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
+  /** Properties the analyzed code defined on React's own functions (`React.createContext[key] = ...`). */
+  private readonly reactApiProperties = new Map<ReactApi, Map<string, StaticValue>>();
+  /** Properties the analyzed code defined on builtin globals other than the global object (`Array[key] = ...`). */
+  private readonly globalExpandos = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
@@ -1215,18 +1228,11 @@ export class Interpreter {
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
+      case "react-api":
+        this.setReactApiProperty(target.api, propertyName, value, context);
+        return target;
       case "global":
-        if (this.getRealm(context.environment).isGlobalAlias(target.name)) {
-          this.windowGlobals.set(
-            propertyName,
-            this.withUncertainAssignment(
-              this.windowGlobals.get(propertyName),
-              value,
-              `window.${propertyName}`,
-              context,
-            ),
-          );
-        }
+        this.setGlobalMember(target, propertyName, value, context);
         return target;
       case "regexp":
         if (propertyName === "lastIndex") {
@@ -1533,8 +1539,13 @@ export class Interpreter {
     const pageLocationMember = realm.hasGlobal("location")
       ? getPageLocationMember(this.origin, this.history.route, hostName)
       : null;
+    const documentBaseUri =
+      hostName === "document.baseURI" && renderEnvironment !== "server"
+        ? getDocumentBaseUri(this.origin, this.history.route, this.hostDocument)
+        : null;
     return (
       pageLocationMember ??
+      documentBaseUri ??
       getBuiltinGlobal(hostName, realm, renderEnvironment === "server" ? null : this.hostDocument, {
         declared: this.processEnvironment,
         renderEnvironment,
@@ -2359,6 +2370,38 @@ export class Interpreter {
     }
   }
 
+  setReactApiProperty(
+    api: ReactApi,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const properties = this.reactApiProperties.get(api) ?? new Map<string, StaticValue>();
+    this.reactApiProperties.set(api, properties);
+    this.changeCount++;
+    properties.set(
+      key,
+      this.withUncertainAssignment(properties.get(key), value, `React.${api}.${key}`, context),
+    );
+  }
+
+  setGlobalMember(
+    target: StaticGlobalValue,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const isGlobalObject = this.getRealm(context.environment).isGlobalAlias(target.name);
+    const properties = isGlobalObject ? this.windowGlobals : this.globalExpandos;
+    const name = isGlobalObject ? `window.${key}` : `${target.name}.${key}`;
+    const propertyKey = isGlobalObject ? key : name;
+    this.changeCount++;
+    properties.set(
+      propertyKey,
+      this.withUncertainAssignment(properties.get(propertyKey), value, name, context),
+    );
+  }
+
   assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
@@ -2664,9 +2707,13 @@ export class Interpreter {
         if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
         return prototypeMember(object, Object.prototype, key);
       case "react-api": {
+        const defined = this.reactApiProperties.get(object.api)?.get(key);
+        if (defined) return defined;
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
+        if (getReactApiTypeof(object.api) === "function" && !isReactApiFunctionKey(key))
+          return UNDEFINED_VALUE;
         return unknownValue(`React.${object.api}.${key}`, location);
       }
       case "external":
@@ -2734,6 +2781,9 @@ export class Interpreter {
           return primitiveValue(intrinsic[key]);
         const declaredMember = this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
+        const expando = this.globalExpandos.get(memberName);
+        if (expando) return expando;
+        if (intrinsic !== null && !hasIntrinsicMember(intrinsic, key)) return UNDEFINED_VALUE;
         const isOpenMember =
           !isCallableProtocolKey(key) &&
           this.getRealm(context.environment).hasGlobal(object.name) &&
@@ -3221,9 +3271,26 @@ export class Interpreter {
             location,
           );
     }
-    return returned.kind === "object" || returned.kind === "function" || returned.kind === "list"
-      ? returned
-      : instance;
+    return this.getConstructorResult(returned, instance, this.getRealm(context.environment));
+  }
+
+  /** `new` yields the constructor's return value only when it is an object or function. */
+  private getConstructorResult(
+    returned: StaticValue,
+    instance: StaticObjectValue,
+    realm: HostRealm,
+  ): StaticValue {
+    if (returned.kind === "branch") {
+      return mapValue(returned, (alternative) =>
+        this.getConstructorResult(alternative, instance, realm),
+      );
+    }
+    const typeofValue = getTypeofValue(returned, realm);
+    const isObjectLike =
+      typeofValue.kind === "primitive" &&
+      (typeofValue.value === "function" ||
+        (typeofValue.value === "object" && returned.kind !== "primitive"));
+    return isObjectLike ? returned : instance;
   }
 
   /**

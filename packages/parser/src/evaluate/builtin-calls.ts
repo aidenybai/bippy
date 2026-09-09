@@ -503,6 +503,12 @@ const defineOwnProperty = (
       }
       target.properties.set(key, value);
       return;
+    case "react-api":
+      interpreter.setReactApiProperty(target.api, key, value, context);
+      return;
+    case "global":
+      interpreter.setGlobalMember(target, key, value, context);
+      return;
     case "list": {
       if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
       target.properties ??= new Map();
@@ -1214,10 +1220,11 @@ const callGlobal = (
     }
     case "Object.defineProperty": {
       const descriptor = args[2];
-      if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
+      const key = second ? getPropertyName(second) : null;
+      if (!first || key === null || descriptor?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
+      defineOwnProperty(interpreter, first, key, descriptor, context, location);
       return first;
     }
     case "Object.getOwnPropertyDescriptors":

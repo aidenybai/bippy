@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { z } from "zod";
 import { describeValue } from "../src/evaluate/values.js";
 import { createStaticRenderer } from "../src/index.js";
 import { readObservationsJson } from "../src/observations.js";
@@ -10,14 +11,16 @@ const { values, positionals } = parseArgs({
   options: {
     packages: { type: "string", multiple: true, default: [] },
     route: { type: "string" },
+    origin: { type: "string" },
     capture: { type: "string" },
     alias: { type: "string", multiple: true, default: [] },
+    define: { type: "string", multiple: true, default: [] },
   },
 });
 const [rootArg, fileArg, exportName = "default"] = positionals;
 if (!rootArg || !fileArg) {
   console.error(
-    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--alias <specifier>=<path>]... [--route <path>] [--capture <capture.json>] <root> <file> [exportName]",
+    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--alias <specifier>=<path>]... [--define <expression>=<json>]... [--route <path>] [--origin <url>] [--capture <capture.json>] <root> <file> [exportName]",
   );
   process.exit(1);
 }
@@ -29,11 +32,16 @@ const observations =
         JSON.parse(readFileSync(values.capture, "utf8")).observations,
         values.capture,
       );
-const aliases = Object.fromEntries(
-  values.alias.map((entry) => {
-    const separator = entry.indexOf("=");
-    if (separator === -1) throw new Error(`--alias expects <specifier>=<path>, got ${entry}`);
-    return [entry.slice(0, separator), entry.slice(separator + 1)];
+const splitAssignment = (flag: string, entry: string): [string, string] => {
+  const separator = entry.indexOf("=");
+  if (separator === -1) throw new Error(`${flag} expects <key>=<value>, got ${entry}`);
+  return [entry.slice(0, separator), entry.slice(separator + 1)];
+};
+const aliases = Object.fromEntries(values.alias.map((entry) => splitAssignment("--alias", entry)));
+const defines = Object.fromEntries(
+  values.define.map((entry) => {
+    const [expression, json] = splitAssignment("--define", entry);
+    return [expression, z.json().parse(JSON.parse(json))];
   }),
 );
 const renderer = await createStaticRenderer({
@@ -41,7 +49,9 @@ const renderer = await createStaticRenderer({
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,
   aliases,
+  defines,
   route: values.route,
+  origin: values.origin,
   observations,
 });
 const result = await renderer.renderWith((interpreter) => {

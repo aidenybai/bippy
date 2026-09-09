@@ -161,7 +161,7 @@ function _loadLines() {
                 _t3.push.call(_t3, _context4.sent);
                 _iterator2 = _createForOfIteratorHelper("xy");
                 try {
-                  for (_iterator2.s(); !(_step2 = _iterator2.n()).done; ) {
+                  for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
                     letter = _step2.value;
                     lines.push(letter);
                   }

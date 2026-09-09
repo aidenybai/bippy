@@ -84,7 +84,7 @@ const createTransform = (rootDirectory: string, rule: SvgrLoaderRule): SourceTra
   }
   if (!loadConfig || !transform) return null;
   return {
-    extension: SVG_EXTENSION,
+    appliesTo: (extension) => extension === SVG_EXTENSION,
     transform: (filePath, sourceText) =>
       transformSvg(
         loadConfig,

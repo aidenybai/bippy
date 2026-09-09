@@ -165,7 +165,10 @@ const readTryEntries = (tryLocsList: StaticValue | undefined): TryEntry[] | null
 };
 
 const runtimeError = (message: string): StaticValue =>
-  thrownValue("regenerator runtime throws", createErrorValue("Error", [primitiveValue(message)], null));
+  thrownValue(
+    "regenerator runtime throws",
+    createErrorValue("Error", [primitiveValue(message)], null),
+  );
 
 class GeneratorContext {
   readonly object: StaticObjectValue;
@@ -197,11 +200,7 @@ class GeneratorContext {
     this.state.current = { ...this.state.current, ...changes };
   }
 
-  private updateEntry(
-    tools: StubRenderTools,
-    entry: TryEntry,
-    completion: Completion,
-  ): void {
+  private updateEntry(tools: StubRenderTools, entry: TryEntry, completion: Completion): void {
     this.update(tools, {
       tryEntries: this.state.current.tryEntries.map((candidate) =>
         candidate === entry ? { ...candidate, completion } : candidate,
@@ -333,7 +332,8 @@ class GeneratorContext {
     for (const entry of [...this.state.current.tryEntries].reverse()) {
       if (entry.tryLoc === "root") return handle(entry, "end", false);
       if (prev === "not-a-number" || entry.tryLoc > prev) continue;
-      if (entry.catchLoc !== null && prev < entry.catchLoc) return handle(entry, entry.catchLoc, true);
+      if (entry.catchLoc !== null && prev < entry.catchLoc)
+        return handle(entry, entry.catchLoc, true);
       if (entry.finallyLoc !== null && prev < entry.finallyLoc) {
         return handle(entry, entry.finallyLoc, false);
       }
@@ -349,7 +349,9 @@ class GeneratorContext {
     if (isUncertain) return this.uncertain("step after its state diverged across paths");
     if (runState === "executing") return runtimeError("Generator is already running");
     if (runState === "completed") {
-      return method === "throw" ? thrownValue("generator throws", arg) : iterationResult(UNDEFINED_VALUE, true);
+      return method === "throw"
+        ? thrownValue("generator throws", arg)
+        : iterationResult(UNDEFINED_VALUE, true);
     }
     this.update(tools, { method, arg });
     for (;;) {
@@ -375,7 +377,8 @@ class GeneratorContext {
         const isDone = this.state.current.isDone;
         this.update(tools, { runState: isDone ? "completed" : "suspendedYield" });
         if (returned === CONTINUE_SENTINEL) continue;
-        if (containsSentinel(returned)) return this.uncertain("step whose continuation is uncertain");
+        if (containsSentinel(returned))
+          return this.uncertain("step whose continuation is uncertain");
         return iterationResult(returned, isDone);
       }
       if (certainty === "maybe" || returned.kind !== "unknown" || returned.thrown === undefined) {

@@ -3,6 +3,7 @@ import { DEFAULT_BROWSER_ENVIRONMENT } from "../evaluate/media-query.js";
 import type { HostDocument } from "../host/host-document.js";
 import { loadHostRealm } from "../host/host-realm.js";
 
+const EMPTY_DOCUMENT_MARKUP = "<!doctype html><html><head></head><body></body></html>";
 const WINDOW_GLOBALS = ["window", "self", "document", "navigator", "location", "history"];
 
 // happy-dom never fires load/error on `<link rel="preload">`, but React DOM
@@ -40,11 +41,15 @@ export const ensureDomGlobals = (): void => {
  * Replaces an installed window with a fresh one. Interpreted code mutates the
  * real document (`document.body.classList`, expando properties, history), so
  * each analyzed program must start from the DOM a browser would give it, not
- * from what the previous program left behind.
+ * from what the previous program left behind. A document the host owns
+ * (vitest's) is rewritten in place with the page's markup instead.
  */
 export const resetDomGlobals = (initialMarkup: string | null = null): void => {
   if (installedWindow !== null || typeof globalThis.document === "undefined") {
     installWindow(initialMarkup);
+  } else {
+    document.open();
+    document.write(initialMarkup ?? EMPTY_DOCUMENT_MARKUP);
   }
 };
 
@@ -102,6 +107,7 @@ export const createDomHostDocument = (hasKnownMarkup: boolean): HostDocument => 
     document,
     globalObject: window,
     hasKnownMarkup,
+    getBaseHref: () => document.querySelector("base[href]")?.getAttribute("href") ?? null,
     isInstanceOf: (value, interfaceName) => {
       if (browser.getInterface(interfaceName) === null) return null;
       const installed: unknown = Reflect.get(window, interfaceName);

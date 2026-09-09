@@ -3,6 +3,7 @@ import { basename, join, relative, resolve, sep } from "node:path";
 import { transform as transformSvgr } from "@svgr/core";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import { defineConfig, type Plugin, type PluginOption, transformWithOxc } from "vite-plus";
+import { flatYamlPlugin } from "./tests/fixtures/vite-yaml-plugin/yaml-plugin.js";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -116,6 +117,7 @@ export default defineConfig({
     fixtureSvgrPlugin(),
     fixtureJsxInJsPlugin(),
     fixtureTanStackRouterPlugin(),
+    flatYamlPlugin(),
   ],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],

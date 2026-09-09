@@ -489,14 +489,19 @@ export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | nu
   return keys && [...keys.keys()];
 };
 
-const spreadHasOwnKey = (spread: StaticValue, key: string): boolean | null => {
+/** Verdicts for objects already visited while answering one `hasOwnKey` query, so shared spreads are walked once. */
+interface OwnKeyMemo extends Map<StaticObjectValue, boolean | null> {}
+
+const spreadHasOwnKey = (memo: OwnKeyMemo, spread: StaticValue, key: string): boolean | null => {
   switch (spread.kind) {
     case "object":
-      return hasOwnKey(spread, key);
+      return getMemoizedOwnKey(memo, spread, key);
     case "primitive":
       return false;
     case "branch": {
-      const verdicts = spread.alternatives.map((alternative) => spreadHasOwnKey(alternative, key));
+      const verdicts = spread.alternatives.map((alternative) =>
+        spreadHasOwnKey(memo, alternative, key),
+      );
       if (verdicts.every((verdict) => verdict === true)) return true;
       return verdicts.every((verdict) => verdict === false) ? false : null;
     }
@@ -505,17 +510,30 @@ const spreadHasOwnKey = (spread: StaticValue, key: string): boolean | null => {
   }
 };
 
-/** Whether `key` is an own property; null when a spread may or may not carry it. */
-export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null => {
+const getMemoizedOwnKey = (
+  memo: OwnKeyMemo,
+  object: StaticObjectValue,
+  key: string,
+): boolean | null => {
+  const memoized = memo.get(object);
+  if (memoized !== undefined) return memoized;
   let verdict: boolean | null = false;
   for (const entry of object.entries) {
     const entryVerdict =
-      entry.kind === "property" ? entry.key === key : spreadHasOwnKey(entry.value, key);
-    if (entryVerdict === true) return true;
+      entry.kind === "property" ? entry.key === key : spreadHasOwnKey(memo, entry.value, key);
+    if (entryVerdict === true) {
+      verdict = true;
+      break;
+    }
     if (entryVerdict === null) verdict = null;
   }
+  memo.set(object, verdict);
   return verdict;
 };
+
+/** Whether `key` is an own property; null when a spread may or may not carry it. */
+export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null =>
+  getMemoizedOwnKey(new Map(), object, key);
 
 /** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
 export const getOwnPropertyDescriptor = (

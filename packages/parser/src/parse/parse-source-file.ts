@@ -99,9 +99,7 @@ export class SourceFileCache {
   private readTransformed(filePath: string, query: string | null): ParsedSourceFile | null {
     const lang = getSourceLanguage(filePath);
     const extension = extname(filePath);
-    const transforms = this.transforms.filter(
-      (candidate) => candidate.extension === (lang ? null : extension),
-    );
+    const transforms = this.transforms.filter((candidate) => candidate.appliesTo(extension, lang));
     if (!lang && transforms.length === 0) return null;
     const stats = statSync(filePath, { throwIfNoEntry: false });
     if (!stats || !stats.isFile()) return null;
