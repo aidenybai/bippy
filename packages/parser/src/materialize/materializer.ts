@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
@@ -10,6 +11,7 @@ import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
+import { normalizePredicate, parseSymbolicPredicate } from "../harness/symbolic-tree.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -30,6 +32,7 @@ import {
   areValuesEquivalent,
   compareIdentity,
   compareShallowly,
+  describeElementType,
   describeValue,
   getObjectProperty,
   getStubDisplayName,
@@ -45,6 +48,8 @@ import { getFunctionComponent } from "../react/element-type.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
+  PinnedBranchDecision,
+  PinnedDecisions,
   RenderEnvironment,
   Scope,
   SourceLocation,
@@ -54,6 +59,7 @@ import type {
   StaticElementValue,
   StaticFunctionValue,
   StaticObjectValue,
+  StaticRepeatValue,
   StaticValue,
   StubComponent,
   StubHooks,
@@ -105,6 +111,21 @@ export interface MaterializerOptions {
   maxFiberCount?: number;
   maxRecursionPerComponent?: number;
   serverComponents?: boolean;
+  /** Selects one alternative per pinned branch and one count per pinned repeat instead of rendering them all. */
+  decisions?: PinnedDecisions;
+}
+
+/**
+ * Where decisions are numbered and pinned decisions looked up: the root, one
+ * alternative, one iteration, or one render pass of a proxy. Decision ids digest
+ * `<prefix><location or reason>#<ordinal>` in materialization order within the
+ * scope; the prefix names the proxy whose render claimed them, so a re-render
+ * of the proxy and a replay along the chosen path number them the same way.
+ */
+export interface DecisionScope {
+  pins: PinnedDecisions | null;
+  ordinals: Map<string, number>;
+  prefix: string;
 }
 
 /**
@@ -143,6 +164,7 @@ interface MaterializeContext {
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
   isStrictMode: boolean;
+  decisions: DecisionScope;
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
@@ -153,6 +175,8 @@ interface ProxyInput {
   context: MaterializeContext;
   /** Wrapped in `React.memo` without a custom compare, so shallow-equal props bail out. */
   isMemoized: boolean;
+  /** Prefix of the decision ids claimed while this proxy renders. */
+  decisionPrefix: string;
 }
 
 interface ProxyProps {
@@ -259,6 +283,7 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
   first.errorBoundaryDepth === second.errorBoundaryDepth &&
   first.ignoresMaybeThrows === second.ignoresMaybeThrows &&
   first.alternativeDepth === second.alternativeDepth &&
+  first.decisions.pins === second.decisions.pins &&
   first.componentStack.length === second.componentStack.length &&
   first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
@@ -457,6 +482,32 @@ const EXOTIC_EXPORT_NAMES: Record<"suspense-list" | "activity" | "view-transitio
 
 const noop = (): void => {};
 
+const createDecisionScope = (pins: PinnedDecisions | null, prefix = ""): DecisionScope => ({
+  pins,
+  ordinals: new Map(),
+  prefix,
+});
+
+const DECISION_ID_LENGTH = 16;
+
+/** Digest of the structural path so the id stays short enough to survive snapshot prop truncation. */
+const toDecisionId = (structuralPath: string): string =>
+  createHash("sha256").update(structuralPath).digest("base64url").slice(0, DECISION_ID_LENGTH);
+
+/** The pinned alternative in the materializer's order; the pattern reader stores a negated predicate's branch swapped. */
+const selectPinnedAlternative = (
+  pinned: PinnedBranchDecision,
+  predicate: string | null,
+  alternativeCount: number,
+): number | null => {
+  const index =
+    predicate !== null &&
+    normalizePredicate(parseSymbolicPredicate(predicate), alternativeCount).isSwapped
+      ? 1 - pinned.alternativeIndex
+      : pinned.alternativeIndex;
+  return index >= 0 && index < alternativeCount ? index : null;
+};
+
 /**
  * Turns the interpreter's values into real React elements. Host elements and
  * React's own types map directly; source components become proxy components
@@ -507,6 +558,7 @@ export class Materializer {
   private portalContainer: Element | null = null;
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
+  private readonly pinnedDecisions: PinnedDecisions | null;
 
   constructor(
     interpreter: Interpreter,
@@ -517,6 +569,7 @@ export class Materializer {
     this.interpreter = interpreter;
     this.runtime = runtime;
     this.host = host;
+    this.pinnedDecisions = options.decisions ?? null;
     this.maxComponentDepth = options.maxComponentDepth ?? DEFAULT_MAX_COMPONENT_DEPTH;
     this.maxElementCount = options.maxFiberCount ?? DEFAULT_MAX_ELEMENT_COUNT;
     this.maxRecursionPerComponent =
@@ -540,6 +593,7 @@ export class Materializer {
       alternativeDepth: 0,
       owner: null,
       isStrictMode: false,
+      decisions: createDecisionScope(this.pinnedDecisions),
     };
   }
 
@@ -578,19 +632,20 @@ export class Materializer {
       case "list":
         return value.items.map((item) => this.toNode(item, context, false));
       case "repeat":
-        return this.runtime.react.createElement(RepeatMarker, {
-          location: value.location && formatSourceLocation(value.location),
-          cardinality: getRepeatCardinality(value),
-          countMin: value.count?.min ?? 0,
-          countMax: value.count?.max ?? null,
-          children: [this.toNode(value.item, context, false)],
-        });
+        return this.repeatNode(value, context);
       case "branch": {
         if (value.alternatives.every(isEmptyChild)) return null;
         const { alternatives, preferredIndex } = collapseEmptyAlternatives(value);
         return this.branchNode(
-          alternatives.map((alternative, index) =>
-            this.alternativeNode(alternative, index === preferredIndex, context, isTopLevel),
+          context,
+          alternatives.map(
+            (alternative, index) => (alternativeContext: MaterializeContext) =>
+              this.alternativeNode(
+                alternative,
+                index === preferredIndex,
+                alternativeContext,
+                isTopLevel,
+              ),
           ),
           value.reason,
           preferredIndex,
@@ -601,7 +656,11 @@ export class Materializer {
       }
       case "optional":
         return this.branchNode(
-          [this.toNode(value.value, context, isTopLevel), null],
+          context,
+          [
+            (alternativeContext) => this.toNode(value.value, alternativeContext, isTopLevel),
+            () => null,
+          ],
           value.reason,
           value.isAbsentPreferred ? 1 : 0,
           isTopLevel,
@@ -639,22 +698,81 @@ export class Materializer {
     );
   }
 
+  private claimDecision(context: MaterializeContext, key: string): string {
+    const ordinal = context.decisions.ordinals.get(key) ?? 0;
+    context.decisions.ordinals.set(key, ordinal + 1);
+    return toDecisionId(`${context.decisions.prefix}${key}#${ordinal}`);
+  }
+
+  /** The context one render pass of a proxy materializes in; every pass numbers its decisions afresh. */
+  private renderContext(input: ProxyInput): MaterializeContext {
+    return {
+      ...input.context,
+      decisions: createDecisionScope(input.context.decisions.pins, input.decisionPrefix),
+    };
+  }
+
+  private repeatNode(value: StaticRepeatValue, context: MaterializeContext): ReactNode {
+    const location = value.location && formatSourceLocation(value.location);
+    const decision = this.claimDecision(context, location ?? "repeat");
+    const pinned = context.decisions.pins?.repeats.get(decision) ?? null;
+    const iterationScopes = pinned
+      ? pinned.iterations.map((pins) => createDecisionScope(pins))
+      : [createDecisionScope(null)];
+    return this.runtime.react.createElement(RepeatMarker, {
+      location,
+      decision,
+      sharesScope: false,
+      cardinality: getRepeatCardinality(value),
+      countMin: value.count?.min ?? 0,
+      countMax: value.count?.max ?? null,
+      pinnedCount: pinned ? pinned.iterations.length : null,
+      children: iterationScopes.map((decisions) =>
+        this.toNode(value.item, { ...context, decisions }, false),
+      ),
+    });
+  }
+
+  /**
+   * A branch marker over its alternatives, each materialized in a decision
+   * scope of its own; with `sharesScope` the alternatives were materialized in
+   * `context` already and only the choice between them is recorded. A replay
+   * that pinned the decision renders the chosen alternative alone.
+   */
   private branchNode(
-    alternatives: ReactNode[],
+    context: MaterializeContext,
+    alternatives: Array<(alternativeContext: MaterializeContext) => ReactNode>,
     reason: string,
     preferredIndex: number | null,
     isTopLevel: boolean,
     location: SourceLocation | null = null,
     predicate: string | null = null,
+    sharesScope = false,
   ): ReactNode {
     const { createElement } = this.runtime.react;
+    const formattedLocation = location && formatSourceLocation(location);
+    const decision = this.claimDecision(context, formattedLocation ?? reason);
+    const pinned = context.decisions.pins?.branches.get(decision) ?? null;
+    const pinnedIndex = pinned && selectPinnedAlternative(pinned, predicate, alternatives.length);
+    const alternativeContext = (pins: PinnedDecisions | null): MaterializeContext =>
+      sharesScope ? context : { ...context, decisions: createDecisionScope(pins) };
+    const rendered =
+      pinned === null || pinnedIndex === null
+        ? alternatives.map((alternative) => alternative(alternativeContext(null)))
+        : [alternatives[pinnedIndex](alternativeContext(pinned.inside))];
     return createElement(BranchMarker, {
       reason,
-      location: location && formatSourceLocation(location),
+      location: formattedLocation,
+      decision,
+      sharesScope,
       preferredIndex,
       predicate,
-      children: alternatives.map((node, index) =>
-        createElement(AlternativeMarker, { key: index, children: isTopLevel ? node : [node] }),
+      pinnedIndex,
+      children: rendered.map((node, index) =>
+        createElement(AlternativeMarker, {
+          key: pinnedIndex ?? index,
+          children: isTopLevel ? node : [node],
+        }),
       ),
     });
   }
@@ -787,7 +905,14 @@ export class Materializer {
     }
     const reactKey = this.keyToString(key, location);
     const children = getObjectProperty(props, "children");
-    const input: ProxyInput = { props, ref: null, location, context, isMemoized: false };
+    const proxyInput = (): ProxyInput => ({
+      props,
+      ref: null,
+      location,
+      context,
+      isMemoized: false,
+      decisionPrefix: `${this.claimDecision(context, describeElementType(type))}/`,
+    });
     switch (type.kind) {
       case "host":
         return createElement(
@@ -795,9 +920,15 @@ export class Materializer {
           this.hostProps(type.tagName, props, reactKey, location, context),
         );
       case "function":
-        return createElement(this.getFunctionProxy(type.component), { key: reactKey, input });
+        return createElement(this.getFunctionProxy(type.component), {
+          key: reactKey,
+          input: proxyInput(),
+        });
       case "class":
-        return createElement(this.getClassProxy(type.component), { key: reactKey, input });
+        return createElement(this.getClassProxy(type.component), {
+          key: reactKey,
+          input: proxyInput(),
+        });
       case "memo": {
         const memoType = this.getMemoType(type);
         if (!memoType)
@@ -805,7 +936,7 @@ export class Materializer {
         return createElement(memoType, {
           key: reactKey,
           input: {
-            ...input,
+            ...proxyInput(),
             props: applyWrapperDefaultProps(type, props),
             isMemoized: !type.hasCompare,
           },
@@ -817,7 +948,7 @@ export class Materializer {
         return createElement(this.getForwardRefProxy(type), {
           key: reactKey,
           input: {
-            ...input,
+            ...proxyInput(),
             props: applyWrapperDefaultProps(
               type,
               renderProps.kind === "object" ? renderProps : props,
@@ -836,7 +967,7 @@ export class Materializer {
             context,
           );
         }
-        return createElement(lazyType, { key: reactKey, input });
+        return createElement(lazyType, { key: reactKey, input: proxyInput() });
       }
       case "fragment":
         return createElement(
@@ -859,7 +990,7 @@ export class Materializer {
         );
       }
       case "suspense":
-        return createElement(this.suspenseBoundaryProxy, { key: reactKey, input });
+        return createElement(this.suspenseBoundaryProxy, { key: reactKey, input: proxyInput() });
       case "suspense-list":
       case "activity":
       case "view-transition": {
@@ -881,10 +1012,17 @@ export class Materializer {
       case "context-consumer": {
         const realContext = this.getContext(type.context ?? type);
         this.noteUnresolvedContext(type.context, location);
+        const input = proxyInput();
         return createElement(realContext.Consumer, {
           key: reactKey,
           children: (provided) =>
-            this.renderConsumer(type.context, provided, children, context, location),
+            this.renderConsumer(
+              type.context,
+              provided,
+              children,
+              this.renderContext(input),
+              location,
+            ),
         });
       }
       case "portal":
@@ -906,7 +1044,7 @@ export class Materializer {
         });
       }
       case "stub":
-        return createElement(this.getStubProxy(type.stub), { key: reactKey, input });
+        return createElement(this.getStubProxy(type.stub), { key: reactKey, input: proxyInput() });
       case "unknown":
         return this.unknownElementNode(
           `${type.displayName ? `<${type.displayName}>` : "element"}: ${type.reason}`,
@@ -1382,7 +1520,8 @@ export class Materializer {
   }
 
   private renderStub(input: ProxyInput, stub: StubComponent): ReactNode {
-    const { context, props, location } = input;
+    const { props, location } = input;
+    const context = this.renderContext(input);
     const { useState, useRef, useEffect } = this.runtime.react;
     const rendered = stub.render(
       props,
@@ -1450,9 +1589,10 @@ export class Materializer {
     instanceRef.current ??= createProxyInstance(input.context, this.interpreter);
     const [, setPass] = useState(0);
     const props = applyDefaultProps(component, input.props);
+    const context = this.renderContext(input);
     const { node, mount, unmount } = this.renderStateful(
       input,
-      input.context,
+      context,
       component,
       instanceRef.current,
       () => setPass((pass) => pass + 1),
@@ -1460,7 +1600,7 @@ export class Materializer {
         this.evaluateComposite(
           component,
           props,
-          input.context,
+          context,
           input.location,
           frame,
           (componentContext) =>
@@ -1636,9 +1776,10 @@ export class Materializer {
   ): ReactNode {
     const props = applyDefaultProps(component, input.props);
     const isBoundary = isErrorBoundaryClass(classValue.body);
+    const renderContext = this.renderContext(input);
     const context: MaterializeContext = isBoundary
-      ? { ...input.context, errorBoundaryDepth: input.context.errorBoundaryDepth + 1 }
-      : input.context;
+      ? { ...renderContext, errorBoundaryDepth: renderContext.errorBoundaryDepth + 1 }
+      : renderContext;
     const renderBoundary = (
       caughtError: boolean,
       boundaryContext: MaterializeContext,
@@ -1676,9 +1817,11 @@ export class Materializer {
     };
     if (caught?.isMaybe) {
       return this.branchNode(
+        context,
         [
-          renderBoundary(false, { ...context, ignoresMaybeThrows: true }),
-          renderBoundary(true, context),
+          (alternativeContext) =>
+            renderBoundary(false, { ...alternativeContext, ignoresMaybeThrows: true }),
+          (alternativeContext) => renderBoundary(true, alternativeContext),
         ],
         "a child may throw into this error boundary",
         0,
@@ -1854,7 +1997,8 @@ export class Materializer {
       if (!isSuspendable) setSuspendable(true);
     };
     useLayoutEffect(() => this.commitSuspenseScope(scope));
-    const { props, context } = input;
+    const { props } = input;
+    const context = this.renderContext(input);
     const fallback = this.toNode(getObjectProperty(props, "fallback"), context, true);
     const primary = this.toNode(
       getObjectProperty(props, "children"),
@@ -1864,9 +2008,16 @@ export class Materializer {
     const content = createElement(Suspense, { fallback }, primary);
     if (!isSuspendable) return content;
     return this.branchNode(
-      [content, createElement(Suspense, { fallback }, createElement(this.suspendedMarker))],
+      context,
+      [
+        () => content,
+        () => createElement(Suspense, { fallback }, createElement(this.suspendedMarker)),
+      ],
       "Suspense boundary may be suspended when observed",
       0,
+      true,
+      null,
+      null,
       true,
     );
   }

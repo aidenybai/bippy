@@ -70,6 +70,7 @@ const itemsRepeat = (
 ): PatternNode => ({
   kind: "repeat",
   variable: "items",
+  decision: "items",
   location: null,
   cardinality: { ...items, measure: "length" },
   inputs,

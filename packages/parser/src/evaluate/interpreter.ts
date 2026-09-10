@@ -102,6 +102,7 @@ import type {
   CapturedValue,
   JsonValue,
   ModuleRecord,
+  LibraryRun,
   ProjectContext,
   ProcessEnvironment,
   ReactApi,
@@ -791,6 +792,7 @@ export class Interpreter {
   private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
   readonly project: ProjectContext;
+  private readonly libraryRun: LibraryRun;
   readonly origin: string | null;
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
@@ -834,6 +836,7 @@ export class Interpreter {
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
+    this.libraryRun = { project: this.project };
     this.origin = options.origin ?? null;
     this.pageState = options.page ?? null;
     this.history = createSessionHistory(this.pageState, options.route ?? null);
@@ -1289,7 +1292,7 @@ export class Interpreter {
   ): StaticValue | null {
     return (
       this.externalValues?.(specifier, importedName) ??
-      getLibraryValue(specifier, importedName, this.project) ??
+      getLibraryValue(specifier, importedName, this.libraryRun) ??
       this.purePackages?.getExport(specifier, importedName, filePath) ??
       null
     );

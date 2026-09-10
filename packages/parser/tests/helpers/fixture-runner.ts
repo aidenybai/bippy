@@ -11,7 +11,7 @@ import {
   dropInjectedFibers,
   getFrameworkProfile,
   unwrapTransparentRuntimeFiber,
-  renderFrameworkTarget,
+  createFrameworkRenderer,
   type FrameworkKind,
 } from "../../src/frameworks/index.js";
 import {
@@ -23,6 +23,7 @@ import {
   formatRuntimeSnapshot,
   getRenderPattern,
   getRootContainer,
+  replayEnumeratedStates,
   type CommitRecorder,
   type CompareRenderResult,
   type ComparisonStatus,
@@ -57,6 +58,8 @@ export interface FixtureManifest {
   expectedStates?: number;
   /** Whether the enumeration must (true) or must not (false) report omitted states. */
   expectOmitted?: boolean;
+  /** How many decision assignments the independent replay must correct; every other fixture replays cleanly. */
+  expectedReplayCorrections?: number;
   notes?: string;
 }
 
@@ -153,7 +156,7 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
 
 export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
   const profile = getFrameworkProfile(fixture.manifest.framework);
-  const staticResult = await renderFrameworkTarget(
+  const renderer = createFrameworkRenderer(
     {
       framework: fixture.manifest.framework,
       entry: join(fixture.directory, fixture.manifest.entry),
@@ -169,6 +172,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
     },
   );
+  const staticResult = await renderer.render();
   if (fixture.manifest.skipRuntime) {
     return {
       staticResult,
@@ -178,13 +182,23 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     };
   }
   const { snapshot: runtime, observed } = await mountFixture(fixture);
-  const stateSpace = enumerateStaticStates(staticResult, {
+  const enumerate = {
     anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
     budget: fixture.manifest.stateSpaceBudget,
-  });
-  const comparison = compareStaticToRuntime(stateSpace, dropInjectedFibers(runtime, profile), {
-    unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
+  };
+  const compare = {
+    unwrapTransparentRuntimeFiber: (fiber: RuntimeFiberSnapshot) =>
+      unwrapTransparentRuntimeFiber(fiber, profile),
+  };
+  const derived = compareStaticToRuntime(
+    enumerateStaticStates(staticResult, enumerate),
+    dropInjectedFibers(runtime, profile),
+    compare,
+  );
+  const comparison = await replayEnumeratedStates(derived, renderer.render, {
+    enumerate,
+    compare,
   });
   return { staticResult, runtime, observed, comparison };
 };

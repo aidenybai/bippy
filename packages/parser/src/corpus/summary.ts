@@ -7,7 +7,13 @@ import {
   guardCoverageSchema,
   type GuardCoverage,
 } from "../harness/guard-coverage.js";
-import type { StateCondition, StateOmission, StateSpaceSummary } from "../harness/state-space.js";
+import type { StateReplaySummary } from "../harness/state-replay.js";
+import type {
+  DecisionCondition,
+  StateCondition,
+  StateOmission,
+  StateSpaceSummary,
+} from "../harness/state-space.js";
 import { symbolicTreeStatsSchema, type SymbolicTreeStats } from "../harness/symbolic-tree.js";
 import type { StaticRenderStats } from "../types.js";
 import type {
@@ -32,7 +38,7 @@ const divergenceSchema: z.ZodType<ComparisonDivergence> = z.object({
 });
 
 const reportSchema: z.ZodType<ComparisonReport> = z.object({
-  status: z.enum(["exact", "truncated", "partial", "mismatch", "unresolved", "skipped"]),
+  status: z.enum(["exact", "truncated", "partial", "unsound", "mismatch", "unresolved", "skipped"]),
   matchedFibers: z.number(),
   matchedText: z.number(),
   opaqueSubtrees: z.number(),
@@ -70,21 +76,30 @@ const reportSchema: z.ZodType<ComparisonReport> = z.object({
   budgetExhausted: z.boolean(),
 });
 
+const branchConditionSchema = z.object({
+  kind: z.enum(["branch", "state-update"]),
+  variable: z.string(),
+  reason: z.string(),
+  location: z.string().nullable(),
+  alternativeIndex: z.number(),
+  alternativeCount: z.number(),
+});
+
+const repeatConditionSchema = z.object({
+  kind: z.literal("repeat"),
+  variable: z.string(),
+  location: z.string().nullable(),
+  count: z.number(),
+});
+
+const decisionConditionSchema: z.ZodType<DecisionCondition> = z.discriminatedUnion("kind", [
+  branchConditionSchema,
+  repeatConditionSchema,
+]);
+
 const stateConditionSchema: z.ZodType<StateCondition> = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.enum(["branch", "state-update"]),
-    variable: z.string(),
-    reason: z.string(),
-    location: z.string().nullable(),
-    alternativeIndex: z.number(),
-    alternativeCount: z.number(),
-  }),
-  z.object({
-    kind: z.literal("repeat"),
-    variable: z.string(),
-    location: z.string().nullable(),
-    count: z.number(),
-  }),
+  branchConditionSchema,
+  repeatConditionSchema,
   z.object({ kind: z.literal("transition"), commit: z.number(), commitCount: z.number() }),
 ]);
 
@@ -134,6 +149,23 @@ const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z.object({
   coverage: guardCoverageSchema.default(emptyCoverage),
 });
 
+const stateReplaySummarySchema: z.ZodType<StateReplaySummary> = z.object({
+  states: z.number(),
+  assignments: z.number(),
+  replayed: z.number(),
+  maxReplayed: z.number(),
+  mismatched: z.array(
+    z.object({
+      stateIndices: z.array(z.number()),
+      conditions: z.array(decisionConditionSchema),
+      claimedCommits: z.number(),
+      replayedCommits: z.number(),
+      divergence: divergenceSchema,
+      isCorrected: z.boolean(),
+    }),
+  ),
+});
+
 const runtimeSummarySchema: z.ZodType<CorpusRuntimeSummary> = z.object({
   reactVersion: z.string().nullable(),
   rendererName: z.string().nullable(),
@@ -175,6 +207,7 @@ const resultSchema: z.ZodType<CorpusResult> = z.object({
   static: staticSummarySchema.nullable(),
   report: reportSchema.nullable(),
   stateSpace: stateSpaceSummarySchema.nullable(),
+  stateReplay: stateReplaySummarySchema.nullable().default(null),
   anchor: z.string().nullable(),
   note: z.string().nullable(),
   failure: z.string().nullable(),
@@ -226,6 +259,11 @@ const describeStateSpace = (stateSpace: StateSpaceSummary): string => {
   return parts.join(", ");
 };
 
+const describeStateReplay = (replay: StateReplaySummary): string => {
+  const sampled = replay.replayed < replay.assignments ? " (sampled)" : "";
+  return `replayed ${replay.replayed}/${replay.assignments} assignments${sampled}, ${replay.mismatched.length} mismatched`;
+};
+
 const describeStatic = (result: CorpusResult): string => {
   if (!result.static) return "-";
   const { stats } = result.static;
@@ -252,6 +290,7 @@ const describeComparison = (result: CorpusResult): string => {
     `${report.matchedFibers} matched`,
   ];
   if (result.stateSpace) parts.push(describeStateSpace(result.stateSpace));
+  if (result.stateReplay) parts.push(describeStateReplay(result.stateReplay));
   if (report.opaqueSubtrees) {
     parts.push(
       `${report.opaqueSubtrees} opaque (${report.opaqueSkippedFibers} skipped, slots ${report.slotsMatched}/${report.slotsMatched + report.slotsUnmatched})`,

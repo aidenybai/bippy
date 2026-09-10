@@ -8,7 +8,7 @@ import { element, nativeFunction, passthroughStub, stubValue } from "../evaluate
 import { toElementType } from "../react/element-type.js";
 import type {
   LibraryValueProvider,
-  ProjectContext,
+  LibraryRun,
   StaticElementType,
   StaticObjectValue,
   StaticValue,
@@ -35,7 +35,7 @@ const ROUTER_HOOK_OPTIONS = [
 ];
 
 const routerIntegrations = new WeakSet<StaticValue>();
-const projectsWithRouterInstrumentation = new WeakSet<ProjectContext>();
+const runsWithRouterInstrumentation = new WeakSet<LibraryRun>();
 
 const isDefinedProperty = (options: StaticObjectValue, key: string): boolean => {
   const property = getObjectProperty(options, key);
@@ -56,7 +56,7 @@ const reactRouterBrowserTracingIntegration = (name: string): StaticValue =>
     return integration;
   });
 
-const init = (project: ProjectContext): StaticValue =>
+const init = (run: LibraryRun): StaticValue =>
   nativeFunction("init", ([options]) => {
     const integrations =
       options?.kind === "object" ? getObjectProperty(options, "integrations") : undefined;
@@ -64,14 +64,14 @@ const init = (project: ProjectContext): StaticValue =>
       integrations?.kind === "list" &&
       integrations.items.some((item) => routerIntegrations.has(item))
     ) {
-      projectsWithRouterInstrumentation.add(project);
+      runsWithRouterInstrumentation.add(run);
     }
     return UNDEFINED_VALUE;
   });
 
-const withSentryReactRouterRouting = (name: string, project: ProjectContext): StaticValue =>
+const withSentryReactRouterRouting = (name: string, run: LibraryRun): StaticValue =>
   nativeFunction(name, ([routes]) => {
-    if (!routes || !projectsWithRouterInstrumentation.has(project)) {
+    if (!routes || !runsWithRouterInstrumentation.has(run)) {
       return routes ?? UNDEFINED_VALUE;
     }
     const inner = toElementType(routes, null);
@@ -158,7 +158,7 @@ const getComponentDisplayName = (
   }
 };
 
-export const sentryValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const sentryValue: LibraryValueProvider = (specifier, importedName, run) => {
   if (specifier !== "@sentry/react") return null;
   switch (importedName) {
     case "wrapCreateBrowserRouterV6":
@@ -173,10 +173,10 @@ export const sentryValue: LibraryValueProvider = (specifier, importedName, proje
     case "reactRouterV7BrowserTracingIntegration":
       return reactRouterBrowserTracingIntegration(importedName);
     case "init":
-      return init(project);
+      return init(run);
     case "withSentryReactRouterV6Routing":
     case "withSentryReactRouterV7Routing":
-      return withSentryReactRouterRouting(importedName, project);
+      return withSentryReactRouterRouting(importedName, run);
     case "ErrorBoundary":
       return stubValue(ERROR_BOUNDARY_STUB);
     case "Profiler":

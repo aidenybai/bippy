@@ -22,7 +22,7 @@ import {
 import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
-  ProjectContext,
+  LibraryRun,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
@@ -287,13 +287,13 @@ const createInstance = (defaults: StaticObjectValue): StaticValue => {
   };
 };
 
-const defaultInstances = new WeakMap<ProjectContext, StaticValue>();
+const defaultInstances = new WeakMap<LibraryRun, StaticValue>();
 
-const getDefaultInstance = (project: ProjectContext): StaticValue => {
-  let instance = defaultInstances.get(project);
+const getDefaultInstance = (run: LibraryRun): StaticValue => {
+  let instance = defaultInstances.get(run);
   if (!instance) {
     instance = createInstance(createDefaults());
-    defaultInstances.set(project, instance);
+    defaultInstances.set(run, instance);
   }
   return instance;
 };
@@ -352,13 +352,13 @@ const staticExports = new Map<string, () => StaticValue>([
   ["spread", spread],
 ]);
 
-export const axiosValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const axiosValue: LibraryValueProvider = (specifier, importedName, run) => {
   if (specifier !== "axios") return null;
-  const defaultInstance = getDefaultInstance(project);
+  const defaultInstance = getDefaultInstance(run);
   const getExport = (name: string): StaticValue => {
     if (name === "default") return defaultInstance;
     if (name === "VERSION") {
-      const version = project.readPackageVersion("axios");
+      const version = run.project.readPackageVersion("axios");
       return version ? primitiveValue(version) : externalExport(name);
     }
     const modeled = staticExports.get(name);

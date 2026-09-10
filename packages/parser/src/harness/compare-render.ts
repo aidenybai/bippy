@@ -20,6 +20,7 @@ import {
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
+import type { StateReplaySummary } from "./state-replay.js";
 import { buildSymbolicTree } from "./symbolic-tree.js";
 
 export interface StaticStateSpaceOptions {
@@ -50,6 +51,8 @@ export interface CompareRenderResult {
   coverage: GuardCoverage;
   runtimeSubtree: RuntimeFiberSnapshot[];
   note: string | null;
+  /** Null until `replayEnumeratedStates` has re-rendered the states independently. */
+  stateReplay: StateReplaySummary | null;
 }
 
 const findPatternFiber = (
@@ -200,6 +203,7 @@ const skipped = (
   coverage: computeGuardCoverage(stateSpace.tree, []),
   runtimeSubtree: [],
   note,
+  stateReplay: null,
 });
 
 const countFibers = (fibers: RuntimeFiberSnapshot[]): number => {
@@ -274,6 +278,7 @@ export const compareStaticToRuntime = (
     ),
     runtimeSubtree,
     note: null,
+    stateReplay: null,
   };
 };
 
@@ -296,4 +301,5 @@ export const formatCompareRenderResult = (comparison: CompareRenderResult): stri
     comparison.report,
     summarizeStateSpace(comparison),
     comparison.stateSpace.states,
+    comparison.stateReplay,
   );

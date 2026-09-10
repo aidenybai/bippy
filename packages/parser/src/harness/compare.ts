@@ -23,12 +23,14 @@ import {
  * `exact`: the runtime tree is one enumerated state and no state was left out.
  * `truncated`: it is one enumerated state (or lies in the omitted region), but
  * the state space was bounded. `partial`: it matches only by letting wildcards
- * or opaque subtrees stand in for runtime fibers.
+ * or opaque subtrees stand in for runtime fibers. `unsound`: it matched, but an
+ * enumerated state was not reproduced when replayed with its decisions alone.
  */
 export type ComparisonStatus =
   | "exact"
   | "truncated"
   | "partial"
+  | "unsound"
   | "mismatch"
   | "unresolved"
   | "skipped";

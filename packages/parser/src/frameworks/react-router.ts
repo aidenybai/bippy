@@ -88,7 +88,7 @@ interface ReactRouterRouteOptions {
  * an `ExternalValueProvider` that models the router's exports, and the route
  * renderer for framework-mode projects.
  */
-interface ReactRouterModel {
+export interface ReactRouterModel {
   pathname: string;
   /** Captured data-router state for this URL, when a runtime capture supplied one. */
   observed: ObservedRouterState | null;

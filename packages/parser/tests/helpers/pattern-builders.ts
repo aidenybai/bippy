@@ -31,6 +31,8 @@ export const choiceBranch = (variable: string, ...alternatives: PatternNode[][])
   return {
     kind: "branch",
     variable,
+    decision: variable,
+    sharesScope: false,
     reason: variable,
     location: null,
     preferredIndex: 0,
@@ -57,6 +59,8 @@ export const guardedBranch = (
 ): PatternBranch => ({
   kind: "branch",
   variable,
+  decision: variable,
+  sharesScope: false,
   reason: variable,
   location: null,
   preferredIndex: 0,
@@ -100,6 +104,7 @@ export const anonymousRepeat = (
   return {
     kind: "repeat",
     variable,
+    decision: variable,
     location: null,
     cardinality: { input: variable, path: [], measure: "length" },
     inputs: [input(variable)],

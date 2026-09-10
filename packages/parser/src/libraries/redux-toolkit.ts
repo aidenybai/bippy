@@ -482,7 +482,7 @@ const createApi = (project: ProjectContext): StaticValue =>
     return lazyProperties(objectValue(), (key) => apiProperty(api, key));
   });
 
-export const reduxValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const reduxValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!REDUX_PACKAGES.includes(specifier)) return null;
   switch (importedName) {
     case "combineReducers":
@@ -495,7 +495,7 @@ export const reduxValue: LibraryValueProvider = (specifier, importedName, projec
   }
 };
 
-export const reduxToolkitValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const reduxToolkitValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!REDUX_TOOLKIT_PACKAGES.includes(specifier)) return null;
   switch (importedName) {
     case "combineReducers":

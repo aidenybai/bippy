@@ -498,7 +498,7 @@ const JSX_RUNTIME_SPECIFIERS: ReadonlyMap<string, ReactApi> = new Map([
   ["@emotion/react/jsx-dev-runtime", "jsxDEV"],
 ]);
 
-export const emotionValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const emotionValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   const isMacro = specifier.endsWith(MACRO_SUFFIX);
   const packageName = isMacro ? specifier.slice(0, -MACRO_SUFFIX.length) : specifier;
   if (packageName === "@emotion/styled" || packageName === "@emotion/styled/base") {
