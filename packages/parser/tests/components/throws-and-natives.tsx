@@ -109,6 +109,8 @@ const Row = ({ text }: { text: string }) => (
 export default function ThrowsAndNatives() {
   return (
     <ul>
+      <Row text={`${parseInt("0x1A")}/${Number.parseInt("0Xff", undefined)}`} />
+      <Row text={parseInt("0x1A") === 26 ? "hexadecimal" : "decimal"} />
       <Row text={safeParseId("42")} />
       <Row text={safeParseId("prof-42")} />
       <Row text={withFinally()} />

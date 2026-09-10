@@ -236,6 +236,70 @@ const evaluateExports = async (
   return described;
 };
 
+describe("integer parsing", () => {
+  it.each(["parseInt", "Number.parseInt"])("matches native %s radix inference", async (callee) => {
+    const inputs = [
+      '"0x1A"',
+      '"0Xff", undefined',
+      '"0x1A", null',
+      '"0x1A", 0',
+      '"0x1A", false',
+      '"0x1A", ""',
+      '"0x1A", 10',
+      '"1A", 16',
+      '"11", 2',
+      '"08"',
+      '"  -0x1A"',
+      '"invalid"',
+      '"10", 1',
+    ];
+    const names = inputs.map((_, index) => `parseCase${index}`);
+    const source = inputs
+      .map((input, index) => `export const ${names[index]} = () => ${callee}(${input});`)
+      .join("\n");
+    const results = await evaluateExports(source, names);
+    expect(Object.values(results)).toEqual([
+      "26",
+      "255",
+      "26",
+      "26",
+      "26",
+      "26",
+      "0",
+      "26",
+      "3",
+      "8",
+      "-26",
+      "NaN",
+      "NaN",
+    ]);
+  });
+});
+
+describe("escaped bound mutations", () => {
+  it("preserves direct callback widening without widening held methods", async () => {
+    const results = await evaluateExports(
+      `
+      import { register } from "opaque-store";
+      export const direct = () => {
+        let count = 0;
+        const update = (value: number) => { count = value; };
+        register(update.bind(null, 1));
+        return count;
+      };
+      export const held = () => {
+        let count = 0;
+        const update = (value: number) => { count = value; };
+        register({ update: update.bind(null, 1) });
+        return count;
+      };
+    `,
+      ["direct", "held"],
+    );
+    expect(results).toEqual({ direct: "branch(0 | unknown)", held: "0" });
+  });
+});
+
 describe("branch-valued primitives", () => {
   it("narrows a branched binding by evaluating a pure test once per alternative", async () => {
     const results = await evaluateExports(BRANCHED_SOURCE, [

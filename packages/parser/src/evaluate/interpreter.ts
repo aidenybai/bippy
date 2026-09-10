@@ -3885,11 +3885,12 @@ export class Interpreter {
     frame: EscapeFrame | null,
   ): void {
     const { module } = functionValue;
+    const isDirect = frame === null || frame.isDirect;
     for (const mutation of getEscapedMutations(functionValue.node)) {
       const root = getAccessRoot(mutation.target, mutation.bindings);
-      if (isClosureLocal(functionValue, root) || (root === "this" && frame !== null)) continue;
+      if (isClosureLocal(functionValue, root) || (root === "this" && !isDirect)) continue;
       if (mutation.kind === "rebinding") {
-        if (frame !== null) continue;
+        if (!isDirect) continue;
         const owner = findOwningScope(functionValue.scope, root);
         if (owner) {
           const current = owner.bindings.get(root);
