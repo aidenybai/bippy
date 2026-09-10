@@ -20,9 +20,9 @@ Continue until the acceptance gates in this document are satisfied. Creating thi
 
 ### Immediate continuation
 
-1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, and guarded heap/read/N-way fixes at `c3b76b75`. Nothing pushed.
-2. Latest identical-capture runs pass Sentry (1/1 assignments) and PostHog (2/2), with no replay contradictions and 100% strict coverage. This is bounded evidence, not global soundness.
-3. Guarded state/store/collection reads and native-function identity fixes pass 758 parser tests with the predicate cache. PostHog's identical-capture run is down from 213.8 to 165.0 seconds, still slower than baseline. Continue remaining P1/P2 obligations.
+1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, and predicate caching at `ac3d6a8c`. Nothing pushed.
+2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
+3. Root validation passes **2,816 tests**, with two existing React-19 DevTools skips; this includes **770 parser tests / 42 files**. Root typecheck/build, realm checks, lint and formatting pass. PostHog is about 167 seconds versus 214 before caching and 104 at baseline. Continue P1/P2 and the unmet 500-repository gate.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
@@ -423,14 +423,14 @@ The fix must make the symbolic claim correct. Replacing an impossible state afte
 ### Tasks
 
 - [ ] Reproduce each of the four exact-with-mismatch rows against its original capture before classification changes.
-- [ ] Define a complete claim versus a partially enumerated claim, including which commit positions/regions were omitted.
-- [ ] Derive replay claims from the symbolic tree under the pinned assignment, not only from the first `states` entries.
-- [ ] If a claim cannot be fully derived under the budget, report incomplete/unverified—not success and not automatically a contradiction.
-- [ ] Ensure a genuine divergent tree in the known part of a partial claim still fails.
+- [x] Define complete versus partial projected claims and report unresolved commit positions.
+- [x] Derive replay claims from all symbolic commits under the pinned assignment, not only the first `states` entries.
+- [x] Report incompletely derived claims as incomplete/unverified, not automatically success or contradiction.
+- [x] Preserve proven contradictions in known regions of partial claims: prefixes, suffixes, and required nodes between unresolved regions.
 - [ ] Distinguish replay not requested, replay unavailable, sample passed, sample incomplete, corrected contradiction, and unresolved contradiction in a small typed result contract.
-- [ ] Keep runtime-membership status separate from whole-space verification status; preserve backward compatibility deliberately if public result shapes change.
+- [x] Separate membership from bounded replay verification; optional fields retain legacy compatibility and report old verification as unrecorded.
 - [ ] Audit reindexing, corrections, rematching, and identical-tree deduplication for condition loss.
-- [ ] Ensure a supposedly complete replay cannot retain newly discovered open decisions unnoticed.
+- [x] Report open decisions/wildcards in replay evidence as incomplete; exact reproduction of a partial pattern does not claim a concrete replay.
 - [ ] Test preferred matches beyond the materialized sample, multiple commits sharing decision names, repeat scopes, and branch IDs renamed across commits.
 - [ ] Add a regression where the first sample matches perfectly but a different reachable assignment contradicts the combined render.
 - [ ] Audit consumers of `stateCount`, `states.length`, `assignments`, `omitted`, and `isCorrected`; each must mean one thing.
@@ -920,6 +920,21 @@ Checkpoint after final validation, optimize measured predicate-processing overhe
 - The same pinned captures still pass: Sentry **0/1** replay mismatches, 5 states, 100% strict coverage, **13.299 seconds**; PostHog **0/2**, 4 states, 100%, **165.015 seconds**. Results: `/tmp/bippy-parser-corpus/predicate-cache-results.json`; log: `/tmp/bippy-parser-corpus-predicate-cache.log`. This also rechecks the final guarded-context replacement and unreachable-commit pin fix against those captures.
 - A separate PostHog probe measured **52.6 seconds** each for rendering and the selected replay, versus about 69 seconds before caching. Overall corpus time improved about 23%, but remains above the 104-second baseline.
 - The recovered transcripts expose no original capture attachments for mantine-admin, form-builder, or mantine-react-table. Their historical replay rows have not yet been independently reproduced here; new captures must not be labeled identical to those originals.
+
+### Symbolic replay claims and incomplete evidence (2026-09-11)
+
+- Reproduced the truncated-prefix defect with the real `effect-cause-chain.tsx` fixture: a one-state materialization falsely contradicted its later commits. Claims now project all committed patterns through the actual scoped pins, respecting commit causes; enumeration budgets are unchanged.
+- Added regressions for repeat-scoped projection, unselected later decisions, undecided commit causes, partial claims with known contradictions, unknown replay regions, known suffixes and interior required nodes, identical partial-pattern reproduction, and zero replay budgets. Zero previously forced a preferred replay despite the budget.
+- The partial comparison preserves proven differences rather than accepting unknown regions as matches. It uses deterministic prefixes/suffixes and necessary known-node subsequences; ambiguous regions stay unverified. It does not introduce a new exhaustive matcher or raise budgets.
+- Added optional `incomplete` and `verification` replay fields, schema round-trip/legacy tests, and human-readable reporting. Verification is `not-replayed`, `sample-passed`, `sample-incomplete`, or `contradicted`; a corrected counterexample still contradicts the original model. Legacy verification is unrecorded. Separate unavailable/not-requested call-site accounting remains open.
+- Corrected state arrays still retain the original tree/clusters. This remaining incoherence is now documented, not treated as a repaired primary model. Preferred matches beyond the enumerated sample, assignment-space completeness, condition-preserving correction/deduplication, and retained raw replay artifacts remain open.
+- Partial comparison exposed why `hasPatternDecisions()` includes wildcards. A naive concrete-only reproduction check regressed three existing fixtures; exact reproduction of the same partial pattern is retained while its verification remains incomplete. The deliberately uncertain new fixture lives in `components/internal/`; no general fixture coverage threshold was lowered.
+- Original captures for mantine-admin, form-builder and mantine-react-table remain unavailable in the recovered attachments. Generic reproductions do not establish those historical rows are repaired; no checked-in corpus results were changed.
+- Root `pnpm typecheck` and `pnpm build` pass. Parser has no build script. Realm checks, changed-file lint/formatting, and diff checks pass.
+- Root tests pass **2,816 / 2,818**, with the two existing pre/post DevTools tests explicitly skipped for React >=19. Parser contributes **770 passing tests / 42 files**. Structured evidence: `/tmp/bippy-replay-claim-root-results.json`; log: `/tmp/bippy-replay-claim-root-json.log`. Localhost:3000 connection warnings did not fail tests (exit 0).
+- `/tmp/bippy-parser-corpus/replay-claim-final-results.json`: Sentry **13.479 seconds**, `sample-passed`, **0/1** mismatches; PostHog **166.809 seconds**, `sample-incomplete`, **0/2** mismatches and **one incomplete replay**. Both remain exact capture members with 100% strict coverage. PostHog's inconclusive assignment selects `index.tsx:44`'s absent `#root` container; its replay is not concrete. Do not silently turn that fallback into a proven empty React tree.
+- Completed checkpoint corpus recheck: `/tmp/bippy-parser-corpus/replay-claim-checkpoint-results.json`, log `/tmp/bippy-parser-corpus-replay-claim-checkpoint.log`. Sentry **13.586 seconds**, `sample-passed`, 0 mismatches; PostHog **166.084 seconds**, `sample-incomplete`, 0 mismatches and one incomplete replay. Final legacy-report formatting/schema checks passed 30 focused tests (`/tmp/bippy-replay-final-focused.log`).
+- Next P1 audit target: `TimerQueue` stores cancellation in an unguarded `WeakSet` and tasks in plain queues. Conditional cancellation/scheduling needs a before-fix regression and guard/journal ownership review; this is not yet a verified repair.
 
 ## 20. Complete checked-in corpus ledger
 

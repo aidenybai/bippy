@@ -16,8 +16,15 @@ import {
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
 import { areGuardsSatisfiable } from "./guard-solver.js";
-import { decisionGuard, type Guard } from "./symbolic-tree.js";
 import {
+  choiceGuard,
+  COMMIT_VARIABLE,
+  decisionGuard,
+  negateGuard,
+  type Guard,
+} from "./symbolic-tree.js";
+import {
+  getPinnedPattern,
   pinDecisions,
   type DecisionCondition,
   type StateCondition,
@@ -30,7 +37,7 @@ import {
 // of one alternative can leak into another's subtree. Replaying an assignment
 // of the decision variables renders the static tree again, from a fresh
 // interpreter, with only those alternatives and repeat counts selected; the
-// trees it commits must be exactly the trees the enumeration claimed.
+// trees it commits are checked against the symbolic tree under that assignment.
 
 /**
  * How many decision assignments a replay renders at most; each is a full
@@ -44,7 +51,7 @@ export interface StateReplayMismatch {
   /** The enumerated states (indices before correction) the assignment claims. */
   stateIndices: number[];
   conditions: DecisionCondition[];
-  /** How many distinct trees the enumeration claimed for the assignment and how many the replay committed. */
+  /** Distinct projected claim trees (possibly partial) and independently replayed trees. */
   claimedCommits: number;
   replayedCommits: number;
   divergence: ComparisonDivergence;
@@ -56,7 +63,15 @@ export interface StateReplayMismatch {
   isCorrected: boolean;
 }
 
+export interface StateReplayIncomplete {
+  stateIndices: number[];
+  conditions: DecisionCondition[];
+  unresolvedClaimCommits: number[];
+  isReplayConcrete: boolean;
+}
+
 export interface StateReplaySummary {
+  verification?: "not-replayed" | "sample-passed" | "sample-incomplete" | "contradicted";
   /** Enumerated states before the replay corrected any. */
   states: number;
   /** Distinct assignments of the decision variables across the enumerated states. */
@@ -65,6 +80,7 @@ export interface StateReplaySummary {
   maxReplayed: number;
   /** Replayed assignments whose claimed trees the reconciler did not produce. */
   mismatched: StateReplayMismatch[];
+  incomplete?: StateReplayIncomplete[];
 }
 
 export interface StateReplayOptions {
@@ -122,35 +138,60 @@ const childrenOf = (node: PatternNode): PatternNode[] => {
   }
 };
 
-/**
- * The first position where two patterns differ, node for node: a wildcard
- * only equals the same wildcard and a decision left open equals nothing.
- */
+const hasUnknownHead = (node: PatternNode | undefined): boolean =>
+  node !== undefined && (node.kind === "text" ? node.text === null : node.kind !== "fiber");
+
 const diffPatterns = (
   expected: PatternNode[],
   actual: PatternNode[],
   path: string[],
+  isPartial = false,
 ): ComparisonDivergence | null => {
-  const length = Math.max(expected.length, actual.length);
-  for (let index = 0; index < length; index++) {
-    const expectedNode = expected[index];
-    const actualNode = actual[index];
+  const compareAt = (expectedIndex: number, actualIndex: number): ComparisonDivergence | null => {
+    const expectedNode = expected[expectedIndex];
+    const actualNode = actual[actualIndex];
     if (
       expectedNode === undefined ||
       actualNode === undefined ||
       !isSameNodeHead(expectedNode, actualNode)
     ) {
       return {
-        path: `${path.join(" > ")}[${index}]`,
-        expected: describeAt(expected, index),
-        actual: describeAt(actual, index),
+        path: `${path.join(" > ")}[${expectedIndex}]`,
+        expected: describeAt(expected, expectedIndex),
+        actual: describeAt(actual, actualIndex),
       };
     }
-    const inside = diffPatterns(childrenOf(expectedNode), childrenOf(actualNode), [
-      ...path,
-      describePatternNode(expectedNode),
-    ]);
-    if (inside) return inside;
+    return diffPatterns(
+      childrenOf(expectedNode),
+      childrenOf(actualNode),
+      [...path, describePatternNode(expectedNode)],
+      isPartial,
+    );
+  };
+  const length = Math.max(expected.length, actual.length);
+  let prefix = 0;
+  for (; prefix < length; prefix++) {
+    if (isPartial && (hasUnknownHead(expected[prefix]) || hasUnknownHead(actual[prefix]))) break;
+    const divergence = compareAt(prefix, prefix);
+    if (divergence) return divergence;
+  }
+  for (let suffix = 0; suffix < length - prefix; suffix++) {
+    const expectedIndex = expected.length - 1 - suffix;
+    const actualIndex = actual.length - 1 - suffix;
+    const expectedPosition = expectedIndex >= prefix ? expectedIndex : expected.length;
+    const actualPosition = actualIndex >= prefix ? actualIndex : actual.length;
+    if (hasUnknownHead(expected[expectedPosition]) || hasUnknownHead(actual[actualPosition])) break;
+    const divergence = compareAt(expectedPosition, actualPosition);
+    if (divergence) return divergence;
+  }
+  if (prefix < length && actual.every((node) => !hasUnknownHead(node))) {
+    let candidate = 0;
+    for (let index = 0; index < expected.length; index++) {
+      if (hasUnknownHead(expected[index])) continue;
+      while (candidate < actual.length && compareAt(index, candidate) !== null) candidate++;
+      if (candidate === actual.length) return compareAt(index, actual.length);
+      candidate++;
+    }
   }
   return null;
 };
@@ -446,13 +487,14 @@ export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionA
 /**
  * Which assignments to replay: up to `maxReplayed` spread evenly over the
  * enumeration order, the slot nearest the runtime-matched assignment replaced
- * by it so the match itself is always re-witnessed.
+ * by it so the match itself is re-witnessed when the budget permits.
  */
 export const chooseReplaySample = (
   assignmentCount: number,
   matchedAssignment: number | null,
   maxReplayed: number,
 ): number[] => {
+  if (maxReplayed <= 0) return [];
   if (assignmentCount <= maxReplayed) {
     return Array.from({ length: assignmentCount }, (_, index) => index);
   }
@@ -474,8 +516,63 @@ export const chooseReplaySample = (
 const transitionConditions = (commit: number, commitCount: number): StateCondition[] =>
   commitCount > 1 ? [{ kind: "transition", commit, commitCount }] : [];
 
+interface ReplayClaim {
+  commits: PatternNode[][];
+  unresolvedCommits: number[];
+}
+
+const getReplayClaim = (
+  stateSpace: StaticStateSpace,
+  assignment: DecisionAssignment,
+  pins: PinnedDecisions,
+): ReplayClaim => {
+  const guards = stateSpace.commits.flatMap((commit, commitIndex) =>
+    collectAssignedGuards(
+      commit,
+      new Map(
+        assignment.pinnedConditions[commitIndex].map((condition) => [
+          condition.variable,
+          condition,
+        ]),
+      ),
+    ),
+  );
+  const commits: PatternNode[][] = [];
+  const unresolvedCommits: number[] = [];
+  stateSpace.tree.commits.forEach((commit, commitIndex) => {
+    if (!areGuardsSatisfiable([...guards, commit.guard])) return;
+    const tree = getPinnedPattern(commit.tree, pins);
+    const isOptional = areGuardsSatisfiable([
+      ...guards,
+      choiceGuard(COMMIT_VARIABLE, commitIndex),
+      negateGuard(commit.guard),
+    ]);
+    if (isOptional || tree.some(hasPatternDecisions)) unresolvedCommits.push(commitIndex);
+    if (!isOptional) commits.push(tree);
+  });
+  return { commits: distinctTrees(commits), unresolvedCommits };
+};
+
+const diffKnownClaims = (
+  claimed: PatternNode[][],
+  witnessed: PatternNode[][],
+): ComparisonDivergence | null => {
+  const candidates = witnessed.length > 0 ? witnessed : [[]];
+  for (const [commitIndex, tree] of claimed.entries()) {
+    let divergence: ComparisonDivergence | null = null;
+    for (const candidate of candidates) {
+      divergence = diffPatterns(tree, candidate, [`commit ${commitIndex + 1}`], true);
+      if (divergence === null) break;
+    }
+    if (divergence !== null) return divergence;
+  }
+  return null;
+};
+
 interface ReplayOutcome {
   mismatch: StateReplayMismatch | null;
+  incomplete: StateReplayIncomplete | null;
+  reproduced: number[];
   /** The assignment's states as the replay witnessed them; null when the claimed states were reproduced. */
   corrected: StaticState[] | null;
 }
@@ -483,17 +580,33 @@ interface ReplayOutcome {
 const replayAssignment = (
   states: StaticState[],
   assignment: DecisionAssignment,
+  claim: ReplayClaim,
   replay: StaticStateSpace,
 ): ReplayOutcome => {
-  const claimed = distinctTrees(
-    assignment.stateIndices.map((stateIndex) => states[stateIndex].tree),
-  );
+  const claimed = claim.commits;
   const witnessed = distinctTrees(replay.commits);
-  const divergence = diffTreeSequences(claimed, witnessed);
-  if (divergence === null) return { mismatch: null, corrected: null };
   const isConcrete =
     witnessed.length > 0 && witnessed.every((commit) => !commit.some(hasPatternDecisions));
+  const incomplete =
+    claim.unresolvedCommits.length > 0 || !isConcrete
+      ? {
+          stateIndices: assignment.stateIndices,
+          conditions: assignment.conditions,
+          unresolvedClaimCommits: claim.unresolvedCommits,
+          isReplayConcrete: isConcrete,
+        }
+      : null;
+  const divergence =
+    incomplete === null
+      ? diffTreeSequences(claimed, witnessed)
+      : diffKnownClaims(claimed, witnessed);
+  const reproduced = assignment.stateIndices.filter((stateIndex) =>
+    witnessed.some((tree) => isSameTree(states[stateIndex].tree, tree)),
+  );
+  if (divergence === null) return { mismatch: null, incomplete, reproduced, corrected: null };
   return {
+    incomplete,
+    reproduced,
     mismatch: {
       stateIndices: assignment.stateIndices,
       conditions: assignment.conditions,
@@ -618,7 +731,7 @@ export interface StateSpaceReplay {
 
 /**
  * Independently replays the enumerated decision assignments in a bounded
- * sample that always includes the assignment of `preferredState`.
+ * sample that includes the assignment of `preferredState` when enabled.
  * States a replay contradicts are replaced by the replayed commits.
  */
 export const replayStateSpace = async (
@@ -638,28 +751,42 @@ export const replayStateSpace = async (
     maxReplayed,
   );
   const mismatched: StateReplayMismatch[] = [];
+  const incomplete: StateReplayIncomplete[] = [];
   const corrections = new Map<number, StaticState[]>();
   const reproduced = new Set<number>();
   for (const assignmentIndex of sample) {
     const assignment = assignments[assignmentIndex];
-    const rendered = await render(pinDecisions(stateSpace, assignment.pinnedConditions));
+    const pins = pinDecisions(stateSpace, assignment.pinnedConditions);
+    const claim = getReplayClaim(stateSpace, assignment, pins);
+    const rendered = await render(pins);
     const outcome = replayAssignment(
       stateSpace.states,
       assignment,
+      claim,
       enumerateStaticStates(rendered, options.enumerate),
     );
+    if (outcome.incomplete) incomplete.push(outcome.incomplete);
     if (outcome.mismatch) mismatched.push(outcome.mismatch);
-    else for (const stateIndex of assignment.stateIndices) reproduced.add(stateIndex);
+    else for (const stateIndex of outcome.reproduced) reproduced.add(stateIndex);
     if (outcome.corrected) corrections.set(assignmentIndex, outcome.corrected);
   }
   const { states, kept, witnessed } = correctStates(stateSpace.states, assignments, corrections);
   return {
     summary: {
+      verification:
+        sample.length === 0
+          ? "not-replayed"
+          : mismatched.length > 0
+            ? "contradicted"
+            : incomplete.length > 0
+              ? "sample-incomplete"
+              : "sample-passed",
       states: stateSpace.states.length,
       assignments: assignments.length,
       replayed: sample.length,
       maxReplayed,
       mismatched,
+      incomplete,
     },
     states,
     kept,
@@ -714,6 +841,7 @@ export const replayEnumeratedStates = async (
     closestState: reindex(comparison.closestState, kept),
     stateReplay: summary,
   };
+  if (summary.replayed === 0) return replayed;
   if (matchedState !== null && matchedState.index !== null && reWitnessed.has(matchedState.index)) {
     return replayed;
   }

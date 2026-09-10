@@ -189,18 +189,27 @@ framework internals; application mismatches are never hidden this way.
   across commits) the static tree is materialized and rendered again through a fresh interpreter
   and materializer with those alternatives and repeat counts pinned (`PinnedDecisions`, a typed
   `StaticRenderOptions.decisions`; branch and repeat markers carry stable decision ids so a pin
-  finds its marker in the replay), captured with bippy, and the distinct trees it commits must
-  equal, node for node, the trees the enumeration claimed for that assignment. Replays are
-  bounded by `DEFAULT_MAX_REPLAYED_ASSIGNMENTS` (16), always include the runtime-matched
-  assignment, and the result records
-  `stateReplay: { states, assignments, replayed, maxReplayed, mismatched }` so a sampled replay is
-  visible as such. Each mismatch names the assignment, the
-  claimed and replayed commit counts and the first divergence. When the replay left no decision
-  open its commits replace the contradicted states and the runtime is matched against them again;
-  a replay that met a decision the enumeration never described cannot correct anything.
+  finds its marker in the replay), captured with bippy, and checked against claims projected
+  from all symbolic commits under those pins—not a truncated prefix of enumerated states.
+  Unselected decisions and undecided commit causes make a claim incomplete. Known regions can
+  still contradict a replay; unknown regions are not treated as concrete counterexamples.
+  Replays are bounded by `DEFAULT_MAX_REPLAYED_ASSIGNMENTS` (16). A positive budget includes
+  the preferred enumerated assignment; zero disables replay. The result records
+  `stateReplay: { states, assignments, replayed, maxReplayed, mismatched, incomplete, verification }`.
+  Each mismatch retains its assignment, projected/replayed commit counts, and first divergence.
+  Incomplete entries identify unresolved claim commits and whether the replay was concrete.
+  Concrete replay commits can replace contradicted states for rematching. Those corrections
+  currently change the state array, not its original symbolic tree/clusters; they are empirical
+  evidence, not proof that the original model was repaired.
 
-Statuses: `exact` (the runtime is a member of the symbolic tree, the budget omitted nothing
-from it, and every replayed assignment reproduced its states or was corrected by its replay),
+Replay `verification` is separate from runtime membership: `not-replayed`, `sample-passed`,
+`sample-incomplete`, or `contradicted`. A corrected contradiction remains `contradicted`.
+`sample-passed` covers only the reported sample of enumerated assignments, not the entire
+symbolic assignment space. Older saved summaries lack these verification/incomplete fields;
+absence means unrecorded evidence, not a passed check.
+
+Membership statuses: `exact` (the capture matches an analyzed or replay-witnessed state without
+reported omissions or opaque/wildcard matching),
 `truncated` (the runtime matched but the budget omitted alternatives, repeat counts or subtrees,
 or it matches only inside that omitted region), `partial` (matched through opaque subtrees or
 wildcards), `unsound` (the runtime matched, but a replayed assignment could neither be reproduced
@@ -219,8 +228,9 @@ commands, URL, static target and notes; `corpus/results.json` holds the latest m
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
 capture runs where a dev server can start in this environment (195 entries so far).
 
-Live-verified so far: 111 entries are `exact` — the runtime capture is one of the enumerated
-states and nothing was omitted — including `react-admin` (5,581 runtime nodes inside 21 states
+Historical checked-in results report 111 `exact` capture matches, not whole-space verification.
+135 runtime-metadata rows have no replay summary, and some exact rows record replay contradictions.
+These historical matches include `react-admin` (5,581 runtime nodes inside 21 states
 over the list query's pending/settled, the loading counter and the effect commits, with
 MUI, Emotion, React Router and React Hook Form interpreted from source), `cal-diy` (6 states:
 the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()` finds no user is one

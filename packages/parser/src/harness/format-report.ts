@@ -151,12 +151,24 @@ const formatStateSpaceSummary = (
 export const formatStateReplay = (replay: StateReplaySummary): string[] => {
   const sampled =
     replay.replayed < replay.assignments ? ` (sampled, max ${replay.maxReplayed})` : "";
+  const incomplete = replay.incomplete?.length ? `, ${replay.incomplete.length} incomplete` : "";
   const lines = [
-    `replayed: ${replay.replayed} of ${replay.assignments} decision assignments${sampled}, ${replay.mismatched.length} mismatched`,
+    `replayed: ${replay.replayed} of ${replay.assignments} decision assignments${sampled}, ${replay.mismatched.length} mismatched${incomplete}`,
   ];
+  lines.push(`verification: ${replay.verification ?? "unrecorded"}`);
+  for (const entry of replay.incomplete ?? []) {
+    const reasons: string[] = [];
+    if (entry.unresolvedClaimCommits.length > 0) {
+      reasons.push(
+        `unresolved claim commits ${entry.unresolvedClaimCommits.map((commit) => commit + 1).join(", ")}`,
+      );
+    }
+    if (!entry.isReplayConcrete) reasons.push("replay not concrete");
+    lines.push(`  ${formatStateConditions(entry.conditions)}: ${reasons.join("; ")}`);
+  }
   for (const mismatch of replay.mismatched) {
     lines.push(
-      `  ${formatStateConditions(mismatch.conditions)}: claimed ${mismatch.claimedCommits} commits, replay produced ${mismatch.replayedCommits}${mismatch.isCorrected ? " (corrected)" : " (decisions left open)"}`,
+      `  ${formatStateConditions(mismatch.conditions)}: claimed ${mismatch.claimedCommits} commits, replay produced ${mismatch.replayedCommits}${mismatch.isCorrected ? " (corrected)" : " (uncorrected)"}`,
     );
     lines.push(`    diverged at ${formatDivergence(mismatch.divergence)}`);
   }

@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { readCorpusManifest } from "../src/corpus/manifest.js";
 import { readSavedCapture } from "../src/corpus/run-entry.js";
+import { formatCorpusTable, readCorpusResults } from "../src/corpus/summary.js";
 import { SchemaError, StaleCaptureError } from "../src/errors.js";
 
 const MANIFEST_PATH = path.resolve(import.meta.dirname, "../corpus/manifest.json");
@@ -34,6 +35,41 @@ describe("corpus manifest", () => {
         writeManifest([{ ...entry, static: { ...entry?.static, globals: ["ENV"] } }]),
       ),
     ).toThrow(/entries\[0\]\.static\.globals/);
+  });
+});
+
+describe("saved replay evidence", () => {
+  it("preserves incomplete evidence and distinguishes older summaries", () => {
+    const example = readCorpusResults(
+      path.resolve(import.meta.dirname, "../corpus/results.json"),
+    ).results.find((result) => result.report !== null);
+    if (!example) throw new Error("missing historical comparison result");
+    const resultsPath = path.join(
+      mkdtempSync(path.join(tmpdir(), "bippy-results-")),
+      "results.json",
+    );
+    const replay = { states: 1, assignments: 1, replayed: 1, maxReplayed: 16, mismatched: [] };
+    writeFileSync(resultsPath, JSON.stringify({ results: [{ ...example, stateReplay: replay }] }));
+    const legacy = readCorpusResults(resultsPath).results[0].stateReplay;
+    expect(legacy?.incomplete).toBeUndefined();
+    expect(legacy?.verification).toBeUndefined();
+    expect(formatCorpusTable(readCorpusResults(resultsPath).results)).toContain("unrecorded");
+    const incomplete = [
+      { stateIndices: [0], conditions: [], unresolvedClaimCommits: [1], isReplayConcrete: false },
+    ];
+    writeFileSync(
+      resultsPath,
+      JSON.stringify({
+        results: [
+          { ...example, stateReplay: { ...replay, incomplete, verification: "sample-incomplete" } },
+        ],
+      }),
+    );
+    const saved = readCorpusResults(resultsPath);
+    expect(saved.results[0].stateReplay?.incomplete).toEqual(incomplete);
+    expect(saved.results[0].stateReplay?.verification).toBe("sample-incomplete");
+    expect(formatCorpusTable(saved.results)).toContain("1 incomplete");
+    expect(formatCorpusTable(saved.results)).toContain("sample-incomplete");
   });
 });
 
