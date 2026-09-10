@@ -44,10 +44,9 @@ export const mountNodes = async (
   const uncaughtErrors: unknown[] = [];
   const caughtErrors: unknown[] = [];
   const roots = containers.map((container) =>
-    runtime.domClient.createRoot(container, {
+    runtime.createRoot(container, {
       onUncaughtError: (error) => uncaughtErrors.push(error),
       onCaughtError: (error) => caughtErrors.push(error),
-      onRecoverableError: () => {},
     }),
   );
   const { error: consoleError, warn: consoleWarn } = console;

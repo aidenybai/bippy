@@ -18,6 +18,7 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNodes } from "../materialize/mount.js";
@@ -91,7 +92,7 @@ export class StaticRenderer {
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
     const { rootDirectory } = this.options;
     const devDirectory = this.resolveOptionalPath(options.devDirectory);
-    const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
+    const bundler = detectModuleBundler(rootDirectory, devDirectory ?? null);
     const platform = options.platform ?? getDefaultPlatform(bundler);
     this.platform = platform;
     const bundlerResolverOptions = getBundlerResolverOptions(rootDirectory, bundler, platform);
@@ -111,7 +112,6 @@ export class StaticRenderer {
       conditionNames: options.conditionNames,
       rootDirectory,
     });
-    this.documentShell = readDocumentShell(rootDirectory, bundler);
     this.defines = {
       ...getBundlerDefines(rootDirectory, bundler, platform),
       ...options.defines,
@@ -129,11 +129,20 @@ export class StaticRenderer {
       transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
       bundler,
     });
+    this.documentShell = readDocumentShell(
+      rootDirectory,
+      bundler,
+      options.environment ?? null,
+      this.project.servedDirectory ?? rootDirectory,
+    );
     this.reactVersion = this.project.readPackageVersion("react");
     const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
     this.graph = new ModuleGraph({
       resolver: this.resolver,
-      sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+      sourceFileCache: new SourceFileCache([
+        ...(svgrTransform ? [svgrTransform] : []),
+        ...createYamlSourceTransforms(rootDirectory),
+      ]),
       assetTransform: getBundlerAssetTransform(rootDirectory, bundler, platform),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,

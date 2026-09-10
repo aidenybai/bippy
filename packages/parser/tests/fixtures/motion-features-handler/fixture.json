@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "framer-motion 5-8 render a motion component under a `VisualElementHandler` class: the keyed array of enabled renderless feature components (`useFeatures`, `MeasureLayout` for layout/drag) before `MotionContext.Provider`. The package is a pared-down copy of `createMotionComponent` and `featureDefinitions` at 6.5.1."
+}

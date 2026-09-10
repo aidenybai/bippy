@@ -1,4 +1,5 @@
 import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js";
+import { recordInputSource } from "./predicates.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -61,7 +62,11 @@ export const callStorageMethod = (
   const [first, second] = args;
   const key = toStorageString(first);
   const describe = (detail: string) =>
-    unknownValue(`${areaName}.${methodName} ${detail}`, location);
+    recordInputSource(
+      unknownValue(`${areaName}.${methodName} ${detail}`, location),
+      "storage",
+      location,
+    );
 
   switch (methodName) {
     case "getItem": {
@@ -69,9 +74,13 @@ export const callStorageMethod = (
       if (key === null) return describe("with a dynamic key");
       const stored = area.entries.get(key);
       if (stored === null) {
-        return unknownPrimitiveValue(
-          "string",
-          `${areaName}.${methodName}(${JSON.stringify(key)}) stores a dynamic string`,
+        return recordInputSource(
+          unknownPrimitiveValue(
+            "string",
+            `${areaName}.${methodName}(${JSON.stringify(key)}) stores a dynamic string`,
+          ),
+          "storage",
+          location,
         );
       }
       return stored === undefined ? NULL_VALUE : primitiveValue(stored);

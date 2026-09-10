@@ -23,8 +23,9 @@ import {
   readExpoWebpackDocumentShell,
 } from "./expo-webpack-config.js";
 import { readInstalledPackage } from "./installed-package.js";
-import { readPackageManifest } from "../package-manifest.js";
 import type { ModuleResolver, ModuleResolverOptions } from "./module-resolver.js";
+import { readDeclaredDependencies } from "./project-context.js";
+import { REACT_SCRIPTS_PACKAGE, getReactScriptsClientEnvironment } from "./react-scripts.js";
 import { findViteConfig } from "./vite-config.js";
 
 /** Vite 8 transpiles with Oxc; in earlier majors these React plugins take over from `vite:esbuild`. */
@@ -45,21 +46,27 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
-/** Rsbuild's config may live anywhere (`rsbuild dev --config`); the project declares the core package. */
-const declaresRsbuild = (directory: string): boolean => {
-  const manifestPath = path.join(directory, "package.json");
-  if (!existsSync(manifestPath)) return false;
-  const { dependencies, devDependencies } = readPackageManifest(manifestPath);
-  return (
-    dependencies?.["@rsbuild/core"] !== undefined ||
-    devDependencies?.["@rsbuild/core"] !== undefined
-  );
-};
+const hasViteConfig = (directory: string): boolean => findViteConfig(directory) !== undefined;
 
-/** Which bundler serves the web page: a project may bundle native platforms with Expo's Metro while another bundler builds its web target. */
-export const detectModuleBundler = (...directories: string[]): ModuleBundler => {
-  if (directories.some((directory) => findViteConfig(directory) !== undefined)) return "vite";
-  if (directories.some(declaresRsbuild)) return "rsbuild";
+const declaresPackage = (directory: string, packageName: string): boolean =>
+  readDeclaredDependencies(path.join(directory, "package.json")).includes(packageName);
+
+/**
+ * Which bundler serves the web page, looked up in the directory the dev server
+ * starts in and the root: a Vite config, then the `@rsbuild/core` (whose config
+ * may live anywhere, `rsbuild dev --config`) or `react-scripts` package, then
+ * Expo's CLI; a project may bundle native platforms with Expo's Metro while
+ * another bundler builds its web target.
+ */
+export const detectModuleBundler = (
+  rootDirectory: string,
+  devDirectory: string | null = null,
+): ModuleBundler => {
+  const directories = [devDirectory ?? rootDirectory, rootDirectory];
+  if (directories.some(hasViteConfig)) return "vite";
+  if (directories.some((directory) => declaresPackage(directory, "@rsbuild/core")))
+    return "rsbuild";
+  if (declaresPackage(rootDirectory, REACT_SCRIPTS_PACKAGE)) return "react-scripts";
   return directories.some((directory) => findExpoCliDirectory(directory) !== null)
     ? "expo"
     : "unknown";
@@ -80,8 +87,22 @@ export const getBundlerResolverOptions = (
   return expoCliDirectory === null ? {} : getExpoResolverOptions(expoCliDirectory, platform);
 };
 
-/** The HTML the bundler serves as the page: Vite's dev server answers `/` with the root `index.html`, Expo's web bundler with its template. */
-export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler): string | null => {
+const readOptionalFile = (filePath: string): string | null =>
+  existsSync(filePath) ? readFileSync(filePath, "utf8") : null;
+
+/**
+ * The HTML the bundler serves as the page: Vite's dev server answers `/` with
+ * the served root's `index.html`; `react-scripts` serves `public/index.html`
+ * after `InterpolateHtmlPlugin` replaced each `%NAME%` with its client environment;
+ * Expo's web bundler serves its template.
+ */
+export const readDocumentShell = (
+  rootDirectory: string,
+  bundler: ModuleBundler,
+  environment: ProcessEnvironment | null,
+  servedDirectory: string = rootDirectory,
+): string | null => {
+  if (bundler === "vite") return readOptionalFile(path.join(servedDirectory, "index.html"));
   if (bundler === "expo") {
     const expoCliDirectory = findExpoCliDirectory(rootDirectory);
     if (expoCliDirectory === null) return null;
@@ -89,9 +110,13 @@ export const readDocumentShell = (rootDirectory: string, bundler: ModuleBundler)
       ? readExpoWebpackDocumentShell(rootDirectory)
       : readExpoDocumentShell(rootDirectory, expoCliDirectory);
   }
-  if (bundler !== "vite") return null;
-  const indexPath = path.join(rootDirectory, "index.html");
-  return existsSync(indexPath) ? readFileSync(indexPath, "utf8") : null;
+  if (bundler !== "react-scripts") return null;
+  const template = readOptionalFile(path.join(rootDirectory, "public", "index.html"));
+  if (template === null) return null;
+  return Object.entries(getReactScriptsClientEnvironment(rootDirectory, environment)).reduce(
+    (html, [name, value]) => html.replaceAll(`%${name}%`, String(value)),
+    template,
+  );
 };
 
 /** The names the bundler inlines into every client module beyond the app's own `define`s. */

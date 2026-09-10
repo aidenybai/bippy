@@ -158,43 +158,61 @@ framework internals; application mismatches are never hidden this way.
   takes the observations as inputs so dynamic data the page actually had is not guessed.
 - `enumerateStaticStates` reads each committed materialized tree back into a pattern
   (`static-pattern.ts`: marker fibers become branch/repeat/opaque/wildcard nodes, everything else
-  is a concrete fiber) and expands it into the set of concrete reachable states
-  (`state-space.ts`): one per assignment of the branch predicates and repeat cardinalities, and
-  one per distinct committed tree. Branches sharing a predicate are decided together, repeats
-  enumerate bounded counts, and whatever the `StateSpaceBudget` cuts off is recorded in `omitted`
-  rather than dropped (see `docs/exhaustive-states.md`).
-- `compareStaticToRuntime` checks the runtime tree for membership in that set: hierarchy, tags,
-  names, keys, host elements, text. `opaque` subtrees match one runtime subtree (by name, or an
-  anonymous / bundler-placeholder name such as esbuild's `_a2`) and slot their passed children
-  back in; `unknown` is a wildcard. The report carries a tally (matched, absorbed, opaque,
-  unknown), coverage, the matched state's conditions, the states never observed, the omissions,
-  and on a mismatch the first divergence path with the closest enumerated state.
+  is a concrete fiber) and builds the **symbolic tree** (`symbolic-tree.ts`), the first-class
+  static output: every branch carries a guard — a boolean formula over named symbolic inputs
+  (`eq(#1.role, "admin")`, `not(truthy(#2))`, `#3.length > 0`, `eq(choice(commit), 1)`) — every
+  repeat a cardinality (`len(#1.items)`), and every input its provenance (source kind, location,
+  stable id). Inputs are the interpreter's own unknowns (`evaluate/predicates.ts` records how each
+  value derives from them), so `const isAdmin = user.role === "admin"` and a later
+  `user.role === "admin"` are one guard over one input, across siblings and depth.
+- Concrete states are a derived, lazy view (`enumerate-states.ts`): guards are solved per
+  independent cluster of inputs (two unrelated toggles are 2 + 2 cluster states, not 4 whole
+  states), whole states are materialized only on demand within the `StateSpaceBudget`, and
+  whatever is cut off is recorded in `omitted` rather than dropped. `matchStateSpace` walks the
+  runtime tree and the symbolic tree together, keeping only decisions whose guards stay jointly
+  satisfiable, so membership does not need the eager list (see `docs/exhaustive-states.md`).
+- `compareStaticToRuntime` checks the runtime tree for membership: hierarchy, tags, names, keys,
+  host elements, text. `opaque` subtrees match one runtime subtree (by name, or an anonymous /
+  bundler-placeholder name such as esbuild's `_a2`) and slot their passed children back in;
+  `unknown` is a wildcard. The report carries a tally (matched, absorbed, opaque, unknown), fiber
+  coverage, the matched state's conditions, the states never observed, the omissions, the
+  symbolic tree's stats, and on a mismatch the first divergence path with the closest state.
+- Guard coverage (`guard-coverage.ts`) classifies every guard side across the captures as
+  `witnessed` (a capture took it), `possible` (satisfiable, not witnessed) or `unreachable`
+  (contradicts the tree's own facts); `planWitnesses` (`witness-plan.ts`) returns typed input
+  assignments covering every reachable side, the plan for future targeted runtime runs.
+  `formatSymbolicTree` prints the tree with guards inline and a decision table per cluster.
 
-Statuses: `exact` (the runtime equals one enumerated state and nothing was omitted), `truncated`
-(the runtime matched but the state space is incomplete), `partial` (matched through opaque
+Statuses: `exact` (the runtime is a member of the symbolic tree and the budget omitted nothing
+from it), `truncated` (the runtime matched but the budget omitted alternatives, repeat counts or
+subtrees, or it matches only inside that omitted region), `partial` (matched through opaque
 subtrees or wildcards), `mismatch` (no state matches), `unresolved` (the static side did not
-produce a component tree), `skipped` (no runtime root or anchor). The harness chooses the runtime
-root by explicit index, then anchor search, then the largest root.
+produce a component tree), `skipped` (no runtime root or anchor). Guard coverage is reported
+alongside, never folded into the status: an exact entry with `possible` sides is exact for the
+captures at hand and says which sides no capture reached. The harness chooses the runtime root by
+explicit index, then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 41 real repositories by revision with framework, install/setup/dev
+`corpus/manifest.json` pins 127 real repositories by revision with framework, install/setup/dev
 commands, URL, static target and notes; `corpus/results.json` holds the latest merged results.
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
-capture runs where a dev server can start in this environment.
+capture runs where a dev server can start in this environment (120 entries so far).
 
-Live-verified so far: 19 entries are `exact` — the runtime capture is one of the enumerated
-states and nothing was omitted — including `react-admin` (5,571 runtime nodes matched inside
-103 states over the list query's pending/settled, the loading indicator and the avatar image
-load, with MUI, Emotion, React Router and React Hook Form interpreted from source), `cal-diy`
-(6 states: the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()` finds no
-user is one of them, the runtime matched the populated database), `documenso`, `sentry`
-(5 states), `posthog`, `graphiql` and `invoify` (6 states each), `lexical`, `puck`,
-`tanstack-router`, `tanstack-query`, `redux-toolkit`, `bulletproof-react`, `epic-stack`,
-`nextjs-examples`, `nextjs-boilerplate`, `react-router-templates`, `react-three-next` and
-`sonner`. 16 are `partial`: `formbricks`, `karakeep` and `socialecho` at 100% strict coverage
-behind opaque nodes and the rest short of full coverage through dynamic data or opaque
-third-party providers; `lobe-chat` and `nextjs-starter` are `unresolved`. Provider packages
+Live-verified so far: 51 entries are `exact` — the runtime capture is one of the enumerated
+states and nothing was omitted — including `react-admin` (5,581 runtime nodes inside 21 states
+over the list query's pending/settled, the loading counter and the effect commits, with
+MUI, Emotion, React Router and React Hook Form interpreted from source), `cal-diy` (6 states:
+the login page's `redirect("/auth/setup")` when `prisma.user.findFirst()` finds no user is one
+of them, the runtime matched the populated database), `tanstack-table` (64 states over its
+compiled memo caches), `documenso`, `sentry`, `posthog`, `graphiql`, `invoify`, `lexical`,
+`puck`, `excalidraw-clone`, `jsoncrack`, `shadcn-ui`, `tanstack-router`, `tanstack-query`,
+`redux-toolkit`, `bulletproof-react`, `epic-stack`, `nextjs-examples`, `nextjs-boilerplate`,
+`react-router-templates`, `react-three-next`, `sonner`, `planka`, `navidrome`, `homarr`,
+`panwriter`, `letterpad` and the Creative Tim/Tailwind dashboard templates. 55 are `partial`:
+`formbricks`, `karakeep`, `socialecho` and `taxonomy` at 100% strict coverage behind opaque nodes and the rest short of full coverage through dynamic data or
+opaque third-party providers; 6 are `mismatch`, 4 `truncated` (budget-omitted alternatives),
+4 `unresolved` and 7 render statically only (no dev server here). Provider packages
 become exact by listing them in an entry's `externalPackageAllowList` (their source is interpreted like application code, as `react-redux`
 and `@tanstack/react-query` are) or through a library model (`src/libraries`, as Redux Toolkit's
 `configureStore`/`createApi` are, reading the recorded store state).

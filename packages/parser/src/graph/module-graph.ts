@@ -16,7 +16,7 @@ import { type AssetModuleSource, readAssetModuleSource } from "./asset-modules.j
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
-import { ModuleResolver } from "./module-resolver.js";
+import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
 
 interface ExportNameSet {
   names: string[];
@@ -115,7 +115,7 @@ export class ModuleGraph {
     specifier: string,
   ): ModuleRecord | ModuleResolution {
     if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
-    if (resolution.filePath === null) return resolution;
+    if (resolution.filePath === null || isInlineLoaderRequest(specifier)) return resolution;
     const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
     if (isUrlImport(specifier)) return resolution;
@@ -126,9 +126,26 @@ export class ModuleGraph {
   }
 
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
-    const source = specifier.includes("?")
-      ? readAssetModuleSource(filePath, specifier)
-      : this.transformAsset(filePath);
+    const queryIndex = specifier.indexOf("?");
+    if (queryIndex === -1) return this.getTransformedAssetModule(filePath);
+    for (const [query] of new URLSearchParams(specifier.slice(queryIndex + 1))) {
+      const file = this.sourceFileCache.readQueried(filePath, query);
+      if (!file) continue;
+      const cached = this.modules.get(file.filePath);
+      if (cached) return cached;
+      const record = createModuleRecord(file);
+      this.modules.set(file.filePath, record);
+      return record;
+    }
+    return this.getVirtualModule(readAssetModuleSource(filePath, specifier));
+  }
+
+  private getTransformedAssetModule(filePath: string): ModuleRecord | null {
+    const sourceText = this.assetTransform?.(filePath) ?? null;
+    return sourceText === null ? null : this.getVirtualModule({ moduleKey: filePath, sourceText });
+  }
+
+  private getVirtualModule(source: AssetModuleSource | null): ModuleRecord | null {
     if (!source) return null;
     const cached = this.modules.get(source.moduleKey);
     if (cached) return cached;
@@ -137,11 +154,6 @@ export class ModuleGraph {
     );
     this.modules.set(source.moduleKey, record);
     return record;
-  }
-
-  private transformAsset(filePath: string): AssetModuleSource | null {
-    const sourceText = this.assetTransform?.(filePath) ?? null;
-    return sourceText === null ? null : { moduleKey: filePath, sourceText };
   }
 
   resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {

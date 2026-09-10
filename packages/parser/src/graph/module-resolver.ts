@@ -111,6 +111,12 @@ export const getPackageNameFromFilePath = (filePath: string): string | null => {
   return packagePath === null ? null : getPackageNameFromSpecifier(packagePath);
 };
 
+/** webpack's inline loader syntax (`loader!request`, `!!loader!request`): loaders transform the file the last segment resolves to. */
+export const isInlineLoaderRequest = (specifier: string): boolean => specifier.includes("!");
+
+const stripInlineLoaders = (specifier: string): string =>
+  specifier.slice(specifier.lastIndexOf("!") + 1);
+
 export const isInsideNodeModules = (filePath: string): boolean =>
   filePath.replaceAll("\\", "/").includes(NODE_MODULES_SEGMENT);
 
@@ -123,11 +129,13 @@ export class ModuleResolver {
   private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
   private readonly shimDirectories: string[];
+  private readonly aliasNames: string[];
   readonly rootDirectory: string | null;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
     this.shimDirectories = options.shimDirectories ?? [];
+    this.aliasNames = Object.keys(options.aliases ?? {});
     const createPair = (conditionNames: string[]): ResolverPair => {
       const baseOptions = {
         extensions: getSourceExtensions(options.platform),
@@ -175,12 +183,11 @@ export class ModuleResolver {
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };
     }
-    const cleanSpecifier = specifier.split("?")[0];
+    const cleanSpecifier = stripInlineLoaders(specifier).split("?")[0];
     let result = primary.resolveFileSync(fromFile, cleanSpecifier);
-    if (!result.path) {
-      const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);
-      if (fallbackResult.path) result = fallbackResult;
-    }
+    const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);
+    const isPathMapped = result.path !== undefined && result.path !== fallbackResult.path;
+    if (!result.path && fallbackResult.path) result = fallbackResult;
     const specifierPackage = getPackageNameFromSpecifier(cleanSpecifier);
     if (result.path) {
       const isPackageRootImport = importer === "esm" && specifierPackage === cleanSpecifier;
@@ -189,7 +196,12 @@ export class ModuleResolver {
         result.path;
       const packageName =
         getPackageNameFromFilePath(filePath) ??
-        (specifierPackage !== null && this.isOutsideRoot(filePath) ? specifierPackage : null);
+        (specifierPackage !== null &&
+        !isPathMapped &&
+        !this.isAliased(cleanSpecifier) &&
+        this.isOutsideRoot(filePath)
+          ? specifierPackage
+          : null);
       if (packageName) {
         return { kind: "external", packageName, filePath: this.applyShim(filePath) };
       }
@@ -208,6 +220,13 @@ export class ModuleResolver {
       .map((directory) => path.join(directory, packagePath))
       .find((candidate) => existsSync(candidate));
     return shim ?? filePath;
+  }
+
+  /** A bundler-aliased specifier is a path of the app itself however package-like it reads (tsconfig `paths` likewise). */
+  private isAliased(specifier: string): boolean {
+    return this.aliasNames.some(
+      (alias) => specifier === alias || specifier.startsWith(`${alias}/`),
+    );
   }
 
   private isOutsideRoot(filePath: string): boolean {

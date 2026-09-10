@@ -4,7 +4,9 @@ import type {
   StaticBranchValue,
   StaticObjectValue,
   StaticValue,
+  StringComposition,
   StubRenderTools,
+  UnknownPrimitiveType,
 } from "../types.js";
 import { getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
@@ -17,6 +19,8 @@ import {
   getComponentIdentity,
   listValue,
   mapValue,
+  mayOverlapCompositions,
+  mayReadAsText,
   objectFromRecord,
   optionalValue,
   primitiveValue,
@@ -35,17 +39,23 @@ interface EntryPresence {
   location: SourceLocation | null;
 }
 
-/** `isDefinite` is false when the entry exists on some paths only (a branch key, or a fork whose paths disagree). */
+/**
+ * `isDefinite` is false when the entry exists on some paths only (a branch key,
+ * a fork whose paths disagree, or a possible `delete`). `writeOrdinal` orders
+ * writes: a later write under a key that may equal this one may have replaced
+ * the value.
+ */
 interface CollectionEntry {
   key: StaticValue;
   value: StaticValue;
   isDefinite: boolean;
+  writeOrdinal: number;
   presence?: EntryPresence;
 }
 
 interface CollectionState {
   entries: CollectionEntries;
-  hasDynamicKeys: boolean;
+  writeCount: number;
   isExternallyMutable: boolean;
 }
 
@@ -62,7 +72,7 @@ const nativeMethod = (
   call,
 });
 
-type KeyIdentity = unknown;
+export type KeyIdentity = unknown;
 
 const internedIdentities = new Map<string, symbol>();
 
@@ -75,8 +85,25 @@ const internIdentity = (namespace: string, name: string): symbol => {
   return identity;
 };
 
-/** What a `Map` compares keys by: the primitive itself (SameValueZero) or the value's identity. */
-const getKeyIdentity = (key: StaticValue): KeyIdentity => {
+const composedIdentities = new WeakMap<StaticValue, Map<string, symbol>>();
+
+/** Strings composed alike from the same dynamic source are one string, so they share one identity. */
+const getComposedIdentity = (composition: StringComposition): symbol => {
+  let bySurroundings = composedIdentities.get(composition.source);
+  if (!bySurroundings) {
+    bySurroundings = new Map();
+    composedIdentities.set(composition.source, bySurroundings);
+  }
+  const surroundings = `${composition.prefix}\u0000${composition.suffix}`;
+  const interned = bySurroundings.get(surroundings);
+  if (interned) return interned;
+  const identity = Symbol(surroundings);
+  bySurroundings.set(surroundings, identity);
+  return identity;
+};
+
+/** What a `Map` compares keys by: the primitive itself (SameValueZero), the value's identity, or the dynamic string it stands for. */
+export const getKeyIdentity = (key: StaticValue): KeyIdentity => {
   switch (key.kind) {
     case "primitive":
       return key.value;
@@ -91,6 +118,8 @@ const getKeyIdentity = (key: StaticValue): KeyIdentity => {
     case "function":
     case "class":
       return getComponentIdentity(key) ?? key;
+    case "unknown-primitive":
+      return key.composition ? getComposedIdentity(key.composition) : key;
     default:
       return key;
   }
@@ -111,6 +140,11 @@ const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "element" ||
   (key.kind === "component-reference" &&
     (key.type.kind === "host" || getComponentIdentity(key) !== null));
+
+const isPrimitiveOfType = (key: StaticValue, primitiveType: UnknownPrimitiveType): boolean =>
+  key.kind === "primitive" &&
+  typeof key.value !== "symbol" &&
+  (primitiveType === "any" || typeof key.value === primitiveType);
 
 /** Upper bound on key alternatives written one by one before the write counts as a dynamic key. */
 const MAX_KEY_ALTERNATIVES = 8;
@@ -134,16 +168,50 @@ const getDefiniteKeyBranch = (key: StaticValue): StaticBranchValue | null =>
     ? key
     : null;
 
+/** Whether two keys of different identities may still be the same runtime key: one is dynamic and nothing known about it rules the other out. */
+const mayEqualKeys = (left: StaticValue, right: StaticValue): boolean => {
+  if (isDefiniteKey(left) && isDefiniteKey(right)) return false;
+  const [dynamic, other] = isDefiniteKey(left) ? [right, left] : [left, right];
+  if (dynamic.kind === "branch") {
+    return dynamic.alternatives.some(
+      (alternative) =>
+        getKeyIdentity(alternative) === getKeyIdentity(other) || mayEqualKeys(alternative, other),
+    );
+  }
+  if (dynamic.kind !== "unknown-primitive") return true;
+  if (other.kind === "unknown-primitive") {
+    if (
+      dynamic.primitiveType !== "any" &&
+      other.primitiveType !== "any" &&
+      dynamic.primitiveType !== other.primitiveType
+    )
+      return false;
+    return (
+      !dynamic.composition ||
+      !other.composition ||
+      mayOverlapCompositions(dynamic.composition, other.composition)
+    );
+  }
+  if (!isDefiniteKey(other)) return true;
+  if (other.kind !== "primitive" || !isPrimitiveOfType(other, dynamic.primitiveType)) return false;
+  return typeof other.value !== "string" || mayReadAsText(dynamic, other.value);
+};
+
+/** Upper bound on the stored values a dynamic-key read enumerates. */
+const MAX_FAN_OUT = 8;
+
 type CollectionEntries = ReadonlyMap<KeyIdentity, CollectionEntry>;
 
 /**
  * Module-level `Map`/`Set` caches are common in data-fetching helpers, so
- * collections are modeled exactly while every key is known and fall back to
- * "any stored value" once a dynamic key is used.
+ * collections are modeled exactly while every key is known. A dynamic key is
+ * tracked as the value it stands for: a read under it finds the write under
+ * the same one, and is otherwise any value written under a key it may equal.
+ * A read under a branch the collection never saw written reads each alternative.
  */
 class StaticCollection implements JournaledState<CollectionState> {
   private entries = new Map<KeyIdentity, CollectionEntry>();
-  private hasDynamicKeys = false;
+  private writeCount = 0;
   private isExternallyMutable = false;
 
   constructor(
@@ -155,14 +223,14 @@ class StaticCollection implements JournaledState<CollectionState> {
   capture(): CollectionState {
     return {
       entries: new Map(this.entries),
-      hasDynamicKeys: this.hasDynamicKeys,
+      writeCount: this.writeCount,
       isExternallyMutable: this.isExternallyMutable,
     };
   }
 
   restore(snapshot: CollectionState): void {
     this.entries = new Map(snapshot.entries);
-    this.hasDynamicKeys = snapshot.hasDynamicKeys;
+    this.writeCount = snapshot.writeCount;
     this.isExternallyMutable = snapshot.isExternallyMutable;
   }
 
@@ -173,7 +241,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     preferredPath: number,
     predicate: string | null,
   ): void {
-    this.hasDynamicKeys = snapshots.some((snapshot) => snapshot.hasDynamicKeys);
+    this.writeCount = Math.max(...snapshots.map((snapshot) => snapshot.writeCount));
     this.isExternallyMutable = snapshots.some((snapshot) => snapshot.isExternallyMutable);
     const joined = new Map<KeyIdentity, CollectionEntry>();
     for (const snapshot of snapshots) {
@@ -201,6 +269,7 @@ class StaticCollection implements JournaledState<CollectionState> {
             isEverywhere ? predicate : null,
           ),
           isDefinite: isEverywhere && present.every((pathEntry) => pathEntry.isDefinite),
+          writeOrdinal: Math.max(...present.map((pathEntry) => pathEntry.writeOrdinal)),
           presence: isCorrelated
             ? {
                 predicate,
@@ -216,21 +285,6 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.entries = joined;
   }
 
-  /** Whether `key` may (undecidably) equal a dynamic key stored under another identity, or, being dynamic itself, any other key. */
-  private mayCollide(key: StaticValue): boolean {
-    const identity = getKeyIdentity(key);
-    const isDefinite = isDefiniteKey(key);
-    for (const [entryIdentity, entry] of this.entries) {
-      if (entryIdentity === identity || (isDefinite && isDefiniteKey(entry.key))) continue;
-      if (compareIdentity(key, entry.key) === null) return true;
-    }
-    return false;
-  }
-
-  private isExact(key: StaticValue): boolean {
-    return !this.hasDynamicKeys && !this.mayCollide(key);
-  }
-
   private find(key: StaticValue): CollectionEntry | null {
     const exact = this.entries.get(getKeyIdentity(key));
     if (exact) return exact;
@@ -238,6 +292,28 @@ class StaticCollection implements JournaledState<CollectionState> {
       if (compareIdentity(key, entry.key) === true) return entry;
     }
     return null;
+  }
+
+  /** Entries under other keys `key` may equal: all of them, or only the writes after `since`. */
+  private findPossiblyEqual(key: StaticValue, since = -1): CollectionEntry[] {
+    const identity = getKeyIdentity(key);
+    return [...this.entries.values()].filter(
+      (entry) =>
+        getKeyIdentity(entry.key) !== identity &&
+        entry.writeOrdinal > since &&
+        mayEqualKeys(key, entry.key),
+    );
+  }
+
+  /** Whether the stored entries may be fewer than tracked: two keys may be one, or an outside write may have replaced a dynamic one. */
+  private hasPossiblyEqualKeys(): boolean {
+    const entries = [...this.entries.values()];
+    if (this.isExternallyMutable && entries.some((entry) => !isDefiniteKey(entry.key))) {
+      return true;
+    }
+    return entries.some((entry, index) =>
+      entries.slice(index + 1).some((other) => mayEqualKeys(entry.key, other.key)),
+    );
   }
 
   markExternallyMutable(): void {
@@ -254,45 +330,62 @@ class StaticCollection implements JournaledState<CollectionState> {
     return `${this.kind}.${method}() of an entry set on some paths only`;
   }
 
+  private readEach(key: StaticValue, read: (alternative: StaticValue) => StaticValue): StaticValue {
+    return this.find(key) ? read(key) : mapValue(key, read);
+  }
+
   get(key: StaticValue): StaticValue {
-    return mapValue(key, (alternative) => this.getOne(alternative));
+    return this.readEach(key, (alternative) => this.getOne(alternative));
+  }
+
+  /** A dynamic key on a collection code the analysis did not run may have written to: nothing rules the outside write out. */
+  private isOutsideWriteVisible(key: StaticValue): boolean {
+    return this.isExternallyMutable && !isDefiniteKey(key);
   }
 
   private getOne(key: StaticValue): StaticValue {
-    if (!this.isExact(key)) {
-      const reason = this.describeUncertainty("get");
-      const stored = [...this.entries.values()].map((entry) => entry.value);
-      if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
-      return branchValue([...stored, UNDEFINED_VALUE], reason, this.location);
-    }
     const entry = this.find(key);
-    if (!entry) return UNDEFINED_VALUE;
-    if (entry.isDefinite) return entry.value;
-    const presence = entry.presence;
-    if (presence) {
+    const isSettled = entry?.isDefinite === true;
+    const possiblyEqual = this.findPossiblyEqual(key, isSettled ? entry.writeOrdinal : -1);
+    if (possiblyEqual.length === 0 && !this.isOutsideWriteVisible(key)) {
+      if (!entry) return UNDEFINED_VALUE;
+      if (isSettled) return entry.value;
+      const presence = entry.presence;
+      if (presence) {
+        return branchValue(
+          presence.pathValues.map((pathValue) => pathValue ?? UNDEFINED_VALUE),
+          presence.reason,
+          presence.location,
+          presence.preferredPath,
+          presence.predicate,
+        );
+      }
       return branchValue(
-        presence.pathValues.map((pathValue) => pathValue ?? UNDEFINED_VALUE),
-        presence.reason,
-        presence.location,
-        presence.preferredPath,
-        presence.predicate,
+        [entry.value, UNDEFINED_VALUE],
+        this.describeMaybePresent("get"),
+        this.location,
       );
     }
-    return branchValue(
-      [entry.value, UNDEFINED_VALUE],
-      this.describeMaybePresent("get"),
-      this.location,
-    );
+    const reason = this.describeUncertainty("get");
+    const stored = [...(entry ? [entry.value] : []), ...possiblyEqual.map((other) => other.value)];
+    if (stored.length > MAX_FAN_OUT) return unknownValue(reason, this.location);
+    if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
+    if (!isSettled) stored.push(UNDEFINED_VALUE);
+    return branchValue(stored, reason, this.location);
   }
 
+  /** A definite entry stays present through writes under other keys, so `has` on it is decided even then. */
   has(key: StaticValue): StaticValue {
-    return mapValue(key, (alternative) => {
-      if (!this.isExact(alternative)) {
+    return this.readEach(key, (alternative) => {
+      const entry = this.find(alternative);
+      if (entry?.isDefinite && !this.isExternallyMutable) return TRUE_VALUE;
+      if (
+        this.isOutsideWriteVisible(alternative) ||
+        this.findPossiblyEqual(alternative).length > 0
+      ) {
         return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
       }
-      const entry = this.find(alternative);
       if (!entry) return FALSE_VALUE;
-      if (entry.isDefinite) return TRUE_VALUE;
       const presence = entry.presence;
       if (presence) {
         return branchValue(
@@ -311,54 +404,47 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.entries.set(getKeyIdentity(entry.key), entry);
   }
 
+  private write(key: StaticValue, value: StaticValue, isDefinite: boolean): void {
+    this.replace({ key, value, isDefinite, writeOrdinal: ++this.writeCount });
+  }
+
   set(key: StaticValue, value: StaticValue): void {
     const keyBranch = getDefiniteKeyBranch(key);
     if (keyBranch) {
+      const reason = `${this.kind}.set() with a key that is one of several values`;
       keyBranch.alternatives.forEach((alternative, index) => {
         const existing = this.find(alternative);
-        const reason = `${this.kind}.set() with a key that is one of several values`;
-        this.replace(
+        this.write(
+          existing?.key ?? alternative,
           existing
-            ? {
-                key: alternative,
-                value: branchValue(
-                  [value, existing.value],
-                  reason,
-                  this.location,
-                  index === keyBranch.preferredIndex ? 0 : 1,
-                ),
-                isDefinite: existing.isDefinite,
-              }
-            : { key: alternative, value, isDefinite: false },
+            ? branchValue(
+                [value, existing.value],
+                reason,
+                this.location,
+                index === keyBranch.preferredIndex ? 0 : 1,
+              )
+            : value,
+          existing?.isDefinite ?? false,
         );
       });
       return;
     }
-    const existing = this.find(key);
-    if (existing) {
-      this.replace({ ...existing, value });
-      return;
-    }
-    if (!isDefiniteKey(key) && this.mayCollide(key)) this.hasDynamicKeys = true;
-    this.replace({ key, value, isDefinite: true });
+    this.write(this.find(key)?.key ?? key, value, true);
+  }
+
+  private unsettle(entries: CollectionEntry[]): void {
+    for (const entry of entries) this.replace({ ...entry, isDefinite: false });
   }
 
   delete(key: StaticValue): StaticValue {
-    const keyBranch = getDefiniteKeyBranch(key);
-    if (keyBranch) {
-      for (const alternative of keyBranch.alternatives) {
-        const existing = this.find(alternative);
-        if (existing) this.replace({ ...existing, isDefinite: false });
-      }
-      return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
-    }
-    if (!this.isExact(key)) {
-      this.hasDynamicKeys = true;
-      return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
-    }
     const existing = this.find(key);
+    const possiblyEqual = this.findPossiblyEqual(key);
+    this.unsettle(possiblyEqual);
+    if (existing) this.entries.delete(getKeyIdentity(existing.key));
+    if (possiblyEqual.length > 0 || this.isOutsideWriteVisible(key)) {
+      return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
+    }
     if (!existing) return FALSE_VALUE;
-    this.entries.delete(getKeyIdentity(key));
     return existing.isDefinite
       ? TRUE_VALUE
       : unknownPrimitiveValue("boolean", this.describeMaybePresent("delete"));
@@ -366,17 +452,18 @@ class StaticCollection implements JournaledState<CollectionState> {
 
   clear(): void {
     this.entries = new Map();
-    this.hasDynamicKeys = false;
   }
 
   /** Entries in insertion order; code the analysis did not see may have appended more. */
   project(select: (entry: CollectionEntry) => StaticValue): StaticValue {
-    if (this.hasDynamicKeys) return unknownValue(`${this.kind} with dynamic keys`, this.location);
+    if (this.hasPossiblyEqualKeys()) {
+      return unknownValue(`${this.kind} with dynamic keys`, this.location);
+    }
     const entries = [...this.entries.values()];
     return this.projectEntries(
       getPresenceStateCount(entries) <= MAX_PRESENCE_STATES
         ? entries
-        : entries.map(({ key, value, isDefinite }) => ({ key, value, isDefinite })),
+        : entries.map(({ presence: _presence, ...entry }) => entry),
       select,
     );
   }
@@ -396,7 +483,14 @@ class StaticCollection implements JournaledState<CollectionState> {
               const pathValue = entry.presence.pathValues[pathIndex];
               return pathValue === null
                 ? []
-                : [{ key: entry.key, value: pathValue, isDefinite: true }];
+                : [
+                    {
+                      key: entry.key,
+                      value: pathValue,
+                      isDefinite: true,
+                      writeOrdinal: entry.writeOrdinal,
+                    },
+                  ];
             }),
             select,
           ),
@@ -429,7 +523,7 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   size(): StaticValue {
-    return this.hasDynamicKeys ||
+    return this.hasPossiblyEqualKeys() ||
       this.isExternallyMutable ||
       [...this.entries.values()].some((entry) => !entry.isDefinite)
       ? unknownPrimitiveValue("number", `${this.kind}.size`)

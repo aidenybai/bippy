@@ -8,7 +8,7 @@ interface TypePredicate {
   (value: StaticValue): boolean | null;
 }
 
-const isUndecided = (value: StaticValue): boolean =>
+export const isUndecided = (value: StaticValue): boolean =>
   value.kind === "unknown" ||
   value.kind === "branch" ||
   value.kind === "optional" ||

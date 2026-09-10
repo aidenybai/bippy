@@ -22,7 +22,12 @@ const CreatedAt = () => {
 
 const Footer = () => {
   const year = new Date().getFullYear();
-  return <footer>© {year} Example</footer>;
+  const legacyYear = 1900 + new Date().getYear();
+  return (
+    <footer>
+      © {year} Example {legacyYear}
+    </footer>
+  );
 };
 
 export default function WallClock() {
