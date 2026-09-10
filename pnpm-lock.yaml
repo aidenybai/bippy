@@ -10,7 +10,7 @@ overrides:
 
 patchedDependencies:
   react-devtools-core@8.0.0:
-    hash: 70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4
+    hash: 47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150
     path: patches/react-devtools-core@8.0.0.patch
 
 importers:
@@ -56,7 +56,7 @@ importers:
         version: 19.3.0
       react-devtools-core:
         specifier: 8.0.0
-        version: 8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4)
+        version: 8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150)
       tsx:
         specifier: ^4.21.0
         version: 4.23.12
@@ -89,7 +89,7 @@ importers:
         version: 0.5.4(typescript@5.9.3)(web-tree-sitter@0.25.10)
       '@opentui/react':
         specifier: ^0.5.1
-        version: 0.5.4(react-devtools-core@8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4))(react@19.3.0)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.3)
+        version: 0.5.4(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.3)
       '@pixi/react':
         specifier: ^8.0.5
         version: 8.0.5(@types/react@19.3.0)(pixi.js@8.19.0)(react@19.3.0)
@@ -137,7 +137,7 @@ importers:
         version: 20.11.6
       ink:
         specifier: ^7.1.1
-        version: 7.1.1(@types/react@19.3.0)(react-devtools-core@8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4))(react@19.3.0)
+        version: 7.1.1(@types/react@19.3.0)(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)
       ink-testing-library:
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.3.0)
@@ -191,7 +191,7 @@ importers:
         version: react@19.3.0-canary-1d34f91d-20260909
       react-devtools-core:
         specifier: 8.0.0
-        version: 8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4)
+        version: 8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150)
       react-devtools-inline:
         specifier: ^8.0.0
         version: 8.0.0
@@ -15671,11 +15671,11 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@opentui/react@0.5.4(react-devtools-core@8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4))(react@19.3.0)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.3)':
+  '@opentui/react@0.5.4(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.3)':
     dependencies:
       '@opentui/core': 0.5.4(typescript@5.9.3)(web-tree-sitter@0.25.10)
       react: 19.3.0
-      react-devtools-core: 8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4)
+      react-devtools-core: 8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150)
       react-reconciler: 0.33.0(react@19.3.0)
       ws: 8.21.3
     transitivePeerDependencies:
@@ -20973,7 +20973,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.3.0
 
-  ink@7.1.1(@types/react@19.3.0)(react-devtools-core@8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4))(react@19.3.0):
+  ink@7.1.1(@types/react@19.3.0)(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0):
     dependencies:
       '@alcalzone/ansi-tokenize': 0.3.0
       ansi-escapes: 7.3.0
@@ -21003,7 +21003,7 @@ snapshots:
       yoga-layout: 3.2.1
     optionalDependencies:
       '@types/react': 19.3.0
-      react-devtools-core: 8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4)
+      react-devtools-core: 8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -23904,7 +23904,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  react-devtools-core@8.0.0(patch_hash=70e3e19ba6b7d52ca94855ed5c85873da8a93cbb569a4df4feb590774746ebe4):
+  react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150):
     dependencies:
       shell-quote: 1.10.0
       ws: 7.5.13

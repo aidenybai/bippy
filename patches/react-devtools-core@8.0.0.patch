@@ -1,9 +1,9 @@
 diff --git a/dist/backend.d.ts b/dist/backend.d.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3091ce14921b4779739307a81c309345640649a5
+index 0000000000000000000000000000000000000000..51c2a4bf99239a7c01ab1fca8e1650bdbee228b5
 --- /dev/null
 +++ b/dist/backend.d.ts
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,66 @@
 +export interface ReactBuildTypeMap {
 +  Development: 1;
 +  Production: 0;
@@ -17,6 +17,9 @@ index 0000000000000000000000000000000000000000..3091ce14921b4779739307a81c309345
 +  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: string;
 +  ELEMENT_SYMBOL_STRING: string;
 +  LEGACY_ELEMENT_SYMBOL_STRING: string;
++  STRICT_MODE_NUMBER: number;
++  STRICT_MODE_SYMBOL_DESCRIPTION: string;
++  STRICT_MODE_SYMBOL_STRING: string;
 +}
 +
 +export interface ReactTypeOfSideEffectMap {
@@ -68,7 +71,7 @@ index 0000000000000000000000000000000000000000..3091ce14921b4779739307a81c309345
 +declare const ReactDevToolsCore: ReactDevToolsCore;
 +export default ReactDevToolsCore;
 diff --git a/dist/backend.js b/dist/backend.js
-index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609c392efa4 100644
+index d571ff628993f7d3fd9fd542becf5cc340026c0a..f03449a6ee3e15e0a7a351ebf172c3d026bfc42a 100644
 --- a/dist/backend.js
 +++ b/dist/backend.js
 @@ -7,7 +7,7 @@
@@ -93,7 +96,7 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
    "connectWithCustomMessagingProtocol": () => (/* binding */ connectWithCustomMessagingProtocol),
    "initialize": () => (/* binding */ backend_initialize)
  });
-@@ -7073,6 +7078,15 @@ var SUSPENSE_NUMBER = 0xead1;
+@@ -7073,6 +7078,18 @@ var SUSPENSE_NUMBER = 0xead1;
  var SUSPENSE_SYMBOL_STRING = 'Symbol(react.suspense)';
  var SUSPENSE_LIST_NUMBER = 0xead8;
  var SUSPENSE_LIST_SYMBOL_STRING = 'Symbol(react.suspense_list)';
@@ -104,12 +107,15 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
 +  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION: 'react.async_mode',
 +  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: DEPRECATED_ASYNC_MODE_SYMBOL_STRING,
 +  ELEMENT_SYMBOL_STRING: ELEMENT_SYMBOL_STRING,
-+  LEGACY_ELEMENT_SYMBOL_STRING: LEGACY_ELEMENT_SYMBOL_STRING
++  LEGACY_ELEMENT_SYMBOL_STRING: LEGACY_ELEMENT_SYMBOL_STRING,
++  STRICT_MODE_NUMBER: STRICT_MODE_NUMBER,
++  STRICT_MODE_SYMBOL_DESCRIPTION: 'react.strict_mode',
++  STRICT_MODE_SYMBOL_STRING: STRICT_MODE_SYMBOL_STRING
 +};
  var SERVER_CONTEXT_DEFAULT_VALUE_NOT_LOADED_SYMBOL_STRING = 'Symbol(react.server_context.defaultValue)';
  var ReactSymbols_REACT_MEMO_CACHE_SENTINEL = Symbol.for('react.memo_cache_sentinel');
  var ReactSymbols_REACT_OPTIMISTIC_KEY = Symbol.for('react.optimistic_key');
-@@ -7177,6 +7191,47 @@ function DevToolsFiberInspection_isError(object) {
+@@ -7177,6 +7194,47 @@ function DevToolsFiberInspection_isError(object) {
  function getFiberFlags(fiber) {
    return fiber.flags !== undefined ? fiber.flags : fiber.effectTag;
  }
@@ -157,7 +163,7 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
  function rootSupportsProfiling(root) {
    if (root.memoizedInteractions != null) {
      return true;
-@@ -7320,7 +7375,7 @@ function didFiberRender(workTagMap, prevFiber, nextFiber) {
+@@ -7320,7 +7378,7 @@ function didFiberRender(workTagMap, prevFiber, nextFiber) {
      case workTagMap.MemoComponent:
      case workTagMap.SimpleMemoComponent:
      case workTagMap.ForwardRef:
@@ -166,7 +172,7 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
        return (getFiberFlags(nextFiber) & PerformedWork) === PerformedWork;
      default:
        return prevFiber.memoizedProps !== nextFiber.memoizedProps || prevFiber.memoizedState !== nextFiber.memoizedState || prevFiber.ref !== nextFiber.ref;
-@@ -7360,7 +7415,8 @@ function getInternalReactConstants(version) {
+@@ -7360,7 +7418,8 @@ function getInternalReactConstants(version) {
    }
    var SuspenseyImagesMode = 32;
    var ReactTypeOfWork = null;
@@ -176,7 +182,7 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
      ReactTypeOfWork = {
        CacheComponent: 24,
        ClassComponent: 1,
-@@ -7397,7 +7453,7 @@ function getInternalReactConstants(version) {
+@@ -7397,7 +7456,7 @@ function getInternalReactConstants(version) {
        ViewTransitionComponent: 30,
        ActivityComponent: 31
      };
@@ -185,7 +191,7 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
      ReactTypeOfWork = {
        CacheComponent: -1,
        ClassComponent: 1,
-@@ -7434,7 +7490,7 @@ function getInternalReactConstants(version) {
+@@ -7434,7 +7493,7 @@ function getInternalReactConstants(version) {
        ViewTransitionComponent: -1,
        ActivityComponent: -1
      };
@@ -194,7 +200,7 @@ index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609
      ReactTypeOfWork = {
        CacheComponent: -1,
        ClassComponent: 1,
-@@ -7471,7 +7527,7 @@ function getInternalReactConstants(version) {
+@@ -7471,7 +7530,7 @@ function getInternalReactConstants(version) {
        ViewTransitionComponent: -1,
        ActivityComponent: -1
      };
