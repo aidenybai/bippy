@@ -8,6 +8,7 @@ import pathToPattern from "path-kit";
 import Chip, { chipCount, tones } from "min-kit";
 import { createRegistry, Stack, version as umdVersion } from "umd-return-kit";
 import { Tag, buildKind } from "env-switch-kit";
+import Sparkline, { palette } from "terser-kit";
 import { Density, Sheet, VisualState } from "tsc-enum-kit";
 
 const registry = new Registry().register("seen").register("caught");
@@ -60,6 +61,7 @@ export const App = () => {
       <Chip tone={tones[1]}>{Chip.defaultProps.tone}</Chip>
       <Banner tone="info">bundled {version}</Banner>
       <Tag>{buildKind} build</Tag>
+      <Sparkline points={[1, 2, 3]} label={palette[1]} />
       <Sheet>
         <p>open</p>
       </Sheet>

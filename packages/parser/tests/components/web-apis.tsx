@@ -56,11 +56,14 @@ const ShapedStrings = () => {
     setIsInserted(true);
   }, []);
   const prefixed = `id-${Math.random()}`;
+  const range = `${Math.random()} - ${Math.random()}`;
   return (
     <p data-inserted={isInserted}>
       {prefixed.startsWith("id-") ? <b>prefixed</b> : <i>unprefixed</i>}
       {prefixed.slice(0, 3) === "id-" ? <b>sliced</b> : <i>unsliced</i>}
       {prefixed.length >= 3 ? <b>long</b> : <i>short</i>}
+      {range ? <b>ranged</b> : <i>empty</i>}
+      {range.slice(1).length >= 2 ? <b>separated</b> : <i>unseparated</i>}
     </p>
   );
 };

@@ -238,7 +238,7 @@ export const callWebCryptoMethod = (
       case "randomUUID":
         return {
           ...unknownPrimitiveValue("string", "crypto.randomUUID()"),
-          stringShape: { prefix: "", length: UUID_LENGTH },
+          stringShape: { prefix: "", minLength: UUID_LENGTH, length: UUID_LENGTH },
         };
       case "getRandomValues":
         if (first?.kind !== "list" || getBinaryKind(first) === null)

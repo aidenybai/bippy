@@ -736,6 +736,20 @@ export interface StaticObjectValue {
  */
 export type RenderEnvironment = "server" | "client";
 
+/**
+ * The component render that created an element (React's `_owner`: the fiber
+ * being reconciled while `jsx` ran) and, through `owner`, the render that
+ * created it in turn. A component recurses when it appears in its own chain,
+ * not when it merely nests inside another render of itself.
+ */
+export interface ElementOwner {
+  node: ComponentDefinition["node"];
+  /** Closure the component was created in: a factory's components share a node but not a scope. */
+  scope: Scope;
+  props: StaticValue;
+  owner: ElementOwner | null;
+}
+
 export interface StaticElementValue {
   kind: "element";
   type: StaticElementType;
@@ -743,6 +757,8 @@ export interface StaticElementValue {
   props: StaticObjectValue;
   location: SourceLocation | null;
   environment: RenderEnvironment | null;
+  /** Null for elements created at module scope or by a native caller. */
+  owner: ElementOwner | null;
 }
 
 export interface StaticPrimitiveValue {
@@ -770,9 +786,10 @@ export interface ClockReading {
   timerUnderrunMs: number;
 }
 
-/** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
+/** Leading characters of an unknown string, the least length it can have, and its length when fixed; see `evaluate/primitive-shapes.ts`. */
 export interface StringShape {
   prefix: string;
+  minLength: number;
   length: number | null;
 }
 

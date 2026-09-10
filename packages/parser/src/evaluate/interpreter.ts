@@ -183,6 +183,7 @@ import {
   isWebpackRequireName,
 } from "./bundler-globals.js";
 import {
+  hasFunctionTextProperty,
   hasIntrinsicMember,
   hasProperty,
   OBJECT_PROTOTYPE_METHODS,
@@ -198,14 +199,15 @@ import {
   getPrimitiveWitness,
   getPrototypeConstructorGlobal,
 } from "./host-globals.js";
-import { toPropertyKey } from "./primitive-shapes.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
   concatenateStrings,
   getShapedStringCharacter,
   getShapedStringLength,
+  isFunctionText,
   mayEqualPropertyKey,
+  toPropertyKey,
   toStringValue,
 } from "./primitive-shapes.js";
 import {
@@ -1052,6 +1054,7 @@ export class Interpreter {
       environment,
       hooks: null,
       suspension: null,
+      owner: null,
     };
   }
 
@@ -3017,11 +3020,18 @@ export class Interpreter {
     );
   }
 
-  assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
+  assignOwnProperty(
+    target: StaticObjectValue,
+    key: string,
+    value: StaticValue,
+    accessor?: StaticAccessor,
+  ): void {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
     this.escapeWalk.memo.invalidate(target, key);
-    target.entries.push({ kind: "property", key, value });
+    target.entries.push(
+      accessor ? { kind: "property", key, value, accessor } : { kind: "property", key, value },
+    );
   }
 
   pushItems(target: StaticListValue, items: readonly StaticValue[]): void {
@@ -3130,6 +3140,7 @@ export class Interpreter {
     key: StaticValue,
     location: SourceLocation | null,
   ): StaticValue {
+    if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
       const candidates = object.items.filter((item) => item.kind !== "repeat");
       return candidates.length === 0
@@ -4322,6 +4333,7 @@ export class Interpreter {
       environment: context.environment,
       hooks: context.hooks,
       suspension: asyncCall ? { call: asyncCall, outcomeHandlers: [] } : null,
+      owner: context.owner,
     };
     if (functionValue.node.type === "FunctionExpression" && functionValue.node.id) {
       declareInScope(scope, functionValue.node.id.name, functionValue);
@@ -5387,6 +5399,7 @@ export class Interpreter {
       props,
       location,
       environment: context.environment,
+      owner: context.owner,
     });
     return mapValue(type, (elementType) =>
       key?.kind === "branch"
@@ -5745,7 +5758,7 @@ const applyBinaryOperator = (
   const equality = compareEquality(operator, left, right, realm);
   if (equality) return equality;
   if (operator === "instanceof") {
-    const isInstance = isInstanceOf(left, right);
+    const isInstance = isInstanceOf(left, right, realm);
     if (isInstance !== null) return primitiveValue(isInstance);
   }
   const timed = applyClockOperator(operator, left, right);

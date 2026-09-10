@@ -326,6 +326,7 @@ const toCloneSource = (
     props: objectValue([{ kind: "spread", value: getObjectProperty(element, "props") }]),
     location,
     environment: null,
+    owner: null,
   };
 };
 
@@ -350,6 +351,7 @@ const cloneElement = (
     props: merged,
     location: source.location,
     environment: source.environment,
+    owner: source.owner,
   };
 };
 
@@ -626,6 +628,7 @@ export const evaluateReactApiCall = (
         props,
         location,
         environment: context.environment,
+        owner: context.owner,
       };
     }
     case "flushSync":
