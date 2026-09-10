@@ -139,7 +139,7 @@ const runFixture = (fixture: ReactVersionFixture): RuntimeResult => {
     const ReactDOMClientModule = await import(${JSON.stringify(runtime.reactDOMClientUrl)}).catch(() => null);
     const ReactDOMClient = ReactDOMClientModule?.default ?? ReactDOMClientModule;
     const TestUtilsModule = await import(${JSON.stringify(runtime.reactDOMTestUtilsUrl)});
-    const actImplementation = TestUtilsModule.act;
+    const actImplementation = React.act ?? TestUtilsModule.act;
     const act = async (callback) => {
       if (typeof actImplementation === "function") await actImplementation(callback);
       else callback();

@@ -18,33 +18,28 @@ const createReact16Fixture = (minor: number): ReactVersionFixture => ({
   version: `16.${minor}`,
 });
 
+const createModernFixture = (
+  major: number,
+  minor: number,
+  reactPackageName = `react-${major}-${minor}`,
+): ReactVersionFixture => ({
+  major,
+  reactDOMPackageName: reactPackageName.replace("react", "react-dom"),
+  reactPackageName,
+  supportsEditing: true,
+  supportsHooks: true,
+  supportsProfiler: true,
+  version: `${major}.${minor}`,
+});
+
 export const reactVersionFixtures: ReactVersionFixture[] = [
   ...Array.from({ length: 9 }, (_, minor) => createReact16Fixture(minor)),
-  {
-    major: 17,
-    reactDOMPackageName: "react-dom-17",
-    reactPackageName: "react-17",
-    supportsEditing: true,
-    supportsHooks: true,
-    supportsProfiler: true,
-    version: "17.0",
-  },
-  {
-    major: 18,
-    reactDOMPackageName: "react-dom-18-0",
-    reactPackageName: "react-18-0",
-    supportsEditing: true,
-    supportsHooks: true,
-    supportsProfiler: true,
-    version: "18.0",
-  },
-  {
-    major: 18,
-    reactDOMPackageName: "react-dom-18-2",
-    reactPackageName: "react-18-2",
-    supportsEditing: true,
-    supportsHooks: true,
-    supportsProfiler: true,
-    version: "18.2",
-  },
+  createModernFixture(17, 0, "react-17"),
+  createModernFixture(18, 0),
+  createModernFixture(18, 2),
+  createModernFixture(18, 3),
+  createModernFixture(19, 0),
+  createModernFixture(19, 1),
+  createModernFixture(19, 2),
+  createModernFixture(19, 3, "react"),
 ];

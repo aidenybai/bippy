@@ -168,6 +168,21 @@ importers:
       react-18:
         specifier: npm:react@18.3.1
         version: react@18.3.1
+      react-18-0:
+        specifier: npm:react@18.0.0
+        version: react@18.0.0
+      react-18-2:
+        specifier: npm:react@18.2.0
+        version: react@18.2.0
+      react-19-0:
+        specifier: npm:react@19.0.0
+        version: react@19.0.0
+      react-19-1:
+        specifier: npm:react@19.1.0
+        version: react@19.1.0
+      react-19-2:
+        specifier: npm:react@19.2.8
+        version: react@19.2.8
       react-babylonjs:
         specifier: ^4.0.2
         version: 4.0.2(@babylonjs/core@9.21.2)(@babylonjs/gui@9.21.2(@babylonjs/core@9.21.2))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -201,6 +216,21 @@ importers:
       react-dom-18:
         specifier: npm:react-dom@18.3.1
         version: react-dom@18.3.1(react@19.3.0)
+      react-dom-18-0:
+        specifier: npm:react-dom@18.0.0
+        version: react-dom@18.0.0(react@19.3.0)
+      react-dom-18-2:
+        specifier: npm:react-dom@18.2.0
+        version: react-dom@18.2.0(react@19.3.0)
+      react-dom-19-0:
+        specifier: npm:react-dom@19.0.0
+        version: react-dom@19.0.0(react@19.3.0)
+      react-dom-19-1:
+        specifier: npm:react-dom@19.1.0
+        version: react-dom@19.1.0(react@19.3.0)
+      react-dom-19-2:
+        specifier: npm:react-dom@19.2.8
+        version: react-dom@19.2.8(react@19.3.0)
       react-dom-canary:
         specifier: npm:react-dom@19.3.0-canary-1d34f91d-20260909
         version: react-dom@19.3.0-canary-1d34f91d-20260909(react@19.3.0)
@@ -300,6 +330,18 @@ importers:
       react-18-2:
         specifier: npm:react@18.2.0
         version: react@18.2.0
+      react-18-3:
+        specifier: npm:react@18.3.1
+        version: react@18.3.1
+      react-19-0:
+        specifier: npm:react@19.0.0
+        version: react@19.0.0
+      react-19-1:
+        specifier: npm:react@19.1.0
+        version: react@19.1.0
+      react-19-2:
+        specifier: npm:react@19.2.8
+        version: react@19.2.8
       react-dom:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
@@ -339,6 +381,18 @@ importers:
       react-dom-18-2:
         specifier: npm:react-dom@18.2.0
         version: react-dom@18.2.0(react@19.3.0)
+      react-dom-18-3:
+        specifier: npm:react-dom@18.3.1
+        version: react-dom@18.3.1(react@19.3.0)
+      react-dom-19-0:
+        specifier: npm:react-dom@19.0.0
+        version: react-dom@19.0.0(react@19.3.0)
+      react-dom-19-1:
+        specifier: npm:react-dom@19.1.0
+        version: react-dom@19.1.0(react@19.3.0)
+      react-dom-19-2:
+        specifier: npm:react-dom@19.2.8
+        version: react-dom@19.2.8(react@19.3.0)
       react-test-renderer:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
@@ -10540,6 +10594,21 @@ packages:
     peerDependencies:
       react: ^19.3.0
 
+  react-dom@19.0.0:
+    resolution: {integrity: sha512-4GV5sHFG0e/0AD4X+ySy6UJd3jVl1iNsNHdpad0qhABJ11twS3TTBnseqsKurKcsNqCEFeGL3uLpVChpIO3QfQ==}
+    peerDependencies:
+      react: ^19.3.0
+
+  react-dom@19.1.0:
+    resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
+    peerDependencies:
+      react: ^19.3.0
+
+  react-dom@19.2.8:
+    resolution: {integrity: sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ==}
+    peerDependencies:
+      react: ^19.3.0
+
   react-dom@19.3.0:
     resolution: {integrity: sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==}
     peerDependencies:
@@ -10906,6 +10975,18 @@ packages:
 
   react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
+    engines: {node: '>=0.10.0'}
+
+  react@19.0.0:
+    resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
+    engines: {node: '>=0.10.0'}
+
+  react@19.1.0:
+    resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
+    engines: {node: '>=0.10.0'}
+
+  react@19.2.8:
+    resolution: {integrity: sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==}
     engines: {node: '>=0.10.0'}
 
   react@19.3.0:
@@ -23984,6 +24065,21 @@ snapshots:
       react: 19.3.0
       scheduler: 0.23.2
 
+  react-dom@19.0.0(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      scheduler: 0.25.0
+
+  react-dom@19.1.0(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      scheduler: 0.26.0
+
+  react-dom@19.2.8(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      scheduler: 0.27.0
+
   react-dom@19.3.0(react@19.3.0):
     dependencies:
       react: 19.3.0
@@ -24478,6 +24574,12 @@ snapshots:
   react@18.3.1:
     dependencies:
       loose-envify: 1.4.0
+
+  react@19.0.0: {}
+
+  react@19.1.0: {}
+
+  react@19.2.8: {}
 
   react@19.3.0: {}
 
