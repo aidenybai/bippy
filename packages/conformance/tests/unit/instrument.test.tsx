@@ -161,7 +161,7 @@ it("unsubscribe removes only this call's handlers", () => {
   unsubscribeActive();
 });
 
-it("propagates React DevTools callback failures", () => {
+it("isolates React DevTools callback failures", () => {
   const committedRootRef: FiberRootRef = { current: null };
   const unsubscribeCapture = instrument({
     onCommitFiberRoot: (_rendererId, root) => {
@@ -182,19 +182,25 @@ it("propagates React DevTools callback failures", () => {
     throw devToolsError;
   };
   const unsubscribe = instrument({ onCommitFiberRoot: laterListener });
+  const reportError = vi.spyOn(console, "error").mockImplementation(() => {});
 
   try {
-    expect(() => rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false)).toThrow(
+    expect(() =>
+      rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false),
+    ).not.toThrow();
+    expect(laterListener).toHaveBeenCalledOnce();
+    expect(reportError).toHaveBeenCalledWith(
+      "Bippy instrumentation encountered an error:",
       devToolsError,
     );
-    expect(laterListener).not.toHaveBeenCalled();
   } finally {
+    reportError.mockRestore();
     unsubscribe();
     rdtHook.onCommitFiberRoot = previousOnCommitFiberRoot;
   }
 });
 
-it("propagates instrumentation callback failures and stops dispatch", () => {
+it("isolates instrumentation callback failures and continues dispatch", () => {
   const committedRootRef: FiberRootRef = { current: null };
   const unsubscribeCapture = instrument({
     onCommitFiberRoot: (_rendererId, root) => {
@@ -217,13 +223,19 @@ it("propagates instrumentation callback failures and stops dispatch", () => {
     },
   });
   const unsubscribeLaterListener = instrument({ onCommitFiberRoot: laterListener });
+  const reportError = vi.spyOn(console, "error").mockImplementation(() => {});
 
   try {
-    expect(() => rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false)).toThrow(
+    expect(() =>
+      rdtHook.onCommitFiberRoot(rendererId, committedRoot, undefined, false),
+    ).not.toThrow();
+    expect(laterListener).toHaveBeenCalledOnce();
+    expect(reportError).toHaveBeenCalledWith(
+      "Bippy instrumentation encountered an error:",
       instrumentationError,
     );
-    expect(laterListener).not.toHaveBeenCalled();
   } finally {
+    reportError.mockRestore();
     unsubscribeThrowingListener();
     unsubscribeLaterListener();
   }

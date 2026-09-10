@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { traverseRenderedFibers } from "../../../bippy/src/index.js";
+import {
+  getReactWorkTags,
+  setReactWorkTagsForFiber,
+  traverseRenderedFibers,
+} from "../../../bippy/src/index.js";
 import type { Fiber, FiberRoot } from "../../../bippy/src/react-internals/index.js";
 import { latestReactWorkTags } from "./react-work-tags.js";
 
@@ -9,6 +13,7 @@ interface MockFiberOverrides {
   alternate?: Fiber | null;
   child?: Fiber | null;
   flags?: number;
+  key?: string | null;
   memoizedState?: unknown;
   return?: Fiber | null;
   sibling?: Fiber | null;
@@ -22,6 +27,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     child: null,
     dependencies: null,
     flags: PERFORMED_WORK_FLAG,
+    key: null,
     memoizedProps: {},
     memoizedState: null,
     pendingProps: {},
@@ -64,6 +70,116 @@ const commitUpdate = (
   };
   traverseRenderedFibers(root, onRenderWithoutRootWrapper as never);
 };
+
+interface TraversalTree {
+  root: Fiber;
+  fibers: Fiber[];
+}
+
+const createTraversalTree = (shape: "deep" | "wide", previous?: TraversalTree): TraversalTree => {
+  const root = createMountedRootFiber(null, previous?.root ?? null);
+  if (previous) previous.root.alternate = root;
+  const fibers: Fiber[] = [];
+  for (let index = 0; index < 20000; index++) {
+    const previousSibling = fibers[index - 1];
+    const parent = shape === "deep" ? (previousSibling ?? root) : root;
+    const fiber = createMockFiber({ return: parent, alternate: previous?.fibers[index] ?? null });
+    if (fiber.alternate) fiber.alternate.alternate = fiber;
+    if (shape === "wide" && previousSibling) previousSibling.sibling = fiber;
+    else parent.child = fiber;
+    fibers.push(fiber);
+  }
+  return { root, fibers };
+};
+
+const treeShapes: Array<"deep" | "wide"> = ["deep", "wide"];
+
+describe.each(treeShapes)("20,000-fiber %s trees", (shape) => {
+  it("mounts each fiber once in depth-first order", () => {
+    const tree = createTraversalTree(shape);
+    const observed: Fiber[] = [];
+    const phases = new Set<string>();
+    traverseRenderedFibers(tree.root, (fiber, phase) => {
+      if (fiber !== tree.root) observed.push(fiber);
+      phases.add(phase);
+    });
+    expect(observed).toEqual(tree.fibers);
+    expect(phases).toEqual(new Set(["mount"]));
+  });
+
+  it("updates each alternate once in depth-first order", () => {
+    const previous = createTraversalTree(shape);
+    const next = createTraversalTree(shape, previous);
+    const root: FiberRoot = { current: previous.root };
+    previous.root.child = null;
+    traverseRenderedFibers(root, () => {});
+    previous.root.child = previous.fibers[0];
+    root.current = next.root;
+    const observed: Fiber[] = [];
+    const phases = new Set<string>();
+    traverseRenderedFibers(root, (fiber, phase) => {
+      if (fiber !== next.root) observed.push(fiber);
+      phases.add(phase);
+    });
+    expect(observed).toEqual(next.fibers);
+    expect(phases).toEqual(new Set(["update"]));
+  });
+
+  it("simulates unmounts without changing the existing parent-first order", () => {
+    const tree = createTraversalTree(shape);
+    const previousSuspense = createMockFiber({ tag: latestReactWorkTags.SuspenseComponent });
+    const offscreen = createMockFiber({
+      tag: latestReactWorkTags.OffscreenComponent,
+      return: previousSuspense,
+    });
+    previousSuspense.child = offscreen;
+    const previousRoot = createMountedRootFiber(previousSuspense);
+    const root: FiberRoot = { current: previousRoot };
+    traverseRenderedFibers(root, () => {});
+    offscreen.child = tree.fibers[0];
+    for (const fiber of shape === "wide" ? tree.fibers : [tree.fibers[0]]) fiber.return = offscreen;
+    const nextSuspense = createMockFiber({
+      tag: latestReactWorkTags.SuspenseComponent,
+      alternate: previousSuspense,
+      memoizedState: {},
+    });
+    root.current = createMountedRootFiber(nextSuspense, previousRoot);
+    const unmounted: Fiber[] = [];
+    traverseRenderedFibers(root, (fiber, phase) => {
+      if (phase === "unmount") unmounted.push(fiber);
+    });
+    expect(unmounted).toEqual(tree.fibers);
+  });
+});
+
+it.each(["16.8.6", "16.14.0", "17.0.2", "19.2.4"])(
+  "mounts all primary Suspense children with React %s work tags",
+  (version) => {
+    const workTags = getReactWorkTags(version);
+    const firstChild = createMockFiber({ tag: workTags.FunctionComponent });
+    const secondChild = createMockFiber({ tag: workTags.FunctionComponent });
+    firstChild.sibling = secondChild;
+    const primary =
+      workTags.OffscreenComponent === -1
+        ? firstChild
+        : createMockFiber({ tag: workTags.OffscreenComponent, child: firstChild });
+    const suspense = createMockFiber({ tag: workTags.SuspenseComponent, child: primary });
+    const root = createMountedRootFiber(suspense);
+    setReactWorkTagsForFiber(root, { version, rendererPackageName: "test", bundleType: 1 });
+    suspense.return = root;
+    primary.return = suspense;
+    firstChild.return = primary === firstChild ? suspense : primary;
+    secondChild.return = firstChild.return;
+    const onRender = vi.fn();
+    traverseRenderedFibers(root, onRender);
+    expect(onRender.mock.calls.map(([fiber]) => fiber)).toEqual([
+      root,
+      suspense,
+      firstChild,
+      secondChild,
+    ]);
+  },
+);
 
 describe("mount commits", () => {
   it("should mount children and siblings", () => {
@@ -164,6 +280,35 @@ describe("mount commits", () => {
     const onRender = vi.fn();
     traverseRenderedFibers(unrenderedFiber, onRender);
     expect(onRender).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["unkeyed Fragment", { tag: latestReactWorkTags.Fragment }],
+    ["HostPortal", { tag: latestReactWorkTags.HostPortal }],
+    ["HostText", { tag: latestReactWorkTags.HostText }],
+    ["Throw", { tag: latestReactWorkTags.Throw }],
+    ["StrictMode", { tag: latestReactWorkTags.Mode, type: Symbol.for("react.strict_mode") }],
+    [
+      "ConcurrentMode",
+      { tag: latestReactWorkTags.Mode, type: Symbol.for("react.concurrent_mode") },
+    ],
+  ])("should filter %s fibers but still report their children", (_label, overrides) => {
+    const child = createMockFiber();
+    const filteredFiber = createMockFiber({ ...overrides, child });
+    const onRender = vi.fn();
+    traverseRenderedFibers(filteredFiber, onRender);
+    expect(onRender).toHaveBeenCalledTimes(1);
+    expect(onRender).toHaveBeenCalledWith(child, "mount");
+  });
+
+  it.each([
+    ["keyed Fragment", { key: "list", tag: latestReactWorkTags.Fragment }],
+    ["Profiler", { tag: latestReactWorkTags.Profiler, type: Symbol.for("react.profiler") }],
+  ])("should report %s fibers", (_label, overrides) => {
+    const fiber = createMockFiber(overrides);
+    const onRender = vi.fn();
+    traverseRenderedFibers(fiber, onRender);
+    expect(onRender).toHaveBeenCalledWith(fiber, "mount");
   });
 });
 

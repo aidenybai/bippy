@@ -43,6 +43,9 @@ const reactSymbolsSchema: z.ZodType<ReactSymbolsMap> = z
     DEPRECATED_ASYNC_MODE_SYMBOL_STRING: z.string(),
     ELEMENT_SYMBOL_STRING: z.string(),
     LEGACY_ELEMENT_SYMBOL_STRING: z.string(),
+    STRICT_MODE_NUMBER: z.number().int(),
+    STRICT_MODE_SYMBOL_DESCRIPTION: z.string(),
+    STRICT_MODE_SYMBOL_STRING: z.string(),
   })
   .strict();
 
@@ -118,6 +121,7 @@ const requiredReactWorkTags = [
   "SimpleMemoComponent",
   "SuspenseComponent",
   "SuspenseListComponent",
+  "Throw",
 ];
 
 const readReactWorkTags = (
@@ -143,6 +147,8 @@ const validateReactSymbols = (reactSymbols: ReactSymbolsMap): void => {
       `Symbol(${reactSymbols.CONCURRENT_MODE_SYMBOL_DESCRIPTION})` ||
     reactSymbols.DEPRECATED_ASYNC_MODE_SYMBOL_STRING !==
       `Symbol(${reactSymbols.DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION})` ||
+    reactSymbols.STRICT_MODE_SYMBOL_STRING !==
+      `Symbol(${reactSymbols.STRICT_MODE_SYMBOL_DESCRIPTION})` ||
     reactSymbols.ELEMENT_SYMBOL_STRING === reactSymbols.LEGACY_ELEMENT_SYMBOL_STRING
   ) {
     throw new Error("React DevTools returned inconsistent React symbols");
