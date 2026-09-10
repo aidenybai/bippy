@@ -125,9 +125,9 @@ describe("loadReactRuntime", () => {
     expect(container.textContent).toBe("legacy:tree");
   });
 
-  it("uses the harness's React when the app's React predates hooks", async () => {
+  it("uses the harness's React when the app's React predates async act", async () => {
     const rootDirectory = createRootDirectory();
-    writePackage(rootDirectory, "react", REACT_STUB.replace(STUB_REACT_VERSION, "16.3.0"));
+    writePackage(rootDirectory, "react", REACT_STUB.replace(STUB_REACT_VERSION, "16.8.6"));
     writePackage(rootDirectory, "react-dom", LEGACY_REACT_DOM_STUB);
     const runtime = await loadReactRuntime({
       resolver: new ModuleResolver({ rootDirectory }),

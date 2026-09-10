@@ -230,10 +230,10 @@ const loadReactModules = async (
   return { react, dom };
 };
 
-const FIRST_REACT_WITH_HOOKS = "16.8.0";
+const FIRST_REACT_WITH_ASYNC_ACT = "16.9.0";
 
-const hasHooks = (react: ReactModule): boolean =>
-  isVersionAtLeast(react.version, FIRST_REACT_WITH_HOOKS);
+const supportsAsyncAct = (react: ReactModule): boolean =>
+  isVersionAtLeast(react.version, FIRST_REACT_WITH_ASYNC_ACT);
 
 const load = async (
   resolver: ModuleResolver | null,
@@ -245,7 +245,8 @@ const load = async (
   const ownResolver = hasOwnReact(resolver, rootDirectory) ? resolver : null;
   const ownModules =
     ownResolver === null ? null : await loadReactModules(ownResolver, rootDirectory);
-  const hostedModules = ownModules !== null && hasHooks(ownModules.react) ? ownModules : null;
+  const hostedModules =
+    ownModules !== null && supportsAsyncAct(ownModules.react) ? ownModules : null;
   const appResolver = hostedModules === null ? null : ownResolver;
   const { react, dom } = hostedModules ?? (await loadReactModules(null, null));
   return {
