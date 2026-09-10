@@ -47,6 +47,7 @@ import {
   reduxValue,
 } from "./redux-toolkit.js";
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
+import { SCHEDULER_PACKAGES, schedulerValue } from "./scheduler.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
 import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
@@ -56,6 +57,7 @@ import {
   tanstackQueryValue,
 } from "./tanstack-query.js";
 import { TANSTACK_STORE_PACKAGES, tanstackStoreValue } from "./tanstack-store.js";
+import { UNPLUGIN_AUTO_IMPORT_PACKAGES, unpluginAutoImportValue } from "./unplugin-auto-import.js";
 import {
   USE_SYNC_EXTERNAL_STORE_PACKAGES,
   useSyncExternalStoreValue,
@@ -114,6 +116,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
+  { packages: SCHEDULER_PACKAGES, getValue: schedulerValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
   { packages: STYLEX_PACKAGES, getValue: stylexValue },
@@ -123,6 +126,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: TANSTACK_QUERY_MODELED_EXPORTS,
   },
   { packages: TANSTACK_STORE_PACKAGES, getValue: tanstackStoreValue },
+  { packages: UNPLUGIN_AUTO_IMPORT_PACKAGES, getValue: unpluginAutoImportValue },
   { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
   { packages: VITE_PACKAGES, getValue: viteValue },
 ];

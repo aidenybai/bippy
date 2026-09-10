@@ -4,6 +4,7 @@ import { enumerateStaticStates } from "../src/harness/compare-render.js";
 import { enumerateStates } from "../src/harness/enumerate-states.js";
 import { formatSymbolicTree } from "../src/harness/format-report.js";
 import { computeGuardCoverage } from "../src/harness/guard-coverage.js";
+import { evaluateGuard, solveGuards, toWitnessModel } from "../src/harness/guard-solver.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import {
   enumerateStateSpace,
@@ -21,6 +22,7 @@ import {
   orGuard,
   parseSymbolicTree,
   truthyGuard,
+  type Guard,
   type InputVariable,
   type SymbolicVariable,
 } from "../src/harness/symbolic-tree.js";
@@ -312,6 +314,63 @@ const nested = (): PatternNode[] => [
     ),
   ]),
 ];
+
+describe("guard solver", () => {
+  const notGuard = (operand: Guard): Guard => ({ kind: "not", operand });
+  const sectionGuard = (section: string): Guard =>
+    orGuard([
+      andGuard([
+        truthyGuard(variable("panel", "visibility")),
+        truthyGuard(variable("panel", "visibility", section)),
+      ]),
+      notGuard(truthyGuard(variable("panel", "visibility"))),
+    ]);
+
+  const guards = Array.from({ length: 64 }, (_, index) =>
+    orGuard([
+      equalsGuard(variable("settings", `flag${index}`), false),
+      notGuard(truthyGuard(variable("settings", "enabled"))),
+    ]),
+  ).concat(
+    Array.from({ length: 64 }, (_, index) => sectionGuard(`section${index}`)),
+    truthyGuard(variable("settings", "enabled")),
+  );
+  const either = orGuard([
+    equalsGuard(variable("panel", "mode"), "curves"),
+    equalsGuard(variable("settings", "tab"), 1),
+  ]);
+
+  it("finds a model of many disjunctions that every guard accepts", () => {
+    const witnesses = solveGuards([...guards, either]);
+    expect(witnesses).not.toBeNull();
+    const model = toWitnessModel(witnesses ?? []);
+    for (const guard of [...guards, either]) expect(evaluateGuard(guard, model)).toBe(true);
+  });
+
+  it("refutes contradictory atoms before splitting the disjunctions' product", () => {
+    const started = performance.now();
+    expect(
+      solveGuards([...guards, equalsGuard(variable("settings", "enabled"), false)]),
+    ).toBeNull();
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  it("splits a disjunction only against the conjuncts sharing its variables", () => {
+    const started = performance.now();
+    expect(
+      solveGuards([
+        ...guards,
+        notGuard(equalsGuard(variable("panel", "mode"), "curves")),
+        andGuard([notGuard(equalsGuard(variable("settings", "tab"), 1))]),
+        either,
+      ]),
+    ).toBeNull();
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(
+      solveGuards([either, notGuard(equalsGuard(variable("panel", "mode"), "curves"))]),
+    ).not.toBeNull();
+  });
+});
 
 describe("guard coverage", () => {
   it("reports each guard side as witnessed, possible or unreachable", () => {

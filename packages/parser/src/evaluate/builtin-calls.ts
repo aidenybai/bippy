@@ -1127,10 +1127,10 @@ const callGlobal = (
         if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
-      const target =
-        first?.kind === "namespace"
-          ? interpreter.materializeNamespace(first.module, context.environment)
-          : (first ?? UNDEFINED_VALUE);
+      const target = interpreter.materializeNamespace(
+        first ?? UNDEFINED_VALUE,
+        context.environment,
+      );
       return getOwnEnumerableEntries(target)
         ? inspect(target)
         : mapValue(distributeObjectBranches(target), inspect);

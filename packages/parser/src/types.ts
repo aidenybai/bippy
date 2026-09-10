@@ -281,6 +281,8 @@ export interface ContextDefinition {
   displayName: string | null;
   defaultValue: StaticValue;
   location: SourceLocation | null;
+  /** Properties source assigned on the context object (`context.Provider = Wrapper`), shadowing React's. */
+  properties?: Map<string, StaticValue>;
 }
 
 export type StaticElementType =
@@ -404,6 +406,8 @@ export interface StubRenderTools {
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** A module namespace as the object of its exports, as `Object.keys` and spread see it; other values unchanged. */
+  materializeNamespace: (value: StaticValue) => StaticValue;
   project: ProjectContext;
   /** Journals hidden state before a mutation, undone on the other paths of an enclosing fork like any heap write. */
   recordStateMutation: (state: JournaledState<unknown>) => void;
@@ -483,6 +487,14 @@ export interface ProjectContext {
   routerState: CapturedRouterState | null;
   /** The state of each Redux store the page created; `null` when no store was recorded. */
   storeStates: readonly CapturedValue[] | null;
+  /** The import a build-time transform (unplugin-auto-import) injects for a free identifier in a file; `null` when it injects none. */
+  findAutoImport: (filePath: string, name: string) => AutoImport | null;
+}
+
+/** An import a bundler plugin adds to a module for an identifier its source leaves unbound. */
+export interface AutoImport {
+  specifier: string;
+  imported: ImportedName;
 }
 
 /** One evaluation of the program: what a library's module instance would hold (default clients, stores, `init` configuration) lives here, so two evaluations of one project never share it. */
