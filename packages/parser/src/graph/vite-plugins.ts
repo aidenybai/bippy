@@ -26,9 +26,19 @@ const transformHookSchema = z.union([
     handler: functionSchema,
   }),
 ]);
+const htmlHookOrderSchema = z.enum(["pre", "post"]);
 const htmlHookSchema = z.union([
   functionSchema,
-  z.object({ order: z.enum(["pre", "post"]).nullish(), handler: functionSchema }),
+  z.object({
+    order: htmlHookOrderSchema.nullish(),
+    enforce: htmlHookOrderSchema.optional(),
+    handler: functionSchema,
+  }),
+  z.object({
+    order: htmlHookOrderSchema.nullish(),
+    enforce: htmlHookOrderSchema.optional(),
+    transform: functionSchema,
+  }),
 ]);
 export const vitePluginSchema = z.object({
   name: z.string(),
@@ -249,9 +259,14 @@ export const applyHtmlTransformHooks = async (
   const hooks = plugins.flatMap((plugin) => {
     const hook = plugin.transformIndexHtml;
     if (!hook) return [];
-    return typeof hook === "function"
-      ? [{ order: null, handler: hook, name: plugin.name }]
-      : [{ order: hook.order ?? null, handler: hook.handler, name: plugin.name }];
+    if (typeof hook === "function") return [{ order: null, handler: hook, name: plugin.name }];
+    return [
+      {
+        order: hook.order ?? (hook.enforce === "pre" ? "pre" : null),
+        handler: "handler" in hook ? hook.handler : hook.transform,
+        name: plugin.name,
+      },
+    ];
   });
   const ordered = [
     ...hooks.filter((hook) => hook.order === "pre"),
