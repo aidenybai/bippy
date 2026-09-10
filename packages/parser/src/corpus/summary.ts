@@ -152,6 +152,19 @@ const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z
   .transform((summary) => ({ ...summary, stateCount: summary.stateCount ?? summary.states }));
 
 const stateReplaySummarySchema: z.ZodType<StateReplaySummary> = z.object({
+  verification: z
+    .enum(["not-replayed", "sample-passed", "sample-incomplete", "contradicted"])
+    .optional(),
+  incomplete: z
+    .array(
+      z.object({
+        stateIndices: z.array(z.number()),
+        conditions: z.array(decisionConditionSchema),
+        unresolvedClaimCommits: z.array(z.number()),
+        isReplayConcrete: z.boolean(),
+      }),
+    )
+    .optional(),
   states: z.number(),
   assignments: z.number(),
   replayed: z.number(),
@@ -263,7 +276,9 @@ const describeStateSpace = (stateSpace: StateSpaceSummary): string => {
 
 const describeStateReplay = (replay: StateReplaySummary): string => {
   const sampled = replay.replayed < replay.assignments ? " (sampled)" : "";
-  return `replayed ${replay.replayed}/${replay.assignments} assignments${sampled}, ${replay.mismatched.length} mismatched`;
+  const incomplete = replay.incomplete?.length ? `, ${replay.incomplete.length} incomplete` : "";
+  const verification = ` (${replay.verification ?? "unrecorded"})`;
+  return `replayed ${replay.replayed}/${replay.assignments} assignments${sampled}, ${replay.mismatched.length} mismatched${incomplete}${verification}`;
 };
 
 const describeStatic = (result: CorpusResult): string => {

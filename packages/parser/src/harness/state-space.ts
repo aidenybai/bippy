@@ -369,6 +369,33 @@ export const pinDecisions = (
   return pins;
 };
 
+export const getPinnedPattern = (nodes: PatternNode[], pins: PinnedDecisions): PatternNode[] =>
+  nodes.flatMap((node): PatternNode[] => {
+    switch (node.kind) {
+      case "fiber":
+        return [{ ...node, children: getPinnedPattern(node.children, pins) }];
+      case "opaque":
+        return [{ ...node, passedChildren: getPinnedPattern(node.passedChildren, pins) }];
+      case "branch": {
+        const pinned = pins.branches.get(node.decision);
+        if (!pinned) return [node];
+        const alternative = node.alternatives[pinned.alternativeIndex];
+        if (!alternative) return [node];
+        return getPinnedPattern(alternative, node.sharesScope ? pins : pinned.inside);
+      }
+      case "repeat": {
+        const pinned = pins.repeats.get(node.decision);
+        if (!pinned) return [node];
+        return pinned.iterations.flatMap((inside, iteration) =>
+          getPinnedPattern(scopeRepeatIteration(node, iteration), inside),
+        );
+      }
+      case "text":
+      case "wildcard":
+        return [node];
+    }
+  });
+
 interface StatePosition {
   /** Whether every cluster enumerated the decisions taken: the state exists, in `states` or beyond the budget. */
   isMember: boolean;

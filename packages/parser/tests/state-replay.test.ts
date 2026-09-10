@@ -4,13 +4,16 @@ import {
   chooseReplaySample,
   joinDecisionAssignments,
   replayEnumeratedStates,
+  replayStateSpace,
 } from "../src/harness/state-replay.js";
 import {
   compareStaticToRuntime,
   enumerateStaticStates,
   formatCompareRenderResult,
 } from "../src/harness/index.js";
-import { enumerateStateSpace, pinDecisions } from "../src/harness/state-space.js";
+import { enumerateStateSpace, getPinnedPattern, pinDecisions } from "../src/harness/state-space.js";
+import { constantGuard } from "../src/harness/symbolic-tree.js";
+import type { PatternFiber, PatternNode } from "../src/harness/static-pattern.js";
 import {
   COMPONENTS_DIRECTORY,
   createComponentRenderer,
@@ -21,6 +24,16 @@ import { anonymousRepeat, choiceBranch, patternHost } from "./helpers/pattern-bu
 const fiber = patternHost;
 const branch = choiceBranch;
 const repeat = anonymousRepeat;
+
+const mapFibers = (
+  nodes: PatternNode[],
+  visitor: (fiber: PatternFiber) => PatternFiber,
+): PatternNode[] =>
+  nodes.map((node) =>
+    node.kind === "fiber"
+      ? visitor({ ...node, children: mapFibers(node.children, visitor) })
+      : node,
+  );
 
 const describeAssignment = (conditions: { variable: string; kind: string }[]): string =>
   conditions
@@ -34,6 +47,10 @@ const describeAssignment = (conditions: { variable: string; kind: string }[]): s
 describe("chooseReplaySample", () => {
   it("replays every assignment while the bound allows", () => {
     expect(chooseReplaySample(3, 1, 16)).toEqual([0, 1, 2]);
+  });
+
+  it("does not replay a preferred assignment when the budget is zero", () => {
+    expect(chooseReplaySample(3, 1, 0)).toEqual([]);
   });
 
   it("always includes the runtime-matched assignment and spreads the rest", () => {
@@ -136,6 +153,7 @@ describe("pinDecisions", () => {
     expect(iterations).toHaveLength(2);
     const chosen = iterations.map((iteration) => iteration.branches.get("done")?.alternativeIndex);
     expect(new Set(chosen)).toEqual(new Set([0, 1]));
+    expect(getPinnedPattern(stateSpace.commits[0], pins)).toEqual(mixed.tree);
   });
 
   it("keeps decisions met in an earlier commit", () => {
@@ -159,6 +177,7 @@ describe("replayEnumeratedStates", () => {
     expect(replay, detail).not.toBeNull();
     expect(replay?.replayed, detail).toBe(2);
     expect(replay?.mismatched, detail).toHaveLength(1);
+    expect(replay?.verification, detail).toBe("contradicted");
     expect(replay?.mismatched[0]).toMatchObject({
       isCorrected: true,
       divergence: { expected: '"2"', actual: '"1"' },
@@ -172,6 +191,166 @@ describe("replayEnumeratedStates", () => {
     expect(matchedTree, detail).not.toContain('"text":"2"');
   });
 
+  it("claims later commits even when only the first state was materialized", async () => {
+    const fixture = fixtureNamed("effect-cause-chain.tsx");
+    const run = await runComponentFixture(fixture);
+    const renderer = await createComponentRenderer();
+    const stateSpace = enumerateStaticStates(run.staticResult, { budget: { maxStates: 1 } });
+    expect(stateSpace.states).toHaveLength(1);
+    expect(stateSpace.commits.length).toBeGreaterThan(1);
+    const replayed = await replayEnumeratedStates(
+      compareStaticToRuntime(stateSpace, run.runtime),
+      (decisions) => renderer.derive({ decisions }).renderComponent(fixture.filePath),
+      { maxReplayed: 1 },
+    );
+    expect(replayed.stateReplay?.mismatched, formatCompareRenderResult(replayed)).toEqual([]);
+    expect(replayed.stateSpace.states).toHaveLength(1);
+    expect(replayed.stateReplay?.verification).toBe("sample-passed");
+  });
+
+  it.each([false, true])(
+    "preserves known contradictions in a partial claim: %s",
+    async (hasKnownContradiction) => {
+      const fixture = fixtureNamed("basic-host.tsx");
+      const renderer = await createComponentRenderer();
+      const original = await renderer.renderComponent(fixture.filePath);
+      const [known] = enumerateStaticStates(original).commits;
+      const stateSpace = enumerateStateSpace(
+        [
+          hasKnownContradiction ? [fiber("incorrect-known-root")] : known,
+          [branch("unselected", known, [fiber("aside")])],
+        ],
+        { maxStates: 1, maxRepeat: 2 },
+      );
+      const replayed = await replayStateSpace(
+        stateSpace,
+        () => renderer.renderComponent(fixture.filePath),
+        null,
+      );
+      expect(replayed.summary.incomplete).toMatchObject([
+        { unresolvedClaimCommits: [1], isReplayConcrete: true },
+      ]);
+      expect(replayed.summary.mismatched).toHaveLength(hasKnownContradiction ? 1 : 0);
+      expect(replayed.summary.verification).toBe(
+        hasKnownContradiction ? "contradicted" : "sample-incomplete",
+      );
+    },
+  );
+
+  it("checks known regions inside a commit with unselected decisions", async () => {
+    const fixture = fixtureNamed("basic-host.tsx");
+    const renderer = await createComponentRenderer();
+    const original = await renderer.renderComponent(fixture.filePath);
+    const [known] = enumerateStaticStates(original).commits;
+    const stateSpace = enumerateStateSpace(
+      [known, [fiber("incorrect-known-root", [branch("unselected", [], [])])]],
+      { maxStates: 1, maxRepeat: 2 },
+    );
+    const replayed = await replayStateSpace(
+      stateSpace,
+      () => renderer.renderComponent(fixture.filePath),
+      null,
+    );
+    expect(replayed.summary.mismatched).toMatchObject([{ isCorrected: true }]);
+    expect(replayed.summary.incomplete).toMatchObject([{ unresolvedClaimCommits: [1] }]);
+  });
+
+  it("reports a known mismatch even when the replay contains an unrelated wildcard", async () => {
+    const fixture = fixtureNamed("internal/replay-claim-wildcard.tsx");
+    const renderer = await createComponentRenderer();
+    const stateSpace = enumerateStateSpace([[fiber("incorrect-known-root")]]);
+    const replayed = await replayStateSpace(
+      stateSpace,
+      () => renderer.renderComponent(fixture.filePath),
+      null,
+    );
+    expect(replayed.summary.mismatched).toMatchObject([{ isCorrected: false }]);
+    expect(replayed.summary.incomplete).toMatchObject([{ isReplayConcrete: false }]);
+    expect(replayed.states).toEqual(stateSpace.states);
+  });
+
+  it("checks a known suffix after an uncertain region", async () => {
+    const fixture = fixtureNamed("internal/replay-claim-wildcard.tsx");
+    const renderer = await createComponentRenderer();
+    const original = await renderer.renderComponent(fixture.filePath);
+    const [known] = enumerateStaticStates(original).commits;
+    const stateSpace = enumerateStateSpace([
+      mapFibers(known, (fiber) => ({
+        ...fiber,
+        name: fiber.name === "footer" ? "incorrect-known-footer" : fiber.name,
+      })),
+    ]);
+    const replayed = await replayStateSpace(
+      stateSpace,
+      () => renderer.renderComponent(fixture.filePath),
+      null,
+    );
+    expect(replayed.summary.mismatched).toMatchObject([{ isCorrected: false }]);
+    expect(replayed.summary.mismatched[0].divergence.expected).toContain("incorrect-known-footer");
+    expect(replayed.summary.incomplete).toMatchObject([{ isReplayConcrete: false }]);
+  });
+
+  it("checks a required node between two unselected regions", async () => {
+    const fixture = fixtureNamed("basic-host.tsx");
+    const renderer = await createComponentRenderer();
+    const original = await renderer.renderComponent(fixture.filePath);
+    const [known] = enumerateStaticStates(original).commits;
+    const partial = mapFibers(known, (innerFiber) =>
+      innerFiber.name === "main"
+        ? {
+            ...innerFiber,
+            children: [
+              branch("before", [], []),
+              fiber("incorrect-known-middle"),
+              branch("after", [], []),
+            ],
+          }
+        : innerFiber,
+    );
+    const stateSpace = enumerateStateSpace([known, partial], { maxStates: 1, maxRepeat: 2 });
+    const replayed = await replayStateSpace(
+      stateSpace,
+      () => renderer.renderComponent(fixture.filePath),
+      null,
+    );
+    expect(replayed.summary.mismatched).toHaveLength(1);
+    expect(replayed.summary.mismatched[0].divergence.expected).toContain("incorrect-known-middle");
+    expect(replayed.summary.incomplete).toMatchObject([{ unresolvedClaimCommits: [1] }]);
+  });
+
+  it("reproduces an identical partial pattern without claiming a concrete replay", async () => {
+    const run = await runComponentFixture(fixtureNamed("internal/replay-claim-wildcard.tsx"));
+    expect(run.comparison.report.status).toBe("partial");
+    expect(run.comparison.stateReplay?.mismatched).toEqual([]);
+    expect(run.comparison.stateReplay?.incomplete).toMatchObject([{ isReplayConcrete: false }]);
+    expect(run.comparison.matchedState?.index).toBeTypeOf("number");
+  });
+
+  it("does not require a commit whose cause the assignment leaves undecided", async () => {
+    const fixture = fixtureNamed("basic-host.tsx");
+    const renderer = await createComponentRenderer();
+    const original = await renderer.renderComponent(fixture.filePath);
+    const [known] = enumerateStaticStates(original).commits;
+    const cause = branch("unfixed", [], []);
+    const stateSpace = enumerateStateSpace(
+      [known, [fiber("aside")]],
+      { maxStates: 1, maxRepeat: 2 },
+      [
+        { guard: constantGuard(true), inputs: [] },
+        { guard: cause.guards[0], inputs: cause.inputs },
+      ],
+    );
+    const replayed = await replayStateSpace(
+      stateSpace,
+      () => renderer.renderComponent(fixture.filePath),
+      null,
+    );
+    expect(replayed.summary.mismatched).toEqual([]);
+    expect(replayed.summary.incomplete).toMatchObject([
+      { unresolvedClaimCommits: [1], isReplayConcrete: true },
+    ]);
+  });
+
   it("cannot correct a replay that leaves decisions open", async () => {
     const fixture = fixtureNamed("ref-interference.tsx");
     const renderer = await createComponentRenderer();
@@ -183,10 +362,12 @@ describe("replayEnumeratedStates", () => {
     );
     const detail = formatCompareRenderResult(replayed);
     expect(replayed.report.status, detail).toBe("mismatch");
+    expect(replayed.stateReplay?.mismatched, detail).toEqual([]);
     expect(
-      replayed.stateReplay?.mismatched.every((mismatch) => !mismatch.isCorrected),
+      replayed.stateReplay?.incomplete?.every((entry) => !entry.isReplayConcrete),
       detail,
     ).toBe(true);
+    expect(replayed.stateReplay?.incomplete?.length, detail).toBeGreaterThan(0);
     expect(replayed.stateSpace.states, detail).toEqual(derived.stateSpace.states);
   });
 
@@ -203,12 +384,33 @@ describe("replayEnumeratedStates", () => {
     );
     const detail = formatCompareRenderResult(replayed);
     expect(replayed.report.status, detail).toBe("unsound");
+    expect(replayed.stateReplay?.mismatched, detail).toEqual([]);
     expect(
-      replayed.stateReplay?.mismatched.map((mismatch) => mismatch.isCorrected),
+      replayed.stateReplay?.incomplete?.map((entry) => entry.isReplayConcrete),
       detail,
     ).toEqual([false, false]);
     expect(replayed.matchedState, detail).toBeNull();
-    expect(replayed.closestState?.index, detail).toBe(derived.matchedState?.index);
+    expect(replayed.closestState, detail).toBeNull();
+  });
+
+  it("preserves membership without claiming replay evidence when replay is disabled", async () => {
+    const run = await runComponentFixture(fixtureNamed("basic-host.tsx"));
+    const derived = compareStaticToRuntime(enumerateStaticStates(run.staticResult), run.runtime);
+    const replayed = await replayEnumeratedStates(
+      derived,
+      async () => {
+        throw new Error("replay exceeded the zero budget");
+      },
+      { maxReplayed: 0 },
+    );
+    expect(replayed.report).toEqual(derived.report);
+    expect(replayed.matchedState).toEqual(derived.matchedState);
+    expect(replayed.stateReplay).toMatchObject({
+      verification: "not-replayed",
+      replayed: 0,
+      mismatched: [],
+      incomplete: [],
+    });
   });
 
   it("bounds the replay and still replays the matched assignment", async () => {
