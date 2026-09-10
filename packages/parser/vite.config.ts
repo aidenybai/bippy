@@ -3,6 +3,7 @@ import { basename, join, relative, resolve, sep } from "node:path";
 import { transformAsync } from "@babel/core";
 import { transform as transformSvgr } from "@svgr/core";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
+import { z } from "zod";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -58,21 +59,21 @@ const fixtureAliasPlugin = (): Plugin => ({
   },
 });
 
-interface FixtureSvgrManifest {
-  svgr?: Record<string, unknown>;
-}
+const fixtureSvgrManifestSchema = z.object({
+  svgr: z.record(z.string(), z.json()).optional(),
+});
 
 const readFixtureSvgrConfig = (id: string): Record<string, unknown> | null => {
   const [fixtureName] = relative(fixturesDirectory, id).split(sep);
   const manifestPath = join(fixturesDirectory, fixtureName, "fixture.json");
   if (!existsSync(manifestPath)) return null;
-  const manifest: FixtureSvgrManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const manifest = fixtureSvgrManifestSchema.parse(JSON.parse(readFileSync(manifestPath, "utf8")));
   return manifest.svgr ?? null;
 };
 
-// What the fixture's bundler makes of an `.svg` import: a `fixture.json` `svgr`
-// config goes straight to `@svgr/core` (as `vite-plugin-svgr` does), otherwise
-// `react-scripts` semantics (`@svgr/webpack` chained after `file-loader`).
+// A `fixture.json` `svgr` config goes straight to `@svgr/core` (as
+// `esbuild-plugin-svgr` does); otherwise `react-scripts` semantics apply
+// (`@svgr/webpack` chained after `file-loader`).
 const fixtureSvgrPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-svgr",
   enforce: "pre",

@@ -3,6 +3,7 @@ import { realpathSync } from "node:fs";
 import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
+import { MAX_TIMER_TASKS } from "../evaluate/timers.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
 import {
   detectModuleBundler,
@@ -54,8 +55,6 @@ interface BootstrapCall {
 }
 
 const BOOTSTRAP_PATTERN = /^(.+)#([^#()]+?)(?:\(([^()]*)\))?$/;
-/** Timer tasks an entry may run before its root render, matching the mount's settle rounds. */
-const MAX_BOOTSTRAP_TASKS = 512;
 
 const parseBootstrap = (bootstrap: string): BootstrapCall | null => {
   const match = BOOTSTRAP_PATTERN.exec(bootstrap);
@@ -308,7 +307,7 @@ export class StaticRenderer {
       for (
         let round = 0;
         interpreter.rootRender.element === null &&
-        round < MAX_BOOTSTRAP_TASKS &&
+        round < MAX_TIMER_TASKS &&
         (timers.hasTasks() || timers.hasMicrotasks());
         round++
       ) {

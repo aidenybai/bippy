@@ -9,6 +9,9 @@ export const DEFAULT_SETTLE_MS = 1_500;
 /** Node's timers fire once its millisecond-truncated monotonic clock has advanced by the delay, so `Date.now()` can measure 1ms less. */
 export const NODE_TIMER_UNDERRUN_MS = 1;
 
+/** Timer tasks a static run may execute before its queue is declared unsettled. */
+export const MAX_TIMER_TASKS = 512;
+
 /**
  * Timers as the harness observes them. The runtime snapshot is captured once
  * React has been quiet for `settleMs`: a timer with a shorter delay has fired,
