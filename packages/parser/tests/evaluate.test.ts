@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -217,10 +217,16 @@ const evaluateExports = async (
   source: string,
   exportNames: string[],
   maxSteps?: number,
+  siblingFiles: Record<string, string> = {},
 ): Promise<Record<string, string>> => {
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-evaluate-"));
   const entryFile = join(rootDirectory, "module.ts");
   writeFileSync(entryFile, source);
+  for (const [relativePath, content] of Object.entries(siblingFiles)) {
+    const filePath = join(rootDirectory, relativePath);
+    mkdirSync(join(filePath, ".."), { recursive: true });
+    writeFileSync(filePath, content);
+  }
   const renderer = await createStaticRenderer({ rootDirectory, maxSteps });
   const described: Record<string, string> = {};
   await renderer.renderWith((interpreter) => {
@@ -393,5 +399,40 @@ describe("module initialization budget", () => {
     const results = await evaluateExports(REGISTRY_SOURCE, ["readFirst", "readLast"], 100);
     expect(results.readFirst).toMatch(/^unknown\(.*exhausted the step budget/);
     expect(results.readLast).toMatch(/^unknown\(.*exhausted the step budget/);
+  });
+});
+
+const EAGER_GLOB_SOURCE = `
+const modules = import.meta.globEager("./routes/*.ts");
+const defaults = import.meta.globEagerDefault("./routes/*.ts");
+
+export const flattened = () => {
+  const routes: string[] = [];
+  Object.keys(modules).forEach((file) => {
+    Object.keys(modules[file]).forEach((exportName) => {
+      routes.push(...modules[file][exportName]);
+    });
+  });
+  return routes;
+};
+export const defaultsOnly = () => Object.values(defaults).flat();
+`;
+const EAGER_GLOB_FILES = {
+  "routes/home.ts": 'export default ["/home"];\nexport const extra = ["/about"];\n',
+  "routes/login.ts": 'export default ["/login"];\n',
+};
+
+describe("Vite 2's eager glob imports", () => {
+  it("loads the matched modules like import.meta.glob with eager: true", async () => {
+    const results = await evaluateExports(
+      EAGER_GLOB_SOURCE,
+      ["flattened", "defaultsOnly"],
+      undefined,
+      EAGER_GLOB_FILES,
+    );
+    expect(results).toEqual({
+      flattened: '["/home", "/about", "/login"]',
+      defaultsOnly: '["/home", "/login"]',
+    });
   });
 });

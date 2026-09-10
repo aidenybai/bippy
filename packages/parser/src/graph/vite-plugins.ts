@@ -26,9 +26,19 @@ const transformHookSchema = z.union([
     handler: functionSchema,
   }),
 ]);
+const htmlHookOrderSchema = z.enum(["pre", "post"]).nullish();
 const htmlHookSchema = z.union([
   functionSchema,
-  z.object({ order: z.enum(["pre", "post"]).nullish(), handler: functionSchema }),
+  z.object({
+    order: htmlHookOrderSchema,
+    enforce: htmlHookOrderSchema,
+    handler: functionSchema,
+  }),
+  z.object({
+    order: htmlHookOrderSchema,
+    enforce: htmlHookOrderSchema,
+    transform: functionSchema,
+  }),
 ]);
 export const vitePluginSchema = z.object({
   name: z.string(),
@@ -239,7 +249,8 @@ const INJECTION_ORDER = ["head-prepend", "head", "body-prepend", "body"] as cons
  * The plugins' `transformIndexHtml` hooks in Vite's order (`pre`, plain, then
  * `post`) applied to the page as the dev server does before serving it: a
  * string replaces the page, tag descriptors are injected where `injectTo`
- * says (the head by default).
+ * says (the head by default). The deprecated `enforce`/`transform` spelling
+ * orders like Vite's `resolveHtmlTransforms`: only `enforce: "pre"` moves a hook.
  */
 export const applyHtmlTransformHooks = async (
   plugins: VitePlugin[],
@@ -249,9 +260,10 @@ export const applyHtmlTransformHooks = async (
   const hooks = plugins.flatMap((plugin) => {
     const hook = plugin.transformIndexHtml;
     if (!hook) return [];
-    return typeof hook === "function"
-      ? [{ order: null, handler: hook, name: plugin.name }]
-      : [{ order: hook.order ?? null, handler: hook.handler, name: plugin.name }];
+    if (typeof hook === "function") return [{ order: null, handler: hook, name: plugin.name }];
+    const order = hook.order ?? (hook.enforce === "pre" ? "pre" : null);
+    const handler = "handler" in hook ? hook.handler : hook.transform;
+    return [{ order, handler, name: plugin.name }];
   });
   const ordered = [
     ...hooks.filter((hook) => hook.order === "pre"),

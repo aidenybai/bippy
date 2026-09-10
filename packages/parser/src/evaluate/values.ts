@@ -2161,6 +2161,15 @@ export const getListItem = (
 };
 
 const MAX_DESCRIPTION_DEPTH = 3;
+const MAX_DESCRIPTION_WIDTH = 8;
+
+const describeEach = <Item>(items: readonly Item[], describe: (item: Item) => string): string[] =>
+  items.length > MAX_DESCRIPTION_WIDTH
+    ? [
+        ...items.slice(0, MAX_DESCRIPTION_WIDTH).map(describe),
+        `… ${items.length - MAX_DESCRIPTION_WIDTH} more`,
+      ]
+    : items.map(describe);
 
 export const describeValue = (value: StaticValue, depth = 0): string => {
   if (depth >= MAX_DESCRIPTION_DEPTH) return "…";
@@ -2173,11 +2182,11 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
     case "element":
       return `<${describeElementType(value.type)}>`;
     case "list":
-      return `[${value.items.map(describeNested).join(", ")}]`;
+      return `[${describeEach(value.items, describeNested).join(", ")}]`;
     case "repeat":
       return `repeat(${describeNested(value.item)})`;
     case "branch":
-      return `branch(${value.alternatives.map(describeNested).join(" | ")})`;
+      return `branch(${describeEach(value.alternatives, describeNested).join(" | ")})`;
     case "optional":
       return `optional(${describeNested(value.value)})`;
     case "regexp":
@@ -2189,7 +2198,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
         ? value.key
         : `Symbol.for(${JSON.stringify(value.key)})`;
     case "object":
-      return `{${value.entries.map((entry) => (entry.kind === "property" ? entry.key : "...")).join(", ")}}`;
+      return `{${describeEach(value.entries, (entry) => (entry.kind === "property" ? entry.key : "...")).join(", ")}}`;
     case "function":
       return `function ${value.name ?? "<anonymous>"}`;
     case "class":

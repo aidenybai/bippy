@@ -6,6 +6,7 @@ import type {
   RenderEnvironment,
   StaticValue,
 } from "../types.js";
+import { isImportGlobName } from "./import-glob.js";
 import { optionalInputValue, recordInputSource } from "./predicates.js";
 import {
   FALSE_VALUE,
@@ -178,14 +179,14 @@ const isBundlerObject = (name: string): boolean =>
 /** `typeof` of a name the bundler itself provides; null for names it leaves to the host. */
 export const getBundlerGlobalTypeof = (name: string): string | null => {
   if (isBundlerObject(name)) return "object";
-  return name === "import.meta.glob" ? "function" : null;
+  return isImportGlobName(name) ? "function" : null;
 };
 
 export const getBundlerGlobal = (
   name: string,
   environment: EnvironmentLookup = NO_ENVIRONMENT,
 ): StaticValue | null => {
-  if (isBundlerObject(name) || name === "import.meta.glob" || POLYFILLED_NODE_OBJECTS.has(name))
+  if (isBundlerObject(name) || isImportGlobName(name) || POLYFILLED_NODE_OBJECTS.has(name))
     return { kind: "global", name };
   for (const objectName of ENVIRONMENT_OBJECTS) {
     if (name.startsWith(`${objectName}.`))

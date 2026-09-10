@@ -55,7 +55,7 @@ import {
   toNativeArguments,
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
-import { callImportMetaGlob } from "./import-glob.js";
+import { callImportMetaGlob, isImportGlobName } from "./import-glob.js";
 import { callRequireContext } from "./require-context.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
@@ -960,7 +960,7 @@ const callGlobal = (
     }
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
-  if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
+  if (isImportGlobName(name)) return callImportMetaGlob(interpreter, name, args, context, location);
   if (name === "require.context") return callRequireContext(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);

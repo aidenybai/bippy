@@ -150,6 +150,8 @@ export const ensureDomGlobals = (): void => {
  * (vitest's) is kept, and rewritten in place when the page has its own markup.
  */
 export const resetDomGlobals = (initialMarkup: string | null = null): void => {
+  performance.clearMarks();
+  performance.clearMeasures();
   if (installedWindow !== null || typeof globalThis.document === "undefined") {
     installWindow(initialMarkup);
   } else if (initialMarkup !== null) {
@@ -159,7 +161,7 @@ export const resetDomGlobals = (initialMarkup: string | null = null): void => {
 };
 
 const installWindow = (initialMarkup: string | null = null): void => {
-  void installedWindow?.happyDOM.abort();
+  void installedWindow?.happyDOM.close();
   const window = new Window({
     url: "http://localhost:3000",
     width: DEFAULT_BROWSER_ENVIRONMENT.viewportWidth,

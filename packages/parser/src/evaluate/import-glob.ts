@@ -24,6 +24,15 @@ interface ImportGlobOptionError {
   error: string;
 }
 
+/** Vite 2's eager spellings, each `import.meta.glob(pattern, { eager: true })` with the import they take. */
+const EAGER_GLOB_IMPORTS: Record<string, string | null> = {
+  "import.meta.globEager": null,
+  "import.meta.globEagerDefault": "default",
+};
+
+export const isImportGlobName = (name: string): boolean =>
+  name === "import.meta.glob" || name in EAGER_GLOB_IMPORTS;
+
 const GLOB_MAGIC = /[*?[{]/;
 const RELATIVE_PREFIX = /^\.\.?\//;
 
@@ -148,30 +157,33 @@ const listImportGlobFiles = (
 
 export const callImportMetaGlob = (
   interpreter: Interpreter,
+  name: string,
   args: StaticValue[],
   context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue => {
   const patterns = readPatterns(args[0]);
-  if (typeof patterns === "string")
-    return unknownValue(`import.meta.glob with ${patterns}`, location);
-  const options = readImportGlobOptions(args[1]);
-  if (typeof options === "string")
-    return unknownValue(`import.meta.glob with ${options}`, location);
+  if (typeof patterns === "string") return unknownValue(`${name} with ${patterns}`, location);
+  const read = readImportGlobOptions(args[1]);
+  if (typeof read === "string") return unknownValue(`${name} with ${read}`, location);
+  const options =
+    name in EAGER_GLOB_IMPORTS
+      ? { ...read, isEager: true, importedName: EAGER_GLOB_IMPORTS[name] }
+      : read;
   const files = listImportGlobFiles(
     patterns,
     options,
     context.module.filePath,
     interpreter.graph.resolver.rootDirectory,
   );
-  if (typeof files === "string") return unknownValue(`import.meta.glob with ${files}`, location);
+  if (typeof files === "string") return unknownValue(`${name} with ${files}`, location);
   const unloadable = files.find((file) => {
     const target = interpreter.graph.resolveImportedModule(file.specifier, context.module);
     return !isModuleRecord(target) && target.kind === "internal";
   });
   if (unloadable) {
     return unknownValue(
-      `import.meta.glob matched "${unloadable.specifier}", which only a bundler plugin can load`,
+      `${name} matched "${unloadable.specifier}", which only a bundler plugin can load`,
       location,
     );
   }
