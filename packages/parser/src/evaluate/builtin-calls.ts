@@ -47,7 +47,8 @@ import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
 import { nativeFunction } from "./stubs.js";
 import {
-  constructHostImage,
+  constructHostNode,
+  isHostNodeConstructorName,
   constructNativeObject,
   fromNativeValue,
   getNativeOwnEntries,
@@ -60,9 +61,10 @@ import { callRequireContext } from "./require-context.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
-import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
+import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
 import { getBuiltinPrototypeName, getPrototypeWitness, isPrototypeOf } from "./instance-of.js";
 import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
+import { createImageElement, type ImageLoadHost } from "./image-loading.js";
 import {
   binaryFromItems,
   callBinaryMethod,
@@ -77,7 +79,13 @@ import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import { type EvaluationContext, isCertainWrite } from "./context.js";
-import { createCollectionValue, getCollectionItems } from "./collections.js";
+import {
+  createCollectionValue,
+  getCollectionItems,
+  getKeyIdentity,
+  isDefiniteKey,
+  type KeyIdentity,
+} from "./collections.js";
 import { createItemsIteratorValue } from "./generators.js";
 import {
   chainPromise,
@@ -94,8 +102,10 @@ import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
   getCoercedText,
-  getFunctionSourceText,
+  getFunctionText,
+  isFunctionText,
   joinStrings,
+  quoteUnknownString,
   rangedNumberValue,
   toPropertyKey,
   toStringValue,
@@ -688,7 +698,8 @@ const hasOwnProperty = (
   name: string,
 ): StaticValue | null => {
   const propertyName = toPropertyKey(key);
-  if (propertyName === null) return null;
+  if (propertyName === null)
+    return isFunctionText(key) && ownsNoFunctionTextKey(receiver) ? FALSE_VALUE : null;
   if (receiver.kind === "object" || receiver.kind === "list") {
     if (receiver.kind === "list" && propertyName === "length")
       return primitiveValue(name === "hasOwnProperty");
@@ -774,10 +785,10 @@ const getInvokedFunctionSource = (
         ),
         location,
       );
-    const sourceText = getFunctionSourceText(alternative);
-    return sourceText === null
-      ? unknownPrimitiveValue("string", `source text of ${describeValue(alternative)}`)
-      : primitiveValue(sourceText);
+    return (
+      getFunctionText(alternative) ??
+      unknownPrimitiveValue("string", `source text of ${describeValue(alternative)}`)
+    );
   });
 
 const PROTOTYPE_SEGMENT = ".prototype.";
@@ -904,7 +915,9 @@ const toObjectValue = (value: StaticValue, location: SourceLocation | null): Sta
           : nativeObjectValue(Object(alternative.value), null);
       case "unknown-primitive":
       case "symbol":
-        return unknownValue(`boxed ${describeValue(alternative)}`, location);
+        return objectValue([
+          { kind: "spread", value: unknownValue(`boxed ${describeValue(alternative)}`, location) },
+        ]);
       default:
         return alternative;
     }
@@ -988,9 +1001,9 @@ const callGlobal = (
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
   }
-  if (isConstructor && name === "Image" && interpreter.hostDocument) {
-    const image = constructHostImage(interpreter.hostDocument, args);
-    if (image) return image;
+  if (isConstructor && isHostNodeConstructorName(name) && interpreter.hostDocument) {
+    const node = constructHostNode(interpreter.hostDocument, name, args);
+    if (node) return node;
   }
   switch (name) {
     case "Date": {
@@ -1031,6 +1044,10 @@ const callGlobal = (
       return createUrlValue(args, location);
     case "AbortController":
       if (isConstructor) return createAbortController(interpreter, location);
+      break;
+    case "Image":
+      if (isConstructor)
+        return createImageElement(imageLoadHost(interpreter, context, location), args);
       break;
     case "fetch":
       if (isConstructor) break;
@@ -1129,10 +1146,10 @@ const callGlobal = (
         if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
-      const target =
-        first?.kind === "namespace"
-          ? interpreter.materializeNamespace(first.module, context.environment)
-          : (first ?? UNDEFINED_VALUE);
+      const target = interpreter.materializeNamespace(
+        first ?? UNDEFINED_VALUE,
+        context.environment,
+      );
       return getOwnEnumerableEntries(target)
         ? inspect(target)
         : mapValue(distributeObjectBranches(target), inspect);
@@ -1325,6 +1342,11 @@ const callGlobal = (
       }
       return unknownValue("Object.fromEntries of dynamic entries", location);
     }
+    case "Object.groupBy":
+    case "Map.groupBy":
+      return first && isCallable(second)
+        ? groupItems(interpreter, name, first, second, context, location)
+        : unknownValue(`${name} without a callback`, location);
     case "parseInt":
     case "Number.parseInt":
       if (
@@ -1360,6 +1382,9 @@ const callGlobal = (
     case "JSON.stringify": {
       if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
       return mapValue(distributeObjectBranches(first), (alternative) => {
+        if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string") {
+          return quoteUnknownString(alternative);
+        }
         const json = toJsonValue(alternative);
         return json === undefined
           ? unknownPrimitiveValue("string", "JSON.stringify")
@@ -1532,6 +1557,9 @@ const iterableOrArrayLike = (
 ): StaticValue | null => {
   const iterated = interpreter.resolveIterable(value, context, location);
   if (iterated !== value) return iterated;
+  if (value.kind === "primitive" && typeof value.value === "string") {
+    return listValue(spreadListItems(value, location));
+  }
   if (value.kind === "object") return arrayLikeToList(value);
   return value.kind === "native-object" ? null : value;
 };
@@ -1602,6 +1630,56 @@ const callCallback = (
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticValue => interpreter.callValue(callback, args, context, null);
+
+/**
+ * `Object.groupBy` / `Map.groupBy`: every item's key must be decided for the
+ * groups to be, so a dynamic key or an indefinite item list yields `unknown`.
+ * Object groups are keyed by property name on a null-prototype object; Map
+ * groups by key identity (SameValueZero), both in first-seen order.
+ */
+const groupItems = (
+  interpreter: Interpreter,
+  name: "Object.groupBy" | "Map.groupBy",
+  iterable: StaticValue,
+  callback: CallableValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  const items = interpreter.resolveIterable(iterable, context, location);
+  if (!hasDefiniteItems(items)) return unknownValue(`${name} of a dynamic iterable`, location);
+  const isObjectGroups = name === "Object.groupBy";
+  const groups = new Map<KeyIdentity, { key: StaticValue; members: StaticValue[] }>();
+  for (const [index, item] of items.items.entries()) {
+    const key = callCallback(interpreter, callback, [item, primitiveValue(index)], context);
+    const propertyName = isObjectGroups ? getPropertyName(key) : null;
+    if (isObjectGroups ? propertyName === null : !isDefiniteKey(key)) {
+      return unknownValue(`${name} with a dynamic key (${describeValue(key)})`, location);
+    }
+    const groupKey: StaticValue = propertyName === null ? key : primitiveValue(propertyName);
+    const identity = getKeyIdentity(groupKey);
+    const group = groups.get(identity);
+    if (group) group.members.push(item);
+    else groups.set(identity, { key: groupKey, members: [item] });
+  }
+  const entries = [...groups.values()];
+  if (isObjectGroups) {
+    return {
+      ...objectValue(
+        entries.map(({ key, members }) => ({
+          kind: "property",
+          key: getPropertyName(key) ?? "",
+          value: listValue(members),
+        })),
+      ),
+      hasNullPrototype: true,
+    };
+  }
+  return createCollectionValue(
+    "Map",
+    listValue(entries.map(({ key, members }) => listValue([key, listValue(members)]))),
+    location,
+  );
+};
 
 const MAX_FILTERED_ALTERNATIVES = 16;
 
@@ -2144,24 +2222,43 @@ const fallbackMethodResult = (
   );
 };
 
-/** Request events fire in later tasks; from a deferred continuation they stay deferred. */
+/** Browser events fire in later tasks; from a deferred continuation they stay deferred. */
+const scheduleTask = (
+  interpreter: Interpreter,
+  description: string,
+): ((task: () => void) => void) => {
+  const isDeferred = interpreter.timers.isDeferred;
+  return (task) =>
+    interpreter.timers.schedule(
+      interpreter.timers.createHandle(description),
+      isDeferred ? () => interpreter.timers.runDeferred(task) : task,
+    );
+};
+
 const indexedDbHost = (
   interpreter: Interpreter,
   context: EvaluationContext,
   location: SourceLocation | null,
-): IndexedDbHost => {
-  const isDeferred = interpreter.timers.isDeferred;
-  return {
-    schedule: (task) =>
-      interpreter.timers.schedule(
-        interpreter.timers.createHandle("IndexedDB request"),
-        isDeferred ? () => interpreter.timers.runDeferred(task) : task,
-      ),
-    call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
-    setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
-    location,
-  };
-};
+): IndexedDbHost => ({
+  schedule: scheduleTask(interpreter, "IndexedDB request"),
+  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
+  location,
+});
+
+const imageLoadHost = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): ImageLoadHost => ({
+  schedule: scheduleTask(interpreter, "image load"),
+  queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
+  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  setProperty: (object, key, value, accessor) =>
+    interpreter.assignOwnProperty(object, key, value, accessor),
+  markEscaped: (value) => interpreter.markEscaped(value),
+  readServedAsset: (url) => interpreter.project.readServedAsset(url),
+});
 
 const promiseTools = (
   interpreter: Interpreter,
@@ -2242,8 +2339,8 @@ export const evaluateBuiltinCall = (
     return callPromiseMethod(interpreter, receiver, name, args, context, location);
 
   if (name === "toString" && args.length === 0) {
-    const sourceText = getFunctionSourceText(receiver);
-    if (sourceText !== null) return primitiveValue(sourceText);
+    const sourceText = getFunctionText(receiver);
+    if (sourceText !== null) return sourceText;
   }
 
   if (receiver.kind === "function") {

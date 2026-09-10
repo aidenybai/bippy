@@ -442,6 +442,19 @@ const resolveBranchGuard = (subject: StaticValue): ResolvedGuard | null => {
   return { guard: orGuard(sides), inputs: mergeInputs(inputs) };
 };
 
+const guardedTruthiness = new WeakMap<StaticBranchValue, boolean | null>();
+
+/** Truthiness the branch's own guards decide: an alternative that is truthy exactly when it is taken, with the other side excluded, leaves no test open. */
+export const getGuardedTruthiness = (subject: StaticBranchValue): boolean | null => {
+  if (subject.predicate === null) return null;
+  const known = guardedTruthiness.get(subject);
+  if (known !== undefined) return known;
+  const guard = resolveBranchGuard(subject)?.guard;
+  const truthiness = guard?.kind === "constant" ? guard.value : null;
+  guardedTruthiness.set(subject, truthiness);
+  return truthiness;
+};
+
 const mergeInputs = (groups: InputVariable[][]): InputVariable[] => {
   const byId = new Map<string, InputVariable>();
   for (const group of groups) for (const input of group) byId.set(input.id, input);

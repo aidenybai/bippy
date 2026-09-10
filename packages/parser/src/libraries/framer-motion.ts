@@ -5,6 +5,7 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   getObjectProperty,
+  getStubOwnDisplayName,
   getTruthiness,
   listValue,
   objectFromRecord,
@@ -200,7 +201,7 @@ const describeWrapped = (type: StaticElementType): string => {
     case "lazy":
       return type.displayName ?? "";
     case "stub":
-      return type.stub.displayName ?? "";
+      return getStubOwnDisplayName(type.stub) ?? "";
     case "external":
       return type.displayName;
     default:
@@ -443,6 +444,7 @@ const createMotionComponent = (
   const stub: StubComponent = {
     displayName: describeMotionComponent(wrappedType, version),
     tag: ForwardRefTag,
+    isRenderNamed: !satisfiesVersion(version, NAMED_MOTION_COMPONENT_VERSIONS),
     render: (props) => {
       const children = getObjectProperty(props, "children");
       const entries = filterProps(props, forwardMotionProps);

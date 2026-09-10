@@ -281,6 +281,8 @@ export interface ContextDefinition {
   displayName: string | null;
   defaultValue: StaticValue;
   location: SourceLocation | null;
+  /** Properties source assigned on the context object (`context.Provider = Wrapper`), shadowing React's. */
+  properties?: Map<string, StaticValue>;
 }
 
 export type StaticElementType =
@@ -334,6 +336,8 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
+  /** The fiber name comes from a wrapped render function's `name`, so the component object itself has no `displayName` or `name`. */
+  isRenderNamed?: boolean;
   /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
   properties?: Map<string, StaticValue>;
   /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */
@@ -404,6 +408,8 @@ export interface StubRenderTools {
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** A module namespace as the object of its exports, as `Object.keys` and spread see it; other values unchanged. */
+  materializeNamespace: (value: StaticValue) => StaticValue;
   project: ProjectContext;
   /** Journals hidden state before a mutation, undone on the other paths of an enclosing fork like any heap write. */
   recordStateMutation: (state: JournaledState<unknown>) => void;
@@ -483,6 +489,16 @@ export interface ProjectContext {
   routerState: CapturedRouterState | null;
   /** The state of each Redux store the page created; `null` when no store was recorded. */
   storeStates: readonly CapturedValue[] | null;
+  /** The import a build-time transform (unplugin-auto-import) injects for a free identifier in a file; `null` when it injects none. */
+  findAutoImport: (filePath: string, name: string) => AutoImport | null;
+  /** The SWR cache the page's hooks read, by serialized key; `null` when no cache was recorded. */
+  swrCache: ReadonlyMap<string, CapturedSwrEntry> | null;
+}
+
+/** An import a bundler plugin adds to a module for an identifier its source leaves unbound. */
+export interface AutoImport {
+  specifier: string;
+  imported: ImportedName;
 }
 
 /** One evaluation of the program: what a library's module instance would hold (default clients, stores, `init` configuration) lives here, so two evaluations of one project never share it. */
@@ -554,6 +570,15 @@ export interface CapturedMutation {
   submittedAt: number;
 }
 
+/** One SWR cache entry as `cache.get(key)` holds it, under the key `useSWR` serializes its argument to. */
+export interface CapturedSwrEntry {
+  key: string;
+  data?: CapturedValue;
+  error?: CapturedValue;
+  isValidating?: boolean;
+  isLoading?: boolean;
+}
+
 /** Both TanStack caches of every mounted `QueryClient`. */
 export interface CapturedQueryCaches {
   queries: CapturedQuery[];
@@ -607,6 +632,8 @@ export interface RootObservations extends CapturedQueryCaches {
   router?: CapturedRouterState;
   /** `getState()` of every Redux store the page created (react-redux providers, kea's store), once settled. */
   stores?: CapturedValue[];
+  /** The caches the mounted SWR hooks read, once settled. */
+  swr?: CapturedSwrEntry[];
 }
 
 /** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
@@ -651,6 +678,8 @@ export interface RuntimeObservations {
   lingui?: CapturedLinguiCatalog;
   router?: CapturedRouterState;
   stores?: CapturedValue[];
+  /** Absent in captures that predate SWR recording, where a hook then shows its first render. */
+  swr?: CapturedSwrEntry[];
   /** Absent in captures that predate page-state recording, which then assume a fresh profile. */
   page?: CapturedPageState;
   /** Absent in captures that predate request recording, which then leave request headers uncertain. */
@@ -707,6 +736,20 @@ export interface StaticObjectValue {
  */
 export type RenderEnvironment = "server" | "client";
 
+/**
+ * The component render that created an element (React's `_owner`: the fiber
+ * being reconciled while `jsx` ran) and, through `owner`, the render that
+ * created it in turn. A component recurses when it appears in its own chain,
+ * not when it merely nests inside another render of itself.
+ */
+export interface ElementOwner {
+  node: ComponentDefinition["node"];
+  /** Closure the component was created in: a factory's components share a node but not a scope. */
+  scope: Scope;
+  props: StaticValue;
+  owner: ElementOwner | null;
+}
+
 export interface StaticElementValue {
   kind: "element";
   type: StaticElementType;
@@ -714,6 +757,8 @@ export interface StaticElementValue {
   props: StaticObjectValue;
   location: SourceLocation | null;
   environment: RenderEnvironment | null;
+  /** Null for elements created at module scope or by a native caller. */
+  owner: ElementOwner | null;
 }
 
 export interface StaticPrimitiveValue {
@@ -741,9 +786,10 @@ export interface ClockReading {
   timerUnderrunMs: number;
 }
 
-/** Leading characters of an unknown string and, when fixed, its length; see `evaluate/primitive-shapes.ts`. */
+/** Leading characters of an unknown string, the least length it can have, and its length when fixed; see `evaluate/primitive-shapes.ts`. */
 export interface StringShape {
   prefix: string;
+  minLength: number;
   length: number | null;
 }
 

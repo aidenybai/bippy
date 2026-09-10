@@ -43,6 +43,7 @@ import {
   composeFlattenedPredicate,
   getAlternativeGuards,
   getBranchPredicate,
+  getGuardedTruthiness,
   guardedPredicate,
   recordBranchOrigin,
   recordDerivation,
@@ -1353,7 +1354,11 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
         areValuesEquivalent(left.props, right.props, depth + 1)
       );
     case "function":
-      return right.kind === "function" && left.node === right.node;
+      return (
+        right.kind === "function" &&
+        left.node === right.node &&
+        areScopesEquivalent(left.scope, right.scope, depth + 1)
+      );
     case "symbol":
       return right.kind === "symbol" && left.key === right.key;
     case "external":
@@ -1366,6 +1371,18 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
     default:
       return false;
   }
+};
+
+/** Closures of one function node are equivalent when every variable they capture is. */
+const areScopesEquivalent = (left: Scope, right: Scope, depth: number): boolean => {
+  if (left === right) return true;
+  if (depth >= MAX_EQUIVALENCE_DEPTH || left.bindings.size !== right.bindings.size) return false;
+  for (const [name, value] of left.bindings) {
+    const other = right.bindings.get(name);
+    if (!other || !areValuesEquivalent(value, other, depth + 1)) return false;
+  }
+  if (left.parent === null || right.parent === null) return left.parent === right.parent;
+  return areScopesEquivalent(left.parent, right.parent, depth);
 };
 
 const areElementTypesEquivalent = (left: StaticElementType, right: StaticElementType): boolean => {
@@ -1389,6 +1406,7 @@ const haveSameShape = (
   right: StaticUnknownPrimitiveValue,
 ): boolean =>
   left.stringShape?.prefix === right.stringShape?.prefix &&
+  left.stringShape?.minLength === right.stringShape?.minLength &&
   left.stringShape?.length === right.stringShape?.length &&
   (left.composition === right.composition ||
     isSameComposition(left.composition, right.composition)) &&
@@ -1545,7 +1563,7 @@ const getShapedTruthiness = (value: StaticUnknownPrimitiveValue): boolean | null
   if (range && (range.min > 0 || range.max < 0)) return true;
   const shape = value.stringShape;
   if (shape) {
-    if (shape.prefix.length > 0) return true;
+    if (shape.minLength > 0) return true;
     if (shape.length !== null) return shape.length > 0;
   }
   return null;
@@ -1556,7 +1574,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "primitive":
       return Boolean(value.value);
     case "branch":
-      return getAgreedTruthiness(value.alternatives);
+      return getAgreedTruthiness(value.alternatives) ?? getGuardedTruthiness(value);
     case "unknown-primitive":
       return getShapedTruthiness(value);
     case "unknown":
@@ -2228,13 +2246,20 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
   }
 };
 
-/** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */
-export const getStubDisplayName = (stub: StubComponent): string | null => {
+const getAssignedStubDisplayName = (stub: StubComponent): string | null => {
   const assigned = stub.properties?.get("displayName");
   return assigned?.kind === "primitive" && typeof assigned.value === "string"
     ? assigned.value
-    : stub.displayName;
+    : null;
 };
+
+/** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */
+export const getStubDisplayName = (stub: StubComponent): string | null =>
+  getAssignedStubDisplayName(stub) ?? stub.displayName;
+
+/** What `Component.displayName || Component.name` reads on a stub. */
+export const getStubOwnDisplayName = (stub: StubComponent): string | null =>
+  getAssignedStubDisplayName(stub) ?? (stub.isRenderNamed ? null : stub.displayName);
 
 export const describeElementType = (type: StaticElementType): string => {
   switch (type.kind) {

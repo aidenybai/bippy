@@ -66,7 +66,37 @@ export const reactVersionFixtures: ReactVersionFixture[] = [
     reactDOMPackageName: "react-dom-16-14",
   },
   { label: "17", major: 17, reactPackageName: "react-17", reactDOMPackageName: "react-dom-17" },
+  {
+    label: "18.0",
+    major: 18,
+    reactPackageName: "react-18-0",
+    reactDOMPackageName: "react-dom-18-0",
+  },
+  {
+    label: "18.2",
+    major: 18,
+    reactPackageName: "react-18-2",
+    reactDOMPackageName: "react-dom-18-2",
+  },
   { label: "18", major: 18, reactPackageName: "react-18", reactDOMPackageName: "react-dom-18" },
+  {
+    label: "19.0",
+    major: 19,
+    reactPackageName: "react-19-0",
+    reactDOMPackageName: "react-dom-19-0",
+  },
+  {
+    label: "19.1",
+    major: 19,
+    reactPackageName: "react-19-1",
+    reactDOMPackageName: "react-dom-19-1",
+  },
+  {
+    label: "19.2",
+    major: 19,
+    reactPackageName: "react-19-2",
+    reactDOMPackageName: "react-dom-19-2",
+  },
   { label: "19", major: 19, reactPackageName: "react", reactDOMPackageName: "react-dom" },
   {
     label: "canary",

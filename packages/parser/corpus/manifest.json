@@ -1381,7 +1381,26 @@
         "route": "/",
         "aliases": {
           "src": "src"
-        }
+        },
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "minimal-shared",
+          "es-toolkit",
+          "es-toolkit/*",
+          "dayjs",
+          "dayjs/*",
+          "simplebar-react",
+          "simplebar-core",
+          "@iconify/react",
+          "react-apexcharts"
+        ]
       }
     },
     {
@@ -1414,7 +1433,27 @@
       "settleMs": 6000,
       "static": {
         "rootDirectory": ".",
-        "route": "/dashboard"
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "mantine-react-table",
+          "@mantine/*",
+          "@tabler/icons-react",
+          "@tanstack/*",
+          "@floating-ui/*",
+          "react-remove-scroll",
+          "react-remove-scroll-bar",
+          "react-style-singleton",
+          "use-callback-ref",
+          "use-sidecar",
+          "react-textarea-autosize",
+          "react-number-format",
+          "react-chartjs-2",
+          "react-transition-group",
+          "@vercel/analytics",
+          "clsx",
+          "dayjs",
+          "dayjs/*"
+        ]
       }
     },
     {
@@ -1462,7 +1501,20 @@
         "route": "/login",
         "aliases": {
           "@": "src"
-        }
+        },
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "classnames",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "tss-react"
+        ],
+        "envFiles": [".env"]
       }
     },
     {
@@ -1470,7 +1522,7 @@
       "repository": "https://github.com/llorentegerman/react-admin-dashboard",
       "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
       "description": "react-admin-dashboard (CRA 3 / React 16, legacy ReactDOM.render, react-router-dom v5 Switch/Route, react-jss)",
-      "framework": "react-router",
+      "framework": "spa",
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx yarn@1.22.22 install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
@@ -1488,7 +1540,35 @@
         "rootDirectory": ".",
         "tsconfig": "jsconfig.json",
         "entry": "src/index.js",
-        "route": "/dashboard"
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "path-to-regexp",
+          "isarray",
+          "mini-create-react-context",
+          "tiny-invariant",
+          "resolve-pathname",
+          "value-equal",
+          "react-jss",
+          "jss",
+          "jss-*",
+          "css-jss",
+          "theming",
+          "hoist-non-react-statics",
+          "is-in-browser",
+          "shallow-equal",
+          "tiny-warning",
+          "react-display-name",
+          "@emotion/is-prop-valid",
+          "@babel/runtime/*",
+          "simple-flexbox",
+          "react-burger-menu",
+          "classnames",
+          "prop-types",
+          "react-is"
+        ]
       },
       "notes": "react-scripts 3 exits when its stdin closes unless CI=true; webpack 4 needs Node 16 (ERR_OSSL_EVP_UNSUPPORTED on newer OpenSSL), and the ambient yarn is a corepack shim that refuses to run under Node 16 (yarn 1 itself balks at the parent bippy package.json's packageManager field without SKIP_YARN_COREPACK_CHECK), so both commands go through npx."
     },
@@ -2197,7 +2277,12 @@
           "@mui/*",
           "@emotion/*",
           "@tanstack/*",
-          "highlight-words"
+          "@floating-ui/*",
+          "highlight-words",
+          "react-transition-group",
+          "next-plausible",
+          "@next/mdx",
+          "@mdx-js/react"
         ],
         "maxFiberCount": 20000
       },
@@ -2224,6 +2309,10 @@
           "@mantine/*",
           "@tabler/icons-react",
           "@tanstack/*",
+          "next-plausible",
+          "@next/mdx",
+          "@mdx-js/react",
+          "@floating-ui/*",
           "clsx",
           "dayjs"
         ],
@@ -3930,6 +4019,166 @@
       "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
     },
     {
+      "id": "magic-resume",
+      "repository": "https://github.com/joyceql/magic-resume",
+      "revision": "baec353da99cd0e2c857f814390ec406ffd1944c",
+      "description": "Magic Resume landing page (TanStack Start file routes with locale prefix, HeroUI, framer-motion, zustand, pnpm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/router.tsx",
+        "route": "/en"
+      },
+      "notes": "Not exact: the runtime capture (633 fibers) is a TanStack Start app, for which the parser has no framework model yet. The client entry is virtual (`virtual:tanstack-start-client-entry` from `@tanstack/start-plugin-core` expands to `hydrateRoot(document, <StrictMode><StartClient /></StrictMode>)`), `StartClient` awaits `hydrateStart()` which imports the app router through the `#tanstack-router-entry` alias and hydrates it from the server-serialized `window.$_TSR` payload before `RouterProvider` renders `Matches`/`MatchImpl`/`CatchBoundary` for `/en`. `src/router.tsx` only exports `getRouter()`, so the static render stops at `no-root-render`; a `tanstack-start` framework profile (virtual entries, router matching for the pinned route, hydration payload as a captured global) is the missing generic piece."
+    },
+    {
+      "id": "playground-macos",
+      "repository": "https://github.com/Renovamen/playground-macos",
+      "revision": "2c9e82dca487432ad9922ddf9b0a26aadeae81e5",
+      "description": "playground-macos login screen (Vite SPA, React 18, UnoCSS, unplugin-auto-import, zustand, pnpm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "aliases": {
+          "~": "src"
+        }
+      }
+    },
+    {
+      "id": "transform",
+      "repository": "https://github.com/ritz078/transform",
+      "revision": "ff7557939be351706f4dc6f71cc375e3bc64c225",
+      "description": "transform.tools SVG to JSX page (Next 10 pages router, React 17, Evergreen UI, Monaco, web workers, yarn 1)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn dev",
+      "env": {
+        "NODE_OPTIONS": "--openssl-legacy-provider"
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "evergreen-ui",
+          "ui-box",
+          "react-transition-group",
+          "downshift",
+          "formik",
+          "@monaco-editor/react"
+        ]
+      }
+    },
+    {
+      "id": "github-profile-readme-generator",
+      "repository": "https://github.com/rahuldkjain/github-profile-readme-generator",
+      "revision": "5ae90bfcbd7ab2f69809b094601f7975c32ae077",
+      "description": "GitHub Profile README Generator home page (Next 15 app router with Turbopack, React 19, zustand persist, framer-motion, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["framer-motion", "lucide-react"]
+      }
+    },
+    {
+      "id": "react-spreadsheet",
+      "repository": "https://github.com/iddan/react-spreadsheet",
+      "revision": "bb80b60b82981527d5172ce8268af61a517f7e46",
+      "description": "react-spreadsheet Controlled Storybook story rendered in the preview iframe (Storybook 8 webpack5, React 18, use-context-selector, yarn 1)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn storybook --ci --no-open",
+      "url": "http://localhost:6006/iframe.html?id=spreadsheet--controlled&viewMode=story",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/stories/Spreadsheet.stories.tsx",
+        "rootComponent": "Controlled",
+        "anchor": "Spreadsheet",
+        "externalPackageAllowList": ["use-context-selector"]
+      },
+      "notes": "The repository is a component library; its Storybook preview iframe is the only runnable React root. Both trees are anchored on the library's Spreadsheet component so Storybook's decorators stay outside the comparison."
+    },
+    {
+      "id": "markdown-to-image",
+      "repository": "https://github.com/gcui-art/markdown-to-image",
+      "revision": "41e4f2252f8588f16385cd170d2bd89db675b48b",
+      "description": "markdown-to-image editor demo (Vite SPA, React 18, react-markdown, Tailwind, npm; both checked-in lockfiles are stale)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx"
+      },
+      "notes": "partial by design: 169 of the 190 runtime fibers are the output of react-markdown (unified + micromark + remark-gfm + rehype-raw/parse5) compiling a ~3KB markdown string character by character; that pipeline exhausts the evaluator step budget even for a two-line document, so <Markdown> stays an opaque external boundary. Allow-listing `react-markdown` alone leaves `toJsxRuntime()` unknown; adding `hast-util-to-jsx-runtime` yields 695 static fibers with 153 unknowns and 92 repeats over an opaque `unified().runSync()` result (256 of an incomplete state space enumerated, capture outside it). Every fiber outside <Markdown> matches."
+    },
+    {
+      "id": "rapidraw",
+      "repository": "https://github.com/CyberTimon/RapidRAW",
+      "revision": "0da0182ff8a63ad64c1b2e3c1cb99e0ff3efd83e",
+      "description": "RapidRAW photo editor renderer (Tauri 2 + Vite SPA, React 19, zustand, Clerk, npm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:1420/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Static-only: RapidRAW is a Tauri 2 desktop app with no web target. Served by Vite in a plain browser, the first render throws `Cannot read properties of undefined (reading 'metadata')` from `@tauri-apps/api/window` (`getCurrentWindow()` reads `window.__TAURI_INTERNALS__` in `App.tsx` and `window/TitleBar.tsx`) before React commits a root, and the UI is driven by 96 distinct `invoke()` commands into the Rust/wgpu backend (settings, folder tree, thumbnails, GPU image processing), so no browser capture of the desktop UI exists to compare against."
+    },
+    {
+      "id": "react-video-editor",
+      "repository": "https://github.com/designcombo/react-video-editor",
+      "revision": "e2469bbffff8c5581e85f601d29fa77eab90468b",
+      "description": "React Video Editor home page (Next 16 app router, React 19, @designcombo timeline/state, Remotion player, zustand, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      },
+      "notes": "Not exact: three opaque provider boundaries (`NextThemesProvider` from next-themes, `QueryClientProvider` from @tanstack/react-query, `PanelGroup`/`Panel` from react-resizable-panels) hide 853 of the 1000 runtime fibers, and the rest of the page (Radix dialogs/popovers/tooltips, lucide icons, zustand stores, Remotion player, @designcombo timeline) yields 129 symbolic inputs and 1916 guards, so the 341,835,808-state space is only enumerated to 256 states and the capture matches outside that set. Allow-listing `@radix-ui/*`, `lucide-react`, `next-themes` and `@tanstack/react-query` for analysis did not finish the static render within 30 minutes."
+    },
+    {
       "id": "create-vite",
       "repository": "https://github.com/vitejs/vite",
       "revision": "e6f6b3e3119256daa837b2dc399058c8aa45b470",
@@ -5425,6 +5674,264 @@
           "@react-pdf/*",
           "@vercel/analytics",
           "@vercel/analytics/*"
+        ]
+      }
+    },
+    {
+      "id": "fragments",
+      "repository": "https://github.com/e2b-dev/fragments",
+      "revision": "b5e627dc89b96ca0d9580bcd5ce3d7afba5f3290",
+      "description": "E2B Fragments chat page (Next 14 app router + Turbopack, shadcn/ui + Radix, next-themes, Vercel AI SDK useObject, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "usehooks-ts",
+          "@vercel/analytics",
+          "@ai-sdk/react",
+          "ai",
+          "swr",
+          "react-textarea-autosize"
+        ]
+      }
+    },
+    {
+      "id": "morphic",
+      "repository": "https://github.com/miurla/morphic",
+      "revision": "be62d2a85c0397c4b3cb3315cd3a5c56a44f6425",
+      "description": "Morphic answer-engine home page (Next 16 app router, shadcn/ui + Radix, Drizzle over a local PostgreSQL container, guest mode without Supabase, bun)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": [
+        "printf 'DATABASE_URL=postgresql://postgres:postgres@localhost:5453/morphic\\n' > .env.local",
+        "bun run migrate"
+      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-morphic-pg 5453 morphic"],
+      "dev": "bun run dev",
+      "env": {
+        "OPENAI_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "GOOGLE_GENERATIVE_AI_API_KEY": "",
+        "OPENAI_COMPATIBLE_API_KEY": "",
+        "AI_GATEWAY_API_KEY": "",
+        "OLLAMA_BASE_URL": ""
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "notes": "Provider keys are pinned empty so the model selector does not depend on host credentials or live provider model lists.",
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env.local"],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "@vercel/analytics",
+          "@ai-sdk/react",
+          "ai",
+          "throttleit",
+          "react-textarea-autosize",
+          "react-remove-scroll"
+        ]
+      }
+    },
+    {
+      "id": "langchain-nextjs-template",
+      "repository": "https://github.com/langchain-ai/langchain-nextjs-template",
+      "revision": "1565feeb96e3c38a0f9332a64920ce6a11d84a70",
+      "description": "LangChain + Next.js template chat page (Next 15 app router, shadcn/ui + Radix, nuqs, Vercel AI SDK useChat, yarn)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "nuqs",
+          "sonner",
+          "next-themes",
+          "use-stick-to-bottom",
+          "@ai-sdk/react",
+          "ai"
+        ]
+      }
+    },
+    {
+      "id": "rustpad",
+      "repository": "https://github.com/ekzhang/rustpad",
+      "revision": "54e4a9383c84d7317af42a7ddb177ce8bcba058d",
+      "description": "Rustpad collaborative editor (Vite SPA, Chakra UI, Monaco, wasm-bindgen client, Rust websocket server, npm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/rustpad-setup.sh\"",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/rustpad-server.sh\""],
+      "dev": "npm run dev -- --port 5173 --strictPort",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "framer-motion",
+          "use-local-storage-state",
+          "react-icons",
+          "@monaco-editor/*"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-notion-starter-kit",
+      "repository": "https://github.com/transitive-bullshit/nextjs-notion-starter-kit",
+      "revision": "379c735bc3b4c1d9f36f74311a503b41e78cd2cb",
+      "description": "Next.js Notion Starter Kit home page (Next 16 pages router, react-notion-x over the public Notion API via getStaticProps, pnpm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": [
+        "grep -q user-agent lib/notion-api.ts || perl -0pi -e \"s/apiBaseUrl: process.env.NOTION_API_BASE_URL\\n/apiBaseUrl: process.env.NOTION_API_BASE_URL,\\n  ofetchOptions: { headers: { 'user-agent': 'Mozilla\\\/5.0' } }\\n/\" lib/notion-api.ts"
+      ],
+      "dev": "npx -y pnpm@10.29.3 dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "capturedGlobals": ["__NEXT_DATA__"],
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "react-notion-x",
+          "notion-utils",
+          "normalize-url",
+          "memoize",
+          "is-url-superb",
+          "@fisch0920/use-dark-mode",
+          "use-persisted-state",
+          "react-use",
+          "react-body-classname",
+          "react-side-effect"
+        ]
+      }
+    },
+    {
+      "id": "form-builder",
+      "repository": "https://github.com/hasanharman/form-builder",
+      "revision": "cc595f5fe74b353a9eaa9e0ad8d8ea4a0d45e50e",
+      "description": "Shadcn Form Builder landing page (Next 16 app router with webpack, shadcn/ui + Radix, next-themes, next-view-transitions, framer-motion, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/form-builder-setup.sh\""],
+      "env": {
+        "NEXT_PUBLIC_POSTHOG_KEY": "phc_bippy_corpus_placeholder",
+        "NEXT_PUBLIC_POSTHOG_HOST": "http://127.0.0.1:9"
+      },
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "next-view-transitions",
+          "nextjs-toploader",
+          "sonner",
+          "@vercel/analytics",
+          "posthog-js",
+          "@next/third-parties",
+          "react-tweet",
+          "react-icons",
+          "react-icons/*",
+          "vaul",
+          "framer-motion"
+        ]
+      }
+    },
+    {
+      "id": "shadcn-ui-sidebar",
+      "repository": "https://github.com/salimi-my/shadcn-ui-sidebar",
+      "revision": "25a8c1295514fe1fc923997b9c4dac9a84453559",
+      "description": "shadcn/ui sidebar dashboard demo (Next 14 app router, shadcn/ui + Radix, zustand persisted sidebar store, next-themes, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "zustand"
+        ]
+      }
+    },
+    {
+      "id": "pagescms",
+      "repository": "https://github.com/pagescms/pagescms",
+      "revision": "69d0215298e4055fd05ccbb428c9bcc881fab448",
+      "description": "Pages CMS sign-in page (Next 16 app router, shadcn/ui + Base UI, better-auth, Drizzle over a local PostgreSQL container, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/pagescms-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-pagescms-pg 5454 pagescms"],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/sign-in",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/sign-in",
+        "envFiles": [".env.local"],
+        "externalPackageAllowList": [
+          "@base-ui/*",
+          "radix-ui",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "swr"
         ]
       }
     }

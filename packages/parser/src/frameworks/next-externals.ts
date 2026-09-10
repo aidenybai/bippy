@@ -121,6 +121,7 @@ const IMAGE_ONLY_PROPS: ReadonlySet<string> = new Set([
 ]);
 
 const FORM_ONLY_PROPS: ReadonlySet<string> = new Set(["replace", "scroll", "prefetch", "ref"]);
+const CHILDREN_PROP: ReadonlySet<string> = new Set(["children"]);
 
 const LINK_STATUS_CONTEXT: ContextDefinition = {
   name: "LinkStatusContext",
@@ -235,11 +236,102 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
 
 /**
  * `next/head` renders its children into `<head>` through a `SideEffect` that
- * returns null; before Next 12.2 it was an anonymous class React names `_class`.
+ * returns null; before Next 12.2 it was an anonymous class React names `_class`
+ * (`class _default` in the CommonJS output before 11.1).
  */
 const HEAD_STUB: StubComponent = {
   displayName: "Head",
   render: () => stubElement(emptyStub("SideEffect"), {}),
+};
+
+const classHeadStub = (className: string): StubComponent => ({
+  displayName: "Head",
+  render: () =>
+    stubElement({ displayName: className, tag: ClassComponentTag, render: () => NULL_VALUE }, {}),
+});
+
+const createHeadStub = ({ version }: NextModelOptions): StubComponent =>
+  version === null || isVersionAtLeast(version, "12.2.0")
+    ? HEAD_STUB
+    : classHeadStub(isVersionAtLeast(version, "11.1.0") ? "_class" : "_default");
+
+/**
+ * `next/document` (next/dist/pages/_document.js) as the server renders it:
+ * `<Head>` starts with `defaultHead()`'s metas, `<Main>` is the
+ * `next-js-internal-body-render-target` the renderer replaces with the
+ * `<div id="__next">` the page mounts into, and `<NextScript>`'s scripts are not
+ * DOM the page's code sees rendered.
+ */
+const DOCUMENT_HTML_STUB: StubComponent = {
+  displayName: "Html",
+  render: (props) => element({ kind: "host", tagName: "html" }, props),
+};
+
+const DOCUMENT_HEAD_STUB: StubComponent = {
+  displayName: "Head",
+  render: (props) =>
+    element(
+      { kind: "host", tagName: "head" },
+      {
+        kind: "object",
+        entries: [
+          ...omitProps(props, CHILDREN_PROP).entries,
+          {
+            kind: "property",
+            key: "children",
+            value: listValue([
+              hostElement("meta", { charSet: primitiveValue("utf-8") }),
+              hostElement("meta", {
+                name: primitiveValue("viewport"),
+                content: primitiveValue("width=device-width"),
+              }),
+              getObjectProperty(props, "children"),
+            ]),
+          },
+        ],
+      },
+    ),
+};
+
+const DOCUMENT_MAIN_STUB: StubComponent = {
+  displayName: "Main",
+  render: () => hostElement("div", { id: primitiveValue("__next") }),
+};
+
+const NEXT_SCRIPT_STUB = emptyStub("NextScript");
+
+export const DEFAULT_DOCUMENT_STUB: StubComponent = {
+  displayName: "Document",
+  tag: ClassComponentTag,
+  render: () =>
+    stubElement(DOCUMENT_HTML_STUB, {
+      children: listValue([
+        stubElement(DOCUMENT_HEAD_STUB, {}),
+        hostElement("body", {
+          children: listValue([
+            stubElement(DOCUMENT_MAIN_STUB, {}),
+            stubElement(NEXT_SCRIPT_STUB, {}),
+          ]),
+        }),
+      ]),
+    }),
+};
+
+const documentValue = (importedName: string): StaticValue | null => {
+  switch (importedName) {
+    case "default":
+      return stubValue(DEFAULT_DOCUMENT_STUB);
+    case "Html":
+      return stubValue(DOCUMENT_HTML_STUB);
+    case "Head":
+      return stubValue(DOCUMENT_HEAD_STUB);
+    case "Main":
+      return stubValue(DOCUMENT_MAIN_STUB);
+    case "NextScript":
+      return stubValue(NEXT_SCRIPT_STUB);
+    default:
+      return null;
+  }
 };
 
 const IMAGE_ELEMENT_STUB: StubComponent = {
@@ -375,15 +467,6 @@ const FORWARD_REF_FORM_STUB: StubComponent = {
   tag: ForwardRefTag,
   render: formElement,
 };
-
-const CLASS_HEAD_STUB: StubComponent = {
-  displayName: "Head",
-  render: () =>
-    stubElement({ displayName: "_class", tag: ClassComponentTag, render: () => NULL_VALUE }, {}),
-};
-
-const hasClassSideEffect = (options: NextModelOptions): boolean =>
-  options.version !== null && !isVersionAtLeast(options.version, "12.2.0");
 
 /**
  * `next/script` commits a `<script>` only for `beforeInteractive` in the App
@@ -651,7 +734,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
     navigation: (importedName) => appNavigationValue(importedName, url, params),
     version: options.nextIntlVersion,
   });
-  const head = hasClassSideEffect(options) ? CLASS_HEAD_STUB : HEAD_STUB;
+  const head = createHeadStub(options);
   const images = imageStubs(options, head);
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {
@@ -672,6 +755,8 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return importedName === "default" ? images.legacyImage : null;
       case "next/head":
         return importedName === "default" ? stubValue(head) : null;
+      case "next/document":
+        return documentValue(importedName);
       case "next/script":
         return importedName === "default" ? stubValue(scriptStub(options.kind)) : null;
       case "next/dynamic":

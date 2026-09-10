@@ -205,6 +205,97 @@ describe("build.assetsInlineLimit", () => {
   });
 });
 
+describe("unplugin-auto-import", () => {
+  const AUTO_IMPORT_CONFIG = [
+    "import react from '@vitejs/plugin-react';",
+    "import autoImport from 'unplugin-auto-import/vite';",
+    "export default {",
+    "  plugins: [",
+    "    react(),",
+    "    [",
+    "      autoImport({",
+    "        imports: ['react', { './src/format': ['format', ['format', 'formatNumber']] }],",
+    "        dirs: ['src/hooks', 'src/components/**'],",
+    "        ignore: ['useIgnored'],",
+    "      }),",
+    "    ],",
+    "    false,",
+    "  ],",
+    "};",
+    "",
+  ].join("\n");
+
+  const writeAutoImportProject = (project: FixtureProject): void => {
+    project.write("vite.config.ts", AUTO_IMPORT_CONFIG);
+    project.write(
+      "src/hooks/use-counter.ts",
+      "export const useCounter = () => useState(1);\nexport const useIgnored = () => 0;\n",
+    );
+    project.write("src/components/Badge/index.tsx", "export default () => <b />;\n");
+    project.write(
+      "src/components/status-pill.tsx",
+      "export default (count: number) => `${count}`;\n",
+    );
+    project.write("src/components/theme.css", ".theme {}\n");
+    project.write("src/format.ts", "export const format = (count: number) => `#${count}`;\n");
+  };
+
+  it("resolves preset, mapped, aliased and directory-scanned names for transformed files", () => {
+    const project = createProject();
+    writeAutoImportProject(project);
+    const config = project.load();
+    const appFile = path.join(project.rootDirectory, "src/app.tsx");
+    expect(config.findAutoImport(appFile, "useState")).toEqual({
+      specifier: "react",
+      imported: { kind: "named", name: "useState" },
+    });
+    expect(config.findAutoImport(appFile, "formatNumber")).toEqual({
+      specifier: "./src/format",
+      imported: { kind: "named", name: "format" },
+    });
+    expect(config.findAutoImport(appFile, "useCounter")).toEqual({
+      specifier: path.join(project.rootDirectory, "src/hooks/use-counter.ts"),
+      imported: { kind: "named", name: "useCounter" },
+    });
+    expect(config.findAutoImport(appFile, "Badge")).toEqual({
+      specifier: path.join(project.rootDirectory, "src/components/Badge/index.tsx"),
+      imported: { kind: "default" },
+    });
+    expect(config.findAutoImport(appFile, "statusPill")).toEqual({
+      specifier: path.join(project.rootDirectory, "src/components/status-pill.tsx"),
+      imported: { kind: "default" },
+    });
+    expect(config.findAutoImport(appFile, "useIgnored")).toBeNull();
+    expect(config.findAutoImport(appFile, "useUnknown")).toBeNull();
+  });
+
+  it("leaves files the plugin does not transform alone", () => {
+    const project = createProject();
+    writeAutoImportProject(project);
+    const config = project.load();
+    expect(
+      config.findAutoImport(path.join(project.rootDirectory, "src/theme.css"), "useState"),
+    ).toBeNull();
+    expect(
+      config.findAutoImport(
+        path.join(project.rootDirectory, "node_modules/react/index.js"),
+        "useState",
+      ),
+    ).toBeNull();
+  });
+
+  it("injects nothing when the plugin's options are not statically known", () => {
+    const project = createProject();
+    project.write(
+      "vite.config.ts",
+      "import autoImport from 'unplugin-auto-import/vite';\nexport default { plugins: [autoImport({ imports: ['react'], include: [/\\.tsx$/] })] };\n",
+    );
+    expect(
+      project.load().findAutoImport(path.join(project.rootDirectory, "src/app.tsx"), "useState"),
+    ).toBeNull();
+  });
+});
+
 describe("transformIndexHtml hooks", () => {
   const context = { path: "/", filename: "index.html", server: { config: {} }, originalUrl: "/" };
   const appending = (marker: string) => (html: string) => `${html}${marker}`;

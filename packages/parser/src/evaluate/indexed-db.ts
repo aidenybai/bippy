@@ -6,6 +6,7 @@ import type {
   StaticValue,
 } from "../types.js";
 import { createErrorValue } from "./errors.js";
+import { createEventTarget, dispatchEvent, type EventTargetModel } from "./event-target-model.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -62,11 +63,6 @@ export interface IndexedDbHost {
   call: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   location: SourceLocation | null;
-}
-
-interface EventTargetModel {
-  value: StaticObjectValue;
-  listeners: Map<string, StaticValue[]>;
 }
 
 interface TransactionModel extends EventTargetModel {
@@ -126,47 +122,6 @@ const propertyEntries = (record: Record<string, StaticValue>): StaticObjectEntry
 
 const domError = (message: string, location: SourceLocation | null): StaticValue =>
   createErrorValue("Error", [primitiveValue(message)], location);
-
-const createEventTarget = (record: Record<string, StaticValue>): EventTargetModel => {
-  const listeners = new Map<string, StaticValue[]>();
-  const value = objectFromRecord({
-    ...record,
-    addEventListener: nativeFunction("addEventListener", ([type, listener]) => {
-      const typeName = toKnownString(type);
-      if (typeName === null || !listener) return UNDEFINED_VALUE;
-      const registered = listeners.get(typeName) ?? [];
-      if (!registered.includes(listener)) listeners.set(typeName, [...registered, listener]);
-      return UNDEFINED_VALUE;
-    }),
-    removeEventListener: nativeFunction("removeEventListener", ([type, listener]) => {
-      const typeName = toKnownString(type);
-      if (typeName === null || !listener) return UNDEFINED_VALUE;
-      listeners.set(
-        typeName,
-        (listeners.get(typeName) ?? []).filter((registered) => registered !== listener),
-      );
-      return UNDEFINED_VALUE;
-    }),
-  });
-  return { value, listeners };
-};
-
-const dispatchEvent = (
-  host: IndexedDbHost,
-  target: EventTargetModel,
-  type: string,
-  eventProperties: Record<string, StaticValue> = {},
-): void => {
-  const event = objectFromRecord({
-    type: primitiveValue(type),
-    target: target.value,
-    currentTarget: target.value,
-    ...eventProperties,
-  });
-  const handler = getObjectProperty(target.value, `on${type}`);
-  if (isNullish(handler) !== true) host.call(handler, [event]);
-  for (const listener of target.listeners.get(type) ?? []) host.call(listener, [event]);
-};
 
 const createRequest = (
   source: StaticValue,

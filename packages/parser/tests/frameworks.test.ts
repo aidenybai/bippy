@@ -229,6 +229,15 @@ describe("next app router", () => {
     );
   });
 
+  it("renders a server element once when a client component places it at several positions", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/mirror" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Mirror>\n\s+<div>\n\s+<section>\n\s+<ul>\n\s+<li> key="alpha"\n\s+<li> key="beta"\n\s+<aside>\n\s+<ul>\n\s+<li> key="alpha"\n\s+<li> key="beta"$/,
+    );
+    expect(tree).not.toContain("branch");
+  });
+
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
@@ -585,6 +594,22 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
   });
 
+  it("reports the matched page's route pattern as useRouter().pathname", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
+    expect(tree).toMatch(/<p>\n\s+"at "\n\s+"\/posts\/\[id\]"/);
+  });
+
+  it("mounts the page into the DOM its _document renders, so its markup is queryable", async () => {
+    const { result, tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/layers",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).not.toContain("<Html>");
+    expect(tree).toMatch(/<main>\n\s+<p>\n\s+<Portal>\n\s+<span>/);
+    expect(result.stats.branchCount).toBe(0);
+  });
+
   it("reports the matched page file's route as useRouter().pathname", async () => {
     const post = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
     expect(post.tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"\n\s+<em>/);
@@ -815,6 +840,13 @@ describe("next pages router", () => {
       /<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<ImageElement>\n\s+<img>\n\s+<noscript>/,
     );
     expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
+  });
+
+  it("follows the installed next version: before 11.1 the head side effect is `class _default`", async () => {
+    const { pattern, tree } = await renderPagesWithNext("10.2.3", "/media");
+    expect(tree).toMatch(/<Head>\n\s+<_default>\n\s+<Image>/);
+    expect(tree).not.toContain("<_class>");
+    expect(findFiberTags(pattern, "_default")).toEqual(["ClassComponent", "ClassComponent"]);
   });
 
   it("splices out the client bootstrap around _app: StrictMode, the head commit hook and the route announcer portal", () => {

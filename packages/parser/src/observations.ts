@@ -10,6 +10,7 @@ import type {
   CapturedQuery,
   CapturedRouteMatch,
   CapturedRouterState,
+  CapturedSwrEntry,
   CapturedValue,
   RuntimeObservations,
 } from "./types.js";
@@ -107,6 +108,14 @@ const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
   hasCriticalCss: z.boolean().optional(),
 });
 
+const capturedSwrEntrySchema: z.ZodType<CapturedSwrEntry> = z.object({
+  key: z.string(),
+  data: capturedValueSchema.optional(),
+  error: capturedValueSchema.optional(),
+  isValidating: z.boolean().optional(),
+  isLoading: z.boolean().optional(),
+});
+
 const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
   cookie: z.string(),
   name: z.string().optional(),
@@ -132,6 +141,7 @@ const observationsSchema: z.ZodType<RuntimeObservations, unknown> = z.object({
   lingui: capturedLinguiCatalogSchema.optional(),
   router: capturedRouterStateSchema.optional(),
   stores: z.array(capturedValueSchema).optional(),
+  swr: z.array(capturedSwrEntrySchema).optional(),
   page: capturedPageStateSchema.optional(),
   request: capturedRequestSchema.optional(),
 });

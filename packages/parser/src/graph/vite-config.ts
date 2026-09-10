@@ -6,11 +6,16 @@ import { bytesValue } from "../evaluate/typed-arrays.js";
 import {
   FALSE_VALUE,
   getTruthiness,
+  hasDefiniteItems,
   isNullish,
   objectFromRecord,
   primitiveValue,
   UNDEFINED_VALUE,
 } from "../evaluate/values.js";
+import {
+  createAutoImportResolver,
+  getAutoImportPluginOptions,
+} from "../libraries/unplugin-auto-import.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
 import type { ProcessEnvironment, ProjectContext, StaticValue } from "../types.js";
 import { ModuleGraph } from "./module-graph.js";
@@ -42,6 +47,8 @@ export interface ViteConfig {
   mode: string;
   /** `build.assetsInlineLimit` applied to an asset: Vite's decision, or null when the config leaves it undecided. */
   shouldInlineAsset: (filePath: string, content: Buffer) => boolean | null;
+  /** The import a configured `unplugin-auto-import` plugin injects for a free identifier. */
+  findAutoImport: ProjectContext["findAutoImport"];
 }
 
 export interface ViteConfigOptions {
@@ -154,12 +161,21 @@ const decideFromCallbackResult = (result: StaticValue, content: Buffer): boolean
   return isResultNullish ? shouldInlineByDefault(content) : getTruthiness(result);
 };
 
+/** The configured plugins in order, nested arrays flattened and falsy entries dropped as Vite's `resolvePlugins` does. */
+const flattenPlugins = (plugins: StaticValue): StaticValue[] =>
+  plugins.kind === "list" && hasDefiniteItems(plugins)
+    ? plugins.items.flatMap(flattenPlugins)
+    : getTruthiness(plugins) === false
+      ? []
+      : [plugins];
+
 export const defaultViteConfig = (rootDirectory: string, mode = DEV_SERVER_MODE): ViteConfig => ({
   root: rootDirectory,
   publicDir: path.resolve(rootDirectory, DEFAULT_PUBLIC_DIRECTORY),
   base: DEFAULT_BASE,
   mode,
   shouldInlineAsset: (_filePath, content) => shouldInlineByDefault(content),
+  findAutoImport: () => null,
 });
 
 export const loadViteConfig = ({
@@ -240,11 +256,16 @@ export const loadViteConfig = ({
         return null;
     }
   };
+  const autoImportPlugin = flattenPlugins(readField(config, "plugins"))
+    .map(getAutoImportPluginOptions)
+    .find((options) => options !== null);
   return {
     root,
     publicDir: resolvePublicDir(readField(config, "publicDir"), root),
     base: resolveDevBase(readField(config, "base")),
     mode,
     shouldInlineAsset: (filePath, content) => decideFromLimit(assetsInlineLimit, filePath, content),
+    findAutoImport:
+      (autoImportPlugin && createAutoImportResolver(autoImportPlugin, root, graph)) ?? (() => null),
   };
 };
