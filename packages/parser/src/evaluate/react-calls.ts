@@ -10,6 +10,7 @@ import type {
   ReactApi,
   SourceLocation,
   StaticElementType,
+  StaticElementValue,
   StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticValue,
@@ -308,27 +309,43 @@ const mapUncertainChildren = (
   };
 };
 
+/**
+ * `cloneElement` only reads `type`, `key` and `props` off its argument, so a
+ * plain object clones into an element too (react-i18next's `Trans` clones a
+ * `{ dummy: true, children }` placeholder to collect its rendered nodes).
+ */
 const cloneElement = (
   element: StaticValue,
   props: StaticValue | undefined,
   children: StaticValue[],
   location: SourceLocation | null,
 ): StaticValue => {
-  if (element.kind !== "element")
+  if (element.kind !== "element" && element.kind !== "object")
     return unknownValue(`cloneElement of ${describeValue(element)}`, location);
+  const source: StaticElementValue =
+    element.kind === "element"
+      ? element
+      : {
+          kind: "element",
+          type: toElementType(getObjectProperty(element, "type"), null),
+          key: toElementKey(getObjectProperty(element, "key")),
+          props: objectValue(propsFromValue(getObjectProperty(element, "props"), false).entries),
+          location,
+          environment: null,
+        };
   const { entries, key } = propsFromValue(props, true);
-  const merged = objectValue([{ kind: "spread", value: element.props }, ...entries]);
+  const merged = objectValue([{ kind: "spread", value: source.props }, ...entries]);
   if (children.length === 1)
     merged.entries.push({ kind: "property", key: "children", value: children[0] });
   if (children.length > 1)
     merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
   return {
     kind: "element",
-    type: element.type,
-    key: toElementKey(key) ?? element.key,
+    type: source.type,
+    key: toElementKey(key) ?? source.key,
     props: merged,
-    location: element.location,
-    environment: element.environment,
+    location: source.location,
+    environment: source.environment,
   };
 };
 

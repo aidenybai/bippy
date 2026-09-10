@@ -212,6 +212,8 @@ export interface ComponentDefinition {
   /** Set when the component is a `bind` result; each `bind` call is a distinct component type. */
   boundArgs?: StaticValue[];
   boundThis?: StaticValue;
+  /** The `apply` trap of a `Proxy` over the function: React calls the proxy, so the trap renders in the function's place. */
+  applyTrap?: StaticValue;
   /** Reached by server code through a `"use client"` module's export. */
   isClientReference: boolean;
 }
@@ -567,6 +569,31 @@ export interface RootObservations extends CapturedQueryCaches {
   stores?: CapturedValue[];
 }
 
+/** What a `Date` reports about one instant: the local and UTC calendar getters, in the capturing browser's time zone. */
+export interface CapturedCalendarFields {
+  year: number;
+  month: number;
+  date: number;
+  day: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  milliseconds: number;
+}
+
+export interface CapturedClockTime {
+  time: number;
+  timezoneOffset: number;
+  local: CapturedCalendarFields;
+  utc: CapturedCalendarFields;
+}
+
+/** The wall clock as the page's first script found it and as the snapshot left it: every `new Date()` the page took lies between. */
+export interface CapturedClockWindow {
+  start: CapturedClockTime;
+  end: CapturedClockTime;
+}
+
 /** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
 export interface CapturedPageState {
   cookie: string;
@@ -587,6 +614,8 @@ export interface CapturedPageState {
   cssSupports?: Record<string, boolean>;
   /** `matchMedia(query).matches` answers the page's scripts received; absent in older captures. */
   mediaQueries?: Record<string, boolean>;
+  /** Absent in captures taken before it was recorded. */
+  clock?: CapturedClockWindow;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
 }

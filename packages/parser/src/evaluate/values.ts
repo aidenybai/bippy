@@ -11,6 +11,7 @@ import type {
   CapturedValue,
   FunctionLikeNode,
   JsonValue,
+  NumberRange,
   Scope,
   SourceLocation,
   StaticAccessor,
@@ -963,6 +964,24 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
   return other.value === undefined ? null : false;
 };
 
+/** Whether a string of `value`'s shape or composition can read exactly `text`. */
+const mayStringShapeRead = (value: StaticUnknownPrimitiveValue, text: string): boolean => {
+  const shape = value.stringShape;
+  if (shape && (!text.startsWith(shape.prefix) || (shape.length !== null && text.length !== shape.length))) {
+    return false;
+  }
+  const composition = value.composition;
+  if (
+    composition &&
+    (text.length < composition.prefix.length + composition.suffix.length ||
+      !text.startsWith(composition.prefix) ||
+      !text.endsWith(composition.suffix))
+  ) {
+    return false;
+  }
+  return true;
+};
+
 /**
  * A primitive of known type is never identical to a primitive of another
  * type, to `null`/`undefined`, or to a reference value.
@@ -970,7 +989,8 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
 const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boolean | null => {
   if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
   if (other.kind === "primitive") {
-    return typeof other.value === typed.primitiveType ? null : false;
+    if (typeof other.value !== typed.primitiveType) return false;
+    return typeof other.value === "string" && !mayStringShapeRead(typed, other.value) ? false : null;
   }
   if (other.kind === "unknown-primitive") {
     return other.primitiveType === "any" || other.primitiveType === typed.primitiveType
@@ -1771,9 +1791,22 @@ export const getIndefiniteItemValue = (item: StaticValue): StaticValue =>
       ? getIndefiniteItemValue(item.value)
       : item;
 
+/** Bounds on how many array slots the items occupy: a repeat spans its count, an optional zero or one. */
+const getItemCountRange = (items: StaticValue[]): NumberRange =>
+  items.reduce<NumberRange>(
+    (range, item) =>
+      item.kind === "repeat"
+        ? { min: range.min + (item.count?.min ?? 0), max: range.max + (item.count?.max ?? Infinity) }
+        : { min: range.min + (item.kind === "optional" ? 0 : 1), max: range.max + 1 },
+    { min: 0, max: 0 },
+  );
+
 export const getListLength = (list: StaticListValue): StaticValue =>
   list.items.some(isIndefiniteItem)
-    ? unknownPrimitiveValue("number", "length of a partially known list")
+    ? {
+        ...unknownPrimitiveValue("number", "length of a partially known list"),
+        numberRange: getItemCountRange(list.items),
+      }
     : primitiveValue(list.items.length);
 
 const MAX_LIST_GROWTH = 1_000;

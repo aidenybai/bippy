@@ -5,17 +5,106 @@ import type {
   StringComposition,
   StringShape,
 } from "../types.js";
+import { mayContainText, mayRegExpMatch, toRegExp } from "./regexp-literals.js";
 import {
   describeValue,
   distributeBinary,
   hasDefiniteItems,
+  listValue,
   mapValue,
+  NULL_VALUE,
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
 
 const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
+
+/** Characters `ToString` of any number is drawn from: digits, sign, decimal point, exponent, `Infinity`, `NaN`. */
+const NUMBER_TEXT_CHARACTERS: ReadonlySet<string> = new Set("0123456789.+-eInfinityNaN");
+const BOOLEAN_TEXT_CHARACTERS: ReadonlySet<string> = new Set("truefalse");
+
+/**
+ * Characters the string coercion of `value` may contain, when its type or
+ * composition bounds them (`${count} items` is digits and the literal text);
+ * null when any character may occur.
+ */
+export const getStringAlphabet = (value: StaticValue): ReadonlySet<string> | null => {
+  if (value.kind === "primitive") {
+    return typeof value.value === "symbol" ? null : new Set(String(value.value));
+  }
+  if (value.kind === "branch") {
+    const alphabets = value.alternatives.map(getStringAlphabet);
+    return alphabets.every((alphabet) => alphabet !== null)
+      ? new Set(alphabets.flatMap((alphabet) => [...alphabet]))
+      : null;
+  }
+  if (value.kind !== "unknown-primitive") return null;
+  if (value.primitiveType === "number") return NUMBER_TEXT_CHARACTERS;
+  if (value.primitiveType === "boolean") return BOOLEAN_TEXT_CHARACTERS;
+  if (value.primitiveType !== "string" || !value.composition) return null;
+  const source = getStringAlphabet(value.composition.source);
+  return source && new Set([...value.composition.prefix, ...source, ...value.composition.suffix]);
+};
+
+/** Methods that turn a string pattern into a RegExp before searching. */
+const REGEXP_SEARCH_METHODS = new Set(["match", "matchAll", "search"]);
+/** Methods that dispatch to a RegExp pattern's own search instead of its text. */
+const REGEXP_ACCEPTING_METHODS = new Set([
+  ...REGEXP_SEARCH_METHODS,
+  "replace",
+  "replaceAll",
+  "split",
+]);
+
+/** Whether a string drawn from `alphabet` can contain a match of `pattern`; an unknown pattern may. */
+const mayMatchPattern = (
+  name: string,
+  pattern: StaticValue | undefined,
+  alphabet: ReadonlySet<string>,
+): boolean => {
+  if (pattern === undefined) return true;
+  if (pattern.kind === "regexp") {
+    if (!REGEXP_ACCEPTING_METHODS.has(name)) return true;
+    const regExp = toRegExp(pattern);
+    return regExp === null || mayRegExpMatch(regExp, alphabet);
+  }
+  if (pattern.kind !== "primitive" || typeof pattern.value === "symbol") return true;
+  const text = String(pattern.value);
+  if (!REGEXP_SEARCH_METHODS.has(name)) return mayContainText(text, alphabet);
+  const regExp = toRegExp({ kind: "regexp", pattern: text, flags: "", lastIndex: 0 });
+  return regExp === null || mayRegExpMatch(regExp, alphabet);
+};
+
+/** A search over a dynamic string whose alphabet rules the pattern out: the result of finding nothing. */
+const searchUnmatchedString = (
+  receiver: StaticUnknownPrimitiveValue,
+  name: string,
+  pattern: StaticValue | undefined,
+  limit: StaticValue | undefined,
+): StaticValue | null => {
+  const alphabet = getStringAlphabet(receiver);
+  if (alphabet === null || mayMatchPattern(name, pattern, alphabet)) return null;
+  switch (name) {
+    case "replace":
+    case "replaceAll":
+      return receiver;
+    case "split":
+      return limit === undefined ? listValue([receiver]) : null;
+    case "match":
+      return NULL_VALUE;
+    case "search":
+    case "indexOf":
+    case "lastIndexOf":
+      return primitiveValue(-1);
+    case "includes":
+    case "startsWith":
+    case "endsWith":
+      return primitiveValue(false);
+    default:
+      return null;
+  }
+};
 
 const shapedStringValue = (reason: string, shape: StringShape): StaticValue =>
   shape.length === shape.prefix.length
@@ -295,6 +384,10 @@ export const callShapedPrimitiveMethod = (
   args: StaticValue[],
 ): StaticValue | null => {
   const [first, second] = args;
+  if (receiver.primitiveType === "string") {
+    const unmatched = searchUnmatchedString(receiver, name, first, second);
+    if (unmatched) return unmatched;
+  }
   if (receiver.primitiveType === "string" && name === "slice") {
     const start = toIndexArgument(first) ?? 0;
     const end = toIndexArgument(second);

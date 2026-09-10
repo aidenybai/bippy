@@ -1,5 +1,5 @@
 import type { ComponentDefinition, StaticElementType, StaticValue } from "../types.js";
-import { primitiveValue } from "../evaluate/values.js";
+import { getObjectProperty, primitiveValue } from "../evaluate/values.js";
 
 export const toElementKey = (key: StaticValue | null): StaticValue | null => {
   if (key?.kind !== "primitive") return key;
@@ -122,6 +122,24 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         displayName: nameHint,
         reason: `dynamic ${value.primitiveType} element type`,
       };
+    case "proxy": {
+      if (value.target.kind !== "function") {
+        return {
+          kind: "unknown",
+          displayName: nameHint,
+          reason: `proxy of ${value.target.kind} element type`,
+        };
+      }
+      const applyTrap = getObjectProperty(value.handler, "apply");
+      const component = createFunctionComponentDefinition(value.target);
+      return {
+        kind: "function",
+        component:
+          applyTrap.kind === "primitive" && applyTrap.value === undefined
+            ? component
+            : { ...component, applyTrap },
+      };
+    }
     case "element":
     case "list":
     case "repeat":
@@ -134,7 +152,6 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
     case "method":
     case "native-function":
     case "native-object":
-    case "proxy":
       return {
         kind: "unknown",
         displayName: nameHint,

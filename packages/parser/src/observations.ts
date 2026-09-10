@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { parseWithSchema } from "./errors.js";
 import type {
+  CapturedCalendarFields,
+  CapturedClockTime,
+  CapturedClockWindow,
   CapturedExportReference,
   CapturedFetcher,
   CapturedLinguiCatalog,
@@ -108,6 +111,29 @@ const capturedRouterStateSchema: z.ZodType<CapturedRouterState> = z.object({
   hasCriticalCss: z.boolean().optional(),
 });
 
+const capturedCalendarFieldsSchema: z.ZodType<CapturedCalendarFields> = z.object({
+  year: z.number(),
+  month: z.number(),
+  date: z.number(),
+  day: z.number(),
+  hours: z.number(),
+  minutes: z.number(),
+  seconds: z.number(),
+  milliseconds: z.number(),
+});
+
+const capturedClockTimeSchema: z.ZodType<CapturedClockTime> = z.object({
+  time: z.number(),
+  timezoneOffset: z.number(),
+  local: capturedCalendarFieldsSchema,
+  utc: capturedCalendarFieldsSchema,
+});
+
+const capturedClockWindowSchema: z.ZodType<CapturedClockWindow> = z.object({
+  start: capturedClockTimeSchema,
+  end: capturedClockTimeSchema,
+});
+
 const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
   cookie: z.string(),
   name: z.string().optional(),
@@ -120,6 +146,7 @@ const capturedPageStateSchema: z.ZodType<CapturedPageState> = z.object({
   navigatorKeys: z.array(z.string()).optional(),
   cssSupports: booleanRecordSchema.optional(),
   mediaQueries: booleanRecordSchema.optional(),
+  clock: capturedClockWindowSchema.optional(),
   localStorage: stringRecordSchema,
   sessionStorage: stringRecordSchema,
 });

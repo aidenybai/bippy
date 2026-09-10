@@ -32,9 +32,11 @@ import {
   describeValue,
   getObjectProperty,
   getStubDisplayName,
+  listValue,
   mapValue,
   NULL_VALUE,
   omitObjectKeys,
+  UNDEFINED_VALUE,
   unknownValue,
   nativeObjectValue,
 } from "../evaluate/values.js";
@@ -739,9 +741,7 @@ export class Materializer {
       location,
       null,
       (componentContext) =>
-        this.interpreter.callFunction(toFunctionValue(serverComponent), [props], componentContext, {
-          awaited: true,
-        }),
+        this.callComponentFunction(serverComponent, [props], componentContext, location),
     );
     return this.toNode(server.rendered, server.childContext, isTopLevel);
   }
@@ -1438,11 +1438,11 @@ export class Materializer {
           input.location,
           frame,
           (componentContext) =>
-            this.interpreter.callFunction(
-              toFunctionValue(component),
+            this.callComponentFunction(
+              component,
               secondArgument ? [props, secondArgument] : [props],
               componentContext,
-              { awaited: true },
+              input.location,
             ),
         ),
     );
@@ -1458,6 +1458,25 @@ export class Materializer {
       return () => unmount(false);
     });
     return node;
+  }
+
+  /** React calls a function component as a plain function; a proxied one runs through its `apply` trap. */
+  private callComponentFunction(
+    component: ComponentDefinition,
+    args: StaticValue[],
+    componentContext: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const callee = toFunctionValue(component);
+    if (!component.applyTrap) {
+      return this.interpreter.callFunction(callee, args, componentContext, { awaited: true });
+    }
+    return this.interpreter.callValue(
+      component.applyTrap,
+      [callee, UNDEFINED_VALUE, listValue(args)],
+      componentContext,
+      location,
+    );
   }
 
   private beginLayoutPhase(): void {

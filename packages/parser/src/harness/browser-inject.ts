@@ -2,6 +2,7 @@
 // script runs so the DevTools hook exists when React initializes.
 import "./zod-jitless.js";
 import type { CapturedPageState, CapturedValue, RootObservations } from "../types.js";
+import { readClockTime } from "./clock-window.js";
 import { createCommitRecorder } from "./commit-recorder.js";
 import { toCssSupportsKey } from "./feature-queries.js";
 import { readKeaStores } from "./kea-store.js";
@@ -45,6 +46,7 @@ const readStorageArea = (area: Storage): Record<string, string> => {
   return entries;
 };
 
+const initialClockTime = readClockTime(new Date());
 const initialHistoryState = toCapturedValue(history.state) ?? null;
 const initialLocalStorage = readStorageArea(localStorage);
 const initialSessionStorage = readStorageArea(sessionStorage);
@@ -95,6 +97,7 @@ const readPageState = (): CapturedPageState => ({
   navigatorKeys: initialNavigatorKeys,
   cssSupports: cssSupportsAnswers,
   mediaQueries: mediaQueryAnswers,
+  clock: { start: initialClockTime, end: readClockTime(new Date()) },
   localStorage: initialLocalStorage,
   sessionStorage: initialSessionStorage,
 });

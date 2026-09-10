@@ -158,7 +158,15 @@
           "@excalidraw/common",
           "@excalidraw/element",
           "@excalidraw/math",
-          "@excalidraw/utils"
+          "@excalidraw/utils",
+          "radix-ui",
+          "@radix-ui/*",
+          "tunnel-rat",
+          "jotai",
+          "jotai-scope",
+          "i18next-browser-languagedetector",
+          "zustand",
+          "zustand/*"
         ],
         "envFiles": [".env.development"],
         "maxFiberCount": 20000
@@ -582,7 +590,7 @@
         "entry": "src/index.tsx",
         "route": "/",
         "envFiles": [],
-        "externalPackageAllowList": ["tldraw", "@tldraw/*", "react-helmet-async"],
+        "externalPackageAllowList": ["tldraw", "@tldraw/*", "react-helmet-async", "radix-ui", "@radix-ui/*"],
         "maxFiberCount": 20000
       }
     },
@@ -1017,6 +1025,7 @@
           "hoist-non-react-statics",
           "react-is",
           "react-i18next",
+          "i18next",
           "next-auth",
           "@tanstack/react-query",
           "@tanstack/react-query-devtools",

@@ -77,9 +77,11 @@ export const resolvedPromiseValue = (outcome: StaticValue): StaticValue => {
 
 /**
  * `await value`: the outcome of a settled promise; unknown while it is pending.
- * The continuation of an `await` is itself a microtask, so a promise that only
- * awaits queued reactions (`await fetchThing().then(transform)`) settles once
- * the queue drains, which happens before the continuation would run.
+ * The continuation of an `await` is itself a microtask, queued behind the
+ * reactions already waiting, so those run first: a promise that only awaits
+ * queued reactions (`await fetchThing().then(transform)`) settles once the
+ * queue drains, and a `.then` handler registered earlier lands before the
+ * continuation observes the heap.
  */
 export const awaitedValue = (
   value: StaticValue,
@@ -87,8 +89,11 @@ export const awaitedValue = (
   drainMicrotasks: () => void,
 ): StaticValue => {
   const promise = getModeledPromise(value);
-  if (!promise) return value;
-  if (!promise.settled && !promise.isEscaped) drainMicrotasks();
+  if (!promise) {
+    drainMicrotasks();
+    return value;
+  }
+  if (!promise.isEscaped) drainMicrotasks();
   return promise.settled ?? unknownValue("promise settled asynchronously", location);
 };
 

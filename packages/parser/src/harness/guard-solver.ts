@@ -235,7 +235,7 @@ const pickOfType = (type: TypeName, literals: Literal[]): WitnessValue | undefin
       return undefined;
     }
     case "bigint":
-      return { typeof: "bigint" };
+      return wantsTruthy(literals) && wantsFalsy(literals) ? undefined : { typeof: "bigint" };
     case "symbol":
     case "function":
       return wantsFalsy(literals) ? undefined : { typeof: type };
@@ -349,10 +349,38 @@ const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null => {
 const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
-/** DPLL over the guard formulas: disjunctions split, atoms accumulate, and a full set of atoms is checked per variable. */
-const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
+/** The literal an atom or negated atom stands for; null for compound operands. */
+const asLiteral = (guard: Guard): Literal | null => {
+  switch (guard.kind) {
+    case "truthy":
+    case "eq":
+    case "compare":
+    case "in-set":
+      return { atom: guard, isNegated: false };
+    case "not": {
+      const { operand } = guard;
+      return operand.kind === "truthy" ||
+        operand.kind === "eq" ||
+        operand.kind === "compare" ||
+        operand.kind === "in-set"
+        ? { atom: operand, isNegated: true }
+        : null;
+    }
+    default:
+      return null;
+  }
+};
+
+interface Clauses {
+  literals: Literal[];
+  disjunctions: Guard[][];
+}
+
+/** Splits guards into the atoms they assert outright and the disjunctions left to decide; null on a constant contradiction. */
+const collectClauses = (pending: Guard[], literals: Literal[]): Clauses | null => {
   const remaining = [...pending];
   const collected = [...literals];
+  const disjunctions: Guard[][] = [];
   while (remaining.length > 0) {
     const guard = remaining.pop();
     if (!guard) break;
@@ -364,11 +392,8 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         remaining.push(...guard.operands);
         break;
       case "or":
-        for (const operand of guard.operands) {
-          const model = findModel([...remaining, operand], collected);
-          if (model) return model;
-        }
-        return null;
+        disjunctions.push(guard.operands);
+        break;
       case "not": {
         const { operand } = guard;
         switch (operand.kind) {
@@ -379,7 +404,7 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
             remaining.push(operand.operand);
             break;
           case "and":
-            remaining.push({ kind: "or", operands: negateOperands(operand.operands) });
+            disjunctions.push(negateOperands(operand.operands));
             break;
           case "or":
             remaining.push(...negateOperands(operand.operands));
@@ -393,7 +418,57 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         collected.push({ atom: guard, isNegated: false });
     }
   }
-  return modelOfLiterals(collected);
+  return { literals: collected, disjunctions };
+};
+
+const toDisjunction = (operands: Guard[]): Guard => ({ kind: "or", operands });
+
+/**
+ * DPLL over the guard formulas. Atoms are checked per variable before any
+ * disjunction splits; a model of the atoms that also satisfies every
+ * disjunction is returned as is, refuted operands are pruned and a forced
+ * operand is asserted, so only genuinely open disjunctions branch.
+ */
+const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
+  const clauses = collectClauses(pending, literals);
+  if (!clauses) return null;
+  let { literals: collected, disjunctions } = clauses;
+  let model = modelOfLiterals(collected);
+  while (model !== null) {
+    const witnessModel = toWitnessModel(model);
+    const open = disjunctions.filter(
+      (operands) => evaluateGuard(toDisjunction(operands), witnessModel) !== true,
+    );
+    if (open.length === 0) return model;
+    let forced: Guard | null = null;
+    const pruned: Guard[][] = [];
+    for (const operands of open) {
+      const possible = operands.filter((operand) => {
+        const literal = asLiteral(operand);
+        return literal === null || modelOfLiterals([...collected, literal]) !== null;
+      });
+      if (possible.length === 0) return null;
+      if (possible.length === 1 && forced === null) forced = possible[0];
+      else pruned.push(possible);
+    }
+    const satisfied = disjunctions.filter((operands) => !open.includes(operands));
+    if (forced === null) {
+      pruned.sort((left, right) => left.length - right.length);
+      const [smallest, ...rest] = pruned;
+      const others = [...rest, ...satisfied].map(toDisjunction);
+      for (const operand of smallest) {
+        const found = findModel([operand, ...others], collected);
+        if (found) return found;
+      }
+      return null;
+    }
+    const forcedClauses = collectClauses([forced], collected);
+    if (!forcedClauses) return null;
+    collected = forcedClauses.literals;
+    disjunctions = [...pruned, ...satisfied, ...forcedClauses.disjunctions];
+    model = modelOfLiterals(collected);
+  }
+  return null;
 };
 
 /** A witness assignment satisfying every guard, or null when they contradict. */
@@ -464,21 +539,38 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => solveGuards(guards) !== null;
 
-/** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
+/**
+ * Guards asserted along one search path; `push` refuses a guard that would
+ * make the path contradictory. The witness of the path so far is kept: a
+ * guard it already satisfies extends the path without solving again.
+ */
 export class GuardSolver {
   private readonly stack: Guard[] = [];
+  private readonly models: WitnessModel[] = [];
 
   get guards(): readonly Guard[] {
     return this.stack;
   }
 
   push(guard: Guard): boolean {
-    if (!areGuardsSatisfiable([...this.stack, guard])) return false;
+    const current = this.models.at(-1);
+    const model =
+      current && evaluateGuard(guard, current) === true
+        ? current
+        : this.solve([...this.stack, guard]);
+    if (model === null) return false;
     this.stack.push(guard);
+    this.models.push(model);
     return true;
   }
 
   pop(): void {
     this.stack.pop();
+    this.models.pop();
+  }
+
+  private solve(guards: Guard[]): WitnessModel | null {
+    const witnesses = solveGuards(guards);
+    return witnesses === null ? null : toWitnessModel(witnesses);
   }
 }

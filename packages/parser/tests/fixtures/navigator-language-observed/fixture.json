@@ -1,0 +1,17 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 1,
+  "notes": "The capture recorded `navigator.language` but predates `navigator.languages` recording. The most preferred language heads that list, so a detector that walks `navigator.languages` by index and falls back to `navigator.language` still settles on one language, and the list's length is known to be at least one.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "page": {
+      "cookie": "",
+      "localStorage": {},
+      "sessionStorage": {},
+      "language": "en-US"
+    }
+  }
+}

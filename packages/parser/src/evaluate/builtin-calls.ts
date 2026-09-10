@@ -96,10 +96,13 @@ import { createNumberFormat } from "./intl-format.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
+  concatenateStrings,
+  getStringAlphabet,
   joinStrings,
   rangedNumberValue,
   toStringValue,
 } from "./primitive-shapes.js";
+import { mayRegExpMatch, toRegExp } from "./regexp-literals.js";
 import { getTruthinessPredicate } from "./predicates.js";
 import { isArrayValue } from "./type-predicates.js";
 import { recordDerivation, recordInputSource, recordRepeatSource } from "./predicates.js";
@@ -927,9 +930,14 @@ const callGlobal = (
   switch (name) {
     case "Date": {
       if (!isConstructor) break;
-      if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
+      if (args.length === 0) {
+        return createClockDateValue(
+          interpreter.timers.readClock("new Date"),
+          interpreter.getClockWindow(),
+        );
+      }
       if (args.length === 1 && first !== undefined && isClockReading(first))
-        return createClockDateValue(first);
+        return createClockDateValue(first, interpreter.getClockWindow());
       break;
     }
     case "Function":
@@ -1465,6 +1473,11 @@ const scheduledTask = (
     ? () => interpreter.callDeferred(callback, [], context, location)
     : () => interpreter.callValue(callback, [], context, location);
 
+interface TextMatch {
+  index: number;
+  length: number;
+}
+
 interface ItemVerdict {
   verdict: boolean | null;
   preference: boolean | null;
@@ -1721,14 +1734,6 @@ const mapList = (
   );
 };
 
-const toRegExp = (value: StaticRegExpValue): RegExp | null => {
-  try {
-    return new RegExp(value.pattern, value.flags);
-  } catch {
-    return null;
-  }
-};
-
 const toPattern = (value: StaticValue): string | RegExp | null => {
   if (value.kind === "primitive") return String(value.value);
   if (value.kind === "regexp") return toRegExp(value);
@@ -1763,6 +1768,49 @@ const dynamicSplitResult = (location: SourceLocation | null): StaticListValue =>
   listValue([
     { kind: "repeat", item: unknownPrimitiveValue("string", "split of dynamic string"), location },
   ]);
+
+/**
+ * `String.prototype.replace` of a known string with a dynamic replacement: the
+ * text around the single match is known, so the result is a composition, as
+ * long as the replacement cannot carry a `$` pattern.
+ */
+const replaceWithDynamicText = (
+  receiver: string,
+  pattern: string | RegExp,
+  replacement: StaticValue,
+  replaceAll: boolean,
+): StaticValue | null => {
+  const alphabet = getStringAlphabet(replacement);
+  if (alphabet === null || alphabet.has("$")) return null;
+  if (typeof pattern !== "string" && replaceAll && !pattern.global) return null;
+  const matches =
+    typeof pattern === "string"
+      ? findTextMatches(receiver, pattern, replaceAll)
+      : [...receiver.matchAll(pattern.global ? pattern : new RegExp(pattern.source, `${pattern.flags}g`))]
+          .slice(0, pattern.global ? undefined : 1)
+          .map((match) => ({ index: match.index, length: match[0].length }));
+  if (matches.length === 0) return primitiveValue(receiver);
+  if (matches.length > 1) return null;
+  const [{ index, length }] = matches;
+  return mapValue(replacement, (alternative) =>
+    concatenateStrings(
+      concatenateStrings(primitiveValue(receiver.slice(0, index)), alternative),
+      primitiveValue(receiver.slice(index + length)),
+    ),
+  );
+};
+
+const findTextMatches = (receiver: string, needle: string, findAll: boolean): TextMatch[] => {
+  const matches: TextMatch[] = [];
+  for (
+    let index = receiver.indexOf(needle);
+    index !== -1 && (findAll || matches.length === 0);
+    index = needle.length === 0 ? -1 : receiver.indexOf(needle, index + needle.length)
+  ) {
+    matches.push({ index, length: needle.length });
+  }
+  return matches;
+};
 
 /** `String.prototype.replace` with a callback needs the callback to produce a known string on every match. */
 const replaceWithCallback = (
@@ -1819,7 +1867,9 @@ const callStringMethod = (
         name === "replaceAll",
       );
     }
-    if (second?.kind !== "primitive") return null;
+    if (second?.kind !== "primitive") {
+      return second ? replaceWithDynamicText(receiver, pattern, second, name === "replaceAll") : null;
+    }
     const replacement = String(second.value);
     return primitiveValue(
       name === "replace"
@@ -1942,6 +1992,11 @@ const callRegExpMethod = (
     );
   }
   if (first?.kind !== "primitive") {
+    const alphabet = first ? getStringAlphabet(first) : null;
+    if (alphabet !== null && !mayRegExpMatch(regExp, alphabet)) {
+      if (regExp.global || regExp.sticky) receiver.lastIndex = 0;
+      return name === "test" ? FALSE_VALUE : NULL_VALUE;
+    }
     return name === "test"
       ? unknownPrimitiveValue("boolean", "RegExp.test() on a dynamic string")
       : unknownValue("RegExp.exec() on a dynamic string", location);

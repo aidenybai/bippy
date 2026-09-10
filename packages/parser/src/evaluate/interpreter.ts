@@ -91,6 +91,7 @@ import type {
   FunctionLikeNode,
   JournaledState,
   CapturedExportReference,
+  CapturedClockWindow,
   CapturedPageState,
   CapturedValue,
   JsonValue,
@@ -322,7 +323,6 @@ import type { CompareOperator, GuardLiteral } from "../harness/symbolic-tree.js"
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
-  maxForkDepth?: number;
   maxSteps?: number;
   externalValues?: ExternalValueProvider;
   /** `window` properties the served page defines; objects are partial (see `partialJsonValue`). */
@@ -416,7 +416,6 @@ const getModulePathName = (name: string, filePath: string): StaticValue | null =
 const ESBUILD_TRANSFORMED_FILE = /\.(m?ts|[jt]sx)$/;
 
 const DEFAULT_MAX_CALL_DEPTH = 128;
-const DEFAULT_MAX_FORK_DEPTH = 5;
 const DEFAULT_MAX_STEPS = 2_000_000;
 const MAX_FORKED_REENTRIES = 1;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
@@ -728,7 +727,6 @@ export class Interpreter {
   readonly diagnostics: Diagnostic[] = [];
   readonly assumeOuterProviders: boolean;
   private readonly maxCallDepth: number;
-  private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
   readonly project: ProjectContext;
   readonly origin: string | null;
@@ -738,7 +736,11 @@ export class Interpreter {
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
-  /** `navigator.languages` as captured: one frozen array for the page's lifetime. */
+  /**
+   * `navigator.languages` as captured: one frozen array for the page's lifetime.
+   * A capture that only recorded `navigator.language` still fixes the first
+   * entry, which is that most preferred language.
+   */
   private readonly observedLanguages: StaticValue | null;
   private readonly processEnvironment: ProcessEnvironment | null;
   private readonly clientRealm: HostRealm;
@@ -781,16 +783,12 @@ export class Interpreter {
     this.graph = graph;
     this.timers = new TimerQueue(options.settleMs, options.timerUnderrunMs);
     this.maxCallDepth = options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH;
-    this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
     this.origin = options.origin ?? null;
     this.pageState = options.page ?? null;
-    this.observedLanguages =
-      this.pageState?.languages === undefined
-        ? null
-        : listValue(this.pageState.languages.map((language) => primitiveValue(language)));
+    this.observedLanguages = this.createObservedLanguages();
     this.history = createSessionHistory(this.pageState, options.route ?? null);
     this.processEnvironment = options.environment ?? null;
     this.clientRealm = loadHostRealm(options.hostPlatform ?? "browser");
@@ -1629,6 +1627,26 @@ export class Interpreter {
   /** `CSS.supports(...)` as the captured browser answered; null when the page never asked. */
   getCssSupport(conditions: readonly string[]): boolean | null {
     return this.pageState?.cssSupports?.[toCssSupportsKey(conditions)] ?? null;
+  }
+
+  /** The wall-clock window the captured page lived in; null in captures that did not record it. */
+  getClockWindow(): CapturedClockWindow | null {
+    return this.pageState?.clock ?? null;
+  }
+
+  private createObservedLanguages(): StaticValue | null {
+    const languages = this.pageState?.languages;
+    if (languages !== undefined) return listValue(languages.map((language) => primitiveValue(language)));
+    const language = this.pageState?.language;
+    if (language === undefined) return null;
+    return listValue([
+      primitiveValue(language),
+      {
+        kind: "repeat",
+        item: unknownPrimitiveValue("string", "navigator.languages after the first, not captured"),
+        location: null,
+      },
+    ]);
   }
 
   /** Page facts recorded from the running browser: cookies, `window.name`, and the navigator strings. */
@@ -4344,11 +4362,9 @@ export class Interpreter {
     preferredBranch = 0,
     predicate = createPathPredicate(reason, location),
   ): StatementOutcome {
-    const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
       ...context,
       forkDepth: context.forkDepth + 1,
-      uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
       suspension: null,
     };
     const entrySnapshot = snapshotScopes(context.scope);

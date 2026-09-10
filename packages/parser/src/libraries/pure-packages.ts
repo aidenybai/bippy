@@ -20,6 +20,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "date-fns",
   "gray-matter",
   "hasown",
+  "html-parse-stringify",
   "lodash",
   "lodash-es",
   "node:path",

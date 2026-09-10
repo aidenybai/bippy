@@ -99,6 +99,39 @@ export const loopInvariantStaysExact = () => {
 };
 `;
 
+const NESTED_FORK_SOURCE = `
+declare const flags: string;
+
+let cursor: Set<string> | undefined;
+
+const countUsingCursor = () => {
+  try {
+    cursor = new Set(["a", "b"]);
+    return cursor.size;
+  } finally {
+    cursor = undefined;
+  }
+};
+
+export const assignedInDeepFork = () => {
+  let total = 0;
+  if (flags.includes("1")) {
+    if (flags.includes("2")) {
+      if (flags.includes("3")) {
+        if (flags.includes("4")) {
+          if (flags.includes("5")) {
+            if (flags.includes("6")) {
+              for (let index = 0; index < 3; index++) total += countUsingCursor();
+            }
+          }
+        }
+      }
+    }
+  }
+  return [total, cursor];
+};
+`;
+
 const evaluateExports = async (
   source: string,
   exportNames: string[],
@@ -177,6 +210,15 @@ describe("list mutation and uncertain loops", () => {
     expect(results).toEqual({
       loopCarriedCounter: "<number: loop-carried value>",
       loopInvariantStaysExact: '"row"',
+    });
+  });
+});
+
+describe("nested forks", () => {
+  it("keeps assignments definite however deeply the fork is nested", async () => {
+    const results = await evaluateExports(NESTED_FORK_SOURCE, ["assignedInDeepFork"]);
+    expect(results).toEqual({
+      assignedInDeepFork: "[branch(6 | 0), undefined]",
     });
   });
 });

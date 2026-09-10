@@ -10,13 +10,14 @@ const { values, positionals } = parseArgs({
   options: {
     packages: { type: "string", multiple: true, default: [] },
     route: { type: "string" },
+    origin: { type: "string" },
     capture: { type: "string" },
   },
 });
 const [rootArg, fileArg, exportName = "default"] = positionals;
 if (!rootArg || !fileArg) {
   console.error(
-    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--route <path>] [--capture <capture.json>] <root> <file> [exportName]",
+    "usage: tsx scripts/debug-export.ts [--packages <name>]... [--route <path>] [--origin <url>] [--capture <capture.json>] <root> <file> [exportName]",
   );
   process.exit(1);
 }
@@ -33,6 +34,7 @@ const renderer = createStaticRenderer({
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,
   route: values.route,
+  origin: values.origin,
   observations,
 });
 const result = await renderer.renderWith((interpreter) => {
