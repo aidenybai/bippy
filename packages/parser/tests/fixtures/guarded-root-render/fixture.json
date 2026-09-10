@@ -1,0 +1,7 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 1,
+  "notes": "Entry whose mount function returns early on a host condition the source does not decide (`window.__bootDisabled`) before creating the root: the path that never mounts contributes no root alternative, so the root element is the one tree."
+}

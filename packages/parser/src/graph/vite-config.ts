@@ -5,6 +5,7 @@ import { Interpreter, UNKNOWN_PROJECT } from "../evaluate/interpreter.js";
 import { bytesValue } from "../evaluate/typed-arrays.js";
 import {
   FALSE_VALUE,
+  getKnownObjectKeys,
   getTruthiness,
   isNullish,
   objectFromRecord,
@@ -29,7 +30,10 @@ const VITE_CONFIG_FILES = ["js", "mjs", "cjs", "ts", "mts", "cts"].map(
 const DEFAULT_ASSETS_INLINE_LIMIT = 4096;
 const DEFAULT_PUBLIC_DIRECTORY = "public";
 const DEFAULT_BASE = "/";
+const VITE_APP_TYPES = new Set(["spa", "mpa", "custom"]);
 const GIT_LFS_PREFIX = Buffer.from("version https://git-lfs.github.com");
+
+export type ViteAppType = "spa" | "mpa" | "custom";
 
 export interface ViteConfig {
   /** Served root (`root`), resolved against where Vite runs. */
@@ -40,6 +44,10 @@ export interface ViteConfig {
   base: string;
   /** The mode the dev server runs in (`--mode`, `import.meta.env.MODE`). */
   mode: string;
+  /** `appType`: only `spa` answers an unmatched HTML-accepting GET with the root `index.html`. */
+  appType: ViteAppType;
+  /** The `server.proxy` contexts (path prefixes, or `^`-anchored patterns) forwarded upstream; null when the config leaves them undecided. */
+  proxyContexts: string[] | null;
   /** `build.assetsInlineLimit` applied to an asset: Vite's decision, or null when the config leaves it undecided. */
   shouldInlineAsset: (filePath: string, content: Buffer) => boolean | null;
 }
@@ -148,11 +156,26 @@ const decideFromCallbackResult = (result: StaticValue, content: Buffer): boolean
   return isResultNullish ? shouldInlineByDefault(content) : getTruthiness(result);
 };
 
+const isViteAppType = (value: string): value is ViteAppType => VITE_APP_TYPES.has(value);
+
+const resolveAppType = (appType: StaticValue): ViteAppType => {
+  const literal = getStringLiteral(appType);
+  return literal !== null && isViteAppType(literal) ? literal : "spa";
+};
+
+/** The keys of `server.proxy`: Vite forwards a request whose URL starts with one (or matches a `^` pattern). */
+const resolveProxyContexts = (proxy: StaticValue): string[] | null => {
+  if (isNullish(proxy) === true) return [];
+  return proxy.kind === "object" ? getKnownObjectKeys(proxy) : null;
+};
+
 export const defaultViteConfig = (rootDirectory: string, mode = DEV_SERVER_MODE): ViteConfig => ({
   root: rootDirectory,
   publicDir: path.resolve(rootDirectory, DEFAULT_PUBLIC_DIRECTORY),
   base: DEFAULT_BASE,
   mode,
+  appType: "spa",
+  proxyContexts: [],
   shouldInlineAsset: (_filePath, content) => shouldInlineByDefault(content),
 });
 
@@ -239,6 +262,8 @@ export const loadViteConfig = ({
     publicDir: resolvePublicDir(readField(config, "publicDir"), root),
     base: resolveDevBase(readField(config, "base")),
     mode,
+    appType: resolveAppType(readField(config, "appType")),
+    proxyContexts: resolveProxyContexts(readField(readField(config, "server"), "proxy")),
     shouldInlineAsset: (filePath, content) => decideFromLimit(assetsInlineLimit, filePath, content),
   };
 };

@@ -1,3 +1,4 @@
+import { readPolarity } from "../evaluate/predicates.js";
 import { MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import type {
@@ -28,12 +29,47 @@ export interface PatternText {
 export interface PatternBranch {
   kind: "branch";
   variable: string;
+  /** A second name for the same decision: the position, which branches on state set inside an alternative derive from. */
+  path: string | null;
   reason: string;
   /** Where the source branched (`file:line:column`); null for branches the materializer introduces. */
   location: string | null;
   preferredIndex: number | null;
   alternatives: PatternNode[][];
 }
+
+/** A decision the branch's `path` takes along with the branch itself. */
+export interface PathAlternative {
+  variable: string;
+  alternativeIndex: number;
+}
+
+/** The alternative index as the branch's `path` names it: a negated variable was read with its alternatives swapped. */
+const toPathIndex = (node: PatternBranch, alternativeIndex: number, isNegated: boolean): number =>
+  isNegated ? node.alternatives.length - 1 - alternativeIndex : alternativeIndex;
+
+/** The `path` decision taking `alternativeIndex` implies; null when the path is the variable itself. */
+export const getPathAlternative = (
+  node: PatternBranch,
+  alternativeIndex: number,
+): PathAlternative | null => {
+  if (node.path === null) return null;
+  const { predicate, isNegated } = readPolarity(node.path);
+  return predicate === node.variable
+    ? null
+    : { variable: predicate, alternativeIndex: toPathIndex(node, alternativeIndex, isNegated) };
+};
+
+/** The alternative the branch takes because its `path` was decided (by state set inside one of its alternatives), as `lookup` reports; null when undecided. */
+export const findPathAlternative = (
+  node: PatternBranch,
+  lookup: (variable: string) => number | null,
+): number | null => {
+  if (node.path === null) return null;
+  const { predicate, isNegated } = readPolarity(node.path);
+  const decided = lookup(predicate);
+  return decided === null ? null : toPathIndex(node, decided, isNegated);
+};
 
 export interface RepeatBounds {
   min: number;
@@ -105,6 +141,7 @@ const normalizeNegatedBranch = (branch: PatternBranch): PatternBranch => {
   return {
     ...branch,
     variable: branch.variable.slice(NEGATED_PREDICATE_PREFIX.length),
+    path: branch.path === null ? null : `${NEGATED_PREDICATE_PREFIX}${branch.path}`,
     preferredIndex: branch.preferredIndex === null ? null : 1 - branch.preferredIndex,
     alternatives: [branch.alternatives[1], branch.alternatives[0]],
   };
@@ -125,6 +162,7 @@ class PatternReader {
           normalizeNegatedBranch({
             kind: "branch",
             variable: readString(fiber.props, "predicate") ?? `branch#${++this.anonymousDecisions}`,
+            path: readString(fiber.props, "path"),
             reason: readString(fiber.props, "reason") ?? "",
             location: readString(fiber.props, "location"),
             preferredIndex: readNumber(fiber.props, "preferredIndex"),
@@ -167,7 +205,7 @@ class PatternReader {
           },
         ];
       case MARKER_NAMES.text:
-        return [{ kind: "text", text: null }];
+        return [{ kind: "text", text: readString(fiber.props, "text") }];
       case MARKER_NAMES.suspenseBoundary:
         return this.read(fiber.children);
       case MARKER_NAMES.suspended:
@@ -355,6 +393,7 @@ export const scopePatternVariables = (nodes: PatternNode[], scope: string): Patt
         return {
           ...node,
           variable: `${node.variable}@${scope}`,
+          path: node.path === null ? null : `${node.path}@${scope}`,
           alternatives: node.alternatives.map((alternative) =>
             scopePatternVariables(alternative, scope),
           ),

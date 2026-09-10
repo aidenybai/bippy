@@ -1,0 +1,9 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 4,
+  "expectOmitted": false,
+  "notes": "A component mounted inside a branch alternative steps its own state through an updater effect. The state it leaves behind is conditional on the alternative's path, so the next pass on that path must read the value of that path (not the whole branch) when it reduces the updater and when it commits the cell; otherwise every pass nests another alternative into the cell, the state never settles, and the derived branch is enumerated as an independent decision."
+}

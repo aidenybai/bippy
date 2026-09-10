@@ -87,10 +87,10 @@ export class ModuleGraph {
   addVirtualModule(
     filePath: string,
     sourceText: string,
+    lang = getSourceLanguage(filePath),
     importerLayer = this.entryLayer,
   ): ModuleRecord | null {
     return this.loadModule(filePath, importerLayer, () => {
-      const lang = getSourceLanguage(filePath);
       if (!lang) return null;
       const file = this.sourceFileCache.readVirtual(filePath, sourceText, lang);
       return file.errors.length === 0 ? createModuleRecord(file, importerLayer) : null;

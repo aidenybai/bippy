@@ -10,6 +10,7 @@ import type {
   CapturedValue,
   FunctionLikeNode,
   JsonValue,
+  NumberRange,
   Scope,
   SourceLocation,
   StaticAccessor,
@@ -30,6 +31,7 @@ import type {
   StaticUnknownValue,
   StaticValue,
   StringComposition,
+  StringShape,
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
@@ -1310,6 +1312,60 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   );
 };
 
+const admitsStringShape = (
+  shape: StringShape | undefined,
+  prefix: string,
+  length: number | null,
+): boolean =>
+  shape === undefined ||
+  (prefix.startsWith(shape.prefix) && (shape.length === null || shape.length === length));
+
+const admitsNumberRange = (range: NumberRange | undefined, min: number, max: number): boolean =>
+  range === undefined || (range.min <= min && max <= range.max);
+
+/**
+ * Whether every value `other` may take is one the unknown primitive already
+ * stands for, so enumerating `other` beside it decides nothing.
+ */
+const admitsPrimitive = (unknown: StaticUnknownPrimitiveValue, other: StaticValue): boolean => {
+  if (unknown.clock || unknown.composition) return false;
+  if (other.kind === "unknown-primitive") {
+    if (other.primitiveType !== unknown.primitiveType) return false;
+    switch (unknown.primitiveType) {
+      case "string":
+        return admitsStringShape(
+          unknown.stringShape,
+          other.stringShape?.prefix ?? "",
+          other.stringShape?.length ?? null,
+        );
+      case "number":
+        return (
+          other.numberRange !== undefined
+            ? admitsNumberRange(unknown.numberRange, other.numberRange.min, other.numberRange.max)
+            : unknown.numberRange === undefined
+        );
+      case "boolean":
+        return true;
+      case "any":
+        return false;
+    }
+  }
+  if (other.kind !== "primitive") return false;
+  const { value } = other;
+  switch (unknown.primitiveType) {
+    case "string":
+      return (
+        typeof value === "string" && admitsStringShape(unknown.stringShape, value, value.length)
+      );
+    case "number":
+      return typeof value === "number" && admitsNumberRange(unknown.numberRange, value, value);
+    case "boolean":
+      return typeof value === "boolean";
+    case "any":
+      return false;
+  }
+};
+
 /**
  * Widening bound: a value joined at every iteration of an uncertain loop or on
  * every call into a stateful module (a scheduler's queue, a store's listener
@@ -1330,13 +1386,31 @@ const collectBranchLeaves = (value: StaticValue, isPreferred: boolean): BranchLe
       )
     : [{ value, isPreferred }];
 
-/** An alternative re-deciding the decision that selected it resolves to the alternative of the same index. */
-const resolveSameDecision = (value: StaticValue, index: number, predicate: string): StaticValue =>
-  value.kind === "branch" &&
-  value.predicate === predicate &&
-  index < value.alternatives.length
-    ? resolveSameDecision(value.alternatives[index], index, predicate)
-    : value;
+/**
+ * `value` once the decision named `predicate` is known to have taken `index`:
+ * every branch on it collapses to that alternative, however deep under other
+ * decisions it sits, so re-joining a value under the same decision does not
+ * nest it inside itself.
+ */
+export const resolveSameDecision = (
+  value: StaticValue,
+  index: number,
+  predicate: string,
+): StaticValue => {
+  if (value.kind !== "branch") return value;
+  if (value.predicate === predicate && index < value.alternatives.length) {
+    return resolveSameDecision(value.alternatives[index], index, predicate);
+  }
+  const alternatives = value.alternatives.map((alternative) =>
+    resolveSameDecision(alternative, index, predicate),
+  );
+  if (alternatives.every((alternative, position) => alternative === value.alternatives[position])) {
+    return value;
+  }
+  return alternatives.every((alternative) => alternative === alternatives[0])
+    ? alternatives[0]
+    : { ...value, alternatives };
+};
 
 /**
  * Alternatives stay positional while the predicate names their decision, so a
@@ -1363,18 +1437,24 @@ export const branchValue = (
   const leaves = alternatives.flatMap((alternative, index) =>
     collectBranchLeaves(alternative, index === preferredIndex),
   );
-  const flattened: StaticValue[] = [];
-  let resolvedPreferred = 0;
+  const merged: StaticValue[] = [];
+  let mergedPreferred = 0;
   for (const leaf of leaves) {
-    let position = flattened.findIndex((candidate) => isInterchangeable(candidate, leaf.value));
-    if (position === -1) position = flattened.push(leaf.value) - 1;
-    if (leaf.isPreferred) resolvedPreferred = position;
+    let position = merged.findIndex((candidate) => isInterchangeable(candidate, leaf.value));
+    if (position === -1) position = merged.push(leaf.value) - 1;
+    if (leaf.isPreferred) mergedPreferred = position;
   }
+  const preferred = merged[mergedPreferred];
+  const flattened =
+    preferred.kind === "unknown-primitive"
+      ? merged.filter((candidate) => candidate === preferred || !admitsPrimitive(preferred, candidate))
+      : merged;
+  const resolvedPreferred = flattened.indexOf(preferred);
   if (flattened.length === 1) return flattened[0];
   if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
     return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
-  if (predicate !== null) {
+  if (predicate !== null && alternatives.every((alternative) => alternative.kind !== "branch")) {
     return { kind: "branch", alternatives, preferredIndex, reason, location, predicate };
   }
   return {
@@ -1574,7 +1654,92 @@ interface SequenceInstance {
 interface StructureExpansion {
   limit: number;
   firstBranch: StaticBranchValue | null;
+  decisionKeys: Map<StaticValue, Set<StructureDecision>>;
+  decisionIds: Map<StructureDecision, number>;
+  expansions: Map<StaticValue, Map<string, StructureInstance[] | null>>;
 }
+
+const collectStructureDecisions = (
+  value: StaticValue,
+  expansion: StructureExpansion,
+  visiting: Set<StaticValue>,
+): Set<StructureDecision> => {
+  const cached = expansion.decisionKeys.get(value);
+  if (cached) return cached;
+  const keys = new Set<StructureDecision>();
+  if (visiting.has(value)) return keys;
+  visiting.add(value);
+  const collectFrom = (inner: StaticValue): void => {
+    for (const key of collectStructureDecisions(inner, expansion, visiting)) keys.add(key);
+  };
+  switch (value.kind) {
+    case "branch":
+      keys.add(value.predicate ?? value);
+      value.alternatives.forEach(collectFrom);
+      break;
+    case "object":
+      for (const entry of value.entries) collectFrom(entry.value);
+      break;
+    case "list":
+      value.items.forEach(collectFrom);
+      break;
+  }
+  visiting.delete(value);
+  expansion.decisionKeys.set(value, keys);
+  return keys;
+};
+
+const getDecisionId = (key: StructureDecision, expansion: StructureExpansion): number => {
+  let id = expansion.decisionIds.get(key);
+  if (id === undefined) {
+    id = expansion.decisionIds.size;
+    expansion.decisionIds.set(key, id);
+  }
+  return id;
+};
+
+/**
+ * Expands `value` once per combination of the decisions it contains that
+ * `decisions` already made; the instances are re-based on the caller's
+ * decisions and preference, so a structure shared by many partial instances
+ * is walked once, not once per partial.
+ */
+const expandStructureMemoized = (
+  value: StaticValue,
+  decisions: Map<StructureDecision, number>,
+  isPreferred: boolean,
+  expansion: StructureExpansion,
+  expand: (relevant: Map<StructureDecision, number>) => StructureInstance[] | null,
+): StructureInstance[] | null => {
+  const keys = collectStructureDecisions(value, expansion, new Set());
+  if (keys.size === 0) return [{ value, decisions, isPreferred }];
+  const relevant = new Map<StructureDecision, number>();
+  for (const key of keys) {
+    const decided = decisions.get(key);
+    if (decided !== undefined) relevant.set(key, decided);
+  }
+  const memoKey = [...relevant]
+    .map(([key, index]) => `${getDecisionId(key, expansion)}=${index}`)
+    .sort()
+    .join(",");
+  let expansions = expansion.expansions.get(value);
+  if (!expansions) {
+    expansions = new Map();
+    expansion.expansions.set(value, expansions);
+  }
+  let instances = expansions.get(memoKey);
+  if (instances === undefined) {
+    instances = expand(relevant);
+    expansions.set(memoKey, instances);
+  }
+  return (
+    instances?.map((instance) => ({
+      value: instance.value,
+      decisions: new Map([...decisions, ...instance.decisions]),
+      isPreferred: isPreferred && instance.isPreferred,
+    })) ?? null
+  );
+};
 
 const expandSequence = (
   values: StaticValue[],
@@ -1609,65 +1774,72 @@ const expandStructure = (
   expansion: StructureExpansion,
 ): StructureInstance[] | null => {
   switch (value.kind) {
-    case "branch": {
+    case "branch":
       expansion.firstBranch ??= value;
-      const key: StructureDecision = value.predicate ?? value;
-      const decided = decisions.get(key);
-      if (decided !== undefined && decided < value.alternatives.length) {
-        return expandStructure(value.alternatives[decided], decisions, isPreferred, expansion);
-      }
-      const instances: StructureInstance[] = [];
-      for (const [index, alternative] of value.alternatives.entries()) {
-        const chosen = new Map(decisions).set(key, index);
-        const expanded = expandStructure(
-          alternative,
-          chosen,
-          isPreferred && index === value.preferredIndex,
-          expansion,
-        );
-        if (expanded === null) return null;
-        instances.push(...expanded);
-        if (instances.length > expansion.limit) return null;
-      }
-      return instances;
-    }
-    case "object": {
-      const expanded = expandSequence(
-        value.entries.map((entry) => entry.value),
+      return expandStructureMemoized(value, decisions, isPreferred, expansion, (relevant) => {
+        const key: StructureDecision = value.predicate ?? value;
+        const decided = relevant.get(key);
+        if (decided !== undefined && decided < value.alternatives.length) {
+          return expandStructure(value.alternatives[decided], relevant, true, expansion);
+        }
+        const instances: StructureInstance[] = [];
+        for (const [index, alternative] of value.alternatives.entries()) {
+          const chosen = new Map(relevant).set(key, index);
+          const expanded = expandStructure(
+            alternative,
+            chosen,
+            index === value.preferredIndex,
+            expansion,
+          );
+          if (expanded === null) return null;
+          instances.push(...expanded);
+          if (instances.length > expansion.limit) return null;
+        }
+        return instances;
+      });
+    case "object":
+      return expandStructureMemoized(
+        value,
         decisions,
         isPreferred,
         expansion,
+        (relevant) =>
+          expandSequence(
+            value.entries.map((entry) => entry.value),
+            relevant,
+            true,
+            expansion,
+          )?.map((instance) => ({
+            value: instance.values.every(
+              (entryValue, index) => entryValue === value.entries[index].value,
+            )
+              ? value
+              : {
+                  ...value,
+                  entries: value.entries.map((entry, index) => ({
+                    ...entry,
+                    value: instance.values[index],
+                  })),
+                },
+            decisions: instance.decisions,
+            isPreferred: instance.isPreferred,
+          })) ?? null,
       );
-      return (
-        expanded?.map((instance) => ({
-          value: instance.values.every(
-            (entryValue, index) => entryValue === value.entries[index].value,
-          )
-            ? value
-            : {
-                ...value,
-                entries: value.entries.map((entry, index) => ({
-                  ...entry,
-                  value: instance.values[index],
-                })),
-              },
-          decisions: instance.decisions,
-          isPreferred: instance.isPreferred,
-        })) ?? null
+    case "list":
+      return expandStructureMemoized(
+        value,
+        decisions,
+        isPreferred,
+        expansion,
+        (relevant) =>
+          expandSequence(value.items, relevant, true, expansion)?.map((instance) => ({
+            value: instance.values.every((item, index) => item === value.items[index])
+              ? value
+              : { ...value, items: instance.values },
+            decisions: instance.decisions,
+            isPreferred: instance.isPreferred,
+          })) ?? null,
       );
-    }
-    case "list": {
-      const expanded = expandSequence(value.items, decisions, isPreferred, expansion);
-      return (
-        expanded?.map((instance) => ({
-          value: instance.values.every((item, index) => item === value.items[index])
-            ? value
-            : { ...value, items: instance.values },
-          decisions: instance.decisions,
-          isPreferred: instance.isPreferred,
-        })) ?? null
-      );
-    }
     default:
       return [{ value, decisions, isPreferred }];
   }
@@ -1683,7 +1855,13 @@ export const distributeObjectBranches = (
   value: StaticValue,
   limit = MAX_DISTRIBUTED_ALTERNATIVES,
 ): StaticValue => {
-  const expansion: StructureExpansion = { limit, firstBranch: null };
+  const expansion: StructureExpansion = {
+    limit,
+    firstBranch: null,
+    decisionKeys: new Map(),
+    decisionIds: new Map(),
+    expansions: new Map(),
+  };
   const instances = expandStructure(value, new Map(), true, expansion);
   if (instances === null || instances.length < 2 || expansion.firstBranch === null) return value;
   if (

@@ -13,6 +13,11 @@ export interface RootRenderCall {
    * resolved lazily.
    */
   enclosingStatements: Statement[][];
+  /**
+   * The call sits in a function body (a `.then` callback, an event handler),
+   * so the module decides at runtime when, and whether, it fires.
+   */
+  isInsideFunction: boolean;
 }
 
 const getCalleeName = (callee: Expression): string | null => {
@@ -32,11 +37,12 @@ const isRootFactory = (callee: Expression): boolean => {
   return name === "createRoot" || name === "hydrateRoot";
 };
 
-const collectCall = (
-  call: CallExpression,
-  enclosingStatements: Statement[][],
-  out: RootRenderCall[],
-): void => {
+interface CallSite {
+  enclosingStatements: Statement[][];
+  isInsideFunction: boolean;
+}
+
+const collectCall = (call: CallExpression, site: CallSite, out: RootRenderCall[]): void => {
   const callee = unwrapExpression(call.callee);
   const name = getCalleeName(callee);
   if (!name) return;
@@ -46,19 +52,19 @@ const collectCall = (
     const receiver = unwrapExpression(callee.object);
     if (receiver.type === "CallExpression" && isRootFactory(unwrapExpression(receiver.callee))) {
       if (firstArgument && firstArgument.type !== "SpreadElement") {
-        out.push({ element: firstArgument, api: "createRoot", call, enclosingStatements });
+        out.push({ element: firstArgument, api: "createRoot", call, ...site });
       }
       return;
     }
     if (receiver.type === "Identifier" && receiver.name.toLowerCase().includes("root")) {
       if (firstArgument && firstArgument.type !== "SpreadElement") {
-        out.push({ element: firstArgument, api: "createRoot", call, enclosingStatements });
+        out.push({ element: firstArgument, api: "createRoot", call, ...site });
       }
       return;
     }
   }
   if (name === "hydrateRoot" && secondArgument && secondArgument.type !== "SpreadElement") {
-    out.push({ element: secondArgument, api: "hydrateRoot", call, enclosingStatements });
+    out.push({ element: secondArgument, api: "hydrateRoot", call, ...site });
     return;
   }
   if (
@@ -72,29 +78,40 @@ const collectCall = (
       (callee.type === "MemberExpression" &&
         callee.object.type === "Identifier" &&
         /react/i.test(callee.object.name));
-    if (isReactDomCall) out.push({ element: firstArgument, api: name, call, enclosingStatements });
+    if (isReactDomCall) out.push({ element: firstArgument, api: name, call, ...site });
   }
 };
 
 const statementsBefore = (node: Node, key: string, index: number): Statement[] | null =>
   key === "body" && node.type === "BlockStatement" ? node.body.slice(0, index) : null;
 
-const walk = (
-  node: Node,
-  enclosingStatements: Statement[][],
-  visit: (node: Node, enclosingStatements: Statement[][]) => void,
-): void => {
-  visit(node, enclosingStatements);
+const isFunctionNode = (node: Node): boolean =>
+  node.type === "ArrowFunctionExpression" ||
+  node.type === "FunctionExpression" ||
+  node.type === "FunctionDeclaration";
+
+const walk = (node: Node, site: CallSite, visit: (node: Node, site: CallSite) => void): void => {
+  visit(node, site);
+  const isInsideFunction = site.isInsideFunction || isFunctionNode(node);
   forEachChildNode(node, (child, key, index) => {
     const preceding = statementsBefore(node, key, index);
-    walk(child, preceding ? [...enclosingStatements, preceding] : enclosingStatements, visit);
+    walk(
+      child,
+      {
+        enclosingStatements: preceding
+          ? [...site.enclosingStatements, preceding]
+          : site.enclosingStatements,
+        isInsideFunction,
+      },
+      visit,
+    );
   });
 };
 
 export const findRootRenderCalls = (module: ModuleRecord): RootRenderCall[] => {
   const calls: RootRenderCall[] = [];
-  walk(module.file.program, [], (node, enclosingStatements) => {
-    if (node.type === "CallExpression") collectCall(node, enclosingStatements, calls);
+  walk(module.file.program, { enclosingStatements: [], isInsideFunction: false }, (node, site) => {
+    if (node.type === "CallExpression") collectCall(node, site, calls);
   });
   return calls;
 };

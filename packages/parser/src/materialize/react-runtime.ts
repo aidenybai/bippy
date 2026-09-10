@@ -2,6 +2,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
 import { ReactRuntimeError } from "../errors.js";
+import { readInstalledPackage } from "../graph/installed-package.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
 import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
@@ -24,6 +25,8 @@ export interface ReactRuntime {
   dom: ReactDomModule;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   version: string;
+  /** The `react-dom` whose fibers are predicted: the app's, or `version` when it has none. */
+  reconcilerVersion: string;
 }
 
 const isReactModule = (value: unknown): value is ReactModule =>
@@ -126,11 +129,14 @@ const load = async (
     throw new ReactRuntimeError("could not load react-dom/client");
   }
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
+  const appDom =
+    resolver && rootDirectory ? readInstalledPackage(resolver, rootDirectory, "react-dom") : null;
   return {
     react,
     domClient,
     dom,
     act: await loadAct(react, appResolver, rootDirectory),
     version: react.version,
+    reconcilerVersion: appDom?.version ?? react.version,
   };
 };

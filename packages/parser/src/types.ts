@@ -378,6 +378,8 @@ export interface StubRenderTools {
   queueMicrotask: (task: () => void) => void;
   /** True while the caller runs past an `await` the analysis cannot see settle, at an unknown time relative to the captured commit: the state it updates escapes. */
   isDeferred: () => boolean;
+  /** `value` as the running path of the enclosing forks reads it: a branch on a decision one of them takes holds that path's alternative. */
+  decided: (value: StaticValue) => StaticValue;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
   project: ProjectContext;
@@ -426,6 +428,12 @@ export type ModuleTranspiler = "esbuild" | "name-preserving";
 /** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers shim them. */
 export type ModuleBundler = "vite" | "unknown";
 
+/** A `fetch` of a served URL as the dev server sees it. */
+export interface ServedRequest {
+  /** The `Accept` header; `undefined` when the request sets none, which servers read as `*\/*`. */
+  accept: string | undefined;
+}
+
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
   /** Directory the analyzed app is served from (`process.cwd()` of its dev server); `null` when analyzing loose modules. */
@@ -443,8 +451,12 @@ export interface ProjectContext {
   bundler: ModuleBundler;
   /** The value an `import` of a static asset file (image, font, ...) evaluates to: the URL the bundler serves it at. */
   getImportedAssetUrl: (filePath: string, specifier: string) => StaticValue;
-  /** The text the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
-  readServedAsset: (url: string) => string | null;
+  /**
+   * The text the dev server serves for a same-origin or root-relative URL;
+   * `null` when it serves none. A `request` lets an unmatched GET fall back to
+   * the page the server answers HTML-accepting requests with.
+   */
+  readServedAsset: (url: string, request?: ServedRequest) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
   findQuery: (queryHash: string) => CapturedQuery | null;
   /** Captured mutations for a mutation key hash (`null` for keyless mutations); `null` when the mutation cache was not recorded. */

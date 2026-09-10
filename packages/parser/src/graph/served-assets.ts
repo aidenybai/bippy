@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { lookup as lookupMimeType } from "mrmime";
 import { branchValue, primitiveValue, unknownValue } from "../evaluate/values.js";
-import type { StaticValue } from "../types.js";
+import type { ServedRequest, StaticValue } from "../types.js";
+import type { ViteAppType } from "./vite-config.js";
 
 // Vite's dev server hands an imported asset the URL it serves the file at
 // (`fileToDevUrl`): root-relative under the served root, `/@fs/<path>` outside
@@ -10,6 +11,11 @@ import type { StaticValue } from "../types.js";
 // `?inline` import, or an SVG `build.assetsInlineLimit` admits (`shouldInline`),
 // is a data URL exactly as at build time. Webpack-style bundlers emit
 // content-hashed URLs the source does not decide.
+//
+// A GET nothing serves is answered by `htmlFallbackMiddleware` when the request
+// accepts HTML (an absent `Accept` counts as `*/*`): `<path>.html` or
+// `<path>/index.html` when that file exists, else under `appType: "spa"` the
+// root `index.html`, as long as no `server.proxy` context claims the URL first.
 
 interface ServedAssetsOptions {
   rootDirectory: string;
@@ -24,13 +30,16 @@ interface ServedAssetsOptions {
   viteVersion: string | null;
   /** Whether the configured `build.assetsInlineLimit` inlines a file; null when it does not decide statically. */
   shouldInlineAsset: (filePath: string, content: Buffer) => boolean | null;
+  appType: ViteAppType;
+  /** `server.proxy` contexts; null when the config leaves them undecided. */
+  proxyContexts: string[] | null;
 }
 
 interface ServedAssets {
   /** The value an `import` of the asset file evaluates to, given the import's original specifier. */
   getImportedUrl: (filePath: string, specifier: string) => StaticValue;
   /** The text served for a same-origin or root-relative URL; `null` when nothing is. */
-  read: (url: string) => string | null;
+  read: (url: string, request?: ServedRequest) => string | null;
 }
 
 const FS_URL_PREFIX = "/@fs/";
@@ -42,6 +51,20 @@ const TRAILING_QUERY_SEPARATOR = /[?&]$/;
 const INLINE_QUERY = /[?&]inline\b/;
 const NO_INLINE_QUERY = /[?&]no-inline\b/;
 const DEFAULT_MIME_TYPE = "application/octet-stream";
+const INDEX_HTML = "index.html";
+const FAVICON_PATH = "/favicon.ico";
+
+const acceptsHtml = (request: ServedRequest): boolean =>
+  request.accept === undefined ||
+  request.accept === "" ||
+  request.accept.includes("text/html") ||
+  request.accept.includes("*/*");
+
+/** `doesProxyContextMatchUrl`: a `^` context is a pattern, any other a prefix. */
+const isProxied = (contexts: string[], url: string): boolean =>
+  contexts.some((context) =>
+    context.startsWith("^") ? new RegExp(context).test(url) : url.startsWith(context),
+  );
 
 /** Vite's `removeUrlQuery`: the `?url` marker is dropped from the postfix the served URL keeps. */
 const getPostfix = (specifier: string): string =>
@@ -88,7 +111,7 @@ const joinUrlSegments = (base: string, url: string): string =>
 const readFileUnder = (directory: string, relativePath: string): string | null => {
   const filePath = path.join(directory, relativePath);
   if (path.relative(directory, filePath).startsWith("..") || !existsSync(filePath)) return null;
-  return readFileSync(filePath, "utf8");
+  return statSync(filePath).isFile() ? readFileSync(filePath, "utf8") : null;
 };
 
 const getPathname = (url: string, origin: string | null): string | null => {
@@ -100,7 +123,7 @@ const getPathname = (url: string, origin: string | null): string | null => {
 };
 
 export const createServedAssets = (options: ServedAssetsOptions): ServedAssets => {
-  const { rootDirectory, servedDirectory, publicDirectory, base, origin } = options;
+  const { rootDirectory, servedDirectory, publicDirectory, base, origin, proxyContexts } = options;
   const viteMajor = readMajor(options.viteVersion);
   const decodedBase = decodeURI(base);
   const basePrefix = joinUrlSegments(decodedBase, "");
@@ -139,9 +162,10 @@ export const createServedAssets = (options: ServedAssetsOptions): ServedAssets =
         null,
       );
     },
-    read: (url) => {
+    read: (url, request) => {
       const pathname = getPathname(url, origin);
       if (pathname === null || !pathname.startsWith(basePrefix)) return null;
+      if (proxyContexts !== null && isProxied(proxyContexts, pathname)) return null;
       const servedPath = pathname.slice(basePrefix.length - 1);
       if (servedPath.startsWith(FS_URL_PREFIX)) {
         return readFileUnder(
@@ -149,9 +173,17 @@ export const createServedAssets = (options: ServedAssetsOptions): ServedAssets =
           servedPath.slice(FS_URL_PREFIX.length),
         );
       }
-      return (
+      const served =
         (publicDirectory === null ? null : readFileUnder(publicDirectory, servedPath)) ??
-        readFileUnder(servedDirectory, servedPath)
+        readFileUnder(servedDirectory, servedPath);
+      if (served !== null || request === undefined || proxyContexts === null) return served;
+      if (!acceptsHtml(request) || servedPath === FAVICON_PATH) return null;
+      const htmlPath = servedPath.endsWith("/")
+        ? `${servedPath}${INDEX_HTML}`
+        : `${servedPath}.html`;
+      return (
+        readFileUnder(servedDirectory, htmlPath) ??
+        (options.appType === "spa" ? readFileUnder(servedDirectory, INDEX_HTML) : null)
       );
     },
   };

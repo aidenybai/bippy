@@ -28,10 +28,14 @@ const writePackage = (
   name: string,
   source: string,
   extraFiles: Record<string, string> = {},
+  version = STUB_REACT_VERSION,
 ): void => {
   const packageDirectory = join(rootDirectory, "node_modules", name);
   mkdirSync(packageDirectory, { recursive: true });
-  writeFileSync(join(packageDirectory, "package.json"), JSON.stringify({ name, main: "index.js" }));
+  writeFileSync(
+    join(packageDirectory, "package.json"),
+    JSON.stringify({ name, version, main: "index.js" }),
+  );
   writeFileSync(join(packageDirectory, "index.js"), source);
   for (const [fileName, fileSource] of Object.entries(extraFiles)) {
     writeFileSync(join(packageDirectory, fileName), fileSource);
@@ -54,8 +58,8 @@ const createRootDirectory = (): string =>
 describe("loadReactRuntime", () => {
   it("uses the harness's React when the app's react-dom has no client entry", async () => {
     const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-legacy-react-"));
-    writePackage(rootDirectory, "react", "module.exports = { version: '16.14.0' };");
-    writePackage(rootDirectory, "react-dom", "module.exports = { version: '16.14.0' };");
+    writePackage(rootDirectory, "react", "module.exports = { version: '16.14.0' };", {}, "16.14.0");
+    writePackage(rootDirectory, "react-dom", "module.exports = { version: '16.14.0' };", {}, "16.14.0");
     const resolver = new ModuleResolver({ rootDirectory });
     expect(resolver.resolve("react", join(rootDirectory, "index.js"))).toMatchObject({
       kind: "external",
@@ -63,6 +67,7 @@ describe("loadReactRuntime", () => {
     });
     const runtime = await loadReactRuntime({ resolver, rootDirectory });
     expect(runtime.version).toBe(harnessReactVersion);
+    expect(runtime.reconcilerVersion).toBe("16.14.0");
   });
 
   it("materializes with the app's React when react, react-dom and react-dom/client all resolve from it", async () => {
@@ -73,6 +78,7 @@ describe("loadReactRuntime", () => {
       rootDirectory,
     });
     expect(runtime.version).toBe(STUB_REACT_VERSION);
+    expect(runtime.reconcilerVersion).toBe(STUB_REACT_VERSION);
   });
 
   it("falls back when react-dom/client only resolves from an ancestor's newer react-dom", async () => {

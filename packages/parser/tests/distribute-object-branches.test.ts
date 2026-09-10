@@ -3,6 +3,7 @@ import type { StaticValue } from "../src/types.js";
 import {
   branchValue,
   distributeObjectBranches,
+  getObjectProperty,
   listValue,
   objectFromRecord,
   primitiveValue,
@@ -96,6 +97,31 @@ describe("distributeObjectBranches", () => {
     expect(alternativesOf(distributeObjectBranches(listValue([shared, shared])))).toEqual([
       '["/dark.png","/dark.png"]',
       '["/light.png","/light.png"]',
+    ]);
+  });
+
+  it("distributes deeply nested correlated branches in polynomial time", () => {
+    const depth = 24;
+    let nested: StaticValue = objectFromRecord({ icon: eitherHref() });
+    for (let level = 0; level < depth; level++) {
+      nested = objectFromRecord({ icon: eitherHref(), children: listValue([nested, nested]) });
+    }
+    const readLeafIcons = (value: StaticValue): string[] => {
+      const icon = value.kind === "object" ? getObjectProperty(value, "icon") : null;
+      const children = value.kind === "object" ? getObjectProperty(value, "children") : null;
+      return [
+        ...(icon?.kind === "primitive" ? [String(icon.value)] : []),
+        ...(children?.kind === "list" ? readLeafIcons(children.items[0]) : []),
+      ];
+    };
+    const startedAt = performance.now();
+    const distributed = distributeObjectBranches(nested);
+    expect(performance.now() - startedAt).toBeLessThan(2_000);
+    expect(distributed.kind === "branch" && distributed.predicate).toBe("truthy(isDark)");
+    expect(distributed.kind === "branch" && distributed.preferredIndex).toBe(1);
+    expect(distributed.kind === "branch" && distributed.alternatives.map(readLeafIcons)).toEqual([
+      Array.from({ length: depth + 1 }, () => "/dark.png"),
+      Array.from({ length: depth + 1 }, () => "/light.png"),
     ]);
   });
 

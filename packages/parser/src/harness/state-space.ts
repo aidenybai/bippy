@@ -19,6 +19,8 @@ import {
 } from "./compare.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import {
+  findPathAlternative,
+  getPathAlternative,
   hasPatternDecisions,
   scopePatternVariables,
   type PatternBranch,
@@ -176,6 +178,30 @@ const branchCondition = (node: PatternBranch, alternativeIndex: number): BranchC
   alternativeIndex,
   alternativeCount: node.alternatives.length,
 });
+
+const getPathDecision = (
+  node: PatternBranch,
+  alternativeIndex: number,
+): DecisionCondition | null => {
+  const path = getPathAlternative(node, alternativeIndex);
+  return (
+    path && {
+      kind: "decision",
+      variable: path.variable,
+      alternativeIndex: path.alternativeIndex,
+      alternativeCount: node.alternatives.length,
+    }
+  );
+};
+
+/** The alternative a branch takes because the state set inside one of its alternatives was already decided. */
+const findPathDecision = (node: PatternBranch, conditions: ConditionMap): number | null =>
+  findPathAlternative(node, (variable) => {
+    const decided = conditions.get(variable);
+    return isDecided(decided) && decided.alternativeCount === node.alternatives.length
+      ? decided.alternativeIndex
+      : null;
+  });
 
 const repeatCondition = (node: PatternRepeat, count: number): RepeatCondition => ({
   kind: "repeat",
@@ -418,6 +444,8 @@ class StateEnumerator {
   private expandBranch(node: PatternBranch, conditions: ConditionMap, emit: Emit): void {
     this.decideBranch(node, conditions, (alternativeIndex, decided) => {
       const next = new Map(decided).set(node.variable, branchCondition(node, alternativeIndex));
+      const path = getPathDecision(node, alternativeIndex);
+      if (path) next.set(path.variable, path);
       this.expandList(node.alternatives[alternativeIndex] ?? [], 0, [], next, emit);
     });
   }
@@ -432,6 +460,11 @@ class StateEnumerator {
     const decided = conditions.get(node.variable);
     if (isDecided(decided)) {
       onDecided(decided.alternativeIndex, conditions);
+      return;
+    }
+    const pathIndex = findPathDecision(node, conditions);
+    if (pathIndex !== null) {
+      onDecided(pathIndex, conditions);
       return;
     }
     if (node.alternatives.length === 2) {

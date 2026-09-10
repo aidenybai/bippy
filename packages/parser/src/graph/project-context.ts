@@ -95,6 +95,8 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     viteVersion:
       bundler === "vite" || hasDeclaredDependency("vite") ? readPackageVersion("vite") : null,
     shouldInlineAsset: viteConfig.shouldInlineAsset,
+    appType: bundler === "vite" ? viteConfig.appType : "custom",
+    proxyContexts: viteConfig.proxyContexts,
   });
   return {
     rootDirectory,

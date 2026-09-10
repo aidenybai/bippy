@@ -32,11 +32,18 @@ const fiber = (name: string, children: PatternNode[] = []): PatternFiber => ({
 const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
   kind: "branch",
   variable,
+  path: null,
   reason: variable,
   location: null,
   preferredIndex: 0,
   alternatives,
 });
+
+const pathBranch = (
+  variable: string,
+  path: string,
+  ...alternatives: PatternNode[][]
+): PatternBranch => ({ ...branch(variable, ...alternatives), path });
 
 const repeat = (
   variable: string,
@@ -118,6 +125,38 @@ describe("enumerateStateSpace", () => {
       "r×2",
     ]);
     expect(known.omitted).toBeNull();
+  });
+
+  it("decides a branch on state set inside an alternative with the alternative's position", () => {
+    const position = pathBranch("path(p/0)", "path(p/0)", [fiber("nav")], [fiber("header")]);
+    const derived = pathBranch("truthy(9)", "path(p/0)", [fiber("em")], [fiber("strong")]);
+    const negated = pathBranch("truthy(9)", "!path(p/0)", [fiber("em")], [fiber("strong")]);
+
+    const afterPosition = enumerateStateSpace([[fiber("main", [position, derived])]]);
+    expect(afterPosition.states.map((state) => state.tree)).toEqual([
+      [fiber("main", [fiber("nav"), fiber("em")])],
+      [fiber("main", [fiber("header"), fiber("strong")])],
+    ]);
+
+    const beforePosition = enumerateStateSpace([[fiber("main", [derived, position])]]);
+    expect(beforePosition.states.map((state) => state.tree)).toEqual([
+      [fiber("main", [fiber("em"), fiber("nav")])],
+      [fiber("main", [fiber("strong"), fiber("header")])],
+    ]);
+
+    const swapped = enumerateStateSpace([[fiber("main", [position, negated])]]);
+    expect(swapped.states.map((state) => state.tree)).toEqual([
+      [fiber("main", [fiber("nav"), fiber("strong")])],
+      [fiber("main", [fiber("header"), fiber("em")])],
+    ]);
+
+    const twice = enumerateStateSpace([
+      [fiber("main", [position, derived, pathBranch("truthy(10)", "path(p/0)", [], [fiber("b")])])],
+    ]);
+    expect(twice.states.map((state) => state.tree)).toEqual([
+      [fiber("main", [fiber("nav"), fiber("em")])],
+      [fiber("main", [fiber("header"), fiber("strong"), fiber("b")])],
+    ]);
   });
 
   it("decides a branch inside a repeat once per iteration", () => {

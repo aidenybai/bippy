@@ -27,6 +27,8 @@ interface BranchMarkerProps extends MarkerChildrenProps {
   preferredIndex: number | null;
   /** Identity of the decision; branches sharing one are selected together. */
   predicate: string | null;
+  /** Identity of the position; state left behind by effects inside an alternative is decided with it. */
+  path: string | null;
 }
 
 interface RepeatMarkerProps extends MarkerChildrenProps {
@@ -42,6 +44,11 @@ interface OpaqueMarkerProps extends MarkerChildrenProps {
   importedName: string | null;
   packageName: string | null;
   reason: string;
+}
+
+interface TextMarkerProps {
+  /** The exact text when it is known but the harness React would not create a HostText fiber for it. */
+  text?: string;
 }
 
 interface UnknownMarkerProps {
@@ -80,7 +87,10 @@ export const UnknownMarker = named(
   (_props: UnknownMarkerProps): null => null,
 );
 
-export const TextMarker = named(MARKER_NAMES.text, (): string => TEXT_PLACEHOLDER);
+export const TextMarker = named(
+  MARKER_NAMES.text,
+  ({ text }: TextMarkerProps): string => text ?? TEXT_PLACEHOLDER,
+);
 
 const NEVER_RESOLVES = new Promise<never>(() => {});
 

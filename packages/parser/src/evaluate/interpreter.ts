@@ -287,6 +287,7 @@ import {
   omitObjectKeys,
   partialJsonValue,
   primitiveValue,
+  resolveSameDecision,
   setListItem,
   setListLength,
   spreadListItems,
@@ -361,6 +362,12 @@ export interface AlternativeCondition {
   preferredIndex: number;
   predicate: string;
   parent: AlternativeCondition | null;
+}
+
+/** The alternative a running fork path takes of the decision named `predicate`. */
+interface ForkDecision {
+  predicate: string;
+  index: number;
 }
 
 interface CallValueOptions {
@@ -757,6 +764,7 @@ export class Interpreter {
   /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
   changeCount = 0;
   private readonly heapJournals: HeapJournal[] = [];
+  private readonly forkDecisions: ForkDecision[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
   private readonly generatorYields: StaticValue[][] = [];
@@ -2174,7 +2182,7 @@ export class Interpreter {
     try {
       return paths.map((path, pathIndex) => {
         if (pathIndex > 0) restoreScopes(entrySnapshot);
-        const result = path();
+        const result = this.runDecided(predicate, pathIndex, path);
         snapshots.push(snapshotScopes(scope));
         journal.endPath();
         return result;
@@ -2186,6 +2194,24 @@ export class Interpreter {
         joinScopes(snapshots, reason, location, preferredPath, predicate);
       }
     }
+  }
+
+  private runDecided<Result>(predicate: string | null, index: number, run: () => Result): Result {
+    if (predicate === null) return run();
+    this.forkDecisions.push({ predicate, index });
+    try {
+      return run();
+    } finally {
+      this.forkDecisions.pop();
+    }
+  }
+
+  /** `value` as the path being run reads it: a branch on a decision an enclosing fork takes holds that path's alternative. */
+  resolveForkDecisions(value: StaticValue): StaticValue {
+    return this.forkDecisions.reduce(
+      (resolved, decision) => resolveSameDecision(resolved, decision.index, decision.predicate),
+      value,
+    );
   }
 
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
@@ -3109,6 +3135,7 @@ export class Interpreter {
           markEscaped: (value) => this.markEscaped(value),
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           isDeferred: () => context.hooks?.isDeferred ?? false,
+          decided: (value) => this.resolveForkDecisions(value),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           project: this.project,
           recordStateMutation: (state) => this.recordStateMutation(state),

@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 6,
+  "notes": "A module-level layout element is remounted under a new host element after mount, so the new layout instance renders the same child element object inside its own branch. That child must be materialized again for the new instance: its effect registers into the new layout's state, and the registration has to fork on the new layout's decision, not on the alternative of the unmounted instance the element was first materialized in."
+}

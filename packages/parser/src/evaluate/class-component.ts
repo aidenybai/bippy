@@ -349,7 +349,7 @@ const mountClassInstance = (
     kind: "native-function",
     name: "setState",
     call: ([partialState, callback], tools) => {
-      const previousState = stateCell.next ?? stateCell.current;
+      const previousState = tools.decided(stateCell.next ?? stateCell.current);
       const resolvedPartial = isCallable(partialState)
         ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
         : (partialState ?? UNDEFINED_VALUE);

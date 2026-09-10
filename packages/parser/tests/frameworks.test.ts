@@ -884,3 +884,68 @@ describe("remix vite plugin", () => {
     expect(tree).toMatch(/<Link>\n\s+<Link>\n\s+<a>\n\s+<Scripts>\n\s+<LiveReload>$/);
   });
 });
+
+describe("remix 1 (object meta, app/routes convention, React 17)", () => {
+  const target = (route: string, rootDirectory = join(FIXTURES, "remix-v1")) =>
+    renderFrameworkTarget(
+      { framework: "react-router", route },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    ).then((result) => ({
+      result,
+      tree: formatPattern(getRenderPattern(result)),
+      errors: result.diagnostics.filter((diagnostic) => diagnostic.severity === "error"),
+    }));
+
+  const metaProps = (result: Awaited<ReturnType<typeof target>>["result"]) => {
+    const props: Record<string, unknown>[] = [];
+    const visit = (fiber: RuntimeFiberSnapshot, isInsideMeta: boolean) => {
+      if (isInsideMeta && (fiber.name === "meta" || fiber.name === "title")) props.push(fiber.props);
+      fiber.children.forEach((child) => visit(child, isInsideMeta || fiber.name === "Meta"));
+    };
+    result.snapshot.roots.forEach((root) => visit(root, false));
+    return props;
+  };
+
+  it("merges the matches' meta() objects root first and renders one head element per key", async () => {
+    const { result, tree, errors } = await target("/posts/hello");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Meta>\n\s+<V1Meta>\n\s+<meta> key="charset"\n\s+<title> key="title"\n\s+<Fragment>\n\s+<meta> key="viewportwidth=device-width,initial-scale=1"\n\s+<Fragment>\n\s+<meta> key="og:site_nameBlocks"\n\s+<Fragment>\n\s+<meta> key="keywordsremix"\n\s+<meta> key="keywordsblog"\n\s+<Fragment>\n\s+<meta>\n\s+<Fragment>\n\s+<meta> key="twitter:card\{[^\n]*\n\s+<Links>\n\s+<link>/,
+    );
+    expect(metaProps(result)).toEqual([
+      { charSet: "utf-8" },
+      {},
+      { name: "viewport", content: "width=device-width,initial-scale=1" },
+      { property: "og:site_name", content: "Blocks" },
+      { name: "keywords", content: "remix" },
+      { name: "keywords", content: "blog" },
+      { property: "og:image", content: "[object]" },
+      { name: "twitter:card", content: "summary" },
+    ]);
+  });
+
+  it("nests app/routes by directory, splits dotted names and hides pathless __layouts", async () => {
+    const posts = await target("/posts/hello");
+    expect(posts.tree).toMatch(
+      /<Posts>\n\s+<section>\n\s+<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<RemixRoute>\n\s+<Post>\n\s+<article>/,
+    );
+    const plans = await target("/pricing/plans");
+    expect(plans.errors).toEqual([]);
+    expect(plans.tree).toMatch(/<Marketing>\n\s+<div>\n\s+<Outlet>[^]*<Plans>\n\s+<h2>/);
+    const index = await target("/");
+    expect(index.tree).toMatch(/<RemixRoute>\n\s+<Index>\n\s+<main>/);
+  });
+
+  it("keeps the empty-string HostText React 17 creates for a falsy `\"\" && <li />`", async () => {
+    const { tree } = await target("/posts/hello");
+    expect(tree).toMatch(/<Breadcrumbs>\n\s+<ol>\n\s+""\n\s+<li>\n\s+<h1>/);
+  });
+
+  it("matches only `og:` names as Open Graph properties before 1.7.5", async () => {
+    const rootDirectory = await withInstalledPackage("remix-v1", "@remix-run/react", "1.7.4");
+    const { result, tree } = await target("/posts/hello", rootDirectory);
+    expect(tree).toMatch(/<Meta>\n\s+<meta> key="charset"/);
+    expect(metaProps(result)).toContainEqual({ name: "twitter:card", content: "summary" });
+    expect(metaProps(result)).toContainEqual({ property: "og:site_name", content: "Blocks" });
+  });
+});

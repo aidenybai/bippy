@@ -203,3 +203,29 @@ describe("build.assetsInlineLimit", () => {
     expect(decide(project.load(), SMALL)).toBe(false);
   });
 });
+
+describe("appType and server.proxy", () => {
+  it("defaults to a SPA with nothing proxied", () => {
+    const project = createProject();
+    project.write("vite.config.ts", "export default { plugins: [] };\n");
+    expect(project.load()).toMatchObject({ appType: "spa", proxyContexts: [] });
+  });
+
+  it("reads a literal appType and the proxy contexts", () => {
+    const project = createProject();
+    project.write(
+      "vite.config.ts",
+      "export default { appType: 'mpa', server: { proxy: { '/api': 'http://localhost:3000', '^/ws/.*': { target: 'ws://localhost:3000', ws: true } } } };\n",
+    );
+    expect(project.load()).toMatchObject({ appType: "mpa", proxyContexts: ["/api", "^/ws/.*"] });
+  });
+
+  it("leaves proxy contexts the source does not decide undecided", () => {
+    const project = createProject();
+    project.write(
+      "vite.config.ts",
+      "export default { server: { proxy: JSON.parse(process.env.PROXY ?? '{}') } };\n",
+    );
+    expect(project.load().proxyContexts).toBeNull();
+  });
+});

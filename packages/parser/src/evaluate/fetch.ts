@@ -1,16 +1,19 @@
-import type { ProjectContext, SourceLocation, StaticValue } from "../types.js";
+import type { ProjectContext, ServedRequest, SourceLocation, StaticValue } from "../types.js";
 import { nativeFunction } from "./stubs.js";
 import { createErrorValue } from "./errors.js";
 import { resolvedPromiseValue } from "./promises.js";
 import {
   FALSE_VALUE,
   TRUE_VALUE,
+  getKnownObjectKeys,
   getObjectProperty,
   isKnownString,
+  isNullish,
   jsonValue,
   objectFromRecord,
   primitiveValue,
   thrownValue,
+  UNDEFINED_VALUE,
   unknownValue,
 } from "./values.js";
 
@@ -22,6 +25,19 @@ const isGetRequest = (init: StaticValue | undefined): boolean | null => {
     return method.value === undefined || String(method.value).toUpperCase() === "GET";
   }
   return null;
+};
+
+/** The request as the server receives it: its `Accept` header from a plain `headers` record; null when the headers are not fully known. */
+const readServedRequest = (init: StaticValue | undefined): ServedRequest | null => {
+  const headers = init?.kind === "object" ? getObjectProperty(init, "headers") : UNDEFINED_VALUE;
+  if (isNullish(headers) === true) return { accept: undefined };
+  if (headers.kind !== "object") return null;
+  const keys = getKnownObjectKeys(headers);
+  if (keys === null) return null;
+  const acceptKey = keys.find((key) => key.toLowerCase() === "accept");
+  if (acceptKey === undefined) return { accept: undefined };
+  const accept = getObjectProperty(headers, acceptKey);
+  return isKnownString(accept) ? { accept: accept.value } : null;
 };
 
 const parseBody = (body: string, location: SourceLocation | null): StaticValue => {
@@ -66,8 +82,9 @@ const createServedResponse = (
 
 /**
  * `fetch(url)`: the dev server serves the public directory at the URL root, so
- * a GET for one of its files resolves to a 200 response holding that file, as
- * the page receives it. Any other request is network the analysis cannot see.
+ * a GET for one of its files (or for the HTML page it falls back to) resolves
+ * to a 200 response holding that text, as the page receives it. Any other
+ * request is network the analysis cannot see.
  */
 export const callFetch = (
   project: ProjectContext,
@@ -76,9 +93,9 @@ export const callFetch = (
 ): StaticValue => {
   const [resource, init] = args;
   if (!isKnownString(resource)) return unknownValue("fetch of a dynamic URL", location);
-  if (isGetRequest(init) !== true)
-    return unknownValue(`fetch(${resource.value}) request`, location);
-  const body = project.readServedAsset(resource.value);
+  const request = isGetRequest(init) === true ? readServedRequest(init) : null;
+  if (request === null) return unknownValue(`fetch(${resource.value}) request`, location);
+  const body = project.readServedAsset(resource.value, request);
   if (body === null) return unknownValue(`fetch(${resource.value})`, location);
   return resolvedPromiseValue(createServedResponse(resource.value, body, location));
 };

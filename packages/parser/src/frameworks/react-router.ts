@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
   NULL_VALUE,
@@ -22,6 +22,8 @@ import { findRootRenderCalls } from "../render/find-root-elements.js";
 import { FS_ROUTES_PACKAGE, readFsRoutes } from "./fs-routes.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
 import { importsCriticalCss } from "./remix-critical-css.js";
+import { readConventionalRoutes } from "./remix-conventional-routes.js";
+import { compileRemixMdxRoute, readMdxPluginSpecs } from "./remix-mdx.js";
 import { type ObservedRouterState, observeRouterState } from "./react-router-observed.js";
 import {
   FLAT_ROUTES_PACKAGE,
@@ -33,11 +35,13 @@ import {
   dedupeLinkDescriptors,
   renderLinkDescriptors,
   renderMetaDescriptors,
+  renderV1MetaObject,
   renderRemixLinkDescriptors,
 } from "./react-router-document.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
 import { getInstalledModules } from "../libraries/installed-modules.js";
+import { isVersionAtLeast, readInstalledVersion } from "../libraries/installed-version.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type {
   CapturedRouterState,
@@ -61,6 +65,7 @@ import {
   hostElement,
   nativeFunction,
   omitProps,
+  stubElement,
   stubValue,
 } from "../evaluate/stubs.js";
 
@@ -154,6 +159,8 @@ interface FrameworkConfig {
   hasSubResourceIntegrity: boolean | null;
   /** Remix's `future.v3_singleFetch`; `RemixBrowser` renders an extra fragment for it. */
   isSingleFetch: boolean | null;
+  /** Remix 1 without `future.v2_meta`: `<Meta>` merges every match's `meta()` object. */
+  isV1Meta: boolean | null;
 }
 
 const CLIENT_ENTRY_NAMES = [
@@ -592,6 +599,74 @@ const RENDERED_ROUTE_STUB: StubComponent = {
 const hasRenderedRoute = (rootDirectory: string): boolean => {
   const installed = getInstalledModules(rootDirectory).load("react-router");
   return installed === null || "RouterProvider" in installed;
+};
+
+/**
+ * Up to 6.10 `RouterProvider` mounted the data router's routes through
+ * `<Routes />` (a fiber of its own); 6.11 renamed that component `DataRoutes`.
+ */
+const DATA_ROUTES_VERSION = "6.11.0";
+const mountsRoutesThroughRoutes = (rootDirectory: string): boolean => {
+  const version = readInstalledVersion(rootDirectory, "react-router");
+  return version !== null && !isVersionAtLeast(version, DATA_ROUTES_VERSION);
+};
+
+const DATA_ROUTES_STUB: StubComponent = {
+  displayName: "Routes",
+  render: (props) => getObjectProperty(props, "children"),
+};
+
+/**
+ * Remix 1 registers every route as `<RemixRoute id />`, which renders the route
+ * module's default export; Remix 2 registers the component itself.
+ */
+const REMIX_ROUTE_COMPONENT_VERSION = "2.0.0";
+const wrapsRoutesInRemixRoute = (rootDirectory: string): boolean => {
+  const version = readInstalledVersion(rootDirectory, REMIX_REACT_PACKAGE);
+  return version !== null && !isVersionAtLeast(version, REMIX_ROUTE_COMPONENT_VERSION);
+};
+
+/**
+ * Up to 1.16 a hydrated `<Scripts>` kept its two manifest/entry preloads and
+ * an empty preload list; 1.17 made it render `null` once hydrated.
+ */
+const HYDRATED_SCRIPTS_NULL_VERSION = "1.17.0";
+const keepsPreloadLinksWhenHydrated = (rootDirectory: string): boolean => {
+  const version = readInstalledVersion(rootDirectory, REMIX_REACT_PACKAGE);
+  return version !== null && !isVersionAtLeast(version, HYDRATED_SCRIPTS_NULL_VERSION);
+};
+
+/**
+ * 1.7.5 grew the v1 `<Meta>` Open Graph test from `og:` to every
+ * `property`-attribute namespace; 1.8 introduced `future.v2_meta`, under which
+ * `<Meta>` renders `<V1Meta>` or `<V2Meta>` until 2.0 made the array API the
+ * only one.
+ */
+const OPEN_GRAPH_NAMESPACES_VERSION = "1.7.5";
+const META_FUTURE_FLAG_VERSION = "1.8.0";
+const V2_META_DEFAULT_VERSION = "2.0.0";
+const hasOpenGraphNamespaces = (rootDirectory: string): boolean => {
+  const version = readInstalledVersion(rootDirectory, REMIX_REACT_PACKAGE);
+  return version === null || isVersionAtLeast(version, OPEN_GRAPH_NAMESPACES_VERSION);
+};
+const splitsMetaByFutureFlag = (rootDirectory: string): boolean => {
+  const version = readInstalledVersion(rootDirectory, REMIX_REACT_PACKAGE);
+  return (
+    version !== null &&
+    isVersionAtLeast(version, META_FUTURE_FLAG_VERSION) &&
+    !isVersionAtLeast(version, V2_META_DEFAULT_VERSION)
+  );
+};
+
+const LINKS_CRITICAL_CSS_VERSION = "2.2.0";
+const linksHaveCriticalCssSlot = (rootDirectory: string): boolean => {
+  const version = readInstalledVersion(rootDirectory, REMIX_REACT_PACKAGE);
+  return version === null || isVersionAtLeast(version, LINKS_CRITICAL_CSS_VERSION);
+};
+
+const REMIX_ROUTE_STUB: StubComponent = {
+  displayName: "RemixRoute",
+  render: (props) => getObjectProperty(props, "children"),
 };
 
 const renderedRoute = (
@@ -1408,6 +1483,10 @@ export const createReactRouterModel = (
   const observed = observeRouterState(routerState, pathname);
   const location = locationValue(routeLocation, observed);
   const withRenderedRoute = hasRenderedRoute(rootDirectory);
+  const mountRoutes = mountsRoutesThroughRoutes(rootDirectory)
+    ? (routes: StaticValue): StaticValue =>
+        element({ kind: "stub", stub: DATA_ROUTES_STUB }, objectFromRecord({ children: routes }))
+    : (routes: StaticValue): StaticValue => routes;
   const renderRouteConfig = (
     config: StaticValue,
     parent: ParentMatch,
@@ -1466,7 +1545,7 @@ export const createReactRouterModel = (
       return provide(
         DATA_ROUTER_STATE_CONTEXT,
         routerState?.[0] ?? objectValue(),
-        withinRouter(getObjectProperty(props, "children"), location),
+        withinRouter(mountRoutes(getObjectProperty(props, "children")), location),
       );
     },
   });
@@ -1518,19 +1597,31 @@ export const createReactRouterModel = (
   };
   const metaStub: StubComponent = {
     displayName: "Meta",
-    render: () => (framework.meta ? renderMetaDescriptors(framework.meta) : NULL_VALUE),
+    render: () => {
+      if (!framework.meta || !framework.config) return NULL_VALUE;
+      const { isV1Meta } = framework.config;
+      if (isV1Meta === null) return unknownValue("remix `future.v2_meta` is not static");
+      const head = isV1Meta
+        ? renderV1MetaObject(framework.meta, hasOpenGraphNamespaces(rootDirectory))
+        : renderMetaDescriptors(framework.meta);
+      return splitsMetaByFutureFlag(rootDirectory)
+        ? stubElement({ displayName: isV1Meta ? "V1Meta" : "V2Meta", render: () => head }, {})
+        : head;
+    },
   };
   const linksStub: StubComponent = {
     displayName: "Links",
     render: () => (framework.links ? renderLinkDescriptors(framework.links) : NULL_VALUE),
   };
-  // Remix's `<Links>` keeps the critical CSS the Vite dev server inlined and
-  // wraps each descriptor in a keyed fragment.
   const remixLinksStub: StubComponent = {
     displayName: "Links",
     render: () =>
       framework.links
-        ? renderRemixLinkDescriptors(framework.links, framework.hasInlinedCriticalCss)
+        ? renderRemixLinkDescriptors(
+            framework.links,
+            framework.hasInlinedCriticalCss,
+            linksHaveCriticalCssSlot(rootDirectory),
+          )
         : NULL_VALUE,
   };
   // The classic compiler's dev server pushes reloads over a socket; the Vite
@@ -1569,6 +1660,7 @@ export const createReactRouterModel = (
   const scriptsStub = (
     context: ContextDefinition,
     bootstrap: (props: StaticObjectValue, config: FrameworkConfig) => StaticValue[],
+    hydrated: (props: StaticObjectValue, config: FrameworkConfig) => StaticValue = () => NULL_VALUE,
   ): StubComponent => ({
     displayName: "Scripts",
     render: (props, tools) => {
@@ -1583,7 +1675,8 @@ export const createReactRouterModel = (
       const firstRender = listValue(bootstrap(props, config));
       if (!isHydrated?.current) return firstRender;
       const { value, reason } = framework.isRerenderedAfterHydration;
-      return value === null ? branchValue([firstRender, NULL_VALUE], reason, null) : NULL_VALUE;
+      const rerendered = hydrated(props, config);
+      return value === null ? branchValue([firstRender, rerendered], reason, null) : rerendered;
     },
   });
   const preloadUrl = (asset: string) =>
@@ -1640,25 +1733,35 @@ export const createReactRouterModel = (
   // Remix preloads the matched route modules from its build manifest (the
   // classic compiler's URLs are hashed at build time) and ends with the
   // deferred-data scripts, none on a page without streamed loaders.
-  const remixScriptsStub = scriptsStub(REMIX_CONTEXT, (props, config) => [
+  const remixManifestPreloads = (props: StaticObjectValue, config: FrameworkConfig) => [
     manifestPreload(props, config, "remix `future.v3_lazyRouteDiscovery` is not static"),
     modulePreload(props, preloadUrl("client entry")),
-    listValue(
-      framework.isClassicCompiler
-        ? [
-            unknownValue("remix: entry imports come from the build manifest"),
-            ...framework.routeModuleUrls.map(() =>
-              modulePreload(props, preloadUrl("route module")),
-            ),
-          ]
-        : framework.routeModuleUrls.map((url) => {
-            const href = primitiveValue(url);
-            return modulePreload(props, href, href);
-          }),
-    ),
-    bootScripts(props),
-    listValue([]),
-  ]);
+  ];
+  const remixScriptsStub = scriptsStub(
+    REMIX_CONTEXT,
+    (props, config) => [
+      ...remixManifestPreloads(props, config),
+      listValue(
+        framework.isClassicCompiler
+          ? [
+              unknownValue("remix: entry imports come from the build manifest"),
+              ...framework.routeModuleUrls.map(() =>
+                modulePreload(props, preloadUrl("route module")),
+              ),
+            ]
+          : framework.routeModuleUrls.map((url) => {
+              const href = primitiveValue(url);
+              return modulePreload(props, href, href);
+            }),
+      ),
+      bootScripts(props),
+      listValue([]),
+    ],
+    (props, config) =>
+      keepsPreloadLinksWhenHydrated(rootDirectory)
+        ? listValue([...remixManifestPreloads(props, config), listValue([])])
+        : NULL_VALUE,
+  );
   const routerProviderStub: StubComponent = {
     displayName: "RouterProvider",
     render: (props, tools) => {
@@ -1668,8 +1771,10 @@ export const createReactRouterModel = (
       }
       const resolveLazy: LazyResolver = (lazy) => tools.callAwaited(lazy, []);
       return withinRouter(
-        renderRouteConfig(getObjectProperty(router, "routes"), ROOT_PARENT_MATCH, (routes) =>
-          readRouteList(routes, resolveLazy),
+        mountRoutes(
+          renderRouteConfig(getObjectProperty(router, "routes"), ROOT_PARENT_MATCH, (routes) =>
+            readRouteList(routes, resolveLazy),
+          ),
         ),
         location,
       );
@@ -1760,6 +1865,14 @@ export const createReactRouterModel = (
         return stubValue(PREFETCH_PAGE_LINKS_STUB);
       case "Navigate":
         return stubValue(emptyStub(importedName));
+      case "useTransition":
+        if (!isRemix) return routerHookValue(importedName);
+        return nativeFunction(
+          importedName,
+          () =>
+            observed?.transition ??
+            unknownValue("remix useTransition() is only known at runtime"),
+        );
       default:
         return routerHookValue(importedName);
     }
@@ -1850,6 +1963,7 @@ const bothFlags = (left: boolean | null, right: boolean | null): boolean | null 
  */
 const readFrameworkConfig = (
   interpreter: Interpreter,
+  rootDirectory: string,
   configModule: ModuleRecord | null,
   viteConfigModule: ModuleRecord | null,
   isRemix: boolean,
@@ -1860,16 +1974,30 @@ const readFrameworkConfig = (
       ? readRemixPluginConfig(interpreter, viteConfigModule)
       : objectValue();
   if (config.kind !== "object") {
-    return { isSsr: null, isFogOfWar: null, hasSubResourceIntegrity: null, isSingleFetch: null };
+    return {
+      isSsr: null,
+      isFogOfWar: null,
+      hasSubResourceIntegrity: null,
+      isSingleFetch: null,
+      isV1Meta: null,
+    };
   }
   const ssr = getObjectProperty(config, "ssr");
   const isSsr = isDefined(ssr) ? getTruthiness(ssr) : true;
   if (isRemix) {
+    const version = readInstalledVersion(rootDirectory, REMIX_REACT_PACKAGE);
+    const v2Meta = readFutureFlag(config, "v2_meta");
     return {
       isSsr,
       isFogOfWar: bothFlags(isSsr, readFutureFlag(config, "v3_lazyRouteDiscovery")),
       hasSubResourceIntegrity: false,
       isSingleFetch: readFutureFlag(config, "v3_singleFetch"),
+      isV1Meta:
+        version === null || isVersionAtLeast(version, V2_META_DEFAULT_VERSION)
+          ? false
+          : v2Meta === null
+            ? null
+            : !v2Meta,
     };
   }
   const routeDiscovery = getObjectProperty(config, "routeDiscovery");
@@ -1881,6 +2009,7 @@ const readFrameworkConfig = (
       mode === "initial" ? false : !isDefined(routeDiscovery) || mode === "lazy" ? isSsr : null,
     hasSubResourceIntegrity: readFutureFlag(config, "unstable_subResourceIntegrity"),
     isSingleFetch: false,
+    isV1Meta: false,
   };
 };
 
@@ -1918,12 +2047,76 @@ const inlineScript = (
     ]),
   );
 
-const renderFrameworkRoutes = (
+/**
+ * `.mdx` routes reach the app as the modules the classic Remix compiler builds
+ * from them; they are compiled up front because loading the compiler is
+ * asynchronous, and stay unknown when it or a configured plugin is not.
+ */
+const compileMdxRouteModules = async (
+  renderer: StaticRenderer,
+  configModule: ModuleRecord,
+  appDirectory: string,
+  chain: RouteMatch[],
+): Promise<void> => {
+  for (const { route } of chain) {
+    if (!route.file || !MDX_ROUTE_MODULE.test(route.file)) continue;
+    const filePath = path.join(appDirectory, route.file);
+    if (!existsSync(filePath)) continue;
+    const { file } = route;
+    const specs = renderer.evaluate((interpreter) =>
+      readMdxPluginSpecs(interpreter, configModule, file),
+    );
+    if (!specs) continue;
+    const compiled = await compileRemixMdxRoute(
+      renderer.options.rootDirectory,
+      specs,
+      file,
+      readFileSync(filePath, "utf8"),
+    );
+    if (compiled !== null) renderer.graph.addVirtualModule(filePath, compiled, "jsx");
+  }
+};
+
+/**
+ * Remix 1 nests `app/routes` by directory (`defineConventionalRoutes`) unless
+ * `future.v2_routeConvention` opts into the flat convention Remix 2 made default.
+ */
+const FLAT_ROUTES_DEFAULT_VERSION = "2.0.0";
+const readRemixRoutesDirectory = (
+  renderer: StaticRenderer,
+  appDirectory: string,
+  configModule: ModuleRecord | null,
+): RouteRecord[] => {
+  const version = readInstalledVersion(renderer.options.rootDirectory, REMIX_REACT_PACKAGE);
+  if (
+    !configModule ||
+    !isClassicRemixCompiler(configModule) ||
+    version === null ||
+    isVersionAtLeast(version, FLAT_ROUTES_DEFAULT_VERSION)
+  ) {
+    return readFsRoutes(appDirectory);
+  }
+  const convention = renderer.evaluate((interpreter) => {
+    const config = interpreter.evaluateModuleExport(configModule, "default");
+    if (config.kind !== "object") return null;
+    const ignored = getObjectProperty(config, "ignoredRouteFiles");
+    return {
+      isFlat: readFutureFlag(config, "v2_routeConvention") === true,
+      ignoredRouteFiles:
+        ignored.kind === "list" ? ignored.items.flatMap((item) => readString(item) ?? []) : [],
+    };
+  });
+  return !convention || convention.isFlat
+    ? readFsRoutes(appDirectory)
+    : readConventionalRoutes(appDirectory, convention.ignoredRouteFiles);
+};
+
+const renderFrameworkRoutes = async (
   renderer: StaticRenderer,
   model: ReactRouterModel,
   appDirectory: string,
   routesSource: string,
-  routes: RouteRecord[],
+  readRoutes: (configModule: ModuleRecord | null) => RouteRecord[],
 ): Promise<StaticRenderResult> => {
   const findModule = (names: string[]): ModuleRecord | null => {
     for (const name of names) {
@@ -1944,8 +2137,13 @@ const renderFrameworkRoutes = (
   const moduleUrl = (filePath: string): string =>
     `/${path.relative(renderer.options.rootDirectory, filePath).split(path.sep).join("/")}`;
 
+  const routes = readRoutes(configModule);
+  const chain = bestMatch(routes, model.pathname, ROOT_PARENT_MATCH);
+  if (chain && configModule && isClassicRemixCompiler(configModule)) {
+    await compileMdxRouteModules(renderer, configModule, appDirectory, chain);
+  }
+
   return renderer.renderWith((interpreter) => {
-    const chain = bestMatch(routes, model.pathname, ROOT_PARENT_MATCH);
     if (!chain) {
       interpreter.report(
         "react-router-no-match",
@@ -1959,12 +2157,14 @@ const renderFrameworkRoutes = (
     const leafParams = chain[chain.length - 1].params;
     const routeModules = new Map<RouteRecord, ModuleRecord>();
     const loadRouteModule = (route: RouteRecord): ModuleRecord | null => {
-      if (!route.file || MDX_ROUTE_MODULE.test(route.file)) return null;
+      if (!route.file) return null;
       const cached = routeModules.get(route);
       if (cached) return cached;
       const module = renderer.loadModule(path.join(appDirectory, route.file));
       if (module) routeModules.set(route, module);
-      else interpreter.report("react-router-parse", `could not parse ${route.file}`, null, "error");
+      else if (!MDX_ROUTE_MODULE.test(route.file)) {
+        interpreter.report("react-router-parse", `could not parse ${route.file}`, null, "error");
+      }
       return module;
     };
     // `meta`/`links` see every match root-first, exactly as `<Meta>`/`<Links>` do.
@@ -1996,6 +2196,23 @@ const renderFrameworkRoutes = (
         params: paramsValue(params),
         matches: matchesValue(),
       });
+    const isRemixRouteWrapped = wrapsRoutesInRemixRoute(renderer.options.rootDirectory);
+    const routeElement = (
+      component: StaticValue,
+      displayName: string,
+      params: RouteParams,
+      routeId: string | null,
+    ): StaticValue => {
+      const rendered = element(toElementType(component, displayName), routeProps(params, routeId));
+      if (!isRemixRouteWrapped) return rendered;
+      return element(
+        { kind: "stub", stub: REMIX_ROUTE_STUB },
+        objectFromRecord({
+          id: routeId === null ? UNDEFINED_VALUE : primitiveValue(routeId),
+          children: rendered,
+        }),
+      );
+    };
     const renderRoute = (route: RouteRecord, outlet: StaticValue): StaticValue => {
       if (!route.file) return outlet;
       const module = loadRouteModule(route);
@@ -2010,9 +2227,11 @@ const renderFrameworkRoutes = (
       if (!interpreter.graph.listExportNames(module).includes("default")) return outlet;
       const component = interpreter.evaluateModuleExport(module, "default");
       const params = chain.find((match) => match.route === route)?.params ?? leafParams;
-      return element(
-        toElementType(component, path.basename(route.file, path.extname(route.file))),
-        routeProps(params, route.id),
+      return routeElement(
+        component,
+        path.basename(route.file, path.extname(route.file)),
+        params,
+        route.id,
       );
     };
     const matched = composeChain(chain, model.pathname, renderRoute);
@@ -2025,28 +2244,50 @@ const renderFrameworkRoutes = (
     ): StaticValue | null => {
       if (!interpreter.graph.listExportNames(module).includes(name)) return null;
       const exported = interpreter.evaluateModuleExport(module, name);
-      if (exported.kind === "list") return exported;
+      if (exported.kind === "list" || exported.kind === "object") return exported;
       return interpreter.callValue(exported, args, interpreter.createModuleContext(module), null);
     };
-    let leafMeta: StaticValue | null = null;
-    for (const { module, params, routeId } of matchedModules) {
-      const metaArgs = objectFromRecord({
-        loaderData: loaderDataFor(routeId),
-        params: paramsValue(params),
-        location:
-          observed?.location ?? objectFromRecord({ pathname: primitiveValue(model.pathname) }),
-        matches: matchesValue(),
-        error: NULL_VALUE,
-      });
-      leafMeta = callExport(module, "meta", [metaArgs]) ?? leafMeta;
-    }
     const isRemix = importsRemix(rootModule);
     model.framework.config = readFrameworkConfig(
       interpreter,
+      renderer.options.rootDirectory,
       configModule,
       viteConfigModule,
       isRemix,
     );
+    const isV1Meta = model.framework.config.isV1Meta === true;
+    const location =
+      observed?.location ?? objectFromRecord({ pathname: primitiveValue(model.pathname) });
+    let leafMeta: StaticValue | null = null;
+    const mergedMetaEntries: StaticObjectEntry[] = [];
+    const parentsData: Record<string, StaticValue> = {};
+    for (const { module, params, routeId } of matchedModules) {
+      const data = loaderDataFor(routeId);
+      const metaArgs = objectFromRecord(
+        isV1Meta
+          ? {
+              data,
+              parentsData: objectFromRecord({ ...parentsData }),
+              params: paramsValue(params),
+              location,
+              matches: UNDEFINED_VALUE,
+            }
+          : {
+              data,
+              loaderData: data,
+              params: paramsValue(params),
+              location,
+              matches: matchesValue(),
+              error: NULL_VALUE,
+            },
+      );
+      const routeMeta = callExport(module, "meta", [metaArgs]);
+      if (routeMeta) {
+        leafMeta = routeMeta;
+        mergedMetaEntries.push({ kind: "spread", value: routeMeta });
+      }
+      parentsData[routeId] = data;
+    }
     model.framework.routes = routes;
     model.framework.routeModuleUrls = [
       ...new Set([
@@ -2073,14 +2314,14 @@ const renderFrameworkRoutes = (
       model.framework.meta = compiledExports;
       model.framework.links = compiledExports;
     } else {
-      model.framework.meta = leafMeta ?? listValue([]);
+      model.framework.meta = isV1Meta ? objectValue(mergedMetaEntries) : leafMeta ?? listValue([]);
       model.framework.links = dedupeLinkDescriptors(
         matchedModules.flatMap(({ module }) => callExport(module, "links", []) ?? []),
       );
     }
 
     const rootComponent = interpreter.evaluateModuleExport(rootModule, "default");
-    const app = element(toElementType(rootComponent, "App"), routeProps({}, ROOT_ROUTE_ID));
+    const app = routeElement(rootComponent, "App", {}, ROOT_ROUTE_ID);
     const rootElement = interpreter.graph.listExportNames(rootModule).includes("Layout")
       ? element(
           toElementType(interpreter.evaluateModuleExport(rootModule, "Layout"), "Layout"),
@@ -2114,12 +2355,8 @@ export const renderReactRouterRoute = async (
   if (routesModule === null) {
     const routesDirectory = path.join(appDirectory, "routes");
     if (existsSync(routesDirectory)) {
-      return renderFrameworkRoutes(
-        renderer,
-        model,
-        appDirectory,
-        routesDirectory,
-        readFsRoutes(appDirectory),
+      return renderFrameworkRoutes(renderer, model, appDirectory, routesDirectory, (configModule) =>
+        readRemixRoutesDirectory(renderer, appDirectory, configModule),
       );
     }
     return renderer.renderWith((interpreter) => {
@@ -2187,5 +2424,6 @@ export const renderReactRouterRoute = async (
       return unknownValue("unrecognized react-router entry");
     });
   }
-  return renderFrameworkRoutes(renderer, model, path.dirname(modulePath), modulePath, probedRoutes);
+  const routes = probedRoutes;
+  return renderFrameworkRoutes(renderer, model, path.dirname(modulePath), modulePath, () => routes);
 };

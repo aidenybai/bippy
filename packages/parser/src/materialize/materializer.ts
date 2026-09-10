@@ -8,7 +8,7 @@ import {
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { ComponentKindError } from "../errors.js";
-import { createPathPredicate, getRepeatCountPredicate } from "../evaluate/predicates.js";
+import { getPathPredicate, getRepeatCountPredicate } from "../evaluate/predicates.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -35,6 +35,7 @@ import {
   mapValue,
   NULL_VALUE,
   omitObjectKeys,
+  resolveSameDecision,
   UNDEFINED_VALUE,
   unknownValue,
   nativeObjectValue,
@@ -69,6 +70,7 @@ import {
   TextMarker,
   UnknownMarker,
 } from "./markers.js";
+import { isVersionAtLeast } from "../libraries/installed-version.js";
 import type { ReactRuntime } from "./react-runtime.js";
 import type { RendererHost } from "./renderer-host.js";
 import { ServerEnvironmentStamper } from "./server-environment.js";
@@ -95,6 +97,7 @@ const MAX_RENDER_PHASE_UPDATES = 25;
 // Every alternative of a branch is materialized, so nested branches multiply the
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
+const EMPTY_TEXT_SKIPPED_VERSION = "18.0.0";
 
 export interface MaterializerOptions {
   maxComponentDepth?: number;
@@ -137,6 +140,8 @@ interface MaterializeContext {
   alternativeDepth: number;
   /** The innermost branch alternative enclosing this node. */
   alternative: AlternativeCondition | null;
+  /** Numbers the branches one render of a component materializes, so each is the same decision when it renders again. */
+  numbering: BranchNumbering;
   /** The component whose render produced this position; host refs are committed into it. */
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
@@ -247,32 +252,71 @@ interface HostRefBinding {
   callback: (node: Element | null) => void;
 }
 
+interface BranchNumbering {
+  owner: object;
+  next: number;
+}
+
+/**
+ * The path a branch's alternatives fork on when the materializer commits
+ * effects and refs inside them. It names the position, not the branch's own
+ * predicate: that predicate is re-derived from fresh values each render, while
+ * the state left behind must still be undone by the same decision next commit.
+ */
 const getAlternativeConditions = (
   context: MaterializeContext,
   count: number,
   reason: string,
   location: SourceLocation | null,
   preferredIndex: number,
-  predicate: string | null,
 ): AlternativeCondition[] => {
-  const decision = predicate ?? createPathPredicate();
+  const path = getPathPredicate(context.numbering.owner, context.numbering.next++);
   return Array.from({ length: count }, (_, index) => ({
     index,
     count,
     reason,
     location,
     preferredIndex,
-    predicate: decision,
+    predicate: path,
     parent: context.alternative,
   }));
+};
+
+/**
+ * An instance inside branch alternatives only renders on the paths those
+ * alternatives select, so updates its own commit-time work queued as one path
+ * of that fork (`runInAlternative`) resolve to the selected path before they
+ * are applied.
+ */
+const resolveAlternativeUpdates = (
+  frame: HookFrame,
+  alternative: AlternativeCondition | null,
+): void => {
+  for (const cell of frame.cells) {
+    for (let condition = alternative; condition && cell.next; condition = condition.parent) {
+      cell.next = resolveSameDecision(cell.next, condition.index, condition.predicate);
+    }
+  }
 };
 
 const isSameFrame = (first: CompositeFrame, second: CompositeFrame): boolean =>
   first.node === second.node && first.scope === second.scope && first.props === second.props;
 
-/** Whether two contexts describe the same tree position; the owner differs between renders of one component. */
+const isSameAlternative = (
+  first: AlternativeCondition | null,
+  second: AlternativeCondition | null,
+): boolean =>
+  first === second ||
+  (first !== null &&
+    second !== null &&
+    first.predicate === second.predicate &&
+    first.index === second.index &&
+    isSameAlternative(first.parent, second.parent));
+
+/** Whether two contexts describe the same tree position. */
 const isSamePosition = (first: MaterializeContext, second: MaterializeContext): boolean =>
   first.depth === second.depth &&
+  isSameAlternative(first.alternative, second.alternative) &&
   first.suspenseScope === second.suspenseScope &&
   first.environment === second.environment &&
   first.errorBoundaryDepth === second.errorBoundaryDepth &&
@@ -498,6 +542,8 @@ export class Materializer {
   private portalContainer: Element | null = null;
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
+  /** React < 18 created a HostText fiber for an empty-string child (`reconcileChildFibers`). */
+  private readonly reconcilesEmptyText: boolean;
 
   constructor(
     interpreter: Interpreter,
@@ -508,6 +554,10 @@ export class Materializer {
     this.interpreter = interpreter;
     this.runtime = runtime;
     this.host = host;
+    this.reconcilesEmptyText = !isVersionAtLeast(
+      runtime.reconcilerVersion,
+      EMPTY_TEXT_SKIPPED_VERSION,
+    );
     this.maxComponentDepth = options.maxComponentDepth ?? DEFAULT_MAX_COMPONENT_DEPTH;
     this.maxElementCount = options.maxFiberCount ?? DEFAULT_MAX_ELEMENT_COUNT;
     this.maxRecursionPerComponent =
@@ -531,6 +581,7 @@ export class Materializer {
       ignoresMaybeThrows: false,
       alternativeDepth: 0,
       alternative: null,
+      numbering: { owner: this, next: 0 },
       owner: null,
       isStrictMode: false,
     };
@@ -555,6 +606,9 @@ export class Materializer {
     switch (value.kind) {
       case "primitive": {
         const primitive = value.value;
+        if (primitive === "" && this.reconcilesEmptyText) {
+          return this.runtime.react.createElement(TextMarker, { text: primitive });
+        }
         if (typeof primitive === "string" || typeof primitive === "number") {
           return primitive;
         }
@@ -586,7 +640,6 @@ export class Materializer {
           value.reason,
           value.location,
           value.preferredIndex,
-          value.predicate,
         );
         return this.branchNode(
           value.alternatives.map((alternative, index) =>
@@ -596,6 +649,7 @@ export class Materializer {
           value.preferredIndex,
           isTopLevel,
           value.location,
+          value.predicate,
           conditions[0].predicate,
         );
       }
@@ -607,7 +661,6 @@ export class Materializer {
           value.reason,
           value.location,
           preferredIndex,
-          null,
         );
         return this.branchNode(
           [this.alternativeNode(value.value, present, context, isTopLevel), null],
@@ -615,6 +668,7 @@ export class Materializer {
           preferredIndex,
           isTopLevel,
           value.location,
+          null,
           present.predicate,
         );
       }
@@ -661,13 +715,15 @@ export class Materializer {
     isTopLevel: boolean,
     location: SourceLocation | null = null,
     predicate: string | null = null,
+    path: string | null = null,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     return createElement(BranchMarker, {
       reason,
       location: location && formatSourceLocation(location),
       preferredIndex,
-      predicate,
+      predicate: predicate ?? path,
+      path,
       children: alternatives.map((node, index) =>
         createElement(AlternativeMarker, { key: index, children: isTopLevel ? node : [node] }),
       ),
@@ -1443,6 +1499,7 @@ export class Materializer {
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
       isDeferred: () => false,
+      decided: (value) => this.interpreter.resolveForkDecisions(value),
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       project: this.interpreter.project,
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
@@ -1538,6 +1595,7 @@ export class Materializer {
     evaluate: (frame: HookFrame) => CompositeEvaluation,
   ): StatefulRender {
     const { frame } = instance;
+    resolveAlternativeUpdates(frame, context.alternative);
     const changedCells = commitHookPass(frame);
     const previous = instance.rendered;
     if (
@@ -1775,6 +1833,7 @@ export class Materializer {
         { node: component.node, scope: component.scope, props },
       ],
       environment,
+      numbering: hooks ? { owner: hooks, next: 0 } : context.numbering,
       owner: null,
     };
     if (context.depth >= this.maxComponentDepth) {

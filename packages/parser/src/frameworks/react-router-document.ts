@@ -4,6 +4,9 @@ import {
   distributeObjectBranches,
   getKnownObjectKeys,
   getObjectProperty,
+  getOwnEnumerableEntries,
+  getTruthiness,
+  hasDefiniteItems,
   isNullish,
   listValue,
   mapValue,
@@ -14,6 +17,7 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { joinStrings, toStringValue } from "../evaluate/primitive-shapes.js";
 import type {
   StaticElementValue,
   StaticObjectValue,
@@ -28,7 +32,7 @@ import { element } from "../evaluate/stubs.js";
 
 /** Descriptors framework mode collects once the routes are matched. */
 export interface FrameworkDocument {
-  /** `meta.flat()` of the leaf route (inherited from the nearest ancestor with `meta`). */
+  /** `meta.flat()` of the leaf route (inherited from the nearest ancestor with `meta`); Remix 1's merged object. */
   meta: StaticValue | null;
   /** `links()` of every match, root first, de-duplicated by key. */
   links: StaticValue | null;
@@ -61,11 +65,6 @@ const jsonKey = (object: StaticObjectValue, sortKeys: boolean): StaticValue => {
   return primitiveValue(JSON.stringify(Object.fromEntries(keys.map((key) => [key, record[key]]))));
 };
 
-const stringOf = (value: StaticValue): StaticValue =>
-  value.kind === "primitive"
-    ? primitiveValue(String(value.value))
-    : unknownPrimitiveValue("string", `String(${value.kind})`);
-
 const metaElement = (descriptor: StaticValue): StaticValue => {
   if (isNullish(descriptor) === true) return NULL_VALUE;
   if (descriptor.kind !== "object") {
@@ -86,7 +85,7 @@ const metaElement = (descriptor: StaticValue): StaticValue => {
   if (keys.includes("title")) {
     return hostElement(
       "title",
-      objectFromRecord({ children: stringOf(getObjectProperty(descriptor, "title")) }),
+      objectFromRecord({ children: toStringValue(getObjectProperty(descriptor, "title")) }),
       primitiveValue("title"),
     );
   }
@@ -141,6 +140,89 @@ export const renderMetaDescriptors = (meta: StaticValue): StaticValue =>
     return listValue(descriptors.map(metaElement));
   });
 
+const OPEN_GRAPH_PROPERTY = /^(og|music|video|article|book|profile|fb):.+$/;
+const OPEN_GRAPH_PREFIX = "og:";
+
+const v1MetaContent = (name: string, content: StaticValue, isOpenGraphTag: boolean): StaticValue => {
+  if (isOpenGraphTag) {
+    return hostElement(
+      "meta",
+      objectFromRecord({ property: primitiveValue(name), content }),
+      joinStrings([primitiveValue(name), content], ""),
+    );
+  }
+  if (content.kind === "primitive" && typeof content.value === "string") {
+    return hostElement(
+      "meta",
+      objectFromRecord({ name: primitiveValue(name), content }),
+      primitiveValue(name + content.value),
+    );
+  }
+  if (content.kind !== "object") {
+    return unknownValue(`remix: meta "${name}" content is not a static string or object`);
+  }
+  return hostElement(
+    "meta",
+    content,
+    joinStrings([primitiveValue(name), jsonKey(content, false)], ""),
+  );
+};
+
+const v1MetaEntry = (
+  name: string,
+  value: StaticValue,
+  hasExtendedOpenGraphPrefixes: boolean,
+): StaticValue =>
+  mapValue(distributeObjectBranches(value), (alternative) => {
+    const truthiness = getTruthiness(alternative);
+    if (truthiness === false) return NULL_VALUE;
+    if (truthiness === null) return unknownValue(`remix: meta "${name}" truthiness is not static`);
+    if (name === "charset" || name === "charSet") {
+      return hostElement(
+        "meta",
+        objectFromRecord({ charSet: alternative }),
+        primitiveValue("charset"),
+      );
+    }
+    if (name === "title") {
+      return hostElement(
+        "title",
+        objectFromRecord({ children: toStringValue(alternative) }),
+        primitiveValue("title"),
+      );
+    }
+    if (alternative.kind === "list" && !hasDefiniteItems(alternative)) {
+      return unknownValue(`remix: meta "${name}" is not a static array`);
+    }
+    const contents = alternative.kind === "list" ? alternative.items : [alternative];
+    const isOpenGraphTag = hasExtendedOpenGraphPrefixes
+      ? OPEN_GRAPH_PROPERTY.test(name)
+      : name.startsWith(OPEN_GRAPH_PREFIX);
+    return listValue(contents.map((content) => v1MetaContent(name, content, isOpenGraphTag)));
+  });
+
+/**
+ * What Remix 1's `<Meta>` renders: the matches' `meta()` objects `Object.assign`ed
+ * root first, one head element per key (arrays of contents become a nested array).
+ */
+export const renderV1MetaObject = (
+  meta: StaticValue,
+  hasExtendedOpenGraphPrefixes: boolean,
+): StaticValue =>
+  mapValue(distributeObjectBranches(meta), (alternative) => {
+    if (alternative.kind === "unknown") return alternative;
+    const entries = getOwnEnumerableEntries(alternative);
+    if (!entries) return unknownValue("remix: merged meta() object has dynamic keys");
+    return element(
+      { kind: "fragment" },
+      objectFromRecord({
+        children: listValue(
+          entries.map(([name, value]) => v1MetaEntry(name, value, hasExtendedOpenGraphPrefixes)),
+        ),
+      }),
+    );
+  });
+
 const linkElement = (descriptor: StaticValue): StaticValue => {
   if (descriptor.kind !== "object") {
     return unknownValue("react-router: link descriptor is not a static object");
@@ -175,14 +257,19 @@ export const renderLinkDescriptors = (links: StaticValue): StaticValue =>
   );
 
 /**
- * Remix v2's `<Links>`: `<>{criticalCss ? <style /> : null} {links.map(...)}</>`.
- * The Vite dev server inlines the stylesheets imported by the matched modules
- * and never clears them after hydration.
+ * Remix's `<Links>`: `<>{criticalCss ? <style /> : null} {links.map(...)}</>`
+ * once the Vite dev server could inline the matched modules' stylesheets
+ * (never cleared after hydration); before that `<>{links.map(...)}</>`, whose
+ * mapped array is the sole child and so becomes no Fragment fiber.
  */
 export const renderRemixLinkDescriptors = (
   links: StaticValue,
   hasCriticalCss: boolean,
+  hasCriticalCssSlot: boolean,
 ): StaticValue => {
+  if (!hasCriticalCssSlot) {
+    return element({ kind: "fragment" }, objectFromRecord({ children: mapLinkDescriptors(links) }));
+  }
   const criticalStyle = hostElement(
     "style",
     objectFromRecord({

@@ -284,16 +284,22 @@ export class StaticRenderer {
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
-   * with the statements that lead up to it. An entry without such a call (it
-   * mounts through an imported function) runs whole, and the element the first
+   * with the statements that lead up to it. An entry whose call sits in a
+   * callback (`i18n.init().then(() => hydrate(...))`) or that has none (it mounts
+   * through an imported function) runs whole, and the element the first
    * evaluated root render received is used. Null (with a diagnostic) when no
    * root render happens.
    */
   evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
     const rootCalls = findRootRenderCalls(module);
-    if (rootCalls.length === 0) {
+    const runModuleWhole = (): StaticValue | null => {
       interpreter.initializeModule(module);
-      if (interpreter.rootRender.element) return interpreter.rootRender.element;
+      interpreter.timers.drainMicrotasks();
+      return interpreter.rootRender.element;
+    };
+    if (rootCalls.length === 0) {
+      const element = runModuleWhole();
+      if (element) return element;
       interpreter.report(
         "no-root-render",
         `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,
@@ -311,6 +317,10 @@ export class StaticRenderer {
       );
     }
     const rootCall = rootCalls[0];
+    if (rootCall.isInsideFunction) {
+      const element = runModuleWhole();
+      if (element) return element;
+    }
     interpreter.initializeModule(
       module,
       module.sideEffectStatements.filter((statement) => statement.end <= rootCall.call.start),
@@ -326,6 +336,11 @@ export class StaticRenderer {
   renderWith(produce: (interpreter: Interpreter) => StaticValue): Promise<StaticRenderResult> {
     const run = this.startRun();
     return this.finish(run, produce(run.interpreter));
+  }
+
+  /** Evaluates with a fresh interpreter without rendering: for module values a framework needs before its render. */
+  evaluate<T>(produce: (interpreter: Interpreter) => T): T {
+    return produce(this.startRun().interpreter);
   }
 }
 

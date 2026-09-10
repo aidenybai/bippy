@@ -35,6 +35,7 @@ const patternHost = (name: string, children: PatternNode[] = []): PatternFiber =
 const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
   kind: "branch",
   variable,
+  path: null,
   reason: variable,
   location: null,
   preferredIndex: 0,
@@ -53,6 +54,7 @@ const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque
 const patternBranch = (alternatives: PatternNode[][]): PatternBranch => ({
   kind: "branch",
   variable: "choice",
+  path: null,
   reason: "unknown flag",
   location: null,
   preferredIndex: 0,

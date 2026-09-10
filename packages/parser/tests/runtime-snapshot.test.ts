@@ -39,7 +39,7 @@ describe("runtime snapshot props", () => {
     const tree = await snapshotTree(
       createElement(
         BranchMarker,
-        { reason: "test", location: null, preferredIndex: 0, predicate: LONG_TEXT },
+        { reason: "test", location: null, preferredIndex: 0, predicate: LONG_TEXT, path: null },
         createElement("div", { title: LONG_TEXT }),
       ),
     );

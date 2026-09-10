@@ -1,0 +1,9 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 4,
+  "expectOmitted": false,
+  "notes": "Two children mounted inside a layout's branch alternatives register into the layout's state from their effects through a functional updater. Each alternative queues its own updates, so the state object the layout reads afterwards is conditional on the alternative's path; `Object.keys` over it and the footer it renders must fork on that same decision, giving two commits times two alternatives, not an independent decision per updater."
+}

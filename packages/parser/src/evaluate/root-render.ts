@@ -1,7 +1,12 @@
 import type { JournaledState, SourceLocation, StaticValue } from "../types.js";
-import { UNDEFINED_VALUE, branchValue, getAllocationCount } from "./values.js";
+import { branchValue, getAllocationCount } from "./values.js";
 
-/** Journaled root element so an entry that mounts different trees on different paths keeps one alternative per path. */
+/**
+ * Journaled root element so an entry that mounts different trees on different
+ * paths keeps one alternative per path. Paths that never mount (a missing
+ * container, an early return) contribute no alternative: the analysis is of
+ * the render that happened.
+ */
 export class RootRenderState implements JournaledState<StaticValue | null> {
   readonly allocation = getAllocationCount();
   element: StaticValue | null = null;
@@ -20,13 +25,17 @@ export class RootRenderState implements JournaledState<StaticValue | null> {
     location: SourceLocation | null,
     preferredPath: number,
   ): void {
-    if (snapshots.every((snapshot) => snapshot === null)) {
+    const rendered = snapshots.flatMap((snapshot, pathIndex) =>
+      snapshot === null ? [] : [{ snapshot, pathIndex }],
+    );
+    if (rendered.length === 0) {
       this.element = null;
       return;
     }
-    const alternatives = snapshots.map((snapshot) => snapshot ?? UNDEFINED_VALUE);
+    const alternatives = rendered.map(({ snapshot }) => snapshot);
+    const preferredRendered = rendered.findIndex(({ pathIndex }) => pathIndex === preferredPath);
     this.element = alternatives.every((alternative) => alternative === alternatives[0])
       ? alternatives[0]
-      : branchValue(alternatives, reason, location, preferredPath);
+      : branchValue(alternatives, reason, location, Math.max(preferredRendered, 0));
   }
 }

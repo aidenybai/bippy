@@ -94,7 +94,7 @@ const stateHook = (
       queueStateUpdate(
         frame,
         cell,
-        reduce(action, cell.next ?? cell.current, tools),
+        reduce(action, tools.decided(cell.next ?? cell.current), tools),
         tools.isDeferred(),
       );
       return UNDEFINED_VALUE;

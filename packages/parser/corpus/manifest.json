@@ -2394,7 +2394,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/components",
-        "externalPackageAllowList": ["react-i18next"]
+        "externalPackageAllowList": ["react-i18next", "i18next", "remix-i18next", "use-consistent-value", "@headlessui/react"]
       },
       "notes": "`metronome-sh` (a Remix metrics SDK listed in package.json but imported nowhere in the app) was unpublished from npm, so the install step drops it from package.json before `npm install`; nothing else is patched.",
       "env": {

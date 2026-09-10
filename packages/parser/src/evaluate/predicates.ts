@@ -89,6 +89,10 @@ export const getTruthinessPredicate = (test: StaticValue): string => {
 /** The predicate of a fork whose paths are decided by something the analysis cannot see. */
 export const createPathPredicate = (): string => `path(${++nextSubjectId})`;
 
+/** The predicate of the `ordinal`-th materialized branch in a render of `owner`; its next render forks the same decision again. */
+export const getPathPredicate = (owner: object, ordinal: number): string =>
+  `path(${getSubjectId(owner)}/${ordinal})`;
+
 /** The predicate deciding which value a state cell holds in a committed tree. */
 export const getStatePredicate = (cell: object): string => `state(${getSubjectId(cell)})`;
 

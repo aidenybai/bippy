@@ -2,7 +2,9 @@ import { isBundledDefaultExportName, isBundlerDedupedName } from "./bundler-name
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
+  findPathAlternative,
   formatRepeatBounds,
+  getPathAlternative,
   hasPatternDecisions,
   scopePatternVariables,
   SelfContainedFiberIndex,
@@ -306,6 +308,8 @@ class Matcher {
   private positions: RuntimePositions = { start: new Map(), end: new Map() };
   /** Decisions in force on the path being tried; a variable met again must agree. */
   private readonly assignment = new Map<string, number>();
+  /** Decisions the `path` of a decided branch implies for branches on state set inside it. */
+  private readonly implied = new Map<string, number>();
   private readonly scopedRepeatChildren = new Map<PatternRepeat, PatternNode[][]>();
   private readonly selfContainedFibers = new SelfContainedFiberIndex();
   private readonly compareKeys: boolean;
@@ -511,31 +515,37 @@ class Matcher {
           }
           return this.matchList(alternative, 0, runtime, runtimeIndex, path, continuation);
         }
+        const resolve = (result: MatchTally, choice: number): MatchTally =>
+          addTally(result, { branchesResolved: 1, decisions: [{ node: pattern, choice }] });
+        const implied = this.findImpliedAlternative(pattern);
+        if (implied !== null) {
+          const result = this.matchDecidedBranch(
+            pattern,
+            implied,
+            runtime,
+            runtimeIndex,
+            path,
+            continuation,
+          );
+          return result && resolve(result, implied);
+        }
         const order = pattern.alternatives.map((_, alternativeIndex) => alternativeIndex);
         if (pattern.preferredIndex !== null && pattern.preferredIndex < order.length) {
           order.splice(order.indexOf(pattern.preferredIndex), 1);
           order.unshift(pattern.preferredIndex);
         }
-        const resolve = (result: MatchTally, choice: number): MatchTally =>
-          addTally(result, { branchesResolved: 1, decisions: [{ node: pattern, choice }] });
         // Alternatives are tried in preference order, but one that explains the
         // runtime without leaning on wildcards beats an earlier one that does.
         let best: RankedAlternative | null = null;
         for (const alternativeIndex of order) {
-          this.assignment.set(pattern.variable, alternativeIndex);
-          let result: MatchTally | null;
-          try {
-            result = this.matchList(
-              pattern.alternatives[alternativeIndex],
-              0,
-              runtime,
-              runtimeIndex,
-              path,
-              continuation,
-            );
-          } finally {
-            this.assignment.delete(pattern.variable);
-          }
+          const result = this.matchDecidedBranch(
+            pattern,
+            alternativeIndex,
+            runtime,
+            runtimeIndex,
+            path,
+            continuation,
+          );
           if (!result) continue;
           if (result.wildcardAbsorbedFibers === 0) return resolve(result, alternativeIndex);
           if (!best || result.wildcardAbsorbedFibers < best.tally.wildcardAbsorbedFibers) {
@@ -581,6 +591,37 @@ class Matcher {
         };
         return iterate(runtime, runtimeIndex, 0);
       }
+    }
+  }
+
+  private findImpliedAlternative(pattern: PatternBranch): number | null {
+    const lookup = (variable: string): number | null =>
+      this.assignment.get(variable) ?? this.implied.get(variable) ?? null;
+    return this.implied.get(pattern.variable) ?? findPathAlternative(pattern, lookup);
+  }
+
+  private matchDecidedBranch(
+    pattern: PatternBranch,
+    alternativeIndex: number,
+    runtime: RuntimeFiberSnapshot[],
+    runtimeIndex: number,
+    path: string[],
+    continuation: Continuation,
+  ): MatchTally | null {
+    const alternative = pattern.alternatives[alternativeIndex];
+    if (!alternative) {
+      this.recordFailure(path, runtime, runtimeIndex, pattern);
+      return null;
+    }
+    const pathAlternative = getPathAlternative(pattern, alternativeIndex);
+    const isImplying = pathAlternative !== null && !this.implied.has(pathAlternative.variable);
+    if (isImplying) this.implied.set(pathAlternative.variable, pathAlternative.alternativeIndex);
+    this.assignment.set(pattern.variable, alternativeIndex);
+    try {
+      return this.matchList(alternative, 0, runtime, runtimeIndex, path, continuation);
+    } finally {
+      this.assignment.delete(pattern.variable);
+      if (isImplying) this.implied.delete(pathAlternative.variable);
     }
   }
 

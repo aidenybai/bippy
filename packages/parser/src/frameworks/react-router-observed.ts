@@ -18,6 +18,8 @@ export interface ObservedRouterState {
   location: StaticValue;
   search: string;
   navigation: StaticValue;
+  /** Remix v1 `useTransition()`: `convertNavigationToTransition(navigation)`, `IDLE_TRANSITION` while idle. */
+  transition: StaticValue;
   revalidation: StaticValue;
   /** `useMatches()`, with each match's `handle` read from its route (module) by `readHandle`. */
   matches: (readHandle: (routeId: string) => StaticValue) => StaticValue;
@@ -44,6 +46,14 @@ const idleNavigation = (): StaticValue =>
   objectFromRecord({
     state: primitiveValue("idle"),
     ...undefinedFields(["location", ...SUBMISSION_FIELDS]),
+  });
+
+const idleTransition = (): StaticValue =>
+  objectFromRecord({
+    state: primitiveValue("idle"),
+    submission: UNDEFINED_VALUE,
+    location: UNDEFINED_VALUE,
+    type: primitiveValue("idle"),
   });
 
 const idleFetcher = (): StaticValue =>
@@ -105,6 +115,10 @@ export const observeRouterState = (
       state.navigationState === "idle"
         ? idleNavigation()
         : unknownValue(`react-router navigation is ${state.navigationState}`),
+    transition:
+      state.navigationState === "idle"
+        ? idleTransition()
+        : unknownValue(`remix transition is ${state.navigationState}`),
     search: state.location.search,
     revalidation: primitiveValue(state.revalidationState),
     matches: (readHandle) =>

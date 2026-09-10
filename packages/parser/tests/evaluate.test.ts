@@ -50,6 +50,26 @@ export const sliceWithTwoBranches = () => {
   const end = isWide ? 2 : 3;
   return "abcd".slice(start, end);
 };
+
+export const randomIdAlphabet = () =>
+  crypto.getRandomValues(new Uint8Array(21)).reduce((id, byte) => {
+    byte &= 63;
+    if (byte < 36) id += byte.toString(36);
+    else if (byte < 62) id += (byte - 26).toString(36).toUpperCase();
+    else if (byte > 62) id += "-";
+    else id += "_";
+    return id;
+  }, "");
+
+export const knownPreferredKeepsItsAlternative = () => {
+  const label = isWide ? "Home" : String(document.title);
+  return label;
+};
+
+export const unknownPreferredOutsideShapeKeepsItsAlternative = () => {
+  const id = isWide ? "user-" + String(document.title) : "guest";
+  return id;
+};
 `;
 
 const MUTATION_SOURCE = `
@@ -149,6 +169,19 @@ describe("branch-valued primitives", () => {
       matchWithBranch: 'branch(["aaa"] | ["b"])',
       startsWithBranch: "branch(true | false)",
       sliceWithTwoBranches: "<string: slice()>",
+    });
+  });
+
+  it("lets a preferred unknown primitive stand for the alternatives it admits", async () => {
+    const results = await evaluateExports(BRANCHED_SOURCE, [
+      "randomIdAlphabet",
+      "knownPreferredKeepsItsAlternative",
+      "unknownPreferredOutsideShapeKeepsItsAlternative",
+    ]);
+    expect(results).toEqual({
+      randomIdAlphabet: "<string: + on dynamic values>",
+      knownPreferredKeepsItsAlternative: 'branch("Home" | <string>)',
+      unknownPreferredOutsideShapeKeepsItsAlternative: 'branch(<string> | "guest")',
     });
   });
 });
