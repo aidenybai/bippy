@@ -333,18 +333,14 @@ afterAll(removeIsolatedReactRuntimes);
 describe.each([...earlyReactVersionFixtures, ...reactVersionFixtures])(
   "React $label providerless useFiber",
   (fixture) => {
-    const reactVersion: string = packageRequire(`${fixture.reactPackageName}/package.json`).version;
-    // Experimental builds report `React.version` as `19.x.x-experimental-<sha>` while their
-    // package.json says `0.0.0-experimental-<sha>`, so match on the build identifier only.
-    const reactBuildIdentifier = reactVersion.slice(reactVersion.indexOf("-") + 1);
+    const reactVersion: string = packageRequire(fixture.reactPackageName).version;
 
     it.each(["development", "production"] as const)(
       "handles real-world edge cases in %s",
       (mode) => {
         const result = runRuntime(fixture, mode);
         expect(result.status, result.stderr).toBe(0);
-        expect(result.stdout).toContain(`"react":"`);
-        expect(result.stdout).toContain(`${reactBuildIdentifier}"`);
+        expect(result.stdout).toContain(`"react":"${reactVersion}"`);
         expect(result.stdout).toContain(`"mode":"${mode}"`);
       },
       35_000,

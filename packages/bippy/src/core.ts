@@ -168,15 +168,19 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
       // https://github.com/bvaughn/react-devtools-experimental/issues/197
       return true;
 
-    case workTags.Fragment:
+    case workTags.HostPortal:
     case workTags.HostText:
     case workTags.LegacyHiddenComponent:
     case workTags.OffscreenComponent:
+    case workTags.Throw:
       return true;
 
     case workTags.HostRoot:
       // It is never valid to filter the root element.
       return false;
+
+    case workTags.Fragment:
+      return fiber.key === null;
 
     default: {
       const symbolOrNumber =
@@ -185,7 +189,8 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
       if (typeof symbolOrNumber === "symbol") {
         return (
           symbolOrNumber.description === ReactSymbols.CONCURRENT_MODE_SYMBOL_DESCRIPTION ||
-          symbolOrNumber.description === ReactSymbols.DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION
+          symbolOrNumber.description === ReactSymbols.DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION ||
+          symbolOrNumber.description === ReactSymbols.STRICT_MODE_SYMBOL_DESCRIPTION
         );
       }
 
@@ -193,6 +198,8 @@ const shouldFilterFiber = (fiber: Fiber): boolean => {
         case ReactSymbols.CONCURRENT_MODE_NUMBER:
         case ReactSymbols.CONCURRENT_MODE_SYMBOL_STRING:
         case ReactSymbols.DEPRECATED_ASYNC_MODE_SYMBOL_STRING:
+        case ReactSymbols.STRICT_MODE_NUMBER:
+        case ReactSymbols.STRICT_MODE_SYMBOL_STRING:
           return true;
 
         default:

@@ -13,6 +13,7 @@ interface MockFiberOverrides {
   alternate?: Fiber | null;
   child?: Fiber | null;
   flags?: number;
+  key?: string | null;
   memoizedState?: unknown;
   return?: Fiber | null;
   sibling?: Fiber | null;
@@ -26,6 +27,7 @@ const createMockFiber = (overrides: MockFiberOverrides = {}): Fiber =>
     child: null,
     dependencies: null,
     flags: PERFORMED_WORK_FLAG,
+    key: null,
     memoizedProps: {},
     memoizedState: null,
     pendingProps: {},
@@ -278,6 +280,35 @@ describe("mount commits", () => {
     const onRender = vi.fn();
     traverseRenderedFibers(unrenderedFiber, onRender);
     expect(onRender).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["unkeyed Fragment", { tag: latestReactWorkTags.Fragment }],
+    ["HostPortal", { tag: latestReactWorkTags.HostPortal }],
+    ["HostText", { tag: latestReactWorkTags.HostText }],
+    ["Throw", { tag: latestReactWorkTags.Throw }],
+    ["StrictMode", { tag: latestReactWorkTags.Mode, type: Symbol.for("react.strict_mode") }],
+    [
+      "ConcurrentMode",
+      { tag: latestReactWorkTags.Mode, type: Symbol.for("react.concurrent_mode") },
+    ],
+  ])("should filter %s fibers but still report their children", (_label, overrides) => {
+    const child = createMockFiber();
+    const filteredFiber = createMockFiber({ ...overrides, child });
+    const onRender = vi.fn();
+    traverseRenderedFibers(filteredFiber, onRender);
+    expect(onRender).toHaveBeenCalledTimes(1);
+    expect(onRender).toHaveBeenCalledWith(child, "mount");
+  });
+
+  it.each([
+    ["keyed Fragment", { key: "list", tag: latestReactWorkTags.Fragment }],
+    ["Profiler", { tag: latestReactWorkTags.Profiler, type: Symbol.for("react.profiler") }],
+  ])("should report %s fibers", (_label, overrides) => {
+    const fiber = createMockFiber(overrides);
+    const onRender = vi.fn();
+    traverseRenderedFibers(fiber, onRender);
+    expect(onRender).toHaveBeenCalledWith(fiber, "mount");
   });
 });
 
