@@ -32066,16 +32066,190 @@
       "id": "hooks-admin",
       "revision": "0f0735266b71ca70d619d6ccb47e9a988d992034",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T11:36:29.914Z",
-      "durationMs": 13583,
-      "runtime": null,
-      "static": null,
-      "report": null,
-      "stateSpace": null,
-      "stateReplay": null,
+      "capturedAt": "2026-09-10T11:53:20.407Z",
+      "durationMs": 12194,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 177,
+        "commits": 7,
+        "pageErrors": [
+          "Warning: ReactDOM.render is no longer supported in React 18. Use createRoot instead. Until you switch to the new API, your app will behave as if it's running React 17. Learn more: https://reactjs.org/link/switch-to-createroot"
+        ],
+        "title": "Hooks-Admin"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 54,
+          "textCount": 0,
+          "branchCount": 4,
+          "repeatCount": 0,
+          "opaqueCount": 10,
+          "unknownCount": 6,
+          "modulesLoaded": 78
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 8,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 153,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 12,
+        "wildcards": [
+          {
+            "path": "root > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <Connect(App)> [SimpleMemoComponent] > <ReactRedux> [ContextProvider] > <App> [FunctionComponent] > <HashRouter> [FunctionComponent] > <ConfigProvider> (opaque) > <AuthRouter> [FunctionComponent]",
+            "reason": "react-router: route is repeat",
+            "absorbedFibers": 12,
+            "heads": [
+              "<ForwardRef> [ForwardRef]"
+            ]
+          }
+        ],
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "status": "partial",
+        "runtimeFibers": 173,
+        "staticFibers": 33,
+        "coverage": 1,
+        "strictCoverage": 0.046242774566473986,
+        "divergence": null,
+        "stepsUsed": 229,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 6,
+        "stateCount": 6,
+        "clusters": 1,
+        "tree": {
+          "nodes": 43,
+          "inputs": 4,
+          "guards": 8,
+          "branches": 4,
+          "repeats": 0,
+          "opaque": 10,
+          "wildcards": 6
+        },
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "1 route(s) could not be read statically and may also match /login",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "1 route(s) could not be read statically and may also match /login",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 0,
+              "guard": "truthy(#2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 1,
+              "guard": "not(truthy(#2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 0,
+              "guard": "truthy(#3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 1,
+              "guard": "not(truthy(#3))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "1 route(s) could not be read statically and may also match /login",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 6,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 6,
+        "assignments": 6,
+        "replayed": 6,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
       "note": null,
-      "failure": "vite config /home/ubuntu/bippy-corpus/hooks-admin/vite.config.ts: ✖ Invalid input\n  → at transformIndexHtml"
+      "failure": null
     },
     {
       "id": "hyper",
