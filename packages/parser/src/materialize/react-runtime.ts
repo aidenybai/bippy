@@ -11,7 +11,7 @@ import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");
-export type ReactDomClientModule = typeof import("react-dom/client");
+type ReactDomClientModule = typeof import("react-dom/client");
 export type ReactDomModule = typeof import("react-dom");
 export type ReactDomServerModule = typeof import("react-dom/server");
 
@@ -23,7 +23,7 @@ export interface ReactPackageSpecifiers {
   domServer: string;
 }
 
-export const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
+const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
   react: "react",
   dom: "react-dom",
   domClient: "react-dom/client",
@@ -31,7 +31,7 @@ export const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
 };
 
 /** `react-dom` before 18: roots are created by `render(element, container)` and are always legacy (sync) roots. */
-export interface LegacyReactDomModule extends ReactDomModule {
+interface LegacyReactDomModule extends ReactDomModule {
   render: (element: ReactNode, container: Element) => void;
   unmountComponentAtNode: (container: Element) => boolean;
 }
@@ -47,11 +47,11 @@ export interface MountedRoot {
 }
 
 /** The reconciler's `readContext`, installed on the current dispatcher for every render (class bodies included). */
-export interface ContextDispatcher {
+interface ContextDispatcher {
   readContext: <T>(context: Context<T>) => T;
 }
 
-export interface LegacyReactInternals {
+interface LegacyReactInternals {
   ReactCurrentDispatcher: { current: ContextDispatcher | null };
 }
 
