@@ -20,9 +20,9 @@ Continue until the acceptance gates in this document are satisfied. Creating thi
 
 ### Immediate continuation
 
-1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`; preserve the uncommitted guarded mutation and N-way predicate work.
+1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, and guarded heap/read/N-way fixes at `c3b76b75`. Nothing pushed.
 2. Latest identical-capture runs pass Sentry (1/1 assignments) and PostHog (2/2), with no replay contradictions and 100% strict coverage. This is bounded evidence, not global soundness.
-3. Guarded state/store/collection reads and native-function identity fixes pass 757 parser tests. Address PostHog's predicate-processing cost, then continue remaining P1/P2 obligations.
+3. Guarded state/store/collection reads and native-function identity fixes pass 758 parser tests with the predicate cache. PostHog's identical-capture run is down from 213.8 to 165.0 seconds, still slower than baseline. Continue remaining P1/P2 obligations.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
@@ -224,7 +224,7 @@ The symbolic artifact must not be reduced to whichever tree happened to be captu
 
 ---
 
-## 4. Local work awaiting a checkpoint
+## 4. Local implementation checkpoints
 
 ### Review fixes checkpointed at `80b8f278`
 
@@ -911,6 +911,15 @@ Old worker claims that all guard sides must be witnessed for `exact` conflict wi
 Checkpoint after final validation, optimize measured predicate-processing overhead without semantic changes, and continue P1's queued mutation/lazy-state and lifecycle audits. Then address P2's truncated-prefix claims, corrected-tree coherence, and optimized host text coverage; review remaining worker changes and proceed through the acceptance gates.
 
 ---
+
+### Predicate-resolution cache checkpoint (2026-09-11)
+
+- Guarded heap/read/N-way work is committed locally at `c3b76b75`; its final suite passed 757 tests.
+- Added a weakly owned, per-branch cache for resolved alternative guards. Predicate changes and alternative-count changes invalidate it; resolved arrays are exposed read-only. No global string cache or analysis-budget change.
+- Cache validation passed **758 tests / 42 files**, typecheck, and lint (`/tmp/bippy-predicate-cache-full.log`).
+- The same pinned captures still pass: Sentry **0/1** replay mismatches, 5 states, 100% strict coverage, **13.299 seconds**; PostHog **0/2**, 4 states, 100%, **165.015 seconds**. Results: `/tmp/bippy-parser-corpus/predicate-cache-results.json`; log: `/tmp/bippy-parser-corpus-predicate-cache.log`. This also rechecks the final guarded-context replacement and unreachable-commit pin fix against those captures.
+- A separate PostHog probe measured **52.6 seconds** each for rendering and the selected replay, versus about 69 seconds before caching. Overall corpus time improved about 23%, but remains above the 104-second baseline.
+- The recovered transcripts expose no original capture attachments for mantine-admin, form-builder, or mantine-react-table. Their historical replay rows have not yet been independently reproduced here; new captures must not be labeled identical to those originals.
 
 ## 20. Complete checked-in corpus ledger
 

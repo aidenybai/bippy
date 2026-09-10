@@ -330,24 +330,40 @@ export const getBranchPredicate = (branch: StaticBranchValue): string =>
   branch.predicate ?? originChoicePredicate(branch);
 
 export interface ResolvedAlternativeGuards {
-  guards: Guard[];
-  inputs: InputVariable[];
+  readonly guards: readonly Guard[];
+  readonly inputs: readonly InputVariable[];
 }
+
+interface CachedAlternativeGuards {
+  predicate: string;
+  alternativeCount: number;
+  resolved: ResolvedAlternativeGuards | null;
+}
+
+const alternativeGuardCache = new WeakMap<StaticBranchValue, CachedAlternativeGuards>();
 
 export const getAlternativeGuards = (
   branch: StaticBranchValue,
 ): ResolvedAlternativeGuards | null => {
-  const predicate = parseSymbolicPredicate(getBranchPredicate(branch));
-  if (!decidesAlternatives(predicate, branch.alternatives.length)) return null;
-  return {
-    guards: predicateGuards(predicate, branch.alternatives.length),
-    inputs: predicate.inputs,
-  };
+  const serialized = getBranchPredicate(branch);
+  const alternativeCount = branch.alternatives.length;
+  const cached = alternativeGuardCache.get(branch);
+  if (cached?.predicate === serialized && cached.alternativeCount === alternativeCount)
+    return cached.resolved;
+  const predicate = parseSymbolicPredicate(serialized);
+  const resolved = decidesAlternatives(predicate, alternativeCount)
+    ? { guards: predicateGuards(predicate, alternativeCount), inputs: predicate.inputs }
+    : null;
+  alternativeGuardCache.set(branch, { predicate: serialized, alternativeCount, resolved });
+  return resolved;
 };
 
 const MAX_PREDICATE_ATOMS = 64;
 
-export const guardedPredicate = (guards: Guard[], inputs: InputVariable[][]): string | null =>
+export const guardedPredicate = (
+  guards: Guard[],
+  inputs: readonly (readonly InputVariable[])[],
+): string | null =>
   guards.reduce((total, guard) => total + countGuardAtoms(guard), 0) > MAX_PREDICATE_ATOMS
     ? null
     : serializeSymbolicPredicate({
@@ -368,7 +384,7 @@ export const composeFlattenedPredicate = (
   const outer = parseSymbolicPredicate(predicate ?? createPathPredicate(reason, location));
   if (!decidesAlternatives(outer, alternatives.length)) return null;
   const outerGuards = predicateGuards(outer, alternatives.length);
-  const inputs = [outer.inputs];
+  const inputs: (readonly InputVariable[])[] = [outer.inputs];
   const sides: Guard[][] = Array.from({ length: positionCount }, () => []);
   for (const [index, alternative] of alternatives.entries()) {
     if (alternative.kind !== "branch") {
@@ -415,7 +431,7 @@ export const getGuardedTruthiness = (subject: StaticBranchValue): boolean | null
   return truthiness;
 };
 
-const mergeInputs = (groups: InputVariable[][]): InputVariable[] => {
+const mergeInputs = (groups: readonly (readonly InputVariable[])[]): InputVariable[] => {
   const byId = new Map<string, InputVariable>();
   for (const group of groups) for (const input of group) byId.set(input.id, input);
   return [...byId.values()].sort((left, right) => left.id.localeCompare(right.id));

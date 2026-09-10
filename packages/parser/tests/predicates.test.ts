@@ -62,6 +62,21 @@ describe("flattened predicates", () => {
     expect(getAlternativeGuards(value)?.inputs).toHaveLength(2);
   });
 
+  it("reuses resolved guards until the predicate or alternative count changes", () => {
+    const predicate = createPathPredicate("first", null);
+    const value = branchValue([primitiveValue(1), primitiveValue(0)], "first", null, 0, predicate);
+    expect(value.kind).toBe("branch");
+    if (value.kind !== "branch") return;
+    const initial = getAlternativeGuards(value);
+    expect(getAlternativeGuards(value)).toBe(initial);
+    value.predicate = createPathPredicate("second", null);
+    const changed = getAlternativeGuards(value);
+    expect(changed).not.toBe(initial);
+    expect(changed?.inputs[0].label).toBe("second");
+    value.alternatives.push(primitiveValue(2));
+    expect(getAlternativeGuards(value)?.guards).toHaveLength(3);
+  });
+
   it("accepts serialized predicates predating per-alternative guards", () => {
     const serialized = JSON.stringify({
       formula: { kind: "constant", value: true },
