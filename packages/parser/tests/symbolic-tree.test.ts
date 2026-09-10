@@ -12,9 +12,13 @@ import {
 } from "../src/harness/state-space.js";
 import type { PatternNode } from "../src/harness/static-pattern.js";
 import {
+  andGuard,
   compareGuard,
+  constantGuard,
   equalsGuard,
   formatGuard,
+  negateGuard,
+  orGuard,
   parseSymbolicTree,
   truthyGuard,
   type InputVariable,
@@ -120,6 +124,31 @@ describe("symbolic tree: input provenance", () => {
     const rendered = formatSymbolicTree(space.tree);
     expect(rendered).toContain('and(not(eq(typeof(#1), "undefined")), eq(#1, "beta"))');
     expect(rendered).toContain("#3 < 0.5");
+  });
+});
+
+describe("symbolic tree: guard algebra", () => {
+  const isTruthy = truthyGuard(variable("#1"));
+  const isBeta = equalsGuard(variable("#2", "flag"), "beta");
+
+  it("folds a guard next to its own negation to the absorbing constant", () => {
+    expect(andGuard([isTruthy, negateGuard(isTruthy)])).toEqual(constantGuard(false));
+    expect(orGuard([isBeta, negateGuard(isBeta)])).toEqual(constantGuard(true));
+    expect(andGuard([isTruthy, orGuard([isBeta, negateGuard(isBeta)])])).toEqual(isTruthy);
+  });
+
+  it("collapses duplicate operands and keeps distinct ones", () => {
+    expect(andGuard([isTruthy, isTruthy])).toEqual(isTruthy);
+    expect(orGuard([isTruthy, isBeta, isTruthy])).toEqual({
+      kind: "or",
+      operands: [isTruthy, isBeta],
+    });
+  });
+
+  it("decides a test whose branch is truthy exactly when it is taken", async () => {
+    const space = await renderFixture("narrowed-opaque-portal-root.tsx");
+    expect(space.tree.inputs).toHaveLength(0);
+    expect(formatSymbolicTree(space.tree)).not.toContain("truthy(");
   });
 });
 

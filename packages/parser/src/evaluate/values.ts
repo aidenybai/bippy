@@ -37,7 +37,12 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
-import { composeFlattenedPredicate, recordBranchOrigin, recordDerivation } from "./predicates.js";
+import {
+  composeFlattenedPredicate,
+  getGuardedTruthiness,
+  recordBranchOrigin,
+  recordDerivation,
+} from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -1528,7 +1533,7 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
     case "primitive":
       return Boolean(value.value);
     case "branch":
-      return getAgreedTruthiness(value.alternatives);
+      return getAgreedTruthiness(value.alternatives) ?? getGuardedTruthiness(value);
     case "unknown-primitive":
       return getShapedTruthiness(value);
     case "unknown":
