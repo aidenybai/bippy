@@ -296,6 +296,8 @@ const mapUncertainChildren = (
       mapChildren(interpreter, children.value, callback, undefined, uncertainContext, location),
       children.reason,
       children.location,
+      children.isAbsentPreferred,
+      children.predicate,
     );
   }
   return {

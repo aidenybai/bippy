@@ -349,6 +349,23 @@ const collectAssignedGuards = (
     }
   });
 
+const getPinnedConditions = (assignment: Assignment, commitCount: number): DecisionCondition[][] =>
+  Array.from({ length: commitCount }, (_, commit) =>
+    [...assignment.values()].flatMap((aliases) =>
+      aliases.flatMap((alias) => (alias.commit === commit ? [alias.condition] : [])),
+    ),
+  );
+
+interface CommitAssignment {
+  decisions: CommitDecision[];
+  guards: Guard[];
+}
+
+interface GuardedAssignment {
+  assignment: Assignment;
+  guards: Guard[];
+}
+
 export interface DecisionAssignment {
   /** One condition per decision, under the variable of the earliest commit meeting it. */
   conditions: DecisionCondition[];
@@ -372,43 +389,41 @@ export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionA
   const perCommit = stateSpace.commitStates.map((commitStates, commit) => {
     const commitDecisions = stateSpace.states
       .slice(commitStart, commitStart + commitStates.stateCount)
-      .map((state) =>
-        state.conditions
-          .filter(isDecisionCondition)
-          .map((condition): CommitDecision => ({ commit, condition })),
-      );
+      .map((state): CommitAssignment => {
+        const conditions = state.conditions.filter(isDecisionCondition);
+        return {
+          decisions: conditions.map((condition) => ({ commit, condition })),
+          guards: collectAssignedGuards(
+            stateSpace.commits[commit],
+            new Map(conditions.map((condition) => [condition.variable, condition])),
+          ),
+        };
+      });
     commitStart += commitStates.stateCount;
-    decisionsOf.push(...commitDecisions);
+    decisionsOf.push(...commitDecisions.map((candidate) => candidate.decisions));
     return commitDecisions;
   });
-  let joint: Assignment[] = [new Map()];
-  for (const commitAssignments of perCommit) {
-    const extended = new Map<string, Assignment>();
-    for (const assignment of joint) {
+  let joint: GuardedAssignment[] = [{ assignment: new Map(), guards: [] }];
+  for (const [commit, commitAssignments] of perCommit.entries()) {
+    const extended = new Map<string, GuardedAssignment>();
+    for (const existing of joint) {
+      const { assignment } = existing;
       let isExtended = false;
-      for (const decisions of commitAssignments) {
-        if (!join.agreesWith(assignment, decisions)) continue;
+      for (const candidate of commitAssignments) {
+        if (!join.agreesWith(assignment, candidate.decisions)) continue;
+        const guards = [...existing.guards, ...candidate.guards];
+        if (!areGuardsSatisfiable([...guards, stateSpace.tree.commits[commit].guard])) continue;
+        const merged = join.merge(assignment, candidate.decisions);
         isExtended = true;
-        const merged = join.merge(assignment, decisions);
-        extended.set(assignmentKey(merged), merged);
+        extended.set(assignmentKey(merged), { assignment: merged, guards });
       }
-      if (!isExtended) extended.set(assignmentKey(assignment), assignment);
+      if (!isExtended) extended.set(assignmentKey(assignment), existing);
     }
     joint = [...extended.values()].slice(0, stateSpace.budget.maxStates);
   }
-  return joint.map((assignment) => {
+  return joint.map(({ assignment, guards }): DecisionAssignment => {
     const decisions = [...assignment.values()];
-    const pinnedConditions = stateSpace.commits.map((_, commit) =>
-      decisions.flatMap((aliases) =>
-        aliases.flatMap((alias) => (alias.commit === commit ? [alias.condition] : [])),
-      ),
-    );
-    const guards = stateSpace.commits.flatMap((commit, index) =>
-      collectAssignedGuards(
-        commit,
-        new Map(pinnedConditions[index].map((condition) => [condition.variable, condition])),
-      ),
-    );
+    const pinnedConditions = getPinnedConditions(assignment, stateSpace.commits.length);
     const reachable = stateSpace.tree.commits.map((commit) =>
       areGuardsSatisfiable([...guards, commit.guard]),
     );

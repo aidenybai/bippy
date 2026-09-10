@@ -360,13 +360,21 @@ import {
 } from "./values.js";
 import {
   createPathPredicate,
+  getAlternativeGuards,
+  guardedPredicate,
   getPresencePredicate,
   getTruthinessPredicate,
   recordDerivation,
   recordNegation,
   recordRefinement,
 } from "./predicates.js";
-import type { CompareOperator, GuardLiteral } from "../harness/symbolic-tree.js";
+import {
+  constantGuard,
+  type CompareOperator,
+  type Guard,
+  type GuardLiteral,
+} from "../harness/symbolic-tree.js";
+import { areGuardsSatisfiable } from "../harness/guard-solver.js";
 
 export interface InterpreterOptions {
   maxCallDepth?: number;
@@ -449,6 +457,11 @@ interface CallValueOptions {
   thisValue?: StaticValue | null;
   nameHint?: string | null;
   templateArgumentNames?: Array<string | null>;
+}
+
+interface MaybeRunOptions {
+  predicate?: string;
+  unconditionalUpdates?: ReadonlySet<StateCell>;
 }
 
 type DestructuringPattern = BindingPattern | AssignmentTargetMaybeDefault;
@@ -909,6 +922,7 @@ export class Interpreter {
   readonly rootRender = new RootRenderState();
   readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
+  private guard: Guard = constantGuard(true);
   private readonly pendingReturnJoins: PendingReturnJoin[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
@@ -2049,10 +2063,49 @@ export class Interpreter {
     return true;
   }
 
+  runWithGuard<Result>(guard: Guard, run: () => Result): Result {
+    const previous = this.guard;
+    this.guard = guard;
+    try {
+      return run();
+    } finally {
+      this.guard = previous;
+    }
+  }
+
+  private getGuardedValue(value: StaticValue): StaticValue {
+    if (value.kind !== "branch" || (this.guard.kind === "constant" && this.guard.value))
+      return value;
+    const resolved = getAlternativeGuards(value);
+    if (!resolved) return value;
+    const indices = resolved.guards.flatMap((guard, index) =>
+      areGuardsSatisfiable([this.guard, guard]) ? [index] : [],
+    );
+    if (indices.length === value.alternatives.length || indices.length === 0) return value;
+    return branchValue(
+      indices.map((index) => value.alternatives[index]),
+      value.reason,
+      value.location,
+      Math.max(0, indices.indexOf(value.preferredIndex)),
+      guardedPredicate(
+        indices.map((index) => resolved.guards[index]),
+        [resolved.inputs],
+      ),
+    );
+  }
+
   evaluateExpression(
     node: Expression,
     context: EvaluationContext,
     nameHint: string | null = null,
+  ): StaticValue {
+    return this.getGuardedValue(this.evaluateExpressionValue(node, context, nameHint));
+  }
+
+  private evaluateExpressionValue(
+    node: Expression,
+    context: EvaluationContext,
+    nameHint: string | null,
   ): StaticValue {
     const location = this.locate(context.module, node);
     if (!this.consumeStep(context.budget, location)) {
@@ -4861,9 +4914,11 @@ export class Interpreter {
     location: SourceLocation | null,
     isLikelyRun = true,
     isRepeated = false,
+    options?: MaybeRunOptions,
   ): Result {
+    const predicate = options?.predicate ?? createPathPredicate(reason, location);
     const entrySnapshot = snapshotScopes(scope);
-    const journal = new HeapJournal();
+    const journal = new HeapJournal(options?.unconditionalUpdates);
     this.heapJournals.push(journal);
     try {
       return run();
@@ -4874,7 +4929,6 @@ export class Interpreter {
       journal.endPath();
       this.removeHeapJournal(journal);
       const preferredPath = isLikelyRun ? 0 : 1;
-      const predicate = createPathPredicate(reason, location);
       journal.join(reason, location, preferredPath, predicate, isRepeated);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
     }

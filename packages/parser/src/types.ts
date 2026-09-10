@@ -385,6 +385,7 @@ export interface JournaledState<Snapshot> {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate?: string | null,
   ): void;
 }
 
@@ -882,6 +883,7 @@ export interface StaticClassValue {
 /** A list item (or child) that is present on some paths and absent on others, as `filter` produces. */
 export interface StaticOptionalValue {
   kind: "optional";
+  predicate?: string | null;
   value: StaticValue;
   reason: string;
   location: SourceLocation | null;
