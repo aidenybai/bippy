@@ -1,15 +1,24 @@
+import type { Class } from "oxc-parser";
 import type {
+  ComponentDefinition,
+  FunctionLikeNode,
   NumberRange,
+  StaticClassValue,
   StaticElementType,
+  StaticFunctionValue,
+  StaticObjectValue,
   StaticUnknownPrimitiveValue,
   StaticValue,
   StringComposition,
   StringShape,
 } from "../types.js";
+import { getBuiltinFunctionSource, getPrototypeWitness } from "./instance-of.js";
 import {
   describeValue,
   distributeBinary,
+  getPropertyName,
   hasDefiniteItems,
+  hasOwnKey,
   mapValue,
   primitiveValue,
   regExpToString,
@@ -43,25 +52,223 @@ const PLAIN_OBJECT_ELEMENT_TYPES = new Set<StaticElementType["kind"]>([
   "context-consumer",
 ]);
 
-/** The text `value` coerces to when the language fixes it: primitives, and React's plain-object element types and elements. */
-export const getCoercedText = (value: StaticValue): string | null => {
-  if (value.kind === "primitive")
-    return typeof value.value === "symbol" ? null : String(value.value);
-  if (value.kind === "element" || value.kind === "context") return "[object Object]";
-  if (value.kind === "component-reference" && PLAIN_OBJECT_ELEMENT_TYPES.has(value.type.kind)) {
-    return "[object Object]";
+const PLAIN_OBJECT_TEXT = "[object Object]";
+
+const CONVERSION_METHOD_KEYS = [
+  "toString",
+  "valueOf",
+  "@@Symbol.toPrimitive",
+  "@@Symbol.toStringTag",
+];
+
+const hasConversionOverride = (properties: Map<string, StaticValue>): boolean =>
+  CONVERSION_METHOD_KEYS.some((key) => properties.has(key));
+
+/** Whether a class chain defines its own conversion; null once the chain reaches a base the analysis cannot see. */
+const classOverridesConversion = (classValue: StaticClassValue): boolean | null => {
+  let current: StaticValue | null = classValue;
+  while (current !== null) {
+    if (current.kind !== "class") return null;
+    const overrides: boolean = current.body.members.some(
+      (member) => !member.isStatic && CONVERSION_METHOD_KEYS.includes(member.key),
+    );
+    if (overrides) return true;
+    current = current.body.superValue;
   }
-  return null;
+  return false;
 };
+
+/** Whether `Object.prototype.toString` is what `ToPrimitive` reaches for the object; null when its shape or prototype chain is not fully known. */
+const isPlainObjectConversion = (object: StaticObjectValue): boolean | null => {
+  for (const key of CONVERSION_METHOD_KEYS) {
+    const isOwn = hasOwnKey(object, key);
+    if (isOwn !== false) return isOwn === true ? false : null;
+  }
+  if (object.prototype) {
+    const prototypeConversion = isPlainObjectConversion(object.prototype);
+    if (prototypeConversion !== true) return prototypeConversion;
+  }
+  if (object.constructedBy) {
+    const overrides = classOverridesConversion(object.constructedBy);
+    if (overrides !== false) return overrides === true ? false : null;
+  }
+  const witness = getPrototypeWitness(object);
+  return witness === null ? null : Object.getPrototypeOf(witness) === Object.prototype;
+};
+
+const NATIVE_FUNCTION_TEXT = "function () { [native code] }";
+
+/** `Function.prototype.toString` where the text is fixed: V8's `[native code]` form for intrinsics and bound functions. */
+const getFunctionSourceText = (receiver: StaticValue): string | null => {
+  switch (receiver.kind) {
+    case "function":
+      return receiver.boundArgs || receiver.boundThis ? NATIVE_FUNCTION_TEXT : null;
+    case "method":
+      return receiver.receiver.kind === "global"
+        ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
+        : receiver.receiver.kind === "external" || receiver.receiver.kind === "unknown"
+          ? null
+          : `function ${receiver.name}() { [native code] }`;
+    case "global":
+      return getBuiltinFunctionSource(receiver.name);
+    default:
+      return null;
+  }
+};
+
+/**
+ * What the served text of a program function opens with. Bundlers reprint the
+ * module (types stripped, JSX compiled, whitespace renormalized) but keep the
+ * `class` and `function` keywords and the parentheses around any arrow
+ * parameter list other than a lone identifier; `async` may be compiled away
+ * into a regenerator wrapper, so an async function claims nothing.
+ */
+const getServedTextPrefix = (node: FunctionLikeNode | Class, sourceText: string): string => {
+  switch (node.type) {
+    case "ClassDeclaration":
+    case "ClassExpression":
+      return "class";
+    case "ArrowFunctionExpression":
+      return node.async || (node.params.length === 1 && node.params[0].type === "Identifier")
+        ? ""
+        : "(";
+    default:
+      return node.async || !sourceText.startsWith("function", node.start) ? "" : "function";
+  }
+};
+
+const servedFunctionTexts = new WeakMap<FunctionLikeNode | Class, StaticUnknownPrimitiveValue>();
+const servedTextValues = new WeakSet<StaticUnknownPrimitiveValue>();
+
+/** The text a program function or class reads back as: one value per node, so every closure of one function compares equal to the others. */
+const getServedFunctionText = (
+  callable: StaticFunctionValue | StaticClassValue | ComponentDefinition,
+): StaticUnknownPrimitiveValue => {
+  const cached = servedFunctionTexts.get(callable.node);
+  if (cached) return cached;
+  const prefix = getServedTextPrefix(callable.node, callable.module.file.sourceText);
+  const text: StaticUnknownPrimitiveValue = {
+    ...unknownPrimitiveValue(
+      "string",
+      `source text of ${callable.name ?? "an anonymous function"} as the bundler serves it`,
+    ),
+    stringShape: { prefix, minLength: prefix.length, length: null },
+  };
+  servedFunctionTexts.set(callable.node, text);
+  servedTextValues.add(text);
+  return text;
+};
+
+/** The served text of a program function, class or component, unless it converts through its own method. */
+const getProgramFunctionText = (value: StaticValue): StaticUnknownPrimitiveValue | null => {
+  switch (value.kind) {
+    case "function":
+    case "class":
+      return hasConversionOverride(value.properties) ? null : getServedFunctionText(value);
+    case "component-reference":
+      return (value.type.kind === "function" || value.type.kind === "class") &&
+        !hasConversionOverride(value.type.component.properties)
+        ? getServedFunctionText(value.type.component)
+        : null;
+    default:
+      return null;
+  }
+};
+
+/** `Function.prototype.toString` of a callable; null when the receiver is not a modeled function. */
+export const getFunctionText = (receiver: StaticValue): StaticValue | null => {
+  const fixedText = getFunctionSourceText(receiver);
+  if (fixedText !== null) return primitiveValue(fixedText);
+  return receiver.kind === "function" || receiver.kind === "class"
+    ? getServedFunctionText(receiver)
+    : null;
+};
+
+/** Whether `key` is (or coerces to) the served text of a program function, which spells function syntax no program key does. */
+export const isFunctionText = (key: StaticValue): boolean =>
+  key.kind === "unknown-primitive"
+    ? servedTextValues.has(key)
+    : getProgramFunctionText(key) !== null;
+
+const getComponentSourceText = (component: ComponentDefinition): string | null =>
+  !hasConversionOverride(component.properties) && (component.boundArgs || component.boundThis)
+    ? NATIVE_FUNCTION_TEXT
+    : null;
+
+/** `memo`/`forwardRef`/`lazy` results and context sides are plain objects; bound components read as native functions. */
+const getElementTypeText = (type: StaticElementType): string | null => {
+  switch (type.kind) {
+    case "host":
+      return type.tagName;
+    case "function":
+    case "class":
+      return getComponentSourceText(type.component);
+    case "memo":
+    case "forward-ref":
+    case "lazy":
+      return hasConversionOverride(type.properties) ? null : PLAIN_OBJECT_TEXT;
+    default:
+      return PLAIN_OBJECT_ELEMENT_TYPES.has(type.kind) ? PLAIN_OBJECT_TEXT : null;
+  }
+};
+
+const getJoinedItemText = (item: StaticValue): string | null =>
+  item.kind === "primitive" && (item.value === null || item.value === undefined)
+    ? ""
+    : getCoercedText(item);
+
+/**
+ * `ToString(ToPrimitive(value, "string"))` when the text is statically decided:
+ * `Object.prototype.toString` for plain objects (and React's element, context
+ * and wrapper objects), `Function.prototype.toString` for bound functions,
+ * `Array.prototype.join` for arrays. Null for symbols, for objects with their
+ * own conversion methods, for program functions whose served text is not known
+ * to the character, and for values the analysis cannot see.
+ */
+export const getCoercedText = (value: StaticValue): string | null => {
+  switch (value.kind) {
+    case "primitive":
+      return typeof value.value === "symbol" ? null : String(value.value);
+    case "function":
+    case "class":
+      return hasConversionOverride(value.properties) ? null : getFunctionSourceText(value);
+    case "component-reference":
+      return getElementTypeText(value.type);
+    case "element":
+    case "context":
+      return PLAIN_OBJECT_TEXT;
+    case "regexp":
+      return regExpToString(value);
+    case "list": {
+      if (!hasDefiniteItems(value)) return null;
+      if (
+        value.properties &&
+        (value.properties.has("join") || hasConversionOverride(value.properties))
+      )
+        return null;
+      const texts = value.items.map(getJoinedItemText);
+      return texts.every((text) => text !== null) ? texts.join(",") : null;
+    }
+    case "object":
+      return isPlainObjectConversion(value) === true ? PLAIN_OBJECT_TEXT : null;
+    default:
+      return null;
+  }
+};
+
+/** `ToPropertyKey`: symbols keep their identity, everything else is coerced to a string; null when the key is not statically known. */
+export const toPropertyKey = (key: StaticValue): string | null =>
+  getPropertyName(key) ?? getCoercedText(key);
 
 /** How `value` reads once `+` coerces it to a string. */
 const getConcatenationShape = (value: StaticValue): StringShape => {
   const text = getCoercedText(value);
   if (text !== null) return fixedLengthShape(text, text.length);
-  if (value.kind === "unknown-primitive" && value.primitiveType === "string") {
-    return value.stringShape ?? UNKNOWN_STRING_SHAPE;
-  }
-  return UNKNOWN_STRING_SHAPE;
+  const dynamicText =
+    value.kind === "unknown-primitive" && value.primitiveType === "string"
+      ? value
+      : getProgramFunctionText(value);
+  return dynamicText?.stringShape ?? UNKNOWN_STRING_SHAPE;
 };
 
 const getConcatenationComposition = (value: StaticValue): StringComposition | null => {
@@ -128,12 +335,15 @@ export const joinStrings = (items: StaticValue[], separator: string): StaticValu
 /** `String(value)`: primitives read as their text, RegExps as their source and arrays join their items, per alternative. */
 export const toStringValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
-    if (alternative.kind === "primitive") return primitiveValue(String(alternative.value));
-    if (alternative.kind === "regexp") return primitiveValue(regExpToString(alternative));
+    const text = getCoercedText(alternative);
+    if (text !== null) return primitiveValue(text);
     if (hasDefiniteItems(alternative)) return joinStrings(alternative.items, ",");
     if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string")
       return alternative;
-    return unknownPrimitiveValue("string", `String(${describeValue(alternative)})`);
+    return (
+      getProgramFunctionText(alternative) ??
+      unknownPrimitiveValue("string", `String(${describeValue(alternative)})`)
+    );
   });
 
 const toIndexArgument = (argument: StaticValue | undefined): number | null | undefined => {

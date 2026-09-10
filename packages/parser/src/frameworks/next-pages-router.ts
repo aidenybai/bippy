@@ -28,7 +28,6 @@ import {
   findRouteFile,
   listRouteFileBaseNames,
   listSubdirectories,
-  routeIdFromFile,
   segmentSpecificity,
   splitPathname,
 } from "./route-files.js";
@@ -71,6 +70,13 @@ const withReactStrictMode = (tree: StaticValue, isStrictMode: StaticValue): Stat
     }
     return truthiness ? strictTree : tree;
   });
+};
+
+/** Next's `removePagePathTail`: the page file relative to `pages/`, without extension, `/index` folded into its directory. */
+const getPagePathname = (pagesDirectory: string, file: string): string => {
+  const relativePath = path.relative(pagesDirectory, file).split(path.sep).join("/");
+  const withoutExtension = relativePath.slice(0, -path.extname(relativePath).length);
+  return `/${withoutExtension}`.replace(/\/index$/, "") || "/";
 };
 
 interface NextPageMatch {
@@ -143,13 +149,6 @@ const matchPage = (
     }
   }
   return null;
-};
-
-/** `router.pathname`: the page file relative to `pages/` without extension, `index` collapsing to its directory. */
-const pagePattern = (pagesDirectory: string, file: string): string => {
-  const segments = routeIdFromFile(path.relative(pagesDirectory, file)).split(path.sep);
-  if (segments[segments.length - 1] === "index") segments.pop();
-  return `/${segments.join("/")}`;
 };
 
 /**
@@ -240,7 +239,7 @@ export const renderNextPagesRoute = (
       return unknownValue(`no page for ${options.route}`);
     }
     Object.assign(model.params, match.params);
-    model.page.pattern = pagePattern(pagesDirectory, match.file);
+    model.page.pathname = getPagePathname(pagesDirectory, match.file);
     const pagePath = match.file;
     const pageModule = renderer.loadModule(pagePath);
     if (!pageModule) {

@@ -155,7 +155,7 @@ const createInlineSvgStub = (project: ProjectContext): StubComponent => {
   };
 };
 
-export const reactInlineSvgValue: LibraryValueProvider = (specifier, importedName, project) =>
+export const reactInlineSvgValue: LibraryValueProvider = (specifier, importedName, { project }) =>
   specifier === PACKAGE_NAME && importedName === "default"
     ? stubValue(createInlineSvgStub(project))
     : null;

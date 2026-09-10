@@ -726,7 +726,7 @@ const BIND_LOGIC: StubComponent = {
 
 const isBuilt = (value: StaticValue): boolean => BUILDS.has(value);
 
-export const keaValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const keaValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (specifier !== "kea") return null;
   switch (importedName) {
     case "kea":

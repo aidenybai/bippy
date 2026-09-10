@@ -37,7 +37,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
-import { recordBranchOrigin, recordDerivation } from "./predicates.js";
+import { composeFlattenedPredicate, recordBranchOrigin, recordDerivation } from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -302,7 +302,11 @@ export const accessorEntry = (
   accessor,
 });
 
-type LookupMemo = Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
+interface LookupMemo {
+  properties: Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
+  ownKeys: Map<StaticObjectValue, Map<string, boolean | null>>;
+  spreadKeys: Map<StaticObjectValue, string[] | null>;
+}
 
 /**
  * Results of the lookup in progress. Objects spread through many branches
@@ -311,15 +315,18 @@ type LookupMemo = Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
  */
 let lookupMemo: LookupMemo | null = null;
 
-export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
-  if (lookupMemo) return getMemoizedObjectProperty(lookupMemo, object, key, object.entries.length);
-  lookupMemo = new Map();
+const withLookupMemo = <Result>(lookup: (memo: LookupMemo) => Result): Result => {
+  if (lookupMemo) return lookup(lookupMemo);
+  lookupMemo = { properties: new Map(), ownKeys: new Map(), spreadKeys: new Map() };
   try {
-    return getMemoizedObjectProperty(lookupMemo, object, key, object.entries.length);
+    return lookup(lookupMemo);
   } finally {
     lookupMemo = null;
   }
 };
+
+export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue =>
+  withLookupMemo((memo) => getMemoizedObjectProperty(memo, object, key, object.entries.length));
 
 /** `key` as seen through the first `entryCount` entries of `object` (and its prototype). */
 const getMemoizedObjectProperty = (
@@ -328,14 +335,14 @@ const getMemoizedObjectProperty = (
   key: string,
   entryCount: number,
 ): StaticValue => {
-  let prefixes = memo.get(object);
+  let prefixes = memo.properties.get(object);
   let properties = prefixes?.get(entryCount);
   const memoized = properties?.get(key);
   if (memoized) return memoized;
   const value = lookupObjectProperty(memo, object, key, entryCount);
   if (!prefixes) {
     prefixes = new Map();
-    memo.set(object, prefixes);
+    memo.properties.set(object, prefixes);
   }
   if (!properties) {
     properties = new Map();
@@ -391,7 +398,10 @@ const lookupObjectProperty = (
 };
 
 const unknownSpreadProperty = (spread: StaticValue, key: string): StaticUnknownValue =>
-  unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+  recordDerivation(
+    unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`),
+    { kind: "property", object: spread, key },
+  );
 
 const getInheritedProperty = (
   memo: LookupMemo,
@@ -461,8 +471,8 @@ export const createSymbolValue = (description: string | undefined): StaticSymbol
 export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefined =>
   unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
 
-/** Symbol-keyed properties are stored under an `@@` key; enumeration skips them like `Object.keys` does. */
-export const SYMBOL_PROPERTY_KEY_PREFIX = "@@";
+/** Symbol-keyed properties are stored under a private-use-character prefix no program string key starts with; enumeration skips them like `Object.keys` does. */
+export const SYMBOL_PROPERTY_KEY_PREFIX = "\uE000symbol:";
 
 export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
   `${SYMBOL_PROPERTY_KEY_PREFIX}${symbol.key}`;
@@ -482,19 +492,20 @@ export const getPropertyName = (key: StaticValue): string | null => {
 const getKnownOwnKeys = (
   object: StaticObjectValue,
   isIncluded: (key: string) => boolean,
-): Map<string, boolean> | null => {
-  const keys = new Map<string, boolean>();
-  for (const entry of object.entries) {
-    if (entry.kind === "property") {
-      if (isIncluded(entry.key)) keys.set(entry.key, entry.isEnumerable !== false);
-      continue;
+): Map<string, boolean> | null =>
+  withLookupMemo((memo) => {
+    const keys = new Map<string, boolean>();
+    for (const entry of object.entries) {
+      if (entry.kind === "property") {
+        if (isIncluded(entry.key)) keys.set(entry.key, entry.isEnumerable !== false);
+        continue;
+      }
+      const spreadKeys = getKnownSpreadKeys(memo, entry.value);
+      if (!spreadKeys) return null;
+      for (const key of spreadKeys) if (isIncluded(key)) keys.set(key, true);
     }
-    const spreadKeys = getKnownSpreadKeys(entry.value);
-    if (!spreadKeys) return null;
-    for (const key of spreadKeys) if (isIncluded(key)) keys.set(key, true);
-  }
-  return keys;
-};
+    return keys;
+  });
 
 const getEnumerableKeys = (keys: Map<string, boolean> | null): string[] | null =>
   keys && [...keys].filter(([, isEnumerable]) => isEnumerable).map(([key]) => key);
@@ -509,14 +520,16 @@ export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | nu
   return keys && [...keys.keys()];
 };
 
-const spreadHasOwnKey = (spread: StaticValue, key: string): boolean | null => {
+const spreadHasOwnKey = (memo: LookupMemo, spread: StaticValue, key: string): boolean | null => {
   switch (spread.kind) {
     case "object":
-      return hasOwnKey(spread, key);
+      return getMemoizedOwnKey(memo, spread, key);
     case "primitive":
       return false;
     case "branch": {
-      const verdicts = spread.alternatives.map((alternative) => spreadHasOwnKey(alternative, key));
+      const verdicts = spread.alternatives.map((alternative) =>
+        spreadHasOwnKey(memo, alternative, key),
+      );
       if (verdicts.every((verdict) => verdict === true)) return true;
       return verdicts.every((verdict) => verdict === false) ? false : null;
     }
@@ -525,17 +538,35 @@ const spreadHasOwnKey = (spread: StaticValue, key: string): boolean | null => {
   }
 };
 
-/** Whether `key` is an own property; null when a spread may or may not carry it. */
-export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null => {
+const getMemoizedOwnKey = (
+  memo: LookupMemo,
+  object: StaticObjectValue,
+  key: string,
+): boolean | null => {
+  let verdicts = memo.ownKeys.get(object);
+  const memoized = verdicts?.get(key);
+  if (memoized !== undefined) return memoized;
   let verdict: boolean | null = false;
   for (const entry of object.entries) {
     const entryVerdict =
-      entry.kind === "property" ? entry.key === key : spreadHasOwnKey(entry.value, key);
-    if (entryVerdict === true) return true;
+      entry.kind === "property" ? entry.key === key : spreadHasOwnKey(memo, entry.value, key);
+    if (entryVerdict === true) {
+      verdict = true;
+      break;
+    }
     if (entryVerdict === null) verdict = null;
   }
+  if (!verdicts) {
+    verdicts = new Map();
+    memo.ownKeys.set(object, verdicts);
+  }
+  verdicts.set(key, verdict);
   return verdict;
 };
+
+/** Whether `key` is an own property; null when a spread may or may not carry it. */
+export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null =>
+  withLookupMemo((memo) => getMemoizedOwnKey(memo, object, key));
 
 /** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
 export const getOwnPropertyDescriptor = (
@@ -580,16 +611,21 @@ export const getKnownEnumerableOwnKeys = (object: StaticObjectValue): string[] |
   getEnumerableKeys(getKnownOwnKeys(object, () => true));
 
 /** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
-const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
+const getKnownSpreadKeys = (memo: LookupMemo, spread: StaticValue): string[] | null => {
   switch (spread.kind) {
-    case "object":
-      return getKnownEnumerableOwnKeys(spread);
+    case "object": {
+      const memoized = memo.spreadKeys.get(spread);
+      if (memoized !== undefined) return memoized;
+      const keys = getKnownEnumerableOwnKeys(spread);
+      memo.spreadKeys.set(spread, keys);
+      return keys;
+    }
     case "primitive":
       return [];
     case "branch": {
       const keys: string[] = [];
       for (const alternative of spread.alternatives) {
-        const alternativeKeys = getKnownSpreadKeys(alternative);
+        const alternativeKeys = getKnownSpreadKeys(memo, alternative);
         if (!alternativeKeys) return null;
         for (const key of alternativeKeys) if (!keys.includes(key)) keys.push(key);
       }
@@ -608,11 +644,20 @@ const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
  */
 export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | null => {
   if (spread.kind !== "object" && spread.kind !== "branch") return null;
-  const keys = getKnownSpreadKeys(spread);
+  const keys = withLookupMemo((memo) => getKnownSpreadKeys(memo, spread));
   if (!keys) return null;
   const holder = objectValue([{ kind: "spread", value: spread }]);
   return keys.map((key) => ({ kind: "property", key, value: getObjectProperty(holder, key) }));
 };
+
+/** `assign({}, ...sources)`: every closed source copied per key, any other kept behind a spread. */
+export const assignedObject = (sources: StaticValue[]): StaticObjectValue =>
+  objectValue(
+    sources.flatMap(
+      (source): StaticObjectEntry[] =>
+        getSpreadEntries(source) ?? [{ kind: "spread", value: source }],
+    ),
+  );
 
 /**
  * Joins the entry lists paths left on one object. Paths that only assigned
@@ -701,9 +746,18 @@ const getJoinedPropertyKeys = (
  * returned as they are, so a spread chain shared through many joins stays shared.
  */
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {
-  const rest = omitObjectKeysShared(object, omitted, new Map());
+  const rest = omitObjectKeysShared(object, omitted, new Map(), unknownRestOfSpread);
   return rest === object ? objectValue([...object.entries]) : rest;
 };
+
+interface OpaqueSpreadOmitter {
+  (spread: StaticValue): StaticValue;
+}
+
+const unknownRestOfSpread: OpaqueSpreadOmitter = (spread) =>
+  unknownValue(`rest of ${describeValue(spread)}`);
+
+const keepOpaqueSpread: OpaqueSpreadOmitter = (spread) => spread;
 
 /**
  * The rest of destructuring `source`: its own enumerable keys minus `omitted`.
@@ -729,6 +783,7 @@ const omitObjectKeysShared = (
   object: StaticObjectValue,
   omitted: Set<string>,
   results: Map<StaticObjectValue, StaticValue>,
+  omitOpaqueSpread: OpaqueSpreadOmitter,
 ): StaticValue => {
   const memoized = results.get(object);
   if (memoized) return memoized;
@@ -740,7 +795,7 @@ const omitObjectKeysShared = (
       else entries.push(entry);
       continue;
     }
-    const rest = omitSpreadKeys(entry.value, omitted, results);
+    const rest = omitSpreadKeys(entry.value, omitted, results, omitOpaqueSpread);
     if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
       results.set(object, rest);
       return rest;
@@ -761,15 +816,16 @@ const omitSpreadKeys = (
   spread: StaticValue,
   omitted: Set<string>,
   results: Map<StaticObjectValue, StaticValue>,
+  omitOpaqueSpread: OpaqueSpreadOmitter,
 ): StaticValue => {
   switch (spread.kind) {
     case "object":
-      return omitObjectKeysShared(spread, omitted, results);
+      return omitObjectKeysShared(spread, omitted, results, omitOpaqueSpread);
     case "primitive":
       return spread;
     case "branch": {
       const alternatives = spread.alternatives.map((alternative) =>
-        omitSpreadKeys(alternative, omitted, results),
+        omitSpreadKeys(alternative, omitted, results, omitOpaqueSpread),
       );
       if (alternatives.every((alternative, index) => alternative === spread.alternatives[index])) {
         return spread;
@@ -783,13 +839,13 @@ const omitSpreadKeys = (
       );
     }
     default:
-      return unknownValue(`rest of ${describeValue(spread)}`);
+      return omitOpaqueSpread(spread);
   }
 };
 
-/** `delete object[key]`: an own property vanishes; one a dynamic spread may hold stays as uncertain as that spread. */
+/** `delete object[key]`: an own property vanishes; one a dynamic spread may hold stays as uncertain as that spread, which is kept in place. */
 export const deleteObjectProperty = (object: StaticObjectValue, key: string): void => {
-  const remaining = omitObjectKeysShared(object, new Set([key]), new Map());
+  const remaining = omitObjectKeysShared(object, new Set([key]), new Map(), keepOpaqueSpread);
   if (remaining === object) return;
   object.entries.splice(
     0,
@@ -1362,6 +1418,13 @@ const areInterchangeableThrownObjects = (
 const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (isSameValue(left, right)) return true;
   if (left === CHAIN_SHORT_CIRCUIT || right === CHAIN_SHORT_CIRCUIT) return false;
+  if (left.kind === "external" && right.kind === "external") {
+    return (
+      left.origin === right.origin &&
+      left.packageName === right.packageName &&
+      left.importedName === right.importedName
+    );
+  }
   if (left.kind === "unknown" && right.kind === "unknown") {
     if (left.thrown === undefined || right.thrown === undefined)
       return left.thrown === right.thrown;
@@ -1404,6 +1467,7 @@ export const branchValue = (
   )
     return firstAlternative;
   const flattened: StaticValue[] = [];
+  const positions: number[][] = alternatives.map(() => []);
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
     const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
@@ -1416,6 +1480,7 @@ export const branchValue = (
     const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
     for (const [innerIndex, value] of inner.entries()) {
       const position = add(value);
+      positions[index].push(position);
       if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
       if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
         return unknownValue(
@@ -1435,7 +1500,9 @@ export const branchValue = (
     preferredIndex: resolvedPreferred,
     reason,
     location,
-    predicate: isPositional ? predicate : null,
+    predicate: isPositional
+      ? predicate
+      : composeFlattenedPredicate(predicate, alternatives, positions, flattened.length),
   };
 };
 

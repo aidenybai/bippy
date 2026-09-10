@@ -27,6 +27,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "match-sorter",
   "node:path",
   "node:url",
+  "numeral",
   "object.entries",
   "path",
   "path-to-regexp",
@@ -47,6 +48,7 @@ const liftExport = (
     const derive = (): StaticExternalValue => ({
       kind: "external",
       packageName,
+      specifier,
       importedName: `${exportedName}()`,
       origin: "derived",
     });
@@ -71,9 +73,20 @@ const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([
   "uniqueId",
 ]);
 
+const IMPURE_NUMERAL_EXPORTS: ReadonlySet<string> = new Set([
+  "defaultFormat",
+  "locale",
+  "nullFormat",
+  "options",
+  "register",
+  "reset",
+  "zeroFormat",
+]);
+
 const IMPURE_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["lodash", IMPURE_LODASH_EXPORTS],
   ["lodash-es", IMPURE_LODASH_EXPORTS],
+  ["numeral", IMPURE_NUMERAL_EXPORTS],
 ]);
 
 /** `lodash.mergewith`-style per-method packages: the same helper as `lodash/mergeWith`, published lowercase. */
@@ -121,6 +134,11 @@ export class PurePackages {
 
   /** `require(specifier)`: the installed module's `module.exports`, whatever shape it has. */
   getRequired(specifier: string, filePath: string | null): StaticValue | null {
+    const packageName = getPackageNameFromSpecifier(specifier);
+    if (packageName === null) return null;
+    if (IMPURE_EXPORTS.get(packageName)?.has(getExportName(specifier, packageName, "default"))) {
+      return null;
+    }
     const module = this.loadPure(specifier, filePath);
     return module === null ? null : liftExport(specifier, "module.exports", module);
   }

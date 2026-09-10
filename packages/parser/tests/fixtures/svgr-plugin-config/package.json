@@ -1,0 +1,8 @@
+{
+  "name": "fixture-svgr-plugin-config",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "esbuild-plugin-svgr": "2.0.0"
+  }
+}

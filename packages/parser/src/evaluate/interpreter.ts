@@ -43,12 +43,12 @@ import type {
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getAssetModuleValue, isAssetImport } from "../graph/asset-module.js";
-import { getCssModuleValue } from "../graph/css-module.js";
+import { getCssModuleValue, isCssModulePath } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { getTransformedRuntimeSpecifier } from "../graph/helper-packages.js";
 import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
-import { isInsideNodeModules } from "../graph/module-resolver.js";
+import { getPackageNameFromSpecifier, isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "./stubs.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
@@ -73,6 +73,7 @@ import {
   WRAPPER_OWN_KEYS,
   doesStrictModeDoubleInvokeHookFactories,
   getReactElementSymbolKey,
+  hasLegacyContext,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
 import {
@@ -83,25 +84,33 @@ import {
 } from "../react/element-type.js";
 import {
   getExternalMember,
+  getReactApiTypeof,
   isClientOnlyReactApi,
   isReactLikePackage,
   REACT_MEMO_CACHE_SENTINEL_KEY,
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { getCompilerHelper, getInlineCompilerHelper, isEsModuleLike } from "./compiler-helpers.js";
+import {
+  getCompilerHelper,
+  getInlineCompilerHelper,
+  getInlineHelperFunction,
+  isEsModuleLike,
+} from "./compiler-helpers.js";
 import { createErrorValue } from "./errors.js";
 import type {
   ClassBody,
   Diagnostic,
   ExternalValueProvider,
   FunctionLikeNode,
+  ImportedName,
   JournaledState,
   CapturedExportReference,
   CapturedPageState,
   CapturedValue,
   JsonValue,
   ModuleRecord,
+  LibraryRun,
   ProjectContext,
   ProcessEnvironment,
   ReactApi,
@@ -117,6 +126,7 @@ import type {
   StaticGlobalValue,
   StaticAccessor,
   StaticListValue,
+  StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
@@ -152,7 +162,7 @@ import {
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
-import { getPageLocationMember } from "./page-location.js";
+import { getDocumentBaseUri, getPageLocationMember } from "./page-location.js";
 import { hasExportedName, isClientModule } from "../graph/module-record.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
@@ -170,19 +180,27 @@ import {
   getInlinedNodeEnv,
   isEnvironmentObject,
   isUnsettableDefineName,
+  isWebpackRequireName,
 } from "./bundler-globals.js";
-import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
+import {
+  hasFunctionTextProperty,
+  hasIntrinsicMember,
+  hasProperty,
+  OBJECT_PROTOTYPE_METHODS,
+} from "./has-property.js";
 import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness, toLanguagePropertyKey } from "./host-globals.js";
+import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness } from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
   concatenateStrings,
   getShapedStringCharacter,
   getShapedStringLength,
+  isFunctionText,
+  toPropertyKey,
   toStringValue,
 } from "./primitive-shapes.js";
 import {
@@ -256,6 +274,7 @@ import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
 import {
   applyNarrowing,
+  getDiscriminantTargets,
   lookupNarrowingTarget,
   type NarrowingTarget,
   narrowTest,
@@ -293,7 +312,6 @@ import {
   getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
-  getPropertyName,
   getStubDisplayName,
   getAllocationCount,
   getTruthiness,
@@ -307,6 +325,7 @@ import {
   mapValue,
   distributeBinary,
   NULL_VALUE,
+  SYMBOL_PROPERTY_KEY_PREFIX,
   capturedValue,
   isJsonRecord,
   jsonValue,
@@ -333,6 +352,7 @@ import {
   getTruthinessPredicate,
   recordDerivation,
   recordNegation,
+  recordRefinement,
 } from "./predicates.js";
 import type { CompareOperator, GuardLiteral } from "../harness/symbolic-tree.js";
 
@@ -379,6 +399,8 @@ interface ModuleRegistry {
   scopes: Map<string, Scope>;
   values: Map<string, ModuleValues>;
   initialized: Set<string>;
+  /** Modules whose top-level statements ran out of steps, leaving their state partially initialized. */
+  exhausted: Set<string>;
   exportExpressionValues: WeakMap<Expression, StaticValue | typeof IN_PROGRESS>;
   /** One evaluation per destructuring declarator, shared by every name it binds. */
   destructuredInitValues: WeakMap<Expression, StaticValue>;
@@ -388,6 +410,7 @@ const createModuleRegistry = (): ModuleRegistry => ({
   scopes: new Map(),
   values: new Map(),
   initialized: new Set(),
+  exhausted: new Set(),
   exportExpressionValues: new WeakMap(),
   destructuredInitValues: new WeakMap(),
 });
@@ -499,9 +522,19 @@ const isClosureBinding = (binding: TopLevelBinding): boolean =>
 const isReceiverIndependent = (callee: StaticValue): boolean =>
   callee.kind === "react-api" || callee.kind === "native-function";
 
-/** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
+const FUNCTION_HAS_INSTANCE_KEY = `${SYMBOL_PROPERTY_KEY_PREFIX}Symbol.hasInstance`;
+
+/** Names a function has without the analyzed code assigning them; any other name (well-known symbols included) reads `undefined`. */
 const isFunctionOwnOrInheritedKey = (key: string): boolean =>
-  isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
+  isSymbolPropertyKey(key)
+    ? key === FUNCTION_HAS_INSTANCE_KEY
+    : FUNCTION_INSTANCE_KEYS.has(key) || hasIntrinsicMember(Function.prototype, key);
+
+/** React's own functions are plain functions: only the intrinsic names exist until source defines more. */
+const isReactApiFunctionKey = (key: string): boolean =>
+  isSymbolPropertyKey(key)
+    ? hasIntrinsicMember(Function.prototype, key)
+    : isFunctionOwnOrInheritedKey(key);
 
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
@@ -524,7 +557,7 @@ const prototypeMember = (
   prototype: object | null,
   key: string,
 ): StaticValue =>
-  prototype === null || (toLanguagePropertyKey(key) ?? key) in prototype
+  prototype === null || hasIntrinsicMember(prototype, key)
     ? { kind: "method", receiver, name: key }
     : UNDEFINED_VALUE;
 
@@ -573,6 +606,14 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
 
 interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
+}
+
+/** A fork whose returning paths still await the state the surviving paths end in. */
+interface PendingReturnJoin {
+  journal: HeapJournal;
+  reason: string;
+  location: SourceLocation;
+  preferredPath: number;
 }
 
 const completeBlock: StatementContinuation = () => COMPLETES;
@@ -738,8 +779,28 @@ const mayBeUnknown = (value: StaticValue): boolean =>
   (value.kind === "external" && value.origin === "derived") ||
   (value.kind === "branch" && value.alternatives.some(mayBeUnknown));
 
-const describeEscapedMutation = ({ target, key }: EscapedMutation): string =>
-  `"${[...target, ...(key === null ? [] : [key])].join(".")}" is mutated by code the analysis did not run`;
+const describeEscapedMutation = ({ target, key, kind }: EscapedMutation): string =>
+  `"${[...target, ...(key === null || kind === "method" ? [] : [key])].join(".")}" is mutated by code the analysis did not run`;
+
+const isEscapedRepeat = (item: StaticValue, reason: string): boolean =>
+  item.kind === "repeat" && item.item.kind === "unknown" && item.item.reason === reason;
+
+/**
+ * `Array.prototype` mutators called from escaped code: `push`/`unshift` add any
+ * number of items the analysis never saw at one end, the rest may leave any
+ * contents behind.
+ */
+const markListEscapedMutation = (list: StaticListValue, method: string, reason: string): void => {
+  if (list.items.some((item) => isEscapedRepeat(item, reason))) return;
+  const escaped: StaticValue = { kind: "repeat", item: unknownValue(reason), location: null };
+  if (method === "push") list.items.push(escaped);
+  else if (method === "unshift") list.items.unshift(escaped);
+  else list.items = [escaped];
+};
+
+/** A captured variable escaped code reassigns holds either the value the analysis saw or one it did not. */
+const widenEscapedBinding = (value: StaticValue, reason: string): StaticValue =>
+  mayBeUnknown(value) ? value : branchValue([value, unknownValue(reason)], reason);
 
 const markExternallyMutable = (value: StaticObjectValue, reason: string): void => {
   if (markCollectionExternallyMutable(value)) return;
@@ -751,18 +812,24 @@ const markExternallyMutable = (value: StaticObjectValue, reason: string): void =
 
 /**
  * A mutation of a statically known property widens that property alone and a
- * computed member the whole object. A mutating method call only widens a
- * collection: a plain object defines such a method itself, so the method body
+ * computed member the whole object. A mutating method call widens a collection
+ * or an array: a plain object defines such a method itself, so the method body
  * is the mutation. Each is idempotent, so following a closure again leaves the
  * object as it was.
  */
 const markEscapedMutation = (value: StaticValue, mutation: EscapedMutation): void => {
+  const reason = describeEscapedMutation(mutation);
+  if (value.kind === "list") {
+    if (mutation.kind === "method" && mutation.key !== null) {
+      markListEscapedMutation(value, mutation.key, reason);
+    }
+    return;
+  }
   if (value.kind !== "object") return;
-  if (mutation.isMethodCall) {
+  if (mutation.kind === "method") {
     markCollectionExternallyMutable(value);
     return;
   }
-  const reason = describeEscapedMutation(mutation);
   if (mutation.key === null) {
     markExternallyMutable(value, reason);
     return;
@@ -791,10 +858,15 @@ export class Interpreter {
   private readonly maxForkDepth: number;
   private readonly externalValues: ExternalValueProvider | null;
   readonly project: ProjectContext;
+  private readonly libraryRun: LibraryRun;
   readonly origin: string | null;
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
+  /** Properties the analyzed code defined on React's own functions (`React.createContext[key] = ...`). */
+  private readonly reactApiProperties = new Map<ReactApi, Map<string, StaticValue>>();
+  /** Properties the analyzed code defined on builtin globals other than the global object (`Array[key] = ...`). */
+  private readonly globalExpandos = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
@@ -808,12 +880,15 @@ export class Interpreter {
   readonly rootRender = new RootRenderState();
   readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
+  private readonly pendingReturnJoins: PendingReturnJoin[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
   private readonly generatorYields: StaticValue[][] = [];
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
   readonly doesStrictModeDoubleInvokeHookFactories: boolean;
+  /** Whether class components still receive `contextTypes`-masked legacy context (`disableLegacyContext`). */
+  readonly hasLegacyContext: boolean;
   private readonly maxSteps: number;
   private readonly clientRegistry = createModuleRegistry();
   private readonly serverRegistry = createModuleRegistry();
@@ -834,6 +909,7 @@ export class Interpreter {
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.externalValues = options.externalValues ?? null;
     this.project = options.project ?? UNKNOWN_PROJECT;
+    this.libraryRun = { project: this.project };
     this.origin = options.origin ?? null;
     this.pageState = options.page ?? null;
     this.history = createSessionHistory(this.pageState, options.route ?? null);
@@ -878,6 +954,7 @@ export class Interpreter {
     this.doesStrictModeDoubleInvokeHookFactories = doesStrictModeDoubleInvokeHookFactories(
       this.reactVersion,
     );
+    this.hasLegacyContext = hasLegacyContext(this.reactVersion);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
     this.styledComponentsTransform = this.project.hasDeclaredDependency(
       "babel-plugin-styled-components",
@@ -1001,7 +1078,7 @@ export class Interpreter {
     environment: RenderEnvironment | null,
   ): StaticValue {
     const moduleExports = this.evaluateModuleExports(module, environment);
-    if (exportedName === "default" && !isEsModuleLike(moduleExports)) return moduleExports;
+    if (exportedName === "default" && !isEsModuleLike(moduleExports, null)) return moduleExports;
     return this.getProperty(
       moduleExports,
       exportedName,
@@ -1058,14 +1135,19 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key, environment);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  /**
+   * The exports of a module as an object, for `{ ...m }` / `Object.keys(m)`
+   * over a namespace. An ESM namespace lists its exports in code-unit order;
+   * a CommonJS `exports` object keeps assignment order.
+   */
   materializeNamespace(module: ModuleRecord, environment: RenderEnvironment | null): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
+    const orderedNames = module.isCommonJs ? names : [...names].sort();
     return objectValue(
-      names.map((name) => ({
+      orderedNames.map((name) => ({
         kind: "property",
         key: name,
         value: this.evaluateModuleExport(module, name, environment),
@@ -1094,7 +1176,19 @@ export class Interpreter {
     const binding = module.bindings.get(name);
     if (!binding) return null;
     this.initializeModule(module, module.sideEffectStatements, environment);
-    return this.evaluateDeclaredBinding(module, binding, environment);
+    return (
+      this.exhaustedModuleValue(module, environment) ??
+      this.evaluateDeclaredBinding(module, binding, environment)
+    );
+  }
+
+  private exhaustedModuleValue(
+    module: ModuleRecord,
+    environment: RenderEnvironment | null,
+  ): StaticValue | null {
+    return this.getModuleRegistry(module, environment).exhausted.has(module.filePath)
+      ? unknownValue(`module initialization of ${module.filePath} exhausted the step budget`)
+      : null;
   }
 
   /**
@@ -1129,7 +1223,7 @@ export class Interpreter {
     }
     if (cached) return cached;
     values.set(name, IN_PROGRESS);
-    const value = this.evaluateTopLevelBindingValue(
+    let value = this.evaluateTopLevelBindingValue(
       module,
       binding,
       this.createModuleContext(
@@ -1138,12 +1232,16 @@ export class Interpreter {
         this.getModuleInstanceEnvironment(module, environment),
       ),
     );
+    for (const mutation of this.escapedMutations.get(module.filePath)?.get(name) ?? []) {
+      if (mutation.kind === "rebinding") {
+        value = widenEscapedBinding(value, describeEscapedMutation(mutation));
+      } else {
+        markEscapedMutation(value, mutation);
+      }
+    }
     values.set(name, value);
     this.escapeWalk.memo.invalidate(module, name);
     this.journalLazyBindingValue(value);
-    for (const mutation of this.escapedMutations.get(module.filePath)?.get(name) ?? []) {
-      markEscapedMutation(value, mutation);
-    }
     return value;
   }
 
@@ -1168,16 +1266,21 @@ export class Interpreter {
     sideEffectStatements: Statement[] = module.sideEffectStatements,
     environment: RenderEnvironment | null = null,
   ): void {
-    const { initialized } = this.getModuleRegistry(module, environment);
+    const { initialized, exhausted } = this.getModuleRegistry(module, environment);
     if (initialized.has(module.filePath)) return;
     initialized.add(module.filePath);
     const instanceEnvironment = this.getModuleInstanceEnvironment(module, environment);
     this.initializeDependencies(module, instanceEnvironment);
     const context = this.createModuleContext(module, undefined, instanceEnvironment);
+    for (const name of getHoistedVarNames(sideEffectStatements)) {
+      if (!module.bindings.has(name) && !context.scope.bindings.has(name)) {
+        declareInScope(context.scope, name, UNDEFINED_VALUE);
+      }
+    }
     let pendingStatements: Statement[] = [];
     const flushPendingStatements = (): void => {
       if (pendingStatements.length === 0) return;
-      this.evaluateBlock(pendingStatements, context, false);
+      this.evaluateFunctionBlock(pendingStatements, context);
       pendingStatements = [];
     };
     for (const statement of sideEffectStatements) {
@@ -1194,6 +1297,15 @@ export class Interpreter {
     flushPendingStatements();
     for (const name of module.outParameterBindings) {
       this.evaluateModuleBinding(module, name, instanceEnvironment);
+    }
+    if (context.budget.remaining <= 0) {
+      exhausted.add(module.filePath);
+      this.report(
+        "budget-exhausted",
+        `module initialization of ${module.filePath} exhausted the step budget; its exports are unknown`,
+        null,
+        "warning",
+      );
     }
   }
 
@@ -1264,6 +1376,7 @@ export class Interpreter {
         return {
           kind: "external",
           packageName: symbol.packageName,
+          specifier: symbol.specifier,
           importedName,
           origin: "binding",
         };
@@ -1287,11 +1400,36 @@ export class Interpreter {
     importedName: string,
     filePath: string | null = null,
   ): StaticValue | null {
-    return (
+    const modeled =
       this.externalValues?.(specifier, importedName) ??
-      getLibraryValue(specifier, importedName, this.project) ??
-      this.purePackages?.getExport(specifier, importedName, filePath) ??
-      null
+      getLibraryValue(specifier, importedName, this.libraryRun);
+    if (modeled) return modeled;
+    const pure = this.purePackages?.getExport(specifier, importedName, filePath);
+    if (!pure || importedName !== "default" || pure.kind !== "native-function") return pure ?? null;
+    return {
+      ...pure,
+      getOwnProperty: (key) => this.getPureNamespaceMember(pure, specifier, key, filePath),
+    };
+  }
+
+  /** `_.debounce` on a pure package's default export: each member resolves as the named import would. */
+  private getPureNamespaceMember(
+    namespace: StaticNativeFunctionValue,
+    specifier: string,
+    key: string,
+    filePath: string | null,
+  ): StaticValue | undefined {
+    const packageName = getPackageNameFromSpecifier(specifier);
+    const own = namespace.getOwnProperty?.(key);
+    if (packageName === null || own === undefined) return own;
+    return (
+      this.getModeledExternal(specifier, key, filePath) ?? {
+        kind: "external",
+        packageName,
+        specifier,
+        importedName: `default.${key}`,
+        origin: "derived",
+      }
     );
   }
 
@@ -1317,6 +1455,8 @@ export class Interpreter {
       );
     }
     if (cached) return cached;
+    const exhausted = this.exhaustedModuleValue(module, environment);
+    if (exhausted) return exhausted;
     exportExpressionValues.set(expression, IN_PROGRESS);
     const value = this.evaluateExpression(
       expression,
@@ -1416,20 +1556,13 @@ export class Interpreter {
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
+      case "react-api":
+        this.setReactApiProperty(target.api, propertyName, value, context);
+        return target;
       case "global": {
-        if (this.getRealm(context.environment).isGlobalAlias(target.name)) {
-          this.windowGlobals.set(
-            propertyName,
-            this.withUncertainAssignment(
-              this.windowGlobals.get(propertyName),
-              value,
-              `window.${propertyName}`,
-              context,
-            ),
-          );
-        }
         const hostDocument = this.getHostDocument(target, context.environment);
         if (hostDocument !== null) setHostDocumentMember(hostDocument, propertyName, value);
+        else this.setGlobalMember(target, propertyName, value, context);
         return target;
       }
       case "regexp":
@@ -1550,10 +1683,10 @@ export class Interpreter {
     switch (binding.kind) {
       case "variable":
         if (!binding.init) return UNDEFINED_VALUE;
+        const helperFunction = getInlineHelperFunction(binding.init);
         return (
-          (isFunctionLikeExpression(binding.init)
-            ? getInlineCompilerHelper(binding.name, binding.init)
-            : null) ?? this.evaluateExpression(binding.init, context, binding.name)
+          (helperFunction ? getInlineCompilerHelper(binding.name, helperFunction) : null) ??
+          this.evaluateExpression(binding.init, context, binding.name)
         );
       case "function":
         return (
@@ -1624,7 +1757,7 @@ export class Interpreter {
     const superValue = node.superClass
       ? this.evaluateExpression(node.superClass, context, null)
       : null;
-    return this.defineClass(
+    const classValue = this.defineClass(
       node,
       {
         members: collectClassMembers(node, (key) => this.evaluatePropertyKey(key, true, context)),
@@ -1633,39 +1766,61 @@ export class Interpreter {
       context,
       this.getDeclaredName(node, context.module) ?? nameHint,
     );
+    return this.decorateClass(node, classValue, context);
   }
 
-  /** Materializes a class from its members, evaluating static members with `this` bound to the class. */
+  /** Legacy (`transform-decorators-legacy`, TS `experimentalDecorators`) class decorators: innermost first, `decorator(Class) || Class`. */
+  private decorateClass(
+    node: Class,
+    classValue: StaticValue,
+    context: EvaluationContext,
+  ): StaticValue {
+    let decorated = classValue;
+    for (const decorator of node.decorators.toReversed()) {
+      const decoratorValue = this.evaluateExpression(decorator.expression, context, null);
+      const target = decorated;
+      const result = this.callValue(
+        decoratorValue,
+        [target],
+        context,
+        this.locate(context.module, decorator),
+      );
+      decorated = mapValue(result, (alternative) =>
+        getTruthiness(alternative) === false ? target : alternative,
+      );
+    }
+    return decorated;
+  }
+
+  /**
+   * Materializes a class as `ClassDefinitionEvaluation` does: the class name is
+   * bound in a scope of its own before any element runs, the methods are defined
+   * first, and the static fields and `static {}` blocks then run in source order
+   * with `this` bound to the class. Static getters are read once, after that.
+   */
   defineClass(
     node: Class | FunctionLikeNode,
     body: ClassBody,
     context: EvaluationContext,
     name: string | null,
   ): StaticClassValue {
+    const classId =
+      node.type === "ClassDeclaration" || node.type === "ClassExpression" ? node.id : null;
+    const scope = classId ? createScope(context.scope) : context.scope;
     const classValue: StaticClassValue = {
       kind: "class",
       node,
       body,
-      scope: context.scope,
+      scope,
       module: context.module,
       name,
       properties: new Map(),
     };
-    const staticContext: EvaluationContext = {
-      ...context,
-      thisValue: classValue,
-    };
+    if (classId) declareInScope(scope, classId.name, classValue);
+    const staticContext: EvaluationContext = { ...context, scope, thisValue: classValue };
+    const staticGetters = new Map<string, StaticFunctionValue>();
     for (const member of body.members) {
-      if (!member.isStatic) continue;
-      if (member.kind === "field") {
-        classValue.properties.set(
-          member.key,
-          member.value
-            ? this.evaluateExpression(member.value, staticContext, member.key)
-            : UNDEFINED_VALUE,
-        );
-        continue;
-      }
+      if (!member.isStatic || member.kind === "field" || member.kind === "static-block") continue;
       const functionValue = this.createFunctionValue(
         member.functionNode,
         staticContext,
@@ -1677,13 +1832,26 @@ export class Interpreter {
         thisValue: classValue,
         superBinding: { construct: null, parent: body.superValue },
       };
+      if (member.kind === "getter") staticGetters.set(member.key, bound);
+      else classValue.properties.set(member.key, bound);
+    }
+    for (const member of body.members) {
+      if (!member.isStatic) continue;
+      if (member.kind === "field") {
+        classValue.properties.set(
+          member.key,
+          member.value
+            ? this.evaluateExpression(member.value, staticContext, member.key)
+            : UNDEFINED_VALUE,
+        );
+      } else if (member.kind === "static-block") {
+        this.evaluateBlock(member.body, staticContext, true);
+      }
+    }
+    for (const [key, getter] of staticGetters) {
       classValue.properties.set(
-        member.key,
-        member.kind === "getter"
-          ? this.callFunction(bound, [], staticContext, {
-              thisValue: classValue,
-            })
-          : bound,
+        key,
+        this.callFunction(getter, [], staticContext, { thisValue: classValue }),
       );
     }
     return classValue;
@@ -1768,6 +1936,9 @@ export class Interpreter {
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
+    if (isWebpackRequireName(name) && isWebpackBundled(this.project.hasDeclaredDependency)) {
+      return { kind: "global", name };
+    }
     if (renderEnvironment !== "server" && isBundlerUndeclaredName(this.project.bundler, name)) {
       return null;
     }
@@ -1788,8 +1959,13 @@ export class Interpreter {
     const pageLocationMember = realm.hasGlobal("location")
       ? getPageLocationMember(this.origin, this.history.route, hostName)
       : null;
+    const documentBaseUri =
+      hostName === "document.baseURI" && renderEnvironment !== "server"
+        ? getDocumentBaseUri(this.origin, this.history.route, this.hostDocument)
+        : null;
     return (
       pageLocationMember ??
+      documentBaseUri ??
       getBuiltinGlobal(hostName, realm, renderEnvironment === "server" ? null : this.hostDocument, {
         declared: this.processEnvironment,
         renderEnvironment,
@@ -2130,7 +2306,7 @@ export class Interpreter {
       if (key.type === "PrivateIdentifier") return `#${key.name}`;
     }
     if (key.type === "PrivateIdentifier") return `#${key.name}`;
-    return getPropertyName(this.evaluateExpression(key, context));
+    return toPropertyKey(this.evaluateExpression(key, context));
   }
 
   private evaluateObjectExpression(
@@ -2529,7 +2705,7 @@ export class Interpreter {
   }
 
   private deleteProperty(target: StaticValue, key: StaticValue): void {
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     switch (target.kind) {
       case "native-object":
         if (name !== null) deleteNativeObjectMember(target, name);
@@ -2571,12 +2747,23 @@ export class Interpreter {
     const right = this.evaluateExpression(node.right, context);
     if (node.operator === "in") {
       return (
+        this.hasGlobalExpando(left, right) ??
         hasProperty(left, right) ??
         this.hasGlobalObjectProperty(left, right, context.environment) ??
+        this.hasExternalExport(left, right, context) ??
         applyBinaryOperator("in", left, right)
       );
     }
     return applyBinaryOperator(node.operator, left, right, this.getRealm(context.environment));
+  }
+
+  /** `"observable" in Symbol` once the program added the member; open while the assignment itself was uncertain. */
+  private hasGlobalExpando(key: StaticValue, target: StaticValue): StaticValue | null {
+    if (target.kind !== "global") return null;
+    const name = toPropertyKey(key);
+    const expando = name === null ? undefined : this.globalExpandos.get(`${target.name}.${name}`);
+    if (expando === undefined) return null;
+    return expando.kind === "branch" ? null : TRUE_VALUE;
   }
 
   /** The host document when `value` is the `document` global rendered into on the client. */
@@ -2599,7 +2786,7 @@ export class Interpreter {
     environment: RenderEnvironment | null,
   ): StaticValue | null {
     if (target.kind !== "global") return null;
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     if (name === null) return null;
     const hostDocument = this.getHostDocument(target, environment);
     if (hostDocument !== null) return primitiveValue(hasHostDocumentMember(hostDocument, name));
@@ -2616,6 +2803,23 @@ export class Interpreter {
     const declared = realm.getGlobal(name);
     if (declared !== null) return declared.type.isNullable ? null : TRUE_VALUE;
     return realm.isForeignGlobal(name) ? FALSE_VALUE : null;
+  }
+
+  /**
+   * `name in ns` on an external module's exports: known to exist when the export is
+   * modeled (or is the `__esModule` marker), otherwise the package's surface is unknown.
+   */
+  private hasExternalExport(
+    key: StaticValue,
+    target: StaticValue,
+    context: EvaluationContext,
+  ): StaticValue | null {
+    if (target.kind !== "external" || target.importedName !== "*" || target.origin !== "binding")
+      return null;
+    const name = toPropertyKey(key);
+    if (name === null) return null;
+    const member = this.getProperty(target, name, context, null);
+    return member.kind === "external" && member.origin === "binding" ? null : TRUE_VALUE;
   }
 
   private evaluateUpdateExpression(
@@ -2692,7 +2896,7 @@ export class Interpreter {
           this.assignMember(target.object, staticKey, value, context);
         } else if (target.computed) {
           const key = this.evaluateExpression(target.property, context);
-          const propertyName = getPropertyName(key);
+          const propertyName = toPropertyKey(key);
           if (propertyName !== null) {
             this.assignMember(target.object, propertyName, value, context);
           } else {
@@ -2752,6 +2956,38 @@ export class Interpreter {
       else if (alternative.kind === "unknown" || alternative.kind === "external")
         this.markEscaped(value);
     }
+  }
+
+  setReactApiProperty(
+    api: ReactApi,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const properties = this.reactApiProperties.get(api) ?? new Map<string, StaticValue>();
+    this.reactApiProperties.set(api, properties);
+    this.mutations.record(0);
+    properties.set(
+      key,
+      this.withUncertainAssignment(properties.get(key), value, `React.${api}.${key}`, context),
+    );
+  }
+
+  setGlobalMember(
+    target: StaticGlobalValue,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const isGlobalObject = this.getRealm(context.environment).isGlobalAlias(target.name);
+    const properties = isGlobalObject ? this.windowGlobals : this.globalExpandos;
+    const name = isGlobalObject ? `window.${key}` : `${target.name}.${key}`;
+    const propertyKey = isGlobalObject ? key : name;
+    this.mutations.record(0);
+    properties.set(
+      propertyKey,
+      this.withUncertainAssignment(properties.get(propertyKey), value, name, context),
+    );
   }
 
   assignOwnProperty(
@@ -2861,7 +3097,7 @@ export class Interpreter {
       return this.getProperty(object, node.property.name, context, location, node.optional);
     }
     const key = this.evaluateExpression(node.property, context);
-    const propertyName = getPropertyName(key);
+    const propertyName = toPropertyKey(key);
     if (propertyName !== null) {
       return this.getProperty(object, propertyName, context, location, node.optional);
     }
@@ -2874,6 +3110,7 @@ export class Interpreter {
     key: StaticValue,
     location: SourceLocation | null,
   ): StaticValue {
+    if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
       const candidates = object.items.filter((item) => item.kind !== "repeat");
       return candidates.length === 0
@@ -3080,11 +3317,15 @@ export class Interpreter {
         if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
         return prototypeMember(object, Object.prototype, key);
       case "react-api": {
+        const defined = this.reactApiProperties.get(object.api)?.get(key);
+        if (defined) return defined;
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         if (key === "prototype" && isReactComponentBase(object))
           return getReactBasePrototype(object.api);
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
+        if (getReactApiTypeof(object.api) === "function" && !isReactApiFunctionKey(key))
+          return UNDEFINED_VALUE;
         return unknownValue(`React.${object.api}.${key}`, location);
       }
       case "external":
@@ -3095,7 +3336,7 @@ export class Interpreter {
               kind: "external",
               packageName: object.packageName,
               imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
-              specifier: object.packageName,
+              specifier: object.specifier,
               filePath: null,
             },
             null,
@@ -3105,7 +3346,7 @@ export class Interpreter {
         if (object.origin !== "binding" && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
         if (object.importedName === "default" && object.origin === "binding") {
-          const modeled = this.getModeledExternal(object.packageName, key);
+          const modeled = this.getModeledExternal(object.specifier, key);
           if (modeled) return modeled;
         }
         if (object.importedName === "*" || object.importedName === "default") {
@@ -3158,7 +3399,7 @@ export class Interpreter {
           intrinsic !== null &&
           INTRINSIC_PROTOTYPE_NAMES.has(object.name) &&
           !isSymbolPropertyKey(key) &&
-          !(key in intrinsic)
+          !hasIntrinsicMember(intrinsic, key)
         ) {
           return UNDEFINED_VALUE;
         }
@@ -3168,7 +3409,10 @@ export class Interpreter {
           this.getModulePathName(memberName, context) ??
           this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
+        const expando = this.globalExpandos.get(memberName);
+        if (expando) return expando;
         if (this.isAbsentHostMember(object.name, key, context.environment)) return UNDEFINED_VALUE;
+        if (intrinsic !== null && !hasIntrinsicMember(intrinsic, key)) return UNDEFINED_VALUE;
         const isOpenMember =
           !isCallableProtocolKey(key) &&
           this.getRealm(context.environment).hasGlobal(object.name) &&
@@ -3180,6 +3424,10 @@ export class Interpreter {
       case "element":
         if (key === "props") return object.props;
         if (key === "key") return object.key ?? NULL_VALUE;
+        if (key === "ref")
+          return mapValue(getObjectProperty(object.props, "ref"), (ref) =>
+            ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
+          );
         if (key === "type") return componentReference(object.type);
         if (key === "$$typeof") return { kind: "symbol", key: this.elementSymbolKey };
         if (!REACT_ELEMENT_OWN_KEYS.has(key)) return UNDEFINED_VALUE;
@@ -3294,7 +3542,7 @@ export class Interpreter {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;
       const filePath = target.kind === "external" ? target.filePath : null;
       if (isRequire) {
-        const required = this.purePackages?.getRequired(specifier, filePath);
+        const required = this.purePackages?.getRequired(target.specifier, filePath);
         if (required) return required;
       }
       return this.resolvedSymbolToValue(
@@ -3302,12 +3550,19 @@ export class Interpreter {
           kind: "external",
           packageName,
           imported: { kind: "namespace" },
-          specifier,
+          specifier: target.specifier,
           filePath,
         },
         null,
         context.environment,
       );
+    }
+    if (target.kind === "internal") {
+      const imported: ImportedName = isRequire ? { kind: "default" } : { kind: "namespace" };
+      if (isCssModulePath(target.filePath)) return getCssModuleValue(target.filePath, imported);
+      if (isAssetImport(target.filePath, specifier)) {
+        return getAssetModuleValue(target.filePath, specifier, imported, this.project);
+      }
     }
     return unknownValue(
       target.kind === "unresolved"
@@ -3372,13 +3627,13 @@ export class Interpreter {
         : member.computed
           ? this.evaluateExpression(member.property, context)
           : primitiveValue(member.property.name);
+    const propertyName = toPropertyKey(key);
     const getCallee = (target: StaticValue): StaticValue => {
       if (target === CHAIN_SHORT_CIRCUIT) return target;
       if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
-      const name = getPropertyName(key);
-      return name === null
+      return propertyName === null
         ? unknownValue("computed method call", location)
-        : this.getProperty(target, name, context, location, member.optional);
+        : this.getProperty(target, propertyName, context, location, member.optional);
     };
     const receiverOf = (target: StaticValue): StaticValue | null =>
       member.object.type === "Super" ? context.thisValue : target;
@@ -3440,6 +3695,7 @@ export class Interpreter {
         return {
           kind: "external",
           packageName: callee.packageName,
+          specifier: callee.specifier,
           importedName: `${callee.importedName}()`,
           origin: "derived",
         };
@@ -3569,7 +3825,10 @@ export class Interpreter {
    * and its module's bindings; an arrow function captures its `this` too.
    * Its arguments and a method's `this` belong to whichever escaped code
    * handed them over; only a method that escaped directly, as a callback or
-   * bound method, may widen the `this` it was bound to.
+   * bound method, may widen the `this` it was bound to. Likewise only a
+   * callback handed straight to unfollowed code, which may run it at once,
+   * rebinds the variables it captures: a closure held by an escaping store
+   * or instance runs when its consumer later calls it.
    */
   private markEscapedMutations(
     functionValue: StaticFunctionValue,
@@ -3579,6 +3838,36 @@ export class Interpreter {
     for (const mutation of getEscapedMutations(functionValue.node)) {
       const root = getAccessRoot(mutation.target, mutation.bindings);
       if (isClosureLocal(functionValue, root) || (root === "this" && frame !== null)) continue;
+      if (mutation.kind === "rebinding") {
+        if (frame !== null) continue;
+        const owner = findOwningScope(functionValue.scope, root);
+        if (owner) {
+          const current = owner.bindings.get(root);
+          if (current === undefined) continue;
+          const widened = widenEscapedBinding(current, describeEscapedMutation(mutation));
+          if (widened === current) continue;
+          this.mutations.record(owner.allocation);
+          this.escapeWalk.memo.invalidate(owner, root);
+          owner.bindings.set(root, widened);
+          continue;
+        }
+        if (module.bindings.get(root)?.kind !== "variable") continue;
+        const values = this.getModuleValues(module, null);
+        const previous = values.get(root);
+        if (previous !== undefined && previous !== IN_PROGRESS) {
+          const widened = widenEscapedBinding(previous, describeEscapedMutation(mutation));
+          if (widened !== previous) {
+            this.mutations.record(0);
+            this.escapeWalk.memo.invalidate(module, root);
+            for (const journal of this.heapJournals) {
+              journal.recordModuleBinding(values, root, previous);
+            }
+            values.set(root, widened);
+          }
+        }
+        this.rememberEscapedMutation(module, root, mutation);
+        continue;
+      }
       const resolved = resolveAccessPath(
         functionValue,
         null,
@@ -3591,18 +3880,27 @@ export class Interpreter {
         continue;
       }
       if (mutation.target.length !== 1 || module.bindings.get(root)?.kind !== "variable") continue;
-      let mutationsByName = this.escapedMutations.get(module.filePath);
-      if (!mutationsByName) {
-        mutationsByName = new Map();
-        this.escapedMutations.set(module.filePath, mutationsByName);
-      }
-      let mutations = mutationsByName.get(root);
-      if (!mutations) {
-        mutations = new Set();
-        mutationsByName.set(root, mutations);
-      }
-      mutations.add(mutation);
+      this.rememberEscapedMutation(module, root, mutation);
     }
+  }
+
+  /** Applies `mutation` to the module variable `name` once it is evaluated, or again should it be re-evaluated. */
+  private rememberEscapedMutation(
+    module: ModuleRecord,
+    name: string,
+    mutation: EscapedMutation,
+  ): void {
+    let mutationsByName = this.escapedMutations.get(module.filePath);
+    if (!mutationsByName) {
+      mutationsByName = new Map();
+      this.escapedMutations.set(module.filePath, mutationsByName);
+    }
+    let mutations = mutationsByName.get(name);
+    if (!mutations) {
+      mutations = new Set();
+      mutationsByName.set(name, mutations);
+    }
+    mutations.add(mutation);
   }
 
   private evaluateNewExpression(node: NewExpression, context: EvaluationContext): StaticValue {
@@ -3649,6 +3947,7 @@ export class Interpreter {
       return {
         kind: "external",
         packageName: callee.packageName,
+        specifier: callee.specifier,
         importedName: `new ${callee.importedName}`,
         origin: "instance",
       };
@@ -3680,9 +3979,26 @@ export class Interpreter {
             location,
           );
     }
-    return returned.kind === "object" || returned.kind === "function" || returned.kind === "list"
-      ? returned
-      : instance;
+    return this.getConstructorResult(returned, instance, this.getRealm(context.environment));
+  }
+
+  /** `new` yields the constructor's return value only when it is an object or function. */
+  private getConstructorResult(
+    returned: StaticValue,
+    instance: StaticObjectValue,
+    realm: HostRealm,
+  ): StaticValue {
+    if (returned.kind === "branch") {
+      return mapValue(returned, (alternative) =>
+        this.getConstructorResult(alternative, instance, realm),
+      );
+    }
+    const typeofValue = getTypeofValue(returned, realm);
+    const isObjectLike =
+      typeofValue.kind === "primitive" &&
+      (typeofValue.value === "function" ||
+        (typeofValue.value === "object" && returned.kind !== "primitive"));
+    return isObjectLike ? returned : instance;
   }
 
   /**
@@ -3812,6 +4128,29 @@ export class Interpreter {
       if (context.hooks && isAwaitDeferred(value, awaited)) context.hooks.isDeferred = true;
       this.resolvedAwaits.set(node, awaited);
     }
+  }
+
+  /**
+   * Runs the blocks a root render call is nested in (an async `main`, a `load`
+   * handler) as their function does: an `await` of a pending promise suspends
+   * the rest, which resumes once the event loop settles it, so the element the
+   * render receives sees the state those awaits set up. Null when no render is
+   * reached even after every queued task ran.
+   */
+  evaluateNestedRootRender(blocks: Statement[][], context: EvaluationContext): StaticValue | null {
+    const evaluateFrom = (index: number, pathContext: EvaluationContext): StatementOutcome =>
+      index === blocks.length
+        ? COMPLETES
+        : this.evaluateBlock(blocks[index], pathContext, false, (nextContext) =>
+            evaluateFrom(index + 1, nextContext),
+          );
+    evaluateFrom(0, {
+      ...context,
+      suspension: { call: { result: null }, outcomeHandlers: [] },
+    });
+    this.timers.drainMicrotasks();
+    while (this.rootRender.element === null && this.timers.hasTasks()) this.timers.runNextTask();
+    return this.rootRender.element;
   }
 
   /** Calls `callee` as a framework does when it awaits the returned promise. */
@@ -3964,7 +4303,7 @@ export class Interpreter {
     for (const name of getHoistedVarNames(body.body)) {
       if (!scope.bindings.has(name)) declareInScope(scope, name, UNDEFINED_VALUE);
     }
-    const outcome = this.evaluateBlock(body.body, callContext, false);
+    const outcome = this.evaluateFunctionBlock(body.body, callContext);
     return outcomeToReturnValue(outcome, location);
   }
 
@@ -3994,8 +4333,23 @@ export class Interpreter {
       compiled.name,
     );
     declareInScope(scope, compiled.name, classValue);
-    this.evaluateBlock(compiled.setup, wrapperContext, false);
+    this.evaluateFunctionBlock(compiled.setup, wrapperContext);
     return classValue;
+  }
+
+  /** Parameters of a callback whose caller is not analyzed: each argument is unknown. */
+  bindUnknownParameters(
+    params: ParamPattern[],
+    scope: Scope,
+    context: EvaluationContext,
+    reason: string,
+  ): void {
+    this.bindParameters(
+      params,
+      getValueParams(params).map(() => unknownValue(reason)),
+      scope,
+      context,
+    );
   }
 
   private bindParameters(
@@ -4302,24 +4656,11 @@ export class Interpreter {
           const narrowing = this.narrowTest(statement.test, context);
           if (narrowing?.whenTrue === null) return runAlternate(context);
           if (narrowing?.whenFalse === null) return runConsequent(context);
-          const narrowed =
-            (value: StaticValue | null, run: StatementContinuation): StatementContinuation =>
-            (pathContext) => {
-              if (narrowing && value) {
-                applyNarrowing(context.scope, narrowing.target, value, (object) =>
-                  this.journalHeapValue(object),
-                );
-              }
-              return run(pathContext);
-            };
           return this.forkPaths(
             [
-              narrowed(narrowing?.whenTrue ?? null, (pathContext) =>
-                this.evaluateBlock([statement.consequent], pathContext, true),
-              ),
-              narrowed(narrowing?.whenFalse ?? null, (pathContext) =>
+              (pathContext) => this.evaluateBlock([statement.consequent], pathContext, true),
+              (pathContext) =>
                 alternate ? this.evaluateBlock([alternate], pathContext, true) : COMPLETES,
-              ),
             ],
             context,
             proceed,
@@ -4327,6 +4668,7 @@ export class Interpreter {
             location,
             getPreferredTruthiness(test) === false ? 1 : 0,
             getTruthinessPredicate(test),
+            narrowing,
           );
         }
         case "SwitchStatement":
@@ -4459,7 +4801,8 @@ export class Interpreter {
    * iteration of a loop whose count is unknown, a callback for an item that
    * may not exist). Reads inside see its own writes; afterwards every binding,
    * object and list it changed holds both the changed and the untouched state,
-   * the changed one preferred unless `isLikelyRun` is false.
+   * the changed one preferred unless `isLikelyRun` is false. `isRepeated` marks
+   * code that may also run more than once.
    */
   runMaybe<Result>(
     scope: Scope,
@@ -4467,6 +4810,7 @@ export class Interpreter {
     reason: string,
     location: SourceLocation | null,
     isLikelyRun = true,
+    isRepeated = false,
   ): Result {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
@@ -4478,10 +4822,10 @@ export class Interpreter {
       journal.endPath();
       restoreScopes(entrySnapshot);
       journal.endPath();
-      this.heapJournals.pop();
+      this.removeHeapJournal(journal);
       const preferredPath = isLikelyRun ? 0 : 1;
       const predicate = createPathPredicate(reason, location);
-      journal.join(reason, location, preferredPath, predicate);
+      journal.join(reason, location, preferredPath, predicate, isRepeated);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
     }
   }
@@ -4496,16 +4840,122 @@ export class Interpreter {
   widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
+    const pendingDepth = this.pendingReturnJoins.length;
     this.heapJournals.push(journal);
     try {
       run();
     } finally {
       const ranSnapshot = snapshotScopes(scope);
+      for (const pending of this.pendingReturnJoins.splice(pendingDepth)) {
+        this.removeHeapJournal(pending.journal);
+      }
       journal.endPath();
-      this.heapJournals.pop();
+      this.removeHeapJournal(journal);
       restoreScopes(entrySnapshot);
       widenMovedBindings(entrySnapshot, ranSnapshot, location);
     }
+  }
+
+  private removeHeapJournal(journal: HeapJournal): void {
+    const index = this.heapJournals.lastIndexOf(journal);
+    if (index !== -1) this.heapJournals.splice(index, 1);
+  }
+
+  /**
+   * When some paths return and the others `break` or `continue`, the loop goes
+   * on from the jumping paths alone; the returning paths keep their heap state
+   * aside until the function they left settles.
+   */
+  private deferReturningPaths(
+    journal: HeapJournal,
+    outcomes: StatementOutcome[],
+    preferredOutcome: number,
+    reason: string,
+    location: SourceLocation,
+  ): boolean {
+    const jumpingPaths = outcomes.flatMap((outcome, index) =>
+      outcome.jump === null ? [] : [index],
+    );
+    const returningPaths = outcomes.flatMap((outcome, index) =>
+      outcome.jump === null ? [index] : [],
+    );
+    if (jumpingPaths.length === 0 || returningPaths.length === 0) return false;
+    const preferredJumping = Math.max(jumpingPaths.indexOf(preferredOutcome), 0);
+    journal.continueFrom(jumpingPaths, reason, location, preferredJumping, null);
+    const preferredReturning = returningPaths.indexOf(preferredOutcome);
+    this.pendingReturnJoins.push({
+      journal,
+      reason,
+      location,
+      preferredPath: preferredReturning === -1 ? returningPaths.length : preferredReturning,
+    });
+    return true;
+  }
+
+  /**
+   * A path that returned left its locals behind but not the scopes the running
+   * activation closed over: the caller observes those in the state the
+   * returning path or a surviving one (already joined into the current scope)
+   * left them in. Path order is preserved so the join keeps the fork's
+   * predicate whenever at most one path survived.
+   */
+  private joinReturningClosures(
+    pathSnapshots: ScopeSnapshot[][],
+    returningPaths: number[],
+    context: EvaluationContext,
+    reason: string,
+    location: SourceLocation,
+    preferredPath: number,
+    predicate: string,
+  ): void {
+    if (returningPaths.length === 0) return;
+    const closureScopes = getClosureScopes(context);
+    const toClosureSnapshots = (snapshots: ScopeSnapshot[]): ScopeSnapshot[] =>
+      closureScopes === null
+        ? snapshots
+        : snapshots.filter((snapshot) => closureScopes.has(snapshot.scope));
+    const survivingSnapshots = toClosureSnapshots(snapshotScopes(context.scope));
+    if (pathSnapshots.length - returningPaths.length <= 1) {
+      joinScopes(
+        pathSnapshots.map((snapshots, index) =>
+          returningPaths.includes(index) ? toClosureSnapshots(snapshots) : survivingSnapshots,
+        ),
+        reason,
+        location,
+        preferredPath,
+        predicate,
+      );
+      return;
+    }
+    const preferredReturning = returningPaths.indexOf(preferredPath);
+    joinScopes(
+      [
+        ...returningPaths.map((index) => toClosureSnapshots(pathSnapshots[index])),
+        survivingSnapshots,
+      ],
+      reason,
+      location,
+      preferredReturning === -1 ? returningPaths.length : preferredReturning,
+      null,
+    );
+  }
+
+  private settlePendingReturns(depth: number): void {
+    for (const pending of this.pendingReturnJoins.splice(depth).reverse()) {
+      this.removeHeapJournal(pending.journal);
+      pending.journal.endPath();
+      pending.journal.join(pending.reason, pending.location, pending.preferredPath, null);
+    }
+  }
+
+  private evaluateFunctionBlock(
+    statements: Statement[],
+    context: EvaluationContext,
+  ): StatementOutcome {
+    const pendingDepth = this.pendingReturnJoins.length;
+    const outcome = this.evaluateBlock(statements, context, false);
+    this.settlePendingReturns(pendingDepth);
+    return outcome;
   }
 
   /**
@@ -4523,6 +4973,7 @@ export class Interpreter {
     location: SourceLocation,
     preferredBranch = 0,
     predicate = createPathPredicate(reason, location),
+    narrowing: TestNarrowing | null = null,
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
@@ -4531,9 +4982,13 @@ export class Interpreter {
       uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
       suspension: null,
     };
+    const narrowedBinding = narrowing?.target.key === null ? narrowing.target.name : null;
+    const narrowedSubject =
+      narrowedBinding === null ? undefined : lookupScope(context.scope, narrowedBinding);
+    let isSubjectReassigned = false;
     const entrySnapshot = snapshotScopes(context.scope);
     const hookCursor = context.hooks?.cursor ?? 0;
-    const joinedSnapshots: ScopeSnapshot[][] = [];
+    const pathSnapshots: ScopeSnapshot[][] = [];
     let completedHookCursor = hookCursor;
     const journal = new HeapJournal();
     this.heapJournals.push(journal);
@@ -4542,9 +4997,16 @@ export class Interpreter {
         restoreScopes(entrySnapshot);
         if (context.hooks) context.hooks.cursor = hookCursor;
       }
+      const narrowed = branchIndex === 0 ? narrowing?.whenTrue : narrowing?.whenFalse;
+      if (narrowing && narrowed) {
+        applyNarrowing(context.scope, narrowing.target, narrowed, (object) =>
+          this.journalHeapValue(object),
+        );
+      }
       const outcome = branch(forkContext);
-      if (outcome.mayComplete || outcome.jump !== null) {
-        joinedSnapshots.push(snapshotScopes(context.scope));
+      pathSnapshots.push(snapshotScopes(context.scope));
+      if (narrowedBinding !== null && lookupScope(context.scope, narrowedBinding) !== narrowed) {
+        isSubjectReassigned = true;
       }
       if (outcome.mayComplete) completedHookCursor = context.hooks?.cursor ?? hookCursor;
       journal.endPath();
@@ -4555,24 +5017,50 @@ export class Interpreter {
       outcome.mayComplete ? [index] : [],
     );
     const jumpingPaths = outcomes.flatMap((outcome, index) => (outcome.mayComplete ? [] : [index]));
+    const returningPaths = jumpingPaths.filter((index) => outcomes[index].jump === null);
     const isMixed = completingPaths.length > 0 && jumpingPaths.length > 0;
     if (isMixed) {
       const preferredCompleting = Math.max(completingPaths.indexOf(preferredOutcome), 0);
       journal.continueFrom(completingPaths, reason, location, preferredCompleting, null);
-    } else {
-      this.heapJournals.pop();
+    } else if (!this.deferReturningPaths(journal, outcomes, preferredOutcome, reason, location)) {
+      this.removeHeapJournal(journal);
       journal.join(reason, location, preferredOutcome, predicate);
     }
+    const joinedSnapshots = pathSnapshots.filter((_, index) => !returningPaths.includes(index));
     if (joinedSnapshots.length > 0) {
-      joinScopes(
-        joinedSnapshots,
+      const isJoinedByPredicate = joinedSnapshots.length === branches.length;
+      joinScopes(joinedSnapshots, reason, location, 0, isJoinedByPredicate ? predicate : null);
+      if (narrowedBinding !== null && narrowedSubject && !isSubjectReassigned) {
+        const rejoined = lookupScope(context.scope, narrowedBinding);
+        if (rejoined) recordRefinement(rejoined, narrowedSubject);
+      }
+    }
+    const joinReturningClosures = (): void => {
+      const isSubjectPreserved =
+        narrowedBinding !== null && narrowedSubject !== undefined && !isSubjectReassigned;
+      const subjectAfterRest = isSubjectPreserved
+        ? completingPaths.length === 0
+          ? narrowedSubject
+          : lookupScope(context.scope, narrowedBinding)
+        : undefined;
+      this.joinReturningClosures(
+        pathSnapshots,
+        returningPaths,
+        context,
         reason,
         location,
-        0,
-        joinedSnapshots.length === branches.length ? predicate : null,
+        preferredOutcome,
+        predicate,
       );
-    }
+      if (narrowedBinding !== null && subjectAfterRest !== undefined) {
+        findOwningScope(context.scope, narrowedBinding)?.bindings.set(
+          narrowedBinding,
+          subjectAfterRest,
+        );
+      }
+    };
     if (completingPaths.length === 0) {
+      joinReturningClosures();
       return mergeOutcomes(
         outcomes,
         reason,
@@ -4583,21 +5071,44 @@ export class Interpreter {
     }
     if (context.hooks) context.hooks.cursor = completedHookCursor;
     const rest = proceed(context);
+    joinReturningClosures();
     if (isMixed) {
-      this.heapJournals.pop();
       journal.endPath();
       const preferredJumping = jumpingPaths.indexOf(preferredOutcome);
-      journal.join(
-        reason,
-        location,
-        preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
-        null,
-      );
+      if (isPureReturn(rest)) {
+        journal.continueFrom(
+          jumpingPaths.map((_, index) => index),
+          reason,
+          location,
+          Math.max(preferredJumping, 0),
+          null,
+        );
+        this.pendingReturnJoins.push({
+          journal,
+          reason,
+          location,
+          preferredPath: preferredJumping === -1 ? 0 : 1,
+        });
+      } else {
+        this.removeHeapJournal(journal);
+        journal.join(
+          reason,
+          location,
+          preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
+          null,
+        );
+      }
     }
+    const completingPath = completingPaths.length === 1 ? completingPaths[0] : -1;
     const isRestPositional =
-      outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
+      completingPath !== -1 &&
+      outcomes.every((outcome, index) =>
+        index === completingPath ? isPureCompletion(outcome) : isPureReturn(outcome),
+      );
     return mergeOutcomes(
-      [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+      isRestPositional
+        ? outcomes.map((outcome, index) => (index === completingPath ? rest : outcome))
+        : [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
       reason,
       location,
       preferredOutcome,
@@ -4638,38 +5149,63 @@ export class Interpreter {
         location,
       );
     };
-    let matchIndex = -1;
-    let isDecided = true;
-    for (const [caseIndex, caseValue] of caseValues.entries()) {
-      if (caseValue === null) continue;
-      const verdict = getTruthiness(
-        applyBinaryOperator("===", discriminant, caseValue, this.getRealm(context.environment)),
-      );
-      if (verdict === true) {
-        matchIndex = caseIndex;
-        break;
+    const defaultIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
+    const realm = this.getRealm(context.environment);
+    const getMatchIndex = (value: StaticValue): number | null => {
+      for (const [caseIndex, caseValue] of caseValues.entries()) {
+        if (caseValue === null) continue;
+        const verdict = getTruthiness(applyBinaryOperator("===", value, caseValue, realm));
+        if (verdict === true) return caseIndex;
+        if (verdict === null) return null;
       }
-      if (verdict === null) {
-        isDecided = false;
-        break;
-      }
-    }
-    if (isDecided) {
-      if (matchIndex === -1)
-        matchIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
+      return defaultIndex;
+    };
+    const reason = `switch (${describeValue(discriminant)})`;
+    const matchIndex = getMatchIndex(discriminant);
+    if (matchIndex !== null) {
       return matchIndex === -1 ? proceed(context) : runThenProceed(matchIndex);
     }
-    const hasDefault = statement.cases.some((switchCase) => switchCase.test === null);
-    const branches: StatementContinuation[] = statement.cases.map(
-      (_, caseIndex) => (pathContext) => runFrom(caseIndex, pathContext),
+    const runStart = (startCase: number): StatementContinuation =>
+      startCase === -1 ? () => COMPLETES : (pathContext) => runFrom(startCase, pathContext);
+    const alternativeMatches =
+      discriminant.kind === "branch"
+        ? discriminant.alternatives.map((alternative) => getMatchIndex(alternative))
+        : [];
+    const decidedMatches = alternativeMatches.filter((match): match is number => match !== null);
+    if (discriminant.kind !== "branch" || decidedMatches.length !== alternativeMatches.length) {
+      const branches = statement.cases.map((_, caseIndex) => runStart(caseIndex));
+      if (defaultIndex === -1) branches.push(runStart(-1));
+      return this.forkPaths(branches, context, proceed, reason, location);
+    }
+    const startCases = [...new Set(decidedMatches)];
+    const targets = getDiscriminantTargets(statement.discriminant).filter(
+      (target) => lookupNarrowingTarget(context.scope, target, getObjectProperty) === discriminant,
     );
-    if (!hasDefault) branches.push(() => COMPLETES);
+    const branches = startCases.map((startCase): StatementContinuation => {
+      const matching = discriminant.alternatives.filter(
+        (_, index) => decidedMatches[index] === startCase,
+      );
+      return (pathContext) => {
+        const narrowed = branchValue(matching, discriminant.reason, discriminant.location);
+        for (const target of targets) {
+          applyNarrowing(context.scope, target, narrowed, (object) =>
+            this.journalHeapValue(object),
+          );
+        }
+        return runStart(startCase)(pathContext);
+      };
+    });
+    const isPositional = startCases.length === decidedMatches.length;
     return this.forkPaths(
       branches,
       context,
       proceed,
-      `switch (${describeValue(discriminant)})`,
+      reason,
       location,
+      startCases.indexOf(decidedMatches[discriminant.preferredIndex]),
+      isPositional && discriminant.predicate
+        ? discriminant.predicate
+        : createPathPredicate(reason, location),
     );
   }
 
@@ -5004,6 +5540,17 @@ const snapshotScopes = (scope: Scope): ScopeSnapshot[] => {
   return snapshots;
 };
 
+/** The scopes the running activation closed over; `null` outside any call, where every scope outlives the path. */
+const getClosureScopes = (context: EvaluationContext): Set<Scope> | null => {
+  const frame = context.callStack.at(-1);
+  if (!frame) return null;
+  const scopes = new Set<Scope>();
+  for (let current: Scope | null = frame.scope; current; current = current.parent) {
+    scopes.add(current);
+  }
+  return scopes;
+};
+
 const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
   for (const snapshot of snapshots) {
     snapshot.scope.bindings.clear();
@@ -5060,7 +5607,9 @@ const joinScopes = (
       );
       snapshot.scope.bindings.set(
         name,
-        branchValue(values, reason, location, preferredPath, predicate),
+        values.every((value) => value === values[0])
+          ? values[0]
+          : branchValue(values, reason, location, preferredPath, predicate),
       );
     }
   });
@@ -5227,6 +5776,22 @@ const nameAnonymousInner = (
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 
+const OBJECT_VALUE_KINDS: ReadonlySet<StaticValue["kind"]> = new Set([
+  "element",
+  "list",
+  "object",
+  "function",
+  "class",
+  "regexp",
+  "context",
+  "react-api",
+  "namespace",
+  "native-object",
+  "method",
+  "native-function",
+  "proxy",
+]);
+
 const COMPARE_OPERATORS: Partial<Record<string, CompareOperator>> = {
   "<": "<",
   "<=": "<=",
@@ -5241,8 +5806,11 @@ const MIRRORED_COMPARISONS: Record<CompareOperator, CompareOperator> = {
   ">=": "<=",
 };
 
+/** Guards are serialized as JSON, where only finite numbers survive. */
 const isGuardLiteral = (value: StaticPrimitive): value is GuardLiteral =>
-  typeof value !== "bigint" && value !== undefined && !Number.isNaN(value);
+  typeof value !== "bigint" &&
+  value !== undefined &&
+  (typeof value !== "number" || Number.isFinite(value));
 
 /** Records an undecided comparison of a dynamic operand against a literal as a guard over that operand. */
 const deriveComparison = (
@@ -5266,7 +5834,7 @@ const deriveComparison = (
     });
   }
   const compareOperator = COMPARE_OPERATORS[operator];
-  if (compareOperator === undefined || typeof literal !== "number" || Number.isNaN(literal)) {
+  if (compareOperator === undefined || typeof literal !== "number" || !Number.isFinite(literal)) {
     return result;
   }
   return recordDerivation(result, {
@@ -5282,6 +5850,12 @@ const mayCoerce = (value: StaticValue): boolean =>
   value.kind === "primitive"
     ? value.value !== null && value.value !== undefined
     : value.kind !== "symbol";
+
+/** Two objects compare by identity under `==` as well: coercion needs a primitive operand. */
+const mayCoerceTogether = (left: StaticValue, right: StaticValue): boolean =>
+  mayCoerce(left) &&
+  mayCoerce(right) &&
+  !(OBJECT_VALUE_KINDS.has(left.kind) && OBJECT_VALUE_KINDS.has(right.kind));
 
 /**
  * React's memo cache sentinel never reaches application values, so comparing
@@ -5312,7 +5886,7 @@ const compareEquality = (
     compareIdentity(left, right) ??
     compareGlobalToNullish(left, right, realm) ??
     compareGlobalToNullish(right, left, realm);
-  if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
+  if (isEqual === false && !isStrict && mayCoerceTogether(left, right)) isEqual = null;
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
       value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;

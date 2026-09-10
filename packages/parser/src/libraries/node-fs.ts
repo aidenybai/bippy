@@ -72,7 +72,7 @@ const getFsExport = (rootDirectory: string, name: string): StaticValue | null =>
   }
 };
 
-export const nodeFsValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const nodeFsValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!NODE_FS_PACKAGES.includes(specifier) || project.rootDirectory === null) return null;
   if (importedName === "default" || importedName === "*") return null;
   return getFsExport(project.rootDirectory, importedName);

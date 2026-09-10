@@ -7,7 +7,7 @@ import type {
   StubRenderTools,
   UnknownPrimitiveType,
 } from "../types.js";
-import { getGeneratorItems } from "./generators.js";
+import { createGeneratorValue, getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getSearchParamsItems } from "./url-search-params.js";
 import {
@@ -408,6 +408,10 @@ const seedCollection = (
 
 const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
 
+/** `keys()`, `values()` and `entries()` hand out an iterator (`next()`, iterable), not an array. */
+const iteratorOver = (items: StaticValue): StaticValue =>
+  items.kind === "list" ? createGeneratorValue(items.items, UNDEFINED_VALUE) : items;
+
 /** What `for..of`, spread and `Array.from` see: `[key, value]` pairs for a `Map` or `URLSearchParams`, values for a `Set`; null for other values. */
 export const getCollectionItems = (value: StaticValue): StaticValue | null => {
   const collection = value.kind === "object" ? collectionsByValue.get(value) : undefined;
@@ -457,10 +461,10 @@ export const createCollectionValue = (
       collection.clear();
       return UNDEFINED_VALUE;
     }),
-    keys: nativeMethod("keys", () => collection.project((entry) => entry.key)),
-    values: nativeMethod("values", () => collection.project((entry) => entry.value)),
+    keys: nativeMethod("keys", () => iteratorOver(collection.project((entry) => entry.key))),
+    values: nativeMethod("values", () => iteratorOver(collection.project((entry) => entry.value))),
     entries: nativeMethod("entries", () =>
-      collection.project((entry) => listValue([entry.key, entry.value])),
+      iteratorOver(collection.project((entry) => listValue([entry.key, entry.value]))),
     ),
     forEach: nativeMethod("forEach", ([callback], tools) => {
       const entries = collection.project((entry) => listValue([entry.value, entry.key, self]));

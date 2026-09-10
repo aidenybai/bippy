@@ -19,7 +19,7 @@ if (!rootArg || !entryArg) {
   process.exit(1);
 }
 const rootDirectory = path.resolve(rootArg);
-const renderer = createStaticRenderer({
+const renderer = await createStaticRenderer({
   rootDirectory,
   tsconfigPath: path.join(rootDirectory, "tsconfig.json"),
   externalPackageAllowList: values.packages,

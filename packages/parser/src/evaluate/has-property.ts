@@ -5,7 +5,9 @@ import {
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
+import { isReactLikePackage, resolveReactApi } from "../react/react-api.js";
 import type {
+  ClassBody,
   StaticClassValue,
   StaticElementType,
   StaticFunctionValue,
@@ -13,13 +15,14 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
-import { toLanguagePropertyKey } from "./host-globals.js";
+import { getLanguageCounterpart, toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
+import { isFunctionText, toPropertyKey } from "./primitive-shapes.js";
 import {
   branchValue,
   FALSE_VALUE,
-  getPropertyName,
+  getKnownObjectOwnNames,
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
@@ -37,9 +40,20 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
-const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
+/** Whether a native witness has the member, reading intrinsics on its chain from the language realm so members scripts added to this process's own do not count. */
+export const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
   const languageKey = toLanguagePropertyKey(name);
-  return languageKey !== null && languageKey in intrinsic;
+  if (languageKey === null) return false;
+  for (
+    let holder: object | null = intrinsic;
+    holder !== null;
+    holder = Object.getPrototypeOf(holder)
+  ) {
+    const languageObject = getLanguageCounterpart(holder);
+    if (languageObject !== null) return languageKey in languageObject;
+    if (Object.hasOwn(holder, languageKey)) return true;
+  }
+  return false;
 };
 
 /** Own keys every function object has without source assigning them; arrows have no `prototype`. */
@@ -76,7 +90,7 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
     case "context-consumer":
       if (name === "displayName") return primitiveValue(type.displayName !== null);
       if (CONTEXT_OWN_KEYS.has(name)) return null;
-      return primitiveValue(name in Object.prototype);
+      return primitiveValue(hasIntrinsicMember(Object.prototype, name));
     default:
       return null;
   }
@@ -125,6 +139,12 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       return hasIntrinsicMember(Function.prototype, name) || target.getOwnProperty?.(name)
         ? TRUE_VALUE
         : FALSE_VALUE;
+    case "external":
+      return isReactLikePackage(target.packageName) &&
+        (target.importedName === "*" || target.importedName === "default") &&
+        resolveReactApi(target.packageName, name) !== null
+        ? TRUE_VALUE
+        : null;
     case "global": {
       const witness = getPrototypeWitness(target);
       if (witness === null) return null;
@@ -160,7 +180,87 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
   }
 };
 
+const couldBeFunctionText = (name: string): boolean =>
+  name.includes("(") || name.includes("=>") || /^class[\s{]/.test(name);
+
+const getStaticMemberKeys = (body: ClassBody | null): string[] =>
+  body === null
+    ? []
+    : body.members.flatMap((member) =>
+        member.kind !== "static-block" && member.isStatic ? [member.key] : [],
+      );
+
+const getOwnPropertyKeys = (target: StaticValue): string[] | null => {
+  switch (target.kind) {
+    case "object":
+      return getKnownObjectOwnNames(target);
+    case "list":
+      return target.properties ? [...target.properties.keys()] : [];
+    case "function":
+      return [...target.properties.keys()];
+    case "class":
+      return [...target.properties.keys(), ...getStaticMemberKeys(target.body)];
+    case "element":
+      return [];
+    case "component-reference":
+      switch (target.type.kind) {
+        case "function":
+        case "class":
+          return [
+            ...target.type.component.properties.keys(),
+            ...getStaticMemberKeys(target.type.component.classBody),
+          ];
+        case "memo":
+        case "forward-ref":
+        case "lazy":
+          return [...target.type.properties.keys()];
+        default:
+          return null;
+      }
+    default:
+      return null;
+  }
+};
+
+/** Whether the target's own keys are fully known and none spells function syntax, so a key read from `Function.prototype.toString` is not among them. */
+export const ownsNoFunctionTextKey = (target: StaticValue): boolean => {
+  const ownKeys = getOwnPropertyKeys(target);
+  return ownKeys !== null && !ownKeys.some(couldBeFunctionText);
+};
+
+const getInheritedFrom = (target: StaticValue): StaticValue | null => {
+  switch (target.kind) {
+    case "object":
+      return target.prototype ?? null;
+    case "class":
+      return target.body.superValue;
+    case "component-reference":
+      return target.type.kind === "class"
+        ? (target.type.component.classBody?.superValue ?? null)
+        : null;
+    default:
+      return null;
+  }
+};
+
+/** `functionText in target`, walking the prototype chain; null when some object on it may hold keys the analysis cannot see. */
+export const hasFunctionTextProperty = (target: StaticValue): boolean | null => {
+  if (!ownsNoFunctionTextKey(target)) return null;
+  const parent = getInheritedFrom(target);
+  return parent ? hasFunctionTextProperty(parent) : false;
+};
+
 export const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null => {
-  const name = getPropertyName(key);
-  return name === null ? null : hasNamedProperty(name, target);
+  const name = toPropertyKey(key);
+  if (name !== null) return hasNamedProperty(name, target);
+  if (!isFunctionText(key)) return null;
+  const results: StaticValue[] = [];
+  for (const alternative of target.kind === "branch" ? target.alternatives : [target]) {
+    const hasKey = hasFunctionTextProperty(alternative);
+    if (hasKey === null) return null;
+    results.push(primitiveValue(hasKey));
+  }
+  return target.kind === "branch"
+    ? branchValue(results, target.reason, target.location, target.preferredIndex)
+    : results[0];
 };

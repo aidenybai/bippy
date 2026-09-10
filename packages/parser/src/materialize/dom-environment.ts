@@ -146,18 +146,16 @@ export const ensureDomGlobals = (): void => {
  * Replaces an installed window with a fresh one. Interpreted code mutates the
  * real document (`document.body.classList`, expando properties, history), so
  * each analyzed program must start from the DOM a browser would give it, not
- * from what the previous program left behind. A window we did not install
- * (vitest's) is kept as-is so fixtures may prime it; when the program ships its
- * own server-rendered shell the document is reopened onto that markup.
+ * from what the previous program left behind. A document the host owns
+ * (vitest's) is kept, and rewritten in place when the page has its own markup.
  */
 export const resetDomGlobals = (initialMarkup: string | null = null): void => {
   if (installedWindow !== null || typeof globalThis.document === "undefined") {
     installWindow(initialMarkup);
-    return;
+  } else if (initialMarkup !== null) {
+    document.open();
+    document.write(initialMarkup);
   }
-  if (initialMarkup === null) return;
-  document.open();
-  document.write(initialMarkup);
 };
 
 const installWindow = (initialMarkup: string | null = null): void => {
@@ -217,6 +215,7 @@ export const createDomHostDocument = (hasKnownMarkup: boolean): HostDocument => 
     document,
     globalObject: window,
     hasKnownMarkup,
+    getBaseHref: () => document.querySelector("base[href]")?.getAttribute("href") ?? null,
     isInstanceOf: (value, interfaceName) => {
       if (browser.getInterface(interfaceName) === null) return null;
       const installed: unknown = Reflect.get(window, interfaceName);
