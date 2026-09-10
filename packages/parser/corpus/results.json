@@ -51412,6 +51412,1862 @@
       "anchor": null,
       "note": "static only",
       "failure": null
+    },
+    {
+      "id": "answer",
+      "revision": "3b9f1370612e690a0b7f230f05e688930db4c6d3",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T00:00:04.612Z",
+      "durationMs": 11519,
+      "runtime": {
+        "reactVersion": null,
+        "rendererName": null,
+        "buildType": null,
+        "roots": 2,
+        "fibers": 183,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "Log In - Bippy Corpus"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 191,
+          "textCount": 2,
+          "branchCount": 4,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 3,
+          "modulesLoaded": 650
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 23
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "truncated",
+        "matchedFibers": 161,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 11,
+        "runtimeFibers": 163,
+        "staticFibers": 169,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 164,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 26,
+        "stateCount": 26,
+        "clusters": 1,
+        "tree": {
+          "nodes": 629,
+          "inputs": 5,
+          "guards": 14,
+          "branches": 4,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 3
+        },
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 4,
+              "commitCount": 5
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/plugins/builtin/ThirdPartyConnector/index.tsx:51:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 2,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/plugins/builtin/ThirdPartyConnector/index.tsx:54:8",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/plugins/builtin/ThirdPartyConnector/index.tsx:51:3",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/plugins/builtin/ThirdPartyConnector/index.tsx:51:3",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/plugins/builtin/ThirdPartyConnector/index.tsx:54:8",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/plugins/builtin/ThirdPartyConnector/index.tsx:54:8",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/node_modules/.pnpm/@restart+ui@1.9.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@restart/ui/esm/Button.js:20:5",
+              "side": 0,
+              "guard": "and(not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#2), 1), truthy(#1[].icon))",
+              "reason": "conditional on branch(\"\" | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/components/Icon/svg.tsx:29:10",
+              "side": 0,
+              "guard": "and(eq(choice(#2), 1), truthy(#1[].icon))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#2), 1), truthy(#1[].icon))",
+              "reason": "conditional on branch(\"\" | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/components/Icon/svg.tsx:29:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#2), 1), truthy(#1[].icon)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/node_modules/.pnpm/@restart+ui@1.9.1_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@restart/ui/esm/Button.js:20:5",
+              "side": 1,
+              "guard": "not(and(not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\"))), not(or(eq(#1[].link, null), eq(typeof(#1[].link), \"undefined\")))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#3), 1), truthy(#1[].icon))",
+              "reason": "conditional on branch(\"\" | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/components/Icon/svg.tsx:29:10",
+              "side": 0,
+              "guard": "and(eq(choice(#3), 1), truthy(#1[].icon))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#3), 1), truthy(#1[].icon))",
+              "reason": "conditional on branch(\"\" | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/answer/ui/src/components/Icon/svg.tsx:29:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#3), 1), truthy(#1[].icon)))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 13,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T16:43:46.468Z",
+      "failure": null
+    },
+    {
+      "id": "giscus",
+      "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T00:00:17.661Z",
+      "durationMs": 2456,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 0,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 45
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 1
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": null,
+      "stateSpace": null,
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "homarr",
+      "revision": "c5873c6e481144cd18a70139ef23ac04ca8ab158",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T00:00:23.936Z",
+      "durationMs": 33287,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 364,
+        "commits": 6,
+        "pageErrors": [],
+        "title": "Onboard • Homarr"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 694,
+          "textCount": 34,
+          "branchCount": 5,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 5934
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 326,
+        "matchedText": 17,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 3,
+        "repeatIterations": 0,
+        "transparentFibers": 15,
+        "runtimeFibers": 343,
+        "staticFibers": 343,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 347,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 28,
+        "stateCount": 28,
+        "clusters": 5,
+        "tree": {
+          "nodes": 2963,
+          "inputs": 6,
+          "guards": 57,
+          "branches": 26,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 15,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 5
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#1, null)",
+              "reason": "conditional on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/next-i18next/dist/esm/appWithTranslation.js:53:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(eq(choice(#2), 1), not(truthy(#3))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#1, null)",
+              "reason": "conditional on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/next-i18next/dist/esm/appWithTranslation.js:53:12",
+              "side": 0,
+              "guard": "eq(#1, null)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#1, null)",
+              "reason": "conditional on <boolean: !== on dynamic values>",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/next-i18next/dist/esm/appWithTranslation.js:53:12",
+              "side": 1,
+              "guard": "not(eq(#1, null))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(eq(choice(#4), 1), not(truthy(#5))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "side": 0,
+              "guard": "or(eq(choice(#4), 0), and(eq(choice(#4), 1), not(truthy(#5))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(eq(choice(#4), 1), not(truthy(#5))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "side": 1,
+              "guard": "not(or(eq(choice(#4), 0), and(eq(choice(#4), 1), not(truthy(#5)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 0,
+              "guard": "truthy(#5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 1,
+              "guard": "not(truthy(#5))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(eq(choice(#2), 1), not(truthy(#3))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(eq(choice(#2), 1), not(truthy(#3))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(eq(choice(#2), 1), not(truthy(#3))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(eq(choice(#2), 1), not(truthy(#3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 0,
+              "guard": "truthy(#3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 1,
+              "guard": "not(truthy(#3))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#3), 0), and(eq(choice(#3), 1), not(truthy(#4))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "side": 0,
+              "guard": "or(eq(choice(#3), 0), and(eq(choice(#3), 1), not(truthy(#4))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#3), 0), and(eq(choice(#3), 1), not(truthy(#4))))",
+              "reason": "&& on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/react-remove-scroll/dist/es2015/UI.js:24:9",
+              "side": 1,
+              "guard": "not(or(eq(choice(#3), 0), and(eq(choice(#3), 1), not(truthy(#4)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 0,
+              "guard": "truthy(#4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 1,
+              "guard": "not(truthy(#4))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 0,
+              "guard": "truthy(#2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/homarr/node_modules/@mantine/core/esm/Transition/Transition.js:31:10",
+              "side": 1,
+              "guard": "not(truthy(#2))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 4,
+          "possible": 17,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T19:11:21.023Z",
+      "failure": null
+    },
+    {
+      "id": "letterpad",
+      "revision": "91d3e2516987ea00b1f068bda20dcd8fd14eb90d",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T00:00:58.728Z",
+      "durationMs": 7435,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 254,
+        "commits": 7,
+        "pageErrors": [],
+        "title": "Login"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 159,
+          "textCount": 22,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 293
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 117,
+        "matchedText": 22,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 51,
+        "runtimeFibers": 139,
+        "staticFibers": 139,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 139,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 139,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-09T19:42:36.027Z",
+      "failure": null
+    },
+    {
+      "id": "museeks",
+      "revision": "7163f6019a3184043c06352caeec0ed1bf6ccff5",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T00:01:07.702Z",
+      "durationMs": 40034,
+      "runtime": {
+        "reactVersion": "19.2.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 211,
+        "commits": 12,
+        "pageErrors": [],
+        "title": "Museeks"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 30,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1201
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 36
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "max-recursion",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 210,
+        "staticFibers": 278,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <StrictMode> [Mode] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RouterContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Matches> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <MatchesInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CatchBoundary> [FunctionComponent] > <CatchBoundaryImpl> [ClassComponent] > <MatchImpl> [SimpleMemoComponent] > <MatchView> [FunctionComponent] > <SafeFragment> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SafeFragment> [FunctionComponent] > <CatchBoundary> [FunctionComponent] > <CatchBoundaryImpl> [ClassComponent] > <CatchNotFound> [FunctionComponent] > <CatchBoundary> [FunctionComponent] > <CatchBoundaryImpl> [ClassComponent] > <MatchInnerImpl> [SimpleMemoComponent] > <ViewRoot> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Status> [FunctionComponent][0]",
+          "expected": "<end of children>",
+          "actual": "<TrackListStatus> [FunctionComponent]"
+        },
+        "stepsUsed": 180,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 9705,
+        "clusters": 4,
+        "tree": {
+          "nodes": 528,
+          "inputs": 6,
+          "guards": 70,
+          "branches": 5,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 3
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 1,
+          "divergence": {
+            "path": "root > <StrictMode> [Mode] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RouterContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Matches> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <MatchesInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <CatchBoundary> [FunctionComponent] > <CatchBoundaryImpl> [ClassComponent] > <MatchImpl> [SimpleMemoComponent] > <MatchView> [FunctionComponent] > <SafeFragment> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SafeFragment> [FunctionComponent] > <CatchBoundary> [FunctionComponent] > <CatchBoundaryImpl> [ClassComponent] > <CatchNotFound> [FunctionComponent] > <CatchBoundary> [FunctionComponent] > <CatchBoundaryImpl> [ClassComponent] > <MatchInnerImpl> [SimpleMemoComponent] > <ViewRoot> [FunctionComponent] > <div> [HostComponent] > <Navigation> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Status> [FunctionComponent][0]",
+            "expected": "<end of children>",
+            "actual": "<TrackListStatus> [FunctionComponent]"
+          }
+        },
+        "omitted": {
+          "total": 9449,
+          "omissions": []
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 3,
+              "guard": "eq(choice(branch#1), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 4,
+              "guard": "eq(choice(branch#1), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 5,
+              "guard": "eq(choice(branch#1), 5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 6,
+              "guard": "eq(choice(branch#1), 6)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 7,
+              "guard": "eq(choice(branch#1), 7)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 8,
+              "guard": "eq(choice(branch#1), 8)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 9,
+              "guard": "eq(choice(branch#1), 9)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 10,
+              "guard": "eq(choice(branch#1), 10)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 11,
+              "guard": "eq(choice(branch#1), 11)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 12,
+              "guard": "eq(choice(branch#1), 12)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 13,
+              "guard": "eq(choice(branch#1), 13)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 14,
+              "guard": "eq(choice(branch#1), 14)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 15,
+              "guard": "eq(choice(branch#1), 15)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 16,
+              "guard": "eq(choice(branch#1), 16)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 17,
+              "guard": "eq(choice(branch#1), 17)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 18,
+              "guard": "eq(choice(branch#1), 18)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 19,
+              "guard": "eq(choice(branch#1), 19)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 20,
+              "guard": "eq(choice(branch#1), 20)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 2,
+              "guard": "eq(choice(branch#2), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 3,
+              "guard": "eq(choice(branch#2), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 4,
+              "guard": "eq(choice(branch#2), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 5,
+              "guard": "eq(choice(branch#2), 5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 6,
+              "guard": "eq(choice(branch#2), 6)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 7,
+              "guard": "eq(choice(branch#2), 7)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 8,
+              "guard": "eq(choice(branch#2), 8)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 9,
+              "guard": "eq(choice(branch#2), 9)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 10,
+              "guard": "eq(choice(branch#2), 10)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 11,
+              "guard": "eq(choice(branch#2), 11)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 12,
+              "guard": "eq(choice(branch#2), 12)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 13,
+              "guard": "eq(choice(branch#2), 13)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 14,
+              "guard": "eq(choice(branch#2), 14)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 15,
+              "guard": "eq(choice(branch#2), 15)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 16,
+              "guard": "eq(choice(branch#2), 16)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 17,
+              "guard": "eq(choice(branch#2), 17)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 18,
+              "guard": "eq(choice(branch#2), 18)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 19,
+              "guard": "eq(choice(branch#2), 19)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 20,
+              "guard": "eq(choice(branch#2), 20)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 0), not(or(eq(#2, null), eq(typeof(#2), \"undefined\"))))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Header.tsx:42:10",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 0), not(or(eq(#2, null), eq(typeof(#2), \"undefined\"))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 0,
+              "guard": "eq(choice(branch#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 1,
+              "guard": "eq(choice(branch#3), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 2,
+              "guard": "eq(choice(branch#3), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 3,
+              "guard": "eq(choice(branch#3), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 4,
+              "guard": "eq(choice(branch#3), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 5,
+              "guard": "eq(choice(branch#3), 5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 6,
+              "guard": "eq(choice(branch#3), 6)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 7,
+              "guard": "eq(choice(branch#3), 7)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 8,
+              "guard": "eq(choice(branch#3), 8)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 9,
+              "guard": "eq(choice(branch#3), 9)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 10,
+              "guard": "eq(choice(branch#3), 10)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 11,
+              "guard": "eq(choice(branch#3), 11)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 12,
+              "guard": "eq(choice(branch#3), 12)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 13,
+              "guard": "eq(choice(branch#3), 13)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 14,
+              "guard": "eq(choice(branch#3), 14)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 15,
+              "guard": "eq(choice(branch#3), 15)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 16,
+              "guard": "eq(choice(branch#3), 16)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 17,
+              "guard": "eq(choice(branch#3), 17)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 18,
+              "guard": "eq(choice(branch#3), 18)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 19,
+              "guard": "eq(choice(branch#3), 19)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "dynamic object key",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Icon.tsx:65:20",
+              "side": 20,
+              "guard": "eq(choice(branch#3), 20)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 0), not(or(eq(#2, null), eq(typeof(#2), \"undefined\"))))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/museeks/src/components/Header.tsx:42:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 0), not(or(eq(#2, null), eq(typeof(#2), \"undefined\")))))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on <string: caught error message>",
+              "location": "/home/ubuntu/bippy-corpus/museeks/node_modules/.pnpm/@tanstack+react-router@1.170.8_react-dom@19.2.6_react@19.2.6__react@19.2.6/node_modules/@tanstack/react-router/dist/esm/CatchBoundary.js:90:15",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on <string: caught error message>",
+              "location": "/home/ubuntu/bippy-corpus/museeks/node_modules/.pnpm/@tanstack+react-router@1.170.8_react-dom@19.2.6_react@19.2.6__react@19.2.6/node_modules/@tanstack/react-router/dist/esm/CatchBoundary.js:90:15",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 70,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T21:38:02.301Z",
+      "failure": null
+    },
+    {
+      "id": "navidrome",
+      "revision": "bea9715001abc956c712f76bf87cd93fd41bd6f1",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T00:00:00.183Z",
+      "durationMs": 2956,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 116,
+        "commits": 3,
+        "pageErrors": [
+          "Unexpected token '{'",
+          "Unexpected token '{'",
+          "Warning: Invalid DOM property `%s`. Did you mean `%s`?%s autocapitalize autoCapitalize \n    at input\n    at div\n    at InputBase2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:489:34)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at Input2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:960:36)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at div\n    at FormControl2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:2195:28)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at TextField2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:3499:32)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at renderInput (http://localhost:4533/src/layout/Login.jsx:96:9)\n    at Field2 (http://localhost:4533/node_modules/.vite/deps/chunk-4FACXT5Z.js?v=e79c0eb0:1656:26)\n    at div\n    at div\n    at div\n    at Paper2 (http://localhost:4533/node_modules/.vite/deps/chunk-3K2QLR6M.js?v=e79c0eb0:68:27)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at Card2 (http://localhost:4533/node_modules/.vite/deps/chunk-22W4LN3N.js?v=e79c0eb0:50:27)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at div\n    at form\n    at ReactFinalForm (http://localhost:4533/node_modules/.vite/deps/chunk-4FACXT5Z.js?v=e79c0eb0:1263:20)\n    at FormLogin (http://localhost:4533/src/layout/Login.jsx:122:22)\n    at Login (http://localhost:4533/src/layout/Login.jsx:528:18)\n    at ThemeProvider (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3116:24)\n    at LoginWithTheme (http://localhost:4533/src/layout/Login.jsx:626:17)\n    at Route2 (http://localhost:4533/node_modules/.vite/deps/chunk-56E73CHO.js?v=e79c0eb0:936:29)\n    at Switch2 (http://localhost:4533/node_modules/.vite/deps/chunk-56E73CHO.js?v=e79c0eb0:1077:29)\n    at CoreAdminUI (http://localhost:4533/node_modules/.vite/deps/chunk-Y45SZX7X.js?v=e79c0eb0:14567:18)\n    at AdminUI\n    at Router2 (http://localhost:4533/node_modules/.vite/deps/chunk-56E73CHO.js?v=e79c0eb0:659:30)\n    at ConnectedRouter3 (http://localhost:4533/node_modules/.vite/deps/chunk-2TXKZA7U.js?v=e79c0eb0:853:7)\n    at ConnectedRouterWithContext2 (http://localhost:4533/node_modules/.vite/deps/chunk-2TXKZA7U.js?v=e79c0eb0:932:25)\n    at ConnectFunction (http://localhost:4533/node_modules/.vite/deps/chunk-4PJE3SDW.js?v=e79c0eb0:338:48)\n    at TranslationProvider (http://localhost:4533/node_modules/.vite/deps/chunk-Y45SZX7X.js?v=e79c0eb0:10127:28)\n    at CoreAdminContext (http://localhost:4533/node_modules/.vite/deps/chunk-Y45SZX7X.js?v=e79c0eb0:14200:28)\n    at AdminContext\n    at Admin (http://localhost:4533/node_modules/.vite/deps/react-admin.js?v=e79c0eb0:23230:25)\n    at Admin (http://localhost:4533/src/App.jsx:96:21)\n    at Provider (http://localhost:4533/node_modules/.vite/deps/chunk-4PJE3SDW.js?v=e79c0eb0:167:20)\n    at App\n    at DndProvider2 (http://localhost:4533/node_modules/.vite/deps/react-dnd.js?v=e79c0eb0:1649:23)\n    at div\n    at HotKeysWrapper2 (http://localhost:4533/node_modules/.vite/deps/react-hotkeys.js?v=e79c0eb0:6765:9)\n    at HotKeysEnabled2 (http://localhost:4533/node_modules/.vite/deps/react-hotkeys.js?v=e79c0eb0:6337:7)\n    at AppWithHotkeys",
+          "Warning: Invalid DOM property `%s`. Did you mean `%s`?%s autocorrect autoCorrect \n    at input\n    at div\n    at InputBase2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:489:34)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at Input2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:960:36)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at div\n    at FormControl2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:2195:28)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at TextField2 (http://localhost:4533/node_modules/.vite/deps/chunk-IVS27NMH.js?v=e79c0eb0:3499:32)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at renderInput (http://localhost:4533/src/layout/Login.jsx:96:9)\n    at Field2 (http://localhost:4533/node_modules/.vite/deps/chunk-4FACXT5Z.js?v=e79c0eb0:1656:26)\n    at div\n    at div\n    at div\n    at Paper2 (http://localhost:4533/node_modules/.vite/deps/chunk-3K2QLR6M.js?v=e79c0eb0:68:27)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at Card2 (http://localhost:4533/node_modules/.vite/deps/chunk-22W4LN3N.js?v=e79c0eb0:50:27)\n    at WithStyles2 (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3764:35)\n    at div\n    at form\n    at ReactFinalForm (http://localhost:4533/node_modules/.vite/deps/chunk-4FACXT5Z.js?v=e79c0eb0:1263:20)\n    at FormLogin (http://localhost:4533/src/layout/Login.jsx:122:22)\n    at Login (http://localhost:4533/src/layout/Login.jsx:528:18)\n    at ThemeProvider (http://localhost:4533/node_modules/.vite/deps/chunk-NDVMGFVI.js?v=e79c0eb0:3116:24)\n    at LoginWithTheme (http://localhost:4533/src/layout/Login.jsx:626:17)\n    at Route2 (http://localhost:4533/node_modules/.vite/deps/chunk-56E73CHO.js?v=e79c0eb0:936:29)\n    at Switch2 (http://localhost:4533/node_modules/.vite/deps/chunk-56E73CHO.js?v=e79c0eb0:1077:29)\n    at CoreAdminUI (http://localhost:4533/node_modules/.vite/deps/chunk-Y45SZX7X.js?v=e79c0eb0:14567:18)\n    at AdminUI\n    at Router2 (http://localhost:4533/node_modules/.vite/deps/chunk-56E73CHO.js?v=e79c0eb0:659:30)\n    at ConnectedRouter3 (http://localhost:4533/node_modules/.vite/deps/chunk-2TXKZA7U.js?v=e79c0eb0:853:7)\n    at ConnectedRouterWithContext2 (http://localhost:4533/node_modules/.vite/deps/chunk-2TXKZA7U.js?v=e79c0eb0:932:25)\n    at ConnectFunction (http://localhost:4533/node_modules/.vite/deps/chunk-4PJE3SDW.js?v=e79c0eb0:338:48)\n    at TranslationProvider (http://localhost:4533/node_modules/.vite/deps/chunk-Y45SZX7X.js?v=e79c0eb0:10127:28)\n    at CoreAdminContext (http://localhost:4533/node_modules/.vite/deps/chunk-Y45SZX7X.js?v=e79c0eb0:14200:28)\n    at AdminContext\n    at Admin (http://localhost:4533/node_modules/.vite/deps/react-admin.js?v=e79c0eb0:23230:25)\n    at Admin (http://localhost:4533/src/App.jsx:96:21)\n    at Provider (http://localhost:4533/node_modules/.vite/deps/chunk-4PJE3SDW.js?v=e79c0eb0:167:20)\n    at App\n    at DndProvider2 (http://localhost:4533/node_modules/.vite/deps/react-dnd.js?v=e79c0eb0:1649:23)\n    at div\n    at HotKeysWrapper2 (http://localhost:4533/node_modules/.vite/deps/react-hotkeys.js?v=e79c0eb0:6765:9)\n    at HotKeysEnabled2 (http://localhost:4533/node_modules/.vite/deps/react-hotkeys.js?v=e79c0eb0:6337:7)\n    at AppWithHotkeys"
+        ],
+        "title": "Navidrome"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 116,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7575
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 111,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 115,
+        "staticFibers": 115,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 115,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 0,
+        "tree": {
+          "nodes": 259,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T15:23:50.287Z",
+      "failure": null
+    },
+    {
+      "id": "panwriter",
+      "revision": "3bc3d60b700e83781369a789bd0078625e2756c6",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T00:00:21.632Z",
+      "durationMs": 744,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 45,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: ReactDOM.render is no longer supported in React 18. Use createRoot instead. Until you switch to the new API, your app will behave as if it's running React 17. Learn more: https://reactjs.org/link/switch-to-createroot",
+          "Warning: ReactDOM.render is no longer supported in React 18. Use createRoot instead. Until you switch to the new API, your app will behave as if it's running React 17. Learn more: https://reactjs.org/link/switch-to-createroot"
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 148,
+          "textCount": 24,
+          "branchCount": 5,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 32
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 44,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 5,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 44,
+        "staticFibers": 131,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 54,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 14,
+        "stateCount": 14,
+        "clusters": 1,
+        "tree": {
+          "nodes": 178,
+          "inputs": 3,
+          "guards": 12,
+          "branches": 5,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 7,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), not(eq(#2.split, \"onlyPreview\"))))",
+              "reason": "conditional on branch(true | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:35:13",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(eq(choice(#1), 1), truthy(#2.doc.fileDirty))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:46:13",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(eq(choice(#1), 1), not(eq(#2.split, \"onlyEditor\")))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:52:15",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(eq(choice(#1), 1), truthy(#2.metaEditorOpen))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/App/App.tsx:46:11",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), not(eq(#2.split, \"onlyPreview\"))))",
+              "reason": "conditional on branch(true | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:35:13",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), not(eq(#2.split, \"onlyPreview\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), not(eq(#2.split, \"onlyPreview\"))))",
+              "reason": "conditional on branch(true | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:35:13",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(eq(choice(#1), 1), not(eq(#2.split, \"onlyPreview\")))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2.doc.fileDirty))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:46:13",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 1), truthy(#2.doc.fileDirty))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2.doc.fileDirty))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:46:13",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 1), truthy(#2.doc.fileDirty)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), not(eq(#2.split, \"onlyEditor\")))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:52:15",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 1), not(eq(#2.split, \"onlyEditor\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), not(eq(#2.split, \"onlyEditor\")))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/Toolbar/Toolbar.tsx:52:15",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 1), not(eq(#2.split, \"onlyEditor\"))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2.metaEditorOpen))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/App/App.tsx:46:11",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 1), truthy(#2.metaEditorOpen))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2.metaEditorOpen))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/panwriter/src/components/App/App.tsx:46:11",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 1), truthy(#2.metaEditorOpen)))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 6,
+          "possible": 6,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T18:37:20.796Z",
+      "failure": null
+    },
+    {
+      "id": "planka",
+      "revision": "26b512193a6a726e4de46dcdbf21ddb1c34c365b",
+      "framework": "react-router",
+      "capturedAt": "2026-09-09T23:59:56.786Z",
+      "durationMs": 1872,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 74,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "PLANKA"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 73,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1610
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 65,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 3,
+        "runtimeFibers": 70,
+        "staticFibers": 70,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 70,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 70,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T15:17:47.648Z",
+      "failure": null
     }
   ]
 }

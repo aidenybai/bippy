@@ -427,6 +427,16 @@ const addVariableCounts = (into: Map<string, number>, from: Map<string, number>)
   for (const [variable, count] of from) into.set(variable, (into.get(variable) ?? 0) + count);
 };
 
+/** A decision is tied to its siblings through its own variable and through every input its guards read. */
+const decisionKeys = (node: PatternBranch | PatternRepeat): string[] => [
+  node.variable,
+  ...node.inputs.map((input) => input.id),
+];
+
+const countDecision = (node: PatternBranch | PatternRepeat, counts: Map<string, number>): void => {
+  for (const key of decisionKeys(node)) counts.set(key, (counts.get(key) ?? 0) + 1);
+};
+
 const countVariables = (nodes: PatternNode[], counts: Map<string, number>): void => {
   for (const node of nodes) {
     switch (node.kind) {
@@ -437,11 +447,11 @@ const countVariables = (nodes: PatternNode[], counts: Map<string, number>): void
         countVariables(node.passedChildren, counts);
         break;
       case "branch":
-        counts.set(node.variable, (counts.get(node.variable) ?? 0) + 1);
+        countDecision(node, counts);
         for (const alternative of node.alternatives) countVariables(alternative, counts);
         break;
       case "repeat":
-        counts.set(node.variable, (counts.get(node.variable) ?? 0) + 1);
+        countDecision(node, counts);
         countVariables(node.children, counts);
         break;
       case "text":
@@ -486,12 +496,12 @@ export class SelfContainedFiberIndex {
           addVariableCounts(inside, this.mark(node.passedChildren));
           break;
         case "branch":
-          inside.set(node.variable, (inside.get(node.variable) ?? 0) + 1);
+          countDecision(node, inside);
           for (const alternative of node.alternatives)
             addVariableCounts(inside, this.mark(alternative));
           break;
         case "repeat":
-          inside.set(node.variable, (inside.get(node.variable) ?? 0) + 1);
+          countDecision(node, inside);
           addVariableCounts(inside, this.mark(node.children));
           break;
         case "text":

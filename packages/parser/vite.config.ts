@@ -2,7 +2,6 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transformAsync } from "@babel/core";
 import { transform as transformSvgr } from "@svgr/core";
-import svgr from "vite-plugin-svgr";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
@@ -87,6 +86,24 @@ const fixtureSvgrPlugin = (): Plugin => ({
   },
 });
 
+// What `vite-plugin-svgr` does with its default `include` of `**/*.svg?react`:
+// svgr with `@svgr/plugin-jsx` as the only default plugin and no caller name.
+// (The plugin itself types against a different `vite` than `vite-plus` bundles.)
+const fixtureViteSvgrPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-vite-svgr",
+  enforce: "pre",
+  async load(id) {
+    if (!id.endsWith(".svg?react") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    const filePath = id.slice(0, -"?react".length);
+    const componentCode = await transformSvgr(
+      readFileSync(filePath, "utf8"),
+      { plugins: ["@svgr/plugin-jsx"] },
+      { filePath },
+    );
+    return transformWithOxc(componentCode, id, { lang: "jsx" });
+  },
+});
+
 // What `@stylexjs/unplugin` does in a dev server: compile `stylex.create` and
 // friends away with the babel plugin in debug mode, leaving `props` to run.
 const fixtureStylexPlugin = (): Plugin => ({
@@ -132,7 +149,7 @@ export default defineConfig({
   plugins: [
     fixtureAliasPlugin(),
     fixtureSvgrPlugin(),
-    svgr(),
+    fixtureViteSvgrPlugin(),
     fixtureStylexPlugin(),
     fixtureJsxInJsPlugin(),
   ],
