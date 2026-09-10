@@ -234,7 +234,12 @@ import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import {
   collectStyledDisplayNames,
   DEFAULT_STYLED_COMPONENTS_TRANSFORM,
+  findBabelMacrosConfig,
+  readStyledComponentsOption,
+  readStyledMacroOption,
+  STYLED_COMPONENTS_MACRO_CONFIG_NAME,
   STYLED_COMPONENTS_MACRO_SPECIFIER,
+  styledComponentsMacroTransform,
 } from "./styled-components-transform.js";
 import type { CallFrame, ContextReader, EvaluationContext, StepBudget } from "./context.js";
 import type { StateCell } from "./hooks.js";
@@ -3760,7 +3765,7 @@ export class Interpreter {
         (binding) => binding.specifier === STYLED_COMPONENTS_MACRO_SPECIFIER,
       );
       const transform = usesMacro
-        ? DEFAULT_STYLED_COMPONENTS_TRANSFORM
+        ? this.getStyledMacroTransform(module)
         : isInsideNodeModules(module.filePath)
           ? null
           : this.styledComponentsTransform;
@@ -3768,6 +3773,35 @@ export class Interpreter {
       this.styledDisplayNames.set(module, displayNames);
     }
     return displayNames;
+  }
+
+  /** The plugin options `styled-components/macro` applies to a file: its babel-plugin-macros `styledComponents` config, the plugin's defaults without one. */
+  private getStyledMacroTransform(module: ModuleRecord): StyledComponentsTransformOptions | null {
+    const config = findBabelMacrosConfig(
+      module.filePath,
+      this.project.rootDirectory ?? path.dirname(module.filePath),
+    );
+    if (config === null) return styledComponentsMacroTransform(DEFAULT_STYLED_COMPONENTS_TRANSFORM);
+    const configModule = config.kind === "module" ? this.graph.getModule(config.filePath) : null;
+    const option =
+      config.kind === "data"
+        ? config.option
+        : readStyledMacroOption(
+            configModule
+              ? this.evaluateModuleExport(configModule, "default")
+              : unknownValue(`${path.basename(config.filePath)} could not be parsed`),
+          );
+    const transform = readStyledComponentsOption(option);
+    if (transform === undefined) {
+      this.report(
+        "styled-components",
+        `${STYLED_COMPONENTS_MACRO_CONFIG_NAME} in ${path.basename(config.filePath)} could not be evaluated`,
+        null,
+        "warning",
+      );
+      return styledComponentsMacroTransform(DEFAULT_STYLED_COMPONENTS_TRANSFORM);
+    }
+    return transform && styledComponentsMacroTransform(transform);
   }
 
   private callBuiltin(

@@ -1,0 +1,5 @@
+{
+  "skipRuntime": true,
+  "externalPackages": ["styled-components"],
+  "notes": "Imports `styled-components/macro`, whose babel-plugin-macros macro rewrites the import to `styled-components` and runs babel-plugin-styled-components with its default options, so styled components are named `file__Binding` without the project declaring the plugin; react-dom here runs untransformed source (the macro throws outside compilation), so the names are asserted statically in styled-components-transform.test.ts."
+}

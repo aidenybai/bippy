@@ -1,0 +1,9 @@
+{
+  "name": "fixture-styled-components-macro-config",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "babel-plugin-macros": "3.1.0",
+    "styled-components": "6.5.3"
+  }
+}

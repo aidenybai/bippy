@@ -25718,6 +25718,206 @@
       "failure": null
     },
     {
+      "id": "fashion-cube",
+      "revision": "9b1f46b24e6469343e595d304f56638f9c0ecc33",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T10:53:07.495Z",
+      "durationMs": 16867,
+      "runtime": {
+        "reactVersion": "16.14.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 293,
+        "commits": 227,
+        "pageErrors": [],
+        "title": "Fashion Cube"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 303,
+          "textCount": 17,
+          "branchCount": 3,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 249
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 275,
+        "matchedText": 16,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 1,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 3,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 292,
+        "staticFibers": 292,
+        "coverage": 1,
+        "strictCoverage": 0.9965753424657534,
+        "divergence": null,
+        "stepsUsed": 295,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 10,
+        "stateCount": 10,
+        "clusters": 2,
+        "tree": {
+          "nodes": 879,
+          "inputs": 9,
+          "guards": 9,
+          "branches": 3,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 9,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\"))), eq(choice(#5), 0)))), eq(#6.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\"))), eq(choice(#7), 0)))), eq(#8.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), eq(#2.status, \"unmounted\"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), eq(#2.status, \"unmounted\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\"))), eq(choice(#5), 0)))), eq(#6.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "side": 0,
+              "guard": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\"))), eq(choice(#5), 0)))), eq(#6.status, \"unmounted\"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\"))), eq(choice(#5), 0)))), eq(#6.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "side": 1,
+              "guard": "not(and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1), eq(choice(#5), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 1))))), eq(#6.status, \"unmounted\"))), eq(choice(#5), 0)))), eq(#6.status, \"unmounted\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\"))), eq(choice(#7), 0)))), eq(#8.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "side": 0,
+              "guard": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\"))), eq(choice(#7), 0)))), eq(#8.status, \"unmounted\"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\"))), eq(choice(#7), 0)))), eq(#8.status, \"unmounted\"))",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/fashion-cube/node_modules/react-transition-group/esm/Transition.js:371:5",
+              "side": 1,
+              "guard": "not(and(not(or(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\")), and(not(and(not(or(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2), eq(choice(#7), 0)), not(and(not(eq(choice(#3), 0)), not(eq(#4, 0)), truthy(#4), eq(#4, 2))))), eq(#8.status, \"unmounted\"))), eq(choice(#7), 0)))), eq(#8.status, \"unmounted\")))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 4,
+          "possible": 5,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 10,
+        "assignments": 8,
+        "replayed": 8,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T10:17:12.554Z",
+      "failure": null
+    },
+    {
       "id": "fastapi-template",
       "revision": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
       "framework": "spa",
@@ -55523,6 +55723,2192 @@
       "failure": null
     },
     {
+      "id": "multimart-react-ecommerce",
+      "revision": "4bb42e5a59afa971cb97209f151324a2442430dd",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T10:49:15.864Z",
+      "durationMs": 226796,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 817,
+        "commits": 125,
+        "pageErrors": [],
+        "title": "Multimart Ecommerce App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1212,
+          "textCount": 64,
+          "branchCount": 43,
+          "repeatCount": 16,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 317
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 16
+          },
+          {
+            "code": "budget-exhausted",
+            "count": 10
+          },
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "truncated",
+        "matchedFibers": 748,
+        "matchedText": 64,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 4,
+        "runtimeFibers": 812,
+        "staticFibers": 812,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 812,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 258,
+        "clusters": 1,
+        "tree": {
+          "nodes": 1947,
+          "inputs": 55,
+          "guards": 105,
+          "branches": 43,
+          "repeats": 16,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 26,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#1)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#3)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#5)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#7)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#9)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#11)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#13)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#16)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#9)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#11)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#13)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#14)@len(repeat#13)[0]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#15)@len(repeat#13)[0]",
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#14)@len(repeat#13)[1]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#16)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#17)@len(repeat#16)[0]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#17)@len(repeat#16)[1]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))@len(repeat#16)[1]",
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.nextArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:166:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.nextArrow))",
+              "reason": "if (branch(null | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:166:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#9)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#11)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#13)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#14)@len(repeat#13)[0]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#15)@len(repeat#13)[0]",
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#14)@len(repeat#13)[1]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#16)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#17)@len(repeat#16)[0]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#17)@len(repeat#16)[1]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))@len(repeat#16)[1]",
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#17)@len(repeat#16)[1]",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#9)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#11)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#13)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#14)@len(repeat#13)[0]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#15)@len(repeat#13)[0]",
+                  "reason": "if (branch(<boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#14)@len(repeat#13)[1]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#16)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#17)@len(repeat#16)[0]",
+                  "reason": "if (branch(true | <boolean> | false))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#14)@len(repeat#13)[0]",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#9)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#11)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#13)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#11)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#9)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#9)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "reason": "if (branch(true | <boolean> | false | undefined))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#7)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#7)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#5)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#5)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#3)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#3)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(repeat#1)",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+                  "count": 0
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#1)",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "countsAbove": 0,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+                  "reason": "if (branch(false | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "state-update",
+                  "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+                  "reason": "if (branch(null | unknown))",
+                  "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+              "reason": "if (branch(null | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+              "alternativeIndex": 1,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+              "reason": "if (branch(null | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.prevArrow))",
+              "reason": "if (branch(null | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:97:7",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), truthy(#2.prevArrow)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#1)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#1)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#1) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 0,
+              "guard": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad)))))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#3)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#3)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#3) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 0,
+              "guard": "or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad)))))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#4), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#5)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#5)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#5) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 0,
+              "guard": "or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad)))))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#6), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#7)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#7), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#7)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#7) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#8), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 0,
+              "guard": "or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad)))))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#8), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 0,
+              "guard": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 1,
+              "guard": "not(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 0,
+              "guard": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 1,
+              "guard": "not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 0,
+              "guard": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 1,
+              "guard": "not(or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 0,
+              "guard": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "reason": "if (branch(true | <boolean> | false | undefined))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
+              "side": 1,
+              "guard": "not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#9)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#9), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#9)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#9) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#10), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 0,
+              "guard": "or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "not(or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad)))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#10), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#11)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#11), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#11)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#11) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#12)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#12), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 0,
+              "guard": "or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad)))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#12)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#12), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#13)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#13), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#13)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#13) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#14)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#14), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#15)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 0,
+              "guard": "eq(choice(branch#15), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#15)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "eq(choice(branch#15), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#14)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#14), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#16)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#16), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#16)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#16) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#17)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#17), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 0,
+              "guard": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "not(or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad)))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#17)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#17), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.rtl))",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:232:3",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), truthy(#2.rtl)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#18)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#18), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#18)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#18) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#19)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#19), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#19)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#19), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#20)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#20), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#20)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#20) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#21)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#21), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#22)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 0,
+              "guard": "eq(choice(branch#22), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#22)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "eq(choice(branch#22), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#21)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#21), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#23)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#23), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#23)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#23) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#24)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#24), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#24)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#24), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#25)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#25), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#25)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#25) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#26)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#26), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#26)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 1,
+              "guard": "eq(choice(branch#26), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#27)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#27), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#27)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#27) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#28)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#28), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#28)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#28), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#29)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#29), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#29)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#29) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#30)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#30), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#30)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#30), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#31)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#31), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#31)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#31) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#32)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#32), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#32)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#32), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#33)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 0,
+              "guard": "eq(len(repeat#33), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(repeat#33)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
+              "side": 1,
+              "guard": "len(repeat#33) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#34)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 0,
+              "guard": "eq(choice(branch#34), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#34)",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:203:7",
+              "side": 1,
+              "guard": "eq(choice(branch#34), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.nextArrow))",
+              "reason": "if (branch(null | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:166:7",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), truthy(#2.nextArrow))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.nextArrow))",
+              "reason": "if (branch(null | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/arrows.js:166:7",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), truthy(#2.nextArrow)))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 26,
+          "possible": 73,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 256,
+        "assignments": 254,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:59:02.078Z",
+      "failure": null
+    },
+    {
       "id": "museeks",
       "revision": "7163f6019a3184043c06352caeec0ed1bf6ccff5",
       "framework": "spa",
@@ -56382,6 +58768,601 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T15:23:50.287Z",
+      "failure": null
+    },
+    {
+      "id": "netflix-ui",
+      "revision": "f0bc3631b2e1679f12169c3d0b16c557afd76fdc",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T10:49:11.919Z",
+      "durationMs": 712,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 825,
+        "commits": 44,
+        "pageErrors": [
+          "Cannot read properties of undefined (reading 'measure')",
+          "Cannot read properties of undefined (reading 'measure')",
+          "Cannot read properties of undefined (reading 'measure')",
+          "Cannot read properties of undefined (reading 'measure')",
+          "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 104,
+          "textCount": 7,
+          "branchCount": 8,
+          "repeatCount": 0,
+          "opaqueCount": 52,
+          "unknownCount": 1,
+          "modulesLoaded": 13
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "mismatch",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 565,
+        "staticFibers": 69,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root[0]",
+          "expected": "<RootLayout> [FunctionComponent]",
+          "actual": "<LogBoxStateSubscription> [ClassComponent]"
+        },
+        "stepsUsed": 1,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 69,
+        "stateCount": 69,
+        "clusters": 2,
+        "tree": {
+          "nodes": 163,
+          "inputs": 9,
+          "guards": 31,
+          "branches": 14,
+          "repeats": 0,
+          "opaque": 95,
+          "wildcards": 1
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 34,
+          "divergence": {
+            "path": "root[0]",
+            "expected": "<RootLayout> [FunctionComponent]",
+            "actual": "<LogBoxStateSubscription> [ClassComponent]"
+          }
+        },
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:162:5",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:162:5",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#4), 0)",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
+              "side": 0,
+              "guard": "eq(choice(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#4), 0)",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
+              "side": 1,
+              "guard": "not(eq(choice(#4), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:42:5",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 0,
+              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "side": 1,
+              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#6), 0)",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
+              "side": 0,
+              "guard": "eq(choice(#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#6), 0)",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
+              "side": 1,
+              "guard": "not(eq(choice(#6), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:42:5",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:53:14",
+              "side": 0,
+              "guard": "or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:53:14",
+              "side": 1,
+              "guard": "not(or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 29,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 69,
+        "assignments": 256,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:56:54.980Z",
+      "failure": null
+    },
+    {
+      "id": "next-ecommerce-shopco",
+      "revision": "f360acb62dbccdeb421d0c261652deedc74829fd",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:47:10.919Z",
+      "durationMs": 118240,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1445,
+        "commits": 7,
+        "pageErrors": [],
+        "title": "Shopco"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1476,
+          "textCount": 36,
+          "branchCount": 4,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 416
+        },
+        "diagnostics": [
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 1170,
+        "matchedText": 36,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 4,
+        "repeatIterations": 0,
+        "transparentFibers": 198,
+        "runtimeFibers": 1206,
+        "staticFibers": 1275,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1213,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 18,
+        "stateCount": 18,
+        "clusters": 2,
+        "tree": {
+          "nodes": 2236,
+          "inputs": 6,
+          "guards": 18,
+          "branches": 8,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 16,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "whether the persistor has bootstrapped",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "&& on branch(<boolean> | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/src/components/layout/Navbar/TopNavbar/CartBtn.tsx:22:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "in(#3, [\"mounted\", \"unmountSuspended\"])",
+              "reason": "conditional on <boolean: includes on branch(\"mounted\" | \"unmounted\")>",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), eq(#2, \"\"))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:349:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "whether the persistor has bootstrapped",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), eq(#2, \"\"))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:349:5",
+              "side": 0,
+              "guard": "and(truthy(#1), eq(#2, \"\"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), eq(#2, \"\"))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/node_modules/@radix-ui/react-navigation-menu/dist/index.mjs:349:5",
+              "side": 1,
+              "guard": "not(and(truthy(#1), eq(#2, \"\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "in(#3, [\"mounted\", \"unmountSuspended\"])",
+              "reason": "conditional on <boolean: includes on branch(\"mounted\" | \"unmounted\")>",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+              "side": 0,
+              "guard": "in(#3, [\"mounted\", \"unmountSuspended\"])",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "in(#3, [\"mounted\", \"unmountSuspended\"])",
+              "reason": "conditional on <boolean: includes on branch(\"mounted\" | \"unmounted\")>",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/node_modules/@radix-ui/react-presence/dist/index.mjs:26:10",
+              "side": 1,
+              "guard": "not(in(#3, [\"mounted\", \"unmountSuspended\"]))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "&& on branch(<boolean> | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/src/components/layout/Navbar/TopNavbar/CartBtn.tsx:22:8",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "&& on branch(<boolean> | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/next-ecommerce-shopco/src/components/layout/Navbar/TopNavbar/CartBtn.tsx:22:8",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "whether the persistor has bootstrapped",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 5,
+          "possible": 5,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 18,
+        "assignments": 9,
+        "replayed": 9,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T09:56:48.784Z",
       "failure": null
     },
     {
@@ -67987,6 +70968,126 @@
       "failure": null
     },
     {
+      "id": "react-ecommerce-lydia",
+      "revision": "10710c7750c3c02d8310e29361b6bd4c71d7b7d7",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T10:53:05.995Z",
+      "durationMs": 375,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 58,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 108
+        },
+        "diagnostics": []
+      },
+      "report": null,
+      "stateSpace": null,
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "static only",
+      "failure": null
+    },
+    {
+      "id": "react-ecommerce-store",
+      "revision": "ae46562743b2e350cfd52deab3f831008a9fcedf",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T10:53:03.829Z",
+      "durationMs": 1062,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 241,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "React E-Commerce Store"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 239,
+          "textCount": 14,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 268
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 222,
+        "matchedText": 14,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 4,
+        "runtimeFibers": 236,
+        "staticFibers": 236,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 236,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 236,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:59:19.803Z",
+      "failure": null
+    },
+    {
       "id": "react-email",
       "revision": "0f0cb94e1f15581131a2d50b80f8daa13dd1c9fc",
       "framework": "next-app",
@@ -68994,6 +72095,403 @@
       "failure": null
     },
     {
+      "id": "react-movies",
+      "revision": "d4790df5a4017c56ba368c4d4dd3307cdc29feea",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T10:49:13.724Z",
+      "durationMs": 1044,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 67,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "TV Time"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 75,
+          "textCount": 2,
+          "branchCount": 6,
+          "repeatCount": 2,
+          "opaqueCount": 0,
+          "unknownCount": 7,
+          "modulesLoaded": 125
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "status": "truncated",
+        "matchedFibers": 64,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 9,
+        "repeatIterations": 5,
+        "transparentFibers": 0,
+        "runtimeFibers": 66,
+        "staticFibers": 37,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 102,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 109,
+        "stateCount": 109,
+        "clusters": 2,
+        "tree": {
+          "nodes": 77,
+          "inputs": 7,
+          "guards": 19,
+          "branches": 6,
+          "repeats": 2,
+          "opaque": 0,
+          "wildcards": 7
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(eq(choice(#1), 0)), #2.length > 0)",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:100:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:105:16",
+              "count": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:118:12",
+              "alternativeIndex": 2,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 2,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3.results)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:124:16",
+              "count": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].vote_average)@len(#3.results)[2]",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:20:17",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].release_date)@len(#3.results)[2]",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:28:14",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].vote_average)@len(#3.results)[1]",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:20:17",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].release_date)@len(#3.results)[1]",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:28:14",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].vote_average)@len(#3.results)[0]",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:20:17",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].release_date)@len(#3.results)[0]",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:28:14",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 3,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:105:16",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3.results)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:124:16",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), #2.length > 0)",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:100:10",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), #2.length > 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:105:16",
+              "side": 0,
+              "guard": "eq(len(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:105:16",
+              "side": 1,
+              "guard": "len(#2) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), #2.length > 0)",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:100:10",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), #2.length > 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:118:12",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:118:12",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "errorMessage is truthy",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "errorMessage is truthy",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:118:12",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#3), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(branch#3), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3.results)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:124:16",
+              "side": 0,
+              "guard": "eq(len(#3.results), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3.results)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/App.jsx:124:16",
+              "side": 1,
+              "guard": "len(#3.results) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].vote_average)",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:20:17",
+              "side": 0,
+              "guard": "truthy(#3.results[].vote_average)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].vote_average)",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:20:17",
+              "side": 1,
+              "guard": "not(truthy(#3.results[].vote_average))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].release_date)",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:28:14",
+              "side": 0,
+              "guard": "truthy(#3.results[].release_date)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.results[].release_date)",
+              "reason": "conditional on unknown(item of unknown(call of fetch(http://localhost:5178/3/discover/movie?sort_by=popularity.desc)))",
+              "location": "/home/ubuntu/bippy-corpus/react-movies/src/components/MovieCard.jsx:28:14",
+              "side": 1,
+              "guard": "not(truthy(#3.results[].release_date))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(branch#3), 3)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 8,
+          "possible": 13,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 109,
+        "assignments": 108,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T10:08:31.500Z",
+      "failure": null
+    },
+    {
       "id": "react-phone-e-commerce",
       "revision": "a6c25aac214915e9d0700f1789c356bdeb542759",
       "framework": "spa",
@@ -69299,6 +72797,128 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-10T05:30:49.141Z",
+      "failure": null
+    },
+    {
+      "id": "react-shopping-cart",
+      "revision": "9fa56244d0f0c0d363cab744a3305c50eabc08cb",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T10:49:10.300Z",
+      "durationMs": 494,
+      "runtime": {
+        "reactVersion": "18.0.0-fc46dba67-20220329",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 530,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Typescript React Shopping cart"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 530,
+          "textCount": 80,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 52
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 449,
+        "matchedText": 80,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 529,
+        "staticFibers": 529,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 529,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 0,
+        "tree": {
+          "nodes": 1177,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 3,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:58:57.274Z",
       "failure": null
     },
     {

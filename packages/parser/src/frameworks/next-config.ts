@@ -1,10 +1,9 @@
 import { existsSync } from "node:fs";
 import type { Interpreter } from "../evaluate/interpreter.js";
-import { DEFAULT_STYLED_COMPONENTS_TRANSFORM } from "../evaluate/styled-components-transform.js";
+import { readStyledComponentsOption } from "../evaluate/styled-components-transform.js";
 import {
   getObjectProperty,
   getTruthiness,
-  isKnownString,
   objectFromRecord,
   primitiveValue,
   UNDEFINED_VALUE,
@@ -12,7 +11,7 @@ import {
 } from "../evaluate/values.js";
 import type { ReactPackageSpecifiers } from "../materialize/react-runtime.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type { StaticValue, StyledComponentsTransformOptions } from "../types.js";
+import type { StaticValue } from "../types.js";
 import { NEXT_PHASES } from "./next-externals.js";
 
 const NEXT_CONFIG_FILES = [
@@ -56,44 +55,6 @@ export const evaluateNextConfig = (
 const readOption = (object: StaticValue, key: string): StaticValue => {
   if (object.kind === "object") return getObjectProperty(object, key);
   return object.kind === "primitive" ? UNDEFINED_VALUE : object;
-};
-
-const readBoolean = (value: StaticValue, fallback: boolean): boolean | null => {
-  if (value.kind === "primitive" && value.value === undefined) return fallback;
-  return getTruthiness(value);
-};
-
-const readStringList = (value: StaticValue, fallback: string[]): string[] | null => {
-  if (value.kind === "primitive" && value.value === undefined) return fallback;
-  if (value.kind !== "list") return null;
-  const strings = value.items.flatMap((item) => (isKnownString(item) ? [item.value] : []));
-  return strings.length === value.items.length ? strings : null;
-};
-
-/** `compiler.styledComponents` as Next's development build applies it; `undefined` when the analysis cannot read it. */
-const readStyledComponentsOption = (
-  option: StaticValue,
-): StyledComponentsTransformOptions | null | undefined => {
-  if (option.kind !== "object") {
-    const isEnabled = getTruthiness(option);
-    if (isEnabled === null) return undefined;
-    return isEnabled ? DEFAULT_STYLED_COMPONENTS_TRANSFORM : null;
-  }
-  const defaults = DEFAULT_STYLED_COMPONENTS_TRANSFORM;
-  const displayName = readBoolean(getObjectProperty(option, "displayName"), true);
-  const fileName = readBoolean(getObjectProperty(option, "fileName"), defaults.fileName);
-  const meaninglessFileNames = readStringList(
-    getObjectProperty(option, "meaninglessFileNames"),
-    defaults.meaninglessFileNames,
-  );
-  const topLevelImportPaths = readStringList(
-    getObjectProperty(option, "topLevelImportPaths"),
-    defaults.topLevelImportPaths,
-  );
-  if (displayName === null || fileName === null || !meaninglessFileNames || !topLevelImportPaths) {
-    return undefined;
-  }
-  return displayName ? { fileName, meaninglessFileNames, topLevelImportPaths } : null;
 };
 
 /** Configures the interpreter with the source transforms `next.config`'s `compiler` options enable. */

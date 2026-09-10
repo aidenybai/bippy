@@ -1,0 +1,5 @@
+{
+  "skipRuntime": true,
+  "externalPackages": ["styled-components"],
+  "notes": "Imports `styled-components/macro` under a babel-plugin-macros.config.js whose `styledComponents` options list `style` as a meaningless file name, so `components/Card/style.tsx` names its components after the directory (`Card__Wrapper`) while `app.tsx` keeps the file's stem; react-dom here runs untransformed source (the macro throws outside compilation), so the names are asserted statically in styled-components-transform.test.ts."
+}

@@ -245,8 +245,10 @@ const loadRootFactory = async (
  */
 const FIRST_REACT_WITH_ASYNC_ACT = "16.9.0";
 
-const supportsAsyncAct = (react: ReactModule): boolean =>
-  isVersionAtLeast(react.version, FIRST_REACT_WITH_ASYNC_ACT);
+const predatesAsyncAct = (react: unknown): boolean =>
+  isRecord(react) &&
+  typeof react.version === "string" &&
+  !isVersionAtLeast(react.version, FIRST_REACT_WITH_ASYNC_ACT);
 
 const loadPackages = async (
   appResolver: ModuleResolver | null,
@@ -257,11 +259,11 @@ const loadPackages = async (
     importResolved(appResolver, packages.react, rootDirectory),
     importResolved(appResolver, packages.dom, rootDirectory),
   ]);
-  if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
-  if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
-  if (appResolver !== null && !supportsAsyncAct(react)) {
+  if (appResolver !== null && predatesAsyncAct(react)) {
     return loadPackages(null, rootDirectory, DEFAULT_REACT_PACKAGES);
   }
+  if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
+  if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
   return {
     react,
     dom,

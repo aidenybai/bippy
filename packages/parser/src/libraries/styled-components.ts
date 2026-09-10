@@ -12,6 +12,7 @@ import {
   unknownPrimitiveValue,
 } from "../evaluate/values.js";
 import { element, lazyProperties, nativeFunction, stubValue } from "../evaluate/stubs.js";
+import { STYLED_COMPONENTS_MACRO_SPECIFIER } from "../evaluate/styled-components-transform.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
@@ -46,6 +47,9 @@ import { isVersionAtLeast } from "./installed-version.js";
 // `ThemeContext.Consumer` around its provider, `withTheme` reads the theme
 // through a consumer, and a global style renders its consumers around nothing
 // (`GlobalStyle.isStatic` skips the theme when no interpolation is a function).
+//
+// `styled-components/macro` (babel-plugin-macros) rewrites every reference to
+// the same import from `styled-components` and runs the babel plugin over it.
 
 export const STYLED_COMPONENTS_PACKAGES = ["styled-components"];
 
@@ -483,7 +487,9 @@ const cssRules = (): StaticValue =>
   listValue([unknownPrimitiveValue("string", "styled-components css rules")]);
 
 export const styledComponentsValue: LibraryValueProvider = (specifier, importedName, run) => {
-  if (specifier !== "styled-components") return null;
+  if (specifier !== "styled-components" && specifier !== STYLED_COMPONENTS_MACRO_SPECIFIER) {
+    return null;
+  }
   const runtime = readRuntime(run.project);
   switch (importedName) {
     case "default":

@@ -5399,6 +5399,275 @@
           "@vercel/analytics/*"
         ]
       }
+    },
+    {
+      "id": "next-ecommerce-shopco",
+      "repository": "https://github.com/mohammadoftadeh/next-ecommerce-shopco",
+      "revision": "f360acb62dbccdeb421d0c261652deedc74829fd",
+      "description": "Shop.co e-commerce home page (Next 14.2 app router, React 18, Tailwind + shadcn/ui Radix primitives, Redux Toolkit + redux-persist, framer-motion, embla carousel, holy-loader)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npx next dev -p 3022",
+      "url": "http://localhost:3022/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux-persist",
+          "redux-persist/*",
+          "@radix-ui/*",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+          "lucide-react",
+          "react-icons",
+          "react-icons/*",
+          "framer-motion",
+          "embla-carousel-react",
+          "holy-loader",
+          "react-simple-star-rating",
+          "usehooks-ts",
+          "vaul"
+        ]
+      }
+    },
+    {
+      "id": "react-shopping-cart",
+      "repository": "https://github.com/jeffersonribeiro/react-shopping-cart",
+      "revision": "9fa56244d0f0c0d363cab744a3305c50eabc08cb",
+      "description": "Jefferson Ribeiro's React shopping cart (CRA 5 / React 18 StrictMode, styled-components 5 macro, context providers, products loaded from a bundled JSON in development)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3023"
+      },
+      "url": "http://localhost:3023/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "tsconfig": "tsconfig.json",
+        "externalPackageAllowList": ["styled-components"]
+      }
+    },
+    {
+      "id": "netflix-ui",
+      "repository": "https://github.com/saulsharma/netflix-ui",
+      "revision": "f0bc3631b2e1679f12169c3d0b16c557afd76fdc",
+      "description": "Netflix UI clone (Expo SDK 51 / expo-router 3, react-native-web 0.19 through Metro web, React 18, react-navigation, reanimated, styled-components)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx expo start --web --port 8083",
+      "env": {
+        "CI": "1",
+        "EXPO_NO_TELEMETRY": "1",
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:8083/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "app/_layout.tsx",
+        "rootComponent": "default",
+        "tsconfig": "tsconfig.json"
+      }
+    },
+    {
+      "id": "react-movies",
+      "repository": "https://github.com/adrianhajdin/react-movies",
+      "revision": "d4790df5a4017c56ba368c4d4dd3307cdc29feea",
+      "description": "JS Mastery movie finder (Vite 6 SPA, React 18, Tailwind 4, TMDB discover fetch in an effect, react-use debounce, Appwrite trending list) against a stand-in TMDB/Appwrite server",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "setup": [
+        "sed -i \"s#'https://api.themoviedb.org/3'#'http://localhost:5178/3'#\" src/App.jsx",
+        "sed -i \"s#'https://fra.cloud.appwrite.io/v1'#'http://localhost:5178/v1'#\" src/appwrite.js"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/react-movies-dev.sh\" 5177 5178",
+      "env": {
+        "VITE_TMDB_API_KEY": "corpus",
+        "VITE_APPWRITE_PROJECT_ID": "corpus",
+        "VITE_APPWRITE_DATABASE_ID": "corpus",
+        "VITE_APPWRITE_COLLECTION_ID": "metrics"
+      },
+      "url": "http://localhost:5177/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx",
+        "envFiles": [],
+        "externalPackageAllowList": ["react-use", "react-use/*"]
+      }
+    },
+    {
+      "id": "multimart-react-ecommerce",
+      "repository": "https://github.com/0mar-helal/multimart-react-ecommerce",
+      "revision": "4bb42e5a59afa971cb97209f151324a2442430dd",
+      "description": "Multimart storefront home page (CRA 5 / React 18 StrictMode, Redux Toolkit, react-router-dom 6 Routes with React.lazy pages, react-bootstrap 2, react-slick, react-toastify)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3024"
+      },
+      "url": "http://localhost:3024/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "react-bootstrap",
+          "react-bootstrap/*",
+          "@restart/*",
+          "react-toastify",
+          "react-slick",
+          "react-select",
+          "react-spinners",
+          "prop-types",
+          "classnames",
+          "clsx",
+          "uncontrollable",
+          "dom-helpers",
+          "dom-helpers/*",
+          "react-transition-group",
+          "react-transition-group/*",
+          "warning",
+          "invariant"
+        ]
+      }
+    },
+    {
+      "id": "react-ecommerce-store",
+      "repository": "https://github.com/gianlucajahn/react-ecommerce-store",
+      "revision": "ae46562743b2e350cfd52deab3f831008a9fcedf",
+      "description": "Gianluca Jahn's game store home page under its /react-ecommerce-store/ base path (CRA 5 / React 18 StrictMode, react-router-dom 6 Routes, framer-motion 6 AnimatePresence, CSS modules)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3025"
+      },
+      "url": "http://localhost:3025/react-ecommerce-store/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/react-ecommerce-store/",
+        "externalPackageAllowList": ["framer-motion", "react-slideshow-image", "uuid"]
+      }
+    },
+    {
+      "id": "react-ecommerce-lydia",
+      "repository": "https://github.com/lydiahallie/react-ecommerce",
+      "revision": "10710c7750c3c02d8310e29361b6bd4c71d7b7d7",
+      "description": "Lydia Hallie's e-commerce demo (react-scripts 1 / React 15.6, legacy ReactDOM.render, react-router-dom 4 Switch/Route, react-materialize)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 10 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 10 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3026"
+      },
+      "url": "http://localhost:3026/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "invariant",
+          "warning",
+          "isarray",
+          "react-materialize"
+        ]
+      },
+      "notes": "Static-only: React 15.7 renders through the stack reconciler, so no fiber tree exists for bippy to capture (the DevTools hook's onCommitFiberRoot is never called and the live capture sees zero commits). The static side renders the app's components with the harness's React because a React predating async act cannot host the materializer's proxies."
+    },
+    {
+      "id": "fashion-cube",
+      "repository": "https://github.com/quintuslabs/fashion-cube",
+      "revision": "9b1f46b24e6469343e595d304f56638f9c0ecc33",
+      "description": "Fashion Cube storefront home page at /fashion-cube (the app routes under its GitHub Pages base path) (CRA 3 / React 16.14 class components, legacy ReactDOM.render, redux + redux-thunk + react-redux 7 connect, react-router-dom 5 Switch/Route, react-bootstrap 1 beta, react-owl-carousel2, aos) without its Express/Mongo backend",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 14 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 14 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3027"
+      },
+      "url": "http://localhost:3027/fashion-cube",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "redux-thunk",
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-bootstrap",
+          "react-bootstrap/*",
+          "@restart/*",
+          "uncontrollable",
+          "dom-helpers",
+          "dom-helpers/*",
+          "react-transition-group",
+          "react-transition-group/*",
+          "prop-types",
+          "classnames",
+          "warning",
+          "invariant",
+          "react-responsive",
+          "react-owl-carousel2",
+          "aos"
+        ]
+      }
     }
   ]
 }

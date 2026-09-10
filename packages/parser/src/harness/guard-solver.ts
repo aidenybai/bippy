@@ -349,9 +349,13 @@ const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null => {
 const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
-/** DPLL over the guard formulas: disjunctions split, atoms accumulate, and a full set of atoms is checked per variable. */
+/**
+ * DPLL over the guard formulas: atoms accumulate and are checked per variable before any
+ * disjunction splits, so a contradiction prunes every split below it.
+ */
 const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
   const remaining = [...pending];
+  const disjunctions: Guard[][] = [];
   const collected = [...literals];
   while (remaining.length > 0) {
     const guard = remaining.pop();
@@ -364,11 +368,8 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         remaining.push(...guard.operands);
         break;
       case "or":
-        for (const operand of guard.operands) {
-          const model = findModel([...remaining, operand], collected);
-          if (model) return model;
-        }
-        return null;
+        disjunctions.push(guard.operands);
+        break;
       case "not": {
         const { operand } = guard;
         switch (operand.kind) {
@@ -393,7 +394,15 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         collected.push({ atom: guard, isNegated: false });
     }
   }
-  return modelOfLiterals(collected);
+  const model = modelOfLiterals(collected);
+  if (model === null || disjunctions.length === 0) return model;
+  const [operands, ...rest] = disjunctions;
+  const pendingRest = rest.map((restOperands): Guard => ({ kind: "or", operands: restOperands }));
+  for (const operand of operands) {
+    const split = findModel([...pendingRest, operand], collected);
+    if (split) return split;
+  }
+  return null;
 };
 
 /** A witness assignment satisfying every guard, or null when they contradict. */
