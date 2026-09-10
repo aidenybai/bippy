@@ -80,7 +80,7 @@ const renderSource = async (source: string): Promise<string> => {
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-library-"));
   const entryFile = join(rootDirectory, "app.tsx");
   writeFileSync(entryFile, source);
-  const renderer = createStaticRenderer({ rootDirectory });
+  const renderer = await createStaticRenderer({ rootDirectory });
   const result = await renderer.renderComponent(entryFile, { exportName: "default" });
   expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
   expect(result.stats.unknownCount).toBe(0);

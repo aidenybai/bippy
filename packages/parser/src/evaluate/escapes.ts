@@ -1,6 +1,7 @@
 import type {
   BindingPattern,
   BindingRestElement,
+  JSXElement,
   MemberExpression,
   Node,
   ParamPattern,
@@ -15,21 +16,35 @@ import type {
 } from "../types.js";
 import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
+import { isUserDrivenEventHandlerProp } from "./event-listeners.js";
 import { findOwningScope } from "./scope.js";
 import { getObjectProperty, primitiveValue } from "./values.js";
 
-/** `this`, `editor`, `callbackRef.current`, `this.update`: a value named from inside a closure body. */
-export type AccessPath = string[];
+/** `context[key]`: a member read whose key is the string another path names. */
+export interface ComputedAccess {
+  keyPath: AccessPath;
+}
+
+export type AccessStep = string | ComputedAccess;
+
+/** `this`, `editor`, `callbackRef.current`, `this.update`, `system[key]`: a value named from inside a closure body. */
+export type AccessPath = [root: string, ...members: AccessStep[]];
+
+const getReceiverPath = ([root, ...members]: AccessPath): AccessPath => [
+  root,
+  ...members.slice(0, -1),
+];
 
 /**
- * An in-place mutation a closure body performs: `editor._dirty = true`
- * assigns `key` on the object at `target`, `obj[dynamic] = v` assigns an
- * unknown key, and `cache.set(k, v)` or `items.push(x)` calls a mutating method.
+ * A mutation a closure body performs: `editor._dirty = true` assigns `key` on
+ * the object at `target`, `obj[dynamic] = v` assigns an unknown key,
+ * `cache.set(k, v)` or `items.push(x)` calls the mutating method `key`, and
+ * `found = x` rebinds the captured variable at `target`.
  */
 export interface EscapedMutation {
   target: AccessPath;
   key: string | null;
-  isMethodCall: boolean;
+  kind: "member" | "method" | "rebinding";
   bindings: ItemBinding[];
 }
 
@@ -102,8 +117,11 @@ const getAccessPath = (node: Node): AccessPath | null => {
       return ["this"];
     case "MemberExpression": {
       const objectPath = getAccessPath(node.object);
-      const key = objectPath ? getStaticMemberKey(node) : null;
-      return objectPath && key !== null ? [...objectPath, key] : null;
+      if (!objectPath) return null;
+      const key = getStaticMemberKey(node);
+      if (key !== null) return [...objectPath, key];
+      const keyPath = node.computed ? getAccessPath(node.property) : null;
+      return keyPath ? [...objectPath, { keyPath }] : null;
     }
     case "ParenthesizedExpression":
     case "TSNonNullExpression":
@@ -244,8 +262,38 @@ const forEachChildWithBindings = (
   });
 };
 
+/**
+ * An element an escaped closure creates is rendered by whoever the closure
+ * returned it to: its `ref` and props reach code the walk cannot follow, the
+ * way props of an opaque component do, except handlers only a user gesture fires.
+ */
+const getElementPaths = (element: JSXElement): AccessPath[] => {
+  const paths: AccessPath[] = [];
+  for (const attribute of element.openingElement.attributes) {
+    if (attribute.type === "JSXSpreadAttribute") {
+      collectAccessPaths(attribute.argument, paths);
+      continue;
+    }
+    const { name, value } = attribute;
+    if (name.type === "JSXIdentifier" && isUserDrivenEventHandlerProp(name.name)) continue;
+    if (value?.type === "JSXExpressionContainer") collectAccessPaths(value.expression, paths);
+  }
+  for (const child of element.children) {
+    if (child.type === "JSXExpressionContainer") collectAccessPaths(child.expression, paths);
+  }
+  return paths;
+};
+
 const collectClosureShape = (node: Node, shape: ClosureShape, bindings: ItemBinding[]): void => {
   switch (node.type) {
+    case "JSXElement":
+      shape.callSites.push({
+        callee: null,
+        arguments: [],
+        nestedPaths: getElementPaths(node),
+        bindings,
+      });
+      break;
     case "CallExpression":
     case "NewExpression": {
       const nestedPaths: AccessPath[] = [];
@@ -322,10 +370,13 @@ const MUTATING_METHODS = new Set([
   "copyWithin",
 ]);
 
-const getMemberMutation = (member: Node, bindings: ItemBinding[]): EscapedMutation | null => {
-  if (member.type !== "MemberExpression") return null;
-  const target = getAccessPath(member.object);
-  return target ? { target, key: getStaticMemberKey(member), isMethodCall: false, bindings } : null;
+const getAssignedMutation = (assigned: Node, bindings: ItemBinding[]): EscapedMutation | null => {
+  if (assigned.type === "Identifier") {
+    return { target: [assigned.name], key: null, kind: "rebinding", bindings };
+  }
+  if (assigned.type !== "MemberExpression") return null;
+  const target = getAccessPath(assigned.object);
+  return target ? { target, key: getStaticMemberKey(assigned), kind: "member", bindings } : null;
 };
 
 const getMutation = (node: Node, bindings: ItemBinding[]): EscapedMutation | null => {
@@ -336,14 +387,16 @@ const getMutation = (node: Node, bindings: ItemBinding[]): EscapedMutation | nul
       const method = callee.computed ? null : callee.property;
       if (method?.type !== "Identifier" || !MUTATING_METHODS.has(method.name)) return null;
       const target = getAccessPath(callee.object);
-      return target ? { target, key: null, isMethodCall: true, bindings } : null;
+      return target ? { target, key: method.name, kind: "method", bindings } : null;
     }
     case "AssignmentExpression":
-      return getMemberMutation(node.left, bindings);
+      return getAssignedMutation(node.left, bindings);
     case "UpdateExpression":
-      return getMemberMutation(node.argument, bindings);
+      return getAssignedMutation(node.argument, bindings);
     case "UnaryExpression":
-      return node.operator === "delete" ? getMemberMutation(node.argument, bindings) : null;
+      return node.operator === "delete" && node.argument.type === "MemberExpression"
+        ? getAssignedMutation(node.argument, bindings)
+        : null;
     default:
       return null;
   }
@@ -492,7 +545,18 @@ export const resolveAccessPath = (
         ? [thisValue]
         : []
       : resolveEscapedIdentifier(closure, frame, root, bindings, walk, record);
-  for (const member of members) values = getMemberValues(values, member, record);
+  for (const member of members) {
+    const keys =
+      typeof member === "string"
+        ? [member]
+        : resolveAccessPath(closure, frame, member.keyPath, walk, bindings).flatMap((key) =>
+            key.kind === "primitive" &&
+            (typeof key.value === "string" || typeof key.value === "number")
+              ? [String(key.value)]
+              : [],
+          );
+    values = keys.flatMap((key) => getMemberValues(values, key, record));
+  }
   return values;
 };
 
@@ -602,12 +666,14 @@ const invokeOnce = (
  * may invoke are the value itself and the items of a list, not the members of
  * an object. Objects are addressed by name in that code, and enumerating them
  * would treat every closure stored anywhere inside a stateful instance (an
- * editor, a store) as running.
+ * editor, a store) as running. A handed list is a dependency of the closure: a
+ * listener pushed into it later must be reached too.
  */
 const forEachHandedCallable = (
   value: StaticValue,
   walk: EscapeWalk,
   visits: EscapeVisits,
+  record: RecordDependency,
 ): void => {
   if (value.kind === "native-function" || value.kind === "function") {
     visitEscapedValue(value, walk, visits);
@@ -617,16 +683,22 @@ const forEachHandedCallable = (
   visits.handed.add(value);
   switch (value.kind) {
     case "list":
-      for (const item of value.items) forEachHandedCallable(item, walk, visits);
+      record(value, LIST_ITEMS_KEY);
+      for (const item of value.items) forEachHandedCallable(item, walk, visits, record);
       return;
     case "branch":
       for (const alternative of value.alternatives) {
-        forEachHandedCallable(alternative, walk, visits);
+        forEachHandedCallable(alternative, walk, visits, record);
       }
       return;
     case "optional":
     case "repeat":
-      forEachHandedCallable(value.kind === "optional" ? value.value : value.item, walk, visits);
+      forEachHandedCallable(
+        value.kind === "optional" ? value.value : value.item,
+        walk,
+        visits,
+        record,
+      );
       return;
     default:
       return;
@@ -640,12 +712,14 @@ const forEachInvokedCallable = (
   visits: EscapeVisits,
 ): void => {
   walk.visit(closure, frame);
+  const record: RecordDependency = (dependency, key) =>
+    walk.memo.addDependency(closure, dependency, key);
   for (const callSite of getClosureShape(closure.node).callSites) {
     const resolve = (path: AccessPath): StaticValue[] =>
       resolveAccessPath(closure, frame, path, walk, callSite.bindings);
     const handPaths = (paths: AccessPath[]): void => {
       for (const path of paths) {
-        for (const value of resolve(path)) forEachHandedCallable(value, walk, visits);
+        for (const value of resolve(path)) forEachHandedCallable(value, walk, visits, record);
       }
     };
     const argumentValues = callSite.arguments.map(({ path, literal }) => {
@@ -665,12 +739,13 @@ const forEachInvokedCallable = (
           invokeOnce(callee, argumentValues, walk, visits);
           break;
         default:
-          forEachHandedCallable(callee, walk, visits);
+          forEachHandedCallable(callee, walk, visits, record);
       }
     }
     handPaths(callSite.nestedPaths);
     if (isEveryCalleeFollowed) continue;
     handPaths(callSite.arguments.flatMap(({ path }) => (path ? [path] : [])));
-    if (callSite.callee && callSite.callee.length > 1) handPaths([callSite.callee.slice(0, -1)]);
+    if (callSite.callee && callSite.callee.length > 1)
+      handPaths([getReceiverPath(callSite.callee)]);
   }
 };

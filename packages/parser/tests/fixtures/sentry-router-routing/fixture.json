@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "withSentryReactRouterV6Routing(Routes) evaluated at module top level runs before `init` installs the router hooks, so it hands `Routes` back unchanged; the same call after `init` wraps `Routes` in a SentryRoutes component."
+}

@@ -10,6 +10,15 @@ Object.defineProperty(globalThis, "hasOwnProperty", {
   writable: true,
 });
 
+// HACK: happy-dom hardcodes a 1024x768 screen; a headless browser (Playwright
+// Chromium, which the corpus captures with) reports its viewport as the screen.
+Object.defineProperties(screen, {
+  width: { value: window.innerWidth, configurable: true },
+  height: { value: window.innerHeight, configurable: true },
+  availWidth: { value: window.innerWidth, configurable: true },
+  availHeight: { value: window.innerHeight, configurable: true },
+});
+
 // happy-dom never fires load/error on `<link rel="preload">`, but React DOM
 // suspends the commit of a `<link rel="stylesheet" precedence>` on exactly that
 // event. Resolve preloads the way a browser with no network would: with an error.

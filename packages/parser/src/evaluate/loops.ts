@@ -34,7 +34,11 @@ type LoopStatement =
   | WhileStatement
   | DoWhileStatement;
 
-/** Upper bound on concretely unrolled iterations before the tail becomes uncertain. */
+/**
+ * Upper bound on concretely unrolled iterations of a conditional loop before the
+ * tail becomes uncertain. Loops over a known iterable are bounded by the
+ * iterable itself (and the step budget), so they unroll in full.
+ */
 const MAX_UNROLLED_ITERATIONS = 256;
 
 type UnrollResult =
@@ -181,7 +185,7 @@ const unrollForEach = (
   context: EvaluationContext,
 ): UnrollResult | null => {
   const iteration = iterationValues(interpreter, statement, context);
-  if (!iteration || iteration.items.length > MAX_UNROLLED_ITERATIONS) return null;
+  if (!iteration) return null;
   const outcomes: StatementOutcome[] = [];
   for (const item of iteration.items) {
     const outcome =
@@ -271,6 +275,8 @@ const evaluateUncertainTail = (
     () => whileTestHolds(runTailBody),
     "loop iterations are uncertain",
     location,
+    true,
+    true,
   );
   whileTestHolds(() => interpreter.widenLoopCarriedBindings(context.scope, runTailBody, location));
   return { ...outcome, mayComplete: true, jump: null };

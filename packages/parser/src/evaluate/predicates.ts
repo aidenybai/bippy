@@ -111,10 +111,30 @@ export const recordDerivation = <T extends StaticValue>(value: T, derivation: De
 
 const negations = new WeakMap<StaticValue, StaticValue>();
 
+const isDerivedFrom = (value: StaticValue, candidate: StaticValue): boolean => {
+  for (let current: StaticValue | undefined = value; current;) {
+    if (current === candidate) return true;
+    const derivation = derivations.get(current);
+    current = derivation?.kind === "alias" ? derivation.operand : negations.get(current);
+  }
+  return false;
+};
+
 /** Records that `negated` is `!operand`, so tests of either take opposite sides. */
 export const recordNegation = (negated: StaticValue, operand: StaticValue): StaticValue => {
-  negations.set(negated, operand);
+  if (!isDerivedFrom(operand, negated)) negations.set(negated, operand);
   return negated;
+};
+
+/**
+ * Records that `refined` is a branch rebuilt from `subject` by a test that
+ * narrowed it (on one path, or rejoining both): it names the same runtime
+ * value, so testing it again decides nothing new.
+ */
+export const recordRefinement = (refined: StaticValue, subject: StaticValue): void => {
+  if (refined.kind === "branch" && !isDerivedFrom(subject, refined)) {
+    recordDerivation(refined, { kind: "alias", operand: subject });
+  }
 };
 
 interface InputSourceRecord {
@@ -303,12 +323,88 @@ const originChoicePredicate = (subject: StaticBranchValue): string => {
   });
 };
 
+interface AlternativeGuards {
+  guards: Guard[];
+  inputs: InputVariable[];
+}
+
+/** Per-alternative guards as a formula may embed them: a choice's last alternative is "none of the others", so negating a side never leaves the choice's range. */
+const parseAlternativeGuards = (
+  serialized: string,
+  alternativeCount: number,
+): AlternativeGuards | null => {
+  const predicate = parseSymbolicPredicate(serialized);
+  if (predicate.formula && alternativeCount !== 2) return null;
+  const guards = predicateGuards(predicate, alternativeCount);
+  if (predicate.choice && alternativeCount > 1) {
+    const others = guards.slice(0, -1);
+    guards.splice(-1, 1, andGuard(others.map(negateGuard)));
+  }
+  return { guards, inputs: predicate.inputs };
+};
+
+/**
+ * Widening bound: a value rebuilt from its own alternatives on every round of
+ * an unsettled loop composes a formula that doubles per round. Past this many
+ * atoms the flattened branch decides on a fresh variable instead.
+ */
+const MAX_COMPOSED_GUARD_ATOMS = 64;
+
+const countGuardAtoms = (guard: Guard): number => {
+  switch (guard.kind) {
+    case "and":
+    case "or":
+      return guard.operands.reduce((sum, operand) => sum + countGuardAtoms(operand), 0);
+    case "not":
+      return countGuardAtoms(guard.operand);
+    default:
+      return 1;
+  }
+};
+
+/** Predicate of a two-way branch flattened from `alternatives`: side 0 holds under every (outer, inner) guard pair whose `positions` entry landed there. */
+export const composeFlattenedPredicate = (
+  outer: string | null,
+  alternatives: StaticValue[],
+  positions: number[][],
+  flattenedCount: number,
+): string | null => {
+  if (outer === null || flattenedCount !== 2) return null;
+  const outerGuards = parseAlternativeGuards(outer, alternatives.length);
+  if (!outerGuards) return null;
+  const inputs = [outerGuards.inputs];
+  const firstSides: Guard[] = [];
+  for (const [index, alternative] of alternatives.entries()) {
+    const outerGuard = outerGuards.guards[index];
+    if (alternative.kind !== "branch") {
+      if (positions[index][0] === 0) firstSides.push(outerGuard);
+      continue;
+    }
+    const innerGuards = parseAlternativeGuards(
+      alternative.predicate ?? originChoicePredicate(alternative),
+      alternative.alternatives.length,
+    );
+    if (!innerGuards) return null;
+    inputs.push(innerGuards.inputs);
+    for (const [innerIndex, position] of positions[index].entries()) {
+      if (position === 0) firstSides.push(andGuard([outerGuard, innerGuards.guards[innerIndex]]));
+    }
+  }
+  const formula = orGuard(firstSides);
+  if (countGuardAtoms(formula) > MAX_COMPOSED_GUARD_ATOMS) return null;
+  return serializeSymbolicPredicate({ formula, choice: null, inputs: mergeInputs(inputs) });
+};
+
 /** `a && b`, `a || b`, `c ? x : y` tested later: truthy under the alternatives' own guards, not a fresh variable. */
 const resolveBranchGuard = (subject: StaticValue): ResolvedGuard | null => {
   if (subject.kind !== "branch") return null;
-  const predicate = parseSymbolicPredicate(subject.predicate ?? originChoicePredicate(subject));
-  const guards = predicateGuards(predicate, subject.alternatives.length);
-  const inputs = [predicate.inputs];
+  const alternativeGuards = parseAlternativeGuards(
+    subject.predicate ?? originChoicePredicate(subject),
+    subject.alternatives.length,
+  );
+  if (!alternativeGuards) return null;
+  const { guards } = alternativeGuards;
+  const inputs = [alternativeGuards.inputs];
   const sides = subject.alternatives.map((alternative, index) => {
     const truthiness = getTruthiness(alternative);
     if (truthiness !== null) return andGuard([guards[index], constantGuard(truthiness)]);

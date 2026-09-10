@@ -88,43 +88,35 @@ export class SourceFileCache {
   }
 
   read(filePath: string): ParsedSourceFile | null {
-    const lang = getSourceLanguage(filePath);
-    const transform = this.findTransform(filePath, undefined);
-    if (!lang && !transform) return null;
-    return this.readCached(filePath, filePath, (fileText) =>
-      lang ? { sourceText: fileText, lang } : transform?.transform(filePath, fileText),
-    );
+    return this.readTransformed(filePath, null);
   }
 
-  /** The module a `query` import of `filePath` links, when a transform is keyed on that query. */
+  /** The module a `query` import of `filePath` links, when a transform claims that query. */
   readQueried(filePath: string, query: string): ParsedSourceFile | null {
-    const transform = this.findTransform(filePath, query);
-    if (!transform) return null;
-    return this.readCached(filePath, `${filePath}?${query}`, (fileText) =>
-      transform.transform(filePath, fileText),
-    );
+    return this.readTransformed(filePath, query);
   }
 
-  private findTransform(filePath: string, query: string | undefined): SourceTransform | null {
-    return (
-      this.transforms.find(
-        (candidate) => candidate.extension === extname(filePath) && candidate.query === query,
-      ) ?? null
+  private readTransformed(filePath: string, query: string | null): ParsedSourceFile | null {
+    const lang = getSourceLanguage(filePath);
+    const extension = extname(filePath);
+    const transforms = this.transforms.filter((candidate) =>
+      candidate.appliesTo(extension, lang, query),
     );
-  }
-
-  private readCached(
-    filePath: string,
-    moduleKey: string,
-    toSource: (fileText: string) => TransformedSource | null | undefined,
-  ): ParsedSourceFile | null {
+    if (!lang && transforms.length === 0) return null;
     const stats = statSync(filePath, { throwIfNoEntry: false });
     if (!stats || !stats.isFile()) return null;
+    const moduleKey = query === null ? filePath : `${filePath}?${query}`;
     const cached = this.entries.get(moduleKey);
     if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) {
       return cached.file;
     }
-    const source = toSource(readFileSync(filePath, "utf8"));
+    const fileText = readFileSync(filePath, "utf8");
+    const transformed = transforms.reduce<TransformedSource | null>(
+      (previous, candidate) =>
+        candidate.transform(filePath, previous?.sourceText ?? fileText, query) ?? previous,
+      null,
+    );
+    const source = transformed ?? (lang && query === null ? { sourceText: fileText, lang } : null);
     if (!source) return null;
     const file = parseSourceText(moduleKey, source.sourceText, source.lang);
     this.entries.set(moduleKey, { mtimeMs: stats.mtimeMs, size: stats.size, file });

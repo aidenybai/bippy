@@ -8,6 +8,7 @@ import pathToPattern from "path-kit";
 import Chip, { chipCount, tones } from "min-kit";
 import { createRegistry, Stack, version as umdVersion } from "umd-return-kit";
 import { Tag, buildKind } from "env-switch-kit";
+import { Density, Sheet, VisualState } from "tsc-enum-kit";
 
 const registry = new Registry().register("seen").register("caught");
 const toPokemonPath = pathToPattern.compile("/pokedex/:name");
@@ -59,6 +60,10 @@ export const App = () => {
       <Chip tone={tones[1]}>{Chip.defaultProps.tone}</Chip>
       <Banner tone="info">bundled {version}</Banner>
       <Tag>{buildKind} build</Tag>
+      <Sheet>
+        <p>open</p>
+      </Sheet>
+      <output data-visual={VisualState.showing}>{Density[Density.compact]}</output>
     </LabelContext.Provider>
   );
 };

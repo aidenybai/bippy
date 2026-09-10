@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { TimerQueue } from "../evaluate/timers.js";
+import { MAX_TIMER_TASKS, type TimerQueue } from "../evaluate/timers.js";
 import { createCommitRecorder } from "../harness/commit-recorder.js";
 import { getRootContainer } from "../harness/runtime-snapshot.js";
 import type { RuntimeSnapshot } from "../harness/snapshot.js";
@@ -7,7 +7,6 @@ import type { ReactRuntime } from "./react-runtime.js";
 import type { RendererHost } from "./renderer-host.js";
 
 const SETTLE_ROUNDS = 8;
-const MAX_TIMER_ROUNDS = 512;
 
 const noop = (): void => {};
 
@@ -56,7 +55,7 @@ export const mountNode = async (
   try {
     try {
       await runtime.act(async () => root.render(node));
-      for (let round = 0; round < MAX_TIMER_ROUNDS; round++) {
+      for (let round = 0; round < MAX_TIMER_TASKS; round++) {
         await runtime.act(async () => {
           timers.runNextTask();
           await new Promise<void>((resolveTick) => setTimeout(resolveTick, 0));

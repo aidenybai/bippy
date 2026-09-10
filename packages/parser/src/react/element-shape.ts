@@ -78,6 +78,22 @@ export const getReactElementSymbolKey = (reactVersion: string | null): string =>
 };
 
 /**
+ * Fibers a React version never constructs: until 17, `updateSuspenseComponent`
+ * reconciled the primary children directly instead of under an Offscreen fiber
+ * (`mountSuspensePrimaryChildren`).
+ */
+export const getFibersAbsentInReact = (reactVersion: string | null): readonly string[] => {
+  const major = getReactMajor(reactVersion);
+  return major !== null && major < 17 ? ["Offscreen"] : [];
+};
+
+/** `disableLegacyContext`: `contextTypes`/`childContextTypes` stopped being threaded in 19. */
+export const hasLegacyContext = (reactVersion: string | null): boolean => {
+  const major = getReactMajor(reactVersion);
+  return major !== null && major < 19;
+};
+
+/**
  * Whether Strict Mode runs `useState`/`useReducer` initializers and `useMemo`
  * factories twice (`shouldDoubleInvokeUserFnsInHooksDEV`); 18 only double-renders the body.
  */

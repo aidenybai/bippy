@@ -1,6 +1,6 @@
-import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
+import { objectValue, TRUE_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
-import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import type { LibraryValueProvider, ModeledExports, StaticValue } from "../types.js";
 import { AXIOS_PACKAGES, axiosValue } from "./axios.js";
 import { DEEPMERGE_PACKAGES, deepmergeValue } from "./deepmerge.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
@@ -151,17 +151,27 @@ export const isModeledLibraryPackage = (packageName: string): boolean =>
 export const isModeledLibraryExport = (specifier: string, exportName: string): boolean =>
   MODELED_EXPORTS.get(specifier)?.has(exportName) ?? false;
 
-export const getLibraryValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const getLibraryValue: LibraryValueProvider = (specifier, importedName, run) => {
   for (const model of LIBRARY_MODELS) {
-    const value = model.getValue(specifier, importedName, project);
+    const value = model.getValue(specifier, importedName, run);
     if (value) return value;
   }
   if (importedName !== "*" || !MODELED_PACKAGES.has(specifier)) return null;
-  const defaultExport = getLibraryValue(specifier, "default", project);
+  const defaultExport = getLibraryValue(specifier, "default", run);
+  const unmodeledExport = (key: string): StaticValue => ({
+    kind: "external",
+    packageName: specifier,
+    specifier,
+    importedName: key,
+    origin: "binding",
+  });
   return lazyProperties(
     defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
       ? defaultExport
       : objectValue(),
-    (key) => getLibraryValue(specifier, key, project) ?? UNDEFINED_VALUE,
+    (key) =>
+      key === "__esModule" && defaultExport
+        ? TRUE_VALUE
+        : (getLibraryValue(specifier, key, run) ?? unmodeledExport(key)),
   );
 };

@@ -21,7 +21,7 @@ import type {
   ContextDefinition,
   LibraryValueProvider,
   MacroJsxChild,
-  ProjectContext,
+  LibraryRun,
   StaticElementValue,
   StaticObjectEntry,
   StaticObjectValue,
@@ -651,13 +651,13 @@ const createLinguiModel = (catalog: CapturedLinguiCatalog | null): LinguiModel =
   };
 };
 
-const models = new WeakMap<ProjectContext, LinguiModel>();
+const models = new WeakMap<LibraryRun, LinguiModel>();
 
-export const linguiValue: LibraryValueProvider = (specifier, importedName, project) => {
-  let model = models.get(project);
+export const linguiValue: LibraryValueProvider = (specifier, importedName, run) => {
+  let model = models.get(run);
   if (!model) {
-    model = createLinguiModel(project.linguiCatalog);
-    models.set(project, model);
+    model = createLinguiModel(run.project.linguiCatalog);
+    models.set(run, model);
   }
   return model.getValue(specifier, importedName);
 };

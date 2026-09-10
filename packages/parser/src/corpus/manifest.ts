@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
 import type { ComparisonOptions, ComparisonReport } from "../harness/compare.js";
+import type { StateReplaySummary } from "../harness/state-replay.js";
 import type { StateSpaceSummary } from "../harness/state-space.js";
 import type { JsonValue, StaticRenderStats } from "../types.js";
 import type { FrameworkKind } from "../frameworks/framework-profile.js";
@@ -36,6 +37,8 @@ export interface CorpusStaticTarget {
   globals?: Record<string, JsonValue>;
   /** Expressions the dev build inlines (`DefinePlugin`, Vite `define`), keyed by source text. */
   defines?: Record<string, JsonValue>;
+  /** The config the bundler's svgr plugin hands `@svgr/core` (`plugins`, `svgo`, `dimensions`, ...), when it is not the `@svgr/webpack`/`@svgr/rollup` loader default. */
+  svgr?: Record<string, JsonValue>;
   /** dotenv files the server loads, relative to `rootDirectory`, highest precedence first; with them the environment is whole and other variables are unset. */
   envFiles?: string[];
   /** Interpreter step budget per entry (one component render, module initialization or callback). */
@@ -115,6 +118,8 @@ export interface CorpusResult {
   report: ComparisonReport | null;
   /** Null on results recorded before the runtime was matched against an enumerated state space. */
   stateSpace: StateSpaceSummary | null;
+  /** Null on results recorded before the enumerated states were replayed independently. */
+  stateReplay: StateReplaySummary | null;
   anchor: string | null;
   note: string | null;
   failure: string | null;
@@ -136,6 +141,7 @@ const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
   bootstrap: z.array(z.string()).optional(),
   globals: jsonRecordSchema.optional(),
   defines: jsonRecordSchema.optional(),
+  svgr: jsonRecordSchema.optional(),
   envFiles: z.array(z.string()).optional(),
   envPrefix: z.string().optional(),
   maxSteps: z.number().optional(),

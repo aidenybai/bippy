@@ -140,7 +140,7 @@ describe("esbuild symbol renumbering", () => {
 
 describe("static render under an esbuild transpiler", () => {
   const render = async (transpiler: "esbuild" | "name-preserving"): Promise<string> => {
-    const renderer = createStaticRenderer({
+    const renderer = await createStaticRenderer({
       rootDirectory: COMPONENTS_DIRECTORY,
       tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
       transpiler,

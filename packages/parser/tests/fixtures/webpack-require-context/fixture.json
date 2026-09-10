@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "skipRuntime": true,
+  "expectedStats": { "branchCount": 0, "unknownCount": 0, "opaqueCount": 0 },
+  "notes": "Webpack's `require.context(directory, useSubdirectories, regExp)`: the directory is enumerated at build time, `keys()` lists the matching requests (with extension-less and `index` alternatives) sorted, calling the context loads the module, and an unknown request throws `MODULE_NOT_FOUND`. Static-only because Vite serves the fixtures at runtime; asserted in webpack-require-context.test.ts."
+}

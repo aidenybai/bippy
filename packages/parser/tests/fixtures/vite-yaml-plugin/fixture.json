@@ -1,0 +1,7 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 1,
+  "notes": "The fixture's vite.config.ts registers a YAML transform plugin; the static side runs the app's Vite config so .yaml imports (direct and via import.meta.glob) resolve to the modules the dev server serves."
+}

@@ -1,4 +1,5 @@
 import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -78,6 +79,69 @@ const renderPagesWithNext = async (version: string, route: string) => {
     tree: formatPattern(pattern),
     errors: result.diagnostics.filter((diagnostic) => diagnostic.severity === "error"),
   };
+};
+
+const harnessRequire = createRequire(import.meta.url);
+
+/** A CommonJS module re-exporting the harness's `specifier` as a React build of another `version`, without `Activity`. */
+const reactBuildStub = (specifier: string, version: string): string =>
+  `const { Activity, unstable_Activity, ...build } = require(${JSON.stringify(harnessRequire.resolve(specifier))});
+module.exports = { ...build, version: ${JSON.stringify(version)} };`;
+
+/**
+ * A copy of the `next-app` fixture with `next.config.js`, an `/activity` page and
+ * the React build Next bundles for `app/` at `next/dist/compiled/react<channel>`,
+ * reporting `version` and lacking `Activity`.
+ */
+const withNextVendoredReact = async (
+  nextConfig: string,
+  channel: "" | "-experimental",
+  version: string,
+): Promise<string> => {
+  const rootDirectory = await withInstalledPackage("next-app", "next", "15.5.9");
+  await writeFile(join(rootDirectory, "next.config.js"), nextConfig);
+  const pageDirectory = join(rootDirectory, "app", "activity");
+  await mkdir(pageDirectory);
+  await writeFile(
+    join(pageDirectory, "page.tsx"),
+    `"use client";
+import { Activity } from "react";
+export default function ActivityPage() {
+  return <Activity mode="visible"><p>shown</p></Activity>;
+}
+`,
+  );
+  const compiledDirectory = join(rootDirectory, "node_modules", "next", "dist", "compiled");
+  const writeBuild = async (name: string, files: Record<string, string>): Promise<void> => {
+    const buildDirectory = join(compiledDirectory, name);
+    await mkdir(buildDirectory, { recursive: true });
+    await writeFile(
+      join(buildDirectory, "package.json"),
+      JSON.stringify({ name, main: "index.cjs", type: "commonjs" }),
+    );
+    for (const [fileName, source] of Object.entries(files)) {
+      await writeFile(join(buildDirectory, fileName), source);
+    }
+  };
+  await writeBuild(`react${channel}`, { "index.cjs": reactBuildStub("react", version) });
+  await writeBuild(`react-dom${channel}`, {
+    "index.cjs": reactBuildStub("react-dom", version),
+    "client.js": reactBuildStub("react-dom/client", version),
+  });
+  return rootDirectory;
+};
+
+const renderActivityPage = async (
+  nextConfig: string,
+  channel: "" | "-experimental",
+  version: string,
+) => {
+  const rootDirectory = await withNextVendoredReact(nextConfig, channel, version);
+  const result = await renderFrameworkTarget(
+    { framework: "next-app", route: "/activity" },
+    { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+  );
+  return formatPattern(getRenderPattern(result));
 };
 
 const findFiberTags = (nodes: PatternNode[], name: string): SnapshotWorkTag[] =>
@@ -293,6 +357,17 @@ describe("next app router", () => {
     expect(tree).not.toContain("unsupported module");
   });
 
+  it("resolves the default of a `require`d next subpath through CommonJS interop", async () => {
+    const { tree, errors } = await render(
+      "next-app",
+      { framework: "next-app", route: "/analytics" },
+      ["analytics-kit"],
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<section>\n\s+<Script>\n\s+<script>$/);
+    expect(tree).not.toContain("<default>");
+  });
+
   it("models next/dynamic as the loaded LoadableComponent tree", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/about" });
     expect(tree).toMatch(
@@ -307,6 +382,38 @@ describe("next app router", () => {
     expect(tree).toMatch(
       /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+\?branch\(priority decides whether the image preloads\)\n\s+\|0 \(preferred\)\n\s+\|1\n\s+<ImagePreload>$/,
     );
+  });
+
+  it("materializes with the canary React build Next bundles for app/ instead of the app's own react", async () => {
+    const tree = await renderActivityPage("module.exports = {};", "", "19.2.0-canary-stub");
+    expect(tree).toContain("?unknown(activity is not available in React 19.2.0-canary-stub)");
+    expect(tree).not.toContain("<Activity>");
+  });
+
+  it("switches to Next's experimental React build when next.config enables viewTransition", async () => {
+    const tree = await renderActivityPage(
+      "module.exports = { experimental: { viewTransition: true } };",
+      "-experimental",
+      "19.2.0-experimental-stub",
+    );
+    expect(tree).toContain("?unknown(activity is not available in React 19.2.0-experimental-stub)");
+  });
+
+  it("keeps the app's own react when Next's bundled build is absent", async () => {
+    const rootDirectory = await withInstalledPackage("next-app", "next", "15.5.9");
+    await writeFile(
+      join(rootDirectory, "next.config.js"),
+      "module.exports = { experimental: { viewTransition: true } };",
+    );
+    const activityRoot = await withNextVendoredReact("module.exports = {};", "", "unused");
+    await cp(join(activityRoot, "app", "activity"), join(rootDirectory, "app", "activity"), {
+      recursive: true,
+    });
+    const result = await renderFrameworkTarget(
+      { framework: "next-app", route: "/activity" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    expect(lines(formatPattern(getRenderPattern(result)))).toContain("<Activity>");
   });
 
   it("reports a missing page instead of guessing", async () => {
@@ -462,6 +569,15 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
   });
 
+  it("reports the matched page file's route as useRouter().pathname", async () => {
+    const post = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
+    expect(post.tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"\n\s+<em>/);
+    expect(post.tree).not.toContain("?branch");
+    const home = await render("next-pages", { framework: "next-pages", route: "/" });
+    expect(home.tree).toContain("<code>");
+    expect(home.tree).not.toContain("<s>");
+  });
+
   it("matches catch-all pages", async () => {
     const { tree, errors } = await render("next-pages", {
       framework: "next-pages",
@@ -609,6 +725,33 @@ describe("next pages router", () => {
     expect(tree).toContain("<StrictMode>");
   });
 
+  it("compares the build phase against next/constants read off a namespace require", async () => {
+    const { tree, errors } = await render("next-pages-phase-config", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("reads reactStrictMode through @sentry/nextjs withSentryConfig", async () => {
+    const { tree, errors } = await render("next-pages-sentry-config", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("calls the next.config function withSentryConfig wraps with the build phase", async () => {
+    const { tree, errors } = await render("next-pages-sentry-config-function", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
   it("models next/head, next/image and next/legacy/image after the current next", async () => {
     const { tree, errors } = await renderPagesWithNext("15.5.0", "/media");
     expect(errors).toEqual([]);
@@ -629,6 +772,14 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
     expect(tree).not.toContain("<ImageElement>");
     expect(findFiberTags(pattern, "_class")).toEqual(["ClassComponent", "ClassComponent"]);
+  });
+
+  it("follows the installed next version: 12.1.1 introduced ImageElement while head stays a class", async () => {
+    const { tree } = await renderPagesWithNext("12.1.5", "/media");
+    expect(tree).toMatch(
+      /<Head>\n\s+<_class>\n\s+<Image>\n\s+<span>\n\s+<span>\n\s+<img>\n\s+<ImageElement>\n\s+<img>\n\s+<noscript>/,
+    );
+    expect(tree).toMatch(/<Image>\n\s+<span>\n\s+<ImageElement>\n\s+<img>\n\s+<Head>\n\s+<_class>/);
   });
 
   it("splices out the client bootstrap around _app: StrictMode, the head commit hook and the route announcer portal", () => {
@@ -677,6 +828,48 @@ describe("next pages router", () => {
     const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("next-pages"));
     expect(flattened.roots[0].children).toEqual([
       fiber("MyApp", "FunctionComponent", [appHead, page]),
+    ]);
+  });
+
+  it("splices react-router 6.4-6.10's RouterProvider stack, which mounts routes through <Routes />", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const matched = fiber("RenderedRoute", "FunctionComponent", [
+      fiber("Route", "ContextProvider", [
+        fiber("LoginPage", "FunctionComponent", [fiber("form", "HostComponent")]),
+      ]),
+    ]);
+    const runtime = {
+      reactVersion: "18.2.0",
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("RouterProvider", "FunctionComponent", [
+            fiber("DataRouter", "ContextProvider", [
+              fiber("DataRouterState", "ContextProvider", [
+                fiber("Router", "FunctionComponent", [
+                  fiber("Navigation", "ContextProvider", [
+                    fiber("Location", "ContextProvider", [
+                      fiber("Routes", "FunctionComponent", [
+                        fiber("RenderErrorBoundary", "ClassComponent", [matched]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("react-router"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("RouterProvider", "FunctionComponent", [matched]),
     ]);
   });
 });

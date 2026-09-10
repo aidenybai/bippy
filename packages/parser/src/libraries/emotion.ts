@@ -3,7 +3,6 @@ import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
-  componentReference,
   getObjectProperty,
   getTruthiness,
   isFunctionValue,
@@ -12,6 +11,7 @@ import {
   mapValue,
   objectFromRecord,
   objectValue,
+  omitObjectKeys,
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
@@ -98,7 +98,14 @@ const THEME_CONTEXT: ContextDefinition = {
 const CACHE_CONTEXT: ContextDefinition = {
   name: "EmotionCacheContext",
   displayName: "EmotionCacheContext",
-  defaultValue: unknownValue("emotion cache"),
+  defaultValue: objectFromRecord({
+    key: primitiveValue("css"),
+    nonce: UNDEFINED_VALUE,
+    sheet: unknownValue("emotion style sheet"),
+    registered: unknownValue("styles registered in the emotion cache"),
+    inserted: unknownValue("styles inserted by the emotion cache"),
+    insert: unknownValue("emotion cache insert"),
+  }),
   location: null,
 };
 
@@ -342,20 +349,6 @@ const styledValue = (factoryOptions: StyledFactoryOptions, hasTags: boolean): St
       : undefined,
 });
 
-/** `withEmotionCache(render)`: a `forwardRef` whose render receives `(props, cache, ref)`. */
-const withEmotionCache = (): StaticValue =>
-  nativeFunction("withEmotionCache", ([render = UNDEFINED_VALUE]) => {
-    if (render.kind !== "function") return unknownValue("withEmotionCache of a non-function");
-    return componentReference({
-      kind: "forward-ref",
-      component: createFunctionComponentDefinition(render),
-      render,
-      renderArguments: (props, ref, tools) => [props, tools.readContext(CACHE_CONTEXT), ref],
-      displayName: null,
-      properties: new Map(),
-    });
-  });
-
 const THEME_PROVIDER_STUB: StubComponent = {
   displayName: "ThemeProvider",
   render: (props, tools) => {
@@ -459,6 +452,51 @@ const jsxFactory = (api: ReactApi, runtime: EmotionRuntime): StaticValue =>
     }
   });
 
+const withEmotionCache = (runtime: EmotionRuntime): StaticValue =>
+  nativeFunction("withEmotionCache", ([func = UNDEFINED_VALUE]) => {
+    if (func.kind !== "function") {
+      return unknownValue(`withEmotionCache of ${describeTag(func)}`);
+    }
+    if (runtime.hasConsumerFibers) {
+      const stub: StubComponent = {
+        displayName: null,
+        tag: ForwardRefTag,
+        render: (props, tools) => {
+          const ref = getObjectProperty(props, "ref");
+          const renderProps = omitObjectKeys(props, new Set(["ref"]));
+          return element(
+            {
+              kind: "context-consumer",
+              context: CACHE_CONTEXT,
+              displayName: CACHE_CONTEXT.displayName,
+            },
+            objectFromRecord({
+              children: nativeFunction("children", ([cache = UNDEFINED_VALUE]) =>
+                tools.call(func, [
+                  renderProps.kind === "object" ? renderProps : props,
+                  cache,
+                  isNullish(ref) === true ? NULL_VALUE : ref,
+                ]),
+              ),
+            }),
+          );
+        },
+      };
+      return stubValue(stub);
+    }
+    return {
+      kind: "component-reference",
+      type: {
+        kind: "forward-ref",
+        component: createFunctionComponentDefinition(func),
+        render: func,
+        renderArguments: (props, ref, readContext) => [props, readContext(CACHE_CONTEXT), ref],
+        displayName: null,
+        properties: new Map(),
+      },
+    };
+  });
+
 const withTheme = (): StaticValue =>
   nativeFunction("withTheme", ([component = UNDEFINED_VALUE]) => {
     const inner = toElementType(component, null);
@@ -501,7 +539,7 @@ const reactValue = (importedName: string, runtime: EmotionRuntime): StaticValue 
     case "__unsafe_useEmotionCache":
       return nativeFunction("useEmotionCache", (_args, tools) => tools.readContext(CACHE_CONTEXT));
     case "withEmotionCache":
-      return runtime.hasConsumerFibers ? null : withEmotionCache();
+      return withEmotionCache(runtime);
     case "Global":
       return stubValue(GLOBAL_STUB);
     case "ClassNames":
@@ -521,7 +559,7 @@ const JSX_RUNTIME_SPECIFIERS: ReadonlyMap<string, ReactApi> = new Map([
   ["@emotion/react/jsx-dev-runtime", "jsxDEV"],
 ]);
 
-export const emotionValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const emotionValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   const isMacro = specifier.endsWith(MACRO_SUFFIX);
   const packageName = isMacro ? specifier.slice(0, -MACRO_SUFFIX.length) : specifier;
   if (packageName === "@emotion/styled" || packageName === "@emotion/styled/base") {

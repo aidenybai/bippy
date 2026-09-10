@@ -142,7 +142,7 @@ export const nextMemoCell = (
 const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
   compareIdentity(left, right) ?? areValuesEquivalent(left, right);
 
-const escapedStateValue = (cell: StateCell): StaticValue =>
+export const escapedStateValue = (cell: StateCell): StaticValue =>
   branchValue(
     [cell.initial, unknownValue(`updated state of ${cell.name}`)],
     "state setter escapes to code that is not evaluated",
@@ -211,6 +211,34 @@ export const escapeStateCell = (
   cell.isEscaped = true;
   if (isSameHookValue(escapedStateValue(cell), cell.current)) return;
   if (!frame.isRendering) frame.requestRender?.();
+};
+
+const MAX_ESCAPED_REDUCER_STATES = 16;
+
+/**
+ * `dispatchReducerAction` with a known action from code the analysis does not
+ * follow: the reducer runs on a later render against whatever the cell holds by
+ * then, and the code may dispatch again, so the cell may hold any value the
+ * reducer reaches from the values it may already hold. A reducer that keeps
+ * producing new values, or one the analysis cannot follow, escapes the cell.
+ */
+export const escapeReducerDispatch = (
+  frame: HookFrame,
+  cell: StateCell,
+  reduce: (state: StaticValue) => StaticValue,
+): void => {
+  if (cell.isEscaped) return;
+  const held = [cell.current, ...(cell.next ? [cell.next] : []), ...cell.deferred];
+  const reachable = [...held];
+  for (let index = 0; index < reachable.length; index += 1) {
+    const next = reduce(reachable[index]);
+    if (next.kind === "unknown" || reachable.length > MAX_ESCAPED_REDUCER_STATES) {
+      escapeStateCell(frame, cell, null);
+      return;
+    }
+    if (!reachable.some((state) => isSameHookValue(state, next))) reachable.push(next);
+  }
+  for (const state of reachable.slice(held.length)) escapeStateCell(frame, cell, state);
 };
 
 /** `processUpdateQueue` for one cell: true when its committed value changed. */

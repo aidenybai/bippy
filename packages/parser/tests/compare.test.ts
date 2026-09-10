@@ -8,7 +8,7 @@ import type {
   PatternOpaque,
   PatternWildcard,
 } from "../src/harness/static-pattern.js";
-import { choiceBranch } from "./helpers/pattern-builders.js";
+import { anonymousRepeat, choiceBranch } from "./helpers/pattern-builders.js";
 
 const runtimeFiber = (
   name: string,
@@ -416,5 +416,35 @@ describe("transparent runtime fibers", () => {
     ]);
     expect(comparePatternToRuntime([pattern], [agreeing]).status).toBe("exact");
     expect(comparePatternToRuntime([pattern], [disagreeing]).status).toBe("mismatch");
+  });
+
+  it("ranks the wildcard alternatives of a repeated item without revisiting the rest per item", () => {
+    const itemCount = 24;
+    const truncated: PatternWildcard = { ...patternWildcard, isTruncated: true };
+    const items = anonymousRepeat("items", [
+      branch("item", [patternHost("li", [patternHost("hr")])], [truncated], [truncated]),
+    ]);
+    const runtimeItems = Array.from({ length: itemCount }, () =>
+      host("li", [runtimeFiber("Item", [host("button")])]),
+    );
+    const report = comparePatternToRuntime(
+      [patternHost("ol", [items, patternHost("footer")])],
+      [host("ol", [...runtimeItems, host("footer")])],
+      { maxSteps: 20_000 },
+    );
+    expect(report.status).toBe("partial");
+    expect(report.wildcardAbsorbedFibers).toBe(itemCount * 3);
+    expect(report.matchedFibers).toBe(2);
+  });
+
+  it("keeps re-matching past a decision whose variable the rest of the tree shares", () => {
+    const pattern = patternHost("section", [
+      patternHost("header", [branch("dense", [patternWildcard], [patternHost("b")])]),
+      patternHost("footer", [branch("dense", [patternHost("i")], [patternHost("b")])]),
+    ]);
+    const runtime = host("section", [host("header", [host("b")]), host("footer", [host("b")])]);
+    const report = comparePatternToRuntime([pattern], [runtime]);
+    expect(report.status).toBe("exact");
+    expect(report.wildcardAbsorbedFibers).toBe(0);
   });
 });

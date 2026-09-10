@@ -5,6 +5,7 @@ import {
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
+import { isReactLikePackage, resolveReactApi } from "../react/react-api.js";
 import type {
   StaticClassValue,
   StaticElementType,
@@ -13,13 +14,13 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
-import { toLanguagePropertyKey } from "./host-globals.js";
+import { getLanguageCounterpart, toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
+import { toPropertyKey } from "./primitive-shapes.js";
 import {
   branchValue,
   FALSE_VALUE,
-  getPropertyName,
   getStubOwnDisplayName,
   hasDefiniteItems,
   hasOwnKey,
@@ -40,9 +41,20 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
-const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
+/** Whether a native witness has the member, reading intrinsics on its chain from the language realm so members scripts added to this process's own do not count. */
+export const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
   const languageKey = toLanguagePropertyKey(name);
-  return languageKey !== null && languageKey in intrinsic;
+  if (languageKey === null) return false;
+  for (
+    let holder: object | null = intrinsic;
+    holder !== null;
+    holder = Object.getPrototypeOf(holder)
+  ) {
+    const languageObject = getLanguageCounterpart(holder);
+    if (languageObject !== null) return languageKey in languageObject;
+    if (Object.hasOwn(holder, languageKey)) return true;
+  }
+  return false;
 };
 
 /** Own keys every function object has without source assigning them; arrows have no `prototype`. */
@@ -79,7 +91,7 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
     case "context-consumer":
       if (name === "displayName") return primitiveValue(type.displayName !== null);
       if (CONTEXT_OWN_KEYS.has(name)) return null;
-      return primitiveValue(name in Object.prototype);
+      return primitiveValue(hasIntrinsicMember(Object.prototype, name));
     default:
       return null;
   }
@@ -128,6 +140,12 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       return hasIntrinsicMember(Function.prototype, name) || target.getOwnProperty?.(name)
         ? TRUE_VALUE
         : FALSE_VALUE;
+    case "external":
+      return isReactLikePackage(target.packageName) &&
+        (target.importedName === "*" || target.importedName === "default") &&
+        resolveReactApi(target.packageName, name) !== null
+        ? TRUE_VALUE
+        : null;
     case "global": {
       const witness = getPrototypeWitness(target);
       if (witness === null) return null;
@@ -164,6 +182,6 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
 };
 
 export const hasProperty = (key: StaticValue, target: StaticValue): StaticValue | null => {
-  const name = getPropertyName(key);
+  const name = toPropertyKey(key);
   return name === null ? null : hasNamedProperty(name, target);
 };

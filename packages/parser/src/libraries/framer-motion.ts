@@ -505,7 +505,7 @@ const useAnimate = (): StaticValue =>
     nativeFunction("animate", () => unknownValue("animation playback controls")),
   ]);
 
-export const framerMotionValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const framerMotionValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!FRAMER_MOTION_SPECIFIERS.has(specifier)) return null;
   if (MOTION_VALUE_HOOKS.includes(importedName))
     return nativeFunction(importedName, () => motionValue(importedName));
