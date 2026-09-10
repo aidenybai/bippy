@@ -5350,6 +5350,215 @@
         "externalPackageAllowList": ["react-router-dom", "react-router"]
       },
       "notes": "src/utils/environment.ts resolves to the `web` platform when neither the Electron preload nor chrome.runtime is present, which is what the Vite dev server gives a plain browser (CLAUDE.md: `npm run dev` runs the React app only). `npm ci --ignore-scripts` skips the postinstall (`electron-rebuild` + copy-ort-wasm) so the Electron binary and native modules are never downloaded or built; setup re-runs only the WASM copy the renderer needs. vite-plugin-electron's `onstart` spawns `electron .` and exits the dev server when that child exits, so the setup writes a sleeping stand-in executable and ELECTRON_OVERRIDE_DIST_PATH points the `electron` package at it; nothing of the app's source is patched."
+    },
+    {
+      "id": "open-react-template",
+      "repository": "https://github.com/cruip/open-react-template",
+      "revision": "9da36763df216be7840f3c063edcdcaf7862401e",
+      "description": "Cruip Open PRO landing template (Next 15 app router with Turbopack, React 19, route groups, AOS, @headlessui/react video modal)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@headlessui/react",
+          "@headlessui/*",
+          "@floating-ui/*",
+          "@react-aria/*",
+          "@tanstack/react-virtual"
+        ]
+      }
+    },
+    {
+      "id": "tailwind-landing-page-template",
+      "repository": "https://github.com/cruip/tailwind-landing-page-template",
+      "revision": "909e38e3249ac575017864a202188b48ef016c9c",
+      "description": "Cruip Simple landing template (Next 15 app router with Turbopack, React 19, route groups, AOS, @headlessui/react accordion)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@headlessui/react",
+          "@headlessui/*",
+          "@floating-ui/*",
+          "@react-aria/*",
+          "@tanstack/react-virtual"
+        ]
+      }
+    },
+    {
+      "id": "tailwind-dashboard-template",
+      "repository": "https://github.com/cruip/tailwind-dashboard-template",
+      "revision": "173f64183e3f5488e8e22d3a3f6a8de75bf63d7a",
+      "description": "Cruip Mosaic Lite dashboard (Vite SPA, React 19 StrictMode, react-router-dom 7 BrowserRouter/Routes, ThemeProvider over localStorage, chart.js cards, react-day-picker popover)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --dangerously-allow-all-builds",
+      "dev": "pnpm exec vite --port 5176 --strictPort",
+      "url": "http://localhost:5176/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "react-day-picker",
+          "react-transition-group"
+        ]
+      }
+    },
+    {
+      "id": "adrianhajdin-portfolio",
+      "repository": "https://github.com/adrianhajdin/portfolio",
+      "revision": "aa3fc6de5066925313070cbb5bdce9d85cc89241",
+      "description": "JS Mastery portfolio (Next 14 app router, React 18, next-themes, framer-motion, Aceternity UI, @react-three/fiber globe, react-lottie, @sentry/nextjs)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "next-themes",
+          "framer-motion",
+          "lucide-react",
+          "@tabler/icons-react",
+          "react-icons",
+          "react-icons/*",
+          "react-lottie",
+          "@react-three/*",
+          "its-fine",
+          "three"
+        ]
+      },
+      "notes": "`react-lottie` loads `lottie-web`, whose UMD bundle runs when `typeof navigator !== \"undefined\"` and then touches `document` at module scope; Node 21+ defines a global `navigator`, so the server render of `BentoGrid` throws under Node 22. The dev server runs under Node 20, where the bundle skips itself on the server as it did when the template was written."
+    },
+    {
+      "id": "developer-portfolio",
+      "repository": "https://github.com/said7388/developer-portfolio",
+      "revision": "5f8cd8e94dacbe802be1f111a0120c8b737ffa9e",
+      "description": "Abu Said developer portfolio (Next 16 app router, React 19, JavaScript, async server page fetching dev.to articles, lottie-react, react-fast-marquee, react-toastify, react-icons)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": [
+          "lottie-react",
+          "react-fast-marquee",
+          "react-toastify",
+          "react-icons",
+          "react-icons/*",
+          "react-google-recaptcha",
+          "@next/third-parties",
+          "@next/third-parties/*"
+        ]
+      }
+    },
+    {
+      "id": "personal-site",
+      "repository": "https://github.com/mldangelo/personal-site",
+      "revision": "7e3c0cd7e6781ff6f428ccaf15df1708170d6865",
+      "description": "mldangelo personal site (Next 16 app router with Turbopack, React 19, static export, trailingSlash, Tailwind 4, FontAwesome, data-theme toggle)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@fortawesome/*",
+          "@next/third-parties",
+          "@next/third-parties/*"
+        ],
+        "envFiles": []
+      },
+      "notes": "The checkout ships only .env.example, so the dev server's environment is whole: NEXT_PUBLIC_GA_TRACKING_ID is unset and GoogleAnalytics renders null."
+    },
+    {
+      "id": "cv",
+      "repository": "https://github.com/bartoszjarocki/cv",
+      "revision": "b9c9c2bacf539d6bbab13714fa1c39a1afd0ad08",
+      "description": "bartoszjarocki/cv printable resume (Next 16 app router, React 19 StrictMode, shadcn/ui, cmdk command menu, geist fonts, @vercel/analytics)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --dangerously-allow-all-builds",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "cmdk",
+          "@vercel/analytics",
+          "@vercel/analytics/*",
+          "geist",
+          "geist/*"
+        ]
+      }
+    },
+    {
+      "id": "open-resume",
+      "repository": "https://github.com/xitanggg/open-resume",
+      "revision": "4f8255a2c763479837f69f1dccf2a3338730cd79",
+      "description": "OpenResume home page (Next 13.4 app router, React 18, Redux Toolkit, @react-pdf/renderer auto-typing resume preview, @heroicons/react, baseUrl src/app)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "@heroicons/react",
+          "@heroicons/react/*",
+          "react-frame-component",
+          "react-contenteditable",
+          "@react-pdf/renderer",
+          "@react-pdf/*",
+          "@vercel/analytics",
+          "@vercel/analytics/*"
+        ]
+      }
     }
   ]
 }
