@@ -120,8 +120,8 @@
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T06:04:13.966Z",
-      "durationMs": 28254,
+      "capturedAt": "2026-09-10T11:32:24.081Z",
+      "durationMs": 41539,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -134,69 +134,314 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 239,
-          "textCount": 17,
-          "branchCount": 0,
+          "fiberCount": 412,
+          "textCount": 14,
+          "branchCount": 7,
           "repeatCount": 0,
-          "opaqueCount": 12,
-          "unknownCount": 2,
-          "modulesLoaded": 2065
+          "opaqueCount": 8,
+          "unknownCount": 4,
+          "modulesLoaded": 2075
         },
         "diagnostics": [
           {
-            "code": "dynamic-key",
+            "code": "timers-unsettled",
             "count": 1
           }
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 203,
-        "matchedText": 10,
-        "opaqueSubtrees": 12,
-        "opaqueSkippedFibers": 19,
-        "slotsMatched": 10,
-        "slotsUnmatched": 2,
+        "status": "mismatch",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
-          {
-            "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <WelcomeScreen> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Paragraph> [FunctionComponent] > <div> [HostComponent] > <Trans> (opaque)",
-            "reason": "Trans from react-i18next is not analyzed",
-            "head": "<Trans> [FunctionComponent]",
-            "skippedFibers": 7,
-            "divergence": {
-              "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <WelcomeScreen> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Paragraph> [FunctionComponent] > <div> [HostComponent] > <Trans> (opaque)[0]",
-              "expected": "\"New to budgeting? Take the\"",
-              "actual": "\"New to budgeting? Take the \""
-            }
-          },
-          {
-            "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Version> [FunctionComponent] > <Text> [ForwardRef] > <span> [HostComponent] > <Trans> (opaque)",
-            "reason": "Trans from react-i18next is not analyzed",
-            "head": "<Trans> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <Version> [FunctionComponent] > <Text> [ForwardRef] > <span> [HostComponent] > <Trans> (opaque)[0]",
-              "expected": "\"App: v\"",
-              "actual": "\"App: v26.9.0 | Server: N/A\""
-            }
-          }
-        ],
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "runtimeFibers": 232,
-        "staticFibers": 235,
-        "coverage": 1,
-        "strictCoverage": 0.9181034482758621,
-        "divergence": null,
-        "stepsUsed": 234,
+        "runtimeFibers": 235,
+        "staticFibers": 174,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> key=\"hidden-scrollbars\" [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <AppBackground> [FunctionComponent] > <Background> [FunctionComponent] > <div> [HostComponent] > <svg> [HostComponent] > <LoadComponent> [FunctionComponent] > <LoadComponentInner> key=\"BackgroundImage\" [FunctionComponent][0]",
+          "expected": "<View> [ForwardRef]",
+          "actual": "<BackgroundImage> [FunctionComponent]"
+        },
+        "stepsUsed": 47,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 32,
+        "stateCount": 32,
+        "clusters": 4,
+        "tree": {
+          "nodes": 1284,
+          "inputs": 12,
+          "guards": 54,
+          "branches": 22,
+          "repeats": 0,
+          "opaque": 48,
+          "wildcards": 14
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 0,
+          "divergence": {
+            "path": "root > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <ServerProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <BrowserRouter> [FunctionComponent] > <F> [FunctionComponent] > <ContextProvider> [ContextProvider] > <j> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SpreadsheetProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BudgetMonthCountProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <DndProvider> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <View> [ForwardRef] > <div> [HostComponent] > <View> key=\"hidden-scrollbars\" [ForwardRef] > <div> [HostComponent] > <m> [ClassComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ManagementApp> [FunctionComponent] > <View> [ForwardRef] > <div> [HostComponent] > <AppBackground> [FunctionComponent] > <Background> [FunctionComponent] > <div> [HostComponent] > <svg> [HostComponent] > <LoadComponent> [FunctionComponent] > <LoadComponentInner> key=\"BackgroundImage\" [FunctionComponent][0]",
+            "expected": "<View> [ForwardRef]",
+            "actual": "<BackgroundImage> [FunctionComponent]"
+          }
+        },
+        "omitted": {
+          "total": 2,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            },
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/App.tsx:213:26",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/App.tsx:213:26",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#2.isOpen)), or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), eq(choice(#4), 0)))), truthy(#2.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 0,
+              "guard": "or(and(not(truthy(#2.isOpen)), or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), eq(choice(#4), 0)))), truthy(#2.isOpen))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "&& on branch(react-i18next#useTranslation().t() | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:344:8",
+              "side": 0,
+              "guard": "truthy(#5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on react-i18next#useTranslation().t()",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:361:12",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on react-i18next#useTranslation().t()",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:361:12",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on react-i18next#useTranslation().t()",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:361:12",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "&& on branch(react-i18next#useTranslation().t() | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:344:8",
+              "side": 1,
+              "guard": "not(truthy(#5))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#2.isOpen)), or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), eq(choice(#4), 0)))), truthy(#2.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 1,
+              "guard": "not(or(and(not(truthy(#2.isOpen)), or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), eq(choice(#4), 0)))), truthy(#2.isOpen)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#6.isOpen)), or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), eq(choice(#8), 0)))), truthy(#6.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 0,
+              "guard": "or(and(not(truthy(#6.isOpen)), or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), eq(choice(#8), 0)))), truthy(#6.isOpen))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#9)",
+              "reason": "&& on branch(react-i18next#useTranslation().t() | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:344:8",
+              "side": 0,
+              "guard": "truthy(#9)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "&& on react-i18next#useTranslation().t()",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:361:12",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "&& on react-i18next#useTranslation().t()",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:361:12",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "&& on react-i18next#useTranslation().t()",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:361:12",
+              "side": 2,
+              "guard": "eq(choice(branch#2), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#9)",
+              "reason": "&& on branch(react-i18next#useTranslation().t() | undefined)",
+              "location": "/home/ubuntu/bippy-corpus/actual/packages/desktop-client/src/components/common/Modal.tsx:344:8",
+              "side": 1,
+              "guard": "not(truthy(#9))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#6.isOpen)), or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), eq(choice(#8), 0)))), truthy(#6.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 1,
+              "guard": "not(or(and(not(truthy(#6.isOpen)), or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), eq(choice(#8), 0)))), truthy(#6.isOpen)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#2.isOpen)), or(not(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))), and(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1)))), not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1)))))))), truthy(#2.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 0,
+              "guard": "or(and(not(truthy(#2.isOpen)), or(not(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))), and(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1)))), not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1)))))))), truthy(#2.isOpen))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#2.isOpen)), or(not(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))), and(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1)))), not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1)))))))), truthy(#2.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 1,
+              "guard": "not(or(and(not(truthy(#2.isOpen)), or(not(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))), and(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1)))), not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1)))))))), truthy(#2.isOpen)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#6.isOpen)), or(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), and(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))), not(or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1)))))))), truthy(#6.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 0,
+              "guard": "or(and(not(truthy(#6.isOpen)), or(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), and(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))), not(or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1)))))))), truthy(#6.isOpen))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(not(truthy(#6.isOpen)), or(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), and(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))), not(or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1)))))))), truthy(#6.isOpen))",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/actual/node_modules/react-aria-components/dist/private/Modal.mjs:96:5",
+              "side": 1,
+              "guard": "not(or(and(not(truthy(#6.isOpen)), or(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), and(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))), not(or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1)))))))), truthy(#6.isOpen)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 24,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 32,
+        "assignments": 10,
+        "replayed": 10,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
       "note": null,
       "failure": null
@@ -35329,8 +35574,8 @@
       "id": "foxel",
       "revision": "d5a24c69e180711e55abeddb4e31ce06e60a456f",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:12:02.275Z",
-      "durationMs": 8619,
+      "capturedAt": "2026-09-10T11:34:41.177Z",
+      "durationMs": 84550,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -35341,34 +35586,25 @@
         "pageErrors": [
           "Failed to load resource: net::ERR_CONNECTION_REFUSED",
           "Failed to load resource: net::ERR_CONNECTION_REFUSED",
-          "Failed to check initialization status: TypeError: Failed to fetch\n    at request (http://localhost:5173/src/api/client.ts:25:22)\n    at status (http://localhost:5173/src/api/config.ts:18:10)\n    at checkInitialization (http://localhost:5173/src/App.tsx:62:34)\n    at http://localhost:5173/src/App.tsx:78:5\n    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:18567:20)\n    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:997:72)\n    at commitHookEffectListMount (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:9411:163)\n    at commitHookPassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:9465:60)\n    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:11040:29)\n    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=7db57128:11010:13)"
+          "Failed to check initialization status: TypeError: Failed to fetch\n    at request (http://localhost:5173/src/api/client.ts:25:22)\n    at status (http://localhost:5173/src/api/config.ts:18:10)\n    at checkInitialization (http://localhost:5173/src/App.tsx:62:34)\n    at http://localhost:5173/src/App.tsx:78:5\n    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=76535d91:18567:20)\n    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=76535d91:997:72)\n    at commitHookEffectListMount (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=76535d91:9411:163)\n    at commitHookPassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=76535d91:9465:60)\n    at commitPassiveMountOnFiber (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=76535d91:11040:29)\n    at recursivelyTraversePassiveMountEffects (http://localhost:5173/node_modules/.vite/deps/chunk-UTQ67KV7.js?v=76535d91:11010:13)"
         ],
         "title": "Foxel"
       },
       "static": {
         "stats": {
-          "fiberCount": 12,
+          "fiberCount": 121,
           "textCount": 0,
-          "branchCount": 1,
+          "branchCount": 12,
           "repeatCount": 0,
-          "opaqueCount": 0,
-          "unknownCount": 2,
-          "modulesLoaded": 2512
+          "opaqueCount": 1,
+          "unknownCount": 6,
+          "modulesLoaded": 2520
         },
-        "diagnostics": [
-          {
-            "code": "budget-exhausted",
-            "count": 23
-          },
-          {
-            "code": "max-call-depth",
-            "count": 3
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 4,
+        "status": "truncated",
+        "matchedFibers": 14,
         "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
@@ -35376,32 +35612,536 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 10,
-        "wildcards": [
-          {
-            "path": "root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <div> [HostComponent] > <Spin> [FunctionComponent]",
-            "reason": "step budget exhausted",
-            "absorbedFibers": 10,
-            "heads": [
-              "<div> [HostComponent]"
-            ]
-          }
-        ],
-        "branchesResolved": 1,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
         "repeatIterations": 0,
-        "transparentFibers": 0,
+        "transparentFibers": 3,
         "runtimeFibers": 14,
-        "staticFibers": 4,
+        "staticFibers": 27,
         "coverage": 1,
-        "strictCoverage": 0.2857142857142857,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 7,
+        "stepsUsed": 16,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 15,
+        "stateCount": 15,
+        "clusters": 2,
+        "tree": {
+          "nodes": 112,
+          "inputs": 9,
+          "guards": 28,
+          "branches": 13,
+          "repeats": 0,
+          "opaque": 1,
+          "wildcards": 6
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "eq(choice(#3), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#3), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+              "side": 0,
+              "guard": "eq(choice(#3), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#3), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+              "side": 1,
+              "guard": "not(eq(choice(#3), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.warning)",
+              "reason": "if (@rc-component/util#default().warning)",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+              "side": 0,
+              "guard": "truthy(#4.warning)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#5), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+              "side": 0,
+              "guard": "or(and(eq(choice(#5), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "#7.length > 0",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:338:3",
+              "side": 0,
+              "guard": "#7.length > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.is_initialized)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:18:12",
+              "side": 0,
+              "guard": "truthy(#2.is_initialized)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.is_initialized)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:18:12",
+              "side": 1,
+              "guard": "not(truthy(#2.is_initialized))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "#7.length > 0",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:338:3",
+              "side": 1,
+              "guard": "not(#7.length > 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#5), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#5), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.warning)",
+              "reason": "if (@rc-component/util#default().warning)",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+              "side": 1,
+              "guard": "not(truthy(#4.warning))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+              "side": 0,
+              "guard": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1)))))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 3,
+          "possible": 15,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 15,
+        "assignments": 26,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [
+          {
+            "stateIndices": [
+              0,
+              12
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "eq(choice(#1), 0)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+                "reason": "if (branch(true | <boolean>))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.warning)",
+                "reason": "if (@rc-component/util#default().warning)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "if (branch(false | <boolean> | true))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "#7.length > 0",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:338:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.is_initialized)",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:18:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 2,
+            "divergence": {
+              "path": "commit 2 > root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent][0]",
+              "expected": "<ContextProvider> [ContextProvider]",
+              "actual": "?unknown(alternative nested 2 branches away from the preferred path)"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              14
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "eq(choice(#1), 0)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+                "reason": "if (branch(true | <boolean>))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.warning)",
+                "reason": "if (@rc-component/util#default().warning)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "if (branch(false | <boolean> | true))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "#7.length > 0",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:338:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 2,
+            "divergence": {
+              "path": "commit 2 > root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent][0]",
+              "expected": "<ContextProvider> [ContextProvider]",
+              "actual": "?unknown(alternative nested 2 branches away from the preferred path)"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              1,
+              11
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "eq(choice(#1), 0)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+                "reason": "if (branch(true | <boolean>))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.warning)",
+                "reason": "if (@rc-component/util#default().warning)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "if (branch(false | <boolean> | true))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 2,
+            "divergence": {
+              "path": "commit 2 > root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent][0]",
+              "expected": "?unknown(alternative nested 2 branches away from the preferred path)",
+              "actual": "<MotionCacheContext> [ContextProvider]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              1,
+              12
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "eq(choice(#1), 0)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+                "reason": "if (branch(true | <boolean>))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.warning)",
+                "reason": "if (@rc-component/util#default().warning)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "if (branch(false | <boolean> | true))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "#7.length > 0",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:338:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.is_initialized)",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:18:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 2,
+            "divergence": {
+              "path": "commit 2 > root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent][0]",
+              "expected": "<ContextProvider> [ContextProvider]",
+              "actual": "?unknown(alternative nested 2 branches away from the preferred path)"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              1,
+              14
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "eq(choice(#1), 0)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/spin/Indicator/Progress.js:45:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, null)))",
+                "reason": "if (branch(true | <boolean>))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/src/App.tsx:57:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.warning)",
+                "reason": "if (@rc-component/util#default().warning)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:412:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#8), 1), not(eq(#6.override.motion, true))), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "if (branch(false | <boolean> | true))",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/MotionWrapper.js:21:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "#7.length > 0",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/home/ubuntu/bippy-corpus/foxel/web/node_modules/antd/es/config-provider/index.js:338:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 2,
+            "divergence": {
+              "path": "commit 2 > root > <BrowserRouter> [FunctionComponent] > <App> [FunctionComponent] > <I18nProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppInner> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ConfigProvider> [FunctionComponent] > <ProviderChildren> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <MotionWrapper> [FunctionComponent][0]",
+              "expected": "<ContextProvider> [ContextProvider]",
+              "actual": "?unknown(alternative nested 2 branches away from the preferred path)"
+            },
+            "isCorrected": false
+          }
+        ]
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T07:24:29.116Z",
+      "note": null,
       "failure": null
     },
     {
@@ -35682,6 +36422,96 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T08:40:06.031Z",
+      "failure": null
+    },
+    {
+      "id": "geeky-nextjs",
+      "revision": "dc59a2bd646b6e1fed01e5a37d779879964a6428",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T11:36:29.225Z",
+      "durationMs": 2370,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 829,
+        "commits": 5,
+        "pageErrors": [
+          "Warning: Failed %s type: %s%s prop The prop `url` is marked as required in `MailchimpSubscribe`, but its value is `undefined`. \n    at MailchimpSubscribe (webpack-internal:///./node_modules/react-mailchimp-subscribe/es/index.js:33:5)\n    at Sidebar (webpack-internal:///./layouts/partials/Sidebar.js:37:11)\n    at div\n    at div\n    at section\n    at main\n    at Base (webpack-internal:///./layouts/Baseof.js:21:11)\n    at Home (webpack-internal:///./pages/index.js:33:11)\n    at f (webpack-internal:///./node_modules/next-themes/dist/index.module.js:8:597)\n    at $ (webpack-internal:///./node_modules/next-themes/dist/index.module.js:8:348)\n    at JsonContext (webpack-internal:///./context/state.js:17:11)\n    at App (webpack-internal:///./pages/_app.js:27:11)\n    at PathnameContextProviderAdapter (webpack-internal:///./node_modules/next/dist/shared/lib/router/adapters.js:62:11)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:301:63)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:850:919)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:61:1)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:171:11)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:346:11)"
+        ],
+        "title": "Geeky Nextjs"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 812,
+          "textCount": 25,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 91
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 729,
+        "matchedText": 25,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 69,
+        "status": "exact",
+        "runtimeFibers": 754,
+        "staticFibers": 754,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 754,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 754,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T10:02:59.071Z",
       "failure": null
     },
     {
@@ -36171,8 +37001,8 @@
       "id": "graphic-walker",
       "revision": "538029764c2a9cfbb6b9a59a83f7d13ae30089ac",
       "framework": "spa",
-      "capturedAt": "2026-09-08T14:45:31.482Z",
-      "durationMs": 702,
+      "capturedAt": "2026-09-10T11:36:57.189Z",
+      "durationMs": 13062,
       "runtime": {
         "reactVersion": "19.2.0",
         "rendererName": "react-dom",
@@ -36209,23 +37039,23 @@
         "opaqueRenamed": 0,
         "unmatchedSlots": [
           {
-            "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque)",
-            "reason": "default.div from react-shadow is not analyzed",
-            "head": "<ForwardRef> [ForwardRef]",
-            "skippedFibers": 97,
-            "divergence": {
-              "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque) > <ContextProvider> [ContextProvider][4]",
-              "expected": "<end of children>",
-              "actual": "<Ye> [FunctionComponent]"
-            }
-          },
-          {
             "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <MemoComponent> [MemoComponent] > <ForwardRef> [ForwardRef] > <ForwardRef> [ForwardRef] > <ContextProvider> [ContextProvider] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque)",
             "reason": "default.div from react-shadow is not analyzed",
             "head": "<ForwardRef> [ForwardRef]",
             "skippedFibers": 1419,
             "divergence": {
               "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <FunctionComponent> [FunctionComponent] > <MemoComponent> [MemoComponent] > <ForwardRef> [ForwardRef] > <ForwardRef> [ForwardRef] > <ContextProvider> [ContextProvider] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque) > <ContextProvider> [ContextProvider][4]",
+              "expected": "<end of children>",
+              "actual": "<Ye> [FunctionComponent]"
+            }
+          },
+          {
+            "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque)",
+            "reason": "default.div from react-shadow is not analyzed",
+            "head": "<ForwardRef> [ForwardRef]",
+            "skippedFibers": 97,
+            "divergence": {
+              "path": "root > <FullGraphicWalker> [FunctionComponent] > <DataSourceSegmentComponent> [FunctionComponent] > <ShadowDom2> [FunctionComponent] > <root.div> (opaque) > <ContextProvider> [ContextProvider][4]",
               "expected": "<end of children>",
               "actual": "<Ye> [FunctionComponent]"
             }
@@ -36241,13 +37071,44 @@
         "coverage": 1,
         "strictCoverage": 0.005901639344262295,
         "divergence": null,
-        "stepsUsed": 68,
+        "stepsUsed": 1731,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 21,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 2,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T09:03:30.882Z",
+      "note": null,
       "failure": null
     },
     {
@@ -36807,8 +37668,8 @@
       "id": "hooks-admin",
       "revision": "0f0735266b71ca70d619d6ccb47e9a988d992034",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T14:45:21.859Z",
-      "durationMs": 473,
+      "capturedAt": "2026-09-10T11:53:20.407Z",
+      "durationMs": 12194,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -36823,52 +37684,173 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 51,
+          "fiberCount": 54,
           "textCount": 0,
-          "branchCount": 3,
+          "branchCount": 4,
           "repeatCount": 0,
           "opaqueCount": 10,
-          "unknownCount": 5,
+          "unknownCount": 6,
           "modulesLoaded": 78
         },
         "diagnostics": []
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 23,
+        "matchedFibers": 8,
         "matchedText": 0,
-        "opaqueSubtrees": 10,
-        "opaqueSkippedFibers": 115,
-        "slotsMatched": 7,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 153,
+        "slotsMatched": 1,
         "slotsUnmatched": 0,
-        "opaqueRenamed": 3,
+        "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 34,
+        "wildcardAbsorbedFibers": 12,
         "wildcards": [
           {
-            "path": "root > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <Connect(App)> [SimpleMemoComponent] > <ReactRedux> [ContextProvider] > <App> [FunctionComponent] > <HashRouter> [FunctionComponent] > <ConfigProvider> (opaque) > <AuthRouter> [FunctionComponent] > <Route> [ContextProvider] > <Login> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Connect(LoginForm)> [SimpleMemoComponent] > <LoginForm> [FunctionComponent] > <Form> (opaque) > <Form.Item> (opaque) > <Button> (opaque)",
-            "reason": "value from react-i18next (useTranslation().t())",
-            "absorbedFibers": 34,
+            "path": "root > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <Connect(App)> [SimpleMemoComponent] > <ReactRedux> [ContextProvider] > <App> [FunctionComponent] > <HashRouter> [FunctionComponent] > <ConfigProvider> (opaque) > <AuthRouter> [FunctionComponent]",
+            "reason": "react-router: route is repeat",
+            "absorbedFibers": 12,
             "heads": [
-              "<ContextProvider> [ContextProvider]"
+              "<ForwardRef> [ForwardRef]"
             ]
           }
         ],
-        "branchesResolved": 3,
+        "branchesResolved": 2,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "runtimeFibers": 172,
+        "transparentFibers": 3,
+        "status": "partial",
+        "runtimeFibers": 173,
         "staticFibers": 33,
         "coverage": 1,
-        "strictCoverage": 0.13372093023255813,
+        "strictCoverage": 0.046242774566473986,
         "divergence": null,
-        "stepsUsed": 207,
+        "stepsUsed": 229,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 6,
+        "stateCount": 6,
+        "clusters": 1,
+        "tree": {
+          "nodes": 43,
+          "inputs": 4,
+          "guards": 8,
+          "branches": 4,
+          "repeats": 0,
+          "opaque": 10,
+          "wildcards": 6
+        },
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "1 route(s) could not be read statically and may also match /login",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "1 route(s) could not be read statically and may also match /login",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 0,
+              "guard": "truthy(#2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 1,
+              "guard": "not(truthy(#2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 0,
+              "guard": "truthy(#3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 1,
+              "guard": "not(truthy(#3))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "1 route(s) could not be read statically and may also match /login",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/hooks-admin/node_modules/react-redux/es/components/connect.js:195:5",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 6,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 6,
+        "assignments": 6,
+        "replayed": 6,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T07:17:13.443Z",
+      "note": null,
       "failure": null
     },
     {
@@ -62504,6 +63486,122 @@
       "failure": null
     },
     {
+      "id": "morethan-log",
+      "revision": "272cd3e73d6fbc650c5d95c6da0846776d39e67a",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T11:36:20.727Z",
+      "durationMs": 658,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 337,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "morethan-log"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 332,
+          "textCount": 22,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 92
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 296,
+        "matchedText": 16,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 19,
+        "status": "exact",
+        "runtimeFibers": 312,
+        "staticFibers": 312,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 314,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 316,
+          "inputs": 1,
+          "guards": 4,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "eq(#1, 2022)",
+              "reason": "conditional on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "eq(#1, 2022)",
+              "reason": "conditional on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
+              "side": 0,
+              "guard": "eq(#1, 2022)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#1, 2022)",
+              "reason": "conditional on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
+              "side": 1,
+              "guard": "not(eq(#1, 2022))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T10:07:18.952Z",
+      "failure": null
+    },
+    {
       "id": "morphic",
       "revision": "be62d2a85c0397c4b3cb3315cd3a5c56a44f6425",
       "framework": "next-app",
@@ -63787,8 +64885,8 @@
       "id": "next-mdx-blog",
       "revision": "90d71ae00cc1518394e6f0fa635bc3d9e3adbff9",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T14:46:42.430Z",
-      "durationMs": 332,
+      "capturedAt": "2026-09-10T11:36:05.821Z",
+      "durationMs": 11571,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -63809,7 +64907,12 @@
           "unknownCount": 1,
           "modulesLoaded": 3
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
       },
       "report": {
         "status": "partial",
@@ -63821,12 +64924,12 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 60,
+        "wildcardAbsorbedFibers": 63,
         "wildcards": [
           {
             "path": "root > <body> [HostSingleton] > <div> [HostComponent] > <main> [HostComponent]",
             "reason": "page.mdx is compiled by the bundler's MDX loader",
-            "absorbedFibers": 60,
+            "absorbedFibers": 63,
             "heads": [
               "<h1> [HostComponent]",
               "\"\\n\"",
@@ -63854,19 +64957,50 @@
         ],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "runtimeFibers": 70,
+        "transparentFibers": 27,
+        "runtimeFibers": 73,
         "staticFibers": 10,
         "coverage": 1,
-        "strictCoverage": 0.14285714285714285,
+        "strictCoverage": 0.136986301369863,
         "divergence": null,
         "stepsUsed": 11,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 11,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T07:21:29.586Z",
+      "note": null,
       "failure": null
     },
     {
@@ -63985,8 +65119,8 @@
       "id": "nextjs-blog-boilerplate",
       "revision": "8b29f57b8da07127bf59fcdad68b9b4e9e1d8770",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T14:46:44.192Z",
-      "durationMs": 503,
+      "capturedAt": "2026-09-10T11:36:18.622Z",
+      "durationMs": 11180,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -63999,19 +65133,24 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 56,
-          "textCount": 9,
-          "branchCount": 2,
+          "fiberCount": 145,
+          "textCount": 18,
+          "branchCount": 1,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
-          "modulesLoaded": 11
+          "unknownCount": 0,
+          "modulesLoaded": 13
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 35,
+        "status": "exact",
+        "matchedFibers": 60,
         "matchedText": 8,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
@@ -64019,36 +65158,82 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 25,
-        "wildcards": [
-          {
-            "path": "root > <MyApp> [FunctionComponent] > <Index> [FunctionComponent] > <Main> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <BlogGallery> [FunctionComponent] > <ul> [HostComponent]",
-            "reason": "call of property \"posts\" may come from a spread of unknown(pageProps come from data fetching at request time)",
-            "absorbedFibers": 25,
-            "heads": [
-              "<li> key=\"2020-08-08-my-fifth-post\" [HostComponent]",
-              "<li> key=\"2020-07-07-my-forth-post\" [HostComponent]",
-              "<li> key=\"2020-06-06-my-third-post\" [HostComponent]",
-              "<li> key=\"nextjs-blog-boilerplate-presentation\" [HostComponent]",
-              "<li> key=\"2020-03-03-my-second-post\" [HostComponent]"
-            ]
-          }
-        ],
-        "branchesResolved": 2,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
         "repeatIterations": 0,
-        "transparentFibers": 0,
+        "transparentFibers": 9,
         "runtimeFibers": 68,
-        "staticFibers": 46,
+        "staticFibers": 68,
         "coverage": 1,
-        "strictCoverage": 0.6323529411764706,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 47,
+        "stepsUsed": 69,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 137,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T07:28:00.770Z",
+      "note": null,
       "failure": null
     },
     {
@@ -64225,6 +65410,101 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-10T05:28:19.076Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-mdx-blog",
+      "revision": "ecdb127d1d450b96fd20d759f16be53fa210b37a",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T11:36:25.355Z",
+      "durationMs": 2118,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-1a001dac6-20230812",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 155,
+        "commits": 4,
+        "pageErrors": [
+          "Warning: Extra attributes from the server: %s%s class,style \n    at html\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:73:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:81:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:54:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:62:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/dev-root-not-found-boundary.js:32:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/internal/ReactDevOverlay.js:66:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:326:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:147:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:82:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:110:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:417:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:123:11)\n    at RSCComponent\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:139:11)"
+        ],
+        "title": "Hunter Chang - Website"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 95,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1299
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 86,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 17,
+        "status": "exact",
+        "runtimeFibers": 91,
+        "staticFibers": 91,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 91,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 91,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T09:51:35.940Z",
       "failure": null
     },
     {
@@ -64957,6 +66237,388 @@
       "failure": null
     },
     {
+      "id": "nextjs-velite-blog-template",
+      "revision": "fd8820501be4a36fd47c1abd04bca42760408111",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T11:36:27.584Z",
+      "durationMs": 1542,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-60a927d04-20240113",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 352,
+        "commits": 5,
+        "pageErrors": [
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s className \"scroll-pt-[3.5rem] light\" \"scroll-pt-[3.5rem]\" \n    at html\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/redirect-boundary.js:73:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/redirect-boundary.js:81:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/react-dev-overlay/internal/ReactDevOverlay.js:84:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:307:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/app-router.js:182:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/error-boundary.js:114:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/error-boundary.js:161:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/app-router.js:538:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/app-index.js:129:11)\n    at RSCComponent\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/app-index.js:145:11)"
+        ],
+        "title": "JollyBlog"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 282,
+          "textCount": 22,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1495
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 250,
+        "matchedText": 22,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 23,
+        "status": "exact",
+        "runtimeFibers": 272,
+        "staticFibers": 272,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 272,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 272,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T09:51:53.320Z",
+      "failure": null
+    },
+    {
+      "id": "nextly-template",
+      "revision": "97b3fe2b2bf0a40cf3ca2350752f9aec42748867",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T11:36:21.515Z",
+      "durationMs": 875,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 488,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Create Next App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 440,
+          "textCount": 24,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 478
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 399,
+        "matchedText": 23,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 27,
+        "status": "exact",
+        "runtimeFibers": 422,
+        "staticFibers": 422,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 423,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "stateCount": 5,
+        "clusters": 2,
+        "tree": {
+          "nodes": 1256,
+          "inputs": 2,
+          "guards": 7,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 3,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/nextly-template/node_modules/@headlessui/react/dist/utils/render.js:1:514",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/nextly-template/node_modules/@headlessui/react/dist/utils/render.js:1:514",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/nextly-template/node_modules/@headlessui/react/dist/utils/render.js:1:514",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 5,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T09:51:12.019Z",
+      "failure": null
+    },
+    {
+      "id": "nextsimplestarter",
+      "revision": "338a8e4bb85181613fa9f344721307a4b693bb71",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T11:36:22.496Z",
+      "durationMs": 2245,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 298,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Todo App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 166,
+          "textCount": 6,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 854
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 140,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 30,
+        "status": "exact",
+        "runtimeFibers": 146,
+        "staticFibers": 146,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 147,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 2,
+        "tree": {
+          "nodes": 281,
+          "inputs": 2,
+          "guards": 6,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(<boolean> | undefined | 0)",
+              "location": "/home/ubuntu/bippy-corpus/nextsimplestarter/node_modules/@mui/material/Badge/useBadge.js:33:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(<boolean> | undefined | 0)",
+              "location": "/home/ubuntu/bippy-corpus/nextsimplestarter/node_modules/@mui/material/Badge/useBadge.js:33:24",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(<boolean> | undefined | 0)",
+              "location": "/home/ubuntu/bippy-corpus/nextsimplestarter/node_modules/@mui/material/Badge/useBadge.js:33:24",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 4,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T10:02:39.386Z",
+      "failure": null
+    },
+    {
       "id": "noteworthy",
       "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
       "framework": "spa",
@@ -65330,6 +66992,94 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:05:28.896Z",
+      "failure": null
+    },
+    {
+      "id": "notion-blog",
+      "revision": "362af9e5457cdc8c11fa4d0adac6e81dcb902975",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T11:36:20.473Z",
+      "durationMs": 147,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 141,
+        "commits": 5,
+        "pageErrors": [],
+        "title": "Home | My Notion Blog"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 129,
+          "textCount": 20,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 16
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 108,
+        "matchedText": 20,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 7,
+        "status": "exact",
+        "runtimeFibers": 128,
+        "staticFibers": 128,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 128,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 128,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:52:18.577Z",
       "failure": null
     },
     {
@@ -94433,45 +96183,57 @@
       "id": "react-starter-kit",
       "revision": "3c5132eb3d0a02dc8090eb6248f8959744e18d12",
       "framework": "spa",
-      "capturedAt": "2026-09-08T08:11:39.327Z",
-      "durationMs": 19783,
+      "capturedAt": "2026-09-10T11:42:23.134Z",
+      "durationMs": 93327,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
-        "fibers": 41,
-        "commits": 4,
+        "fibers": 82,
+        "commits": 8,
         "pageErrors": [
-          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
-          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
-          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
-          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
-          "%o\n\n%s\n\n%s\n {status: 500, statusText: Internal Server Error, routerCode: BEFORE_LOAD} The above error occurred in the <MatchInnerImpl> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.",
-          "Uncaught error: {status: 500, statusText: Internal Server Error, routerCode: BEFORE_LOAD}"
+          "[Better Auth] Error verifying passkey Error: No <input> with \"webauthn\" as the only or last value in its `autocomplete` attribute was detected\n    at startAuthentication (http://localhost:5173/@fs/home/ubuntu/bippy-corpus/react-starter-kit/.cache/vite-app/deps/@better-auth_passkey_client.js?v=79c57402:392:13)\n    at async Proxy.signInPasskey (http://localhost:5173/@fs/home/ubuntu/bippy-corpus/react-starter-kit/.cache/vite-app/deps/@better-auth_passkey_client.js?v=79c57402:438:27)\n    at async setupConditionalUI (http://localhost:5173/components/auth/passkey-login.tsx:34:32)",
+          "[Better Auth] Error verifying passkey Error: No <input> with \"webauthn\" as the only or last value in its `autocomplete` attribute was detected\n    at startAuthentication (http://localhost:5173/@fs/home/ubuntu/bippy-corpus/react-starter-kit/.cache/vite-app/deps/@better-auth_passkey_client.js?v=79c57402:392:13)\n    at async Proxy.signInPasskey (http://localhost:5173/@fs/home/ubuntu/bippy-corpus/react-starter-kit/.cache/vite-app/deps/@better-auth_passkey_client.js?v=79c57402:438:27)\n    at async setupConditionalUI (http://localhost:5173/components/auth/passkey-login.tsx:34:32)"
         ],
         "title": "Acme Co."
       },
       "static": {
         "stats": {
-          "fiberCount": 23,
+          "fiberCount": 0,
           "textCount": 0,
-          "branchCount": 1,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 2,
-          "modulesLoaded": 1866
+          "unknownCount": 0,
+          "modulesLoaded": 1867
         },
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 36
+            "count": 29
+          },
+          {
+            "code": "dynamic-key",
+            "count": 2
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          },
+          {
+            "code": "render-error",
+            "count": 1
           }
         ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 7,
+        "status": "unresolved",
+        "matchedFibers": 0,
         "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
@@ -94479,32 +96241,51 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 33,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RouterProvider> [FunctionComponent] > <RouterContextProvider> [FunctionComponent]",
-            "reason": "<provider>: window.__TSR_ROUTER_CONTEXT__",
-            "absorbedFibers": 33,
-            "heads": [
-              "<ContextProvider> [ContextProvider]"
-            ]
-          }
-        ],
-        "branchesResolved": 1,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "runtimeFibers": 40,
-        "staticFibers": 16,
-        "coverage": 1,
-        "strictCoverage": 0.175,
+        "runtimeFibers": 0,
+        "staticFibers": 0,
+        "coverage": 0,
+        "strictCoverage": 0,
         "divergence": null,
-        "stepsUsed": 19,
+        "stepsUsed": 0,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 0,
+        "stateCount": 0,
+        "clusters": 0,
+        "tree": {
+          "nodes": 0,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 0,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T07:23:55.274Z",
+      "note": "React failed to render the materialized tree",
       "failure": null
     },
     {
@@ -142701,27 +144482,25 @@
       "id": "shadcn-crm-dashboard",
       "revision": "f262d7570fbf315992516fc6a90257c5e4ad812e",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T14:45:29.288Z",
-      "durationMs": 684,
+      "capturedAt": "2026-09-10T11:36:43.636Z",
+      "durationMs": 13453,
       "runtime": {
         "reactVersion": "19.1.0-canary-029e8bd6-20250306",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 1275,
-        "commits": 8,
-        "pageErrors": [
-          "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <RenderFromTemplateContext>\n      <ScrollAndFocusHandler segmentPath={[...]}>\n        <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>\n          <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>\n            <LoadingBoundary loading={null}>\n              <HTTPAccessFallbackBoundary notFound={[...]} forbidden={undefined} unauthorized={undefined}>\n                <HTTPAccessFallbackErrorBoundary pathname=\"/dashboard...\" notFound={[...]} forbidden={undefined} ...>\n                  <RedirectBoundary>\n                    <RedirectErrorBoundary router={{...}}>\n                      <InnerLayoutRouter url=\"/dashboard...\" tree={[...]} cacheNode={{lazyData:null, ...}} ...>\n                        <DashboardLayout>\n                          <DashboardLayoutWrapper>\n                            <DashboardSkeleton>\n                              <div\n+                               className=\"flex h-full w-full flex-col\"\n-                               className=\"group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-...\"\n+                               aria-busy=\"true\"\n-                               aria-busy={null}\n+                               aria-label=\"Loading dashboard\"\n-                               aria-label={null}\n-                               data-slot=\"sidebar-wrapper\"\n-                               style={{--sidebar-width:\"16rem\",--sidebar-width-icon:\"3rem\"}}\n                              >\n                                <div\n+                                 className=\"flex h-16 items-center justify-between border-b px-4\"\n-                                 className=\"group peer text-sidebar-foreground hidden md:block\"\n+                                 aria-hidden=\"true\"\n-                                 aria-hidden={null}\n-                                 data-state=\"expanded\"\n-                                 data-collapsible=\"\"\n-                                 data-variant=\"inset\"\n-                                 data-side=\"left\"\n-                                 data-slot=\"sidebar\"\n                                >\n                                  <div\n+                                   className=\"flex items-center space-x-4\"\n-                                   className=\"relative w-(--sidebar-width) bg-transparent transition-[width] duration...\"\n-                                   data-slot=\"sidebar-gap\"\n                                  >\n                                    <Skeleton className=\"h-8 w-8\">\n+                                     <div data-slot=\"skeleton\" className=\"bg-accent animate-pulse rounded-md h-8 w-8\">\n                                    ...\n                                  ...\n                                ...\n"
-        ],
+        "commits": 10,
+        "pageErrors": [],
         "title": "Piper - Customer Relationship Management"
       },
       "static": {
         "stats": {
-          "fiberCount": 1433,
-          "textCount": 37,
-          "branchCount": 1,
+          "fiberCount": 822,
+          "textCount": 25,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 402,
+          "opaqueCount": 213,
           "unknownCount": 0,
           "modulesLoaded": 37
         },
@@ -142729,241 +144508,99 @@
       },
       "report": {
         "status": "partial",
-        "matchedFibers": 411,
-        "matchedText": 8,
-        "opaqueSubtrees": 143,
-        "opaqueSkippedFibers": 638,
-        "slotsMatched": 76,
-        "slotsUnmatched": 19,
-        "opaqueRenamed": 90,
+        "matchedFibers": 3,
+        "matchedText": 0,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 1168,
+        "slotsMatched": 1,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 2,
         "unmatchedSlots": [
           {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarHeader> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <SidebarMenuButton> [FunctionComponent] > <Comp> (opaque)",
-            "reason": "Slot from @radix-ui/react-slot is not analyzed",
-            "head": "<Slot.Slot> [ForwardRef]",
-            "skippedFibers": 12,
+            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque)",
+            "reason": "Provider from @radix-ui/react-tooltip is not analyzed",
+            "head": "<TooltipProvider> [FunctionComponent]",
+            "skippedFibers": 1163,
             "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarHeader> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <SidebarMenuButton> [FunctionComponent] > <Comp> (opaque)[0]",
-              "expected": "<LinkComponent> [FunctionComponent]",
-              "actual": "<Slot.SlotClone> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Dashboard\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/overview\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Dashboard\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/overview\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Dashboard\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Leads\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/leads\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Leads\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/leads\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Leads\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Leads\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/leads\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)",
-            "reason": "CollapsibleContent from @radix-ui/react-collapsible is not analyzed",
-            "head": "<CollapsibleContent> [ForwardRef]",
-            "skippedFibers": 5,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Leads\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/leads\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)[0]",
-              "expected": "<SidebarSubmenuWrapper> [FunctionComponent]",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Customers\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/customers\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Customers\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/customers\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Customers\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Customers\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/customers\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)",
-            "reason": "CollapsibleContent from @radix-ui/react-collapsible is not analyzed",
-            "head": "<CollapsibleContent> [ForwardRef]",
-            "skippedFibers": 5,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Customers\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/customers\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)[0]",
-              "expected": "<SidebarSubmenuWrapper> [FunctionComponent]",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Orders\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/orders\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Orders\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/orders\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Orders\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Orders\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/orders\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)",
-            "reason": "CollapsibleContent from @radix-ui/react-collapsible is not analyzed",
-            "head": "<CollapsibleContent> [ForwardRef]",
-            "skippedFibers": 5,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Orders\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/orders\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)[0]",
-              "expected": "<SidebarSubmenuWrapper> [FunctionComponent]",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Invoices\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/invoices\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Invoices\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/invoices\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Invoices\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Invoices\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/invoices\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)",
-            "reason": "CollapsibleContent from @radix-ui/react-collapsible is not analyzed",
-            "head": "<CollapsibleContent> [ForwardRef]",
-            "skippedFibers": 5,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Invoices\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/invoices\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)[0]",
-              "expected": "<SidebarSubmenuWrapper> [FunctionComponent]",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Reports\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/reports/sales\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Reports\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/reports/sales\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Reports\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Reports\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/reports/sales\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)",
-            "reason": "CollapsibleContent from @radix-ui/react-collapsible is not analyzed",
-            "head": "<CollapsibleContent> [ForwardRef]",
-            "skippedFibers": 5,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Reports\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/reports/sales\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)[0]",
-              "expected": "<SidebarSubmenuWrapper> [FunctionComponent]",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Settings\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/settings/general\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-tooltip is not analyzed",
-            "head": "<TooltipPortalProvider> [FunctionComponent]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Settings\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/settings/general\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleTrigger> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleTrigger> (opaque) > <SidebarMenuButton> [FunctionComponent] > <Tooltip> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <TooltipPrimitive.Root> (opaque) > <TooltipContent> [FunctionComponent] > <TooltipPrimitive.Portal> (opaque) > <TooltipPrimitive.Content> (opaque)[0]",
-              "expected": "\"Settings\"",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Settings\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/settings/general\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)",
-            "reason": "CollapsibleContent from @radix-ui/react-collapsible is not analyzed",
-            "head": "<CollapsibleContent> [ForwardRef]",
-            "skippedFibers": 5,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavMain> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <Collapsible> key=\"Settings\" [FunctionComponent] > <CollapsiblePrimitive.Root> (opaque) > <SidebarMenuWrapper> key=\"/dashboard/settings/general\" [FunctionComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <CollapsibleContent> [FunctionComponent] > <CollapsiblePrimitive.CollapsibleContent> (opaque)[0]",
-              "expected": "<SidebarSubmenuWrapper> [FunctionComponent]",
-              "actual": "<Presence> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavWorkspace> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> key=\"Customer Management\" [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-dropdown-menu is not analyzed",
-            "head": "<MenuPortal> [FunctionComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavWorkspace> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> key=\"Customer Management\" [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)[0]",
-              "expected": "<DropdownMenuItem> [FunctionComponent]",
-              "actual": "<MenuPortalProvider> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavWorkspace> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> key=\"Sales Performance\" [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-dropdown-menu is not analyzed",
-            "head": "<MenuPortal> [FunctionComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavWorkspace> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> key=\"Sales Performance\" [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)[0]",
-              "expected": "<DropdownMenuItem> [FunctionComponent]",
-              "actual": "<MenuPortalProvider> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavWorkspace> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> key=\"Business Expansion\" [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-dropdown-menu is not analyzed",
-            "head": "<MenuPortal> [FunctionComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarContent> [FunctionComponent] > <div> [HostComponent] > <NavWorkspace> [FunctionComponent] > <SidebarGroup> [FunctionComponent] > <div> [HostComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> key=\"Business Expansion\" [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)[0]",
-              "expected": "<DropdownMenuItem> [FunctionComponent]",
-              "actual": "<MenuPortalProvider> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarFooter> [FunctionComponent] > <div> [HostComponent] > <NavUser> [FunctionComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-dropdown-menu is not analyzed",
-            "head": "<MenuPortal> [FunctionComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <AppSidebar> [FunctionComponent] > <Sidebar> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SidebarFooter> [FunctionComponent] > <div> [HostComponent] > <NavUser> [FunctionComponent] > <SidebarMenu> [FunctionComponent] > <ul> [HostComponent] > <SidebarMenuItem> [FunctionComponent] > <li> [HostComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)[0]",
-              "expected": "<DropdownMenuLabel> [FunctionComponent]",
-              "actual": "<MenuPortalProvider> [FunctionComponent]"
-            }
-          },
-          {
-            "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <DashboardHeader> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <ModeToggle> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)",
-            "reason": "Content from @radix-ui/react-dropdown-menu is not analyzed",
-            "head": "<MenuPortal> [FunctionComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <DashboardLayoutWrapper> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque) > <div> [HostComponent] > <SidebarInset> [FunctionComponent] > <main> [HostComponent] > <DashboardHeader> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <ModeToggle> [FunctionComponent] > <DropdownMenu> [FunctionComponent] > <DropdownMenuPrimitive.Root> (opaque) > <DropdownMenuContent> [FunctionComponent] > <DropdownMenuPrimitive.Portal> (opaque) > <DropdownMenuPrimitive.Content> (opaque)[0]",
-              "expected": "<DropdownMenuItem> [FunctionComponent]",
-              "actual": "<MenuPortalProvider> [FunctionComponent]"
+              "path": "root > <body> [HostSingleton] > <ThemeProvider> [FunctionComponent] > <NextThemesProvider> (opaque) > <TooltipProvider> [FunctionComponent] > <TooltipPrimitive.Provider> (opaque)[0]",
+              "expected": "<DashboardLayoutWrapper> [FunctionComponent]",
+              "actual": "<OverviewPage> [FunctionComponent]"
             }
           }
         ],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 1,
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "runtimeFibers": 1057,
-        "staticFibers": 824,
+        "runtimeFibers": 1171,
+        "staticFibers": 101,
         "coverage": 1,
-        "strictCoverage": 0.39640491958372753,
+        "strictCoverage": 0.0025619128949615714,
         "divergence": null,
-        "stepsUsed": 7616,
+        "stepsUsed": 7677,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 911,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 215,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 0,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T07:37:55.978Z",
+      "note": null,
       "failure": null
     },
     {
@@ -144913,60 +146550,237 @@
       "id": "socialecho",
       "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
       "framework": "react-router",
-      "capturedAt": "2026-09-08T08:11:36.992Z",
-      "durationMs": 979,
+      "capturedAt": "2026-09-10T11:40:23.013Z",
+      "durationMs": 16347,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
-        "fibers": 9,
+        "fibers": 62,
         "commits": 3,
-        "pageErrors": [
-          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
-          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
-        ],
+        "pageErrors": [],
         "title": "Sign In | SocialEcho"
       },
       "static": {
         "stats": {
-          "fiberCount": 109,
+          "fiberCount": 105,
           "textCount": 0,
-          "branchCount": 6,
+          "branchCount": 5,
           "repeatCount": 0,
           "opaqueCount": 2,
-          "unknownCount": 5,
-          "modulesLoaded": 92
+          "unknownCount": 4,
+          "modulesLoaded": 158
         },
         "diagnostics": []
       },
       "report": {
         "status": "partial",
-        "matchedFibers": 5,
+        "matchedFibers": 54,
         "matchedText": 0,
-        "opaqueSubtrees": 0,
-        "opaqueSkippedFibers": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 3,
         "slotsMatched": 0,
-        "slotsUnmatched": 0,
-        "opaqueRenamed": 0,
-        "unmatchedSlots": [],
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [
+          {
+            "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <Helmet> (opaque)",
+            "reason": "Helmet from react-helmet is not analyzed",
+            "head": "<HelmetWrapper> [ClassComponent]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <Helmet> (opaque)[0]",
+              "expected": "<title> [HostComponent]",
+              "actual": "<SideEffect(NullComponent)> [ClassComponent]"
+            }
+          }
+        ],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 2,
+        "branchesResolved": 4,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "runtimeFibers": 5,
-        "staticFibers": 77,
+        "transparentFibers": 4,
+        "runtimeFibers": 57,
+        "staticFibers": 76,
         "coverage": 1,
-        "strictCoverage": 1,
+        "strictCoverage": 0.9473684210526315,
         "divergence": null,
-        "stepsUsed": 8,
+        "stepsUsed": 70,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 7,
+        "stateCount": 7,
+        "clusters": 1,
+        "tree": {
+          "nodes": 96,
+          "inputs": 5,
+          "guards": 12,
+          "branches": 5,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 4
+        },
+        "matchedState": {
+          "index": 6,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | null))",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.auth.userData)",
+              "reason": "conditional on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/App.jsx:43:20",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.auth.signInError)",
+              "reason": "&& on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.auth.successMessage)",
+              "reason": "&& on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | null))",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/AppContainer.jsx:56:10",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.auth.userData)",
+              "reason": "conditional on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/App.jsx:43:20",
+              "side": 0,
+              "guard": "truthy(#2.auth.userData)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.auth.userData)",
+              "reason": "conditional on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/App.jsx:43:20",
+              "side": 1,
+              "guard": "not(truthy(#2.auth.userData))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.auth.signInError)",
+              "reason": "&& on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "side": 0,
+              "guard": "truthy(#3.auth.signInError)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3.auth.signInError)",
+              "reason": "&& on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "side": 1,
+              "guard": "not(truthy(#3.auth.signInError))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.auth.successMessage)",
+              "reason": "&& on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "side": 0,
+              "guard": "truthy(#4.auth.successMessage)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.auth.successMessage)",
+              "reason": "&& on unknown(call of property \"getState\" of null)",
+              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "side": 1,
+              "guard": "not(truthy(#4.auth.successMessage))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 5,
+          "possible": 5,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 7,
+        "assignments": 6,
+        "replayed": 6,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T07:23:34.754Z",
+      "note": null,
       "failure": null
     },
     {
@@ -177335,32 +179149,37 @@
       "id": "taxonomy",
       "revision": "298a8857c7128a0d121e7f699dfd729f23b3966d",
       "framework": "next-app",
-      "capturedAt": "2026-09-08T14:46:51.216Z",
-      "durationMs": 690,
+      "capturedAt": "2026-09-10T11:38:46.127Z",
+      "durationMs": 23306,
       "runtime": {
         "reactVersion": "18.3.0-next-6eadbe0c4-20230425",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
-        "fibers": 304,
-        "commits": 6,
+        "fibers": 307,
+        "commits": 8,
         "pageErrors": [],
         "title": "Taxonomy"
       },
       "static": {
         "stats": {
-          "fiberCount": 218,
-          "textCount": 20,
+          "fiberCount": 219,
+          "textCount": 18,
           "branchCount": 1,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 896
+          "modulesLoaded": 892
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
       },
       "report": {
-        "status": "partial",
+        "status": "exact",
         "matchedFibers": 176,
         "matchedText": 15,
         "opaqueSubtrees": 0,
@@ -177373,7 +179192,7 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "transparentFibers": 0,
+        "transparentFibers": 37,
         "runtimeFibers": 191,
         "staticFibers": 201,
         "coverage": 1,
@@ -177382,10 +179201,78 @@
         "stepsUsed": 192,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 202,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(null | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/taxonomy/app/(marketing)/page.tsx:197:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(null | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/taxonomy/app/(marketing)/page.tsx:197:12",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(null | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/taxonomy/app/(marketing)/page.tsx:197:12",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(null | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/taxonomy/app/(marketing)/page.tsx:197:12",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 3,
+        "assignments": 3,
+        "replayed": 3,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-08T08:16:25.361Z",
+      "note": null,
       "failure": null
     },
     {
@@ -181506,6 +183393,94 @@
       },
       "anchor": null,
       "note": null,
+      "failure": null
+    },
+    {
+      "id": "typescript-nextjs-starter",
+      "revision": "059eaaadc746d48bc54015f904ff52e117aad77f",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T11:36:24.840Z",
+      "durationMs": 122,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 146,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "TypeScript starter for Next.js by João Pedro Schmitz"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 14,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 12,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 26,
+        "status": "exact",
+        "runtimeFibers": 12,
+        "staticFibers": 12,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 12,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 12,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T09:51:23.395Z",
       "failure": null
     },
     {

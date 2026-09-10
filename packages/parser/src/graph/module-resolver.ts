@@ -39,7 +39,8 @@ type ImporterKind = "esm" | "commonjs";
 const NODE_MODULES_SEGMENT = "/node_modules/";
 const JAVASCRIPT_CONFIG_FILE = "jsconfig.json";
 
-const getPathAliasConfigFile = (tsconfigPath: string): string => {
+/** The compiler config a project keeps: `tsconfigPath`, or the sibling `jsconfig.json` a JavaScript project has instead. */
+export const getCompilerConfigFile = (tsconfigPath: string): string => {
   if (existsSync(tsconfigPath)) return tsconfigPath;
   const jsconfigPath = path.join(path.dirname(tsconfigPath), JAVASCRIPT_CONFIG_FILE);
   return existsSync(jsconfigPath) ? jsconfigPath : tsconfigPath;
@@ -141,7 +142,7 @@ export class ModuleResolver {
         primary: new ResolverFactory({
           ...baseOptions,
           tsconfig: options.tsconfigPath
-            ? { configFile: getPathAliasConfigFile(options.tsconfigPath), references: "auto" }
+            ? { configFile: getCompilerConfigFile(options.tsconfigPath), references: "auto" }
             : "auto",
         }),
         fallback: new ResolverFactory(baseOptions),

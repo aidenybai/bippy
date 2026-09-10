@@ -42,28 +42,28 @@ const getSubjectId = (subject: object): number => {
 
 const toInputId = (id: number): string => `#${id}`;
 
-export interface PropertyDerivation {
+interface PropertyDerivation {
   kind: "property";
   object: StaticValue;
   key: string;
 }
 
-export interface ElementDerivation {
+interface ElementDerivation {
   kind: "element";
   list: StaticValue;
 }
 
-export interface MeasureDerivation {
+interface MeasureDerivation {
   kind: "length" | "typeof";
   operand: StaticValue;
 }
 
-export interface AliasDerivation {
+interface AliasDerivation {
   kind: "alias";
   operand: StaticValue;
 }
 
-export interface EqualityDerivation {
+interface EqualityDerivation {
   kind: "equality";
   operand: StaticValue;
   literal: GuardLiteral | undefined;
@@ -71,27 +71,27 @@ export interface EqualityDerivation {
   isNegated: boolean;
 }
 
-export interface ComparisonDerivation {
+interface ComparisonDerivation {
   kind: "comparison";
   operand: StaticValue;
   operator: CompareOperator;
   literal: number;
 }
 
-export interface MembershipDerivation {
+interface MembershipDerivation {
   kind: "membership";
   operand: StaticValue;
   literals: GuardLiteral[];
 }
 
-export interface LogicalDerivation {
+interface LogicalDerivation {
   kind: "logical";
   operator: "&&" | "||";
   left: StaticValue;
   right: StaticValue;
 }
 
-export type Derivation =
+type Derivation =
   | PropertyDerivation
   | ElementDerivation
   | MeasureDerivation

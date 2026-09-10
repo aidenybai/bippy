@@ -214,6 +214,7 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
   if (hasLinkStatus(options)) {
     return {
       displayName: "LinkComponent",
+      isRenderNamed: true,
       render: (props) =>
         element(
           {
@@ -229,9 +230,9 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
     };
   }
   if (options.version !== null && !isVersionAtLeast(options.version, "12.2.0")) {
-    return { displayName: "Link", render };
+    return { displayName: "Link", isRenderNamed: true, render };
   }
-  return { displayName: "LinkComponent", tag: ForwardRefTag, render };
+  return { displayName: "LinkComponent", tag: ForwardRefTag, isRenderNamed: true, render };
 };
 
 /**
@@ -241,6 +242,7 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
  */
 const HEAD_STUB: StubComponent = {
   displayName: "Head",
+  isRenderNamed: true,
   render: () => stubElement(emptyStub("SideEffect"), {}),
 };
 
@@ -459,12 +461,14 @@ const formElement = (props: StaticObjectValue): StaticValue =>
 /** `next/form` is a plain `Form` -> <form> in the App Router and a forwardRef `FormComponent` -> <form> in the Pages Router. */
 const APP_FORM_STUB: StubComponent = {
   displayName: "Form",
+  isRenderNamed: true,
   render: formElement,
 };
 
 const FORWARD_REF_FORM_STUB: StubComponent = {
   displayName: "FormComponent",
   tag: ForwardRefTag,
+  isRenderNamed: true,
   render: formElement,
 };
 
@@ -475,6 +479,7 @@ const FORWARD_REF_FORM_STUB: StubComponent = {
  */
 const scriptStub = (kind: NextRouterKind): StubComponent => ({
   displayName: "Script",
+  isRenderNamed: true,
   render: (props) => {
     if (kind === "next-pages") return NULL_VALUE;
     const strategy = getObjectProperty(props, "strategy");
@@ -549,6 +554,7 @@ const loadableComponent = (
     return stubValue({
       displayName: "LoadableComponent",
       tag: ForwardRefTag,
+      isRenderNamed: true,
       render: (props) =>
         lazyType.inner
           ? element(lazyType.inner, props)

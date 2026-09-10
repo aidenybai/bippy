@@ -231,6 +231,7 @@ import {
   setHostDocumentMember,
   setNativeObjectComposedMember,
   setNativeObjectMember,
+  toNativeObjectPrimitive,
 } from "./native-values.js";
 import {
   HeapJournal,
@@ -323,6 +324,7 @@ import {
   getPreferredTruthiness,
   getStubDisplayName,
   getStubOwnDisplayName,
+  getStubOwnName,
   getAllocationCount,
   getTruthiness,
   hasDefiniteItems,
@@ -3229,7 +3231,8 @@ export class Interpreter {
         const property = type.stub.properties?.get(key);
         if (property) return property;
         if (key === "displayName" || key === "name") {
-          const ownName = getStubOwnDisplayName(type.stub);
+          const ownName =
+            key === "name" ? getStubOwnName(type.stub) : getStubOwnDisplayName(type.stub);
           return ownName === null ? UNDEFINED_VALUE : primitiveValue(ownName);
         }
         return getStubOwnKeys(type.stub.tag).has(key)
@@ -5705,6 +5708,9 @@ const applyUnaryOperator = (
   argument: StaticValue,
 ): StaticValue => {
   if (getThrownOperand([argument])) return argument;
+  if (operator !== "!" && isCoercibleOperand(argument)) {
+    return applyUnaryOperator(operator, toCoercedOperand(argument, "number"));
+  }
   switch (operator) {
     case "!": {
       const truthiness = getTruthiness(argument);
@@ -5748,8 +5754,14 @@ const applyBinaryOperator = (
   if (distributed) return distributed;
   const thrownOperand = getThrownOperand([left, right]);
   if (thrownOperand) return thrownOperand;
-  if (operator === "+" && (left.kind === "regexp" || right.kind === "regexp")) {
-    return applyBinaryOperator(operator, toCoercedOperand(left), toCoercedOperand(right), realm);
+  const coercionHint = getCoercionHint(operator, left, right);
+  if (coercionHint !== null && (isCoercibleOperand(left) || isCoercibleOperand(right))) {
+    return applyBinaryOperator(
+      operator,
+      toCoercedOperand(left, coercionHint),
+      toCoercedOperand(right, coercionHint),
+      realm,
+    );
   }
   if (left.kind === "primitive" && right.kind === "primitive") {
     const computed = computeBinary(operator, left.value, right.value);
@@ -5800,9 +5812,39 @@ const applyBinaryOperator = (
   }
 };
 
-/** `ToPrimitive` of a RegExp operand: `RegExp.prototype.toString`. */
-const toCoercedOperand = (value: StaticValue): StaticValue =>
-  value.kind === "regexp" ? primitiveValue(regExpToString(value)) : value;
+/**
+ * The `ToPrimitive` hint an operator applies to an object operand; null for
+ * operators that compare objects by identity (and `==` between two objects).
+ */
+const getCoercionHint = (
+  operator: string,
+  left: StaticValue,
+  right: StaticValue,
+): "default" | "number" | null => {
+  switch (operator) {
+    case "+":
+      return "default";
+    case "==":
+    case "!=":
+      return left.kind === "primitive" || right.kind === "primitive" ? "default" : null;
+    case "===":
+    case "!==":
+    case "instanceof":
+    case "in":
+      return null;
+    default:
+      return "number";
+  }
+};
+
+const isCoercibleOperand = (value: StaticValue): boolean =>
+  value.kind === "regexp" || value.kind === "native-object";
+
+/** `ToPrimitive` of an object operand: `RegExp.prototype.toString`, or the native object's own conversion. */
+const toCoercedOperand = (value: StaticValue, hint: "default" | "number"): StaticValue => {
+  if (value.kind === "regexp") return primitiveValue(regExpToString(value));
+  return value.kind === "native-object" ? toNativeObjectPrimitive(value, hint) : value;
+};
 
 /** A value that is a number for sure, known or not. */
 const isNumberValue = (value: StaticValue): boolean =>

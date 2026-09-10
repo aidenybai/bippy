@@ -33,7 +33,7 @@ const getSharedGlobal = (name: string): object | null => {
 };
 
 /** The constructor this process implements under a shared global name, or null; `Function.prototype` itself is callable. */
-export const getBuiltinConstructor = (name: string): Function | null => {
+const getBuiltinConstructor = (name: string): Function | null => {
   const shared = getSharedGlobal(name);
   return typeof shared === "function" && isObjectLike(shared.prototype) ? shared : null;
 };

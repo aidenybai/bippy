@@ -186,7 +186,7 @@ const getRootContainerName = (root: FiberRoot): string | null => {
 };
 
 /** The root's fiber tree; its `HostRoot` carries the container's node name (`div`, `#document`, a custom element) as `container`. */
-export const snapshotRoot = (root: FiberRoot): RuntimeFiberSnapshot => {
+const snapshotRoot = (root: FiberRoot): RuntimeFiberSnapshot => {
   const tree = snapshotFiberTree(root.current);
   const container = getRootContainerName(root);
   return container === null ? tree : { ...tree, props: { container } };

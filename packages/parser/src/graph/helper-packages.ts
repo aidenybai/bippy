@@ -3,12 +3,12 @@ import { getPackageNameFromFilePath } from "./module-resolver.js";
 
 const BABEL_RUNTIME_PACKAGE = "@babel/runtime";
 
-const HELPER_PACKAGES = new Set([
-  BABEL_RUNTIME_PACKAGE,
-  "@babel/runtime-corejs3",
-  "tslib",
-  "@swc/helpers",
-]);
+const BABEL_RUNTIME_PACKAGES = new Set([BABEL_RUNTIME_PACKAGE, "@babel/runtime-corejs3"]);
+
+const HELPER_PACKAGES = new Set([...BABEL_RUNTIME_PACKAGES, "tslib", "@swc/helpers"]);
+
+export const isBabelRuntimePackage = (packageName: string): boolean =>
+  BABEL_RUNTIME_PACKAGES.has(packageName);
 
 const REACT_SCRIPTS_PACKAGE = "react-scripts";
 const REGENERATOR_RUNTIME_GLOBAL = "regeneratorRuntime";

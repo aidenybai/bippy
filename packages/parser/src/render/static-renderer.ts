@@ -10,6 +10,7 @@ import {
   detectModuleTranspiler,
   readDocumentShell,
 } from "../graph/module-transpiler.js";
+import { readProjectJsxOptions } from "../graph/jsx-compiler-options.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
@@ -56,7 +57,7 @@ export interface RenderComponentOptions {
   isolated?: boolean;
 }
 
-export interface RenderWithOptions {
+interface RenderWithOptions {
   /**
    * Produces the document the framework serves the page in (a Next `_document`);
    * its server-rendered markup is the DOM the page's code then mounts into and
@@ -124,7 +125,7 @@ interface RendererSetup {
 }
 
 /** Options a derived renderer may change without re-parsing the project. */
-export interface RenderTimeOptions {
+interface RenderTimeOptions {
   decisions?: PinnedDecisions;
   externalValues?: ExternalValueProvider;
   serverComponents?: boolean;
@@ -193,11 +194,14 @@ export class StaticRenderer {
       ),
       graph: new ModuleGraph({
         resolver,
-        sourceFileCache: new SourceFileCache([
-          ...(svgrTransform ? [svgrTransform] : []),
-          ...createYamlSourceTransforms(rootDirectory),
-          ...bundlerTransforms,
-        ]),
+        sourceFileCache: new SourceFileCache(
+          [
+            ...(svgrTransform ? [svgrTransform] : []),
+            ...createYamlSourceTransforms(rootDirectory),
+            ...bundlerTransforms,
+          ],
+          options.tsconfigPath ? readProjectJsxOptions(options.tsconfigPath, resolver) : null,
+        ),
         resolveExternalPackages: options.resolveExternalPackages,
         externalPackageAllowList: options.externalPackageAllowList,
       }),

@@ -36,6 +36,7 @@ import type {
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
+import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 import {
   composeFlattenedPredicate,
@@ -654,15 +655,6 @@ export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | nul
   const holder = objectValue([{ kind: "spread", value: spread }]);
   return keys.map((key) => ({ kind: "property", key, value: getObjectProperty(holder, key) }));
 };
-
-/** `assign({}, ...sources)`: every closed source copied per key, any other kept behind a spread. */
-export const assignedObject = (sources: StaticValue[]): StaticObjectValue =>
-  objectValue(
-    sources.flatMap(
-      (source): StaticObjectEntry[] =>
-        getSpreadEntries(source) ?? [{ kind: "spread", value: source }],
-    ),
-  );
 
 /**
  * Joins the entry lists paths left on one object. Paths that only assigned
@@ -2165,6 +2157,12 @@ export const getStubDisplayName = (stub: StubComponent): string | null =>
 /** What `Component.displayName || Component.name` reads on a stub. */
 export const getStubOwnDisplayName = (stub: StubComponent): string | null =>
   getAssignedStubDisplayName(stub) ?? (stub.isRenderNamed ? null : stub.displayName);
+
+/** What `Component.name` reads on a stub: a render-named plain function is that function, so it has the name its `displayName` lacks. */
+export const getStubOwnName = (stub: StubComponent): string | null =>
+  stub.isRenderNamed && getStubOwnKeys(stub.tag) === FUNCTION_OWN_KEYS
+    ? stub.displayName
+    : getStubOwnDisplayName(stub);
 
 export const describeElementType = (type: StaticElementType): string => {
   switch (type.kind) {
