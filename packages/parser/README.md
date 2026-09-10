@@ -214,12 +214,12 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 199 real repositories by revision with framework, install/setup/dev
+`corpus/manifest.json` pins 207 real repositories by revision with framework, install/setup/dev
 commands, URL, static target and notes; `corpus/results.json` holds the latest merged results.
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
-capture runs where a dev server can start in this environment (187 entries so far).
+capture runs where a dev server can start in this environment (195 entries so far).
 
-Live-verified so far: 101 entries are `exact` — the runtime capture is one of the enumerated
+Live-verified so far: 111 entries are `exact` — the runtime capture is one of the enumerated
 states and nothing was omitted — including `react-admin` (5,581 runtime nodes inside 21 states
 over the list query's pending/settled, the loading counter and the effect commits, with
 MUI, Emotion, React Router and React Hook Form interpreted from source), `cal-diy` (6 states:
@@ -231,10 +231,11 @@ compiled memo caches), `documenso`, `sentry`, `posthog`, `graphiql`, `invoify`, 
 `react-router-templates`, `react-three-next`, `sonner`, `planka`, `navidrome`, `homarr`,
 `panwriter`, `letterpad`, the MUI/Mantine admin templates (`material-kit-react`,
 `react-material-admin`, `mantine-admin`, `mantine-react-table`) and the Creative Tim/Tailwind
-dashboard templates. 67 are `partial`:
-`formbricks`, `karakeep`, `socialecho` and `taxonomy` at 100% strict coverage behind opaque nodes and the rest short of full coverage through dynamic data or
-opaque third-party providers; 6 are `mismatch`, 7 `truncated` (budget-omitted alternatives),
-6 `unresolved` and 12 render statically only (no dev server here). Provider packages
+dashboard templates, and the Next.js blog/starter templates (`geeky-nextjs`, `morethan-log`,
+`notion-blog`, `nextly-template`, `nextsimplestarter`). 62 are `partial`:
+`formbricks` and `karakeep` at 100% strict coverage behind opaque nodes and the rest short of full coverage through dynamic data or
+opaque third-party providers; 7 are `mismatch`, 8 `truncated` (budget-omitted alternatives),
+7 `unresolved` and 12 render statically only (no dev server here). Provider packages
 become exact by listing them in an entry's `externalPackageAllowList` (their source is interpreted like application code, as `react-redux`
 and `@tanstack/react-query` are) or through a library model (`src/libraries`, as Redux Toolkit's
 `configureStore`/`createApi` are, reading the recorded store state).
