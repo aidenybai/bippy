@@ -38551,8 +38551,8 @@
       "id": "material-kit-react",
       "revision": "69e780a40c455d664b2e13c525faf1d492a072a7",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:41:27.023Z",
-      "durationMs": 39018,
+      "capturedAt": "2026-09-10T10:32:05.004Z",
+      "durationMs": 58163,
       "runtime": {
         "reactVersion": "19.1.0",
         "rendererName": "react-dom",
@@ -38810,7 +38810,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T13:03:38.246Z",
+      "note": null,
       "failure": null
     },
     {
@@ -82585,8 +82585,8 @@
       "id": "react-material-admin",
       "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:43:49.039Z",
-      "durationMs": 85275,
+      "capturedAt": "2026-09-10T10:33:03.178Z",
+      "durationMs": 102574,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -82636,7 +82636,7 @@
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 218,
+        "stepsUsed": 217,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -82653,7 +82653,7 @@
           "wildcards": 0
         },
         "matchedState": {
-          "index": 5,
+          "index": 4,
           "conditions": [
             {
               "kind": "transition",
@@ -82665,7 +82665,7 @@
               "variable": "choice(branch#1)",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
-              "alternativeIndex": 1,
+              "alternativeIndex": 0,
               "alternativeCount": 4
             }
           ]
@@ -82690,7 +82690,7 @@
               "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
               "side": 0,
               "guard": "eq(choice(branch#1), 0)",
-              "status": "possible"
+              "status": "witnessed"
             },
             {
               "kind": "branch",
@@ -82699,7 +82699,7 @@
               "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
               "side": 1,
               "guard": "eq(choice(branch#1), 1)",
-              "status": "witnessed"
+              "status": "possible"
             },
             {
               "kind": "branch",
@@ -82742,7 +82742,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T13:04:16.995Z",
+      "note": null,
       "failure": null
     },
     {
