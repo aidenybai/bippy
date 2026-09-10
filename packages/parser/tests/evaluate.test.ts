@@ -395,3 +395,56 @@ describe("module initialization budget", () => {
     expect(results.readLast).toMatch(/^unknown\(.*exhausted the step budget/);
   });
 });
+
+const BABEL_HELPER_MODULE_SOURCE = `
+const helperModule = require("@babel/runtime/helpers/interopRequireDefault");
+const interopRequireDefault = helperModule.default;
+const esModuleNamespace = { __esModule: true, default: "named" };
+
+export const defaultIsTheHelper = () => helperModule.default === helperModule;
+export const isEsModule = () => helperModule.__esModule;
+export const wrapsCommonJs = () => interopRequireDefault(7).default;
+export const passesEsModules = () => interopRequireDefault(esModuleNamespace).default;
+`;
+
+describe("Babel runtime helper modules", () => {
+  it("exposes the helper as its own `default` export like the CommonJS build does", async () => {
+    const results = await evaluateExports(BABEL_HELPER_MODULE_SOURCE, [
+      "defaultIsTheHelper",
+      "isEsModule",
+      "wrapsCommonJs",
+      "passesEsModules",
+    ]);
+    expect(results).toEqual({
+      defaultIsTheHelper: "true",
+      isEsModule: "true",
+      wrapsCommonJs: "7",
+      passesEsModules: '"named"',
+    });
+  });
+});
+
+const DATE_TIME_FORMAT_SOURCE = `
+const formatter = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", hour: "2-digit", hour12: false });
+const fixed = new Date("2022-04-04T01:00:00.000Z");
+
+export const formatsKnownDates = () => formatter.format(fixed);
+export const formatsTheClockAsUnknown = () => formatter.format();
+export const partsOfTheClockAreUnknown = () => formatter.formatToParts().length;
+export const resolvesOptions = () => formatter.resolvedOptions().timeZone;
+`;
+
+describe("Intl.DateTimeFormat", () => {
+  it("formats known dates and keeps the current time unknown", async () => {
+    const results = await evaluateExports(DATE_TIME_FORMAT_SOURCE, [
+      "formatsKnownDates",
+      "formatsTheClockAsUnknown",
+      "partsOfTheClockAreUnknown",
+      "resolvesOptions",
+    ]);
+    expect(results.formatsKnownDates).toBe('"01"');
+    expect(results.formatsTheClockAsUnknown).toMatch(/^unknown\(/);
+    expect(results.partsOfTheClockAreUnknown).toMatch(/^unknown\(/);
+    expect(results.resolvesOptions).toBe('"UTC"');
+  });
+});

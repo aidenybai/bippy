@@ -52,7 +52,7 @@ const toNonNumericOnlyHash = (hash: string, length: number): string => {
   return `${String.fromCharCode(NON_NUMERIC_HASH_CODE_A + (Number.parseInt(hash[0], 10) % 6))}${slice.slice(1)}`;
 };
 
-export interface ReactScriptsAssets {
+interface ReactScriptsAssets {
   /** The URL (or data URL) `import`ing the file evaluates to under `react-scripts start`. */
   getImportedUrl: (filePath: string) => string;
   /** The file the dev server serves at a pathname: an emitted asset or one under `public/`. */

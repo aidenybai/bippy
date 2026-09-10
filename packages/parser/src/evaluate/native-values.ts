@@ -15,6 +15,7 @@ import type { HostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
+import { getIntrinsicGlobal } from "./host-globals.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
 import {
@@ -156,7 +157,7 @@ const isClassifiedMember = (
  * Members whose runtime value depends on layout, which the static document
  * never performs: every box is zero-sized here, so reading one is a guess.
  */
-export const LAYOUT_MEMBERS = classifyMembers([
+const LAYOUT_MEMBERS = classifyMembers([
   "Element.getBoundingClientRect",
   "Element.getClientRects",
   "Element.checkVisibility",
@@ -182,7 +183,7 @@ export const LAYOUT_MEMBERS = classifyMembers([
 ]);
 
 /** Canvas members whose value comes from rasterizing, which the static document only answers with placeholders. */
-export const RASTER_MEMBERS = classifyMembers([
+const RASTER_MEMBERS = classifyMembers([
   "HTMLCanvasElement.getContext",
   "HTMLCanvasElement.toDataURL",
   "HTMLCanvasElement.toBlob",
@@ -238,13 +239,21 @@ export const getNativeInterfaceName = (value: object): string => {
   return Object.prototype.toString.call(value).slice("[object ".length, -1);
 };
 
-/** Immutable `Intl` services whose output depends on locale data alone (not the clock or time zone). */
+/**
+ * Immutable `Intl` services whose output depends on locale data and, like
+ * `Date`'s local-time methods, the host time zone; never on the clock, except
+ * `DateTimeFormat` formatting no argument, which is kept from running.
+ */
 const INTL_CONSTRUCTORS = {
   "Intl.Collator": Intl.Collator,
+  "Intl.DateTimeFormat": Intl.DateTimeFormat,
   "Intl.ListFormat": Intl.ListFormat,
   "Intl.PluralRules": Intl.PluralRules,
   "Intl.RelativeTimeFormat": Intl.RelativeTimeFormat,
 };
+
+/** `Intl.DateTimeFormat` methods that format `Date.now()` when given no date. */
+const CLOCK_FORMATTING_METHODS = new Set(["format", "formatToParts"]);
 
 const isIntlObject = (value: object): boolean =>
   Object.values(INTL_CONSTRUCTORS).some((constructor) => value instanceof constructor);
@@ -297,6 +306,15 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
       return UNCERTAIN;
   }
 };
+
+/** The language object (`Object("abc")`, a `Date`) a value stands for exactly, whose coercions this process can run; null for host objects and objects the analysis lost track of or the program extended. */
+export const getExactLanguageObject = (object: StaticNativeObjectValue): object | null =>
+  object.host !== null ||
+  uncertainNativeObjects.has(object.value) ||
+  expandoProperties.has(object.value) ||
+  composedExpandoProperties.has(object.value)
+    ? null
+    : object.value;
 
 /** The JavaScript values `args` stand for; null when any part of one is uncertain. */
 export const toNativeArguments = (
@@ -520,12 +538,20 @@ export const getNativeObjectMember = (
     }
   }
   if (typeof member !== "function") return fromNativeValue(member, name, object.host);
+  const intrinsicGlobal = getIntrinsicGlobal(member);
+  if (intrinsicGlobal) return intrinsicGlobal;
   const heldValue = standInValues.get(member);
   if (heldValue) return heldValue;
-  return pureNativeFunction(name, member, object.value, object.host, () => {
+  const method = pureNativeFunction(name, member, object.value, object.host, () => {
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
     return unknownValue(`${name}() on dynamic arguments`);
   });
+  if (object.value instanceof Intl.DateTimeFormat && CLOCK_FORMATTING_METHODS.has(key)) {
+    return nativeFunction(name, (args, tools) =>
+      args.length === 0 ? unknownValue(`${name}() of the current time`) : method.call(args, tools),
+    );
+  }
+  return method;
 };
 
 interface DeclaredMember {
@@ -698,6 +724,38 @@ export const getNativeIterableItems = (object: StaticNativeObjectValue): StaticL
   );
 };
 
+/**
+ * `ToPrimitive(object, hint)` run natively (`Symbol.toPrimitive`, else `valueOf`
+ * / `toString` in the hint's order): what an operator sees of a `Date` or
+ * another native object; unknown once a mutation the analysis could not see
+ * touched it.
+ */
+export const toNativeObjectPrimitive = (
+  object: StaticNativeObjectValue,
+  hint: "default" | "number" | "string",
+): StaticValue => {
+  const name = `ToPrimitive(${getNativeInterfaceName(object.value)})`;
+  if (uncertainNativeObjects.has(object.value)) {
+    return unknownValue(`${name} after a mutation on dynamic arguments`);
+  }
+  return guardNativeCall(name, () => {
+    const exotic = Reflect.get(object.value, Symbol.toPrimitive);
+    if (typeof exotic === "function") {
+      return fromNativeValue(Reflect.apply(exotic, object.value, [hint]), name, object.host);
+    }
+    const methodNames = hint === "string" ? ["toString", "valueOf"] : ["valueOf", "toString"];
+    for (const methodName of methodNames) {
+      const method = Reflect.get(object.value, methodName);
+      if (typeof method !== "function") continue;
+      const result: unknown = Reflect.apply(method, object.value, []);
+      if (result === null || typeof result !== "object") {
+        return fromNativeValue(result, name, object.host);
+      }
+    }
+    throw new TypeError("Cannot convert object to primitive value");
+  });
+};
+
 /** `value instanceof Interface` against the constructor the object's own document installed; null when it has none by that name. */
 export const isNativeInstanceOf = (
   object: StaticNativeObjectValue,
@@ -740,7 +798,7 @@ export const constructNativeObject = (
  * roots and node factories, parser facts, and the focus and selection nothing
  * has touched. Page state (`cookie`, `title`, `readyState`) stays modeled.
  */
-export const DOCUMENT_SERVED_MEMBERS = new Set([
+const DOCUMENT_SERVED_MEMBERS = new Set([
   "body",
   "documentElement",
   "head",
@@ -768,7 +826,7 @@ export const DOCUMENT_SERVED_MEMBERS = new Set([
 ]);
 
 /** `Window` members the host window answers for a freshly loaded page at the configured viewport. */
-export const WINDOW_SERVED_MEMBERS = new Set([
+const WINDOW_SERVED_MEMBERS = new Set([
   "getSelection",
   "innerWidth",
   "innerHeight",
@@ -800,13 +858,23 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
         realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
 };
 
-/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
-export const constructHostImage = (host: HostDocument, args: StaticValue[]): StaticValue | null => {
-  const constructor: unknown = Reflect.get(host.globalObject, "Image");
+/** Node interfaces the DOM lets a program construct directly, each creating a fresh node of the host document. */
+const HOST_NODE_CONSTRUCTORS = new Set(["Image", "Audio", "DocumentFragment", "Text", "Comment"]);
+
+export const isHostNodeConstructorName = (name: string): boolean =>
+  HOST_NODE_CONSTRUCTORS.has(name);
+
+/** `new Image(width, height)`, `new DocumentFragment()`, …: the node of the host document it constructs, as the matching `document.create*` would; null for dynamic arguments. */
+export const constructHostNode = (
+  host: HostDocument,
+  name: string,
+  args: StaticValue[],
+): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, name);
   const natives = toNativeArguments(args, host);
   if (typeof constructor !== "function" || natives === null) return null;
-  return guardNativeCall("new Image", () =>
-    fromNativeValue(Reflect.construct(constructor, natives), "new Image()", host),
+  return guardNativeCall(`new ${name}`, () =>
+    fromNativeValue(Reflect.construct(constructor, natives), `new ${name}()`, host),
   );
 };
 

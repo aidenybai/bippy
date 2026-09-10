@@ -4,30 +4,34 @@ import { getRDTHook } from "bippy";
 import type { Context, ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
-import { createCommitRecorder, getRootContainer } from "../harness/commit-recorder.js";
+import { createCommitRecorder } from "../harness/commit-recorder.js";
+import { getRootContainer } from "../harness/runtime-snapshot.js";
 import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");
-export type ReactDomClientModule = typeof import("react-dom/client");
+type ReactDomClientModule = typeof import("react-dom/client");
 export type ReactDomModule = typeof import("react-dom");
+export type ReactDomServerModule = typeof import("react-dom/server");
 
 /** Module specifiers of the React build the analyzed app is served with. */
 export interface ReactPackageSpecifiers {
   react: string;
   dom: string;
   domClient: string;
+  domServer: string;
 }
 
-export const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
+const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
   react: "react",
   dom: "react-dom",
   domClient: "react-dom/client",
+  domServer: "react-dom/server",
 };
 
 /** `react-dom` before 18: roots are created by `render(element, container)` and are always legacy (sync) roots. */
-export interface LegacyReactDomModule extends ReactDomModule {
+interface LegacyReactDomModule extends ReactDomModule {
   render: (element: ReactNode, container: Element) => void;
   unmountComponentAtNode: (container: Element) => boolean;
 }
@@ -43,11 +47,11 @@ export interface MountedRoot {
 }
 
 /** The reconciler's `readContext`, installed on the current dispatcher for every render (class bodies included). */
-export interface ContextDispatcher {
+interface ContextDispatcher {
   readContext: <T>(context: Context<T>) => T;
 }
 
-export interface LegacyReactInternals {
+interface LegacyReactInternals {
   ReactCurrentDispatcher: { current: ContextDispatcher | null };
 }
 
@@ -64,6 +68,7 @@ export interface LegacyReactInternals {
 export interface ReactRuntime {
   react: ReactModule;
   dom: ReactDomModule;
+  domServer: ReactDomServerModule;
   createRoot: (container: Element, callbacks: RootErrorCallbacks) => MountedRoot;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   /** Reads a context at the rendering fiber the way `readContext(contextType)` does for classes: `use` on React 19, the dispatcher's `readContext` before. */
@@ -82,6 +87,9 @@ const isReactDomClientModule = (value: unknown): value is ReactDomClientModule =
 
 const isReactDomModule = (value: unknown): value is ReactDomModule =>
   isRecord(value) && typeof value.createPortal === "function";
+
+const isReactDomServerModule = (value: unknown): value is ReactDomServerModule =>
+  isRecord(value) && typeof value.renderToStaticMarkup === "function";
 
 const isLegacyReactDomModule = (value: ReactDomModule): value is LegacyReactDomModule =>
   "render" in value &&
@@ -187,7 +195,13 @@ export const loadReactRuntime = ({
   rootDirectory,
   packages = DEFAULT_REACT_PACKAGES,
 }: LoadReactRuntimeOptions = {}): Promise<ReactRuntime> => {
-  const cacheKey = `${rootDirectory ?? ""}\n${packages.react}\n${packages.dom}\n${packages.domClient}`;
+  const cacheKey = [
+    rootDirectory ?? "",
+    packages.react,
+    packages.dom,
+    packages.domClient,
+    packages.domServer,
+  ].join("\n");
   let pending = runtimeCache.get(cacheKey);
   if (!pending) {
     pending = load(resolver ?? null, rootDirectory ?? null, packages);
@@ -255,18 +269,23 @@ const loadPackages = async (
   rootDirectory: string | null,
   packages: ReactPackageSpecifiers,
 ): Promise<ReactRuntime> => {
-  const [react, dom] = await Promise.all([
+  const [react, dom, domServer] = await Promise.all([
     importResolved(appResolver, packages.react, rootDirectory),
     importResolved(appResolver, packages.dom, rootDirectory),
+    importResolved(appResolver, packages.domServer, rootDirectory),
   ]);
   if (appResolver !== null && predatesAsyncAct(react)) {
     return loadPackages(null, rootDirectory, DEFAULT_REACT_PACKAGES);
   }
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
+  if (!isReactDomServerModule(domServer)) {
+    throw new ReactRuntimeError("could not load react-dom/server");
+  }
   return {
     react,
     dom,
+    domServer,
     createRoot: await loadRootFactory(dom, appResolver, rootDirectory, packages),
     act: await loadAct(react, appResolver, rootDirectory),
     readContext: loadContextReader(react),

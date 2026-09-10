@@ -1,0 +1,8 @@
+{
+  "name": "fixture-swr-observed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "swr": "2.5.1"
+  }
+}

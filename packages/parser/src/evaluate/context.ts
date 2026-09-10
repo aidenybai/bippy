@@ -1,5 +1,6 @@
 import type {
   ContextDefinition,
+  ElementOwner,
   FunctionLikeNode,
   ModuleRecord,
   RenderEnvironment,
@@ -72,6 +73,8 @@ export interface EvaluationContext {
   environment: RenderEnvironment | null;
   hooks: HookFrame | null;
   suspension: SuspensionPoint | null;
+  /** The component render evaluating, recorded on the elements it creates. */
+  owner: ElementOwner | null;
 }
 
 export const withScope = (context: EvaluationContext, scope: Scope): EvaluationContext => ({

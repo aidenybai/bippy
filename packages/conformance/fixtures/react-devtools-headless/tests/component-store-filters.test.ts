@@ -117,6 +117,43 @@ describe("upstream Store component-filter behavior", () => {
     expect(names(store)).toContain("Content");
   });
 
+  it("stays in sync when a filtered boundary suspends during a sibling restructure", () => {
+    const store = createComponentStore();
+    store.setFilters([filter("type", "suspense")]);
+    const app: StoreElement[] = [
+      { children: [2], displayName: null, id: 1, parentId: null, type: "root" },
+      { children: [3], displayName: "App", id: 2, parentId: 1, type: "function" },
+      { children: [4], displayName: "div", id: 3, parentId: 2, type: "host" },
+      { children: [5], displayName: "A", id: 4, parentId: 3, type: "function" },
+      { children: [6, 8], displayName: "Suspense", id: 5, parentId: 4, type: "suspense" },
+      { children: [7], displayName: "Suspense", id: 6, parentId: 5, type: "suspense" },
+      { children: [], displayName: "div", id: 7, parentId: 6, type: "host" },
+      { children: [9], displayName: "Suspense", id: 8, parentId: 5, type: "suspense" },
+      { children: [], displayName: "div", id: 9, parentId: 8, type: "host" },
+    ];
+    store.setElements(app);
+    expect(names(store)).toEqual(["App", "div", "A", "div", "div"]);
+
+    const collapsedWithSibling: StoreElement[] = [
+      app[0],
+      app[1],
+      { children: [10, 4], displayName: "div", id: 3, parentId: 2, type: "host" },
+      { children: [], displayName: "em", id: 10, parentId: 3, type: "host" },
+      app[3],
+      { children: [7], displayName: "Suspense", id: 5, parentId: 4, type: "suspense" },
+      { children: [], displayName: "div", id: 7, parentId: 5, type: "host" },
+    ];
+    store.setElements(collapsedWithSibling);
+    expect(names(store)).toEqual(["App", "div", "em", "A", "div"]);
+
+    store.setElements(
+      collapsedWithSibling
+        .filter((element) => element.id !== 10)
+        .map((element) => (element.id === 3 ? { ...element, children: [4] } : element)),
+    );
+    expect(names(store)).toEqual(["App", "div", "A", "div"]);
+  });
+
   it("only counts for unfiltered components (legacy render)", () => {
     const store = createComponentStore();
     store.setElements(

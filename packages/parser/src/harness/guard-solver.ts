@@ -4,6 +4,7 @@ import {
   type GuardEquals,
   type GuardInSet,
   type GuardLiteral,
+  type GuardOr,
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
@@ -350,13 +351,14 @@ const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
 /**
- * DPLL over the guard formulas: atoms accumulate and are checked per variable before any
- * disjunction splits, so a contradiction prunes every split below it.
+ * DPLL over the guard formulas: atoms accumulate and are checked per variable
+ * before any disjunction splits, so a contradiction among the atoms is found
+ * without exploring the disjunctions' product.
  */
 const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
   const remaining = [...pending];
-  const disjunctions: Guard[][] = [];
   const collected = [...literals];
+  const disjunctions: GuardOr[] = [];
   while (remaining.length > 0) {
     const guard = remaining.pop();
     if (!guard) break;
@@ -368,7 +370,7 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         remaining.push(...guard.operands);
         break;
       case "or":
-        disjunctions.push(guard.operands);
+        disjunctions.push(guard);
         break;
       case "not": {
         const { operand } = guard;
@@ -395,21 +397,86 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
     }
   }
   const model = modelOfLiterals(collected);
-  if (model === null || disjunctions.length === 0) return model;
-  const [operands, ...rest] = disjunctions;
-  const pendingRest = rest.map((restOperands): Guard => ({ kind: "or", operands: restOperands }));
-  for (const operand of operands) {
-    const split = findModel([...pendingRest, operand], collected);
+  const disjunction = disjunctions.pop();
+  if (model === null || disjunction === undefined) return model;
+  for (const operand of disjunction.operands) {
+    const split = findModel([...disjunctions, operand], collected);
     if (split) return split;
   }
   return null;
 };
 
+const conjuncts = (guards: Guard[]): Guard[] =>
+  guards.flatMap((guard) => {
+    if (guard.kind === "and") return conjuncts(guard.operands);
+    if (guard.kind === "not" && guard.operand.kind === "not")
+      return conjuncts([guard.operand.operand]);
+    if (guard.kind === "not" && guard.operand.kind === "or") {
+      return conjuncts(negateOperands(guard.operand.operands));
+    }
+    return [guard];
+  });
+
+const collectProjectionKeys = (guard: Guard, keys: Set<string>): Set<string> => {
+  switch (guard.kind) {
+    case "constant":
+      break;
+    case "not":
+      collectProjectionKeys(guard.operand, keys);
+      break;
+    case "and":
+    case "or":
+      for (const operand of guard.operands) collectProjectionKeys(operand, keys);
+      break;
+    default:
+      keys.add(projectionKey(guard.variable));
+  }
+  return keys;
+};
+
+interface GuardComponent {
+  keys: Set<string>;
+  guards: Guard[];
+}
+
+/**
+ * Conjuncts partitioned by the variables they mention: atoms are decided per
+ * variable, so a disjunction only interacts with the conjuncts sharing one of
+ * its variables and each component is solved on its own instead of splitting
+ * every disjunction against every other.
+ */
+const independentComponents = (guards: Guard[]): Guard[][] => {
+  const components: GuardComponent[] = [];
+  for (const guard of conjuncts(guards)) {
+    const merged: GuardComponent = {
+      keys: collectProjectionKeys(guard, new Set()),
+      guards: [guard],
+    };
+    for (let index = components.length - 1; index >= 0; index--) {
+      const component = components[index];
+      if (![...component.keys].some((key) => merged.keys.has(key))) continue;
+      for (const key of component.keys) merged.keys.add(key);
+      merged.guards.push(...component.guards);
+      components.splice(index, 1);
+    }
+    components.push(merged);
+  }
+  return components.map((component) => component.guards);
+};
+
 /** A witness assignment satisfying every guard, or null when they contradict. */
-export const solveGuards = (guards: Guard[]): VariableWitness[] | null => findModel(guards, []);
+export const solveGuards = (guards: Guard[]): VariableWitness[] | null => {
+  const witnesses: VariableWitness[] = [];
+  for (const component of independentComponents(guards)) {
+    const model = findModel(component, []);
+    if (model === null) return null;
+    witnesses.push(...model);
+  }
+  return witnesses;
+};
 
 /** Witness values by symbolic variable (`formatVariable`), the form the planner evaluates guards against. */
-export type WitnessModel = ReadonlyMap<string, WitnessValue>;
+type WitnessModel = ReadonlyMap<string, WitnessValue>;
 
 export const toWitnessModel = (witnesses: VariableWitness[]): WitnessModel =>
   new Map(witnesses.map((witness) => [formatVariable(witness.variable), witness.value]));
@@ -476,10 +543,6 @@ export const areGuardsSatisfiable = (guards: Guard[]): boolean => solveGuards(gu
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
 export class GuardSolver {
   private readonly stack: Guard[] = [];
-
-  get guards(): readonly Guard[] {
-    return this.stack;
-  }
 
   push(guard: Guard): boolean {
     if (!areGuardsSatisfiable([...this.stack, guard])) return false;

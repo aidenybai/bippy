@@ -25,6 +25,9 @@ export const ReactSymbols = {
   DEPRECATED_ASYNC_MODE_SYMBOL_STRING: "Symbol(react.async_mode)",
   ELEMENT_SYMBOL_STRING: "Symbol(react.transitional.element)",
   LEGACY_ELEMENT_SYMBOL_STRING: "Symbol(react.element)",
+  STRICT_MODE_NUMBER: 60108,
+  STRICT_MODE_SYMBOL_DESCRIPTION: "react.strict_mode",
+  STRICT_MODE_SYMBOL_STRING: "Symbol(react.strict_mode)",
 } as const;
 
 export interface ReactWorkTagMap {

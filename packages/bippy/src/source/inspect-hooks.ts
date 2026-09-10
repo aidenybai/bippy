@@ -14,7 +14,7 @@ import {
   BippyUnsupportedHookError,
 } from "../errors.js";
 import { getReactWorkTagsForFiber } from "../react-internals/index.js";
-import { parseStack, type StackFrame } from "./parse-stack.js";
+import { createStackParser, parseStack, type StackFrame } from "./parse-stack.js";
 import {
   getRendererDispatcherRefs,
   readDispatcher,
@@ -604,8 +604,9 @@ const findPrimitiveIndex = (hookStack: StackFrame[], hook: HookLogEntry): number
 const parseTrimmedStack = (
   rootStack: StackFrame[],
   hook: HookLogEntry,
+  parseHookStack: (stack: string) => StackFrame[],
 ): [StackFrame | null, StackFrame[] | null] => {
-  const hookStack = parseErrorStack(hook.stackError);
+  const hookStack = parseHookStack(hook.stackError.stack || "");
   const rootIndex = findCommonAncestorIndex(rootStack, hookStack);
   const primitiveIndex = findPrimitiveIndex(hookStack, hook);
   if (rootIndex === -1 || primitiveIndex === -1 || rootIndex - primitiveIndex < 2) {
@@ -626,13 +627,14 @@ const NON_ID_HOOK_PRIMITIVES = new Set([
 
 const buildTree = (rootStack: StackFrame[], capturedHookLog: HookLogEntry[]): HooksTree => {
   const rootChildren: HooksNode[] = [];
+  const parseHookStack = createStackParser();
   let previousStack: StackFrame[] | null = null;
   let levelChildren = rootChildren;
   let nativeHookID = 0;
   const childrenStack: HooksNode[][] = [];
 
   for (const hook of capturedHookLog) {
-    const [primitiveFrame, stack] = parseTrimmedStack(rootStack, hook);
+    const [primitiveFrame, stack] = parseTrimmedStack(rootStack, hook, parseHookStack);
     let displayName = hook.displayName;
     if (displayName === null && primitiveFrame !== null) {
       const primitiveName = parseHookName(primitiveFrame.functionName);

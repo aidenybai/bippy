@@ -1,12 +1,16 @@
 import { readFileSync, statSync } from "node:fs";
 import { extname } from "node:path";
 import { parseSync } from "oxc-parser";
+import type { Comment } from "oxc-parser";
 import type {
+  JsxPragma,
   ParsedSourceFile,
   SourceLanguage,
   SourceTransform,
   TransformedSource,
 } from "../types.js";
+import type { ProjectJsxOptions } from "../graph/jsx-compiler-options.js";
+import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { readJsxPragma } from "./jsx-pragma.js";
 
 const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
@@ -48,10 +52,27 @@ const buildLineStarts = (sourceText: string): number[] => {
   return lineStarts;
 };
 
+/** The file's own annotations over the project's compiler options; `importSource` is what the automatic runtime imports from when the file names none. */
+const readProjectJsxPragma = (
+  comments: readonly Comment[],
+  projectJsx: ProjectJsxOptions | null,
+): JsxPragma | null => {
+  const own = readJsxPragma(comments);
+  if (projectJsx === null || own?.importSource) return own;
+  return {
+    runtime: null,
+    factory: null,
+    fragment: null,
+    ...own,
+    importSource: projectJsx.importSource,
+  };
+};
+
 export const parseSourceText = (
   filePath: string,
   sourceText: string,
   lang: SourceLanguage,
+  projectJsx: ProjectJsxOptions | null = null,
 ): ParsedSourceFile => {
   const programText = lang === "json" ? `${JSON_MODULE_PREFIX}${sourceText};` : sourceText;
   const result = parseSync(filePath, programText, {
@@ -69,7 +90,7 @@ export const parseSourceText = (
     errors: result.errors
       .filter((error) => error.severity === "Error")
       .map((error) => error.message),
-    jsxPragma: lang === "json" ? null : readJsxPragma(result.comments),
+    jsxPragma: lang === "json" ? null : readProjectJsxPragma(result.comments, projectJsx),
   };
 };
 
@@ -82,9 +103,11 @@ interface CacheEntry {
 export class SourceFileCache {
   private readonly entries = new Map<string, CacheEntry>();
   private readonly transforms: SourceTransform[];
+  private readonly projectJsx: ProjectJsxOptions | null;
 
-  constructor(transforms: SourceTransform[] = []) {
+  constructor(transforms: SourceTransform[] = [], projectJsx: ProjectJsxOptions | null = null) {
     this.transforms = transforms;
+    this.projectJsx = projectJsx;
   }
 
   read(filePath: string): ParsedSourceFile | null {
@@ -118,7 +141,12 @@ export class SourceFileCache {
     );
     const source = transformed ?? (lang && query === null ? { sourceText: fileText, lang } : null);
     if (!source) return null;
-    const file = parseSourceText(moduleKey, source.sourceText, source.lang);
+    const file = parseSourceText(
+      moduleKey,
+      source.sourceText,
+      source.lang,
+      isInsideNodeModules(filePath) ? null : this.projectJsx,
+    );
     this.entries.set(moduleKey, { mtimeMs: stats.mtimeMs, size: stats.size, file });
     return file;
   }
@@ -127,9 +155,5 @@ export class SourceFileCache {
     const file = parseSourceText(filePath, sourceText, lang);
     this.entries.set(filePath, { mtimeMs: -1, size: -1, file });
     return file;
-  }
-
-  get size(): number {
-    return this.entries.size;
   }
 }

@@ -6,7 +6,7 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { nativeFunction } from "./stubs.js";
-import { isCompilerHelperPackage } from "../graph/helper-packages.js";
+import { isBabelRuntimePackage, isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { isFunctionLikeExpression } from "../parse/ast-walk.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
@@ -153,7 +153,7 @@ const spreadArray: HelperImplementation = ([target, source]) => {
 };
 
 /** `null == source` yields `{}`; the excluded keys must be a literal list for the rest to be known. */
-const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
+const objectWithoutProperties: HelperImplementation = ([source, excluded], tools) => {
   if (!source || !excluded) return source ?? UNDEFINED_VALUE;
   if (!isKnownList(excluded)) return unknownValue("rest with dynamic excluded keys");
   const omitted = new Set<string>();
@@ -161,7 +161,7 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
     if (key.kind !== "primitive") return unknownValue("rest with dynamic excluded keys");
     omitted.add(String(key.value));
   }
-  return mapValue(source, (alternative) =>
+  return mapValue(tools.materializeNamespace(source), (alternative) =>
     isNullish(alternative) === true ? objectValue() : omitRestKeys(alternative, omitted),
   );
 };
@@ -447,5 +447,22 @@ export const getCompilerHelper = (
   const name = getHelperName(packageName, specifier, importedName);
   const implementation = HELPERS[name];
   if (!implementation) return null;
-  return { kind: "native-function", name, call: implementation };
+  const helper: StaticNativeFunctionValue = { kind: "native-function", name, call: implementation };
+  if (isBabelRuntimePackage(packageName) && importedName !== "default") {
+    helper.getOwnProperty = (key) => getBabelHelperModuleProperty(helper, key);
+  }
+  return helper;
+};
+
+/**
+ * `@babel/runtime`'s CommonJS helper modules end in `module.exports = helper,
+ * module.exports.__esModule = true, module.exports["default"] = module.exports`,
+ * so `require(helper).default` is the helper itself.
+ */
+const getBabelHelperModuleProperty = (
+  helper: StaticNativeFunctionValue,
+  key: string,
+): StaticValue | undefined => {
+  if (key === "default") return helper;
+  return key === "__esModule" ? TRUE_VALUE : undefined;
 };

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { MAX_TIMER_TASKS, type TimerQueue } from "../evaluate/timers.js";
-import { createCommitRecorder, getRootContainer } from "../harness/commit-recorder.js";
+import { createCommitRecorder } from "../harness/commit-recorder.js";
+import { getRootContainer } from "../harness/runtime-snapshot.js";
 import type { RuntimeSnapshot } from "../harness/snapshot.js";
 import type { ReactRuntime } from "./react-runtime.js";
 import type { RendererHost } from "./renderer-host.js";
@@ -76,5 +77,19 @@ export const mountNode = async (
     console.warn = consoleWarn;
     recorder.dispose();
     detachContainer();
+  }
+};
+
+/** The HTML a server render of `node` produces, as a framework's document shell does before the client mounts. */
+export const renderStaticMarkup = (runtime: ReactRuntime, node: ReactNode): string => {
+  const { error: consoleError, warn: consoleWarn } = console;
+  // HACK: the proxies' layout effects draw React 18's "does nothing on the server" warning.
+  console.error = noop;
+  console.warn = noop;
+  try {
+    return runtime.domServer.renderToStaticMarkup(node);
+  } finally {
+    console.error = consoleError;
+    console.warn = consoleWarn;
   }
 };

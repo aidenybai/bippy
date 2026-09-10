@@ -107,5 +107,6 @@ export const readNextVendoredReactPackages = (
     react: `next/dist/compiled/react${channel}`,
     dom: `next/dist/compiled/react-dom${channel}`,
     domClient: `next/dist/compiled/react-dom${channel}/client`,
+    domServer: `next/dist/compiled/react-dom${channel}/server`,
   };
 };

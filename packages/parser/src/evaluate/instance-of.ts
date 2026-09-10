@@ -1,5 +1,5 @@
 import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
-import { EVALUATOR_HOST_PLATFORM, loadHostRealm } from "../host/host-realm.js";
+import { EVALUATOR_HOST_PLATFORM, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import { getAbortWitness } from "./abort-controller.js";
 import { isBlobValue } from "./blob.js";
@@ -33,7 +33,7 @@ const getSharedGlobal = (name: string): object | null => {
 };
 
 /** The constructor this process implements under a shared global name, or null; `Function.prototype` itself is callable. */
-export const getBuiltinConstructor = (name: string): Function | null => {
+const getBuiltinConstructor = (name: string): Function | null => {
   const shared = getSharedGlobal(name);
   return typeof shared === "function" && isObjectLike(shared.prototype) ? shared : null;
 };
@@ -233,8 +233,12 @@ export const isPrototypeOf = (prototype: StaticValue, value: StaticValue): boole
   }
 };
 
-/** `left instanceof right` for a built-in or analyzed constructor; null when it depends on values the analysis cannot see. */
-export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | null => {
+/** `left instanceof right` for a built-in, host or analyzed constructor; null when it depends on values the analysis cannot see. */
+export const isInstanceOf = (
+  left: StaticValue,
+  right: StaticValue,
+  realm: HostRealm | null,
+): boolean | null => {
   if (right.kind === "class") return isInstanceOfClass(left, right);
   if (right.kind === "function") return isInstanceOfFunction(left, right);
   if (right.kind === "external") {
@@ -253,7 +257,11 @@ export const isInstanceOf = (left: StaticValue, right: StaticValue): boolean | n
     if (native !== null) return native;
   }
   const constructor = getBuiltinConstructor(right.name);
-  if (constructor === null) return null;
+  if (constructor === null) {
+    return isPrimitiveLike(left) && realm?.getGlobalTypeof(right.name) === "function"
+      ? false
+      : null;
+  }
   if (isPrimitiveLike(left)) return false;
   const witness = getPrototypeWitness(left);
   return witness === null ? null : witness instanceof constructor;

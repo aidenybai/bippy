@@ -174,6 +174,24 @@ const snapshotFiber = (
 export const snapshotFiberTree = (rootFiber: Fiber): RuntimeFiberSnapshot =>
   snapshotFiber(rootFiber, buildTagLookup(getReactWorkTagsForFiber(rootFiber)));
 
+/** The host container a root renders into (`containerInfo` is not part of bippy's public FiberRoot shape). */
+export const getRootContainer = (root: FiberRoot): unknown =>
+  "containerInfo" in root ? root.containerInfo : null;
+
+const getRootContainerName = (root: FiberRoot): string | null => {
+  const container = getRootContainer(root);
+  if (typeof container !== "object" || container === null) return null;
+  const nodeName: unknown = Object(container).nodeName;
+  return typeof nodeName === "string" ? nodeName.toLowerCase() : null;
+};
+
+/** The root's fiber tree; its `HostRoot` carries the container's node name (`div`, `#document`, a custom element) as `container`. */
+const snapshotRoot = (root: FiberRoot): RuntimeFiberSnapshot => {
+  const tree = snapshotFiberTree(root.current);
+  const container = getRootContainerName(root);
+  return container === null ? tree : { ...tree, props: { container } };
+};
+
 interface RuntimeSnapshotSource {
   roots: FiberRoot[];
   renderer: ReactRenderer | null;
@@ -187,6 +205,6 @@ export const createRuntimeSnapshot = (source: RuntimeSnapshotSource): RuntimeSna
       ? "development"
       : "production"
     : null,
-  roots: source.roots.map((root) => snapshotFiberTree(root.current)),
+  roots: source.roots.map(snapshotRoot),
   capturedAt: new Date().toISOString(),
 });

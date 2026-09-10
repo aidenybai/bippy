@@ -66,6 +66,7 @@ const VENDORED_PACKAGES = {
   react: "bundler/vendored/react",
   dom: "bundler/vendored/react-dom",
   domClient: "bundler/vendored/react-dom/client",
+  domServer: "bundler/vendored/react-dom/server",
 };
 
 /** A bundled React build whose three modules share the harness's React internals. */
@@ -73,6 +74,7 @@ const writeVendoredReact = (rootDirectory: string, clientSource: string): void =
   writePackage(rootDirectory, VENDORED_PACKAGES.react, reexport("react", VENDORED_REACT_VERSION));
   writePackage(rootDirectory, VENDORED_PACKAGES.dom, reexport("react-dom"), {
     "client.js": clientSource,
+    "server.js": reexport("react-dom/server"),
   });
 };
 

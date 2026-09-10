@@ -1,8 +1,11 @@
+import type { Class } from "oxc-parser";
 import type {
   ComponentDefinition,
+  FunctionLikeNode,
   NumberRange,
   StaticClassValue,
   StaticElementType,
+  StaticFunctionValue,
   StaticObjectValue,
   StaticUnknownPrimitiveValue,
   StaticValue,
@@ -23,12 +26,34 @@ import {
   unknownValue,
 } from "./values.js";
 
-const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
+const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", minLength: 0, length: null };
+
+const fixedLengthShape = (prefix: string, length: number | null): StringShape => ({
+  prefix,
+  minLength: length ?? prefix.length,
+  length,
+});
 
 const shapedStringValue = (reason: string, shape: StringShape): StaticValue =>
   shape.length === shape.prefix.length
     ? primitiveValue(shape.prefix)
     : { ...unknownPrimitiveValue("string", reason), stringShape: shape };
+
+/** `JSON.stringify(text)` of an unknown string: a quoted string, one per source text. */
+export const quoteUnknownString = (
+  text: StaticUnknownPrimitiveValue,
+): StaticUnknownPrimitiveValue => {
+  const composition = text.composition ?? { prefix: "", source: text, suffix: "" };
+  return {
+    ...unknownPrimitiveValue("string", "JSON.stringify"),
+    stringShape: { prefix: '"', minLength: (text.stringShape?.minLength ?? 0) + 2, length: null },
+    composition: {
+      ...composition,
+      prefix: `"${composition.prefix}`,
+      suffix: `${composition.suffix}"`,
+    },
+  };
+};
 
 export const rangedNumberValue = (
   reason: string,
@@ -87,15 +112,13 @@ const isPlainObjectConversion = (object: StaticObjectValue): boolean | null => {
   return witness === null ? null : Object.getPrototypeOf(witness) === Object.prototype;
 };
 
-/** `Function.prototype.toString`: the source text of program functions, V8's `[native code]` form for intrinsics and bound functions. */
-export const getFunctionSourceText = (receiver: StaticValue): string | null => {
+const NATIVE_FUNCTION_TEXT = "function () { [native code] }";
+
+/** `Function.prototype.toString` where the text is fixed: V8's `[native code]` form for intrinsics and bound functions. */
+const getFunctionSourceText = (receiver: StaticValue): string | null => {
   switch (receiver.kind) {
     case "function":
-      return receiver.boundArgs || receiver.boundThis
-        ? "function () { [native code] }"
-        : receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
-    case "class":
-      return receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+      return receiver.boundArgs || receiver.boundThis ? NATIVE_FUNCTION_TEXT : null;
     case "method":
       return receiver.receiver.kind === "global"
         ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
@@ -109,14 +132,86 @@ export const getFunctionSourceText = (receiver: StaticValue): string | null => {
   }
 };
 
-const getComponentSourceText = (component: ComponentDefinition): string | null => {
-  if (hasConversionOverride(component.properties)) return null;
-  return component.boundArgs || component.boundThis
-    ? "function () { [native code] }"
-    : component.module.file.sourceText.slice(component.node.start, component.node.end);
+/**
+ * What the served text of a program function opens with. Bundlers reprint the
+ * module (types stripped, JSX compiled, whitespace renormalized) but keep the
+ * `class` and `function` keywords and the parentheses around any arrow
+ * parameter list other than a lone identifier; `async` may be compiled away
+ * into a regenerator wrapper, so an async function claims nothing.
+ */
+const getServedTextPrefix = (node: FunctionLikeNode | Class, sourceText: string): string => {
+  switch (node.type) {
+    case "ClassDeclaration":
+    case "ClassExpression":
+      return "class";
+    case "ArrowFunctionExpression":
+      return node.async || (node.params.length === 1 && node.params[0].type === "Identifier")
+        ? ""
+        : "(";
+    default:
+      return node.async || !sourceText.startsWith("function", node.start) ? "" : "function";
+  }
 };
 
-/** `memo`/`forwardRef`/`lazy` results and context sides are plain objects; component functions and classes read as their source. */
+const servedFunctionTexts = new WeakMap<FunctionLikeNode | Class, StaticUnknownPrimitiveValue>();
+const servedTextValues = new WeakSet<StaticUnknownPrimitiveValue>();
+
+/** The text a program function or class reads back as: one value per node, so every closure of one function compares equal to the others. */
+const getServedFunctionText = (
+  callable: StaticFunctionValue | StaticClassValue | ComponentDefinition,
+): StaticUnknownPrimitiveValue => {
+  const cached = servedFunctionTexts.get(callable.node);
+  if (cached) return cached;
+  const prefix = getServedTextPrefix(callable.node, callable.module.file.sourceText);
+  const text: StaticUnknownPrimitiveValue = {
+    ...unknownPrimitiveValue(
+      "string",
+      `source text of ${callable.name ?? "an anonymous function"} as the bundler serves it`,
+    ),
+    stringShape: { prefix, minLength: prefix.length, length: null },
+  };
+  servedFunctionTexts.set(callable.node, text);
+  servedTextValues.add(text);
+  return text;
+};
+
+/** The served text of a program function, class or component, unless it converts through its own method. */
+const getProgramFunctionText = (value: StaticValue): StaticUnknownPrimitiveValue | null => {
+  switch (value.kind) {
+    case "function":
+    case "class":
+      return hasConversionOverride(value.properties) ? null : getServedFunctionText(value);
+    case "component-reference":
+      return (value.type.kind === "function" || value.type.kind === "class") &&
+        !hasConversionOverride(value.type.component.properties)
+        ? getServedFunctionText(value.type.component)
+        : null;
+    default:
+      return null;
+  }
+};
+
+/** `Function.prototype.toString` of a callable; null when the receiver is not a modeled function. */
+export const getFunctionText = (receiver: StaticValue): StaticValue | null => {
+  const fixedText = getFunctionSourceText(receiver);
+  if (fixedText !== null) return primitiveValue(fixedText);
+  return receiver.kind === "function" || receiver.kind === "class"
+    ? getServedFunctionText(receiver)
+    : null;
+};
+
+/** Whether `key` is (or coerces to) the served text of a program function, which spells function syntax no program key does. */
+export const isFunctionText = (key: StaticValue): boolean =>
+  key.kind === "unknown-primitive"
+    ? servedTextValues.has(key)
+    : getProgramFunctionText(key) !== null;
+
+const getComponentSourceText = (component: ComponentDefinition): string | null =>
+  !hasConversionOverride(component.properties) && (component.boundArgs || component.boundThis)
+    ? NATIVE_FUNCTION_TEXT
+    : null;
+
+/** `memo`/`forwardRef`/`lazy` results and context sides are plain objects; bound components read as native functions. */
 const getElementTypeText = (type: StaticElementType): string | null => {
   switch (type.kind) {
     case "host":
@@ -141,9 +236,10 @@ const getJoinedItemText = (item: StaticValue): string | null =>
 /**
  * `ToString(ToPrimitive(value, "string"))` when the text is statically decided:
  * `Object.prototype.toString` for plain objects (and React's element, context
- * and wrapper objects), `Function.prototype.toString` for program functions,
+ * and wrapper objects), `Function.prototype.toString` for bound functions,
  * `Array.prototype.join` for arrays. Null for symbols, for objects with their
- * own conversion methods, and for values the analysis cannot see.
+ * own conversion methods, for program functions whose served text is not known
+ * to the character, and for values the analysis cannot see.
  */
 export const getCoercedText = (value: StaticValue): string | null => {
   switch (value.kind) {
@@ -183,11 +279,12 @@ export const toPropertyKey = (key: StaticValue): string | null =>
 /** How `value` reads once `+` coerces it to a string. */
 const getConcatenationShape = (value: StaticValue): StringShape => {
   const text = getCoercedText(value);
-  if (text !== null) return { prefix: text, length: text.length };
-  if (value.kind === "unknown-primitive" && value.primitiveType === "string") {
-    return value.stringShape ?? UNKNOWN_STRING_SHAPE;
-  }
-  return UNKNOWN_STRING_SHAPE;
+  if (text !== null) return fixedLengthShape(text, text.length);
+  const dynamicText =
+    value.kind === "unknown-primitive" && value.primitiveType === "string"
+      ? value
+      : getProgramFunctionText(value);
+  return dynamicText?.stringShape ?? UNKNOWN_STRING_SHAPE;
 };
 
 const getConcatenationComposition = (value: StaticValue): StringComposition | null => {
@@ -219,6 +316,7 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
   const isLeftComplete = leftShape.length === leftShape.prefix.length;
   const concatenated = shapedStringValue("+ on dynamic values", {
     prefix: isLeftComplete ? leftShape.prefix + rightShape.prefix : leftShape.prefix,
+    minLength: leftShape.minLength + rightShape.minLength,
     length:
       leftShape.length === null || rightShape.length === null
         ? null
@@ -258,7 +356,10 @@ export const toStringValue = (value: StaticValue): StaticValue =>
     if (hasDefiniteItems(alternative)) return joinStrings(alternative.items, ",");
     if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string")
       return alternative;
-    return unknownPrimitiveValue("string", `String(${describeValue(alternative)})`);
+    return (
+      getProgramFunctionText(alternative) ??
+      unknownPrimitiveValue("string", `String(${describeValue(alternative)})`)
+    );
   });
 
 const toIndexArgument = (argument: StaticValue | undefined): number | null | undefined => {
@@ -280,19 +381,23 @@ const sliceShapedString = (
   if (to === null && end !== undefined) return null;
   if (shape.length !== null) {
     const clampedTo = Math.min(to ?? shape.length, shape.length);
-    return shapedStringValue("slice()", {
-      prefix: shape.prefix.slice(from, clampedTo),
-      length: Math.max(0, clampedTo - from),
-    });
+    return shapedStringValue(
+      "slice()",
+      fixedLengthShape(shape.prefix.slice(from, clampedTo), Math.max(0, clampedTo - from)),
+    );
   }
   if (to !== null && to <= shape.prefix.length) return primitiveValue(shape.prefix.slice(from, to));
-  return shapedStringValue("slice()", { prefix: shape.prefix.slice(from), length: null });
+  return shapedStringValue("slice()", {
+    prefix: shape.prefix.slice(from),
+    minLength: Math.max(0, Math.min(shape.minLength, to ?? shape.minLength) - from),
+    length: null,
+  });
 };
 
 const toFixedOfRange = (range: NumberRange, digits: number): StaticValue | null => {
   if (!Number.isInteger(digits) || digits < 0 || digits > 100) return null;
   if (range.min < 0 || range.max >= 9) return null;
-  return shapedStringValue("toFixed()", { prefix: "", length: digits === 0 ? 1 : digits + 2 });
+  return shapedStringValue("toFixed()", fixedLengthShape("", digits === 0 ? 1 : digits + 2));
 };
 
 /** `text[index]`: the character when `index` falls inside the known prefix, `undefined` past a known length. */
@@ -311,7 +416,7 @@ export const getShapedStringLength = (receiver: StaticUnknownPrimitiveValue): St
   const shape = receiver.stringShape;
   if (shape?.length !== null && shape?.length !== undefined) return primitiveValue(shape.length);
   return rangedNumberValue("length of dynamic value", {
-    min: shape?.prefix.length ?? 0,
+    min: shape?.minLength ?? 0,
     max: Number.POSITIVE_INFINITY,
   });
 };
@@ -435,6 +540,15 @@ export const applyMathToRanges = (method: string, args: StaticValue[]): StaticVa
       return rangeOf(reason, [round(first.min), round(first.max)]);
     }
   }
+};
+
+/** Whether a dynamic property key may read as `name`: an unknown string of another prefix or length, or a number, never does. */
+export const mayEqualPropertyKey = (key: StaticValue, name: string): boolean => {
+  if (key.kind !== "unknown-primitive") return true;
+  if (key.primitiveType === "number") return String(Number(name)) === name;
+  if (key.primitiveType !== "string" || !key.stringShape) return true;
+  const { prefix, length } = key.stringShape;
+  return name.startsWith(prefix) && (length === null || name.length === length);
 };
 
 const startsWithShapedString = (shape: StringShape, search: string): StaticValue | null => {

@@ -42,28 +42,28 @@ const getSubjectId = (subject: object): number => {
 
 const toInputId = (id: number): string => `#${id}`;
 
-export interface PropertyDerivation {
+interface PropertyDerivation {
   kind: "property";
   object: StaticValue;
   key: string;
 }
 
-export interface ElementDerivation {
+interface ElementDerivation {
   kind: "element";
   list: StaticValue;
 }
 
-export interface MeasureDerivation {
+interface MeasureDerivation {
   kind: "length" | "typeof";
   operand: StaticValue;
 }
 
-export interface AliasDerivation {
+interface AliasDerivation {
   kind: "alias";
   operand: StaticValue;
 }
 
-export interface EqualityDerivation {
+interface EqualityDerivation {
   kind: "equality";
   operand: StaticValue;
   literal: GuardLiteral | undefined;
@@ -71,27 +71,27 @@ export interface EqualityDerivation {
   isNegated: boolean;
 }
 
-export interface ComparisonDerivation {
+interface ComparisonDerivation {
   kind: "comparison";
   operand: StaticValue;
   operator: CompareOperator;
   literal: number;
 }
 
-export interface MembershipDerivation {
+interface MembershipDerivation {
   kind: "membership";
   operand: StaticValue;
   literals: GuardLiteral[];
 }
 
-export interface LogicalDerivation {
+interface LogicalDerivation {
   kind: "logical";
   operator: "&&" | "||";
   left: StaticValue;
   right: StaticValue;
 }
 
-export type Derivation =
+type Derivation =
   | PropertyDerivation
   | ElementDerivation
   | MeasureDerivation
@@ -413,6 +413,19 @@ const resolveBranchGuard = (subject: StaticValue): ResolvedGuard | null => {
     return andGuard([guards[index], resolved.guard]);
   });
   return { guard: orGuard(sides), inputs: mergeInputs(inputs) };
+};
+
+const guardedTruthiness = new WeakMap<StaticBranchValue, boolean | null>();
+
+/** Truthiness the branch's own guards decide: an alternative that is truthy exactly when it is taken, with the other side excluded, leaves no test open. */
+export const getGuardedTruthiness = (subject: StaticBranchValue): boolean | null => {
+  if (subject.predicate === null) return null;
+  const known = guardedTruthiness.get(subject);
+  if (known !== undefined) return known;
+  const guard = resolveBranchGuard(subject)?.guard;
+  const truthiness = guard?.kind === "constant" ? guard.value : null;
+  guardedTruthiness.set(subject, truthiness);
+  return truthiness;
 };
 
 const mergeInputs = (groups: InputVariable[][]): InputVariable[] => {
