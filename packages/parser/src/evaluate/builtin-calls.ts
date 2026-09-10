@@ -142,6 +142,7 @@ import {
   getTruthiness,
   compareIdentity,
   hasDefiniteItems,
+  ITERATOR_PROPERTY_KEY,
   hasOwnKey,
   isIndefiniteItem,
   isKnownList,
@@ -854,7 +855,15 @@ const callHostObjectMethod = (
   location: SourceLocation | null,
 ): StaticValue | null => {
   const realm = interpreter.getRealm(context.environment);
-  const listened = callEventTargetMethod(interpreter, realm, receiver, name, args);
+  const listened = callEventTargetMethod(
+    interpreter,
+    realm,
+    receiver,
+    name,
+    args,
+    context,
+    location,
+  );
   if (listened) return listened;
   if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
     return mediaQueryListValue(args[0]);
@@ -1018,7 +1027,11 @@ const callGlobal = (
     case "Set":
     case "WeakMap":
     case "WeakSet":
-      return createCollectionValue(name, first, location);
+      return createCollectionValue(
+        name,
+        first && interpreter.resolveIterable(first, context, location),
+        location,
+      );
     case "URLSearchParams":
       return mapValue(distributeObjectBranches(first ?? UNDEFINED_VALUE), (init) =>
         createSearchParamsValue(init, { location }),
@@ -1080,7 +1093,7 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
-      const source = getArrayFromSource(first);
+      const source = first && iterableOrArrayLike(interpreter, first, context, location);
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context, location);
         return source;
@@ -1096,7 +1109,7 @@ const callGlobal = (
     case "Uint32Array.from":
     case "Float32Array.from":
     case "Float64Array.from": {
-      const source = getArrayFromSource(first);
+      const source = first && iterableOrArrayLike(interpreter, first, context, location);
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
       const mapped = isCallable(second)
         ? mapList(interpreter, source, second, context, location)
@@ -1297,7 +1310,7 @@ const callGlobal = (
       return first;
     }
     case "Object.fromEntries": {
-      const entries = first?.kind === "object" ? (getCollectionItems(first) ?? first) : first;
+      const entries = first && interpreter.resolveIterable(first, context, location);
       if (entries?.kind === "list" && !entries.items.some((item) => item.kind === "repeat")) {
         return objectValue(
           entries.items.map(
@@ -1493,13 +1506,19 @@ const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
 
 /** What `Array.from(source)` copies: an iterable's items (including a native `NodeList`), else an array-like's indexed entries. */
-const getArrayFromSource = (source: StaticValue | undefined): StaticValue | null => {
-  if (source?.kind === "object") return getCollectionItems(source) ?? arrayLikeToList(source);
-  if (source?.kind === "native-object") return getCollectionItems(source);
-  return source ?? null;
+/** What `Array.from` consumes: an iterable's items, else `{ length: n }` (and sparse array-likes). */
+const iterableOrArrayLike = (
+  interpreter: Interpreter,
+  value: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const iterated = interpreter.resolveIterable(value, context, location);
+  if (iterated !== value) return iterated;
+  if (value.kind === "object") return arrayLikeToList(value);
+  return value.kind === "native-object" ? null : value;
 };
 
-// `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
   const length = getObjectProperty(value, "length");
   if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
@@ -1950,6 +1969,13 @@ const callStringMethod = (
     const texts = args.map(getCoercedText);
     return texts.every((text) => text !== null) ? primitiveValue(receiver + texts.join("")) : null;
   }
+  if (name === "matchAll" && first?.kind === "regexp") {
+    const regExp = toRegExp(first);
+    if (!regExp?.global) return null;
+    return listValue(
+      [...receiver.matchAll(regExp)].map((matched) => matchResultValue(matched, receiver)),
+    );
+  }
   if (!allKnown) return null;
   const position = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
   switch (name) {
@@ -2227,6 +2253,8 @@ export const evaluateBuiltinCall = (
     receiver,
     name,
     args,
+    context,
+    location,
   );
   if (listened) return listened;
 
@@ -2384,6 +2412,7 @@ export const evaluateBuiltinCall = (
       case "toReversed":
         return listValue([...receiver.items].reverse());
       case "values":
+      case ITERATOR_PROPERTY_KEY:
         return receiver;
       case "keys":
         if (!hasDefiniteItems(receiver)) break;

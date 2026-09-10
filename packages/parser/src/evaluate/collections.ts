@@ -14,6 +14,7 @@ import {
   accessorEntry,
   branchValue,
   FALSE_VALUE,
+  ITERATOR_PROPERTY_KEY,
   listValue,
   mapValue,
   mayOverlapCompositions,
@@ -475,6 +476,7 @@ export const createCollectionValue = (
     collection.set(keyOf(args), isKeyed(kind) ? (args[1] ?? UNDEFINED_VALUE) : keyOf(args));
     return self;
   });
+  iterationMethods[ITERATOR_PROPERTY_KEY] = iterationMethods[isKeyed(kind) ? "entries" : "values"];
   const members = isWeak ? methods : { ...methods, ...iterationMethods };
   for (const [key, value] of Object.entries(members)) {
     self.entries.push({ kind: "property", key, value });

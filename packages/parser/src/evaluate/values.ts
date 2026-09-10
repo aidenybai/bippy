@@ -103,11 +103,13 @@ let allocationCount = 0;
 /** Ordinal of the most recent heap allocation; later allocations get larger ordinals. */
 export const getAllocationCount = (): number => allocationCount;
 
+export const allocate = (): number => ++allocationCount;
+
 /** A newly allocated array: `===` to no other value analysis constructs. */
 export const listValue = (items: StaticValue[]): StaticListValue => ({
   kind: "list",
   items,
-  allocation: ++allocationCount,
+  allocation: allocate(),
 });
 
 /** `Class.__proto__` / `Object.getPrototypeOf(Class)`: the parent class, or `Function.prototype` for a base class. */
@@ -118,7 +120,7 @@ export const getClassPrototype = (classValue: StaticClassValue): StaticValue =>
 export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValue => ({
   kind: "object",
   entries,
-  allocation: ++allocationCount,
+  allocation: allocate(),
 });
 
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
@@ -450,7 +452,7 @@ const unregisteredSymbols = new Map<string, StaticSymbolValue>();
 
 /** `Symbol(description)`: identical only to itself, unlike `Symbol.for` registry symbols. */
 export const createSymbolValue = (description: string | undefined): StaticSymbolValue => {
-  const symbol: StaticSymbolValue = { kind: "symbol", key: `#${++allocationCount}` };
+  const symbol: StaticSymbolValue = { kind: "symbol", key: `#${allocate()}` };
   if (description !== undefined) symbol.description = description;
   unregisteredSymbols.set(symbol.key, symbol);
   return symbol;
@@ -467,6 +469,8 @@ export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
 
 export const isSymbolPropertyKey = (key: string): boolean =>
   key.startsWith(SYMBOL_PROPERTY_KEY_PREFIX);
+
+export const ITERATOR_PROPERTY_KEY = `${SYMBOL_PROPERTY_KEY_PREFIX}Symbol.iterator`;
 
 /** The property name a computed key denotes, or `null` when the key is not statically known. */
 export const getPropertyName = (key: StaticValue): string | null => {

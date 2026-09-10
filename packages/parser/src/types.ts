@@ -1007,6 +1007,8 @@ export type ReactApi =
 export interface Scope {
   parent: Scope | null;
   bindings: Map<string, StaticValue>;
+  /** Allocation ordinal (see `getAllocationCount`), so writes to its bindings date like heap writes. */
+  allocation: number;
 }
 
 export interface StaticRenderStats {

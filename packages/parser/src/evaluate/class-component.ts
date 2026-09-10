@@ -1,4 +1,4 @@
-import type { Class, ClassElement, ParamPattern } from "oxc-parser";
+import type { Class, ClassElement, ParamPattern, PropertyKey } from "oxc-parser";
 import type {
   ClassBody,
   ClassFunctionMember,
@@ -48,20 +48,26 @@ import {
 
 const MAX_INHERITANCE_DEPTH = 8;
 
-const getElementName = (element: ClassElement): string | null => {
+const getElementName = (
+  element: ClassElement,
+  resolveComputedKey: (key: PropertyKey) => string | null,
+): string | null => {
   if (element.type === "StaticBlock" || element.type === "TSIndexSignature") return null;
-  if (element.computed) return null;
   const key = element.key;
+  if (element.computed) return resolveComputedKey(key);
   if (key.type === "Identifier") return key.name;
   if (key.type === "PrivateIdentifier") return `#${key.name}`;
   if (key.type === "Literal") return String(key.value);
   return null;
 };
 
-export const collectClassMembers = (node: Class): ClassMember[] => {
+export const collectClassMembers = (
+  node: Class,
+  resolveComputedKey: (key: PropertyKey) => string | null,
+): ClassMember[] => {
   const members: ClassMember[] = [];
   for (const element of node.body.body) {
-    const key = getElementName(element);
+    const key = getElementName(element, resolveComputedKey);
     if (key === null) continue;
     if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
       if (element.kind === "set" || element.value.body === null) continue;
@@ -71,6 +77,7 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
       (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
       !element.declare
     ) {
+      if (element.declare) continue;
       members.push({ key, isStatic: element.static, kind: "field", value: element.value });
     }
   }

@@ -176,7 +176,7 @@ import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness } from "./host-globals.js";
+import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness, toLanguagePropertyKey } from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
@@ -265,6 +265,7 @@ import {
 } from "./narrowing.js";
 import { evaluateReactApiCall } from "./react-calls.js";
 import { RootRenderState } from "./root-render.js";
+import { MutationLog } from "./mutation-log.js";
 import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
   evaluateTypeScriptDeclaration,
@@ -294,10 +295,13 @@ import {
   getPreferredTruthiness,
   getPropertyName,
   getStubDisplayName,
+  getAllocationCount,
   getTruthiness,
   hasDefiniteItems,
   isNullish,
+  isCallable,
   isSymbolPropertyKey,
+  ITERATOR_PROPERTY_KEY,
   listValue,
   joinMappedAlternatives,
   mapValue,
@@ -463,6 +467,7 @@ const MAX_FORKED_REENTRIES = 1;
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
+const MAX_ITERATOR_STEPS = 256;
 const USE_STRICT_DIRECTIVE = "use strict";
 const FS_URL_PREFIX = "/@fs/";
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
@@ -519,7 +524,7 @@ const prototypeMember = (
   prototype: object | null,
   key: string,
 ): StaticValue =>
-  prototype === null || key in prototype
+  prototype === null || (toLanguagePropertyKey(key) ?? key) in prototype
     ? { kind: "method", receiver, name: key }
     : UNDEFINED_VALUE;
 
@@ -662,9 +667,12 @@ const hasSameProperties = (
   previous.size === next.size && [...previous].every(([key, value]) => next.get(key) === value);
 
 /**
- * A recursive call whose arguments are equivalent to those of an activation
- * already on the stack, with nothing written since that activation began,
- * would never bottom out (dynamic values never become more precise). Nor
+ * A recursive call whose arguments and receiver are equivalent to those of an
+ * activation already on the stack, with nothing that predates that activation
+ * written since it began, would never bottom out (dynamic values never become
+ * more precise). Writes to what the activation allocated itself (a fresh
+ * receiver or accumulator, its own locals) reach the deeper call only through
+ * the receiver and arguments, which the comparison already covers. Nor
  * would one that only threads unknowns forward with a changing counter
  * (`walk(node.child, depth + 1)` over an unknown `node`): every level sees
  * the same unknown data, so the result is unknown either way. One re-entered
@@ -686,7 +694,7 @@ const isNonProgressingRecursion = (
   functionValue: StaticFunctionValue,
   args: StaticValue[],
   thisValue: StaticValue | null,
-  changeCount: number,
+  mutations: MutationLog,
   forkDepth: number,
 ): boolean => {
   const inputs = [thisValue ?? UNDEFINED_VALUE, ...args];
@@ -705,7 +713,12 @@ const isNonProgressingRecursion = (
         isSameInput(input, inputs[index]),
       ),
   );
-  if (activations.some((frame) => hasUnknownInput || frame.changeCount === changeCount)) {
+  if (
+    activations.some(
+      (frame) =>
+        hasUnknownInput || mutations.oldestMutationSince(frame.changeCount) > frame.allocation,
+    )
+  ) {
     return true;
   }
   return activations.filter((frame) => frame.forkDepth < forkDepth).length > MAX_FORKED_REENTRIES;
@@ -793,8 +806,7 @@ export class Interpreter {
   readonly indexedDb = createIndexedDbFactory();
   readonly timers: TimerQueue;
   readonly rootRender = new RootRenderState();
-  /** Observable changes (state commits, heap mutations) so far; a timer tick that adds none is steady state. */
-  changeCount = 0;
+  readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
@@ -1399,7 +1411,7 @@ export class Interpreter {
       }
       case "function":
       case "class":
-        this.changeCount++;
+        this.mutations.record(0);
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
@@ -1433,6 +1445,7 @@ export class Interpreter {
             target,
             propertyName,
             value,
+            context,
           )
         ) {
           return target;
@@ -1466,7 +1479,7 @@ export class Interpreter {
       case "component-reference": {
         const type = target.type;
         if (type.kind === "function" || type.kind === "class") {
-          this.changeCount++;
+          this.mutations.record(0);
           type.component.properties.set(propertyName, value);
           return target;
         }
@@ -1493,7 +1506,7 @@ export class Interpreter {
           }
           return componentReference({ ...type, displayName });
         }
-        this.changeCount++;
+        this.mutations.record(0);
         type.properties.set(propertyName, value);
         return target;
       }
@@ -1612,7 +1625,10 @@ export class Interpreter {
       : null;
     return this.defineClass(
       node,
-      { members: collectClassMembers(node), superValue },
+      {
+        members: collectClassMembers(node, (key) => this.evaluatePropertyKey(key, true, context)),
+        superValue,
+      },
       context,
       this.getDeclaredName(node, context.module) ?? nameHint,
     );
@@ -1976,7 +1992,9 @@ export class Interpreter {
           : UNDEFINED_VALUE;
         if (yields === undefined) return unknownValue("yield outside a generator", location);
         if (node.delegate)
-          yields.push(...spreadListItems(getCollectionItems(argument) ?? argument, location));
+          yields.push(
+            ...spreadListItems(this.resolveIterable(argument, context, location), location),
+          );
         else yields.push(argument);
         return unknownValue("value sent to the generator", location);
       }
@@ -2004,13 +2022,9 @@ export class Interpreter {
         continue;
       }
       if (element.type === "SpreadElement") {
+        const location = this.locate(context.module, element);
         const spread = this.evaluateExpression(element.argument, context);
-        items.push(
-          ...spreadListItems(
-            getCollectionItems(spread) ?? spread,
-            this.locate(context.module, element),
-          ),
-        );
+        items.push(...spreadListItems(this.resolveIterable(spread, context, location), location));
         continue;
       }
       items.push(this.evaluateExpression(element, context));
@@ -2018,9 +2032,55 @@ export class Interpreter {
     return listValue(items);
   }
 
+  /**
+   * What `for..of`, spread, `Array.from` and array destructuring draw from:
+   * a collection's or generator's items, the values an object's own
+   * `[Symbol.iterator]()` yields through `next()`, or the value itself when it
+   * is not such an object.
+   */
+  resolveIterable(
+    value: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    const items = getCollectionItems(value);
+    if (items) return items;
+    if (value.kind !== "object") return value;
+    const iteratorMethod = this.getProperty(value, ITERATOR_PROPERTY_KEY, context, location);
+    if (!isCallable(iteratorMethod)) return value;
+    const iterator = this.callValue(iteratorMethod, [], context, location, { thisValue: value });
+    if (iterator.kind === "list") return iterator;
+    return (
+      getCollectionItems(iterator) ??
+      this.drainIterator(iterator, context, location) ??
+      unknownValue(`iteration of ${describeValue(value)}`, location)
+    );
+  }
+
+  /** Calls `next()` until `done`; null when a step's shape or `done` is uncertain. */
+  private drainIterator(
+    iterator: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue | null {
+    if (iterator.kind !== "object") return null;
+    const next = this.getProperty(iterator, "next", context, location);
+    if (!isCallable(next)) return null;
+    const items: StaticValue[] = [];
+    while (items.length <= MAX_ITERATOR_STEPS) {
+      const result = this.callValue(next, [], context, location, { thisValue: iterator });
+      if (result.kind !== "object") return null;
+      const isDone = getTruthiness(this.getProperty(result, "done", context, location));
+      if (isDone === null) return null;
+      if (isDone) return listValue(items);
+      items.push(this.getProperty(result, "value", context, location));
+    }
+    return null;
+  }
+
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
-    this.changeCount++;
+    this.mutations.record(target.allocation ?? 0);
     if (target.kind === "list") {
       forgetThrowCertainty(target);
       this.escapeWalk.memo.invalidate(target, null);
@@ -2044,7 +2104,7 @@ export class Interpreter {
   }
 
   recordStateMutation(state: JournaledState<unknown>): void {
-    this.changeCount++;
+    this.mutations.record(state.allocation);
     for (let index = this.heapJournals.length - 1; index >= 0; index--) {
       const journal = this.heapJournals[index];
       if (!journal.isPreexisting(state)) return;
@@ -2054,7 +2114,7 @@ export class Interpreter {
 
   /** A state update queued on one path of an enclosing fork is pending on that path only. */
   recordStateUpdate(cell: StateCell): void {
-    this.changeCount++;
+    this.mutations.record(0);
     for (const journal of this.heapJournals) journal.recordStateUpdate(cell);
   }
 
@@ -2729,7 +2789,7 @@ export class Interpreter {
   private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
     const owner = findOwningScope(context.scope, name);
     if (owner) {
-      this.changeCount++;
+      this.mutations.record(owner.allocation);
       this.escapeWalk.memo.invalidate(owner, name);
       owner.bindings.set(
         name,
@@ -2743,7 +2803,7 @@ export class Interpreter {
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name, context.environment);
     const previous = values.get(name);
     if (previous === undefined || previous === IN_PROGRESS) return;
-    this.changeCount++;
+    this.mutations.record(0);
     this.escapeWalk.memo.invalidate(context.module, name);
     for (const journal of this.heapJournals) journal.recordModuleBinding(values, name, previous);
     values.set(name, this.withUncertainAssignment(previous, value, name, context));
@@ -3186,7 +3246,11 @@ export class Interpreter {
     for (const argument of args) {
       if (argument.type === "SpreadElement") {
         const evaluated = this.evaluateExpression(argument.argument, context);
-        const spread = getCollectionItems(evaluated) ?? evaluated;
+        const spread = this.resolveIterable(
+          evaluated,
+          context,
+          this.locate(context.module, argument),
+        );
         if (spread.kind === "list" && spread.items.every((item) => item.kind !== "repeat")) {
           values.push(...spread.items);
         } else {
@@ -3303,9 +3367,10 @@ export class Interpreter {
     const getCallee = (target: StaticValue): StaticValue => {
       if (target === CHAIN_SHORT_CIRCUIT) return target;
       if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
-      return key.kind === "primitive"
-        ? this.getProperty(target, String(key.value), context, location, member.optional)
-        : unknownValue("computed method call", location);
+      const name = getPropertyName(key);
+      return name === null
+        ? unknownValue("computed method call", location)
+        : this.getProperty(target, name, context, location, member.optional);
     };
     const receiverOf = (target: StaticValue): StaticValue | null =>
       member.object.type === "Super" ? context.thisValue : target;
@@ -3628,10 +3693,10 @@ export class Interpreter {
     this.timers.isClockSettled = true;
     try {
       for (let tick = 0; tick < MAX_INTERVAL_TICKS; tick++) {
-        const changesBefore = this.changeCount;
+        const changesBefore = this.mutations.changeCount;
         if (isDeferred) this.callDeferred(callback, [], context, location);
         else this.callValue(callback, [], context, location);
-        if (this.timers.isCleared(handle) || this.changeCount === changesBefore) return;
+        if (this.timers.isCleared(handle) || this.mutations.changeCount === changesBefore) return;
       }
     } finally {
       this.timers.isClockSettled = wasSettled;
@@ -3785,7 +3850,7 @@ export class Interpreter {
         functionValue,
         args,
         getCallReceiver(functionValue, options),
-        this.changeCount,
+        this.mutations,
         context.forkDepth,
       )
     ) {
@@ -3863,7 +3928,8 @@ export class Interpreter {
           scope: functionValue.scope,
           args,
           thisValue,
-          changeCount: this.changeCount,
+          changeCount: this.mutations.changeCount,
+          allocation: getAllocationCount(),
           forkDepth: context.forkDepth,
           properties: new Map(functionValue.properties),
         },
@@ -4076,18 +4142,19 @@ export class Interpreter {
         return;
       }
       case "ArrayPattern": {
+        const iterated = this.resolveIterable(value, context, null);
         pattern.elements.forEach((element, index) => {
           if (!element) return;
           if (element.type === "RestElement") {
             const rest =
-              value.kind === "list" &&
-              value.items.slice(0, index).every((item) => item.kind !== "repeat")
-                ? listValue(value.items.slice(index))
-                : unknownValue(`rest of ${describeValue(value)}`);
+              iterated.kind === "list" &&
+              iterated.items.slice(0, index).every((item) => item.kind !== "repeat")
+                ? listValue(iterated.items.slice(index))
+                : unknownValue(`rest of ${describeValue(iterated)}`);
             destructure(element.argument, rest);
             return;
           }
-          destructure(element, this.getProperty(value, String(index), context, null, true));
+          destructure(element, this.getProperty(iterated, String(index), context, null, true));
         });
         return;
       }
