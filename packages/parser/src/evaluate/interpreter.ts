@@ -334,6 +334,7 @@ import {
   getTruthinessPredicate,
   recordDerivation,
   recordNegation,
+  recordRefinement,
 } from "./predicates.js";
 import type { CompareOperator, GuardLiteral } from "../harness/symbolic-tree.js";
 
@@ -4343,24 +4344,11 @@ export class Interpreter {
           const narrowing = this.narrowTest(statement.test, context);
           if (narrowing?.whenTrue === null) return runAlternate(context);
           if (narrowing?.whenFalse === null) return runConsequent(context);
-          const narrowed =
-            (value: StaticValue | null, run: StatementContinuation): StatementContinuation =>
-            (pathContext) => {
-              if (narrowing && value) {
-                applyNarrowing(context.scope, narrowing.target, value, (object) =>
-                  this.journalHeapValue(object),
-                );
-              }
-              return run(pathContext);
-            };
           return this.forkPaths(
             [
-              narrowed(narrowing?.whenTrue ?? null, (pathContext) =>
-                this.evaluateBlock([statement.consequent], pathContext, true),
-              ),
-              narrowed(narrowing?.whenFalse ?? null, (pathContext) =>
+              (pathContext) => this.evaluateBlock([statement.consequent], pathContext, true),
+              (pathContext) =>
                 alternate ? this.evaluateBlock([alternate], pathContext, true) : COMPLETES,
-              ),
             ],
             context,
             proceed,
@@ -4368,6 +4356,7 @@ export class Interpreter {
             location,
             getPreferredTruthiness(test) === false ? 1 : 0,
             getTruthinessPredicate(test),
+            narrowing,
           );
         }
         case "SwitchStatement":
@@ -4566,6 +4555,7 @@ export class Interpreter {
     location: SourceLocation,
     preferredBranch = 0,
     predicate = createPathPredicate(reason, location),
+    narrowing: TestNarrowing | null = null,
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
@@ -4574,6 +4564,10 @@ export class Interpreter {
       uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
       suspension: null,
     };
+    const narrowedBinding = narrowing?.target.key === null ? narrowing.target.name : null;
+    const narrowedSubject =
+      narrowedBinding === null ? undefined : lookupScope(context.scope, narrowedBinding);
+    let isSubjectReassigned = false;
     const entrySnapshot = snapshotScopes(context.scope);
     const hookCursor = context.hooks?.cursor ?? 0;
     const joinedSnapshots: ScopeSnapshot[][] = [];
@@ -4585,9 +4579,18 @@ export class Interpreter {
         restoreScopes(entrySnapshot);
         if (context.hooks) context.hooks.cursor = hookCursor;
       }
+      const narrowed = branchIndex === 0 ? narrowing?.whenTrue : narrowing?.whenFalse;
+      if (narrowing && narrowed) {
+        applyNarrowing(context.scope, narrowing.target, narrowed, (object) =>
+          this.journalHeapValue(object),
+        );
+      }
       const outcome = branch(forkContext);
       if (outcome.mayComplete || outcome.jump !== null) {
         joinedSnapshots.push(snapshotScopes(context.scope));
+        if (narrowedBinding !== null && lookupScope(context.scope, narrowedBinding) !== narrowed) {
+          isSubjectReassigned = true;
+        }
       }
       if (outcome.mayComplete) completedHookCursor = context.hooks?.cursor ?? hookCursor;
       journal.endPath();
@@ -4607,13 +4610,12 @@ export class Interpreter {
       journal.join(reason, location, preferredOutcome, predicate);
     }
     if (joinedSnapshots.length > 0) {
-      joinScopes(
-        joinedSnapshots,
-        reason,
-        location,
-        0,
-        joinedSnapshots.length === branches.length ? predicate : null,
-      );
+      const isJoinedByPredicate = joinedSnapshots.length === branches.length;
+      joinScopes(joinedSnapshots, reason, location, 0, isJoinedByPredicate ? predicate : null);
+      if (narrowedBinding !== null && narrowedSubject && !isSubjectReassigned) {
+        const rejoined = lookupScope(context.scope, narrowedBinding);
+        if (rejoined) recordRefinement(rejoined, narrowedSubject);
+      }
     }
     if (completingPaths.length === 0) {
       return mergeOutcomes(
@@ -4637,10 +4639,16 @@ export class Interpreter {
         null,
       );
     }
+    const completingPath = completingPaths.length === 1 ? completingPaths[0] : -1;
     const isRestPositional =
-      outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
+      completingPath !== -1 &&
+      outcomes.every((outcome, index) =>
+        index === completingPath ? isPureCompletion(outcome) : isPureReturn(outcome),
+      );
     return mergeOutcomes(
-      [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+      isRestPositional
+        ? outcomes.map((outcome, index) => (index === completingPath ? rest : outcome))
+        : [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
       reason,
       location,
       preferredOutcome,

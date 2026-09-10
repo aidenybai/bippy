@@ -26,6 +26,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "lodash-es",
   "node:path",
   "node:url",
+  "numeral",
   "object.entries",
   "path",
   "path-to-regexp",
@@ -71,9 +72,20 @@ const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([
   "uniqueId",
 ]);
 
+const IMPURE_NUMERAL_EXPORTS: ReadonlySet<string> = new Set([
+  "defaultFormat",
+  "locale",
+  "nullFormat",
+  "options",
+  "register",
+  "reset",
+  "zeroFormat",
+]);
+
 const IMPURE_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["lodash", IMPURE_LODASH_EXPORTS],
   ["lodash-es", IMPURE_LODASH_EXPORTS],
+  ["numeral", IMPURE_NUMERAL_EXPORTS],
 ]);
 
 /** `lodash.mergewith`-style per-method packages: the same helper as `lodash/mergeWith`, published lowercase. */

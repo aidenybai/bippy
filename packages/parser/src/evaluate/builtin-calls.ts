@@ -1067,15 +1067,21 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
-      const source = first && iterableOrArrayLike(interpreter, first, context, location);
-      if (!source || (source.kind === "primitive" && typeof source.value !== "string")) {
-        return unknownValue("Array.from of a non-iterable", location);
-      }
-      const items =
-        source.kind === "list" || source.kind === "repeat"
-          ? source
-          : listValue(spreadListItems(source, location));
-      return isCallable(second) ? mapList(interpreter, items, second, context, location) : items;
+      return mapValue(first ?? UNDEFINED_VALUE, (candidate) => {
+        const source = iterableOrArrayLike(interpreter, candidate, context, location);
+        if (!source || (source.kind === "primitive" && typeof source.value !== "string")) {
+          return unknownValue("Array.from of a non-iterable", location);
+        }
+        return mapValue(source, (iterable) => {
+          const items =
+            iterable.kind === "list" || iterable.kind === "repeat"
+              ? iterable
+              : listValue(spreadListItems(iterable, location));
+          return isCallable(second)
+            ? mapList(interpreter, items, second, context, location)
+            : items;
+        });
+      });
     }
     case "Int8Array.from":
     case "Uint8Array.from":
@@ -1495,29 +1501,29 @@ const iterableOrArrayLike = (
   return value.kind === "native-object" ? null : value;
 };
 
-const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
-  const length = getObjectProperty(value, "length");
-  if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
-    return {
-      kind: "repeat",
-      item: UNDEFINED_VALUE,
-      location: null,
-      count: length.numberRange && {
-        min: toLength(length.numberRange.min),
-        max: toLength(length.numberRange.max),
-      },
-    };
-  }
-  if (length.kind !== "primitive" || typeof length.value === "symbol") {
-    return unknownValue("Array.from of an array-like with dynamic length", null);
-  }
-  const itemCount = toLength(length.value);
-  if (itemCount > MAX_ARRAY_LIKE_LENGTH)
-    return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
-  return listValue(
-    Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
-  );
-};
+const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue =>
+  mapValue(getObjectProperty(value, "length"), (length) => {
+    if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
+      return {
+        kind: "repeat",
+        item: UNDEFINED_VALUE,
+        location: null,
+        count: length.numberRange && {
+          min: toLength(length.numberRange.min),
+          max: toLength(length.numberRange.max),
+        },
+      };
+    }
+    if (length.kind !== "primitive" || typeof length.value === "symbol") {
+      return unknownValue("Array.from of an array-like with dynamic length", null);
+    }
+    const itemCount = toLength(length.value);
+    if (itemCount > MAX_ARRAY_LIKE_LENGTH)
+      return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
+    return listValue(
+      Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
+    );
+  });
 
 /** A task queued from a continuation of unknown timing runs at an unknown time too. */
 const scheduledTask = (

@@ -1,6 +1,7 @@
 import type { BinaryExpression, CallExpression, Expression } from "oxc-parser";
 import type { Scope, StaticObjectEntry, StaticObjectValue, StaticValue } from "../types.js";
 import { hasNamedProperty } from "./has-property.js";
+import { recordRefinement } from "./predicates.js";
 import { findOwningScope, lookupScope } from "./scope.js";
 import { getThrowCertainty } from "./thrown.js";
 import { getTypePredicate } from "./type-predicates.js";
@@ -97,8 +98,12 @@ const partition = (
     else if (verdict) passing.push(alternative);
     if (verdict !== true) failing.push(alternative);
   }
-  const rebuild = (alternatives: StaticValue[]): StaticValue | null =>
-    alternatives.length === 0 ? null : branchValue(alternatives, reason);
+  const rebuild = (alternatives: StaticValue[]): StaticValue | null => {
+    if (alternatives.length === 0) return null;
+    const rebuilt = branchValue(alternatives, reason);
+    recordRefinement(rebuilt, value);
+    return rebuilt;
+  };
   return [rebuild(passing), rebuild(failing)];
 };
 
@@ -230,6 +235,7 @@ const narrowLogical = (
           `${describeTarget(primary.target)} narrowed by ${operator}`,
         )
       : sideOf(primary);
+  if (combined) recordRefinement(combined, original);
   return isOr
     ? { target: primary.target, whenTrue: original, whenFalse: combined }
     : { target: primary.target, whenTrue: combined, whenFalse: original };

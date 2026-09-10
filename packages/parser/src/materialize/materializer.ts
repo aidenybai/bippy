@@ -100,7 +100,8 @@ const isRetainedInput = (committed: ProxyInput, next: ProxyInput): boolean =>
 const DEFAULT_MAX_COMPONENT_DEPTH = 512;
 const DEFAULT_MAX_ELEMENT_COUNT = 50_000;
 const DEFAULT_MAX_RECURSION_PER_COMPONENT = 16;
-const MAX_RENDER_PASSES = 8;
+// React's NESTED_UPDATE_LIMIT: effect-raised update chains settle within this or loop.
+const MAX_RENDER_PASSES = 50;
 const MAX_RENDER_PHASE_UPDATES = 25;
 // Every alternative of a branch is materialized, so nested branches multiply the
 // work; deviations from the preferred path deeper than this become wildcards.

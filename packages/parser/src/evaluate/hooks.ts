@@ -142,7 +142,7 @@ export const nextMemoCell = (
 const isSameHookValue = (left: StaticValue, right: StaticValue): boolean =>
   compareIdentity(left, right) ?? areValuesEquivalent(left, right);
 
-const escapedStateValue = (cell: StateCell): StaticValue =>
+export const escapedStateValue = (cell: StateCell): StaticValue =>
   branchValue(
     [cell.initial, unknownValue(`updated state of ${cell.name}`)],
     "state setter escapes to code that is not evaluated",

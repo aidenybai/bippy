@@ -18,8 +18,20 @@ import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from 
 import { findOwningScope } from "./scope.js";
 import { getObjectProperty, primitiveValue } from "./values.js";
 
-/** `this`, `editor`, `callbackRef.current`, `this.update`: a value named from inside a closure body. */
-export type AccessPath = string[];
+/** `context[key]`: a member read whose key is the string another path names. */
+export interface ComputedAccess {
+  keyPath: AccessPath;
+}
+
+export type AccessStep = string | ComputedAccess;
+
+/** `this`, `editor`, `callbackRef.current`, `this.update`, `system[key]`: a value named from inside a closure body. */
+export type AccessPath = [root: string, ...members: AccessStep[]];
+
+const getReceiverPath = ([root, ...members]: AccessPath): AccessPath => [
+  root,
+  ...members.slice(0, -1),
+];
 
 /**
  * An in-place mutation a closure body performs: `editor._dirty = true`
@@ -102,8 +114,11 @@ const getAccessPath = (node: Node): AccessPath | null => {
       return ["this"];
     case "MemberExpression": {
       const objectPath = getAccessPath(node.object);
-      const key = objectPath ? getStaticMemberKey(node) : null;
-      return objectPath && key !== null ? [...objectPath, key] : null;
+      if (!objectPath) return null;
+      const key = getStaticMemberKey(node);
+      if (key !== null) return [...objectPath, key];
+      const keyPath = node.computed ? getAccessPath(node.property) : null;
+      return keyPath ? [...objectPath, { keyPath }] : null;
     }
     case "ParenthesizedExpression":
     case "TSNonNullExpression":
@@ -492,7 +507,18 @@ export const resolveAccessPath = (
         ? [thisValue]
         : []
       : resolveEscapedIdentifier(closure, frame, root, bindings, walk, record);
-  for (const member of members) values = getMemberValues(values, member, record);
+  for (const member of members) {
+    const keys =
+      typeof member === "string"
+        ? [member]
+        : resolveAccessPath(closure, frame, member.keyPath, walk, bindings).flatMap((key) =>
+            key.kind === "primitive" &&
+            (typeof key.value === "string" || typeof key.value === "number")
+              ? [String(key.value)]
+              : [],
+          );
+    values = keys.flatMap((key) => getMemberValues(values, key, record));
+  }
   return values;
 };
 
@@ -602,12 +628,14 @@ const invokeOnce = (
  * may invoke are the value itself and the items of a list, not the members of
  * an object. Objects are addressed by name in that code, and enumerating them
  * would treat every closure stored anywhere inside a stateful instance (an
- * editor, a store) as running.
+ * editor, a store) as running. A handed list is a dependency of the closure: a
+ * listener pushed into it later must be reached too.
  */
 const forEachHandedCallable = (
   value: StaticValue,
   walk: EscapeWalk,
   visits: EscapeVisits,
+  record: RecordDependency,
 ): void => {
   if (value.kind === "native-function" || value.kind === "function") {
     visitEscapedValue(value, walk, visits);
@@ -617,16 +645,22 @@ const forEachHandedCallable = (
   visits.handed.add(value);
   switch (value.kind) {
     case "list":
-      for (const item of value.items) forEachHandedCallable(item, walk, visits);
+      record(value, LIST_ITEMS_KEY);
+      for (const item of value.items) forEachHandedCallable(item, walk, visits, record);
       return;
     case "branch":
       for (const alternative of value.alternatives) {
-        forEachHandedCallable(alternative, walk, visits);
+        forEachHandedCallable(alternative, walk, visits, record);
       }
       return;
     case "optional":
     case "repeat":
-      forEachHandedCallable(value.kind === "optional" ? value.value : value.item, walk, visits);
+      forEachHandedCallable(
+        value.kind === "optional" ? value.value : value.item,
+        walk,
+        visits,
+        record,
+      );
       return;
     default:
       return;
@@ -640,12 +674,14 @@ const forEachInvokedCallable = (
   visits: EscapeVisits,
 ): void => {
   walk.visit(closure, frame);
+  const record: RecordDependency = (dependency, key) =>
+    walk.memo.addDependency(closure, dependency, key);
   for (const callSite of getClosureShape(closure.node).callSites) {
     const resolve = (path: AccessPath): StaticValue[] =>
       resolveAccessPath(closure, frame, path, walk, callSite.bindings);
     const handPaths = (paths: AccessPath[]): void => {
       for (const path of paths) {
-        for (const value of resolve(path)) forEachHandedCallable(value, walk, visits);
+        for (const value of resolve(path)) forEachHandedCallable(value, walk, visits, record);
       }
     };
     const argumentValues = callSite.arguments.map(({ path, literal }) => {
@@ -665,12 +701,13 @@ const forEachInvokedCallable = (
           invokeOnce(callee, argumentValues, walk, visits);
           break;
         default:
-          forEachHandedCallable(callee, walk, visits);
+          forEachHandedCallable(callee, walk, visits, record);
       }
     }
     handPaths(callSite.nestedPaths);
     if (isEveryCalleeFollowed) continue;
     handPaths(callSite.arguments.flatMap(({ path }) => (path ? [path] : [])));
-    if (callSite.callee && callSite.callee.length > 1) handPaths([callSite.callee.slice(0, -1)]);
+    if (callSite.callee && callSite.callee.length > 1)
+      handPaths([getReceiverPath(callSite.callee)]);
   }
 };

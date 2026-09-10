@@ -57,3 +57,22 @@ describe("component fixtures: static fiber tree vs react-dom", () => {
     });
   }
 });
+
+/**
+ * Twelve rows read one uncertain map by three distinct keys, so the space is
+ * the state transition times one decision per key: correlated repeated reads
+ * must not multiply into an enumeration that hits the state budget.
+ */
+describe("repeated reads of one uncertain value share one decision", () => {
+  it("keyed-lookups.tsx", async () => {
+    const fixture = listComponentFixtures().find(
+      (candidate) => candidate.name === "keyed-lookups.tsx",
+    );
+    if (!fixture) throw new Error("missing keyed-lookups fixture");
+    const run = await runComponentFixture(fixture);
+    const detail = describeComponentRun(fixture, run);
+    expect(run.comparison.report.status, detail).toBe("exact");
+    expect(run.comparison.stateSpace.omitted, detail).toBeNull();
+    expect(run.comparison.stateSpace.states.length, detail).toBe(2 + 2 ** 3);
+  });
+});

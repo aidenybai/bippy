@@ -23,6 +23,7 @@ import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
 import type { EvaluationContext } from "./context.js";
 import {
   escapeStateCell,
+  escapedStateValue,
   invokeHookFactory,
   nextMemoCell,
   nextStateCell,
@@ -113,7 +114,9 @@ const stateHook = (
  * Mirrors `mountSyncExternalStore`: the snapshot is read on every render, and a
  * passive effect subscribes and re-checks it (`updateStoreInstance`), so a store
  * mutated between render and commit re-renders with the latest value. The
- * listener does the same for store changes triggered during evaluation.
+ * listener does the same for store changes triggered during evaluation; once
+ * it is held by code the analysis does not follow, the store may change at any
+ * time and the snapshot is one value among those the store may hold.
  */
 const externalStoreHook = (
   interpreter: Interpreter,
@@ -130,8 +133,9 @@ const externalStoreHook = (
   const frame = context.hooks;
   if (!frame) return snapshot;
   const cell = nextStateCell(frame, "useSyncExternalStore", () => snapshot);
-  cell.current = snapshot;
-  if (!frame.isRendering || !subscribe) return snapshot;
+  cell.initial = snapshot;
+  cell.current = cell.isEscaped ? escapedStateValue(cell) : snapshot;
+  if (!frame.isRendering || !subscribe) return cell.current;
   const handleStoreChange: StaticNativeFunctionValue = {
     kind: "native-function",
     name: "handleStoreChange",
@@ -139,6 +143,7 @@ const externalStoreHook = (
       queueStateUpdate(frame, cell, readSnapshot(), tools.isDeferred());
       return UNDEFINED_VALUE;
     },
+    onEscape: () => escapeStateCell(frame, cell, null),
   };
   frame.effects.push({
     isLayout: false,
@@ -154,7 +159,7 @@ const externalStoreHook = (
     deps: listValue([subscribe]),
     cleanup: null,
   });
-  return snapshot;
+  return cell.current;
 };
 
 const configEntries = (value: StaticValue | undefined): StaticObjectEntry[] => {

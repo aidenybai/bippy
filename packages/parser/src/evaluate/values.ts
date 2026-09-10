@@ -37,7 +37,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
-import { recordBranchOrigin, recordDerivation } from "./predicates.js";
+import { composeFlattenedPredicate, recordBranchOrigin, recordDerivation } from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -391,7 +391,10 @@ const lookupObjectProperty = (
 };
 
 const unknownSpreadProperty = (spread: StaticValue, key: string): StaticUnknownValue =>
-  unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+  recordDerivation(
+    unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`),
+    { kind: "property", object: spread, key },
+  );
 
 const getInheritedProperty = (
   memo: LookupMemo,
@@ -1403,6 +1406,7 @@ export const branchValue = (
   )
     return firstAlternative;
   const flattened: StaticValue[] = [];
+  const positions: number[][] = alternatives.map(() => []);
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
     const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
@@ -1415,6 +1419,7 @@ export const branchValue = (
     const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
     for (const [innerIndex, value] of inner.entries()) {
       const position = add(value);
+      positions[index].push(position);
       if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
       if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
         return unknownValue(
@@ -1434,7 +1439,9 @@ export const branchValue = (
     preferredIndex: resolvedPreferred,
     reason,
     location,
-    predicate: isPositional ? predicate : null,
+    predicate: isPositional
+      ? predicate
+      : composeFlattenedPredicate(predicate, alternatives, positions, flattened.length),
   };
 };
 
