@@ -14,6 +14,7 @@ import {
   branchValue,
   compareIdentity,
   FALSE_VALUE,
+  getComponentIdentity,
   listValue,
   mapValue,
   objectFromRecord,
@@ -85,6 +86,11 @@ const getKeyIdentity = (key: StaticValue): KeyIdentity => {
       return internIdentity("global", key.name);
     case "context":
       return key.context;
+    case "component-reference":
+      return key.type.kind === "host" ? key.type.tagName : (getComponentIdentity(key) ?? key);
+    case "function":
+    case "class":
+      return getComponentIdentity(key) ?? key;
     default:
       return key;
   }
@@ -102,7 +108,9 @@ const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "context" ||
   key.kind === "global" ||
   key.kind === "native-object" ||
-  key.kind === "element";
+  key.kind === "element" ||
+  (key.kind === "component-reference" &&
+    (key.type.kind === "host" || getComponentIdentity(key) !== null));
 
 /** Upper bound on key alternatives written one by one before the write counts as a dynamic key. */
 const MAX_KEY_ALTERNATIVES = 8;
@@ -208,13 +216,13 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.entries = joined;
   }
 
-  /** Whether `key` may equal a dynamic key stored under another identity (or, being dynamic itself, any other key). */
+  /** Whether `key` may (undecidably) equal a dynamic key stored under another identity, or, being dynamic itself, any other key. */
   private mayCollide(key: StaticValue): boolean {
     const identity = getKeyIdentity(key);
     const isDefinite = isDefiniteKey(key);
     for (const [entryIdentity, entry] of this.entries) {
       if (entryIdentity === identity || (isDefinite && isDefiniteKey(entry.key))) continue;
-      if (compareIdentity(key, entry.key) !== false) return true;
+      if (compareIdentity(key, entry.key) === null) return true;
     }
     return false;
   }
@@ -368,7 +376,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     return this.projectEntries(
       getPresenceStateCount(entries) <= MAX_PRESENCE_STATES
         ? entries
-        : entries.map(({ presence, ...entry }) => entry),
+        : entries.map(({ key, value, isDefinite }) => ({ key, value, isDefinite })),
       select,
     );
   }

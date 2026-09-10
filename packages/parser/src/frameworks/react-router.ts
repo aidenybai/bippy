@@ -2093,7 +2093,7 @@ const renderFrameworkRoutes = (
     // without one, `@react-router/dev` uses `<StrictMode><HydratedRouter /></StrictMode>`
     // and `@remix-run/dev` `<StrictMode><RemixBrowser /></StrictMode>`.
     if (clientEntry) {
-      const entry = renderer.evaluateEntryElement(interpreter, clientEntry);
+      const [entry] = renderer.evaluateEntryRoots(interpreter, clientEntry);
       if (entry) return entry;
     }
     const browserRouter = isRemix ? model.remixBrowser : model.hydratedRouter;

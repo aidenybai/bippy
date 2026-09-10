@@ -34,7 +34,7 @@ export const getPrimitiveWitness = (
 ): string | number | boolean | bigint | undefined => PRIMITIVE_WITNESSES[primitiveType];
 
 /** The interface the language wraps a primitive type's values in (`String` for strings), read off this process's own wrapper. */
-const getPrimitiveInterfaceName = (primitiveType: string): string | undefined => {
+export const getPrimitiveInterfaceName = (primitiveType: string): string | undefined => {
   const witness = getPrimitiveWitness(primitiveType);
   return witness === undefined ? undefined : getNativeInterfaceName(Object(witness));
 };

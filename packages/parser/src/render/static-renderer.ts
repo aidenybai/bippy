@@ -7,7 +7,9 @@ import { objectValue, unknownValue } from "../evaluate/values.js";
 import {
   detectModuleBundler,
   detectModuleTranspiler,
+  getBundlerAssetTransform,
   getBundlerDefines,
+  getBundlerBabelTransform,
   getBundlerResolverOptions,
   getDefaultPlatform,
   readDocumentShell,
@@ -18,7 +20,7 @@ import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
-import { mountNode } from "../materialize/mount.js";
+import { mountNodes } from "../materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
 import type { RendererHost } from "../materialize/renderer-host.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
@@ -26,6 +28,7 @@ import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
   JsonValue,
+  BabelTransform,
   ModuleRecord,
   ProjectContext,
   StaticObjectValue,
@@ -80,6 +83,8 @@ export class StaticRenderer {
   private readonly project: ProjectContext;
   private readonly documentShell: string | null;
   private readonly defines: Record<string, JsonValue>;
+  private readonly platform: string | undefined;
+  private readonly babelTransforms = new Map<string, BabelTransform>();
 
   constructor(options: StaticRendererOptions) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
@@ -88,6 +93,7 @@ export class StaticRenderer {
     const devDirectory = this.resolveOptionalPath(options.devDirectory);
     const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
     const platform = options.platform ?? getDefaultPlatform(bundler);
+    this.platform = platform;
     const bundlerResolverOptions = getBundlerResolverOptions(rootDirectory, bundler, platform);
     this.resolver = new ModuleResolver({
       tsconfigPath: options.tsconfigPath,
@@ -128,6 +134,7 @@ export class StaticRenderer {
     this.graph = new ModuleGraph({
       resolver: this.resolver,
       sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+      assetTransform: getBundlerAssetTransform(rootDirectory, bundler, platform),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
     });
@@ -147,7 +154,23 @@ export class StaticRenderer {
     return this.graph.getModule(this.resolvePath(filePath));
   }
 
-  private startRun(assumeOuterProviders = false): AnalysisRun {
+  /** The bundler's JSX transform for the bundle `entryPath` starts, looked up once per entry. */
+  private getBabelTransform(entryPath: string): BabelTransform {
+    let transform = this.babelTransforms.get(entryPath);
+    if (transform === undefined) {
+      transform = getBundlerBabelTransform(
+        this.options.rootDirectory,
+        this.project.bundler,
+        this.platform,
+        entryPath,
+        this.options.environment,
+      );
+      this.babelTransforms.set(entryPath, transform);
+    }
+    return transform;
+  }
+
+  private startRun(entryPath: string | null, assumeOuterProviders = false): AnalysisRun {
     resetDomGlobals(this.documentShell);
     const host = createDomHost(this.documentShell !== null);
     const interpreter = new Interpreter(this.graph, {
@@ -156,6 +179,7 @@ export class StaticRenderer {
       externalValues: this.options.externalValues,
       globals: this.options.globals,
       defines: this.defines,
+      babelTransform: entryPath === null ? undefined : this.getBabelTransform(entryPath),
       environment: this.options.environment,
       hostPlatform: this.options.hostPlatform,
       hostDocument: host.hostDocument,
@@ -205,7 +229,7 @@ export class StaticRenderer {
    */
   private async finish(
     { interpreter, host }: AnalysisRun,
-    rootValue: StaticValue,
+    rootValues: StaticValue[],
   ): Promise<StaticRenderResult> {
     const runtime = await this.loadRuntime();
     const materializer = new Materializer(interpreter, runtime, host, {
@@ -214,9 +238,9 @@ export class StaticRenderer {
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
       serverComponents: this.options.serverComponents,
     });
-    const rootNode = materializer.toRootNode(rootValue);
+    const rootNodes = rootValues.map((rootValue) => materializer.toRootNode(rootValue));
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, host, rootNode, interpreter.timers, () =>
+    const mounted = await mountNodes(runtime, host, rootNodes, interpreter.timers, () =>
       materializer.resetElementBudget(),
     );
     if (interpreter.timers.hasTasks()) {
@@ -244,7 +268,7 @@ export class StaticRenderer {
   }
 
   private missingModuleResult(filePath: string, message: string): Promise<StaticRenderResult> {
-    const run = this.startRun();
+    const run = this.startRun(null);
     const diagnostic: Diagnostic = {
       severity: "error",
       code: "module-not-found",
@@ -252,7 +276,7 @@ export class StaticRenderer {
       location: null,
     };
     run.interpreter.diagnostics.push(diagnostic);
-    return this.finish(run, unknownValue(`${filePath}: ${message}`));
+    return this.finish(run, [unknownValue(`${filePath}: ${message}`)]);
   }
 
   renderComponent(
@@ -263,7 +287,7 @@ export class StaticRenderer {
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const exportName = options.exportName ?? "default";
-    const run = this.startRun(options.isolated ?? false);
+    const run = this.startRun(absolutePath, options.isolated ?? false);
     const componentValue = run.interpreter.evaluateModuleExport(module, exportName);
     const type = toElementType(
       componentValue,
@@ -279,47 +303,42 @@ export class StaticRenderer {
       location: null,
       environment: null,
     };
-    return this.finish(run, element);
+    return this.finish(run, [element]);
   }
 
   renderEntry(filePath: string): Promise<StaticRenderResult> {
     const absolutePath = this.resolvePath(filePath);
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
-    const run = this.startRun();
-    const entry = this.evaluateEntryElement(run.interpreter, module);
-    return this.finish(run, entry ?? unknownValue("no root render call"));
+    const run = this.startRun(absolutePath);
+    const roots = this.evaluateEntryRoots(run.interpreter, module);
+    return this.finish(run, roots.length > 0 ? roots : [unknownValue("no root render call")]);
   }
 
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
    * with the statements that lead up to it. An entry without such a call (it
-   * mounts through an imported function) runs whole, and the element the first
-   * evaluated root render received is used. Null (with a diagnostic) when no
-   * root render happens.
+   * mounts through an imported function) or with several (an overlay root next
+   * to the app root) runs whole, and every root it rendered is used, in creation
+   * order. Empty (with a diagnostic) when no root render happens.
    */
-  evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
+  evaluateEntryRoots(interpreter: Interpreter, module: ModuleRecord): StaticValue[] {
     const rootCalls = findRootRenderCalls(module);
-    if (rootCalls.length === 0) {
+    if (rootCalls.length !== 1) {
       interpreter.initializeModule(module);
       interpreter.timers.drainMicrotasks();
-      if (interpreter.rootRender.element) return interpreter.rootRender.element;
-      interpreter.report(
-        "no-root-render",
-        `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,
-        null,
-        "error",
-      );
-      return null;
-    }
-    if (rootCalls.length > 1) {
-      interpreter.report(
-        "multiple-root-renders",
-        `${rootCalls.length} root render calls found in ${module.filePath}; using the first`,
-        null,
-        "warning",
-      );
+      const roots = interpreter.rootRender.elements;
+      if (roots.length > 0) return roots;
+      if (rootCalls.length === 0) {
+        interpreter.report(
+          "no-root-render",
+          `no createRoot().render / hydrateRoot / ReactDOM.render call found in ${module.filePath}`,
+          null,
+          "error",
+        );
+        return [];
+      }
     }
     const rootCall = rootCalls[0];
     interpreter.initializeModule(
@@ -331,12 +350,12 @@ export class StaticRenderer {
     for (const statements of rootCall.enclosingStatements) {
       interpreter.evaluateBlock(statements, context, false);
     }
-    return interpreter.evaluateExpression(rootCall.element, context);
+    return [interpreter.evaluateExpression(rootCall.element, context)];
   }
 
   renderWith(produce: (interpreter: Interpreter) => StaticValue): Promise<StaticRenderResult> {
-    const run = this.startRun();
-    return this.finish(run, produce(run.interpreter));
+    const run = this.startRun(null);
+    return this.finish(run, [produce(run.interpreter)]);
   }
 }
 

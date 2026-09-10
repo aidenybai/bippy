@@ -1,0 +1,7 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 1,
+  "notes": "Entry that opens two React roots (a dev overlay in a container it creates, then the app in `#root`) and re-renders the app root twice: each root keeps its own element, the last `root.render` wins, and the runtime capture of `#root` matches the app root rather than a merge of both."
+}

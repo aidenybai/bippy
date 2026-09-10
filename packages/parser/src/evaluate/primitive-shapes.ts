@@ -78,6 +78,13 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
     : concatenated;
 };
 
+/** The string `prefix + source + suffix` reads as. */
+export const composedStringValue = (composition: StringComposition): StaticValue =>
+  concatenateStrings(
+    primitiveValue(composition.prefix),
+    concatenateStrings(composition.source, primitiveValue(composition.suffix)),
+  );
+
 /** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */
 const toJoinedItem = (item: StaticValue): StaticValue => {
   if (item.kind === "primitive" && (item.value === null || item.value === undefined))
@@ -140,6 +147,14 @@ const toFixedOfRange = (range: NumberRange, digits: number): StaticValue | null 
   if (!Number.isInteger(digits) || digits < 0 || digits > 100) return null;
   if (range.min < 0 || range.max >= 9) return null;
   return shapedStringValue("toFixed()", { prefix: "", length: digits === 0 ? 1 : digits + 2 });
+};
+
+/** `text[index]` for a dynamic `index` whose range stays inside `text`: some single character. */
+export const getDynamicStringCharacter = (text: string, index: StaticValue): StaticValue | null => {
+  const range = toNumberRange(index);
+  if (!range || range.min < 0 || range.max >= text.length) return null;
+  if (!Number.isInteger(range.min) || !Number.isInteger(range.max)) return null;
+  return shapedStringValue("character at a dynamic index", { prefix: "", length: 1 });
 };
 
 /** `text[index]`: the character when `index` falls inside the known prefix, `undefined` past a known length. */
@@ -210,6 +225,17 @@ const rangeOf = (reason: string, bounds: number[]): StaticValue | null =>
     ? null
     : rangedNumberValue(reason, { min: Math.min(...bounds), max: Math.max(...bounds) });
 
+const INT32_MIN = -(2 ** 31);
+const INT32_MAX = 2 ** 31 - 1;
+
+const isIdentityOperand = (range: NumberRange): boolean => range.min === 0 && range.max === 0;
+
+/** `x | 0`, `x ^ 0`, `x >> 0`: ToInt32 truncates toward zero while `x` stays inside int32. */
+const truncateToInt32 = (reason: string, range: NumberRange): StaticValue | null =>
+  range.min < INT32_MIN || range.max > INT32_MAX
+    ? null
+    : rangeOf(reason, [Math.trunc(range.min), Math.trunc(range.max)]);
+
 /** Interval arithmetic on two numbers whose ranges are known; null when the result's range is not. */
 export const applyNumberRangeOperator = (
   operator: string,
@@ -240,6 +266,13 @@ export const applyNumberRangeOperator = (
         leftRange.max / rightRange.min,
         leftRange.max / rightRange.max,
       ]);
+    case "|":
+    case "^":
+      if (isIdentityOperand(rightRange)) return truncateToInt32(reason, leftRange);
+      if (isIdentityOperand(leftRange)) return truncateToInt32(reason, rightRange);
+      return null;
+    case ">>":
+      return isIdentityOperand(rightRange) ? truncateToInt32(reason, leftRange) : null;
     default:
       return null;
   }

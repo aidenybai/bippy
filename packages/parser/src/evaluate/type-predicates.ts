@@ -24,8 +24,6 @@ export const isElementValue: TypePredicate = (value) => {
       const keys = getKnownObjectKeys(value);
       return keys !== null && !keys.includes(ELEMENT_TYPE_TAG_KEY) ? false : null;
     }
-    case "unknown-primitive":
-      return value.primitiveType === "any" ? null : false;
     default:
       return isUndecided(value) ? null : false;
   }

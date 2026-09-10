@@ -43,6 +43,7 @@ import { getFunctionComponent } from "../react/element-type.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
+  ParsedSourceFile,
   RenderEnvironment,
   Scope,
   SourceLocation,
@@ -60,6 +61,7 @@ import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js"
 import {
   AlternativeMarker,
   BranchMarker,
+  CrashMarker,
   createSuspendedMarker,
   MARKER_NAMES,
   OpaqueMarker,
@@ -117,7 +119,38 @@ interface CompositeFrame {
   /** Closure the component was created in: a factory's components share a node but not a scope. */
   scope: Scope;
   props: StaticValue;
+  file: ParsedSourceFile;
+  /** Stack index of the frame whose body created this component's element; -1 when no frame did. */
+  ownerIndex: number;
 }
+
+const isCreatedWithin = (frame: CompositeFrame, location: SourceLocation): boolean => {
+  if (frame.file.filePath !== location.filePath) return false;
+  const offset = frame.file.lineStarts[location.line - 1] + location.column - 1;
+  return offset >= frame.node.start && offset < frame.node.end;
+};
+
+const getOwnerIndex = (stack: CompositeFrame[], location: SourceLocation | null): number =>
+  location === null ? -1 : stack.findLastIndex((frame) => isCreatedWithin(frame, location));
+
+/**
+ * Frames of `component` along the owner chain of the element: the component
+ * recurses only through renders its own render (transitively) produced, not
+ * when a shallower component nests it inside `children` it created itself.
+ * Without a known owner every frame counts.
+ */
+const getRecursiveAncestors = (
+  stack: CompositeFrame[],
+  component: ComponentDefinition,
+  ownerIndex: number,
+): CompositeFrame[] => {
+  if (ownerIndex === -1) return stack.filter((frame) => frame.node === component.node);
+  const owners: CompositeFrame[] = [];
+  for (let index = ownerIndex; index >= 0; index = stack[index].ownerIndex) {
+    if (stack[index].node === component.node) owners.push(stack[index]);
+  }
+  return owners;
+};
 
 /**
  * Everything about a position in the tree that React does not carry for us:
@@ -134,6 +167,8 @@ interface MaterializeContext {
   ignoresMaybeThrows: boolean;
   /** How many non-preferred branch alternatives enclose this node. */
   alternativeDepth: number;
+  /** Inside a branch alternative or repeat item, so only some decisions reach this node. */
+  isDecided: boolean;
   /** The component whose render produced this position; host refs are committed into it. */
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
@@ -254,6 +289,7 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
   first.errorBoundaryDepth === second.errorBoundaryDepth &&
   first.ignoresMaybeThrows === second.ignoresMaybeThrows &&
   first.alternativeDepth === second.alternativeDepth &&
+  first.isDecided === second.isDecided &&
   first.componentStack.length === second.componentStack.length &&
   first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
@@ -505,6 +541,7 @@ export class Materializer {
       errorBoundaryDepth: 0,
       ignoresMaybeThrows: false,
       alternativeDepth: 0,
+      isDecided: false,
       owner: null,
       isStrictMode: false,
     };
@@ -549,7 +586,7 @@ export class Materializer {
           location: value.location && formatSourceLocation(value.location),
           countMin: value.count?.min ?? 0,
           countMax: value.count?.max ?? null,
-          children: [this.toNode(value.item, context, false)],
+          children: [this.toNode(value.item, { ...context, isDecided: true }, false)],
         });
       case "branch":
         if (value.alternatives.every(isEmptyChild)) return null;
@@ -589,7 +626,7 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
-    if (isPreferred) return this.toNode(value, context, isTopLevel);
+    if (isPreferred) return this.toNode(value, { ...context, isDecided: true }, isTopLevel);
     if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
       return this.unknownNode(
         `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
@@ -598,7 +635,7 @@ export class Materializer {
     }
     return this.toNode(
       value,
-      { ...context, alternativeDepth: context.alternativeDepth + 1 },
+      { ...context, alternativeDepth: context.alternativeDepth + 1, isDecided: true },
       isTopLevel,
     );
   }
@@ -756,11 +793,10 @@ export class Materializer {
     const children = getObjectProperty(props, "children");
     const input: ProxyInput = { props, ref: null, location, context, isMemoized: false };
     switch (type.kind) {
-      case "host":
-        return createElement(
-          type.tagName,
-          this.hostProps(type.tagName, props, reactKey, location, context),
-        );
+      case "host": {
+        const hostProps = this.hostProps(type.tagName, props, reactKey, location, context);
+        return createElement(type.tagName, hostProps);
+      }
       case "function":
         return createElement(this.getFunctionProxy(type.component), { key: reactKey, input });
       case "class":
@@ -771,21 +807,14 @@ export class Materializer {
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, {
           key: reactKey,
-          input: { ...input, isMemoized: !type.hasCompare },
+          input: { ...this.forwardedInput(type.inner, input), isMemoized: !type.hasCompare },
         });
       }
-      case "forward-ref": {
-        const ref = getObjectProperty(props, "ref");
-        const renderProps = omitObjectKeys(props, new Set(["ref"]));
+      case "forward-ref":
         return createElement(this.getForwardRefProxy(type), {
           key: reactKey,
-          input: {
-            ...input,
-            props: renderProps.kind === "object" ? renderProps : props,
-            ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
-          },
+          input: this.forwardedInput(type, input),
         });
-      }
       case "lazy": {
         const lazyType = this.getLazyType(type);
         if (!lazyType) {
@@ -1218,6 +1247,19 @@ export class Materializer {
     return proxy;
   }
 
+  /** A `forwardRef` render function (also under `memo`) receives `ref` apart from its props. */
+  private forwardedInput(type: StaticElementType, input: ProxyInput): ProxyInput {
+    if (type.kind === "memo") return this.forwardedInput(type.inner, input);
+    if (type.kind !== "forward-ref") return input;
+    const ref = getObjectProperty(input.props, "ref");
+    const renderProps = omitObjectKeys(input.props, new Set(["ref"]));
+    return {
+      ...input,
+      props: renderProps.kind === "object" ? renderProps : input.props,
+      ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
+    };
+  }
+
   private getForwardRefProxy(
     type: Extract<StaticElementType, { kind: "forward-ref" }>,
   ): ComponentType<ProxyProps> {
@@ -1640,7 +1682,7 @@ export class Materializer {
           renderBoundary(false, { ...context, ignoresMaybeThrows: true }),
           renderBoundary(true, context),
         ],
-        "a child may throw into this error boundary",
+        `a child may throw into this error boundary (${caught.message})`,
         0,
         true,
       );
@@ -1656,10 +1698,12 @@ export class Materializer {
   ): ReactNode {
     const certainty = getThrowCertainty(rendered);
     if (certainty === "always") {
-      throw (
-        this.getWakeable(rendered, input.context) ??
-        new StaticThrowError(describeThrow(rendered), false)
-      );
+      const wakeable = this.getWakeable(rendered, input.context);
+      if (wakeable) throw wakeable;
+      if (input.context.errorBoundaryDepth === 0 && input.context.isDecided) {
+        return this.runtime.react.createElement(CrashMarker, { reason: describeThrow(rendered) });
+      }
+      throw new StaticThrowError(describeThrow(rendered), false);
     }
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
@@ -1705,12 +1749,19 @@ export class Materializer {
     render: (componentContext: EvaluationContext) => StaticValue,
   ): CompositeEvaluation {
     const environment = this.componentEnvironment(component, context);
+    const ownerIndex = getOwnerIndex(context.componentStack, location);
     const childContext: MaterializeContext = {
       ...context,
       depth: context.depth + 1,
       componentStack: [
         ...context.componentStack,
-        { node: component.node, scope: component.scope, props },
+        {
+          node: component.node,
+          scope: component.scope,
+          props,
+          file: component.module.file,
+          ownerIndex,
+        },
       ],
       environment,
       owner: null,
@@ -1728,7 +1779,7 @@ export class Materializer {
         componentContext: null,
       };
     }
-    const ancestors = context.componentStack.filter((frame) => frame.node === component.node);
+    const ancestors = getRecursiveAncestors(context.componentStack, component, ownerIndex);
     const isNonTerminating = ancestors.some(
       (frame) => frame.scope === component.scope && areValuesEquivalent(frame.props, props),
     );

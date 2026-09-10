@@ -130,6 +130,7 @@ import {
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
+  getOwnObjectEntry,
   getPreferredTruthiness,
   getPropertyName,
   getSymbolPropertyKey,
@@ -239,6 +240,9 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
   if (key?.kind !== "primitive") return null;
   return { kind: "property", key: String(key.value), value };
 };
+
+/** `Math.random()` is half-open: it never reaches 1. */
+const LARGEST_BELOW_ONE = 1 - Number.EPSILON / 2;
 
 /** Collection methods whose callback runs synchronously for every item, a shape the language shares across `Array`, `Map` and `Set`. */
 const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
@@ -450,18 +454,36 @@ const readDescriptorValue = (
   location: SourceLocation | null,
 ): StaticValue => {
   const keys = getKnownObjectKeys(descriptor);
-  if (keys?.includes("value")) return getObjectProperty(descriptor, "value");
-  if (keys?.includes("get")) {
+  if (keys === null) {
+    return unknownValue(`property "${key}" defined with a dynamic descriptor`, location);
+  }
+  if (keys.includes("value")) return getObjectProperty(descriptor, "value");
+  if (keys.includes("get")) {
     return interpreter.callValue(getObjectProperty(descriptor, "get"), [], context, location, {
       thisValue: target,
     });
   }
-  return unknownValue(`property "${key}" defined with a dynamic descriptor`, location);
+  return UNDEFINED_VALUE;
+};
+
+/** A descriptor with neither `value`, `get` nor `set` only changes an existing property's attributes. */
+const isGenericDescriptor = (descriptor: StaticObjectValue): boolean => {
+  const keys = getKnownObjectKeys(descriptor);
+  return keys !== null && !keys.some((key) => key === "value" || key === "get" || key === "set");
 };
 
 /** A descriptor without `enumerable` defines a non-enumerable property; an undecidable flag is taken as enumerable. */
 const isEnumerableDescriptor = (descriptor: StaticObjectValue): boolean =>
   getTruthiness(getObjectProperty(descriptor, "enumerable")) !== false;
+
+/** Attributes a descriptor omits stay as the property already has them. */
+const isEnumerableAfterDefine = (
+  descriptor: StaticObjectValue,
+  existing: StaticPropertyEntry | null,
+): boolean =>
+  existing && !getKnownObjectKeys(descriptor)?.includes("enumerable")
+    ? existing.isEnumerable !== false
+    : isEnumerableDescriptor(descriptor);
 
 /** `Object.defineProperty`; a function's `name` is what fibers display. */
 const defineOwnProperty = (
@@ -472,9 +494,14 @@ const defineOwnProperty = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
-  const isEnumerable = isEnumerableDescriptor(descriptor);
   if (target.kind === "object" || target.kind === "list") interpreter.recordHeapMutation(target);
   if (target.kind === "object") {
+    const existing = getOwnObjectEntry(target, key);
+    const isEnumerable = isEnumerableAfterDefine(descriptor, existing);
+    if (existing && isGenericDescriptor(descriptor)) {
+      setObjectEntry(target, { ...existing, isEnumerable });
+      return;
+    }
     const accessor = getDescriptorAccessor(descriptor);
     const entry: StaticPropertyEntry = accessor
       ? accessorEntry(key, accessor, location)
@@ -486,6 +513,8 @@ const defineOwnProperty = (
     setObjectEntry(target, { ...entry, isEnumerable });
     return;
   }
+  if (isGenericDescriptor(descriptor)) return;
+  const isEnumerable = isEnumerableDescriptor(descriptor);
   const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
   switch (target.kind) {
     case "function":
@@ -886,6 +915,8 @@ const INSPECTING_GLOBALS = new Set([
   "Number.isInteger",
   "Number.isSafeInteger",
   "JSON.stringify",
+  "String.fromCharCode",
+  "String.fromCodePoint",
 ]);
 
 const callGlobal = (
@@ -944,7 +975,7 @@ const callGlobal = (
   if (isConstructor && name === "TextEncoder") return createTextEncoder();
   if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
-    return createDomObserver(interpreter, name, first, location);
+    return createDomObserver(interpreter, name, first, context, location);
   if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
@@ -1391,7 +1422,7 @@ const callGlobal = (
     default:
       break;
   }
-  if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
+  if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: LARGEST_BELOW_ONE });
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
@@ -1539,6 +1570,55 @@ interface JoinedItems {
   parts: StaticValue[];
   isPreferred: boolean;
 }
+
+const prependItems = (prefix: StaticValue[], rest: StaticValue): StaticValue =>
+  mapValue(rest, (alternative) =>
+    alternative.kind === "list" ? listValue([...prefix, ...alternative.items]) : alternative,
+  );
+
+const hasListAlternative = (item: StaticValue): boolean =>
+  item.kind === "branch" && item.alternatives.some((alternative) => alternative.kind === "list");
+
+/**
+ * `flat(depth)`: nested lists unwrap `depth` levels (`Infinity` unwraps all, a
+ * self-containing list once). An item that is a list on some paths only
+ * (`isSelected && [style]`) yields one flattened list per path.
+ */
+const flattenListItems = (
+  items: StaticValue[],
+  depth: number,
+  seen: Set<StaticListValue> = new Set(),
+): StaticValue => {
+  const flattened: StaticValue[] = [];
+  for (const [index, item] of items.entries()) {
+    const rest = items.slice(index + 1);
+    if (depth >= 1 && hasListAlternative(item)) {
+      return prependItems(
+        flattened,
+        mapValue(item, (alternative) => flattenListItems([alternative, ...rest], depth, seen)),
+      );
+    }
+    if (depth < 1 || item.kind !== "list" || seen.has(item)) {
+      flattened.push(item);
+      continue;
+    }
+    seen.add(item);
+    const inner = flattenListItems(item.items, depth - 1, seen);
+    seen.delete(item);
+    if (inner.kind === "branch") {
+      return prependItems(
+        flattened,
+        mapValue(inner, (alternative) =>
+          alternative.kind === "list"
+            ? prependItems(alternative.items, flattenListItems(rest, depth, seen))
+            : alternative,
+        ),
+      );
+    }
+    if (inner.kind === "list") flattened.push(...inner.items);
+  }
+  return listValue(flattened);
+};
 
 /** `join()` over items that may be absent: one string per combination of present items. */
 const joinListItems = (
@@ -2271,12 +2351,11 @@ export const evaluateBuiltinCall = (
         return receiver;
       }
       case "flat": {
-        const items: StaticValue[] = [];
-        for (const item of receiver.items) {
-          if (item.kind === "list") items.push(...item.items);
-          else items.push(item);
+        if (first !== undefined && first.kind !== "primitive") {
+          return unknownValue("flat() with a dynamic depth", location);
         }
-        return listValue(items);
+        const depth = first === undefined || first.value === undefined ? 1 : Number(first.value);
+        return flattenListItems(receiver.items, Number.isNaN(depth) ? 0 : depth);
       }
       case "join": {
         if (first === undefined || (first.kind === "primitive" && first.value === undefined)) {

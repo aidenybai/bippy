@@ -51,8 +51,9 @@ export class CommandFailedError extends ParserError {
   constructor(
     readonly command: string,
     readonly exitCode: number | null,
+    readonly stderr = "",
   ) {
-    super(`\`${command}\` exited with code ${exitCode}`);
+    super(`\`${command}\` exited with code ${exitCode}${stderr ? `:\n${stderr.trim()}` : ""}`);
   }
 }
 

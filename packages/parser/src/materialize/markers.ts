@@ -12,6 +12,7 @@ export const MARKER_NAMES = {
   repeat: "$Repeat",
   opaque: "$Opaque",
   unknown: "$Unknown",
+  crash: "$Crash",
   text: "$Text",
   suspended: "$Suspended",
   suspenseBoundary: "$SuspenseBoundary",
@@ -48,6 +49,10 @@ interface UnknownMarkerProps {
   isTruncated: boolean;
 }
 
+interface CrashMarkerProps {
+  reason: string;
+}
+
 export const TEXT_PLACEHOLDER = "\u2026";
 
 const named = <T extends (...args: never[]) => unknown>(name: string, component: T): T =>
@@ -77,6 +82,9 @@ export const UnknownMarker = named(
   MARKER_NAMES.unknown,
   (_props: UnknownMarkerProps): null => null,
 );
+
+/** An uncaught error React would unmount the root over; the states selecting it have an empty root. */
+export const CrashMarker = named(MARKER_NAMES.crash, (_props: CrashMarkerProps): null => null);
 
 export const TextMarker = named(MARKER_NAMES.text, (): string => TEXT_PLACEHOLDER);
 

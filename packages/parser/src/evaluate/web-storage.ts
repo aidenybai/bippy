@@ -1,14 +1,21 @@
 import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js";
-import { NULL_VALUE, UNDEFINED_VALUE, primitiveValue, unknownValue } from "./values.js";
+import {
+  NULL_VALUE,
+  UNDEFINED_VALUE,
+  primitiveValue,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
 
 /**
  * Web Storage as the captured page's first script found it; without a capture,
  * as a fresh browser profile holds it (empty). Later state comes only from
- * writes performed by the interpreted code.
+ * writes performed by the interpreted code: a `null` entry is a key whose
+ * stored string is dynamic, and a write under a dynamic key loses every key.
  */
 export interface StorageArea {
-  readonly entries: Map<string, string>;
-  hasUnknownWrites: boolean;
+  readonly entries: Map<string, string | null>;
+  hasUnknownKeys: boolean;
 }
 
 export interface StorageAreas {
@@ -28,7 +35,7 @@ export const getStorageAreaName = (globalName: string): StorageAreaName | null =
 
 const createStorageArea = (entries: Record<string, string> = {}): StorageArea => ({
   entries: new Map(Object.entries(entries)),
-  hasUnknownWrites: false,
+  hasUnknownKeys: false,
 });
 
 export const createStorageAreas = (page: CapturedPageState | null): StorageAreas => ({
@@ -40,8 +47,8 @@ const toStorageString = (value: StaticValue | undefined): string | null =>
   value?.kind === "primitive" ? String(value.value) : null;
 
 export const getStorageLength = (area: StorageArea, areaName: StorageAreaName): StaticValue =>
-  area.hasUnknownWrites
-    ? unknownValue(`${areaName}.length after a dynamic write`)
+  area.hasUnknownKeys
+    ? unknownValue(`${areaName}.length after a write under a dynamic key`)
     : primitiveValue(area.entries.size);
 
 export const callStorageMethod = (
@@ -58,28 +65,33 @@ export const callStorageMethod = (
 
   switch (methodName) {
     case "getItem": {
-      if (area.hasUnknownWrites) return describe("after a dynamic write");
+      if (area.hasUnknownKeys) return describe("after a write under a dynamic key");
       if (key === null) return describe("with a dynamic key");
       const stored = area.entries.get(key);
+      if (stored === null) {
+        return unknownPrimitiveValue(
+          "string",
+          `${areaName}.${methodName}(${JSON.stringify(key)}) stores a dynamic string`,
+        );
+      }
       return stored === undefined ? NULL_VALUE : primitiveValue(stored);
     }
     case "setItem": {
-      const stored = toStorageString(second);
-      if (key === null || stored === null) area.hasUnknownWrites = true;
-      else area.entries.set(key, stored);
+      if (key === null) area.hasUnknownKeys = true;
+      else area.entries.set(key, toStorageString(second));
       return UNDEFINED_VALUE;
     }
     case "removeItem": {
-      if (key === null) area.hasUnknownWrites = true;
+      if (key === null) area.hasUnknownKeys = true;
       else area.entries.delete(key);
       return UNDEFINED_VALUE;
     }
     case "clear":
       area.entries.clear();
-      area.hasUnknownWrites = false;
+      area.hasUnknownKeys = false;
       return UNDEFINED_VALUE;
     case "key": {
-      if (area.hasUnknownWrites) return describe("after a dynamic write");
+      if (area.hasUnknownKeys) return describe("after a write under a dynamic key");
       if (first?.kind !== "primitive") return describe("with a dynamic index");
       const storedKey = [...area.entries.keys()][Number(first.value)];
       return storedKey === undefined ? NULL_VALUE : primitiveValue(storedKey);

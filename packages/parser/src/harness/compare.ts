@@ -255,6 +255,8 @@ export const describePatternNode = (node: PatternNode): string => {
       return `<${node.name}> (opaque)`;
     case "wildcard":
       return `?unknown(${node.reason})`;
+    case "crash":
+      return `!crash(${node.reason})`;
   }
 };
 
@@ -501,6 +503,9 @@ class Matcher {
       case "opaque":
       case "wildcard":
         return this.matchLeaf(pattern, runtime, runtimeIndex, path, continuation);
+      case "crash":
+        this.recordFailure(path, runtime, runtimeIndex, pattern);
+        return null;
       case "branch": {
         const decided = this.assignment.get(pattern.variable);
         if (decided !== undefined) {

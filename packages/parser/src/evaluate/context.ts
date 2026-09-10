@@ -21,6 +21,8 @@ export const NO_PROVIDERS: ContextReader = () => null;
 export interface CallFrame {
   node: FunctionLikeNode;
   scope: Scope;
+  /** The scope the parameters were bound in. */
+  activationScope: Scope;
   args: StaticValue[];
   thisValue: StaticValue | null;
   /** `Interpreter.changeCount` when the activation began. */

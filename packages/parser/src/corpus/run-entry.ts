@@ -219,7 +219,7 @@ const captureLive = async (
     env: getCommandEnv(entry, options.scriptsDirectory),
     logPath,
   });
-  server.start();
+  await server.start(entry.url);
   try {
     await server.waitUntilReady(entry.url, entry.readyTimeoutMs ?? DEFAULT_READY_TIMEOUT_MS);
     log(`capture ${entry.url}`);

@@ -1,4 +1,4 @@
-import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
+import type { ReactApi, StaticElementType, StaticExternalValue, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
 const REACT_DOM_PACKAGES = new Set(["react-dom", "preact/compat"]);
@@ -98,18 +98,25 @@ export const resolveReactApi = (
   return null;
 };
 
-const SYMBOL_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
-  "Fragment",
-  "StrictMode",
-  "Suspense",
-  "SuspenseList",
-  "Profiler",
-  "Activity",
-  "ViewTransition",
+/** The element type each symbol-valued React export (`Symbol.for("react.fragment")`, ...) creates. */
+const SYMBOL_ELEMENT_TYPES: ReadonlyMap<ReactApi, StaticElementType> = new Map<
+  ReactApi,
+  StaticElementType
+>([
+  ["Fragment", { kind: "fragment" }],
+  ["StrictMode", { kind: "strict-mode" }],
+  ["Suspense", { kind: "suspense" }],
+  ["SuspenseList", { kind: "suspense-list" }],
+  ["Profiler", { kind: "profiler" }],
+  ["Activity", { kind: "activity" }],
+  ["ViewTransition", { kind: "view-transition" }],
 ]);
 
+export const getSymbolElementType = (api: ReactApi): StaticElementType | null =>
+  SYMBOL_ELEMENT_TYPES.get(api) ?? null;
+
 export const getReactApiTypeof = (api: ReactApi): string => {
-  if (SYMBOL_API_NAMES.has(api)) return "symbol";
+  if (SYMBOL_ELEMENT_TYPES.has(api)) return "symbol";
   return api === "Children" ? "object" : "function";
 };
 

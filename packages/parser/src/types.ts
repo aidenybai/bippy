@@ -41,6 +41,22 @@ export interface JsxPragma {
   importSource: string | null;
 }
 
+/** A Babel plugin that reroutes `createElement` imported from `react` through another module's export in the files it visits. */
+export interface CreateElementRewrite {
+  filePattern: RegExp;
+  moduleSpecifier: string;
+  exportName: string;
+}
+
+/** What a bundler's project-level Babel config does to element creation and functions in a bundle. */
+export interface BabelTransform {
+  /** The JSX plugin's settings; a file's own `@jsx*` annotations override them field by field. */
+  pragma: JsxPragma | null;
+  createElementRewrites: CreateElementRewrite[];
+  /** `react-native-worklets/plugin` is in the chain, so worklet functions carry `__closure` and `__workletHash`. */
+  workletizes: boolean;
+}
+
 export interface TransformedSource {
   sourceText: string;
   lang: SourceLanguage;
@@ -50,6 +66,11 @@ export interface TransformedSource {
 export interface SourceTransform {
   extension: string;
   transform: (filePath: string, sourceText: string) => TransformedSource | null;
+}
+
+/** A bundler's asset transformer: the JavaScript source it links in place of a non-source file, or `null` when it links the file itself. */
+export interface AssetTransform {
+  (filePath: string): string | null;
 }
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
@@ -415,8 +436,8 @@ export interface InstalledPackage {
 /** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
 export type ModuleTranspiler = "esbuild" | "name-preserving";
 
-/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers and Expo's Metro shim them. */
-export type ModuleBundler = "vite" | "expo" | "unknown";
+/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers and Expo's Metro shim them; Rsbuild projects declare theirs through `source.define`. */
+export type ModuleBundler = "vite" | "expo" | "rsbuild" | "unknown";
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
@@ -688,6 +709,7 @@ export interface StaticPrimitiveValue {
   value: StaticPrimitive;
 }
 
+/** `any`: a non-nullish primitive whose type is undecided (`+` on dynamic operands, a bigint). */
 export type UnknownPrimitiveType = "string" | "number" | "boolean" | "any";
 
 /** Ordering a clock-derived number carries; see `evaluate/timers.ts`. */

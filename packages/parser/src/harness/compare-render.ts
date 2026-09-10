@@ -15,7 +15,7 @@ import {
 } from "./state-space.js";
 import {
   flattenPatternFibers,
-  getSnapshotRootChildren,
+  snapshotToPattern,
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
@@ -116,7 +116,9 @@ export const enumerateStaticStates = (
 ): StaticRenderStateSpace => {
   const budget = { ...DEFAULT_STATE_SPACE_BUDGET, ...options.budget };
   const transparent = options.transparentStaticFibers ?? new Set<string>();
-  const rootPattern = getSnapshotRootChildren(staticResult.snapshot);
+  const anchor = options.anchor ?? null;
+  const rootIndex = chooseRootIndex(staticResult.snapshot, anchor);
+  const rootPattern = snapshotToPattern(staticResult.snapshot.roots[rootIndex]?.children ?? []);
   const staticChildren = flattenPatternFibers(rootPattern, transparent);
   if (isStaticRootUnresolved(rootPattern)) {
     return unresolvedStateSpace(
@@ -133,9 +135,11 @@ export const enumerateStaticStates = (
     );
   }
   const commits = (staticResult.commits.length > 0 ? staticResult.commits : [staticResult.snapshot])
-    .map((commit) => flattenPatternFibers(getSnapshotRootChildren(commit), transparent))
+    .flatMap((commit) => {
+      const root = commit.roots[rootIndex];
+      return root ? [flattenPatternFibers(snapshotToPattern(root.children), transparent)] : [];
+    })
     .filter((pattern) => pattern.length > 0);
-  const anchor = options.anchor ?? null;
   const anchoredCommits =
     anchor === null
       ? commits
@@ -203,34 +207,37 @@ const countFibers = (fibers: RuntimeFiberSnapshot[]): number => {
 
 /**
  * Pages mount more than one React root (dev overlays, portals rendered with a
- * second `createRoot`). Without an explicit `rootIndex`, prefer the root that
- * holds the anchor, otherwise the largest one.
+ * second `createRoot`), and so does the static render of an entry that opens
+ * several. Prefer the root that holds the anchor, otherwise the largest one;
+ * -1 when there is none.
  */
-const chooseRuntimeRoot = (
-  runtime: RuntimeSnapshot,
-  anchor: string | null,
-  options: CompareRenderOptions,
-): RuntimeFiberSnapshot | null => {
-  if (options.rootIndex !== undefined) return runtime.roots[options.rootIndex] ?? null;
+const chooseRootIndex = (snapshot: RuntimeSnapshot, anchor: string | null): number => {
   if (anchor) {
-    const anchored = runtime.roots.find(
+    const anchored = snapshot.roots.findIndex(
       (root) =>
         findSnapshotFiber(root, (fiber) => fiber.name === anchor && fiber.tag !== "HostText") !==
         null,
     );
-    if (anchored) return anchored;
+    if (anchored !== -1) return anchored;
   }
-  let largest: RuntimeFiberSnapshot | null = null;
+  let largest = -1;
   let largestSize = -1;
-  for (const root of runtime.roots) {
+  for (const [index, root] of snapshot.roots.entries()) {
     const size = countFibers(root.children);
     if (size > largestSize) {
-      largest = root;
+      largest = index;
       largestSize = size;
     }
   }
   return largest;
 };
+
+const chooseRuntimeRoot = (
+  runtime: RuntimeSnapshot,
+  anchor: string | null,
+  options: CompareRenderOptions,
+): RuntimeFiberSnapshot | null =>
+  runtime.roots[options.rootIndex ?? chooseRootIndex(runtime, anchor)] ?? null;
 
 /** Checks the runtime tree for membership in the enumerated state space. */
 export const compareStaticToRuntime = (

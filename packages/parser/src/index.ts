@@ -24,7 +24,7 @@ export { Materializer, type MaterializerOptions } from "./materialize/materializ
 export { MARKER_NAMES } from "./materialize/markers.js";
 export { loadReactRuntime, type ReactRuntime } from "./materialize/react-runtime.js";
 export { ensureDomGlobals } from "./materialize/dom-environment.js";
-export { mountNode, type MountResult } from "./materialize/mount.js";
+export { mountNodes, type MountResult } from "./materialize/mount.js";
 export {
   StaticRenderer,
   createStaticRenderer,

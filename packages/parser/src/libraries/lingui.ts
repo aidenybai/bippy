@@ -15,6 +15,7 @@ import {
 } from "../evaluate/values.js";
 import { element, nativeFunction, stubElement, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
+import { isVersionAtLeast } from "./installed-version.js";
 import type {
   CapturedLinguiCatalog,
   CapturedValue,
@@ -400,17 +401,26 @@ const sourceFromArguments = (args: StaticValue[]): MessageSource => {
 
 const noopMethod = (name: string): StaticValue => nativeFunction(name, () => UNDEFINED_VALUE);
 
-const RENDER_FRAGMENT_STUB: StubComponent = {
-  displayName: "RenderFragment",
+/** `@lingui/react` renamed `TransNoContext`'s fallback `RenderFragment` to `RenderChildren` in 5.9.0. */
+const RENDER_CHILDREN_VERSION = "5.9.0";
+
+const createFallbackComponentStub = (version: string | null): StubComponent => ({
+  displayName:
+    version !== null && isVersionAtLeast(version, RENDER_CHILDREN_VERSION)
+      ? "RenderChildren"
+      : "RenderFragment",
   render: (props) => getObjectProperty(props, "children"),
-};
+});
 
 const readLinguiContext = (tools: StubRenderTools): StaticValue => {
   const context = tools.readContext(LINGUI_CONTEXT);
   return isNull(context) ? unknownValue("useLingui() rendered outside an I18nProvider") : context;
 };
 
-const createLinguiModel = (catalog: CapturedLinguiCatalog | null): LinguiModel => {
+const createLinguiModel = (
+  catalog: CapturedLinguiCatalog | null,
+  fallbackComponentStub: StubComponent,
+): LinguiModel => {
   /**
    * `i18n._`: `messages[id] || message || id`, rendered. Exact against a captured
    * catalog; a branch against the unknown runtime catalog otherwise.
@@ -500,7 +510,7 @@ const createLinguiModel = (catalog: CapturedLinguiCatalog | null): LinguiModel =
         "defaultComponent",
       );
       return isUndefinedValue(defaultComponent)
-        ? stubElement(RENDER_FRAGMENT_STUB, { children: translated })
+        ? stubElement(fallbackComponentStub, { children: translated })
         : element(toElementType(defaultComponent, null), translationProps);
     },
   };
@@ -656,7 +666,10 @@ const models = new WeakMap<ProjectContext, LinguiModel>();
 export const linguiValue: LibraryValueProvider = (specifier, importedName, project) => {
   let model = models.get(project);
   if (!model) {
-    model = createLinguiModel(project.linguiCatalog);
+    model = createLinguiModel(
+      project.linguiCatalog,
+      createFallbackComponentStub(project.readPackageVersion("@lingui/react")),
+    );
     models.set(project, model);
   }
   return model.getValue(specifier, importedName);

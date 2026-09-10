@@ -1,5 +1,6 @@
 import { getSourceLanguage, SourceFileCache } from "../parse/parse-source-file.js";
 import type {
+  AssetTransform,
   BuiltinModuleResolution,
   ExternalModuleResolution,
   ImportBinding,
@@ -11,7 +12,7 @@ import type {
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isPurePackage } from "../libraries/pure-packages.js";
 import { isAssetImport, isUrlImport } from "./asset-module.js";
-import { readAssetModuleSource } from "./asset-modules.js";
+import { type AssetModuleSource, readAssetModuleSource } from "./asset-modules.js";
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
@@ -27,6 +28,7 @@ export interface ModuleGraphOptions {
   sourceFileCache?: SourceFileCache;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
+  assetTransform?: AssetTransform | null;
 }
 
 const describeImportedName = (imported: ImportedName): string => {
@@ -44,6 +46,7 @@ export class ModuleGraph {
   readonly resolver: ModuleResolver;
   readonly sourceFileCache: SourceFileCache;
   private readonly modules = new Map<string, ModuleRecord | null>();
+  private readonly assetTransform: AssetTransform | null;
   private readonly resolveExternalPackages: boolean;
   private readonly externalPackageAllowList: Set<string>;
   private readonly externalScopeAllowList: Set<string>;
@@ -53,6 +56,7 @@ export class ModuleGraph {
   constructor(options: ModuleGraphOptions) {
     this.resolver = options.resolver;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
+    this.assetTransform = options.assetTransform ?? null;
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
     const allowList = options.externalPackageAllowList ?? [];
     this.externalPackageAllowList = new Set(allowList.filter((name) => !name.endsWith("*")));
@@ -122,8 +126,9 @@ export class ModuleGraph {
   }
 
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
-    if (!specifier.includes("?")) return null;
-    const source = readAssetModuleSource(filePath, specifier);
+    const source = specifier.includes("?")
+      ? readAssetModuleSource(filePath, specifier)
+      : this.transformAsset(filePath);
     if (!source) return null;
     const cached = this.modules.get(source.moduleKey);
     if (cached) return cached;
@@ -132,6 +137,11 @@ export class ModuleGraph {
     );
     this.modules.set(source.moduleKey, record);
     return record;
+  }
+
+  private transformAsset(filePath: string): AssetModuleSource | null {
+    const sourceText = this.assetTransform?.(filePath) ?? null;
+    return sourceText === null ? null : { moduleKey: filePath, sourceText };
   }
 
   resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {

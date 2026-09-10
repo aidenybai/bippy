@@ -348,14 +348,20 @@ const countChildren = (children: StaticValue): StaticValue => {
   return count === null ? unknownPrimitiveValue("number", "Children.count") : primitiveValue(count);
 };
 
-const createReactRoot = (interpreter: Interpreter): StaticValue =>
-  objectFromRecord({
-    render: nativeFunction("render", ([element]) => {
-      interpreter.recordRootRender(element ?? UNDEFINED_VALUE);
+const createReactRoot = (
+  interpreter: Interpreter,
+  container: StaticValue,
+  element: StaticValue | null,
+): StaticValue => {
+  const rootId = interpreter.createRoot(container, element);
+  return objectFromRecord({
+    render: nativeFunction("render", ([rendered]) => {
+      interpreter.renderRoot(rootId, rendered ?? UNDEFINED_VALUE);
       return UNDEFINED_VALUE;
     }),
     unmount: nativeFunction("unmount", () => UNDEFINED_VALUE),
   });
+};
 
 const mapChildren = (
   interpreter: Interpreter,
@@ -599,13 +605,12 @@ export const evaluateReactApiCall = (
         ? interpreter.callValue(first, second ? [second] : [], context, location)
         : UNDEFINED_VALUE;
     case "createRoot":
-      return createReactRoot(interpreter);
+      return createReactRoot(interpreter, first ?? UNDEFINED_VALUE, null);
     case "hydrateRoot":
-      interpreter.recordRootRender(second ?? UNDEFINED_VALUE);
-      return createReactRoot(interpreter);
+      return createReactRoot(interpreter, first ?? UNDEFINED_VALUE, second ?? UNDEFINED_VALUE);
     case "render":
     case "hydrate":
-      interpreter.recordRootRender(first ?? UNDEFINED_VALUE);
+      interpreter.renderLegacyRoot(first ?? UNDEFINED_VALUE, second ?? UNDEFINED_VALUE);
       return unknownValue(`${api}() root`, location);
     case "Children.map":
       return mapChildren(interpreter, first, second, third, context);

@@ -120,6 +120,22 @@ describe("enumerateStateSpace", () => {
     expect(known.omitted).toBeNull();
   });
 
+  it("empties the root of every state that selects an uncaught throw", () => {
+    const space = enumerateStateSpace([
+      [
+        fiber("main", [
+          branch("a", [fiber("p", [{ kind: "crash", reason: "component throws" }])], [fiber("em")]),
+        ]),
+      ],
+    ]);
+    expect(space.states.map((state) => describeConditions(state.conditions))).toEqual([
+      "a=0",
+      "a=1",
+    ]);
+    expect(space.states[0].tree).toEqual([]);
+    expect(space.states[1].tree).toEqual([fiber("main", [fiber("em")])]);
+  });
+
   it("decides a branch inside a repeat once per iteration", () => {
     const space = enumerateStateSpace([
       [fiber("ul", [repeat("r", [branch("a", [fiber("li")], [fiber("dd")])], { min: 2, max: 2 })])],

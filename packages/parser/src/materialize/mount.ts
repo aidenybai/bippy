@@ -20,33 +20,36 @@ export interface MountResult {
 }
 
 /**
- * Mounts a React element in a fresh root, lets effects, state updates, lazy
- * resolutions and the static timer queue (one task per settle round) settle
- * under `act`, and returns the committed fiber tree as bippy observed it.
- * Rounds continue while tasks or the effects they trigger keep queueing more,
- * up to a bound; `onCommit` runs after each React commit.
+ * Mounts React elements each in a fresh root (one per element, in order), lets
+ * effects, state updates, lazy resolutions and the static timer queue (one
+ * task per settle round) settle under `act`, and returns the committed fiber
+ * trees as bippy observed them. Rounds continue while tasks or the effects
+ * they trigger keep queueing more, up to a bound; `onCommit` runs after each
+ * React commit.
  */
-export const mountNode = async (
+export const mountNodes = async (
   runtime: ReactRuntime,
   host: RendererHost<Element>,
-  node: ReactNode,
+  nodes: ReactNode[],
   timers: TimerQueue,
   onCommit: () => void,
 ): Promise<MountResult> => {
-  const container = host.createContainer();
-  const detachContainer = host.attachContainer(container);
+  const containers = nodes.map(() => host.createContainer());
+  const detachContainers = containers.map((container) => host.attachContainer(container));
   const recorder = createCommitRecorder({
-    rootFilter: (root) => getRootContainer(root) === container,
+    rootFilter: (root) => containers.some((container) => container === getRootContainer(root)),
     recordCommits: true,
     onCommit,
   });
   const uncaughtErrors: unknown[] = [];
   const caughtErrors: unknown[] = [];
-  const root = runtime.domClient.createRoot(container, {
-    onUncaughtError: (error) => uncaughtErrors.push(error),
-    onCaughtError: (error) => caughtErrors.push(error),
-    onRecoverableError: () => {},
-  });
+  const roots = containers.map((container) =>
+    runtime.domClient.createRoot(container, {
+      onUncaughtError: (error) => uncaughtErrors.push(error),
+      onCaughtError: (error) => caughtErrors.push(error),
+      onRecoverableError: () => {},
+    }),
+  );
   const { error: consoleError, warn: consoleWarn } = console;
   // HACK: React DOM's dev warnings (missing keys on materialized lists, DOM nesting
   // inside the harness container) describe the materialized tree, not the app;
@@ -55,7 +58,9 @@ export const mountNode = async (
   console.warn = noop;
   try {
     try {
-      await runtime.act(async () => root.render(node));
+      for (const [index, root] of roots.entries()) {
+        await runtime.act(async () => root.render(nodes[index]));
+      }
       for (let round = 0; round < MAX_TIMER_ROUNDS; round++) {
         await runtime.act(async () => {
           timers.runNextTask();
@@ -73,10 +78,10 @@ export const mountNode = async (
       caughtErrors,
     };
   } finally {
-    await runtime.act(async () => root.unmount());
+    for (const root of roots) await runtime.act(async () => root.unmount());
     console.error = consoleError;
     console.warn = consoleWarn;
     recorder.dispose();
-    detachContainer();
+    for (const detachContainer of detachContainers) detachContainer();
   }
 };

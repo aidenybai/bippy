@@ -1,5 +1,5 @@
 import { nativeFunction } from "./stubs.js";
-import type { SourceLocation, StaticValue } from "../types.js";
+import type { SourceLocation, StaticPrimitive, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
 import { bytesValue, getKnownBytes } from "./typed-arrays.js";
 import {
@@ -10,13 +10,15 @@ import {
   unknownValue,
 } from "./values.js";
 
-const STRING_CODECS: Record<string, (text: string) => string> = {
-  encodeURIComponent,
-  decodeURIComponent,
-  encodeURI,
-  decodeURI,
-  btoa,
-  atob,
+const STRING_CODECS: Record<string, (...inputs: StaticPrimitive[]) => string> = {
+  encodeURIComponent: (input) => encodeURIComponent(String(input)),
+  decodeURIComponent: (input) => decodeURIComponent(String(input)),
+  encodeURI: (input) => encodeURI(String(input)),
+  decodeURI: (input) => decodeURI(String(input)),
+  btoa: (input) => btoa(String(input)),
+  atob: (input) => atob(String(input)),
+  "String.fromCharCode": (...codes) => String.fromCharCode(...codes.map(Number)),
+  "String.fromCodePoint": (...codes) => String.fromCodePoint(...codes.map(Number)),
 };
 
 export const isStringCodecName = (name: string): boolean => Object.hasOwn(STRING_CODECS, name);
@@ -31,22 +33,33 @@ const toCodecInput = (value: StaticValue | undefined): string | null =>
       ? String(value.value)
       : null;
 
-/** The URI and base64 codecs over a known string; malformed input throws as the engine does. */
+const toCodecInputs = (args: StaticValue[]): StaticPrimitive[] | null => {
+  const inputs: StaticPrimitive[] = [];
+  for (const argument of args) {
+    if (argument.kind !== "primitive" || typeof argument.value === "symbol") return null;
+    inputs.push(argument.value);
+  }
+  return inputs;
+};
+
+const getCodecErrorName = (error: unknown): "URIError" | "RangeError" | "Error" =>
+  error instanceof URIError ? "URIError" : error instanceof RangeError ? "RangeError" : "Error";
+
+/** The URI, base64 and code-unit string codecs over known primitives; malformed input throws as the engine does. */
 export const callStringCodec = (
   name: string,
   args: StaticValue[],
   location: SourceLocation | null,
 ): StaticValue => {
-  const text = toCodecInput(args[0]);
-  if (text === null) return unknownPrimitiveValue("string", `${name}()`);
+  const inputs = toCodecInputs(args);
+  if (inputs === null) return unknownPrimitiveValue("string", `${name}()`);
   try {
-    return primitiveValue(STRING_CODECS[name](text));
+    return primitiveValue(STRING_CODECS[name](...inputs));
   } catch (error) {
-    const isUriError = error instanceof URIError;
     return thrownValue(
       `${name}() with malformed input`,
       createErrorValue(
-        isUriError ? "URIError" : "Error",
+        getCodecErrorName(error),
         [primitiveValue(error instanceof Error ? error.message : String(error))],
         location,
       ),

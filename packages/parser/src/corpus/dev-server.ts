@@ -36,6 +36,16 @@ const probeStatus = (url: string): Promise<number> =>
     request.once("error", reject);
     request.end();
   });
+
+const isAnswering = async (url: string): Promise<boolean> => {
+  try {
+    return (await probeStatus(url)) < 500;
+  } catch (error) {
+    if (getSystemErrorCode(error) === null) throw error;
+    return false;
+  }
+};
+
 const KILL_GRACE_MS = 3_000;
 const KILL_POLL_INTERVAL_MS = 100;
 
@@ -123,7 +133,15 @@ export class DevServer {
 
   constructor(private readonly options: DevServerOptions) {}
 
-  start(): void {
+  // A capture must come from this entry's server, not whatever an earlier run
+  // (or another entry sharing the port) left listening at the same URL.
+  async start(url: string): Promise<void> {
+    if (await isAnswering(url)) {
+      throw new DevServerError(
+        `${url} already answers before the dev server started; stop the foreign server first`,
+        this.options.logPath,
+      );
+    }
     this.log = createWriteStream(this.options.logPath, { flags: "a" });
     this.log.write(`\n$ ${this.options.command}\n`);
     this.child = spawnShell(this.options.command, this.options.cwd, this.options.env, this.log);
@@ -143,11 +161,7 @@ export class DevServer {
           this.options.logPath,
         );
       }
-      try {
-        if ((await probeStatus(url)) < 500) return;
-      } catch (error) {
-        if (getSystemErrorCode(error) === null) throw error;
-      }
+      if (await isAnswering(url)) return;
       await sleep(READY_POLL_INTERVAL_MS);
     }
     throw new DevServerError(`${url} did not answer within ${timeoutMs}ms`, this.options.logPath);

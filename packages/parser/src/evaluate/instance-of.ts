@@ -151,9 +151,7 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
 };
 
 const isPrimitiveLike = (value: StaticValue): boolean =>
-  value.kind === "primitive" ||
-  value.kind === "symbol" ||
-  (value.kind === "unknown-primitive" && value.primitiveType !== "any");
+  value.kind === "primitive" || value.kind === "symbol" || value.kind === "unknown-primitive";
 
 /** Whether `classValue` is in the class chain of `left`'s constructor; null once the chain leaves analyzed code. */
 const isInstanceOfClass = (left: StaticValue, classValue: StaticClassValue): boolean | null => {

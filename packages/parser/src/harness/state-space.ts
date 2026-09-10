@@ -148,6 +148,15 @@ const transitionCondition = (commit: number, commitCount: number): TransitionCon
 const iterationScope = (node: PatternRepeat, iteration: number): string =>
   `${node.variable}[${iteration}]`;
 
+/** React unmounts a root whose render threw past every error boundary, so a crashed state is an empty root. */
+const hasCrash = (nodes: PatternNode[]): boolean =>
+  nodes.some(
+    (node) =>
+      node.kind === "crash" ||
+      (node.kind === "fiber" && hasCrash(node.children)) ||
+      (node.kind === "opaque" && hasCrash(node.passedChildren)),
+  );
+
 class StateEnumerator {
   readonly states: StaticState[] = [];
   private readonly omissions = new Map<string, StateOmission>();
@@ -173,7 +182,7 @@ class StateEnumerator {
         });
         return;
       }
-      this.states.push({ tree, conditions: stateConditions });
+      this.states.push({ tree: hasCrash(tree) ? [] : tree, conditions: stateConditions });
     });
   }
 
@@ -226,6 +235,9 @@ class StateEnumerator {
         return;
       case "wildcard":
         if (node.isTruncated) this.omit(node.reason, { kind: "subtree", reason: node.reason });
+        emit([node], conditions);
+        return;
+      case "crash":
         emit([node], conditions);
         return;
       case "fiber":

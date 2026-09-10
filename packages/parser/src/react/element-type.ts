@@ -1,5 +1,6 @@
 import type { ComponentDefinition, StaticElementType, StaticValue } from "../types.js";
 import { primitiveValue } from "../evaluate/values.js";
+import { getSymbolElementType } from "./react-api.js";
 
 export const toElementKey = (key: StaticValue | null): StaticValue | null => {
   if (key?.kind !== "primitive") return key;
@@ -83,28 +84,13 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         displayName: value.context.displayName,
       };
     case "react-api":
-      switch (value.api) {
-        case "Fragment":
-          return { kind: "fragment" };
-        case "StrictMode":
-          return { kind: "strict-mode" };
-        case "Suspense":
-          return { kind: "suspense" };
-        case "SuspenseList":
-          return { kind: "suspense-list" };
-        case "Profiler":
-          return { kind: "profiler" };
-        case "Activity":
-          return { kind: "activity" };
-        case "ViewTransition":
-          return { kind: "view-transition" };
-        default:
-          return {
-            kind: "unknown",
-            displayName: nameHint,
-            reason: `React.${value.api} is not an element type`,
-          };
-      }
+      return (
+        getSymbolElementType(value.api) ?? {
+          kind: "unknown",
+          displayName: nameHint,
+          reason: `React.${value.api} is not an element type`,
+        }
+      );
     case "external":
       return {
         kind: "external",

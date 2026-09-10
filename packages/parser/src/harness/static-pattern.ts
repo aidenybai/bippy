@@ -67,13 +67,20 @@ export interface PatternWildcard {
   isTruncated: boolean;
 }
 
+/** A component throws here with no error boundary above it: React unmounts the whole root. */
+export interface PatternCrash {
+  kind: "crash";
+  reason: string;
+}
+
 export type PatternNode =
   | PatternFiber
   | PatternText
   | PatternBranch
   | PatternRepeat
   | PatternOpaque
-  | PatternWildcard;
+  | PatternWildcard
+  | PatternCrash;
 
 const readString = (props: Record<string, SnapshotPropValue>, key: string): string | null => {
   const value = props[key];
@@ -166,6 +173,8 @@ class PatternReader {
             isTruncated: fiber.props.isTruncated === true,
           },
         ];
+      case MARKER_NAMES.crash:
+        return [{ kind: "crash", reason: readString(fiber.props, "reason") ?? "" }];
       case MARKER_NAMES.text:
         return [{ kind: "text", text: null }];
       case MARKER_NAMES.suspenseBoundary:
@@ -227,6 +236,7 @@ const flattenPatternNode = (node: PatternNode, transparent: ReadonlySet<string>)
       return [{ ...node, passedChildren: flattenPatternFibers(node.passedChildren, transparent) }];
     case "text":
     case "wildcard":
+    case "crash":
       return [node];
   }
 };
@@ -285,6 +295,7 @@ const countVariables = (nodes: PatternNode[], counts: Map<string, number>): void
         break;
       case "text":
       case "wildcard":
+      case "crash":
         break;
     }
   }
@@ -335,6 +346,7 @@ export class SelfContainedFiberIndex {
           break;
         case "text":
         case "wildcard":
+        case "crash":
           break;
       }
     }
@@ -367,6 +379,7 @@ export const scopePatternVariables = (nodes: PatternNode[], scope: string): Patt
         };
       case "text":
       case "wildcard":
+      case "crash":
         return node;
     }
   });
@@ -389,6 +402,7 @@ export const countPatternFibers = (node: PatternNode): number => {
     case "repeat":
       return node.children.reduce((sum, child) => sum + countPatternFibers(child), 0);
     case "wildcard":
+    case "crash":
       return 0;
   }
 };
@@ -430,6 +444,8 @@ const formatPatternNode = (node: PatternNode, depth: number): string[] => {
     }
     case "wildcard":
       return [`${indent}?unknown(${node.reason})`];
+    case "crash":
+      return [`${indent}!crash(${node.reason})`];
   }
 };
 

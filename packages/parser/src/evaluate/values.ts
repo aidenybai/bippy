@@ -35,7 +35,7 @@ import type {
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
-import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
+import { getExternalMember, getReactApiTypeof, getSymbolElementType } from "../react/react-api.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -276,6 +276,19 @@ export const setObjectProperty = (
   value: StaticValue,
 ): void => setObjectEntry(object, { kind: "property", key, value });
 
+/** The own entry for `key`, unless a later spread could shadow it. */
+export const getOwnObjectEntry = (
+  object: StaticObjectValue,
+  key: string,
+): StaticPropertyEntry | null => {
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const entry = object.entries[index];
+    if (entry.kind === "spread") return null;
+    if (entry.key === key) return entry;
+  }
+  return null;
+};
+
 /** The accessor owning `key`, unless a later spread could shadow it. */
 export const getObjectAccessor = (
   object: StaticObjectValue,
@@ -503,6 +516,53 @@ export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null =
 export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | null => {
   const keys = getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key));
   return keys && [...keys.keys()];
+};
+
+/** An own key `for..in` visits: its name, or the composition a dynamic write left it under. */
+export type EnumerableKey = string | StringComposition;
+
+const isNamedKey = (key: EnumerableKey): key is string => typeof key === "string";
+
+const mayCollide = (left: EnumerableKey, right: EnumerableKey): boolean => {
+  if (isNamedKey(left)) return isNamedKey(right) ? false : matchesComposition(left, right);
+  if (isNamedKey(right)) return matchesComposition(right, left);
+  return !isSameComposition(left, right) && mayOverlapCompositions(left, right);
+};
+
+/**
+ * Own enumerable keys in definition order, naming a key written under a
+ * composition by that composition; null when a spread source is not fully
+ * known or a composed key may coincide with another key, since which entry
+ * then owns the key (and in what order) is undecidable.
+ */
+export const getEnumerableKeyNames = (object: StaticObjectValue): EnumerableKey[] | null => {
+  const keys: { key: EnumerableKey; isEnumerable: boolean }[] = [];
+  const add = (key: EnumerableKey, isEnumerable: boolean): boolean => {
+    if (keys.some((existing) => mayCollide(existing.key, key))) return false;
+    const existing = keys.find((candidate) =>
+      isNamedKey(candidate.key)
+        ? candidate.key === key
+        : !isNamedKey(key) && isSameComposition(candidate.key, key),
+    );
+    if (existing) existing.isEnumerable = isEnumerable;
+    else keys.push({ key, isEnumerable });
+    return true;
+  };
+  for (const entry of object.entries) {
+    if (entry.kind === "property") {
+      if (isSymbolPropertyKey(entry.key)) continue;
+      if (!add(entry.key, entry.isEnumerable !== false)) return null;
+      continue;
+    }
+    if (entry.composed) {
+      if (!add(entry.composed.key, true)) return null;
+      continue;
+    }
+    const spreadKeys = getKnownSpreadKeys(entry.value);
+    if (!spreadKeys) return null;
+    for (const key of spreadKeys) if (!isSymbolPropertyKey(key) && !add(key, true)) return null;
+  }
+  return keys.filter(({ isEnumerable }) => isEnumerable).map(({ key }) => key);
 };
 
 const spreadHasOwnKey = (spread: StaticValue, key: string): boolean | null => {
@@ -838,13 +898,22 @@ const SYMBOL_ELEMENT_KINDS = new Set<StaticElementType["kind"]>([
   "view-transition",
 ]);
 
+/** The element kind a symbol-valued React export or a reference to one (`element.type`) denotes. */
+const getSymbolElementKindOf = (value: StaticValue): StaticElementType["kind"] | null => {
+  if (value.kind === "react-api") return getSymbolElementType(value.api)?.kind ?? null;
+  if (value.kind === "component-reference" && SYMBOL_ELEMENT_KINDS.has(value.type.kind)) {
+    return value.type.kind;
+  }
+  return null;
+};
+
 /** The runtime `typeof` a value is known to have, when identity can be decided from it. */
 const getIdentityClass = (value: StaticValue): IdentityClass | null => {
   switch (value.kind) {
     case "primitive":
       return "scalar";
     case "unknown-primitive":
-      return value.primitiveType === "any" ? null : "scalar";
+      return "scalar";
     case "symbol":
       return "symbol";
     case "react-api":
@@ -863,7 +932,8 @@ const getIdentityClass = (value: StaticValue): IdentityClass | null => {
 /** The `typeof` of a scalar, when known: a typed unknown primitive can never equal a scalar of another type. */
 const getScalarTypeof = (value: StaticValue): string | null => {
   if (value.kind === "primitive") return typeof value.value;
-  if (value.kind === "unknown-primitive") return value.primitiveType;
+  if (value.kind === "unknown-primitive")
+    return value.primitiveType === "any" ? null : value.primitiveType;
   return null;
 };
 
@@ -933,7 +1003,7 @@ const getElementTypeIdentity = (type: StaticElementType): object | null => {
 };
 
 /** Element types share their statics map with the value they were created from. */
-const getComponentIdentity = (value: StaticValue): object | null => {
+export const getComponentIdentity = (value: StaticValue): object | null => {
   if (value.kind === "function") return value.boundThis ? null : value.properties;
   if (value.kind === "class") return value.properties;
   return value.kind === "component-reference" ? getElementTypeIdentity(value.type) : null;
@@ -965,7 +1035,10 @@ const mayMatchStringShape = (shape: StringShape, text: string | StringShape): bo
 };
 
 const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boolean | null => {
-  if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
+  if (typed.kind !== "unknown-primitive") return null;
+  if (typed.primitiveType === "any") {
+    return other.kind === "primitive" && isNullish(other) === true ? false : null;
+  }
   if (other.kind === "primitive") {
     if (typeof other.value !== typed.primitiveType) return false;
     return typed.stringShape &&
@@ -1264,6 +1337,10 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     compareGlobalToPrimitive(left, right) ?? compareGlobalToPrimitive(right, left);
   if (globalVersusPrimitive !== null) return globalVersusPrimitive;
   if (left.kind === "react-api" && right.kind === "react-api") return left.api === right.api;
+  const leftSymbolKind = getSymbolElementKindOf(left);
+  const rightSymbolKind = getSymbolElementKindOf(right);
+  if (leftSymbolKind !== null && rightSymbolKind !== null)
+    return leftSymbolKind === rightSymbolKind;
   const hostTagName = (value: StaticValue): string | null =>
     value.kind === "component-reference" && value.type.kind === "host" ? value.type.tagName : null;
   if (hostTagName(left) !== null && hostTagName(right) !== null)
@@ -1741,15 +1818,18 @@ export const isCallable = (value: StaticValue | undefined): value is CallableVal
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
   if (value.kind === "unknown" || value.kind === "branch") return null;
-  if (value.kind === "unknown-primitive") return value.primitiveType === "any" ? null : false;
+  if (value.kind === "external") return value.origin === "derived" ? null : false;
   return false;
 };
 
 /** The alternatives of `value` that can be truthy; `value` itself when it is not a branch. */
 export const truthyCounterpart = (value: StaticValue): StaticValue => {
+  if (value.kind === "unknown-primitive" && value.primitiveType === "boolean") return TRUE_VALUE;
   if (value.kind !== "branch") return value;
   const truthy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== false);
-  return truthy.length === 0 ? value : branchValue(truthy, value.reason, value.location);
+  return truthy.length === 0
+    ? value
+    : branchValue(truthy.map(truthyCounterpart), value.reason, value.location);
 };
 
 export const falsyCounterpart = (value: StaticValue): StaticValue => {
@@ -1769,7 +1849,7 @@ export const falsyCounterpart = (value: StaticValue): StaticValue => {
       case "boolean":
         return FALSE_VALUE;
       case "any":
-        return UNDEFINED_VALUE;
+        return value;
     }
   }
   return UNDEFINED_VALUE;
