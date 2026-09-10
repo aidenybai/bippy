@@ -76,6 +76,18 @@ export default function Items() {
 }
 `;
 
+const OPAQUE_RENDER_PROP_SOURCE = `
+import { Highlight } from "prism-react-renderer";
+
+export default () => (
+  <section>
+    <Highlight code="const x = 1;" language="tsx">
+      {({ tokens }) => <pre>{tokens.length}</pre>}
+    </Highlight>
+  </section>
+);
+`;
+
 const AUTO_IMPORT_PROJECT: Record<string, string> = {
   "vite.config.ts": `
 import autoImport from "unplugin-auto-import/vite";
@@ -175,6 +187,17 @@ describe("library models", () => {
         "          *repeat(0..) @ app.tsx:32:8",
         "            <li>",
         "              <span>",
+      ].join("\n"),
+    );
+  });
+
+  it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {
+    expect(await renderSource(OPAQUE_RENDER_PROP_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <section>",
+        "      <Highlight> (opaque: Highlight from prism-react-renderer is not analyzed)",
       ].join("\n"),
     );
   });

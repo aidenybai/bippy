@@ -594,6 +594,22 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
   });
 
+  it("reports the matched page's route pattern as useRouter().pathname", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
+    expect(tree).toMatch(/<p>\n\s+"at "\n\s+"\/posts\/\[id\]"/);
+  });
+
+  it("mounts the page into the DOM its _document renders, so its markup is queryable", async () => {
+    const { result, tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/layers",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).not.toContain("<Html>");
+    expect(tree).toMatch(/<main>\n\s+<p>\n\s+<Portal>\n\s+<span>/);
+    expect(result.stats.branchCount).toBe(0);
+  });
+
   it("reports the matched page file's route as useRouter().pathname", async () => {
     const post = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
     expect(post.tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"\n\s+<em>/);

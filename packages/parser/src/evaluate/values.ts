@@ -1393,6 +1393,7 @@ const haveSameShape = (
   right: StaticUnknownPrimitiveValue,
 ): boolean =>
   left.stringShape?.prefix === right.stringShape?.prefix &&
+  left.stringShape?.minLength === right.stringShape?.minLength &&
   left.stringShape?.length === right.stringShape?.length &&
   (left.composition === right.composition ||
     isSameComposition(left.composition, right.composition)) &&
@@ -1538,7 +1539,7 @@ const getShapedTruthiness = (value: StaticUnknownPrimitiveValue): boolean | null
   if (range && (range.min > 0 || range.max < 0)) return true;
   const shape = value.stringShape;
   if (shape) {
-    if (shape.prefix.length > 0) return true;
+    if (shape.minLength > 0) return true;
     if (shape.length !== null) return shape.length > 0;
   }
   return null;

@@ -61,9 +61,10 @@ import { callRequireContext } from "./require-context.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
-import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
+import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
 import { getBuiltinPrototypeName, getPrototypeWitness, isPrototypeOf } from "./instance-of.js";
 import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
+import { createImageElement, type ImageLoadHost } from "./image-loading.js";
 import {
   binaryFromItems,
   callBinaryMethod,
@@ -100,7 +101,8 @@ import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
   getCoercedText,
-  getFunctionSourceText,
+  getFunctionText,
+  isFunctionText,
   joinStrings,
   quoteUnknownString,
   rangedNumberValue,
@@ -695,7 +697,8 @@ const hasOwnProperty = (
   name: string,
 ): StaticValue | null => {
   const propertyName = toPropertyKey(key);
-  if (propertyName === null) return null;
+  if (propertyName === null)
+    return isFunctionText(key) && ownsNoFunctionTextKey(receiver) ? FALSE_VALUE : null;
   if (receiver.kind === "object" || receiver.kind === "list") {
     if (receiver.kind === "list" && propertyName === "length")
       return primitiveValue(name === "hasOwnProperty");
@@ -781,10 +784,10 @@ const getInvokedFunctionSource = (
         ),
         location,
       );
-    const sourceText = getFunctionSourceText(alternative);
-    return sourceText === null
-      ? unknownPrimitiveValue("string", `source text of ${describeValue(alternative)}`)
-      : primitiveValue(sourceText);
+    return (
+      getFunctionText(alternative) ??
+      unknownPrimitiveValue("string", `source text of ${describeValue(alternative)}`)
+    );
   });
 
 const PROTOTYPE_SEGMENT = ".prototype.";
@@ -1039,6 +1042,10 @@ const callGlobal = (
       return createUrlValue(args, location);
     case "AbortController":
       if (isConstructor) return createAbortController(interpreter, location);
+      break;
+    case "Image":
+      if (isConstructor)
+        return createImageElement(imageLoadHost(interpreter, context, location), args);
       break;
     case "fetch":
       if (isConstructor) break;
@@ -2200,24 +2207,43 @@ const fallbackMethodResult = (
   );
 };
 
-/** Request events fire in later tasks; from a deferred continuation they stay deferred. */
+/** Browser events fire in later tasks; from a deferred continuation they stay deferred. */
+const scheduleTask = (
+  interpreter: Interpreter,
+  description: string,
+): ((task: () => void) => void) => {
+  const isDeferred = interpreter.timers.isDeferred;
+  return (task) =>
+    interpreter.timers.schedule(
+      interpreter.timers.createHandle(description),
+      isDeferred ? () => interpreter.timers.runDeferred(task) : task,
+    );
+};
+
 const indexedDbHost = (
   interpreter: Interpreter,
   context: EvaluationContext,
   location: SourceLocation | null,
-): IndexedDbHost => {
-  const isDeferred = interpreter.timers.isDeferred;
-  return {
-    schedule: (task) =>
-      interpreter.timers.schedule(
-        interpreter.timers.createHandle("IndexedDB request"),
-        isDeferred ? () => interpreter.timers.runDeferred(task) : task,
-      ),
-    call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
-    setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
-    location,
-  };
-};
+): IndexedDbHost => ({
+  schedule: scheduleTask(interpreter, "IndexedDB request"),
+  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
+  location,
+});
+
+const imageLoadHost = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): ImageLoadHost => ({
+  schedule: scheduleTask(interpreter, "image load"),
+  queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
+  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  setProperty: (object, key, value, accessor) =>
+    interpreter.assignOwnProperty(object, key, value, accessor),
+  markEscaped: (value) => interpreter.markEscaped(value),
+  readServedAsset: (url) => interpreter.project.readServedAsset(url),
+});
 
 const promiseTools = (
   interpreter: Interpreter,
@@ -2298,8 +2324,8 @@ export const evaluateBuiltinCall = (
     return callPromiseMethod(interpreter, receiver, name, args, context, location);
 
   if (name === "toString" && args.length === 0) {
-    const sourceText = getFunctionSourceText(receiver);
-    if (sourceText !== null) return primitiveValue(sourceText);
+    const sourceText = getFunctionText(receiver);
+    if (sourceText !== null) return sourceText;
   }
 
   if (receiver.kind === "function") {

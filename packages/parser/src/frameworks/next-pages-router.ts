@@ -19,8 +19,8 @@ import { hasExportedName } from "../graph/module-record.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { ModuleRecord, StaticRenderResult, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
-import type { NextModel } from "./next-externals.js";
-import { element } from "../evaluate/stubs.js";
+import { DEFAULT_DOCUMENT_STUB, type NextModel } from "./next-externals.js";
+import { element, stubElement } from "../evaluate/stubs.js";
 import {
   type DynamicSegment,
   classifySegment,
@@ -182,8 +182,9 @@ const readAppProps = (
 
 /**
  * Composes `<App Component={Page} pageProps={…} router={…} />` (or just
- * `<Page {...pageProps} />` without a custom `_app`); `_document` is
- * server-only and never part of the client fiber tree.
+ * `<Page {...pageProps} />` without a custom `_app`). `_document` (or Next's
+ * default one) is server-only: its markup is the DOM the page mounts into
+ * rather than part of the client fiber tree.
  */
 export const renderNextPagesRoute = (
   renderer: StaticRenderer,
@@ -194,7 +195,28 @@ export const renderNextPagesRoute = (
     ? renderer.resolvePath(options.pagesDirectory)
     : findFirstDirectory(renderer.options.rootDirectory, ["pages", "src/pages"]);
 
-  return renderer.renderWith((interpreter) => {
+  const documentPath = pagesDirectory ? findRouteFile(pagesDirectory, "_document") : null;
+  const document = (interpreter: Interpreter): StaticValue => {
+    applyNextCompilerOptions(renderer, interpreter);
+    const documentModule = documentPath ? renderer.loadModule(documentPath) : null;
+    if (!documentModule) {
+      if (documentPath) {
+        interpreter.report("next-pages-parse", `could not parse ${documentPath}`, null, "error");
+      }
+      return stubElement(DEFAULT_DOCUMENT_STUB, {});
+    }
+    return interpreter.createElement(
+      interpreter.evaluateModuleExport(documentModule, "default"),
+      objectValue(),
+      null,
+      [],
+      null,
+      "Document",
+      interpreter.createModuleContext(documentModule),
+    );
+  };
+
+  const produce = (interpreter: Interpreter): StaticValue => {
     applyNextCompilerOptions(renderer, interpreter);
     if (!pagesDirectory) {
       interpreter.report(
@@ -269,5 +291,6 @@ export const renderNextPagesRoute = (
       ),
       isStrictMode,
     );
-  });
+  };
+  return renderer.renderWith(produce, { document });
 };
