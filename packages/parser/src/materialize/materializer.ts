@@ -1594,7 +1594,7 @@ export class Materializer {
     // so a timer task starts a new one.
     frame.requestRender = () => {
       if (frame.isFrozen) return;
-      this.interpreter.changeCount++;
+      this.interpreter.mutations.record(0);
       if (this.interpreter.timers.isFlushing) instance.passCount = 0;
       if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
       rerender();

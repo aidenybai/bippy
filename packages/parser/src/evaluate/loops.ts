@@ -9,7 +9,6 @@ import type {
 } from "oxc-parser";
 import type { SourceLocation, StaticOptionalValue, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
-import { getCollectionItems } from "./collections.js";
 import { withScope } from "./context.js";
 import { composedStringValue } from "./primitive-shapes.js";
 import {
@@ -86,11 +85,17 @@ const isPositionalItem = (item: StaticValue): boolean =>
   item.kind !== "repeat" && item.kind !== "branch";
 
 const iterationValues = (
+  interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
+  context: EvaluationContext,
   right: StaticValue,
 ): IterationItems | null => {
   if (statement.type === "ForOfStatement") {
-    const iterated = getCollectionItems(right) ?? right;
+    const iterated = interpreter.resolveIterable(
+      right,
+      context,
+      interpreter.locate(context.module, statement.right),
+    );
     if (iterated.kind === "list") {
       const positionalCount = iterated.items.findIndex((item) => !isPositionalItem(item));
       return positionalCount === -1
@@ -190,7 +195,7 @@ const unrollForEach = (
   context: EvaluationContext,
   right: StaticValue,
 ): UnrollResult | null => {
-  const iteration = iterationValues(statement, right);
+  const iteration = iterationValues(interpreter, statement, context, right);
   if (!iteration || iteration.items.length > MAX_UNROLLED_ITERATIONS) return null;
   const outcomes: StatementOutcome[] = [];
   for (const item of iteration.items) {
@@ -321,7 +326,9 @@ const evaluateForEach = (
     );
   if (
     right.kind !== "branch" ||
-    !right.alternatives.every((alternative) => iterationValues(statement, alternative) !== null)
+    !right.alternatives.every(
+      (alternative) => iterationValues(interpreter, statement, context, alternative) !== null,
+    )
   ) {
     return runWith(right, context);
   }
