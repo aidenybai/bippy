@@ -179,6 +179,8 @@ const runOptionalIteration = (
     item.reason,
     item.location,
     !item.isAbsentPreferred,
+    false,
+    { predicate: item.predicate ?? undefined },
   );
   return { ...outcome, mayComplete: true };
 };

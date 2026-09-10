@@ -12,6 +12,7 @@ import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
+import { areGuardsSatisfiable } from "../harness/guard-solver.js";
 import {
   andGuard,
   combineGuardContexts,
@@ -19,6 +20,7 @@ import {
   constantGuard,
   type GuardContext,
   normalizePredicate,
+  negateGuard,
   parseSymbolicCardinality,
   parseSymbolicPredicate,
   predicateGuards,
@@ -563,7 +565,10 @@ export class Materializer {
   private readonly serverComponents: boolean;
   private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
-  readonly commitCauses = new CommitCauses();
+  readonly commitCauses = new CommitCauses((cause, run) =>
+    this.interpreter.runWithGuard(cause.guard, run),
+  );
+  private readonly frameCauses = new WeakMap<HookFrame, GuardContext>();
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
   private isPassivePhasePending = false;
   /** A state update was raised in the layout phase, so React renders it synchronously. */
@@ -707,6 +712,7 @@ export class Materializer {
           value.isAbsentPreferred ? 1 : 0,
           isTopLevel,
           value.location,
+          value.predicate,
         );
       case "unknown":
         return this.unknownNode(value.reason);
@@ -815,6 +821,7 @@ export class Materializer {
     predicate ??= serializeSymbolicPredicate({
       formula: null,
       choice: { input: inputId, path: [], measure: "choice" },
+      guards: null,
       inputs: [{ id: inputId, label: reason, source: "unknown", location: formattedLocation }],
     });
     const parsed = parseSymbolicPredicate(predicate);
@@ -828,13 +835,17 @@ export class Materializer {
       ...context,
       decisions: sharesScope ? context.decisions : createDecisionScope(pins),
       decisionPath: toDecisionId(`${context.decisionPath}/${decision}|${index}`),
-      cause: combineGuardContexts(
-        [context.cause, { guard: guards[index], inputs: parsed.inputs }],
-        andGuard,
-      ),
+      cause:
+        pinned !== null && pinnedIndex !== null
+          ? context.cause
+          : combineGuardContexts(
+              [context.cause, { guard: guards[index], inputs: parsed.inputs }],
+              andGuard,
+            ),
     });
     const renderAlternative = (index: number, pins: PinnedDecisions | null): ReactNode => {
       const inside = alternativeContext(pins, index);
+      if (!areGuardsSatisfiable([inside.cause.guard])) return null;
       return this.commitCauses.run(inside.cause, () => alternatives[index](inside));
     };
     const rendered =
@@ -1354,11 +1365,17 @@ export class Materializer {
       location,
       callback: (node) => {
         this.commitCauses.run(binding.cause, () =>
-          this.interpreter.assignRef(
-            ref,
-            this.hostInstanceValue(node),
-            binding.owner,
+          this.runGuardedMutation(
+            ref.kind === "function" ? ref.scope : binding.owner.scope,
             binding.location,
+            () =>
+              this.interpreter.assignRef(
+                ref,
+                this.hostInstanceValue(node),
+                binding.owner,
+                binding.location,
+              ),
+            binding.owner.hooks,
           ),
         );
       },
@@ -1807,6 +1824,7 @@ export class Materializer {
     evaluate: (frame: HookFrame) => CompositeEvaluation,
   ): StatefulRender {
     const { frame } = instance;
+    this.frameCauses.set(frame, context.cause);
     const changedCells = commitHookPass(frame);
     const previous = instance.rendered;
     if (
@@ -1878,6 +1896,38 @@ export class Materializer {
     return this.commitRender(instance, instance.rendered, input.location);
   }
 
+  private runGuardedMutation<Result>(
+    scope: Scope,
+    location: SourceLocation | null,
+    run: () => Result,
+    frame: HookFrame | null,
+  ): Result {
+    const cause = this.commitCauses.getCause();
+    if (cause.guard.kind === "constant" && cause.guard.value) return run();
+    const ownerCause = frame && this.frameCauses.get(frame);
+    const unconditionalUpdates =
+      frame && ownerCause && !areGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)])
+        ? new Set(frame.cells)
+        : undefined;
+    return this.interpreter.runMaybe(
+      scope,
+      run,
+      "conditional commit callback",
+      location,
+      true,
+      false,
+      {
+        predicate: serializeSymbolicPredicate({
+          formula: cause.guard,
+          choice: null,
+          guards: null,
+          inputs: cause.inputs,
+        }),
+        unconditionalUpdates,
+      },
+    );
+  }
+
   /**
    * The proxy's own effects drive the static ones: after a render they commit
    * the changed static effects; a bailout (`bailoutHooks`) keeps the previous
@@ -1895,7 +1945,14 @@ export class Materializer {
       const { componentContext } = rendered;
       if (!componentContext) return;
       this.commitCauses.run(rendered.context.cause, () =>
-        run((callback) => this.interpreter.callValue(callback, [], componentContext, location)),
+        run((callback) =>
+          this.runGuardedMutation(
+            callback.kind === "function" ? callback.scope : componentContext.scope,
+            location,
+            () => this.interpreter.callValue(callback, [], componentContext, location),
+            frame,
+          ),
+        ),
       );
     };
     const mount = (isLayout: boolean): void => {

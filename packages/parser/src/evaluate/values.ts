@@ -40,7 +40,9 @@ import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 import {
   composeFlattenedPredicate,
+  getBranchPredicate,
   getGuardedTruthiness,
+  getTruthinessPredicate,
   recordBranchOrigin,
   recordDerivation,
 } from "./predicates.js";
@@ -387,7 +389,7 @@ const lookupObjectProperty = (
         spread.reason,
         spread.location,
         spread.preferredIndex,
-        spread.predicate,
+        getBranchPredicate(spread),
       );
     }
     const own = getSpreadProperty(memo, spread, key);
@@ -447,7 +449,7 @@ const getSpreadProperty = (
         spread.reason,
         spread.location,
         spread.preferredIndex,
-        spread.predicate,
+        getBranchPredicate(spread),
       );
     default:
       return null;
@@ -832,7 +834,7 @@ const omitSpreadKeys = (
         spread.reason,
         spread.location,
         spread.preferredIndex,
-        spread.predicate,
+        getBranchPredicate(spread),
       );
     }
     default:
@@ -1136,8 +1138,8 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     if (isIntrinsicGlobalName(left.name) && isIntrinsicGlobalName(right.name)) return false;
   }
   if (
-    (left.kind === "global" && isProgramAllocated(right)) ||
-    (right.kind === "global" && isProgramAllocated(left))
+    ((left.kind === "global" || left.kind === "native-function") && isProgramAllocated(right)) ||
+    ((right.kind === "global" || right.kind === "native-function") && isProgramAllocated(left))
   )
     return false;
   const globalVersusPrimitive =
@@ -1482,6 +1484,7 @@ export const branchValue = (
   const flattened: StaticValue[] = [];
   const positions: number[][] = alternatives.map(() => []);
   let resolvedPreferred = 0;
+  let hasNestedBranch = false;
   const add = (value: StaticValue): number => {
     const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
     if (existing !== -1) return existing;
@@ -1491,6 +1494,7 @@ export const branchValue = (
   for (const [index, alternative] of alternatives.entries()) {
     const inner = alternative.kind === "branch" ? alternative.alternatives : [alternative];
     const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
+    hasNestedBranch ||= alternative.kind === "branch";
     for (const [innerIndex, value] of inner.entries()) {
       const position = add(value);
       positions[index].push(position);
@@ -1504,9 +1508,7 @@ export const branchValue = (
     }
   }
   if (flattened.length === 1) return flattened[0];
-  const isPositional =
-    flattened.length === alternatives.length &&
-    alternatives.every((alternative) => alternative.kind !== "branch");
+  const isPositional = flattened.length === alternatives.length && !hasNestedBranch;
   return {
     kind: "branch",
     alternatives: flattened,
@@ -1515,7 +1517,16 @@ export const branchValue = (
     location,
     predicate: isPositional
       ? predicate
-      : composeFlattenedPredicate(predicate, alternatives, positions, flattened.length),
+      : predicate === null && !hasNestedBranch
+        ? null
+        : composeFlattenedPredicate(
+            predicate,
+            reason,
+            location,
+            alternatives,
+            positions,
+            flattened.length,
+          ),
   };
 };
 
@@ -1668,7 +1679,7 @@ export const joinMappedAlternatives = (
     source.reason,
     source.location,
     source.preferredIndex,
-    source.predicate,
+    getBranchPredicate(source),
   );
   if (
     mapped.kind === "branch" &&
@@ -1873,6 +1884,8 @@ const getItemCountRange = (item: StaticValue): NumberRange => {
 
 export const getListLength = (list: StaticListValue): StaticValue => {
   if (!list.items.some(isIndefiniteItem)) return primitiveValue(list.items.length);
+  const guardedLength = getGuardedListLength(list);
+  if (guardedLength !== null) return guardedLength;
   const ranges = list.items.map(getItemCountRange);
   return {
     ...unknownPrimitiveValue("number", "length of a partially known list"),
@@ -1881,6 +1894,40 @@ export const getListLength = (list: StaticListValue): StaticValue => {
       max: ranges.reduce((total, range) => total + range.max, 0),
     },
   };
+};
+
+const getGuardedListLength = (list: StaticListValue): StaticValue | null => {
+  if (
+    list.items.some(
+      (item) => item.kind === "repeat" || (item.kind === "optional" && !item.predicate),
+    )
+  )
+    return null;
+  let length: StaticValue = primitiveValue(0);
+  for (const item of list.items) {
+    const count =
+      item.kind === "optional"
+        ? branchValue(
+            [primitiveValue(1), primitiveValue(0)],
+            item.reason,
+            item.location,
+            item.isAbsentPreferred ? 1 : 0,
+            item.predicate,
+          )
+        : primitiveValue(1);
+    const combined = distributeBinary(length, count, (left, right) =>
+      left.kind === "primitive" &&
+      typeof left.value === "number" &&
+      right.kind === "primitive" &&
+      typeof right.value === "number"
+        ? primitiveValue(left.value + right.value)
+        : unknownPrimitiveValue("number", "length of a partially known list"),
+    );
+    if (combined === null || (combined.kind !== "primitive" && combined.kind !== "branch"))
+      return null;
+    length = combined;
+  }
+  return length;
 };
 
 const MAX_LIST_GROWTH = 1_000;
@@ -1969,7 +2016,15 @@ export const optionalValue = (
   reason: string,
   location: SourceLocation | null = null,
   isAbsentPreferred = false,
-): StaticOptionalValue => ({ kind: "optional", value, reason, location, isAbsentPreferred });
+  predicate: string | null = null,
+): StaticOptionalValue => ({
+  kind: "optional",
+  value,
+  reason,
+  location,
+  isAbsentPreferred,
+  predicate,
+});
 
 /**
  * Items contributed by `...value` inside an array literal (also `concat`,
@@ -1990,7 +2045,13 @@ export const spreadListItems = (
     return spreadListItems(value.value, location).map((item) =>
       item.kind === "repeat"
         ? item
-        : optionalValue(item, value.reason, value.location, value.isAbsentPreferred),
+        : optionalValue(
+            item,
+            value.reason,
+            value.location,
+            value.isAbsentPreferred,
+            value.predicate,
+          ),
     );
   }
   if (value.kind === "branch" && value.alternatives.every(hasDefiniteItems)) {
@@ -2003,17 +2064,15 @@ export const spreadListItems = (
           value.reason,
           value.location,
           value.preferredIndex,
-          value.predicate,
+          getBranchPredicate(value),
         ),
       );
     }
     const present = lists.filter((list) => list.items.length > 0);
     if (present.every((list) => list.items.length === 1)) {
-      const item = branchValue(
-        present.map((list) => list.items[0]),
-        value.reason,
-        value.location,
-        Math.max(0, present.indexOf(lists[value.preferredIndex])),
+      const item = joinMappedAlternatives(
+        value,
+        lists.map((list) => list.items[0] ?? UNDEFINED_VALUE),
       );
       return [
         optionalValue(
@@ -2021,6 +2080,11 @@ export const spreadListItems = (
           value.reason,
           value.location,
           lists[value.preferredIndex].items.length === 0,
+          getTruthinessPredicate(
+            mapValue(value, (alternative) =>
+              primitiveValue(alternative.kind === "list" && alternative.items.length > 0),
+            ),
+          ),
         ),
       ];
     }

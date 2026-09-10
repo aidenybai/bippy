@@ -1831,6 +1831,7 @@ export const callUncertainCallback = (
   args: StaticValue[],
   context: EvaluationContext,
   mayRepeat: boolean,
+  predicate: string | null = null,
 ): StaticValue =>
   interpreter.runMaybe(
     callback.kind === "function" ? callback.scope : context.scope,
@@ -1839,6 +1840,7 @@ export const callUncertainCallback = (
     null,
     true,
     mayRepeat,
+    { predicate: predicate ?? undefined },
   );
 
 const sortListItems = (
@@ -1920,9 +1922,12 @@ const mapList = (
               [item.value, unknownPrimitiveValue("number", "index"), receiver],
               context,
               false,
+              item.predicate,
             ),
             item.reason,
             item.location,
+            item.isAbsentPreferred,
+            item.predicate,
           );
         }
         return callCallback(

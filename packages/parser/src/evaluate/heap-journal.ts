@@ -132,6 +132,8 @@ export class HeapJournal {
   private paths: HeapPath[] = [];
   private readonly entryAllocation = getAllocationCount();
 
+  constructor(private readonly unconditionalUpdates?: ReadonlySet<StateCell>) {}
+
   /** Whether `target` predates the fork, so its mutations must be journaled. */
   isPreexisting(target: MutableHeapValue | JournaledState<unknown>): boolean {
     return (target.allocation ?? 0) <= this.entryAllocation;
@@ -159,6 +161,7 @@ export class HeapJournal {
   }
 
   recordStateUpdate(cell: StateCell): void {
+    if (this.unconditionalUpdates?.has(cell)) return;
     if (!this.updates.has(cell)) this.updates.set(cell, cell.next);
   }
 
@@ -278,6 +281,7 @@ export class HeapJournal {
         reason,
         location,
         preferredPath,
+        predicate,
       );
     }
     for (const [list, original] of this.lists) {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  createPathPredicate,
+  getAlternativeGuards,
   getTruthinessPredicate,
   recordNegation,
   recordRefinement,
@@ -10,6 +12,7 @@ import {
   primitiveValue,
   unknownValue,
 } from "../src/evaluate/values.js";
+import { andGuard, parseSymbolicPredicate, predicateGuards } from "../src/harness/symbolic-tree.js";
 
 describe("truthiness predicates", () => {
   it("names a negation as the opposite side of its operand", () => {
@@ -37,5 +40,39 @@ describe("truthiness predicates", () => {
     const negated = recordNegation(unknownValue("!a"), first);
     recordNegation(first, negated);
     expect(getTruthinessPredicate(negated)).toBe(getTruthinessPredicate(first, true));
+  });
+});
+
+describe("flattened predicates", () => {
+  it("keeps the causes of three distinct values", () => {
+    const first = createPathPredicate("first", null);
+    const second = createPathPredicate("second", null);
+    const firstGuards = predicateGuards(parseSymbolicPredicate(first), 2);
+    const secondGuards = predicateGuards(parseSymbolicPredicate(second), 2);
+    const inner = branchValue([primitiveValue(1), primitiveValue(0)], "first", null, 0, first);
+    const value = branchValue([primitiveValue(2), inner], "second", null, 0, second);
+    expect(value.kind).toBe("branch");
+    if (value.kind !== "branch") return;
+    expect(value.alternatives).toEqual([primitiveValue(2), primitiveValue(1), primitiveValue(0)]);
+    expect(getAlternativeGuards(value)?.guards).toEqual([
+      secondGuards[0],
+      andGuard([secondGuards[1], firstGuards[0]]),
+      andGuard([secondGuards[1], firstGuards[1]]),
+    ]);
+    expect(getAlternativeGuards(value)?.inputs).toHaveLength(2);
+  });
+
+  it("accepts serialized predicates predating per-alternative guards", () => {
+    const serialized = JSON.stringify({
+      formula: { kind: "constant", value: true },
+      choice: null,
+      inputs: [],
+    });
+    expect(parseSymbolicPredicate(serialized)).toEqual({
+      formula: { kind: "constant", value: true },
+      choice: null,
+      guards: null,
+      inputs: [],
+    });
   });
 });

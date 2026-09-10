@@ -20,9 +20,9 @@ Continue until the acceptance gates in this document are satisfied. Creating thi
 
 ### Immediate continuation
 
-1. Review fixes are checkpointed locally at `80b8f278`; preserve subsequent effect-cause work.
-2. Sentry/PostHog captures are recovered and revision-verified; finish pinned dependency installation and run identical-capture baseline/current comparisons.
-3. The minimal effect/commit regression now passes, including chained, batched, disappearing-branch, and timer variants.
+1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`; preserve the uncommitted guarded mutation and N-way predicate work.
+2. Latest identical-capture runs pass Sentry (1/1 assignments) and PostHog (2/2), with no replay contradictions and 100% strict coverage. This is bounded evidence, not global soundness.
+3. Guarded state/store/collection reads and native-function identity fixes pass 757 parser tests. Address PostHog's predicate-processing cost, then continue remaining P1/P2 obligations.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
@@ -226,7 +226,7 @@ The symbolic artifact must not be reduced to whichever tree happened to be captu
 
 ## 4. Local work awaiting a checkpoint
 
-### Completed locally, not committed
+### Review fixes checkpointed at `80b8f278`
 
 - [x] Fix `parseInt` / `Number.parseInt` radix inference: omitted, undefined, or null radix no longer forces decimal parsing of hexadecimal-prefixed strings.
 - [x] Preserve bound arguments during escaped-call analysis, before call-site arguments.
@@ -235,7 +235,7 @@ The symbolic artifact must not be reduced to whichever tree happened to be captu
 - [x] Add interpreter mutation regression coverage and real-fiber component coverage for integer parsing.
 - [x] Demonstrate the new radix/bound-callback tests fail before the fixes and pass afterward.
 - [x] Run parser typecheck, targeted lint, formatting, diff check, and full 720-test parser suite.
-- [ ] Revalidate and checkpoint these changes before any worker-branch integration.
+- [x] Revalidate and checkpoint these review fixes before worker-branch integration.
 - [ ] Reconcile overlapping escape-analysis changes when integrating the correlation branch.
 
 Files:
@@ -874,14 +874,41 @@ Old worker claims that all guard sides must be witnessed for `exact` conflict wi
 - Initial mount remains unconditional. For updates without tracked setters (including native retries), rendered component ancestry is unioned conservatively; read React's `retryTimedOutBoundary`/`resolveRetryWakeable` source. This is not lane-complete scheduling instrumentation.
 - Guard-side coverage now unions repeated sides' reachability paths rather than retaining only the first occurrence, and reports a single commit's nontrivial cause. Added regressions for both.
 - Identical-capture baseline `80b8f278`: Sentry **exact, 100% strict coverage, 9/16 sampled mismatches over 40 reported assignments**, 52 corrected states; PostHog **exact, 100%, 0/2 mismatches**, 6 states.
-- Current implementation after stable refs, modeled hooks, and native-retry ancestry: Sentry **exact, 100%, still 9/16 mismatches over 40 assignments**. Several impossible claims shrink from 4 commits to 2, versus 1 replayed, but the residual remains real. PostHog **exact, 100%, 0/2 mismatches**, 5 states. Do not present this as Sentry soundness completion.
+- Current implementation after stable refs, modeled hooks, and native-retry ancestry: Sentry **exact, 100%, still 9/16 mismatches over 40 assignments**. Several impossible claims shrink from 4 commits to 2, versus 1 replayed, but the residual remains real. PostHog **exact, 100%, 0/2 mismatches**, 4 states. Do not present this as Sentry soundness completion.
 - Results are separate external files: `/tmp/bippy-parser-corpus/{baseline,current}-results.json`. Logs include `/tmp/bippy-parser-corpus-baseline.log`, `/tmp/bippy-parser-posthog-baseline.log`, and `/tmp/bippy-parser-corpus-current-{stable-refs,stub-hooks,retry}.log`. Checked-in corpus results remain unchanged.
 - A read-only/ad-hoc local inspection saved `/tmp/bippy-sentry-render.json`, `/tmp/bippy-sentry-{claimed,replayed}-*.txt`, and `/tmp/bippy-inspect-sentry-trace.log`. The all-false assignment claims a late tree with populated portals while its replay has none. Its early initial trees are identical. A later unconditional state update exposes mutations from the combined run's other alternatives: **commit existence guards alone do not condition persisted cell values or the heap**.
 - The inspection helper `/tmp/bippy-inspect-sentry.mts` temporarily wraps methods in its own process to print scheduling guards; it does not modify checked-in source. Its first run had produced artifacts but retained native handles and reached the command timeout; the subsequent run explicitly exits after saving results.
 
+### 2026-09-11: guarded mutations and partial N-way integration
+
+- Initial commit-cause work is checkpointed locally at `608d38ab`; nothing pushed.
+- Reused `Interpreter.runMaybe()` and `HeapJournal` for mutations in effects/refs under their active cause. A frame's own pending updates are excluded from that outer journal when its existence implies the callback cause; nested conditional journals still apply. Pinned replay no longer reintroduces the unresolved cause of its chosen alternative.
+- Added `effect-cause-persisted{,-store,-reducer}.tsx`. They cover a conditional mutation observed after an unrelated unconditional timer render, including sequential reducer updates. Added direct journal tests for local exclusions and nested forks, and an assignment-join regression retaining an earlier branch with no compatible later state.
+- Replay joining now checks combined decision guards and the candidate commit's cause before treating it as an extension. It does not pin decisions inside an unreachable later commit. Guards are collected once per commit-state rather than repeatedly traversing all trees for every merge.
+- Validation before N-way integration: **746 tests / 41 files** passed (`/tmp/bippy-persisted-full.log`); subsequent store fixture and targeted replay checks passed. During N-way integration: typecheck and **325 tests / 5 files** passed, then **20 targeted tests** including the new journal/reducer/join cases. Full final validation is pending.
+- Corrected the apparent PostHog hang diagnosis: initial rendering completes in 28.8 seconds; measured individual pinned renders take 27–30 seconds. The expanded assignment space increases the sampled workload from two to sixteen renders. The first silent run was stopped before completion; a fresh run completed. Local sample/profile artifacts are under `/tmp/bippy-posthog-*`; no remote session was touched.
+- Guarded-heap-only same-capture results: Sentry still **9/16 mismatches over 40 assignments**; PostHog is now **truncated, 15/16 mismatches over 256 reported assignments**, 62 corrected states, 12 omissions. PostHog's result is `/tmp/bippy-parser-corpus/guarded-heap-results.json`; it is a regression, not a validated improvement. Model diff before N-way changes: `/tmp/bippy-guarded-heap-before-nway.patch`, SHA-256 `dce81db8d490d3d3c00fa56659b49b443410ed7172e9b85653b04bf898c22ea8`.
+- Sentry cell/guard tracing shows causal predicates lost when state branches flatten beyond two alternatives. Started integrating only N-way predicate/schema/composition and mapped-origin preservation from `origin/devin/1789014494-corpus-parity-guards` (`5438a8e9`), adapting to current commit causes and accepting legacy serialized predicates without the new field. This is a partial source integration, not a merge or acceptance of the whole worker branch.
+- Do not blindly take that branch's opaque-call derivation: identical literal arguments do not prove an opaque function is deterministic. Its other semantic/corpus changes still need independent review.
+- First N-way flattening run: Sentry remained **exact membership but 11/16 mismatches over 38 reported assignments**, 42 corrected states. PostHog completed in 1,221 seconds, still **truncated with 15/16 mismatches over 256 assignments**, 62 corrected states. Artifacts: `/tmp/bippy-parser-corpus-nway-flattening.log` and separate `nway-flattening-results.json`. Flattening alone did not solve the contradiction.
+
+### 2026-09-11: native identity, collection guards, and guarded reads
+
+- Located Sentry's spurious conditions at `slot.tsx:239` and `:304`: React's modeled dispatch was treated as possibly equal to an application-defined no-op. Modeled native functions cannot be the program's own allocations; native round-trip stand-ins preserve actual aliases separately. Extended the existing intrinsic-versus-program identity rule. `setter-identity.tsx` fails before and passes after, with dispatch alias stability and an observable state update.
+- Extended `JournaledState.join` to receive predicates, preserving them in root renders and collection joins. Collection entries now carry guarded presence as well as guarded values. Projection remains a list of independently optional entries, not a Cartesian product. Optional values carry predicates through mapping, spreading, materialization, and loop callbacks; bounded scalar length evaluation preserves their guards where possible. Existing caller shapes remain accepted through optional/defaulted fields.
+- `effect-cause-persisted-map.tsx` failed before and passes after for conditional Map `get`, `has`, `size`, and iteration observed after an unconditional timer render.
+- Guarding mutations is not enough: reads inside a component/callback must also respect the cause under which it runs. `CommitCauses` now delegates its full active cause to a scoped interpreter guard. Expression results discard incompatible branch alternatives when a feasible subset remains. The prior guard is restored afterward; captured tasks replace, rather than inherit, unrelated ambient causes. Materialization skips alternatives whose ancestry is proven contradictory.
+- `effect-cause-guarded-store-read.tsx` exposed an impossible missing-registry read under the very condition that registered it. Its combined render claimed `1` missing read under B versus replay's `0`; the scoped read fix passes without corrections.
+- Test construction caveat: a single scalar host child may not produce a HostText fiber. These regressions use mixed text children for observable values. Audit optimized host text/props comparison separately; passing fiber-only checks does not prove all displayed text or props.
+- Added direct N-way predicate and legacy serialization tests while retaining the existing negation/refinement/cycle tests.
+- Full parser validation passed **756 tests / 42 files** (`/tmp/bippy-guarded-checkpoint-full.log`), plus typecheck, changed-file lint, realm generation check, formatting, and diff checks. A final added regression covers unreachable-commit decision pins; its before-fix run produced a duplicate B assignment. Final checkpoint validation passed **757 tests / 42 files**, typecheck, and lint (`/tmp/bippy-guarded-checkpoint-final.log`). No root-monorepo acceptance run yet.
+- **Latest same-capture results:** Sentry **exact membership, 100% strict, 0/1 replay mismatches**, 5 states; PostHog **exact membership, 100% strict, 0/2 replay mismatches**, 4 states. Artifacts: `/tmp/bippy-parser-corpus/guarded-reads-results.json`, `/tmp/bippy-parser-corpus-guarded-reads.log`. Compared with baseline's Sentry 9/16 of 40 and PostHog 0/2, the spurious Sentry decisions are gone and PostHog's guarded-heap regression is repaired. Checked-in historical corpus results remain unchanged.
+- Timing remains an open issue: the latest PostHog run took 213.8 seconds versus baseline 104.0 and cause-only 87.9. Individual runs finish; profiles identify repeated predicate parsing/serialization and composition as major costs. No budgets were raised. Sentry improved from baseline 64.9 seconds to 13.9 seconds.
+- These captures contain final runtime snapshots, not independent complete commit histories. The successful replay assignments are not evidence that unmodeled event sequences, lanes, cleanup, or every guard side were witnessed. The full correlation worker branch is still unmerged; only the reviewed N-way subset is integrated.
+
 ### Next execution entry
 
-Add a minimal regression where an effect under A mutates state, then an unrelated unconditional update renders again: B must retain its unmodified state. Investigate guarded heap/cell updates using the interpreter's existing fork/join machinery rather than hiding the late contradictory tree with a stronger commit guard. Then fix replay claims derived from truncated enumeration and continue P1/P2. No pending worker branch has been integrated yet.
+Checkpoint after final validation, optimize measured predicate-processing overhead without semantic changes, and continue P1's queued mutation/lazy-state and lifecycle audits. Then address P2's truncated-prefix claims, corrected-tree coherence, and optimized host text coverage; review remaining worker changes and proceed through the acceptance gates.
 
 ---
 

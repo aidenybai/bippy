@@ -110,10 +110,11 @@ export interface GuardContext {
   inputs: InputVariable[];
 }
 
-/** What a `$Branch` marker carries: either a two-way formula or an N-way choice variable. */
+/** A branch's formula, choice variable, or guards for alternatives flattened from nested decisions. */
 export interface SymbolicPredicate {
   formula: Guard | null;
   choice: SymbolicVariable | null;
+  guards: Guard[] | null;
   inputs: InputVariable[];
 }
 
@@ -222,6 +223,7 @@ export const guardSchema: z.ZodType<Guard> = z.lazy(() =>
 export const symbolicPredicateSchema: z.ZodType<SymbolicPredicate> = z.object({
   formula: guardSchema.nullable(),
   choice: symbolicVariableSchema.nullable(),
+  guards: z.array(guardSchema).nullable().default(null),
   inputs: z.array(inputVariableSchema),
 });
 
@@ -531,26 +533,53 @@ export const formatGuard = (guard: Guard): string => {
 export const formatPredicate = (predicate: SymbolicPredicate): string => {
   if (predicate.formula) return formatGuard(predicate.formula);
   if (predicate.choice) return formatVariable(predicate.choice);
-  throw new Error("a branch predicate decides by a formula or a choice");
+  if (predicate.guards) return predicate.guards.map(formatGuard).join(" | ");
+  throw new Error("a branch predicate decides by a formula, a choice, or per-alternative guards");
+};
+
+export const countGuardAtoms = (guard: Guard): number => {
+  switch (guard.kind) {
+    case "constant":
+      return 0;
+    case "not":
+      return countGuardAtoms(guard.operand);
+    case "and":
+    case "or":
+      return guard.operands.reduce((total, operand) => total + countGuardAtoms(operand), 0);
+    default:
+      return 1;
+  }
 };
 
 /** The guard alternative `index` of an N-way choice is taken under. */
 export const choiceGuard = (variable: SymbolicVariable, index: number): Guard =>
   equalsGuard(variable, index);
 
-/** Per-alternative guards of a marker predicate: `[g, not g]` for a formula, `eq(choice, i)` for a choice. */
+/** A formula's sides, explicit guards, or choice indices with a final catch-all alternative. */
 export const predicateGuards = (
   predicate: SymbolicPredicate,
   alternativeCount: number,
 ): Guard[] => {
   if (predicate.formula && alternativeCount === 2)
     return [predicate.formula, negateGuard(predicate.formula)];
+  if (predicate.guards && predicate.guards.length === alternativeCount) return predicate.guards;
   if (predicate.choice) {
     const choice = predicate.choice;
-    return Array.from({ length: alternativeCount }, (_, index) => choiceGuard(choice, index));
+    const named = Array.from({ length: alternativeCount - 1 }, (_, index) =>
+      choiceGuard(choice, index),
+    );
+    return [...named, negateGuard(orGuard(named))];
   }
   throw new Error(`predicate does not decide ${alternativeCount} alternatives`);
 };
+
+export const decidesAlternatives = (
+  predicate: SymbolicPredicate,
+  alternativeCount: number,
+): boolean =>
+  predicate.choice !== null ||
+  (predicate.formula !== null && alternativeCount === 2) ||
+  predicate.guards?.length === alternativeCount;
 
 const countNodes = (nodes: PatternNode[], stats: SymbolicTreeStats): void => {
   for (const node of nodes) {

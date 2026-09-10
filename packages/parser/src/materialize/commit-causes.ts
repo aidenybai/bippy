@@ -6,6 +6,10 @@ import {
   orGuard,
 } from "../harness/symbolic-tree.js";
 
+interface GuardedRunner {
+  <Result>(cause: GuardContext, run: () => Result): Result;
+}
+
 export class CommitCauses {
   private current: GuardContext = { guard: constantGuard(true), inputs: [] };
   private pending: GuardContext[] = [];
@@ -13,6 +17,8 @@ export class CommitCauses {
   private isRendering = false;
   private hasTrackedCause = false;
   private hasCommitted = false;
+
+  constructor(private readonly runGuarded: GuardedRunner = (_cause, run) => run()) {}
 
   beginRender(ancestry: GuardContext = { guard: constantGuard(true), inputs: [] }): void {
     if (this.isRendering) {
@@ -36,12 +42,16 @@ export class CommitCauses {
     return this.current;
   }
 
+  getCause(): GuardContext {
+    return this.active ?? { guard: constantGuard(true), inputs: [] };
+  }
+
   schedule(): void {
-    this.pending.push(this.active ?? { guard: constantGuard(true), inputs: [] });
+    this.pending.push(this.getCause());
   }
 
   bindTask(task: () => void): () => void {
-    const cause = this.active ?? { guard: constantGuard(true), inputs: [] };
+    const cause = this.getCause();
     return () => this.runWith(cause, task);
   }
 
@@ -53,7 +63,7 @@ export class CommitCauses {
     const previous = this.active;
     this.active = cause;
     try {
-      return run();
+      return this.runGuarded(cause, run);
     } finally {
       this.active = previous;
     }

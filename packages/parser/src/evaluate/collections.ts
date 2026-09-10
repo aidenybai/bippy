@@ -10,10 +10,13 @@ import type {
 import { createGeneratorValue, getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getSearchParamsItems } from "./url-search-params.js";
+import { getTruthinessPredicate } from "./predicates.js";
 import {
   accessorEntry,
   branchValue,
   FALSE_VALUE,
+  getListLength,
+  getTruthiness,
   ITERATOR_PROPERTY_KEY,
   listValue,
   mapValue,
@@ -21,7 +24,6 @@ import {
   mayReadAsText,
   objectFromRecord,
   optionalValue,
-  primitiveValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -29,15 +31,14 @@ import {
 } from "./values.js";
 
 /**
- * `isDefinite` is false when the entry exists on some paths only (a branch key,
- * a fork whose paths disagree, or a possible `delete`). `writeOrdinal` orders
+ * `presence` preserves which paths contain an entry. `writeOrdinal` orders
  * writes: a later write under a key that may equal this one may have replaced
  * the value.
  */
 interface CollectionEntry {
   key: StaticValue;
   value: StaticValue;
-  isDefinite: boolean;
+  presence: StaticValue;
   writeOrdinal: number;
 }
 
@@ -198,6 +199,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
+    predicate: string | null = null,
   ): void {
     this.writeCount = Math.max(...snapshots.map((snapshot) => snapshot.writeCount));
     this.isExternallyMutable = snapshots.some((snapshot) => snapshot.isExternallyMutable);
@@ -213,16 +215,22 @@ class StaticCollection implements JournaledState<CollectionState> {
           continue;
         }
         const present = pathEntries.filter((pathEntry) => pathEntry !== null);
-        const preferred = pathEntries[preferredPath];
         joined.set(identity, {
           key: entry.key,
           value: branchValue(
-            present.map((pathEntry) => pathEntry.value),
+            pathEntries.map((pathEntry) => pathEntry?.value ?? UNDEFINED_VALUE),
             reason,
             location,
-            preferred ? present.indexOf(preferred) : 0,
+            preferredPath,
+            predicate,
           ),
-          isDefinite: pathEntries.every((pathEntry) => pathEntry?.isDefinite ?? false),
+          presence: branchValue(
+            pathEntries.map((pathEntry) => pathEntry?.presence ?? FALSE_VALUE),
+            reason,
+            location,
+            preferredPath,
+            predicate,
+          ),
           writeOrdinal: Math.max(...present.map((pathEntry) => pathEntry.writeOrdinal)),
         });
       }
@@ -278,16 +286,18 @@ class StaticCollection implements JournaledState<CollectionState> {
 
   private getOne(key: StaticValue): StaticValue {
     const entry = this.find(key);
-    const isSettled = entry?.isDefinite === true;
+    const isSettled = entry !== null && getTruthiness(entry.presence) === true;
     const possiblyEqual = this.findPossiblyEqual(key, isSettled ? entry.writeOrdinal : -1);
     if (possiblyEqual.length === 0 && !this.isOutsideWriteVisible(key)) {
-      if (!entry) return UNDEFINED_VALUE;
+      if (!entry || getTruthiness(entry.presence) === false) return UNDEFINED_VALUE;
       return isSettled
         ? entry.value
         : branchValue(
             [entry.value, UNDEFINED_VALUE],
             this.describeMaybePresent("get"),
             this.location,
+            0,
+            getTruthinessPredicate(entry.presence),
           );
     }
     const reason = this.describeUncertainty("get");
@@ -302,7 +312,8 @@ class StaticCollection implements JournaledState<CollectionState> {
   has(key: StaticValue): StaticValue {
     return this.readEach(key, (alternative) => {
       const entry = this.find(alternative);
-      if (entry?.isDefinite && !this.isExternallyMutable) return TRUE_VALUE;
+      if (entry && getTruthiness(entry.presence) === true && !this.isExternallyMutable)
+        return TRUE_VALUE;
       if (
         this.isOutsideWriteVisible(alternative) ||
         this.findPossiblyEqual(alternative).length > 0
@@ -310,7 +321,9 @@ class StaticCollection implements JournaledState<CollectionState> {
         return unknownPrimitiveValue("boolean", this.describeUncertainty("has"));
       }
       if (!entry) return FALSE_VALUE;
-      return unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
+      return this.isExternallyMutable
+        ? unknownPrimitiveValue("boolean", this.describeMaybePresent("has"))
+        : entry.presence;
     });
   }
 
@@ -318,16 +331,21 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.entries.set(getKeyIdentity(entry.key), entry);
   }
 
-  private write(key: StaticValue, value: StaticValue, isDefinite: boolean): void {
-    this.replace({ key, value, isDefinite, writeOrdinal: ++this.writeCount });
-  }
-
   set(key: StaticValue, value: StaticValue): void {
-    this.write(key, value, true);
+    this.replace({ key, value, presence: TRUE_VALUE, writeOrdinal: ++this.writeCount });
   }
 
   private unsettle(entries: CollectionEntry[]): void {
-    for (const entry of entries) this.replace({ ...entry, isDefinite: false });
+    for (const entry of entries) {
+      this.replace({
+        ...entry,
+        presence: branchValue(
+          [FALSE_VALUE, entry.presence],
+          this.describeMaybePresent("delete"),
+          this.location,
+        ),
+      });
+    }
   }
 
   delete(key: StaticValue): StaticValue {
@@ -339,9 +357,7 @@ class StaticCollection implements JournaledState<CollectionState> {
       return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
     if (!existing) return FALSE_VALUE;
-    return existing.isDefinite
-      ? TRUE_VALUE
-      : unknownPrimitiveValue("boolean", this.describeMaybePresent("delete"));
+    return existing.presence;
   }
 
   clear(): void {
@@ -353,11 +369,22 @@ class StaticCollection implements JournaledState<CollectionState> {
     if (this.hasDynamicKeys()) {
       return unknownValue(`${this.kind} with dynamic keys`, this.location);
     }
-    const items = [...this.entries.values()].map((entry) =>
-      entry.isDefinite
-        ? select(entry)
-        : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location),
-    );
+    const items: StaticValue[] = [];
+    for (const entry of this.entries.values()) {
+      const presence = getTruthiness(entry.presence);
+      if (presence === false) continue;
+      items.push(
+        presence === true
+          ? select(entry)
+          : optionalValue(
+              select(entry),
+              this.describeMaybePresent("entries"),
+              this.location,
+              false,
+              getTruthinessPredicate(entry.presence),
+            ),
+      );
+    }
     if (this.isExternallyMutable) {
       items.push({
         kind: "repeat",
@@ -375,11 +402,10 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   size(): StaticValue {
-    return this.hasDynamicKeys() ||
-      this.isExternallyMutable ||
-      [...this.entries.values()].some((entry) => !entry.isDefinite)
-      ? unknownPrimitiveValue("number", `${this.kind}.size`)
-      : primitiveValue(this.entries.size);
+    const items = this.project((entry) => entry.value);
+    return items.kind === "list"
+      ? getListLength(items)
+      : unknownPrimitiveValue("number", `${this.kind}.size`);
   }
 }
 

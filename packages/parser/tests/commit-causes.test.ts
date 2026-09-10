@@ -90,6 +90,34 @@ describe("commit causes", () => {
     expect(areGuardsSatisfiable([commitSide.guard, negateGuard(firstGuard)])).toBe(false);
   });
 
+  it("retains an earlier assignment when every later state contradicts it", () => {
+    const derivedBranch = guardedBranch(
+      "derived",
+      firstGuard,
+      [firstInput],
+      [patternHost("strong")],
+      [patternHost("span")],
+    );
+    const space = enumerateStateSpace([[firstBranch()], [derivedBranch]], undefined, [
+      unconditional,
+      firstCause,
+    ]);
+    const assignments = joinDecisionAssignments(space);
+    expect(assignments).toHaveLength(2);
+    expect(assignments.map((assignment) => assignment.stateIndices)).toEqual([[0, 2], [1]]);
+    expect(assignments[1].conditions.map((condition) => condition.variable)).toEqual(["first"]);
+  });
+
+  it("does not pin decisions inside a commit with an incompatible cause", () => {
+    const space = enumerateStateSpace([[firstBranch()], [secondBranch()]], undefined, [
+      unconditional,
+      firstCause,
+    ]);
+    const assignments = joinDecisionAssignments(space);
+    expect(assignments.map((assignment) => assignment.stateIndices)).toEqual([[0, 2], [0, 3], [1]]);
+    expect(assignments[2].conditions.map((condition) => condition.variable)).toEqual(["first"]);
+  });
+
   it("unions the paths of a guard side that appears in different commits", () => {
     const space = enumerateStateSpace(
       [[patternHost("initial", [secondBranch()])], [patternHost("updated", [secondBranch()])]],
