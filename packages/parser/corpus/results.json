@@ -83474,6 +83474,896 @@
       "anchor": "body",
       "note": "runtime replayed from 2026-09-10T04:42:06.559Z",
       "failure": null
+    },
+    {
+      "id": "ecommerce-react",
+      "revision": "8d37028200dc1475d78f27d3b352a4d0384a4ab1",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T04:43:59.733Z",
+      "durationMs": 1063,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 182,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Sign In | Salinaka"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 182,
+          "textCount": 9,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1796
+        },
+        "diagnostics": [
+          {
+            "code": "multiple-root-renders",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 172,
+        "matchedText": 9,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 181,
+        "staticFibers": 181,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 181,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 181,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:06:41.950Z",
+      "failure": null
+    },
+    {
+      "id": "mern-ecommerce",
+      "revision": "7f73dfbd68a27b6945fe7fbf654067004816d09e",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T04:43:59.137Z",
+      "durationMs": 566,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 313,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "MERN Store"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 314,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 387
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 308,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 312,
+        "staticFibers": 312,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 312,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 312,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T14:49:52.748Z",
+      "failure": null
+    },
+    {
+      "id": "mern-ecommerce-frontend",
+      "revision": "89845dd6f2ec3cc9719775299a561cb2da86bfbf",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T04:43:55.413Z",
+      "durationMs": 498,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 46,
+        "commits": 2,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ],
+        "title": "React Redux App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 50,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 9,
+          "unknownCount": 0,
+          "modulesLoaded": 85
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 36,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 7,
+        "runtimeFibers": 38,
+        "staticFibers": 38,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 38,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 86,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 9,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 0,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:05:45.513Z",
+      "failure": null
+    },
+    {
+      "id": "pizza-man",
+      "revision": "fbba955958c5c3eaa144fee50266b3a8c0e0f913",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T04:43:54.701Z",
+      "durationMs": 677,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 169,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Pizza Man"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 171,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 100
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 165,
+        "matchedText": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 168,
+        "staticFibers": 168,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 168,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 330,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:06:59.284Z",
+      "failure": null
+    },
+    {
+      "id": "react-ecommerce-client",
+      "revision": "d59ca117e7d80cd67275d8b4a50946499e531fba",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T04:43:55.943Z",
+      "durationMs": 3162,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 651,
+        "commits": 6,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to fetch",
+          "Failed to fetch",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+          "Failed to fetch",
+          "Failed to fetch"
+        ],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 649,
+          "textCount": 11,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 11463
+        },
+        "diagnostics": [
+          {
+            "code": "unsettled-state",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 635,
+        "matchedText": 11,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 4,
+        "runtimeFibers": 646,
+        "staticFibers": 646,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 646,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 0,
+        "tree": {
+          "nodes": 1794,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:06:17.984Z",
+      "failure": null
+    },
+    {
+      "id": "react-phone-e-commerce",
+      "revision": "a6c25aac214915e9d0700f1789c356bdeb542759",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T04:49:48.191Z",
+      "durationMs": 598,
+      "runtime": {
+        "reactVersion": "16.6.3",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 201,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "The Store"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 201,
+          "textCount": 11,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 57
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 189,
+        "matchedText": 11,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 200,
+        "staticFibers": 200,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 200,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 248,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:06:42.218Z",
+      "failure": null
+    },
+    {
+      "id": "social-media-app",
+      "revision": "9fa032dd198c92aa498db82d248c0d93f28ebf5c",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T04:44:00.826Z",
+      "durationMs": 358,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 114,
+        "commits": 5,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_UNSAFE_PORT",
+          "Failed to load resource: net::ERR_UNSAFE_PORT"
+        ],
+        "title": "Snapgram"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 124,
+          "textCount": 2,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 110
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 108,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "transparentFibers": 4,
+        "runtimeFibers": 109,
+        "staticFibers": 114,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 112,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 1,
+        "tree": {
+          "nodes": 204,
+          "inputs": 3,
+          "guards": 6,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 3,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "eq(choice(#1), 1)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/social-media-app/src/_auth/AuthLayout.tsx:10:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "eq(choice(#2), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/social-media-app/src/_auth/forms/SigninForm.tsx:97:14",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 1)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/social-media-app/src/_auth/AuthLayout.tsx:10:8",
+              "side": 0,
+              "guard": "eq(choice(#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 1)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/social-media-app/src/_auth/AuthLayout.tsx:10:8",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 1))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#2), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/social-media-app/src/_auth/forms/SigninForm.tsx:97:14",
+              "side": 0,
+              "guard": "eq(choice(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#2), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/social-media-app/src/_auth/forms/SigninForm.tsx:97:14",
+              "side": 1,
+              "guard": "not(eq(choice(#2), 0))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 3,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:06:29.607Z",
+      "failure": null
+    },
+    {
+      "id": "social-network-client",
+      "revision": "d99ef7b3c56599e95db7b3d14bbcda76ec3e6714",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T04:44:01.216Z",
+      "durationMs": 1183,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 70,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Login | social-network"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 71,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 745
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 65,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 69,
+        "staticFibers": 69,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 69,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 85,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-09T13:07:30.202Z",
+      "failure": null
     }
   ]
 }

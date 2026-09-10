@@ -120,6 +120,7 @@ export class ModuleResolver {
   private readonly cache = new Map<string, ModuleResolution>();
   private readonly aliasNames: string[];
   readonly rootDirectory: string | null;
+  readonly extensions: readonly string[] = SOURCE_EXTENSIONS;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;

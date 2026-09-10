@@ -735,6 +735,14 @@ export const WINDOW_SERVED_MEMBERS = new Set([
   "scrollY",
 ]);
 
+/** A headless browser's screen is its viewport: `screen.width` reads as `innerWidth`. */
+const SCREEN_VIEWPORT_MEMBERS = new Map([
+  ["width", "innerWidth"],
+  ["height", "innerHeight"],
+  ["availWidth", "innerWidth"],
+  ["availHeight", "innerHeight"],
+]);
+
 /** A method declared to answer with the nodes it finds: a nullable node or a node collection. */
 const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
   const { returnType } = member;
@@ -787,6 +795,10 @@ export const getHostDocumentMember = (
   objectPath: string,
   member: string,
 ): StaticValue | null => {
+  if (objectPath === "screen") {
+    const viewportMember = SCREEN_VIEWPORT_MEMBERS.get(member);
+    return viewportMember === undefined ? null : getHostDocumentMember(host, "", viewportMember);
+  }
   const isDocument = objectPath === "document";
   if (!isDocument && objectPath !== "") return null;
   const target = isDocument ? host.document : host.globalObject;

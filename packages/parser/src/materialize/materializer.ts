@@ -3,6 +3,7 @@ import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
   getComponentProperty,
+  getMaskedLegacyContext,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
@@ -38,6 +39,7 @@ import {
   getStubDisplayName,
   mapValue,
   NULL_VALUE,
+  objectFromRecord,
   omitObjectKeys,
   unknownValue,
   nativeObjectValue,
@@ -58,6 +60,7 @@ import type {
   StaticElementType,
   StaticElementValue,
   StaticFunctionValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticRepeatValue,
   StaticValue,
@@ -166,6 +169,8 @@ interface MaterializeContext {
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
   isStrictMode: boolean;
   decisions: DecisionScope;
+  /** The unmasked legacy context (`contextStackCursor`) at this position; null once React dropped legacy context. */
+  legacyContext: StaticValue | null;
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
@@ -413,12 +418,25 @@ const hasDefaultProps = (component: ComponentDefinition): boolean => {
   return defaults !== null && isNonNullish(defaults);
 };
 
+/** `createElement` fills in a default for every prop that is missing or explicitly `undefined`. */
 const withDefaultProps = (
   defaults: StaticValue | null,
   props: StaticObjectValue,
 ): StaticObjectValue => {
   if (!defaults || !isNonNullish(defaults)) return props;
-  return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
+  const isDefaulted = (entry: StaticObjectEntry): boolean =>
+    entry.kind === "property" &&
+    defaults.kind === "object" &&
+    entry.value.kind === "primitive" &&
+    entry.value.value === undefined &&
+    isNonNullish(getObjectProperty(defaults, entry.key));
+  return {
+    kind: "object",
+    entries: [
+      { kind: "spread", value: defaults },
+      ...props.entries.filter((entry) => !isDefaulted(entry)),
+    ],
+  };
 };
 
 const applyDefaultProps = (
@@ -595,6 +613,7 @@ export class Materializer {
       owner: null,
       isStrictMode: false,
       decisions: createDecisionScope(this.pinnedDecisions),
+      legacyContext: this.interpreter.hasLegacyContext ? objectFromRecord({}) : null,
     };
   }
 
@@ -831,13 +850,20 @@ export class Materializer {
       if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
     if (!this.isServerEnvironment(element, context)) {
-      return this.createNode(element.type, element.key, element.props, element.location, context);
+      return this.createNode(
+        element.type,
+        element.key,
+        element.props,
+        element.location,
+        context,
+        isTopLevel,
+      );
     }
     if (this.isFlightUnwrappedFragment(element)) {
       return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
     }
     const props = this.serverEnvironment.stampProps(element.props);
-    return this.createNode(element.type, element.key, props, element.location, context);
+    return this.createNode(element.type, element.key, props, element.location, context, isTopLevel);
   }
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
@@ -890,6 +916,7 @@ export class Materializer {
     props: StaticObjectValue,
     location: SourceLocation | null,
     context: MaterializeContext,
+    isTopLevel: boolean,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     if (type.kind !== "fragment" && this.materializedCount++ >= this.maxElementCount) {
@@ -970,12 +997,16 @@ export class Materializer {
         }
         return createElement(lazyType, { key: reactKey, input: proxyInput() });
       }
-      case "fragment":
+      case "fragment": {
+        // `reconcileChildFibers` unwraps an unkeyed top-level fragment without recursing,
+        // so its children take its position and a fragment among them stays a fiber.
+        const isUnwrapped = isTopLevel && reactKey === undefined;
         return createElement(
           this.runtime.react.Fragment,
           { key: isKeyless(key) ? undefined : (reactKey ?? KEY_PLACEHOLDER) },
-          this.toNode(children, context, true),
+          this.toNode(children, context, !isUnwrapped),
         );
+      }
       case "strict-mode":
         return createElement(
           this.runtime.react.StrictMode,
@@ -1295,7 +1326,17 @@ export class Materializer {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
           this.renderInsideComponent(() =>
-            this.renderFunctionProxy(input, component, (props) => [props]),
+            this.renderFunctionProxy(input, component, (props) => {
+              const legacyContext = input.context.legacyContext;
+              const contextArgument =
+                legacyContext === null
+                  ? null
+                  : getMaskedLegacyContext(
+                      component.properties.get("contextTypes") ?? null,
+                      legacyContext,
+                    );
+              return contextArgument ? [props, contextArgument] : [props];
+            }),
           ),
         getComponentDisplayName(component),
       );
@@ -1388,7 +1429,7 @@ export class Materializer {
         }
       }
       proxy = setFunctionName(
-        isErrorBoundaryClass(classValue.body) ? ErrorBoundaryProxy : ClassProxy,
+        isErrorBoundaryClass(classValue) ? ErrorBoundaryProxy : ClassProxy,
         getComponentDisplayName(component),
       );
       this.classProxies.set(component, proxy);
@@ -1792,7 +1833,7 @@ export class Materializer {
     host: ClassProxyHost,
   ): ReactNode {
     const props = applyDefaultProps(component, input.props);
-    const isBoundary = isErrorBoundaryClass(classValue.body);
+    const isBoundary = isErrorBoundaryClass(classValue);
     const renderContext = this.renderContext(input);
     const context: MaterializeContext = isBoundary
       ? { ...renderContext, errorBoundaryDepth: renderContext.errorBoundaryDepth + 1 }
@@ -1819,14 +1860,18 @@ export class Materializer {
             boundaryContext,
             input.location,
             frame,
-            (componentContext) =>
-              renderClassComponent(
+            (componentContext, childContext) => {
+              const classRender = renderClassComponent(
                 this.interpreter,
                 classValue,
                 props,
+                boundaryContext.legacyContext,
                 componentContext,
                 caughtError,
-              ),
+              );
+              childContext.legacyContext = classRender.childLegacyContext;
+              return classRender.rendered;
+            },
           ),
       );
       host.queueCommitWork({ mount, unmount });
@@ -1902,7 +1947,7 @@ export class Materializer {
     context: MaterializeContext,
     location: SourceLocation | null,
     hooks: HookFrame | null,
-    render: (componentContext: EvaluationContext) => StaticValue,
+    render: (componentContext: EvaluationContext, childContext: MaterializeContext) => StaticValue,
   ): CompositeEvaluation {
     const environment = this.componentEnvironment(component, context);
     const childContext: MaterializeContext = {
@@ -1952,7 +1997,7 @@ export class Materializer {
       hooks,
     };
     childContext.owner = componentContext;
-    return { rendered: render(componentContext), childContext, componentContext };
+    return { rendered: render(componentContext, childContext), childContext, componentContext };
   }
 
   /** Under RSC an element created outside a client boundary (a module with `"use client"`) is Flight's to render. */

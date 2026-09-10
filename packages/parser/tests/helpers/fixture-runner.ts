@@ -185,6 +185,7 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
   const enumerate = {
     anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
+    runtimeReactVersion: runtime.reactVersion,
     budget: fixture.manifest.stateSpaceBudget,
   };
   const compare = {

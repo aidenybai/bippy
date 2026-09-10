@@ -73,6 +73,7 @@ import {
   WRAPPER_OWN_KEYS,
   doesStrictModeDoubleInvokeHookFactories,
   getReactElementSymbolKey,
+  hasLegacyContext,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
 import {
@@ -171,6 +172,7 @@ import {
   getInlinedNodeEnv,
   isEnvironmentObject,
   isUnsettableDefineName,
+  isWebpackRequireName,
 } from "./bundler-globals.js";
 import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
@@ -308,6 +310,7 @@ import {
   mapValue,
   distributeBinary,
   NULL_VALUE,
+  SYMBOL_PROPERTY_KEY_PREFIX,
   capturedValue,
   isJsonRecord,
   jsonValue,
@@ -504,9 +507,13 @@ const isClosureBinding = (binding: TopLevelBinding): boolean =>
 const isReceiverIndependent = (callee: StaticValue): boolean =>
   callee.kind === "react-api" || callee.kind === "native-function";
 
-/** Names a function has without the analyzed code assigning them; any other name reads `undefined`. */
+const FUNCTION_HAS_INSTANCE_KEY = `${SYMBOL_PROPERTY_KEY_PREFIX}Symbol.hasInstance`;
+
+/** Names a function has without the analyzed code assigning them; any other name (well-known symbols included) reads `undefined`. */
 const isFunctionOwnOrInheritedKey = (key: string): boolean =>
-  isSymbolPropertyKey(key) || FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
+  isSymbolPropertyKey(key)
+    ? key === FUNCTION_HAS_INSTANCE_KEY
+    : FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
 
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
@@ -820,6 +827,8 @@ export class Interpreter {
   private readonly elementSymbolKey: string;
   private readonly reactVersion: string | null;
   readonly doesStrictModeDoubleInvokeHookFactories: boolean;
+  /** Whether class components still receive `contextTypes`-masked legacy context (`disableLegacyContext`). */
+  readonly hasLegacyContext: boolean;
   private readonly maxSteps: number;
   private readonly clientRegistry = createModuleRegistry();
   private readonly serverRegistry = createModuleRegistry();
@@ -885,6 +894,7 @@ export class Interpreter {
     this.doesStrictModeDoubleInvokeHookFactories = doesStrictModeDoubleInvokeHookFactories(
       this.reactVersion,
     );
+    this.hasLegacyContext = hasLegacyContext(this.reactVersion);
     this.assumeOuterProviders = options.assumeOuterProviders ?? false;
     this.styledComponentsTransform = this.project.hasDeclaredDependency(
       "babel-plugin-styled-components",
@@ -1192,6 +1202,11 @@ export class Interpreter {
     const instanceEnvironment = this.getModuleInstanceEnvironment(module, environment);
     this.initializeDependencies(module, instanceEnvironment);
     const context = this.createModuleContext(module, undefined, instanceEnvironment);
+    for (const name of getHoistedVarNames(sideEffectStatements)) {
+      if (!module.bindings.has(name) && !context.scope.bindings.has(name)) {
+        declareInScope(context.scope, name, UNDEFINED_VALUE);
+      }
+    }
     let pendingStatements: Statement[] = [];
     const flushPendingStatements = (): void => {
       if (pendingStatements.length === 0) return;
@@ -1798,6 +1813,9 @@ export class Interpreter {
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
     const defined = this.defines.get(name);
     if (defined) return defined;
+    if (isWebpackRequireName(name) && isWebpackBundled(this.project.hasDeclaredDependency)) {
+      return { kind: "global", name };
+    }
     if (renderEnvironment !== "server" && isBundlerUndeclaredName(this.project.bundler, name)) {
       return null;
     }
@@ -4040,6 +4058,21 @@ export class Interpreter {
     return classValue;
   }
 
+  /** Parameters of a callback whose caller is not analyzed: each argument is unknown. */
+  bindUnknownParameters(
+    params: ParamPattern[],
+    scope: Scope,
+    context: EvaluationContext,
+    reason: string,
+  ): void {
+    this.bindParameters(
+      params,
+      getValueParams(params).map(() => unknownValue(reason)),
+      scope,
+      context,
+    );
+  }
+
   private bindParameters(
     params: ParamPattern[],
     args: StaticValue[],
@@ -5277,6 +5310,22 @@ const nameAnonymousInner = (
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 
+const OBJECT_VALUE_KINDS: ReadonlySet<StaticValue["kind"]> = new Set([
+  "element",
+  "list",
+  "object",
+  "function",
+  "class",
+  "regexp",
+  "context",
+  "react-api",
+  "namespace",
+  "native-object",
+  "method",
+  "native-function",
+  "proxy",
+]);
+
 const COMPARE_OPERATORS: Partial<Record<string, CompareOperator>> = {
   "<": "<",
   "<=": "<=",
@@ -5336,6 +5385,12 @@ const mayCoerce = (value: StaticValue): boolean =>
     ? value.value !== null && value.value !== undefined
     : value.kind !== "symbol";
 
+/** Two objects compare by identity under `==` as well: coercion needs a primitive operand. */
+const mayCoerceTogether = (left: StaticValue, right: StaticValue): boolean =>
+  mayCoerce(left) &&
+  mayCoerce(right) &&
+  !(OBJECT_VALUE_KINDS.has(left.kind) && OBJECT_VALUE_KINDS.has(right.kind));
+
 /**
  * React's memo cache sentinel never reaches application values, so comparing
  * it against anything the interpreter cannot see is still a definite answer.
@@ -5365,7 +5420,7 @@ const compareEquality = (
     compareIdentity(left, right) ??
     compareGlobalToNullish(left, right, realm) ??
     compareGlobalToNullish(right, left, realm);
-  if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
+  if (isEqual === false && !isStrict && mayCoerceTogether(left, right)) isEqual = null;
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
       value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;

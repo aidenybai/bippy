@@ -14,7 +14,7 @@ import { isAssetImport, isUrlImport } from "./asset-module.js";
 import { readAssetModuleSource } from "./asset-modules.js";
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
-import { createModuleRecord, isClientModule } from "./module-record.js";
+import { createModuleRecord, hasExportedName, isClientModule } from "./module-record.js";
 import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
 
 interface ExportNameSet {
@@ -351,6 +351,9 @@ export class ModuleGraph {
     }
     if (module.moduleExports) {
       return { kind: "module-exports", module, exportedName, isClientReference: false };
+    }
+    if (module.isCommonJs && exportedName === "default" && !hasExportedName(module, "__esModule")) {
+      return { kind: "namespace", module };
     }
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
   }

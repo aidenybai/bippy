@@ -10,12 +10,24 @@ import { loadReactRuntime } from "../src/materialize/react-runtime.js";
 
 const STUB_REACT_VERSION = "17.0.2-stub";
 
+const PRE_HOOKS_REACT_VERSION = "16.6.3-stub";
+
+const PRE_HOOKS_REACT_STUB = `
+module.exports = {
+  version: ${JSON.stringify(PRE_HOOKS_REACT_VERSION)},
+  createElement: () => null,
+  createContext: (defaultValue) => ({ _currentValue: defaultValue }),
+  Component: class Component {},
+};
+`;
+
 const REACT_STUB = `
 module.exports = {
   version: ${JSON.stringify(STUB_REACT_VERSION)},
   createElement: () => null,
   createContext: (defaultValue) => ({ _currentValue: defaultValue }),
   Component: class Component {},
+  useState: (initial) => [initial, () => {}],
   act: (callback) => callback(),
   __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
     ReactCurrentDispatcher: { current: { readContext: (context) => context._currentValue } },
@@ -182,6 +194,18 @@ describe("loadReactRuntime", () => {
     const container = document.createElement("div");
     runtime.createRoot(container, rootCallbacks).render("tree");
     expect(container.textContent).toBe("legacy:tree");
+  });
+
+  it("uses the harness's React when the app's React predates hooks", async () => {
+    const rootDirectory = createRootDirectory();
+    writePackage(rootDirectory, "react", PRE_HOOKS_REACT_STUB);
+    writePackage(rootDirectory, "react-dom", LEGACY_REACT_DOM_STUB);
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+    });
+    expect(runtime.version).toBe(harnessReactVersion);
+    expect(typeof runtime.react.useState).toBe("function");
   });
 
   it("uses the harness's React when the app resolves none", async () => {

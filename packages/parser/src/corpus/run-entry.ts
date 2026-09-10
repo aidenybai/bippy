@@ -251,11 +251,15 @@ interface StaticRun {
   staticResult: StaticRenderResult;
 }
 
-const enumerateOptions = (entry: CorpusEntry): StaticStateSpaceOptions => {
+const enumerateOptions = (
+  entry: CorpusEntry,
+  runtimeReactVersion: string | null = null,
+): StaticStateSpaceOptions => {
   const profile = getFrameworkProfile(entry.framework);
   return {
     anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
+    runtimeReactVersion,
   };
 };
 
@@ -281,7 +285,7 @@ const compareEntry = async (
   log: (message: string) => void,
 ): Promise<void> => {
   const profile = getFrameworkProfile(entry.framework);
-  const enumerate = enumerateOptions(entry);
+  const enumerate = enumerateOptions(entry, capture.snapshot.reactVersion);
   const compare = {
     ...entry.compare,
     unwrapTransparentRuntimeFiber: (fiber: RuntimeFiberSnapshot) =>

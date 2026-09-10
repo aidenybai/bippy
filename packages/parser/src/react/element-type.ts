@@ -1,11 +1,14 @@
 import type {
   ComponentDefinition,
   StaticElementType,
+  StaticFunctionValue,
   StaticObjectEntry,
+  StaticObjectValue,
   StaticValue,
 } from "../types.js";
 import {
   getObjectProperty,
+  getTruthiness,
   isUndefinedValue,
   mapValue,
   objectValue,
@@ -54,6 +57,20 @@ export const createFunctionComponentDefinition = (
   boundArgs: value.boundArgs,
   boundThis: value.boundThis,
   isClientReference: value.isClientReference ?? false,
+});
+
+const createConstructedComponentDefinition = (
+  value: StaticFunctionValue,
+  prototype: StaticObjectValue,
+): ComponentDefinition => ({
+  ...createFunctionComponentDefinition(value),
+  classBody: {
+    members: [
+      { kind: "constructor", key: "constructor", isStatic: false, functionNode: value.node },
+    ],
+    superValue: null,
+    prototype,
+  },
 });
 
 const createClassComponentDefinition = (
@@ -105,8 +122,24 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         displayName: nameHint,
         reason: `element type is ${String(value.value)}`,
       };
-    case "function":
-      return { kind: "function", component: createFunctionComponentDefinition(value) };
+    case "function": {
+      const prototype = value.boundArgs ? undefined : value.properties.get("prototype");
+      const isConstructed =
+        prototype?.kind === "object"
+          ? getTruthiness(getObjectProperty(prototype, "isReactComponent"))
+          : false;
+      if (isConstructed === null) {
+        return {
+          kind: "unknown",
+          displayName: nameHint ?? value.name,
+          reason:
+            "whether React constructs the component depends on an unknown prototype.isReactComponent",
+        };
+      }
+      return isConstructed && prototype?.kind === "object"
+        ? { kind: "class", component: createConstructedComponentDefinition(value, prototype) }
+        : { kind: "function", component: createFunctionComponentDefinition(value) };
+    }
     case "class":
       return { kind: "class", component: createClassComponentDefinition(value) };
     case "component-reference":

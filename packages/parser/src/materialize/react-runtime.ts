@@ -57,7 +57,8 @@ export interface LegacyReactInternals {
  * same work tags, naming and reconciliation rules as the app's runtime.
  * `createRoot` mounts a concurrent root when the app's
  * `react-dom` has a `client` entry and a legacy `ReactDOM.render` root
- * otherwise (React 16/17); an app without its own React uses the harness's copy.
+ * otherwise (React 16/17); an app without its own React, or whose React
+ * predates hooks, uses the harness's copy.
  */
 export interface ReactRuntime {
   react: ReactModule;
@@ -236,6 +237,9 @@ const loadRootFactory = async (
   return legacyRootFactory(dom);
 };
 
+/** The materializer's proxies are hook components: a React that predates hooks (< 16.8) cannot mount them. */
+const hasHooks = (react: ReactModule): boolean => typeof react.useState === "function";
+
 const loadPackages = async (
   appResolver: ModuleResolver | null,
   rootDirectory: string | null,
@@ -247,6 +251,9 @@ const loadPackages = async (
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
+  if (appResolver !== null && !hasHooks(react)) {
+    return loadPackages(null, rootDirectory, DEFAULT_REACT_PACKAGES);
+  }
   return {
     react,
     dom,
