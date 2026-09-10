@@ -2,7 +2,7 @@ import type { RuntimeFiberSnapshot } from "../harness/snapshot.js";
 import { type FrameworkKind, type FrameworkProfile, SPA_PROFILE } from "./framework-profile.js";
 import { NEXT_DATA_GLOBAL } from "./next-pages-router.js";
 
-// Names observed in Next 15/16 development builds (app router). Everything here
+// Names observed in Next 14–16 development builds (app router). Everything here
 // is framework plumbing that wraps application output without rendering host
 // nodes of its own; `Fragment` and anonymous `ContextProvider`s are flattened
 // on both sides because Next inserts bare fragments and unnamed providers
@@ -39,6 +39,7 @@ const NEXT_APP_RUNTIME_WRAPPERS = [
   "ScrollAndMaybeFocusHandler",
   "ScrollAndFocusHandler",
   "ClientPageRoot",
+  "StaticGenerationSearchParamsBailoutProvider",
   "ClientSegmentRoot",
   "InnerScrollHandlerNew",
   "InnerScrollAndFocusHandler",
@@ -82,8 +83,29 @@ const isNextLayerAsset = (fiber: RuntimeFiberSnapshot): boolean => {
   return (fiber.name === "link" || fiber.name === "style") && NEXT_LAYER_STYLE_KEY.test(fiber.key);
 };
 
+// `lib/framework/boundary-components` defines the metadata, viewport and outlet
+// boundaries as computed-key members of a namespace object; Turbopack's
+// downleveled client output passes them to `_define_property` as anonymous
+// function expressions, so their fibers carry no name and are recognized by
+// the `Suspense` they wrap, which `lib/metadata/metadata` names `Next.*`.
+const NEXT_BOUNDARY_SUSPENSE_NAME = /^Next\./;
+
+const isNextAnonymousBoundary = (fiber: RuntimeFiberSnapshot): boolean => {
+  if (fiber.tag !== "FunctionComponent" || fiber.name !== null || fiber.children.length !== 1)
+    return false;
+  const [child] = fiber.children;
+  const suspenseName = child.props.name;
+  return (
+    child.tag === "SuspenseComponent" &&
+    typeof suspenseName === "string" &&
+    NEXT_BOUNDARY_SUSPENSE_NAME.test(suspenseName)
+  );
+};
+
 const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
-  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) || isNextLayerAsset(fiber);
+  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) ||
+  isNextLayerAsset(fiber) ||
+  isNextAnonymousBoundary(fiber);
 
 const NEXT_SEGMENT_ACTIVITY_FIBERS: ReadonlySet<string> = new Set(["Activity", "Offscreen"]);
 

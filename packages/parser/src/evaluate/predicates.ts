@@ -394,6 +394,15 @@ export const getStatePredicate = (cell: object, name: string): string =>
     location: null,
   });
 
+/** The predicate deciding where Flight's row overflowed while serializing `children` to the client. */
+export const getFlightDeferralPredicate = (children: StaticValue): string =>
+  choicePredicate({
+    id: toInputId(getSubjectId(children)),
+    label: "Flight row overflow",
+    source: "flight",
+    location: null,
+  });
+
 const repeatSources = new WeakMap<StaticValue, StaticValue>();
 
 /** Records that `repeat` iterates over `collection`, so its count is `len(collection)`. */

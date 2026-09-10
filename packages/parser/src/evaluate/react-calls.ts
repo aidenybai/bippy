@@ -240,6 +240,7 @@ const mapUncertainChildren = (
   children: StaticValue,
   callback: CallableValue,
   context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue => {
   if (children.kind === "list") {
     return listValue(
@@ -274,12 +275,12 @@ const mapUncertainChildren = (
   const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
   if (children.kind === "branch") {
     return mapValue(children, (alternative) =>
-      mapChildren(interpreter, alternative, callback, undefined, uncertainContext),
+      mapChildren(interpreter, alternative, callback, undefined, uncertainContext, location),
     );
   }
   if (children.kind === "optional") {
     return optionalValue(
-      mapChildren(interpreter, children.value, callback, undefined, uncertainContext),
+      mapChildren(interpreter, children.value, callback, undefined, uncertainContext, location),
       children.reason,
       children.location,
     );
@@ -343,9 +344,17 @@ const childrenToArray = (
   interpreter: Interpreter,
   children: StaticValue,
   context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue => {
   if (isNullish(children) === true) return listValue([]);
-  const mapped = mapChildrenExactly(interpreter, children, IDENTITY_MAPPER, undefined, context);
+  const mapped = mapChildrenExactly(
+    interpreter,
+    children,
+    IDENTITY_MAPPER,
+    undefined,
+    context,
+    location,
+  );
   if (mapped) return mapped;
   if (children.kind === "list" || children.kind === "repeat") return children;
   if (children.kind === "element" || children.kind === "primitive") return listValue([children]);
@@ -372,11 +381,12 @@ const mapChildren = (
   callback: StaticValue | undefined,
   thisArg: StaticValue | undefined,
   context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue => {
   if (!children || !isCallable(callback)) return unknownValue("Children.map with dynamic callback");
   return (
-    mapChildrenExactly(interpreter, children, callback, thisArg, context) ??
-    mapUncertainChildren(interpreter, children, callback, context)
+    mapChildrenExactly(interpreter, children, callback, thisArg, context, location) ??
+    mapUncertainChildren(interpreter, children, callback, context, location)
   );
 };
 
@@ -615,13 +625,13 @@ export const evaluateReactApiCall = (
       interpreter.recordRootRender(first ?? UNDEFINED_VALUE);
       return unknownValue(`${api}() root`, location);
     case "Children.map":
-      return mapChildren(interpreter, first, second, third, context);
+      return mapChildren(interpreter, first, second, third, context, location);
     case "Children.forEach":
-      mapChildren(interpreter, first, second, third, context);
+      mapChildren(interpreter, first, second, third, context, location);
       return UNDEFINED_VALUE;
     case "Children.toArray":
       return first
-        ? mapValue(first, (children) => childrenToArray(interpreter, children, context))
+        ? mapValue(first, (children) => childrenToArray(interpreter, children, context, location))
         : listValue([]);
     case "Children.count":
       return first ? mapValue(first, countChildren) : primitiveValue(0);

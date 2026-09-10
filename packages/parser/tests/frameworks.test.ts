@@ -300,6 +300,31 @@ describe("next app router", () => {
     );
   });
 
+  it("models Next 13.4 next/image preloads as next/head and next/dynamic client-only as NoSSR", async () => {
+    const rootDirectory = await withInstalledPackage("next-app", "next", "13.4.4");
+    const renderRoute = async (route: string) => {
+      const result = await renderFrameworkTarget(
+        { framework: "next-app", route },
+        { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+      );
+      return formatPattern(getRenderPattern(result));
+    };
+    expect(await renderRoute("/gallery")).toMatch(
+      /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<Head>\n\s+<SideEffect>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>/,
+    );
+    expect(await renderRoute("/about")).toMatch(
+      /<LoadableComponent>\n\s+<Suspense>\n\s+<Offscreen>\n\s+<NoSSR>\n\s+<Chart>\n\s+<figure>/,
+    );
+  });
+
+  it("lets a client Children.map lose the keys of server elements Flight deferred past its row size", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/ticker" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Ticker>\n\s+<ul>\n\s+\?branch\(Flight deferred the elements past its row size limit\)[^\n]*\n\s+\|0 \(preferred\)\n\s+<li> key="\.0:\$aapl"\n\s+<span> key="aapl"\n\s+<li> key="\.0:\$msft"\n\s+<span> key="msft"\n\s+<li> key="\.0:\$nvda"\n\s+<span> key="nvda"\n\s+<li> key="\.1"\n\s+<em>\n\s+\|1\n\s+<li> key="\.0:0"\n\s+<span> key="aapl"\n\s+<li> key="\.0:1"\n\s+<span> key="msft"\n\s+<li> key="\.0:2"\n\s+<span> key="nvda"\n\s+<li> key="\.1"\n\s+<em>\n\s+\|2\n\s+<li> key="\.0:\$aapl"\n\s+<span> key="aapl"\n\s+<li> key="\.0:1"\n\s+<span> key="msft"\n\s+<li> key="\.0:2"\n\s+<span> key="nvda"\n\s+<li> key="\.1"\n\s+<em>\n\s+\|3\n\s+<li> key="\.0:\$aapl"\n\s+<span> key="aapl"\n\s+<li> key="\.0:\$msft"\n\s+<span> key="msft"\n\s+<li> key="\.0:2"\n\s+<span> key="nvda"\n\s+<li> key="\.1"\n\s+<em>$/,
+    );
+  });
+
   it("reports a missing page instead of guessing", async () => {
     const { result, errors } = await render("next-app", {
       framework: "next-app",
