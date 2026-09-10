@@ -22,6 +22,7 @@
     "@emotion/is-prop-valid": "^1.4.0",
     "bippy": "workspace:*",
     "esbuild": "^0.28.2",
+    "mrmime": "^2.0.1",
     "oxc-parser": "^0.148.0",
     "oxc-resolver": "^11.24.2",
     "playwright": "^1.63.0",
@@ -30,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@babel/core": "7.29.7",
     "@babel/runtime": "^7.29.7",
     "@emotion/core": "10.3.1",
     "@emotion/react": "11.14.0",
@@ -41,11 +43,14 @@
     "@mui/material": "5.16.14",
     "@radix-ui/react-tabs": "1.1.21",
     "@reduxjs/toolkit": "2.12.0",
+    "@stylexjs/babel-plugin": "0.18.3",
+    "@stylexjs/stylex": "0.18.3",
     "@svgr/core": "8.1.0",
     "@svgr/plugin-jsx": "8.1.0",
     "@svgr/webpack": "8.1.0",
     "@tanstack/react-query": "5.101.4",
     "@tanstack/react-store": "0.7.0",
+    "@types/babel__core": "7.20.5",
     "@types/hoist-non-react-statics": "3.3.6",
     "@types/lodash-es": "4.17.12",
     "@types/node": "^20",
@@ -54,6 +59,7 @@
     "@types/react-dom": "^19.2.4",
     "@types/semver": "^7.8.0",
     "array.prototype.foreach": "1.0.7",
+    "deepmerge": "4.3.1",
     "fake-indexeddb": "6.2.4",
     "happy-dom": "^20.11.6",
     "hasown": "2.0.4",
@@ -75,11 +81,13 @@
     "react-router": "8.3.0",
     "react-router-dom-v5": "npm:react-router-dom@5.3.4",
     "redux": "5.0.1",
+    "redux-persist": "6.0.0",
     "string.prototype.trim": "1.2.11",
     "styled-components": "6.5.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "use-sync-external-store": "1.6.0",
+    "vite-plugin-svgr": "5.2.0",
     "vite-plus": "latest"
   }
 }

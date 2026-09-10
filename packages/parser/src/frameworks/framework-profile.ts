@@ -34,6 +34,8 @@ export interface FrameworkProfile {
   isInjectedRuntimeFiber: (fiber: RuntimeFiberSnapshot) => boolean;
   /** Fiber name both trees are aligned on when the corpus entry does not name one. */
   defaultAnchor: string | null;
+  /** `window` properties the framework's client reads at hydration, recorded with every capture. */
+  capturedGlobals: readonly string[];
 }
 
 // A bundled module re-exporting a same-named component gets its own renamed
@@ -133,4 +135,5 @@ export const SPA_PROFILE: FrameworkProfile = {
   transparentStaticFibers: new Set(),
   isInjectedRuntimeFiber: neverInjected,
   defaultAnchor: null,
+  capturedGlobals: [],
 };

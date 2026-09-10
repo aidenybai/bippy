@@ -1,7 +1,10 @@
-import { type ComponentType, type ReactNode } from "react";
+import { Component, type ComponentType, forwardRef, memo, type ReactNode } from "react";
 
-type Renderable<TProps> = ReactNode | ComponentType<TProps>;
+interface CellProps {
+  value: string;
+}
 
+/** react-table's `isClassComponent`: walks the constructor's prototype chain for `isReactComponent`. */
 const isClassComponent = (component: unknown): boolean =>
   typeof component === "function" &&
   (() => {
@@ -12,39 +15,60 @@ const isClassComponent = (component: unknown): boolean =>
 const isExoticComponent = (component: unknown): boolean =>
   typeof component === "object" &&
   component !== null &&
-  typeof (component as { $$typeof?: unknown }).$$typeof === "symbol" &&
-  ["react.memo", "react.forward_ref"].includes(
-    (component as { $$typeof: symbol }).$$typeof.description ?? "",
-  );
+  "$$typeof" in component &&
+  typeof component.$$typeof === "symbol" &&
+  ["react.memo", "react.forward_ref"].includes(component.$$typeof.description ?? "");
 
-const isReactComponent = <TProps,>(component: unknown): component is ComponentType<TProps> =>
+const isReactComponent = (component: unknown): component is ComponentType<CellProps> =>
   isClassComponent(component) || typeof component === "function" || isExoticComponent(component);
 
-const flexRender = <TProps extends object>(Comp: Renderable<TProps>, props: TProps): ReactNode =>
-  !Comp ? null : isReactComponent<TProps>(Comp) ? <Comp {...props} /> : Comp;
+const flexRender = (Comp: unknown, props: CellProps): ReactNode =>
+  isReactComponent(Comp) ? <Comp {...props} /> : String(Comp);
 
-interface CellProps {
-  value: string;
+const DefaultCell = ({ value }: CellProps) => <span>{value}</span>;
+
+class Legacy extends Component<CellProps> {
+  render() {
+    return <b>{this.props.value}</b>;
+  }
 }
 
-const columns = [
-  { id: "name", cell: ({ value }: CellProps) => <em>{value}</em> },
-  { id: "plain", cell: "static text" },
-  { id: "empty", cell: undefined },
+const Exotic = memo(
+  forwardRef<HTMLElement, CellProps>(({ value }, ref) => <i ref={ref}>{value}</i>),
+);
+
+const columns: { Header: unknown; Cell: unknown }[] = [
+  { Header: "name", Cell: DefaultCell },
+  { Header: "role", Cell: Legacy },
+  { Header: "team", Cell: Exotic },
+  { Header: 42, Cell: ({ value }: CellProps) => <em>{value}</em> },
 ];
 
 export const isExact = true;
 
-export default function FlexRenderTable() {
+export default function FlexRender() {
   return (
     <table>
+      <thead>
+        <tr>
+          {columns.map((column, index) => (
+            <th key={index}>{flexRender(column.Header, { value: "" })}</th>
+          ))}
+        </tr>
+      </thead>
       <tbody>
         <tr>
-          {columns.map((column) => (
-            <td key={column.id}>{flexRender(column.cell, { value: column.id })}</td>
+          {columns.map((column, index) => (
+            <td key={index}>{flexRender(column.Cell, { value: `cell ${index}` })}</td>
           ))}
         </tr>
       </tbody>
+      <tfoot>
+        <tr>
+          <td>{String(Object.getPrototypeOf(DefaultCell).prototype)}</td>
+          <td>{String(Object.getPrototypeOf(Legacy).prototype === Component.prototype)}</td>
+        </tr>
+      </tfoot>
     </table>
   );
 }

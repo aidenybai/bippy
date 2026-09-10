@@ -1,4 +1,4 @@
-import { exportCapture } from "../observations.js";
+import { exportCapture, isRecord } from "../observations.js";
 import type { CapturedExportReference, CapturedValue } from "../types.js";
 
 /** Looks up the module export a page value is identical to, so captures can name it instead of serializing it. */
@@ -28,9 +28,6 @@ const isSourceModuleUrl = (url: URL, origins: Set<string>): boolean =>
   SOURCE_MODULE_PATH.test(url.pathname) &&
   !url.pathname.includes("/node_modules/") &&
   !url.pathname.startsWith("/@");
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const isReferenceable = (value: unknown): value is object =>
   typeof value === "function" || isRecord(value);

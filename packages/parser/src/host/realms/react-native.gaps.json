@@ -1,11 +1,11 @@
 {
-  "total": 134,
+  "total": 106,
   "byReason": {
-    "type-parameter": 94,
+    "type-parameter": 60,
     "overloads": 9,
-    "declared-any": 23,
-    "unresolved-name": 5,
-    "mixed-union": 2,
+    "declared-any": 25,
+    "unresolved-name": 7,
+    "mixed-union": 4,
     "conditional": 1
   },
   "gaps": [
@@ -27,17 +27,7 @@
     {
       "site": "Array.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "Array.find",
-      "reason": "type-parameter",
       "detail": "T"
-    },
-    {
-      "site": "Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Array.findLast",
@@ -76,11 +66,6 @@
     },
     {
       "site": "AsyncDisposableStack.adopt",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "AsyncDisposableStack.use",
       "reason": "type-parameter",
       "detail": "T"
     },
@@ -130,16 +115,6 @@
       "detail": "number | bigint"
     },
     {
-      "site": "BigInt64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "BigInt64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "BigInt64Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -148,16 +123,6 @@
       "site": "BigInt64Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "BigUint64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "BigUint64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "BigUint64Array.reduce",
@@ -170,17 +135,7 @@
       "detail": "U"
     },
     {
-      "site": "DataView.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
       "site": "DisposableStack.adopt",
-      "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "DisposableStack.use",
       "reason": "type-parameter",
       "detail": "T"
     },
@@ -205,16 +160,6 @@
       "detail": "string | object"
     },
     {
-      "site": "Float16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Float16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -225,16 +170,6 @@
       "detail": "U"
     },
     {
-      "site": "Float32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Float32Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -243,16 +178,6 @@
       "site": "Float32Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Float64Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Float64Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Float64Array.reduce",
@@ -295,19 +220,14 @@
       "detail": "any"
     },
     {
+      "site": "globalThis.HermesInternal",
+      "reason": "declared-any",
+      "detail": "{}"
+    },
+    {
       "site": "globalThis.originalXMLHttpRequest",
       "reason": "declared-any",
       "detail": "any"
-    },
-    {
-      "site": "Int16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Int16Array.reduce",
@@ -320,16 +240,6 @@
       "detail": "U"
     },
     {
-      "site": "Int32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Int32Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -338,16 +248,6 @@
       "site": "Int32Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Int8Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Int8Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Int8Array.reduce",
@@ -402,11 +302,6 @@
     {
       "site": "IteratorObject.find",
       "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
-      "site": "IteratorObject.find",
-      "reason": "type-parameter",
       "detail": "T"
     },
     {
@@ -452,11 +347,6 @@
     {
       "site": "namespace Reflect.get",
       "reason": "type-parameter",
-      "detail": "T"
-    },
-    {
-      "site": "namespace Reflect.get",
-      "reason": "type-parameter",
       "detail": "P"
     },
     {
@@ -466,8 +356,8 @@
     },
     {
       "site": "ObjectConstructor.assign",
-      "reason": "type-parameter",
-      "detail": "T"
+      "reason": "declared-any",
+      "detail": "{}"
     },
     {
       "site": "ObjectConstructor.assign",
@@ -521,8 +411,8 @@
     },
     {
       "site": "ObjectConstructor.groupBy",
-      "reason": "type-parameter",
-      "detail": "K"
+      "reason": "mixed-union",
+      "detail": "string | number | symbol"
     },
     {
       "site": "ObjectConstructor.preventExtensions",
@@ -538,6 +428,16 @@
       "site": "ObjectConstructor.setPrototypeOf",
       "reason": "declared-any",
       "detail": "any"
+    },
+    {
+      "site": "ProgressEvent",
+      "reason": "unresolved-name",
+      "detail": "extends Event"
+    },
+    {
+      "site": "ProgressEvent.target",
+      "reason": "unresolved-name",
+      "detail": "EventTarget"
     },
     {
       "site": "PropertyDescriptor.get",
@@ -565,16 +465,6 @@
       "detail": "T"
     },
     {
-      "site": "Uint16Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint16Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Uint16Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -583,16 +473,6 @@
       "site": "Uint16Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Uint32Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint32Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Uint32Array.reduce",
@@ -605,16 +485,6 @@
       "detail": "U"
     },
     {
-      "site": "Uint8Array.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint8Array.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
-    },
-    {
       "site": "Uint8Array.reduce",
       "reason": "type-parameter",
       "detail": "U"
@@ -623,16 +493,6 @@
       "site": "Uint8Array.reduceRight",
       "reason": "type-parameter",
       "detail": "U"
-    },
-    {
-      "site": "Uint8ClampedArray.buffer",
-      "reason": "type-parameter",
-      "detail": "TArrayBuffer"
-    },
-    {
-      "site": "Uint8ClampedArray.findLast",
-      "reason": "type-parameter",
-      "detail": "S"
     },
     {
       "site": "Uint8ClampedArray.reduce",
@@ -651,8 +511,8 @@
     },
     {
       "site": "WeakRef.deref",
-      "reason": "type-parameter",
-      "detail": "T"
+      "reason": "mixed-union",
+      "detail": "object | symbol"
     },
     {
       "site": "WebSocket",
@@ -670,9 +530,9 @@
       "detail": "any"
     },
     {
-      "site": "XMLHttpRequest.responseXML",
+      "site": "XMLHttpRequestEventMap.readystatechange",
       "reason": "unresolved-name",
-      "detail": "Document"
+      "detail": "Event"
     },
     {
       "site": "XMLHttpRequestUpload",

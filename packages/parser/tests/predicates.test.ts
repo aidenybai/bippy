@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
-  getNegatedPredicate,
   getTruthinessPredicate,
   recordNegation,
   recordRefinement,
@@ -16,9 +15,7 @@ describe("truthiness predicates", () => {
   it("names a negation as the opposite side of its operand", () => {
     const operand = unknownValue("flag");
     const negated = recordNegation(unknownValue("!flag"), operand);
-    expect(getTruthinessPredicate(negated)).toBe(
-      getNegatedPredicate(getTruthinessPredicate(operand)),
-    );
+    expect(getTruthinessPredicate(negated)).toBe(getTruthinessPredicate(operand, true));
     expect(getTruthinessPredicate(recordNegation(unknownValue("!!flag"), negated))).toBe(
       getTruthinessPredicate(operand),
     );
@@ -39,8 +36,6 @@ describe("truthiness predicates", () => {
     expect(getTruthinessPredicate(first)).toBe(getTruthinessPredicate(second));
     const negated = recordNegation(unknownValue("!a"), first);
     recordNegation(first, negated);
-    expect(getTruthinessPredicate(negated)).toBe(
-      getNegatedPredicate(getTruthinessPredicate(first)),
-    );
+    expect(getTruthinessPredicate(negated)).toBe(getTruthinessPredicate(first, true));
   });
 });

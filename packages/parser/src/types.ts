@@ -46,9 +46,15 @@ export interface TransformedSource {
   lang: SourceLanguage;
 }
 
-/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+/**
+ * A bundler loader the app applies to a non-JavaScript file extension,
+ * producing the module the bundler links in its place. With `query` it only
+ * applies to imports carrying that Vite query (`icon.svg?react`); a plain
+ * import of the file stays the asset it is.
+ */
 export interface SourceTransform {
   extension: string;
+  query?: string;
   transform: (filePath: string, sourceText: string) => TransformedSource | null;
 }
 
@@ -140,6 +146,8 @@ export interface ModuleRecord {
   isCommonJs: boolean;
   /** The `value` of `module.exports = value`, whose runtime members are the exports a bundler imports. */
   moduleExports: Expression | null;
+  /** Names assigned onto that value afterwards (`module.exports.compile = compile`). */
+  moduleExportsMembers: string[];
 }
 
 export type ModuleResolution =
@@ -190,7 +198,13 @@ export type ResolvedSymbol =
       filePath: string | null;
     }
   | { kind: "stylesheet"; filePath: string; imported: ImportedName }
-  | { kind: "asset"; filePath: string; imported: ImportedName }
+  | {
+      kind: "asset";
+      filePath: string;
+      /** The import specifier as written, whose query (`?url`, `?inline`, ...) selects how the bundler serves the file. */
+      specifier: string;
+      imported: ImportedName;
+    }
   | { kind: "unresolved"; reason: string };
 
 export interface ComponentDefinition {
@@ -372,6 +386,8 @@ export interface StubRenderTools {
   realm: HostRealm;
   /** Appends to a modeled list as `Array.prototype.push` would, undone on the other paths of an enclosing fork like any heap write. */
   pushItems: (list: StaticListValue, items: readonly StaticValue[]) => void;
+  /** Writes an index of a modeled list as `list[index] = value` would, undone on the other paths of an enclosing fork like any heap write. */
+  setItem: (list: StaticListValue, index: number, value: StaticValue) => void;
   /** Binding the call's result is assigned to, as build-time labelers (Emotion's babel/swc plugin) see it. */
   nameHint: string | null;
   /** For tagged templates, the identifier each `${expression}` is (null when not a bare identifier); null for other calls. */
@@ -408,8 +424,8 @@ export interface InstalledPackage {
 /** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
 export type ModuleTranspiler = "esbuild" | "name-preserving";
 
-/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers shim them. */
-export type ModuleBundler = "vite" | "unknown";
+/** The dev bundler serving the app: Vite leaves Node's free names (`global`, `process`) undeclared in the browser, where webpack-style bundlers (Create React App's `react-scripts` among them) shim them. */
+export type ModuleBundler = "vite" | "react-scripts" | "unknown";
 
 /** What a library model may learn about the analyzed project: which transforms shaped the runtime, and what the running page held. */
 export interface ProjectContext {
@@ -417,13 +433,19 @@ export interface ProjectContext {
   rootDirectory: string | null;
   /** Directory the dev server serves at the URL root (Vite `root`); `null` when analyzing loose modules. */
   servedDirectory: string | null;
+  /** Public base path the dev server serves under (Vite `base`, `import.meta.env.BASE_URL`). */
+  baseUrl: string;
+  /** The mode the dev server runs in (Vite `--mode`, `import.meta.env.MODE`). */
+  mode: string;
   hasDeclaredDependency: (packageName: string) => boolean;
   /** The installed version of a package as resolved from the root; `null` when it is not installed. */
   readPackageVersion: (packageName: string) => string | null;
   transpiler: ModuleTranspiler;
   bundler: ModuleBundler;
   /** The value an `import` of a static asset file (image, font, ...) evaluates to: the URL the bundler serves it at. */
-  getImportedAssetUrl: (filePath: string) => StaticValue;
+  getImportedAssetUrl: (filePath: string, specifier: string) => StaticValue;
+  /** The file the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
+  findServedFile: (url: string) => string | null;
   /** The text the dev server serves for a same-origin or root-relative URL; `null` when it serves none. */
   readServedAsset: (url: string) => string | null;
   /** The captured TanStack Query cache entry for a query hash (`hashKey(queryKey)`), if the page held one. */
@@ -566,9 +588,12 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
-  /** `navigator.userAgent`, `navigator.language` and `navigator.maxTouchPoints`; absent in older captures. */
+  /** Every name `in navigator` (vendor members such as `userLanguage`); absent in older captures. */
+  navigatorKeys?: string[];
+  /** `navigator.userAgent`, `navigator.language(s)` and `navigator.maxTouchPoints`; absent in older captures. */
   userAgent?: string;
   language?: string;
+  languages?: string[];
   maxTouchPoints?: number;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
@@ -694,12 +719,13 @@ export interface StringShape {
 
 /**
  * An unknown string that reads `prefix + source + suffix`: strings composed
- * alike from the same `source` (one `Math.random()`-derived id, say) are the
- * same string, so a property written under one is read back under the other.
+ * alike from the same `source` (one `Math.random()`-derived id, or one result
+ * of an external call, say) are the same string, so a property written under
+ * one is read back under the other.
  */
 export interface StringComposition {
   prefix: string;
-  source: StaticUnknownPrimitiveValue;
+  source: StaticUnknownPrimitiveValue | StaticExternalValue;
   suffix: string;
 }
 
@@ -981,6 +1007,8 @@ export type ReactApi =
 export interface Scope {
   parent: Scope | null;
   bindings: Map<string, StaticValue>;
+  /** Allocation ordinal (see `getAllocationCount`), so writes to its bindings date like heap writes. */
+  allocation: number;
 }
 
 export interface StaticRenderStats {
@@ -1040,6 +1068,10 @@ export interface StaticRendererOptions {
   defines?: Record<string, JsonValue>;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;
+  /** The command line the dev server is started with; bundler flags such as Vite's `--config`/`--mode` apply to the static render. */
+  devCommand?: string;
+  /** Directory `devCommand` runs in, where the bundler looks its config up; relative to `rootDirectory`, which it is when unset. */
+  devDirectory?: string;
   /** URL path (pathname, search, hash) the page is rendered at; `location` reads it. */
   route?: string;
   /** Origin (`http://localhost:3000`) the dev server serves the page from; `location` reads it and same-origin asset URLs resolve to its static files. */

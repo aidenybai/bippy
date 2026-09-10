@@ -13,3 +13,11 @@ const BUNDLED_DEFAULT_EXPORT_NAME = /^[A-Za-z_$][\w$]*_default$/;
 
 export const isBundledDefaultExportName = (name: string, runtimeName: string): boolean =>
   name === "default" && BUNDLED_DEFAULT_EXPORT_NAME.test(runtimeName);
+
+// React Compiler's `outlineFunctions` hoists a context-free anonymous function
+// out of a component to module scope under Babel's `generateUidIdentifier()`
+// name (`_temp`, `_temp2`, …), discarding the name the source position gave it.
+const REACT_COMPILER_OUTLINED_NAME = /^_temp\d*$/;
+
+export const isReactCompilerOutlinedName = (runtimeName: string): boolean =>
+  REACT_COMPILER_OUTLINED_NAME.test(runtimeName);

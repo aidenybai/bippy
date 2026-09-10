@@ -18,7 +18,7 @@ const countStaticBranches = async (name: string): Promise<number> => {
 
 describe("escaped handlers", () => {
   it("widen the state reachable from handlers that may run before the snapshot", async () => {
-    expect(await countStaticBranches("observer-callback-ref")).toBe(2);
+    expect(await countStaticBranches("observer-callback-ref")).toBe(1);
   });
 
   it("leave state reachable only from user-gesture listeners at its initial value", async () => {

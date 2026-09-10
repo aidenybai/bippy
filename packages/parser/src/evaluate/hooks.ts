@@ -148,7 +148,7 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
     "state setter escapes to code that is not evaluated",
     null,
     0,
-    getStatePredicate(cell),
+    getStatePredicate(cell, cell.name),
   );
 
 /**
@@ -164,7 +164,7 @@ const pendingStateValue = (cell: StateCell): StaticValue | null => {
     "state set by a continuation that may run after the commit",
     null,
     0,
-    getStatePredicate(cell),
+    getStatePredicate(cell, cell.name),
   );
 };
 

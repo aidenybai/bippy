@@ -17,8 +17,14 @@ export * from "./static-pattern.js";
 export * from "./compare.js";
 export * from "./compare-render.js";
 export * from "./state-space.js";
+export * from "./symbolic-tree.js";
+export * from "./enumerate-states.js";
+export * from "./guard-coverage.js";
+export * from "./witness-plan.js";
 export {
   formatComparisonReport,
+  formatGuardCoverageLines,
   formatStateCondition,
   formatStateConditions,
+  formatSymbolicTree,
 } from "./format-report.js";
