@@ -91,10 +91,10 @@
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "^1.5.0",
     "@types/node": "^20",
-    "@types/react": "^19.2.18",
+    "@types/react": "^19.3.0",
     "publint": "^0.3.0",
-    "react": "^19.2.4",
-    "react-devtools-core": "7.0.1",
+    "react": "^19.3.0",
+    "react-devtools-core": "8.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite-plus": "latest",

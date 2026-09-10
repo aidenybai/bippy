@@ -9,14 +9,14 @@
   "dependencies": {
     "bippy": "workspace:*",
     "konva": "^10.3.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "react-konva": "^19.2.5",
     "react-refresh": "^0.18.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "typescript": "^5",
     "vite": "^7.3.4"
   }

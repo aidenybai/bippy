@@ -1,0 +1,217 @@
+diff --git a/dist/backend.d.ts b/dist/backend.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..3091ce14921b4779739307a81c309345640649a5
+--- /dev/null
++++ b/dist/backend.d.ts
+@@ -0,0 +1,63 @@
++export interface ReactBuildTypeMap {
++  Development: 1;
++  Production: 0;
++}
++
++export interface ReactSymbolsMap {
++  CONCURRENT_MODE_NUMBER: number;
++  CONCURRENT_MODE_SYMBOL_DESCRIPTION: string;
++  CONCURRENT_MODE_SYMBOL_STRING: string;
++  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION: string;
++  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: string;
++  ELEMENT_SYMBOL_STRING: string;
++  LEGACY_ELEMENT_SYMBOL_STRING: string;
++}
++
++export interface ReactTypeOfSideEffectMap {
++  ChildDeletion: number;
++  Cloned: number;
++  ContentReset: number;
++  Hydrating: number;
++  PerformedWork: number;
++  Placement: number;
++  Snapshot: number;
++  Update: number;
++  Visibility: number;
++}
++
++export interface ReactWorkTagMap {
++  [name: string]: number;
++}
++
++export interface ReactWorkTagVersionRange {
++  isMinimumExcluded?: boolean;
++  minimumVersion?: string;
++  version: string;
++}
++
++export interface InternalReactConstants {
++  ReactTypeOfWork: ReactWorkTagMap;
++}
++
++export interface ReactDevToolsCore {
++  ReactBuildType: ReactBuildTypeMap;
++  ReactSymbols: ReactSymbolsMap;
++  ReactTypeOfSideEffect: ReactTypeOfSideEffectMap;
++  ReactWorkTagVersionRanges: ReactWorkTagVersionRange[];
++  getInternalReactConstants: (reactVersion: string) => InternalReactConstants;
++}
++
++export declare const ReactBuildType: ReactBuildTypeMap;
++export declare const ReactSymbols: ReactSymbolsMap;
++export declare const ReactTypeOfSideEffect: ReactTypeOfSideEffectMap;
++export declare const ReactWorkTagVersionRanges: ReactWorkTagVersionRange[];
++export declare const getInternalReactConstants: (
++  reactVersion: string,
++) => InternalReactConstants;
++
++export declare const connectToDevTools: (...arguments_: unknown[]) => unknown;
++export declare const connectWithCustomMessagingProtocol: (...arguments_: unknown[]) => unknown;
++export declare const initialize: (...arguments_: unknown[]) => unknown;
++
++declare const ReactDevToolsCore: ReactDevToolsCore;
++export default ReactDevToolsCore;
+diff --git a/dist/backend.js b/dist/backend.js
+index d571ff628993f7d3fd9fd542becf5cc340026c0a..2ab67c1a93ba65f9ae9d0547cf946609c392efa4 100644
+--- a/dist/backend.js
++++ b/dist/backend.js
+@@ -7,7 +7,7 @@
+ 		exports["ReactDevToolsBackend"] = factory();
+ 	else
+ 		root["ReactDevToolsBackend"] = factory();
+-})(self, () => {
++})(typeof self === 'undefined' ? globalThis : self, () => {
+ return /******/ (() => { // webpackBootstrap
+ /******/ 	var __webpack_modules__ = ({
+ 
+@@ -2422,7 +2422,12 @@ __webpack_require__.r(__webpack_exports__);
+ 
+ // EXPORTS
+ __webpack_require__.d(__webpack_exports__, {
++  "ReactBuildType": () => (/* binding */ ReactBuildType),
++  "ReactSymbols": () => (/* binding */ ReactSymbols),
++  "ReactTypeOfSideEffect": () => (/* binding */ ReactTypeOfSideEffect),
++  "ReactWorkTagVersionRanges": () => (/* binding */ ReactWorkTagVersionRanges),
+   "connectToDevTools": () => (/* binding */ connectToDevTools),
++  "getInternalReactConstants": () => (/* binding */ getInternalReactConstants),
+   "connectWithCustomMessagingProtocol": () => (/* binding */ connectWithCustomMessagingProtocol),
+   "initialize": () => (/* binding */ backend_initialize)
+ });
+@@ -7073,6 +7078,15 @@ var SUSPENSE_NUMBER = 0xead1;
+ var SUSPENSE_SYMBOL_STRING = 'Symbol(react.suspense)';
+ var SUSPENSE_LIST_NUMBER = 0xead8;
+ var SUSPENSE_LIST_SYMBOL_STRING = 'Symbol(react.suspense_list)';
++var ReactSymbols = {
++  CONCURRENT_MODE_NUMBER: CONCURRENT_MODE_NUMBER,
++  CONCURRENT_MODE_SYMBOL_DESCRIPTION: 'react.concurrent_mode',
++  CONCURRENT_MODE_SYMBOL_STRING: CONCURRENT_MODE_SYMBOL_STRING,
++  DEPRECATED_ASYNC_MODE_SYMBOL_DESCRIPTION: 'react.async_mode',
++  DEPRECATED_ASYNC_MODE_SYMBOL_STRING: DEPRECATED_ASYNC_MODE_SYMBOL_STRING,
++  ELEMENT_SYMBOL_STRING: ELEMENT_SYMBOL_STRING,
++  LEGACY_ELEMENT_SYMBOL_STRING: LEGACY_ELEMENT_SYMBOL_STRING
++};
+ var SERVER_CONTEXT_DEFAULT_VALUE_NOT_LOADED_SYMBOL_STRING = 'Symbol(react.server_context.defaultValue)';
+ var ReactSymbols_REACT_MEMO_CACHE_SENTINEL = Symbol.for('react.memo_cache_sentinel');
+ var ReactSymbols_REACT_OPTIMISTIC_KEY = Symbol.for('react.optimistic_key');
+@@ -7177,6 +7191,47 @@ function DevToolsFiberInspection_isError(object) {
+ function getFiberFlags(fiber) {
+   return fiber.flags !== undefined ? fiber.flags : fiber.effectTag;
+ }
++var ReactBuildType = {
++  Production: 0,
++  Development: 1
++};
++var ReactTypeOfSideEffect = {
++  ChildDeletion: 16,
++  Cloned: 8,
++  ContentReset: 32,
++  Hydrating: 4096,
++  PerformedWork: 1,
++  Placement: 2,
++  Snapshot: 1024,
++  Update: 4,
++  Visibility: 8192
++};
++var ReactWorkTagVersionRanges = [{
++  version: '16.0.0'
++}, {
++  minimumVersion: '16.4.3-alpha',
++  version: '16.4.3-alpha'
++}, {
++  minimumVersion: '16.6.0-beta.0',
++  version: '16.6.0-beta.0'
++}, {
++  minimumVersion: '17.0.0-alpha',
++  version: '17.0.0-alpha'
++}, {
++  isMinimumExcluded: true,
++  minimumVersion: '17.0.1',
++  version: '17.0.2'
++}];
++function getReactWorkTagVersion(version) {
++  for (var rangeIndex = ReactWorkTagVersionRanges.length - 1; rangeIndex > 0; rangeIndex--) {
++    var range = ReactWorkTagVersionRanges[rangeIndex];
++    var matchesMinimum = range.isMinimumExcluded ? gt(version, range.minimumVersion) : gte(version, range.minimumVersion);
++    if (matchesMinimum) {
++      return range.version;
++    }
++  }
++  return ReactWorkTagVersionRanges[0].version;
++}
+ function rootSupportsProfiling(root) {
+   if (root.memoizedInteractions != null) {
+     return true;
+@@ -7320,7 +7375,7 @@ function didFiberRender(workTagMap, prevFiber, nextFiber) {
+     case workTagMap.MemoComponent:
+     case workTagMap.SimpleMemoComponent:
+     case workTagMap.ForwardRef:
+-      var PerformedWork = 1;
++      var PerformedWork = ReactTypeOfSideEffect.PerformedWork;
+       return (getFiberFlags(nextFiber) & PerformedWork) === PerformedWork;
+     default:
+       return prevFiber.memoizedProps !== nextFiber.memoizedProps || prevFiber.memoizedState !== nextFiber.memoizedState || prevFiber.ref !== nextFiber.ref;
+@@ -7360,7 +7415,8 @@ function getInternalReactConstants(version) {
+   }
+   var SuspenseyImagesMode = 32;
+   var ReactTypeOfWork = null;
+-  if (gt(version, '17.0.1')) {
++  var reactWorkTagVersion = getReactWorkTagVersion(version);
++  if (reactWorkTagVersion === ReactWorkTagVersionRanges[4].version) {
+     ReactTypeOfWork = {
+       CacheComponent: 24,
+       ClassComponent: 1,
+@@ -7397,7 +7453,7 @@ function getInternalReactConstants(version) {
+       ViewTransitionComponent: 30,
+       ActivityComponent: 31
+     };
+-  } else if (gte(version, '17.0.0-alpha')) {
++  } else if (reactWorkTagVersion === ReactWorkTagVersionRanges[3].version) {
+     ReactTypeOfWork = {
+       CacheComponent: -1,
+       ClassComponent: 1,
+@@ -7434,7 +7490,7 @@ function getInternalReactConstants(version) {
+       ViewTransitionComponent: -1,
+       ActivityComponent: -1
+     };
+-  } else if (gte(version, '16.6.0-beta.0')) {
++  } else if (reactWorkTagVersion === ReactWorkTagVersionRanges[2].version) {
+     ReactTypeOfWork = {
+       CacheComponent: -1,
+       ClassComponent: 1,
+@@ -7471,7 +7527,7 @@ function getInternalReactConstants(version) {
+       ViewTransitionComponent: -1,
+       ActivityComponent: -1
+     };
+-  } else if (gte(version, '16.4.3-alpha')) {
++  } else if (reactWorkTagVersion === ReactWorkTagVersionRanges[1].version) {
+     ReactTypeOfWork = {
+       CacheComponent: -1,
+       ClassComponent: 2,
+diff --git a/package.json b/package.json
+index b1d48b3065205fb6b079d77080efa712ead594ad..a0968284f881dc126909dff3696b73ea2e4a1cc9 100644
+--- a/package.json
++++ b/package.json
+@@ -4,6 +4,7 @@
+   "description": "Use react-devtools outside of the browser",
+   "license": "MIT",
+   "main": "./dist/backend.js",
++  "types": "./dist/backend.d.ts",
+   "repository": {
+     "type": "git",
+     "url": "https://github.com/react/react.git",
