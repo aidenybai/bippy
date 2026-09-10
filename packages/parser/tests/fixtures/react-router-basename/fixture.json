@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/docs/guide/intro",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "<BrowserRouter basename> strips the basename before matching (the route table sees `/guide/intro`), publishes the stripped pathname through useLocation, prefixes generated hrefs with it, and renders nothing for a sibling router whose basename the URL lies outside."
+}

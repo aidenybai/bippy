@@ -176,10 +176,11 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // (`RouterProvider`/`Routes` -> `RenderedRoute` -> `Route` provider -> component,
 // `Outlet` -> anonymous OutletContext provider, `NavLink` -> `Link` -> `a`), so
 // only the router's own context stack and error boundary are transparent. The
-// static side provides `Location` (it backs `useInRouterContext`) and the
-// `DataRouterState`/`FrameworkContext` re-render paths itself, so those are
-// transparent on both sides, as are the wrapper names: an application component
-// sharing one (`Router`) is spliced from both trees alike.
+// static side provides `Navigation` (the basename), `Location` (it backs
+// `useInRouterContext`) and the `DataRouterState`/`FrameworkContext` re-render
+// paths itself, so those are transparent on both sides, as are the wrapper
+// names: an application component sharing one (`Router`) is spliced from both
+// trees alike.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
   // react-router 6.4-6.10's `RouterProvider` renders `<Routes />` (no children)
@@ -230,6 +231,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set([
     ...REACT_ROUTER_RUNTIME_WRAPPERS,
+    "Navigation",
     "Location",
     "DataRouterState",
     "FrameworkContext",

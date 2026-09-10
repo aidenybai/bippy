@@ -142,7 +142,8 @@ interface UncertainFlag {
 /** A link target `resolveTo` resolved against its route, or null when it is not static. */
 interface ResolvedTarget {
   pathname: string;
-  href: string;
+  /** The target's search and hash, appended to the pathname in its href. */
+  rest: string;
 }
 
 /** `Link`/`Form` targets that React Router marks with `data-discover` for the fog-of-war observer. */
@@ -222,6 +223,17 @@ const ROUTE_CONTEXT: ContextDefinition = {
 const LOCATION_CONTEXT: ContextDefinition = {
   name: "LocationContext",
   displayName: "Location",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
+/**
+ * Mirrors `NavigationContext` (displayName `Navigation`): the router's
+ * `basename`, which `useHref` prepends to every resolved link.
+ */
+const NAVIGATION_CONTEXT: ContextDefinition = {
+  name: "NavigationContext",
+  displayName: "Navigation",
   defaultValue: NULL_VALUE,
   location: null,
 };
@@ -742,6 +754,44 @@ const readParentMatch = (tools: StubRenderTools): ParentMatch | null => {
   return { params: inherited, pathnameBase };
 };
 
+/** `useLocation().pathname` as the enclosing router provides it, already stripped of the basename. */
+const readLocationPathname = (tools: StubRenderTools): string | null => {
+  const locationContext = tools.readContext(LOCATION_CONTEXT);
+  if (locationContext.kind !== "object") return null;
+  const location = getObjectProperty(locationContext, "location");
+  return location.kind === "object" ? readString(getObjectProperty(location, "pathname")) : null;
+};
+
+const readBasename = (tools: StubRenderTools): string | null => {
+  const navigationContext = tools.readContext(NAVIGATION_CONTEXT);
+  return navigationContext.kind === "object"
+    ? readString(getObjectProperty(navigationContext, "basename"))
+    : null;
+};
+
+/** `stripBasename` from `@remix-run/router`: the pathname left to match, or null when the URL is outside the basename. */
+const stripBasename = (pathname: string, basename: string): string | null => {
+  if (basename === "/") return pathname;
+  if (!pathname.toLowerCase().startsWith(basename.toLowerCase())) return null;
+  const startIndex = basename.endsWith("/") ? basename.length - 1 : basename.length;
+  const nextChar = pathname.charAt(startIndex);
+  if (nextChar && nextChar !== "/") return null;
+  return pathname.slice(startIndex) || "/";
+};
+
+const joinPaths = (paths: string[]): string => paths.join("/").replace(/\/\/+/g, "/");
+
+/** `useHref`: a root link keeps the raw basename so it controls the trailing slash. */
+const hrefWithinBasename = (target: ResolvedTarget, basename: string): string => {
+  const pathname =
+    basename === "/"
+      ? target.pathname
+      : target.pathname === "/"
+        ? basename
+        : joinPaths([basename, target.pathname]);
+  return `${pathname}${target.rest}`;
+};
+
 const ROUTE_STUB: StubComponent = {
   displayName: "Route",
   render: () => NULL_VALUE,
@@ -837,7 +887,7 @@ const resolveTarget = (
   if (!parent) return null;
   const targetPathname = target.kind === "object" ? getObjectProperty(target, "pathname") : target;
   if (!isDefined(targetPathname)) {
-    return { pathname: locationPathname, href: locationPathname };
+    return { pathname: locationPathname, rest: "" };
   }
   const text = readString(targetPathname);
   if (text === null) return null;
@@ -853,24 +903,26 @@ const resolveTarget = (
       : toPathname.startsWith("/")
         ? resolvePathnameFrom(toPathname.slice(1), "/")
         : resolvePathnameFrom(toPathname, parent.pathnameBase);
-  return { pathname, href: `${pathname}${rest}` };
+  return { pathname, rest };
 };
 
 const createLinkStubs = (
   discovery: DiscoveryRegistry,
-  locationPathname: string,
+  fallbackPathname: string,
 ): {
   link: StubComponent;
   navLink: StubComponent;
   form: StubComponent;
   fetcherForm: StubComponent;
 } => {
+  const currentPathname = (tools: StubRenderTools): string =>
+    readLocationPathname(tools) ?? fallbackPathname;
   const discover = (
     target: StaticValue,
     tools: StubRenderTools,
     discoverProp: StaticValue,
   ): ResolvedTarget | null => {
-    const resolved = resolveTarget(target, readParentMatch(tools), locationPathname);
+    const resolved = resolveTarget(target, readParentMatch(tools), currentPathname(tools));
     const mode = isDefined(discoverProp) ? readString(discoverProp) : "render";
     if (mode === null) {
       discovery.register(null);
@@ -892,7 +944,7 @@ const createLinkStubs = (
       const href = isAbsolute
         ? primitiveValue(absoluteHref)
         : resolved
-          ? primitiveValue(resolved.href)
+          ? primitiveValue(hrefWithinBasename(resolved, readBasename(tools) ?? "/"))
           : unknownPrimitiveValue("string", "href is resolved by the router");
       const anchor = element(
         { kind: "host", tagName: "a" },
@@ -910,6 +962,7 @@ const createLinkStubs = (
     displayName: "NavLink",
     tag: ForwardRefTag,
     render: (props, tools) => {
+      const locationPathname = currentPathname(tools);
       const resolved = resolveTarget(
         getObjectProperty(props, "to"),
         readParentMatch(tools),
@@ -1136,8 +1189,20 @@ const fetcherValue = (state: StaticValue, fetcherForm: StubComponent): StaticVal
     })),
   ]);
 
+/** `createBrowserRouter(routes, opts)`: the router keeps `opts.basename` (`/` by default) for its `RouterProvider`. */
 const createRouterFactory = (name: string): StaticValue =>
-  nativeFunction(name, (args) => objectFromRecord({ routes: args[0] ?? listValue([]) }));
+  nativeFunction(name, (args) => {
+    const [routes = listValue([]), options = UNDEFINED_VALUE] = args;
+    const basename = !isDefined(options)
+      ? UNDEFINED_VALUE
+      : options.kind === "object"
+        ? getObjectProperty(options, "basename")
+        : unknownValue("react-router: router options are not static");
+    return objectFromRecord({
+      routes,
+      basename: isDefined(basename) ? basename : primitiveValue("/"),
+    });
+  });
 
 /**
  * `createRoutesFromChildren`: `<Route>` elements (fragments flattened) become
@@ -1293,11 +1358,7 @@ const parseRouteLocation = (route: string): RouteLocation => {
   return { pathname, search, hash };
 };
 
-const locationValue = (
-  location: RouteLocation,
-  observed: ObservedRouterState | null,
-): StaticValue =>
-  observed?.location ??
+const locationValue = (location: RouteLocation): StaticValue =>
   objectFromRecord({
     pathname: primitiveValue(location.pathname),
     search: primitiveValue(location.search),
@@ -1305,6 +1366,9 @@ const locationValue = (
     state: NULL_VALUE,
     key: unknownValue("location key is assigned at runtime"),
   });
+
+/** `<Router basename>` normalizes leading slashes and keeps a trailing one. */
+const normalizeBasename = (basename: string): string => basename.replace(/^\/*/, "/");
 
 const provide = (
   context: ContextDefinition,
@@ -1316,11 +1380,19 @@ const provide = (
     objectFromRecord({ value, children }),
   );
 
-const withinRouter = (children: StaticValue, location: StaticValue): StaticElementValue =>
+const withinRouter = (
+  children: StaticValue,
+  location: StaticValue,
+  basename: string,
+): StaticElementValue =>
   provide(
-    LOCATION_CONTEXT,
-    objectFromRecord({ location, navigationType: primitiveValue("POP") }),
-    children,
+    NAVIGATION_CONTEXT,
+    objectFromRecord({ basename: primitiveValue(basename) }),
+    provide(
+      LOCATION_CONTEXT,
+      objectFromRecord({ location, navigationType: primitiveValue("POP") }),
+      children,
+    ),
   );
 
 /**
@@ -1375,7 +1447,12 @@ const createRouterHookValues = (
       case "useAsyncValue":
         return nativeFunction(importedName, (_args, tools) => readAsyncValue(tools));
       case "useLocation":
-        return nativeFunction(importedName, () => location);
+        return nativeFunction(importedName, (_args, tools) => {
+          const locationContext = tools.readContext(LOCATION_CONTEXT);
+          return locationContext.kind === "object"
+            ? getObjectProperty(locationContext, "location")
+            : location;
+        });
       case "useSearchParams":
         return nativeFunction(importedName, (args) => searchParamsValue(args[0]));
       case "useNavigate":
@@ -1505,16 +1582,51 @@ export const createReactRouterModel = (
   const routeLocation = parseRouteLocation(route);
   const { pathname } = routeLocation;
   const observed = observeRouterState(routerState, pathname);
-  const location = locationValue(routeLocation, observed);
+  const location = observed?.location ?? locationValue(routeLocation);
   const withRenderedRoute = hasRenderedRoute(rootDirectory);
   const renderRouteConfig = (
     config: StaticValue,
     parent: ParentMatch,
     readRoutes: (alternative: StaticValue) => RouteRecord[],
-  ): StaticValue =>
-    mapValue(distributeObjectBranches(config), (alternative) =>
-      renderMatchedRoutes(readRoutes(alternative), pathname, parent, withRenderedRoute),
+    tools: StubRenderTools,
+  ): StaticValue => {
+    const matchedPathname = readLocationPathname(tools) ?? pathname;
+    return mapValue(distributeObjectBranches(config), (alternative) =>
+      renderMatchedRoutes(readRoutes(alternative), matchedPathname, parent, withRenderedRoute),
     );
+  };
+  // `<Router>` strips its basename off the URL before publishing the location and
+  // renders nothing when the URL lies outside it. Each basename's location object
+  // is created once so `useLocation` keeps its identity across renders.
+  const locationsByBasename = new Map<string, StaticValue>();
+  const routerScope = (children: StaticValue, basenameProp: StaticValue): StaticValue => {
+    const basename = isDefined(basenameProp) ? readString(basenameProp) : "/";
+    if (basename === null) return unknownValue("react-router: basename is not static");
+    const normalized = normalizeBasename(basename);
+    if (observed?.location || normalized === "/") {
+      return withinRouter(children, location, normalized);
+    }
+    const trailingPathname = stripBasename(pathname, normalized);
+    if (trailingPathname === null) return NULL_VALUE;
+    let scopedLocation = locationsByBasename.get(normalized);
+    if (!scopedLocation) {
+      scopedLocation = locationValue({ ...routeLocation, pathname: trailingPathname });
+      locationsByBasename.set(normalized, scopedLocation);
+    }
+    return withinRouter(children, scopedLocation, normalized);
+  };
+  // `RouterProvider` mounts `router.routes` from inside the router's contexts
+  // (`DataRoutes`, `<Routes />` before 6.11), where the stripped location is read.
+  const dataRoutesStub: StubComponent = {
+    displayName: "DataRoutes",
+    render: (props, tools) =>
+      renderRouteConfig(
+        getObjectProperty(props, "routes"),
+        ROOT_PARENT_MATCH,
+        (routes) => readRouteList(routes, (lazy) => tools.callAwaited(lazy, [])),
+        tools,
+      ),
+  };
   const hasCriticalCss = observed?.hasCriticalCss ?? null;
   const clearsCriticalCss: UncertainFlag = { value: hasCriticalCss, reason: CRITICAL_CSS_REASON };
   const framework: FrameworkState = {
@@ -1569,7 +1681,7 @@ export const createReactRouterModel = (
       return provide(
         DATA_ROUTER_STATE_CONTEXT,
         routerState?.[0] ?? objectValue(),
-        withinRouter(getObjectProperty(props, "children"), location),
+        withinRouter(getObjectProperty(props, "children"), location, "/"),
       );
     },
   });
@@ -1764,23 +1876,24 @@ export const createReactRouterModel = (
   ]);
   const routerProviderStub: StubComponent = {
     displayName: "RouterProvider",
-    render: (props, tools) => {
+    render: (props) => {
       const router = getObjectProperty(props, "router");
       if (router.kind !== "object") {
         return unknownValue("react-router: router object was not created statically");
       }
-      const resolveLazy: LazyResolver = (lazy) => tools.callAwaited(lazy, []);
-      return withinRouter(
-        renderRouteConfig(getObjectProperty(router, "routes"), ROOT_PARENT_MATCH, (routes) =>
-          readRouteList(routes, resolveLazy),
+      return routerScope(
+        element(
+          { kind: "stub", stub: dataRoutesStub },
+          objectFromRecord({ routes: getObjectProperty(router, "routes") }),
         ),
-        location,
+        getObjectProperty(router, "basename"),
       );
     },
   };
   const routerStub = (displayName: string): StubComponent => ({
     displayName,
-    render: (props) => withinRouter(getObjectProperty(props, "children"), location),
+    render: (props) =>
+      routerScope(getObjectProperty(props, "children"), getObjectProperty(props, "basename")),
   });
   const routesStub: StubComponent = {
     displayName: "Routes",
@@ -1789,8 +1902,11 @@ export const createReactRouterModel = (
       if (!parent) {
         return unknownValue("react-router: the enclosing route's match is not static");
       }
-      return renderRouteConfig(getObjectProperty(props, "children"), parent, (children) =>
-        readRouteElements(children, (lazy) => tools.callAwaited(lazy, [])),
+      return renderRouteConfig(
+        getObjectProperty(props, "children"),
+        parent,
+        (children) => readRouteElements(children, (lazy) => tools.callAwaited(lazy, [])),
+        tools,
       );
     },
   };
@@ -1823,8 +1939,11 @@ export const createReactRouterModel = (
           if (!parent) {
             return unknownValue("react-router: the enclosing route's match is not static");
           }
-          return renderRouteConfig(args[0] ?? listValue([]), parent, (routes) =>
-            readRouteList(routes, (lazy) => tools.callAwaited(lazy, [])),
+          return renderRouteConfig(
+            args[0] ?? listValue([]),
+            parent,
+            (routes) => readRouteList(routes, (lazy) => tools.callAwaited(lazy, [])),
+            tools,
           );
         });
       case "Route":

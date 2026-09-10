@@ -898,7 +898,7 @@ describe("react router framework mode with react-router-auto-routes", () => {
     const { tree, errors } = await target("/");
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<HostRoot>\n\s+<HydratedRouter>\n\s+<FrameworkContext>\n\s+<RouterProvider>\n\s+<DataRouterState>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
+      /<HostRoot>\n\s+<HydratedRouter>\n\s+<FrameworkContext>\n\s+<RouterProvider>\n\s+<DataRouterState>\n\s+<Navigation>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<Layout>\n\s+<html>/,
     );
     expect(tree).toMatch(/<ScrollRestoration>\n\s+<script>\n\s+<Scripts>/);
     expect(tree).toMatch(
@@ -1086,7 +1086,7 @@ describe("remix classic compiler (remix.config.js, no client entry)", () => {
     const { tree, errors } = await target("/");
     expect(errors).toEqual([]);
     expect(tree).toMatch(
-      /<HostRoot>\n\s+<StrictMode>\n\s+<RemixBrowser>\n\s+<Remix>\n\s+<RouterProvider>\n\s+<DataRouterState>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<default>\n\s+<html>/,
+      /<HostRoot>\n\s+<StrictMode>\n\s+<RemixBrowser>\n\s+<Remix>\n\s+<RouterProvider>\n\s+<DataRouterState>\n\s+<Navigation>\n\s+<Location>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<default>\n\s+<html>/,
     );
     expect(tree).toMatch(/<LiveReload>\n\s+<script>\n\s+<Fragment>$/);
   });
