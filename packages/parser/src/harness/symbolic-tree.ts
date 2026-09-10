@@ -22,6 +22,7 @@ export type InputSourceKind =
   | "commit"
   | "root-props"
   | "collection"
+  | "flight"
   | "path"
   | "unknown";
 
@@ -162,6 +163,7 @@ const inputSourceKindSchema: z.ZodType<InputSourceKind> = z.enum([
   "commit",
   "root-props",
   "collection",
+  "flight",
   "path",
   "unknown",
 ]);
