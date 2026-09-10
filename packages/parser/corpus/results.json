@@ -30176,8 +30176,8 @@
       "id": "geeky-nextjs",
       "revision": "dc59a2bd646b6e1fed01e5a37d779879964a6428",
       "framework": "next-pages",
-      "capturedAt": "2026-09-10T10:45:28.077Z",
-      "durationMs": 1000,
+      "capturedAt": "2026-09-10T11:36:29.225Z",
+      "durationMs": 2370,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -30198,7 +30198,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 89
+          "modulesLoaded": 91
         },
         "diagnostics": []
       },
@@ -53556,8 +53556,8 @@
       "id": "morethan-log",
       "revision": "272cd3e73d6fbc650c5d95c6da0846776d39e67a",
       "framework": "next-pages",
-      "capturedAt": "2026-09-10T10:23:59.430Z",
-      "durationMs": 680,
+      "capturedAt": "2026-09-10T11:36:20.727Z",
+      "durationMs": 658,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -53576,12 +53576,11 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 91
+          "modulesLoaded": 92
         },
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 296,
         "matchedText": 16,
         "opaqueSubtrees": 0,
@@ -53595,6 +53594,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 19,
+        "status": "exact",
         "runtimeFibers": 312,
         "staticFibers": 312,
         "coverage": 1,
@@ -53621,7 +53621,7 @@
           "conditions": [
             {
               "kind": "branch",
-              "variable": "and(eq(#1, 2022), eq(#1, 2022))",
+              "variable": "eq(#1, 2022)",
               "reason": "conditional on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
               "alternativeIndex": 0,
@@ -53635,20 +53635,20 @@
           "sides": [
             {
               "kind": "branch",
-              "variable": "and(eq(#1, 2022), eq(#1, 2022))",
+              "variable": "eq(#1, 2022)",
               "reason": "conditional on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
               "side": 0,
-              "guard": "and(eq(#1, 2022), eq(#1, 2022))",
+              "guard": "eq(#1, 2022)",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "and(eq(#1, 2022), eq(#1, 2022))",
+              "variable": "eq(#1, 2022)",
               "reason": "conditional on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
               "side": 1,
-              "guard": "not(and(eq(#1, 2022), eq(#1, 2022)))",
+              "guard": "not(eq(#1, 2022))",
               "status": "possible"
             }
           ],
@@ -55396,8 +55396,8 @@
       "id": "nextjs-mdx-blog",
       "revision": "ecdb127d1d450b96fd20d759f16be53fa210b37a",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T09:51:23.729Z",
-      "durationMs": 13141,
+      "capturedAt": "2026-09-10T11:36:25.355Z",
+      "durationMs": 2118,
       "runtime": {
         "reactVersion": "18.3.0-canary-1a001dac6-20230812",
         "rendererName": "react-dom",
@@ -55428,7 +55428,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 86,
         "matchedText": 5,
         "opaqueSubtrees": 0,
@@ -55442,6 +55441,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 17,
+        "status": "exact",
         "runtimeFibers": 91,
         "staticFibers": 91,
         "coverage": 1,
@@ -55484,7 +55484,7 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T09:51:35.940Z",
       "failure": null
     },
     {
@@ -56220,8 +56220,8 @@
       "id": "nextjs-velite-blog-template",
       "revision": "fd8820501be4a36fd47c1abd04bca42760408111",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T09:51:36.947Z",
-      "durationMs": 18591,
+      "capturedAt": "2026-09-10T11:36:27.584Z",
+      "durationMs": 1542,
       "runtime": {
         "reactVersion": "18.3.0-canary-60a927d04-20240113",
         "rendererName": "react-dom",
@@ -56247,7 +56247,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 250,
         "matchedText": 22,
         "opaqueSubtrees": 0,
@@ -56261,6 +56260,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 23,
+        "status": "exact",
         "runtimeFibers": 272,
         "staticFibers": 272,
         "coverage": 1,
@@ -56303,15 +56303,15 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T09:51:53.320Z",
       "failure": null
     },
     {
       "id": "nextly-template",
       "revision": "97b3fe2b2bf0a40cf3ca2350752f9aec42748867",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T09:50:59.091Z",
-      "durationMs": 13832,
+      "capturedAt": "2026-09-10T11:36:21.515Z",
+      "durationMs": 875,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -56335,7 +56335,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 399,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -56349,6 +56348,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 27,
+        "status": "exact",
         "runtimeFibers": 422,
         "staticFibers": 422,
         "coverage": 1,
@@ -56451,15 +56451,15 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T09:51:12.019Z",
       "failure": null
     },
     {
       "id": "nextsimplestarter",
       "revision": "338a8e4bb85181613fa9f344721307a4b693bb71",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T10:26:34.393Z",
-      "durationMs": 2111,
+      "capturedAt": "2026-09-10T11:36:22.496Z",
+      "durationMs": 2245,
       "runtime": {
         "reactVersion": "19.2.0-canary-0bdb9206-20250818",
         "rendererName": "react-dom",
@@ -56488,7 +56488,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 140,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -56502,6 +56501,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 30,
+        "status": "exact",
         "runtimeFibers": 146,
         "staticFibers": 146,
         "coverage": 1,
@@ -56978,8 +56978,8 @@
       "id": "notion-blog",
       "revision": "362af9e5457cdc8c11fa4d0adac6e81dcb902975",
       "framework": "next-pages",
-      "capturedAt": "2026-09-10T09:52:05.039Z",
-      "durationMs": 13752,
+      "capturedAt": "2026-09-10T11:36:20.473Z",
+      "durationMs": 147,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -56998,12 +56998,11 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 15
+          "modulesLoaded": 16
         },
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 108,
         "matchedText": 20,
         "opaqueSubtrees": 0,
@@ -57017,6 +57016,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 7,
+        "status": "exact",
         "runtimeFibers": 128,
         "staticFibers": 128,
         "coverage": 1,
@@ -57059,7 +57059,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T09:52:18.577Z",
       "failure": null
     },
     {
@@ -168247,8 +168247,8 @@
       "id": "typescript-nextjs-starter",
       "revision": "059eaaadc746d48bc54015f904ff52e117aad77f",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T09:51:13.024Z",
-      "durationMs": 10542,
+      "capturedAt": "2026-09-10T11:36:24.840Z",
+      "durationMs": 122,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -168272,7 +168272,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 12,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -168286,6 +168285,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 26,
+        "status": "exact",
         "runtimeFibers": 12,
         "staticFibers": 12,
         "coverage": 1,
@@ -168328,7 +168328,7 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T09:51:23.395Z",
       "failure": null
     },
     {
