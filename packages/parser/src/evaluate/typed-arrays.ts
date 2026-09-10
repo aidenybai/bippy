@@ -17,7 +17,7 @@ import {
  * buffer it is created over rather than aliasing it, so a write through one
  * view is not seen through another; such writes are rare in rendering code.
  */
-export const TYPED_ARRAY_CONSTRUCTORS = {
+const TYPED_ARRAY_CONSTRUCTORS = {
   Int8Array,
   Uint8Array,
   Uint8ClampedArray,
