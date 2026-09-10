@@ -123,6 +123,17 @@ describe("symbolic tree: input provenance", () => {
   });
 });
 
+describe("symbolic tree: guard literals", () => {
+  it("keeps every guard literal finite so the tree survives JSON serialization", async () => {
+    const space = await renderFixture("infinite-bound.tsx");
+    const rendered = formatSymbolicTree(space.tree);
+    expect(rendered).toContain("#2 < 50");
+    expect(rendered).toContain("truthy(#1)");
+    expect(rendered).not.toContain("Infinity");
+    expect(parseSymbolicTree(JSON.stringify(space.tree))).toEqual(space.tree);
+  });
+});
+
 describe("symbolic tree: independent guards factor", () => {
   const admin = guardedBranch(
     "admin",
