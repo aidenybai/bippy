@@ -3,8 +3,8 @@
   bippy
 </h1>
 
-[![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
-[![downloads](https://img.shields.io/npm/dt/bippy.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
+[![version](https://bippy.dev/api/badges/version)](https://npmjs.com/package/bippy)
+[![downloads](https://bippy.dev/api/badges/downloads)](https://npmjs.com/package/bippy)
 
 bippy hacks into React internals.
 
@@ -295,14 +295,7 @@ These definitions follow React’s private implementation and may change between
 
 ### `getSource`
 
-Returns the source location for a Fiber from these renderers:
-
-- DOM
-- Native
-- Terminal
-- Canvas
-- PDF
-- Custom
+Returns the source location for a Fiber.
 
 ```typescript
 import { getSource } from "bippy/source";
@@ -352,4 +345,4 @@ const parentFrames = await getParentStack(fiber);
 
 ## Acknowledgements
 
-[@dairyfreerice](https://www.instagram.com/dairyfreerice) created and owns the original bippy character. this project has nothing to do with the bippy brand, i think the character is cute.
+The bippy character is originally created by [@bippyandfriends](https://www.instagram.com/bippyandfriends/) (See [website](https://www.bippyandfriends.com/)). This project has nothing to do with the bippy brand. I just think the character is cute.

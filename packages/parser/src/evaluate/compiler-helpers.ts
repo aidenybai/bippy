@@ -153,7 +153,7 @@ const spreadArray: HelperImplementation = ([target, source]) => {
 };
 
 /** `null == source` yields `{}`; the excluded keys must be a literal list for the rest to be known. */
-const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
+const objectWithoutProperties: HelperImplementation = ([source, excluded], tools) => {
   if (!source || !excluded) return source ?? UNDEFINED_VALUE;
   if (!isKnownList(excluded)) return unknownValue("rest with dynamic excluded keys");
   const omitted = new Set<string>();
@@ -161,7 +161,7 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
     if (key.kind !== "primitive") return unknownValue("rest with dynamic excluded keys");
     omitted.add(String(key.value));
   }
-  return mapValue(source, (alternative) =>
+  return mapValue(tools.materializeNamespace(source), (alternative) =>
     isNullish(alternative) === true ? objectValue() : omitRestKeys(alternative, omitted),
   );
 };

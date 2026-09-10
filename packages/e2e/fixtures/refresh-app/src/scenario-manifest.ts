@@ -11,23 +11,17 @@ export interface ScenarioDescriptor {
   // behavior upstream flips them to "unexpected pass" and gets noticed.
   knownIssue?: string;
   // Restricts the known issue to specific React majors (all majors when
-  // omitted). Example: the missing StrictMode double-invoke on forced
-  // remounts affects 19.x only; 18.3 behaves correctly.
+  // omitted). Example: kind-changing edits fail on 17/18 but work on 19.3.
   knownIssueReactMajors?: readonly number[];
 }
 
-// Fixed on React main by facebook/react#36950 and #36964 (kind-changing
-// edits crash or are dropped), but the fixes have not shipped in the
-// published react-refresh 0.18.0 / react-dom 19.2.4 pair yet. The
-// experimental channel (treated as major 99) has the fixes, so these
-// scenarios must pass there.
+// Fixed by facebook/react#36950 and #36964 (kind-changing edits crash or
+// are dropped), shipped in the react-refresh 0.19.0 / react-dom 19.3.0 pair.
+// The React 17/18 fixtures still run react-refresh 0.18.0 against the older
+// react-dom majors, which lack the reconciler side of the fix.
 const KIND_CHANGE_ISSUE =
-  "kind-changing edits require facebook/react#36950/#36964, unreleased as of react-refresh 0.18.0";
-const KIND_CHANGE_ISSUE_MAJORS: readonly number[] = [17, 18, 19];
-
-// A React 19 regression relative to 18.3, where the double-invoke works.
-const STRICT_MODE_REMOUNT_ISSUE =
-  "react-dom 19.2.4 does not double-invoke effects for Fast Refresh forced remounts; React 18.3 and React main do";
+  "kind-changing edits require facebook/react#36950/#36964, which only shipped with react-dom 19.3.0";
+const KIND_CHANGE_ISSUE_MAJORS: readonly number[] = [17, 18];
 
 export const scenarioManifest: readonly ScenarioDescriptor[] = [
   { name: "preserves state for compatible types" },
@@ -126,17 +120,10 @@ export const scenarioManifest: readonly ScenarioDescriptor[] = [
   { name: "does not get into infinite loops during render phase updates" },
   { name: "does not re-render ancestor components unnecessarily during a hot update" },
   { name: "batches re-renders during a hot update" },
-  {
-    name: "double invokes effects after a forced remount in StrictMode",
-    minReactMajor: 18,
-    knownIssue: STRICT_MODE_REMOUNT_ISSUE,
-    knownIssueReactMajors: [19],
-  },
+  { name: "double invokes effects after a forced remount in StrictMode", minReactMajor: 18 },
   {
     name: "double invokes an effect added during a Fast Refresh remount in StrictMode",
     minReactMajor: 18,
-    knownIssue: STRICT_MODE_REMOUNT_ISSUE,
-    knownIssueReactMajors: [19],
   },
   { name: "remounts failed error boundaries (componentDidCatch)" },
   { name: "remounts failed error boundaries (getDerivedStateFromError)" },

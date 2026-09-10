@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/facebook/react.git",
-  "revision": "f1f7ed2ac267a21dd2e3e67c4a606b9cf56e360b",
+  "revision": "1d34f91dfde6bba84d08b683aaba164c7194dacb",
   "sources": {
     "packages/react-devtools-shared/src/hook.js": "8069d8a660171dbfe1d1972bb89ca040ed699dc105469c798d63daaa96c6d148",
     "packages/react-debug-tools/src/__tests__/ReactHooksInspection-test.js": "c12af2244ac0715cb13bfa44fe05bdd784ae3374e620125abb46b50985c3a876",
@@ -25,7 +25,7 @@
     }
   ],
   "devtools": {
-    "revision": "eafeac097ba51e1eab809c07102126bd5f8e5425",
+    "revision": "1d34f91dfde6bba84d08b683aaba164c7194dacb",
     "testFiles": [
       {
         "definitions": [
@@ -2195,6 +2195,10 @@
           {
             "disabled": false,
             "title": "should not break when Suspense nodes are filtered from the tree"
+          },
+          {
+            "disabled": false,
+            "title": "stays in sync when a filtered boundary suspends during a sibling restructure"
           },
           {
             "disabled": false,

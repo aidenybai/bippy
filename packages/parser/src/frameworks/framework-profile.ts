@@ -27,9 +27,11 @@ export interface FrameworkProfile {
   /**
    * Runtime fibers (with their subtrees) the framework or its dev tooling
    * injects with no application counterpart: outlet boundaries, route
-   * announcers, asset scripts, devtools panels. A tool that mounts one next to
-   * an application element does so from an anonymous wrapper of its own, which
-   * is spliced out along with the injection.
+   * announcers, asset scripts, devtools panels, and whole roots the tooling
+   * mounts in a container of its own (a `HostRoot` whose `container` prop is
+   * that element's node name). A tool that mounts one next to an application
+   * element does so from an anonymous wrapper of its own, which is spliced out
+   * along with the injection.
    */
   isInjectedRuntimeFiber: (fiber: RuntimeFiberSnapshot) => boolean;
   /** Fiber name both trees are aligned on when the corpus entry does not name one. */
@@ -99,11 +101,15 @@ const mapRoots = (
   roots: snapshot.roots.map((root) => ({ ...root, children: mapChildren(root.children) })),
 });
 
-/** Drops the subtrees the framework injects with no application counterpart; transparent wrappers stay for the comparison to splice where the static tree lacks them. */
+/** Drops the roots and subtrees the framework injects with no application counterpart; transparent wrappers stay for the comparison to splice where the static tree lacks them. */
 export const dropInjectedFibers = (
   snapshot: RuntimeSnapshot,
   profile: FrameworkProfile,
-): RuntimeSnapshot => mapRoots(snapshot, (children) => dropInjectedList(children, profile));
+): RuntimeSnapshot =>
+  mapRoots(
+    { ...snapshot, roots: snapshot.roots.filter((root) => !profile.isInjectedRuntimeFiber(root)) },
+    (children) => dropInjectedList(children, profile),
+  );
 
 const spliceTransparentList = (
   fibers: RuntimeFiberSnapshot[],

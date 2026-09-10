@@ -22,6 +22,7 @@ export const element = (
   props,
   location: null,
   environment: null,
+  owner: null,
 });
 
 export const hostElement = (
