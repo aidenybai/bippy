@@ -111,6 +111,8 @@ export const getKeyIdentity = (key: StaticValue): KeyIdentity => {
       return internIdentity("symbol", key.key);
     case "global":
       return internIdentity("global", key.name);
+    case "react-api":
+      return internIdentity("react-api", key.api);
     case "context":
       return key.context;
     case "component-reference":
@@ -136,6 +138,7 @@ const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "class" ||
   key.kind === "context" ||
   key.kind === "global" ||
+  key.kind === "react-api" ||
   key.kind === "native-object" ||
   key.kind === "element" ||
   (key.kind === "component-reference" &&
@@ -160,11 +163,11 @@ const getPresenceStateCount = (entries: CollectionEntry[]): number => {
   return [...pathCounts.values()].reduce((product, count) => product * count, 1);
 };
 
-/** A small branch whose every alternative is a definite key: the operation applies to each alternative. */
-const getDefiniteKeyBranch = (key: StaticValue): StaticBranchValue | null =>
+/** A small branch of keys: the operation applies to each alternative, which stays findable under its own identity. */
+const getKeyBranch = (key: StaticValue): StaticBranchValue | null =>
   key.kind === "branch" &&
   key.alternatives.length <= MAX_KEY_ALTERNATIVES &&
-  key.alternatives.every(isDefiniteKey)
+  key.alternatives.every((alternative) => alternative.kind !== "branch")
     ? key
     : null;
 
@@ -368,7 +371,9 @@ class StaticCollection implements JournaledState<CollectionState> {
     }
     const reason = this.describeUncertainty("get");
     const stored = [...(entry ? [entry.value] : []), ...possiblyEqual.map((other) => other.value)];
-    if (stored.length > MAX_FAN_OUT) return unknownValue(reason, this.location);
+    if (stored.length > MAX_FAN_OUT) {
+        return unknownValue(reason, this.location);
+    }
     if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
     if (!isSettled) stored.push(UNDEFINED_VALUE);
     return branchValue(stored, reason, this.location);
@@ -409,7 +414,7 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   set(key: StaticValue, value: StaticValue): void {
-    const keyBranch = getDefiniteKeyBranch(key);
+    const keyBranch = getKeyBranch(key);
     if (keyBranch) {
       const reason = `${this.kind}.set() with a key that is one of several values`;
       keyBranch.alternatives.forEach((alternative, index) => {

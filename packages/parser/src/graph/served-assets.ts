@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { lookup as lookupMimeType } from "mrmime";
 import { branchValue, primitiveValue, unknownValue } from "../evaluate/values.js";
 import type { ModuleBundler, ProcessEnvironment, StaticValue } from "../types.js";
+import { findMetroAssetFile } from "./expo-asset-transform.js";
 import { createReactScriptsAssets } from "./react-scripts.js";
 
 // Vite's dev server hands an imported asset the URL it serves the file at
@@ -37,7 +38,20 @@ interface ServedAssets {
   findServedFile: (url: string) => string | null;
 }
 
+/** A same-origin request as the dev server routes it: the decoded pathname and the query. */
+interface ServedRequest {
+  pathname: string;
+  searchParams: URLSearchParams;
+}
+
+interface BundlerAssets {
+  getImportedUrl: ServedAssets["getImportedUrl"];
+  findServedFile: (request: ServedRequest) => string | null;
+}
+
 const FS_URL_PREFIX = "/@fs/";
+const METRO_ASSET_REQUEST = /^\/assets\/(.+)$/;
+const METRO_SECONDARY_QUERY = /\?.*$/;
 const FIRST_INLINING_VITE_MAJOR = 6;
 const NESTED_QUOTES = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/;
 const POSTFIX = /[?#].*$/;
@@ -92,20 +106,22 @@ const joinUrlSegments = (base: string, url: string): string =>
 const findFileUnder = (directory: string | null, relativePath: string): string | null => {
   if (directory === null) return null;
   const filePath = path.join(directory, relativePath);
-  return path.relative(directory, filePath).startsWith("..") || !existsSync(filePath)
+  return path.relative(directory, filePath).startsWith("..") ||
+    !existsSync(filePath) ||
+    !statSync(filePath).isFile()
     ? null
     : filePath;
 };
 
-const getPathname = (url: string, origin: string | null): string | null => {
+const parseServedRequest = (url: string, origin: string | null): ServedRequest | null => {
   const base = origin ?? "http://origin.invalid";
   if ((origin === null && !url.startsWith("/")) || !URL.canParse(url, base)) return null;
   const parsed = new URL(url, base);
   if (origin !== null && parsed.origin !== origin) return null;
-  return decodeURIComponent(parsed.pathname);
+  return { pathname: decodeURIComponent(parsed.pathname), searchParams: parsed.searchParams };
 };
 
-const createViteAssets = (options: ServedAssetsOptions, viteMajor: number): ServedAssets => {
+const createViteAssets = (options: ServedAssetsOptions, viteMajor: number): BundlerAssets => {
   const { rootDirectory, servedDirectory, publicDirectory, base } = options;
   const decodedBase = decodeURI(base);
   const basePrefix = joinUrlSegments(decodedBase, "");
@@ -141,7 +157,7 @@ const createViteAssets = (options: ServedAssetsOptions, viteMajor: number): Serv
         null,
       );
     },
-    findServedFile: (pathname) => {
+    findServedFile: ({ pathname }) => {
       if (!pathname.startsWith(basePrefix)) return null;
       const servedPath = pathname.slice(basePrefix.length - 1);
       if (servedPath.startsWith(FS_URL_PREFIX)) {
@@ -157,15 +173,39 @@ const createViteAssets = (options: ServedAssetsOptions, viteMajor: number): Serv
   };
 };
 
-const createUnmodeledAssets = (options: ServedAssetsOptions): ServedAssets => ({
+const createUnmodeledAssets = (options: ServedAssetsOptions): BundlerAssets => ({
   getImportedUrl: (filePath) =>
     unknownValue(`URL the bundler emits for ${path.basename(filePath)}`),
-  findServedFile: (pathname) =>
+  findServedFile: ({ pathname }) =>
     findFileUnder(options.publicDirectory, pathname) ??
     findFileUnder(options.servedDirectory, pathname),
 });
 
-const createBundlerAssets = (options: ServedAssetsOptions): ServedAssets => {
+/**
+ * Metro's asset server (`_processSingleAssetRequest`): `/assets/<path>` or
+ * `/assets/?unstable_path=<path>` reads the asset at `<path>` under the
+ * project root; anything else `@expo/cli` serves from the `public` directory.
+ */
+const createExpoAssets = (options: ServedAssetsOptions): BundlerAssets => {
+  const unmodeled = createUnmodeledAssets(options);
+  return {
+    getImportedUrl: unmodeled.getImportedUrl,
+    findServedFile: (request) => {
+      const { pathname, searchParams } = request;
+      if (pathname !== "/assets" && !pathname.startsWith("/assets/")) {
+        return unmodeled.findServedFile(request);
+      }
+      const requestedPath =
+        METRO_ASSET_REQUEST.exec(pathname)?.[1] ??
+        searchParams.get("unstable_path")?.replace(METRO_SECONDARY_QUERY, "");
+      return requestedPath
+        ? findMetroAssetFile(options.rootDirectory, requestedPath, searchParams.get("platform"))
+        : null;
+    },
+  };
+};
+
+const createBundlerAssets = (options: ServedAssetsOptions): BundlerAssets => {
   const { rootDirectory, publicDirectory, environment } = options;
   if (options.bundler === "react-scripts" && publicDirectory !== null) {
     const assets = createReactScriptsAssets(
@@ -176,9 +216,10 @@ const createBundlerAssets = (options: ServedAssetsOptions): ServedAssets => {
     );
     return {
       getImportedUrl: (filePath) => primitiveValue(assets.getImportedUrl(filePath)),
-      findServedFile: assets.findServedFile,
+      findServedFile: ({ pathname }) => assets.findServedFile(pathname),
     };
   }
+  if (options.bundler === "expo") return createExpoAssets(options);
   const viteMajor = readMajor(options.viteVersion);
   return viteMajor === null ? createUnmodeledAssets(options) : createViteAssets(options, viteMajor);
 };
@@ -188,8 +229,8 @@ export const createServedAssets = (options: ServedAssetsOptions): ServedAssets =
   return {
     getImportedUrl: assets.getImportedUrl,
     findServedFile: (url) => {
-      const pathname = getPathname(url, options.origin);
-      return pathname === null ? null : assets.findServedFile(pathname);
+      const request = parseServedRequest(url, options.origin);
+      return request === null ? null : assets.findServedFile(request);
     },
   };
 };

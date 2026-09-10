@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { getDefaultExport, getInstalledModules } from "../libraries/installed-modules.js";
@@ -88,7 +88,12 @@ interface ParsedAssetName {
 
 const toPosixPath = (filePath: string): string => filePath.split(path.sep).join(path.posix.sep);
 
-const parseAssetName = (filePath: string, platform: string): ParsedAssetName | null => {
+interface AssetVariant {
+  fileName: string;
+  scale: number;
+}
+
+const parseAssetName = (filePath: string, platform: string | null): ParsedAssetName | null => {
   const match = path.basename(filePath).match(PLATFORM_FILE_PATTERN);
   if (!match) return null;
   const [, base, , filePlatform, extension] = match;
@@ -102,6 +107,38 @@ const parseAssetName = (filePath: string, platform: string): ParsedAssetName | n
     type: extension,
     scale: Number.isNaN(resolution) ? 1 : resolution,
   };
+};
+
+/**
+ * Metro's `getAsset`: the file its asset server reads for a requested path,
+ * the smallest scale variant at or above the requested scale, else the largest.
+ */
+export const findMetroAssetFile = (
+  projectRoot: string,
+  relativePath: string,
+  platform: string | null,
+): string | null => {
+  const requested = parseAssetName(relativePath, platform);
+  if (requested === null || !METRO_ASSET_EXTENSIONS.has(requested.type)) return null;
+  const absolutePath = path.resolve(projectRoot, relativePath);
+  const directory = path.dirname(absolutePath);
+  if (
+    path.relative(projectRoot, absolutePath).startsWith("..") ||
+    !existsSync(directory) ||
+    !statSync(directory).isDirectory()
+  ) {
+    return null;
+  }
+  const variants = readdirSync(directory)
+    .flatMap((fileName): AssetVariant[] => {
+      const parsed = parseAssetName(fileName, platform);
+      return parsed !== null && parsed.name === requested.name && parsed.type === requested.type
+        ? [{ fileName, scale: parsed.scale }]
+        : [];
+    })
+    .sort((left, right) => left.scale - right.scale);
+  const variant = variants.find(({ scale }) => scale >= requested.scale) ?? variants.at(-1);
+  return variant === undefined ? null : path.join(directory, variant.fileName);
 };
 
 /** Metro's `getAssetData` URL directory, with `@expo/metro-config`'s URL-encoding of the query path. */
