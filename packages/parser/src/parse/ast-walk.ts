@@ -4,6 +4,7 @@ import type {
   AwaitExpression,
   BindingPattern,
   Expression,
+  MemberExpression,
   Node,
   ObjectPropertyKind,
   Statement,
@@ -12,11 +13,11 @@ import type {
 } from "oxc-parser";
 import type { FunctionLikeNode } from "../types.js";
 
-export interface ChildNodeVisitor {
+interface ChildNodeVisitor {
   (child: Node, key: string, index: number): void;
 }
 
-export const isAstNode = (value: unknown): value is Node =>
+const isAstNode = (value: unknown): value is Node =>
   typeof value === "object" && value !== null && "type" in value && typeof value.type === "string";
 
 export const isFunctionLikeNode = (node: Node): boolean =>
@@ -38,24 +39,6 @@ export const forEachChildNode = (node: Node, visit: ChildNodeVisitor): void => {
       visit(child, key, 0);
     }
   }
-};
-
-/**
- * Depth-first search for a node satisfying `predicate`. `enter` decides whether
- * a subtree is descended into at all (e.g. to stop at nested function bodies).
- */
-export const someNode = (
-  root: Node,
-  predicate: (node: Node) => boolean,
-  enter: (node: Node) => boolean = () => true,
-): boolean => {
-  if (predicate(root)) return true;
-  if (!enter(root)) return false;
-  let found = false;
-  forEachChildNode(root, (child) => {
-    if (!found) found = someNode(child, predicate, enter);
-  });
-  return found;
 };
 
 export const getPatternNames = (pattern: BindingPattern): string[] => {
@@ -118,6 +101,12 @@ export const unwrapExpression = (node: Expression): Expression => {
     default:
       return node;
   }
+};
+
+/** The property name a non-computed member access reads (`#name` for a private field); null when the key is computed. */
+export const getStaticMemberKey = (node: MemberExpression): string | null => {
+  if (node.property.type === "PrivateIdentifier") return `#${node.property.name}`;
+  return !node.computed && node.property.type === "Identifier" ? node.property.name : null;
 };
 
 /** Decides which side of a short-circuiting operator runs; null when the source does not decide. */

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-export interface AssetModuleSource {
+interface AssetModuleSource {
   moduleKey: string;
   sourceText: string;
 }

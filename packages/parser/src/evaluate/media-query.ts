@@ -1,8 +1,9 @@
 import type { StaticValue } from "../types.js";
+import { recordInputSource } from "./predicates.js";
 import { objectValue, primitiveValue, unknownPrimitiveValue } from "./values.js";
 
 /** The user-agent state media queries observe; defaults match a fresh Playwright Chromium context. */
-export interface BrowserEnvironment {
+interface BrowserEnvironment {
   viewportWidth: number;
   viewportHeight: number;
   devicePixelRatio: number;
@@ -224,7 +225,10 @@ export const mediaQueryListValue = (query: StaticValue | undefined): StaticValue
       key: "matches",
       value:
         matches === null
-          ? unknownPrimitiveValue("boolean", `matchMedia(${media ?? "dynamic query"})`)
+          ? recordInputSource(
+              unknownPrimitiveValue("boolean", `matchMedia(${media ?? "dynamic query"})`),
+              "viewport",
+            )
           : primitiveValue(matches),
     },
     {

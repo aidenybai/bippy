@@ -1,5 +1,6 @@
 import type { RuntimeFiberSnapshot } from "../harness/snapshot.js";
 import { type FrameworkKind, type FrameworkProfile, SPA_PROFILE } from "./framework-profile.js";
+import { NEXT_DATA_GLOBAL } from "./next-pages-router.js";
 
 // Names observed in Next 15/16 development builds (app router). Everything here
 // is framework plumbing that wraps application output without rendering host
@@ -94,6 +95,7 @@ export const NEXT_APP_PROFILE: FrameworkProfile = {
   transparentStaticFibers: new Set(["Fragment", "ContextProvider"]),
   isInjectedRuntimeFiber: isNextAppInjectedFiber,
   defaultAnchor: "body",
+  capturedGlobals: [],
 };
 
 const NEXT_PAGES_RUNTIME_WRAPPERS = [
@@ -144,6 +146,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   transparentStaticFibers: new Set(["Fragment", "StrictMode"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
+  capturedGlobals: [NEXT_DATA_GLOBAL],
 };
 
 // React Router 6.4+/7/8 (names observed against react-router 8 in the fixture
@@ -211,6 +214,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   ]),
   isInjectedRuntimeFiber: isReactRouterInjectedFiber,
   defaultAnchor: null,
+  capturedGlobals: [],
 };
 
 export const getFrameworkProfile = (kind: FrameworkKind): FrameworkProfile => {

@@ -1,23 +1,25 @@
 import {
-  FALSE_VALUE,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
+  booleanValue,
   branchValue,
   compareIdentity,
+  FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
   isCallable,
   isKnownString,
+  isUndefinedValue,
   mapValue,
   objectFromRecord,
   objectValue,
   primitiveValue,
   toJsonValue,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { lazyProperties, nativeFunction } from "../frameworks/stubs.js";
+import { lazyProperties, nativeFunction } from "../evaluate/stubs.js";
 import { hashKey } from "../observations.js";
 import type {
   CapturedValue,
@@ -49,40 +51,73 @@ type RequestStatus = "uninitialized" | "pending" | "fulfilled" | "rejected";
 
 const reducerKeysByReducer = new WeakMap<StaticValue, readonly string[]>();
 
-const booleanValue = (value: boolean): StaticValue => (value ? TRUE_VALUE : FALSE_VALUE);
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
-
 const isCapturedRecord = (value: CapturedValue): value is Record<string, CapturedValue> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
 const getOptionalProperty = (options: StaticValue | undefined, key: string): StaticValue =>
   options?.kind === "object" ? getObjectProperty(options, key) : UNDEFINED_VALUE;
 
-const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
+/** The keys of the state a reducer (or a map of slice reducers) produces; null when not statically known. */
+export const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
   reducer.kind === "object"
     ? getKnownObjectKeys(reducer)
     : (reducerKeysByReducer.get(reducer) ?? null);
 
+/** An opaque reducer whose state is known to have exactly `keys` (none recorded when null). */
+export const opaqueReducer = (
+  name: string,
+  keys: readonly string[] | null,
+  description: string,
+): StaticValue => {
+  const reducer = nativeFunction(name, () => unknownValue(description));
+  if (keys) reducerKeysByReducer.set(reducer, keys);
+  return reducer;
+};
+
+const INIT_ACTION_TYPE = "@@redux/INIT";
+
 /**
- * The recorded state of the one store whose INIT state had these keys;
- * `undefined` when none or several did. Later actions may add keys (a root
- * reducer wrapping `combineReducers`, redux-persist's `_persist` on PERSIST),
- * never drop the slices INIT established.
+ * The keys of a root reducer's state: registered by `combineReducers`, or
+ * otherwise what the reducer returns for the `INIT` dispatch `createStore`
+ * probes it with, which sees through wrappers around a combined reducer.
+ */
+const getStoreStateKeys = (
+  reducer: StaticValue,
+  preloadedState: StaticValue,
+  tools: StubRenderTools,
+): readonly string[] | null => {
+  const registered = getReducerKeys(reducer);
+  if (registered || !isCallable(reducer)) return registered;
+  const initialState = tools.call(reducer, [
+    preloadedState,
+    objectFromRecord({ type: primitiveValue(INIT_ACTION_TYPE) }),
+  ]);
+  return initialState.kind === "object" ? getKnownObjectKeys(initialState) : null;
+};
+
+const haveSameKeys = (left: readonly string[], right: readonly string[]): boolean =>
+  left.length === right.length && left.every((key) => right.includes(key));
+
+/**
+ * The recorded state of the one store built from these slice reducers: with
+ * exactly these keys, else the one whose later actions only added keys to
+ * what INIT established; `undefined` when none or several qualify.
  */
 const findStoreState = (
   states: readonly CapturedValue[],
   reducerKeys: readonly string[],
 ): CapturedValue | undefined => {
-  const matches = states.filter(
-    (state) => isCapturedRecord(state) && reducerKeys.every((key) => key in state),
-  );
+  const records = states.filter(isCapturedRecord);
+  const exactMatches = records.filter((state) => haveSameKeys(Object.keys(state), reducerKeys));
+  const matches =
+    exactMatches.length > 0
+      ? exactMatches
+      : records.filter((state) => reducerKeys.every((key) => key in state));
   return matches.length === 1 ? matches[0] : undefined;
 };
 
 const getSliceState = (state: StaticValue, key: string): StaticValue => {
-  if (isUndefined(state)) return UNDEFINED_VALUE;
+  if (isUndefinedValue(state)) return UNDEFINED_VALUE;
   return state.kind === "object"
     ? getObjectProperty(state, key)
     : unknownValue(`the ${key} slice of a state that is not statically known`);
@@ -227,24 +262,6 @@ const bindActionCreators = nativeFunction("bindActionCreators", ([creators, disp
   );
 });
 
-const INIT_ACTION_TYPE = "@@redux/INIT";
-
-/** The state shape `createStore` establishes by dispatching INIT, which also runs a hand-written root reducer around `combineReducers`. */
-const getInitialStateKeys = (
-  reducer: StaticValue,
-  preloadedState: StaticValue,
-  tools: StubRenderTools,
-): readonly string[] | null => {
-  if (!isCallable(reducer)) return getReducerKeys(reducer);
-  const initialState = tools.call(reducer, [
-    preloadedState,
-    objectFromRecord({ type: primitiveValue(INIT_ACTION_TYPE) }),
-  ]);
-  return initialState.kind === "object"
-    ? getKnownObjectKeys(initialState)
-    : getReducerKeys(reducer);
-};
-
 /** A store whose state is the one the page recorded for exactly these reducer keys; the store is otherwise opaque. */
 const storeValue = (
   project: ProjectContext,
@@ -252,7 +269,7 @@ const storeValue = (
   preloadedState: StaticValue,
   tools: StubRenderTools,
 ): StaticValue => {
-  const reducerKeys = getInitialStateKeys(reducer, preloadedState, tools);
+  const reducerKeys = getStoreStateKeys(reducer, preloadedState, tools);
   const state =
     reducerKeys && project.storeStates
       ? findStoreState(project.storeStates, reducerKeys)
@@ -376,7 +393,7 @@ const queryHookResult = (
   isSkipped: boolean,
 ): StaticValue => {
   const data = substate.data ?? UNDEFINED_VALUE;
-  const hasData = !isUndefined(data);
+  const hasData = !isUndefinedValue(data);
   const isFetching = status === "pending";
   const selected: Record<string, StaticValue> = {
     ...substate,
@@ -472,7 +489,7 @@ const serializeQueryArgs = (
   queryArgs: StaticValue,
   tools: StubRenderTools,
 ): string | null => {
-  if (!isUndefined(api.serializeQueryArgs)) {
+  if (!isUndefinedValue(api.serializeQueryArgs)) {
     const serialized = tools.call(api.serializeQueryArgs, [
       objectFromRecord({
         queryArgs,
@@ -482,7 +499,7 @@ const serializeQueryArgs = (
     ]);
     return isKnownString(serialized) ? serialized.value : null;
   }
-  if (isUndefined(queryArgs)) return `${endpointName}(undefined)`;
+  if (isUndefinedValue(queryArgs)) return `${endpointName}(undefined)`;
   const json = toJsonValue(queryArgs);
   return json === undefined ? null : `${endpointName}(${hashKey(json)})`;
 };

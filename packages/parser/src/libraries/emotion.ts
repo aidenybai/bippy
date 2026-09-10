@@ -5,6 +5,7 @@ import {
   branchValue,
   getObjectProperty,
   getTruthiness,
+  isFunctionValue,
   isNullish,
   listValue,
   mapValue,
@@ -15,7 +16,7 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { hasProperty } from "../evaluate/has-property.js";
-import { element, emptyStub, nativeFunction, stubValue } from "../frameworks/stubs.js";
+import { element, emptyStub, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
@@ -165,15 +166,12 @@ const getStringOption = (options: StaticValue | undefined, key: string): string 
   return value.kind === "primitive" && typeof value.value === "string" ? value.value : null;
 };
 
-const isFunctionLike = (value: StaticValue): boolean =>
-  value.kind === "function" || value.kind === "native-function";
-
 const composePropFilters = (
   options: StaticValue | undefined,
   styledTag: StyledComponent | undefined,
 ): readonly StaticValue[] | null => {
   const optionFilter = getOption(options, "shouldForwardProp");
-  if (isFunctionLike(optionFilter)) {
+  if (isFunctionValue(optionFilter)) {
     return styledTag?.propFilters ? [...styledTag.propFilters, optionFilter] : [optionFilter];
   }
   return styledTag ? styledTag.propFilters : null;
@@ -380,7 +378,7 @@ const cssPropStub = (runtime: EmotionRuntime): StubComponent => ({
   tag: ForwardRefTag,
   render: (props) => {
     const cssProp = getObjectProperty(props, "css");
-    const readsTheme = isFunctionLike(cssProp)
+    const readsTheme = isFunctionValue(cssProp)
       ? true
       : cssProp.kind === "unknown" || cssProp.kind === "branch"
         ? null

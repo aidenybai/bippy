@@ -1,9 +1,4 @@
-import {
-  NULL_VALUE,
-  UNDEFINED_VALUE,
-  getObjectProperty,
-  objectFromRecord,
-} from "../evaluate/values.js";
+import { NULL_VALUE, UNDEFINED_VALUE, getObjectProperty, objectFromRecord } from "./values.js";
 import type {
   StaticElementType,
   StaticElementValue,
@@ -49,6 +44,9 @@ export const nativeFunction = (
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue,
 ): StaticValue => ({ kind: "native-function", name, call });
 
+export const noopFunction = (name: string): StaticValue =>
+  nativeFunction(name, () => UNDEFINED_VALUE);
+
 /** `target` with properties computed on access (a store's `values`), as `new Proxy(target, { get })` would. */
 export const lazyProperties = (
   target: StaticValue,
@@ -72,7 +70,7 @@ export const passthroughStub = (displayName: string): StubComponent => ({
 });
 
 /** A component that renders nothing (effects, portals to `<head>`, metadata). */
-export const emptyStub = (displayName: string): StubComponent => ({
+export const emptyStub = (displayName: string | null): StubComponent => ({
   displayName,
   render: () => NULL_VALUE,
 });

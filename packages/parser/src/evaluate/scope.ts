@@ -1,6 +1,11 @@
 import type { Scope, StaticValue } from "../types.js";
+import { allocate } from "./values.js";
 
-export const createScope = (parent: Scope | null): Scope => ({ parent, bindings: new Map() });
+export const createScope = (parent: Scope | null): Scope => ({
+  parent,
+  bindings: new Map(),
+  allocation: allocate(),
+});
 
 export const lookupScope = (scope: Scope, name: string): StaticValue | undefined => {
   let current: Scope | null = scope;

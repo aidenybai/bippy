@@ -1,14 +1,15 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
+  getComponentProperty,
   getMaskedLegacyContext,
-  getStaticProperty,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
+import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
@@ -59,12 +60,14 @@ import type {
   StubComponent,
   StubHooks,
   StubRenderTools,
+  WrapperElementType,
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
   AlternativeMarker,
   BranchMarker,
   createSuspendedMarker,
+  KEY_PLACEHOLDER,
   MARKER_NAMES,
   OpaqueMarker,
   RepeatMarker,
@@ -73,6 +76,7 @@ import {
   UnknownMarker,
 } from "./markers.js";
 import type { ReactRuntime } from "./react-runtime.js";
+import type { RendererHost } from "./renderer-host.js";
 import { ServerEnvironmentStamper } from "./server-environment.js";
 
 /**
@@ -98,33 +102,6 @@ const MAX_RENDER_PHASE_UPDATES = 25;
 // work; deviations from the preferred path deeper than this become wildcards.
 const MAX_ALTERNATIVE_DEPTH = 2;
 
-/** Tags whose `children` React DOM either rejects (void elements) or never reconciles (`textarea`, `noscript`). */
-const CHILDLESS_HOST_TAGS = new Set([
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "keygen",
-  "link",
-  "menuitem",
-  "meta",
-  "noscript",
-  "param",
-  "source",
-  "textarea",
-  "track",
-  "wbr",
-]);
-
-interface ClassProxyContext {
-  context: Context<StaticValue | null>;
-  value: StaticValue | null;
-}
-
 export interface MaterializerOptions {
   maxComponentDepth?: number;
   maxFiberCount?: number;
@@ -137,12 +114,12 @@ export interface MaterializerOptions {
  * something in the primary subtree that can suspend, and `commit` tells the
  * boundary so in the layout phase of whichever proxy rendered it.
  */
-export interface SuspenseScope {
+interface SuspenseScope {
   maySuspend: boolean;
   commit: () => void;
 }
 
-export interface CompositeFrame {
+interface CompositeFrame {
   node: ComponentDefinition["node"];
   /** Closure the component was created in: a factory's components share a node but not a scope. */
   scope: Scope;
@@ -154,7 +131,7 @@ export interface CompositeFrame {
  * the static context values in scope, the RSC environment, and the guards
  * against runaway recursion.
  */
-export interface MaterializeContext {
+interface MaterializeContext {
   depth: number;
   componentStack: CompositeFrame[];
   suspenseScope: SuspenseScope | null;
@@ -173,7 +150,7 @@ export interface MaterializeContext {
 }
 
 /** The static element a proxy component stands for, handed to it as its only prop. */
-export interface ProxyInput {
+interface ProxyInput {
   props: StaticObjectValue;
   ref: StaticValue | null;
   location: SourceLocation | null;
@@ -182,7 +159,7 @@ export interface ProxyInput {
   isMemoized: boolean;
 }
 
-export interface ProxyProps {
+interface ProxyProps {
   input: ProxyInput;
 }
 
@@ -290,7 +267,7 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
   first.componentStack.every((frame, index) => isSameFrame(frame, second.componentStack[index]));
 
 /** Thrown by a proxy whose static render evaluates to a thrown value, so React's error boundaries take over. */
-export class StaticThrowError extends Error {
+class StaticThrowError extends Error {
   readonly isMaybe: boolean;
 
   constructor(reason: string, isMaybe: boolean) {
@@ -382,22 +359,22 @@ const textContentToNull = (value: StaticValue): StaticValue => {
 };
 
 const getComponentDisplayName = (component: ComponentDefinition): string | null => {
-  const displayName = component.properties.get("displayName");
+  const displayName = getComponentProperty(component, "displayName");
   if (displayName?.kind === "primitive" && typeof displayName.value === "string")
     return displayName.value;
   return component.name;
 };
 
 const hasDefaultProps = (component: ComponentDefinition): boolean => {
-  const defaults = component.properties.get("defaultProps");
-  return defaults !== undefined && isNonNullish(defaults);
+  const defaults = getComponentProperty(component, "defaultProps");
+  return defaults !== null && isNonNullish(defaults);
 };
 
-const applyDefaultProps = (
-  component: ComponentDefinition,
+/** `createElement` fills in a default for every prop that is missing or explicitly `undefined`. */
+const withDefaultProps = (
+  defaults: StaticValue | null,
   props: StaticObjectValue,
 ): StaticObjectValue => {
-  const defaults = component.properties.get("defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
   const isDefaulted = (entry: StaticObjectEntry): boolean =>
     entry.kind === "property" &&
@@ -413,6 +390,17 @@ const applyDefaultProps = (
     ],
   };
 };
+
+const applyDefaultProps = (
+  component: ComponentDefinition,
+  props: StaticObjectValue,
+): StaticObjectValue => withDefaultProps(getComponentProperty(component, "defaultProps"), props);
+
+/** `createElement` fills in `type.defaultProps` of a `memo`/`forwardRef` object like any other type's. */
+const applyWrapperDefaultProps = (
+  type: WrapperElementType,
+  props: StaticObjectValue,
+): StaticObjectValue => withDefaultProps(type.properties.get("defaultProps") ?? null, props);
 
 const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue => {
   const node = component.node;
@@ -476,6 +464,7 @@ const noop = (): void => {};
 export class Materializer {
   readonly interpreter: Interpreter;
   readonly runtime: ReactRuntime;
+  readonly host: RendererHost<Element>;
   private materializedCount = 0;
   private readonly maxComponentDepth: number;
   private readonly maxElementCount: number;
@@ -500,22 +489,10 @@ export class Materializer {
     Context<StaticValue | null>
   >();
   private isInsideComponentRender = false;
-  /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
-  private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
-  /**
-   * Context values flow through React itself, so a proxy reads them at its own
-   * fiber: through the hook in a function proxy, and through `this.context` of
-   * a class proxy whose `contextType` is the analyzed class's (`readContext`
-   * is what React itself does there; hooks throw inside a class render).
-   */
-  private classProxyContext: ClassProxyContext | null = null;
+  /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
   private readonly readContext: ContextReader = (definition) => {
     if (!this.isInsideComponentRender) return null;
-    const context = this.getContext(definition);
-    const value =
-      this.classProxyContext?.context === context
-        ? this.classProxyContext.value
-        : this.useStaticContext(context);
+    const value = this.runtime.readContext(this.getContext(definition));
     this.contextReads?.push({ definition, value });
     return value;
   };
@@ -527,15 +504,20 @@ export class Materializer {
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
 
-  constructor(interpreter: Interpreter, runtime: ReactRuntime, options: MaterializerOptions = {}) {
+  constructor(
+    interpreter: Interpreter,
+    runtime: ReactRuntime,
+    host: RendererHost<Element>,
+    options: MaterializerOptions = {},
+  ) {
     this.interpreter = interpreter;
     this.runtime = runtime;
+    this.host = host;
     this.maxComponentDepth = options.maxComponentDepth ?? DEFAULT_MAX_COMPONENT_DEPTH;
     this.maxElementCount = options.maxFiberCount ?? DEFAULT_MAX_ELEMENT_COUNT;
     this.maxRecursionPerComponent =
       options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.serverComponents = options.serverComponents ?? false;
-    this.useStaticContext = runtime.react.use ?? runtime.react.useContext;
     this.suspenseBoundaryProxy = setFunctionName(
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,
@@ -595,6 +577,7 @@ export class Materializer {
       case "repeat":
         return this.runtime.react.createElement(RepeatMarker, {
           location: value.location && formatSourceLocation(value.location),
+          cardinality: getRepeatCardinality(value),
           countMin: value.count?.min ?? 0,
           countMax: value.count?.max ?? null,
           children: [this.toNode(value.item, context, false)],
@@ -742,10 +725,7 @@ export class Materializer {
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
   private isFlightUnwrappedFragment(element: StaticElementValue): boolean {
-    return (
-      element.type.kind === "fragment" &&
-      this.keyToString(element.key, element.location) === undefined
-    );
+    return element.type.kind === "fragment" && isKeyless(element.key);
   }
 
   /**
@@ -827,7 +807,11 @@ export class Materializer {
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, {
           key: reactKey,
-          input: { ...input, isMemoized: !type.hasCompare },
+          input: {
+            ...input,
+            props: applyWrapperDefaultProps(type, props),
+            isMemoized: !type.hasCompare,
+          },
         });
       }
       case "forward-ref": {
@@ -837,7 +821,10 @@ export class Materializer {
           key: reactKey,
           input: {
             ...input,
-            props: renderProps.kind === "object" ? renderProps : props,
+            props: applyWrapperDefaultProps(
+              type,
+              renderProps.kind === "object" ? renderProps : props,
+            ),
             ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
           },
         });
@@ -860,7 +847,7 @@ export class Materializer {
         const isUnwrapped = isTopLevel && reactKey === undefined;
         return createElement(
           this.runtime.react.Fragment,
-          { key: reactKey },
+          { key: isKeyless(key) ? undefined : (reactKey ?? KEY_PLACEHOLDER) },
           this.toNode(children, context, !isUnwrapped),
         );
       }
@@ -986,7 +973,7 @@ export class Materializer {
     this.collectHostAttributes(props, result, context);
     const ref = this.hostRef(getObjectProperty(props, "ref"), location, context);
     if (ref) result.ref = ref;
-    if (CHILDLESS_HOST_TAGS.has(tagName)) return result;
+    if (this.host.isChildlessTag(tagName)) return result;
     const children = getObjectProperty(props, "children");
     if (!isNonNullish(children)) {
       const innerHtml = getObjectProperty(props, "dangerouslySetInnerHTML");
@@ -1084,11 +1071,8 @@ export class Materializer {
     key: StaticValue | null,
     location: SourceLocation | null,
   ): string | undefined {
-    if (!key) return undefined;
-    if (key.kind === "primitive") {
-      if (key.value === null || key.value === undefined) return undefined;
-      return String(key.value);
-    }
+    if (!key || isKeyless(key)) return undefined;
+    if (key.kind === "primitive") return String(key.value);
     this.interpreter.report("dynamic-key", `key is dynamic (${describeValue(key)})`, location);
     return undefined;
   }
@@ -1164,12 +1148,12 @@ export class Materializer {
     }
   }
 
-  /** The document node the program portals into; a detached one stands in for a container the analysis cannot name. */
+  /** The host node the program portals into; a detached one stands in for a container the analysis cannot name. */
   private getPortalContainer(container: StaticValue): Element {
-    if (container.kind === "native-object" && container.value instanceof Element) {
+    if (container.kind === "native-object" && this.host.isContainer(container.value)) {
       return container.value;
     }
-    this.portalContainer ??= document.createElement("div");
+    this.portalContainer ??= this.host.createContainer();
     return this.portalContainer;
   }
 
@@ -1197,26 +1181,15 @@ export class Materializer {
         this.beginLayoutPhase();
         this.commitSuspenseScope(context.suspenseScope);
       };
-      const contextType = getStaticProperty(classValue, "contextType");
-      const proxyContextType =
-        contextType?.kind === "context" ? this.getContext(contextType.context) : null;
       const renderProxy = (
         input: ProxyInput,
         caught: StaticThrowError | null,
         host: ClassProxyHost,
-        contextValue: StaticValue | null,
       ): ReactNode =>
-        this.renderInsideComponent(() => {
-          this.classProxyContext =
-            proxyContextType === null ? null : { context: proxyContextType, value: contextValue };
-          try {
-            return this.renderClassProxy(input, component, classValue, caught, host);
-          } finally {
-            this.classProxyContext = null;
-          }
-        });
+        this.renderInsideComponent(() =>
+          this.renderClassProxy(input, component, classValue, caught, host),
+        );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
-        declare context: StaticValue | null;
         state: ErrorBoundaryState = { caught: null };
         private readonly instances = new Map<BoundaryRenderPath, ProxyInstance>();
         private pendingWork: EffectPhaseWork[] = [];
@@ -1236,7 +1209,7 @@ export class Materializer {
 
         render(): ReactNode {
           this.pendingWork = [];
-          return renderProxy(this.props.input, this.state.caught, this.host, this.context);
+          return renderProxy(this.props.input, this.state.caught, this.host);
         }
 
         componentDidMount(): void {
@@ -1267,7 +1240,6 @@ export class Materializer {
           }
         }
       }
-      if (proxyContextType) ClassProxy.contextType = proxyContextType;
       class ErrorBoundaryProxy extends ClassProxy {
         static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
           return {
@@ -1347,12 +1319,14 @@ export class Materializer {
       byVariant = new Map();
       this.memoTypes.set(inner, byVariant);
     }
-    const cacheKey = `${type.hasCompare ? "compare" : ""}\u0000${type.displayName ?? ""}`;
+    const hasWrapperDefaults = isNonNullish(type.properties.get("defaultProps") ?? NULL_VALUE);
+    const cacheKey = `${type.hasCompare ? "compare" : ""}\u0000${hasWrapperDefaults ? "defaults" : ""}\u0000${type.displayName ?? ""}`;
     let memoType = byVariant.get(cacheKey);
     if (!memoType) {
       const memoized = this.runtime.react.memo(inner, type.hasCompare ? () => false : undefined);
       if (type.displayName) memoized.displayName = type.displayName;
-      memoType = memoized;
+      // React 18 only takes the SimpleMemoComponent fast path when the memo object itself has no defaultProps.
+      memoType = hasWrapperDefaults ? Object.assign(memoized, { defaultProps: {} }) : memoized;
       byVariant.set(cacheKey, memoType);
     }
     return memoType;
@@ -1465,6 +1439,7 @@ export class Materializer {
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       pushItems: (list, items) => this.interpreter.pushItems(list, items),
+      setItem: (list, index, value) => this.interpreter.setItem(list, index, value),
       nameHint: null,
       templateArgumentNames: null,
       environment: context.environment,
@@ -1612,7 +1587,7 @@ export class Materializer {
     // so a timer task starts a new one.
     frame.requestRender = () => {
       if (frame.isFrozen) return;
-      this.interpreter.changeCount++;
+      this.interpreter.mutations.record(0);
       if (this.interpreter.timers.isFlushing) instance.passCount = 0;
       if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
       rerender();
