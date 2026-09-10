@@ -2,6 +2,7 @@ import type { Fiber, FiberRoot, ReactRenderer, ReactWorkTagMap } from "bippy";
 import { getDisplayName, getReactWorkTagsForFiber } from "bippy";
 import type {
   RuntimeFiberSnapshot,
+  RuntimeRootSnapshot,
   RuntimeSnapshot,
   SnapshotPropValue,
   SnapshotWorkTag,
@@ -174,10 +175,20 @@ const snapshotFiber = (
 export const snapshotFiberTree = (rootFiber: Fiber): RuntimeFiberSnapshot =>
   snapshotFiber(rootFiber, buildTagLookup(getReactWorkTagsForFiber(rootFiber)));
 
-interface RuntimeSnapshotSource {
-  roots: FiberRoot[];
+export interface CommittedRoot {
+  root: FiberRoot;
   renderer: ReactRenderer | null;
 }
+
+interface RuntimeSnapshotSource {
+  roots: CommittedRoot[];
+  renderer: ReactRenderer | null;
+}
+
+const snapshotRoot = ({ root, renderer }: CommittedRoot): RuntimeRootSnapshot => ({
+  ...snapshotFiberTree(root.current),
+  rendererName: renderer?.rendererPackageName ?? null,
+});
 
 export const createRuntimeSnapshot = (source: RuntimeSnapshotSource): RuntimeSnapshot => ({
   reactVersion: source.renderer?.version ?? null,
@@ -187,6 +198,6 @@ export const createRuntimeSnapshot = (source: RuntimeSnapshotSource): RuntimeSna
       ? "development"
       : "production"
     : null,
-  roots: source.roots.map((root) => snapshotFiberTree(root.current)),
+  roots: source.roots.map(snapshotRoot),
   capturedAt: new Date().toISOString(),
 });

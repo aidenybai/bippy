@@ -3,7 +3,12 @@ import type { StaticRenderResult } from "../types.js";
 import type { ComparisonOptions, ComparisonReport } from "./compare.js";
 import { formatComparisonReport } from "./format-report.js";
 import { computeGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
-import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
+import {
+  findSnapshotFiber,
+  type RuntimeFiberSnapshot,
+  type RuntimeRootSnapshot,
+  type RuntimeSnapshot,
+} from "./snapshot.js";
 import {
   DEFAULT_STATE_SPACE_BUDGET,
   enumerateStateSpace,
@@ -218,10 +223,18 @@ const countFibers = (fibers: RuntimeFiberSnapshot[]): number => {
   return count;
 };
 
+/** The renderer the static side always renders through; older captures did not record one per root. */
+const DOM_RENDERER_PACKAGE = "react-dom";
+
+const isDomRoot = (root: RuntimeRootSnapshot): boolean =>
+  (root.rendererName ?? DOM_RENDERER_PACKAGE) === DOM_RENDERER_PACKAGE;
+
 /**
  * Pages mount more than one React root (dev overlays, portals rendered with a
- * second `createRoot`). Without an explicit `rootIndex`, prefer the root that
- * holds the anchor, otherwise the largest one.
+ * second `createRoot`, a custom reconciler such as `@react-three/fiber`).
+ * Without an explicit `rootIndex`, prefer the root that holds the anchor,
+ * otherwise the largest root the DOM renderer committed (the static side only
+ * ever renders react-dom trees), falling back to the largest root of any renderer.
  */
 const chooseRuntimeRoot = (
   runtime: RuntimeSnapshot,
@@ -237,9 +250,10 @@ const chooseRuntimeRoot = (
     );
     if (anchored) return anchored;
   }
+  const domRoots = runtime.roots.filter(isDomRoot);
   let largest: RuntimeFiberSnapshot | null = null;
   let largestSize = -1;
-  for (const root of runtime.roots) {
+  for (const root of domRoots.length > 0 ? domRoots : runtime.roots) {
     const size = countFibers(root.children);
     if (size > largestSize) {
       largest = root;

@@ -45,19 +45,24 @@ export const createCommitRecorder = ({
   recordCommits = false,
   onCommit,
 }: CommitRecorderOptions = {}): CommitRecorder => {
-  const roots = new Set<FiberRoot>();
+  const roots = new Map<FiberRoot, ReactRenderer | null>();
   const committedSnapshots: RuntimeSnapshot[] = [];
   let renderer: ReactRenderer | null = null;
   let commits = 0;
   let commitWaiters: Array<() => void> = [];
-  const liveRoots = (): FiberRoot[] => [...roots].filter((root) => _fiberRoots.has(root));
-  const snapshot = (): RuntimeSnapshot => createRuntimeSnapshot({ roots: liveRoots(), renderer });
+  const liveRoots = (): FiberRoot[] => [...roots.keys()].filter((root) => _fiberRoots.has(root));
+  const snapshot = (): RuntimeSnapshot =>
+    createRuntimeSnapshot({
+      roots: liveRoots().map((root) => ({ root, renderer: roots.get(root) ?? null })),
+      renderer,
+    });
   const unsubscribe = instrument({
     name: "bippy-parser-harness",
     onCommitFiberRoot: (rendererId, root) => {
       if (rootFilter && !rootFilter(root)) return;
-      roots.add(root);
-      renderer = getRDTHook().renderers.get(rendererId) ?? renderer;
+      const rootRenderer = getRDTHook().renderers.get(rendererId) ?? null;
+      roots.set(root, rootRenderer ?? roots.get(root) ?? null);
+      renderer = rootRenderer ?? renderer;
       commits++;
       if (recordCommits) committedSnapshots.push(snapshot());
       onCommit?.();

@@ -28,11 +28,16 @@ export interface RuntimeFiberSnapshot {
   children: RuntimeFiberSnapshot[];
 }
 
+/** A committed root with the renderer (`react-dom`, `@react-three/fiber`, ...) that owns it. */
+export interface RuntimeRootSnapshot extends RuntimeFiberSnapshot {
+  rendererName?: string | null;
+}
+
 export interface RuntimeSnapshot {
   reactVersion: string | null;
   rendererName: string | null;
   buildType: "development" | "production" | null;
-  roots: RuntimeFiberSnapshot[];
+  roots: RuntimeRootSnapshot[];
   capturedAt: string;
 }
 
@@ -93,11 +98,16 @@ const fiberSchema: z.ZodType<RuntimeFiberSnapshot> = z.object({
   },
 });
 
+const rootSchema: z.ZodType<RuntimeRootSnapshot, unknown> = z.intersection(
+  fiberSchema,
+  z.object({ rendererName: z.string().nullable().default(null) }),
+);
+
 const snapshotSchema: z.ZodType<RuntimeSnapshot, unknown> = z.object({
   reactVersion: z.string().nullable().default(null),
   rendererName: z.string().nullable().default(null),
   buildType: z.enum(["development", "production"]).nullable().catch(null),
-  roots: z.array(fiberSchema),
+  roots: z.array(rootSchema),
   capturedAt: z.string().default(() => new Date().toISOString()),
 });
 
