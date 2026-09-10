@@ -307,6 +307,7 @@ import {
   getObjectProperty,
   getPreferredTruthiness,
   getStubDisplayName,
+  getStubOwnName,
   getAllocationCount,
   getTruthiness,
   hasDefiniteItems,
@@ -1615,6 +1616,7 @@ export class Interpreter {
         if (type.kind === "stub") {
           if (propertyName === "displayName") {
             type.stub.displayName = displayName;
+            type.stub.isNamedByRender = false;
           } else {
             type.stub.properties ??= new Map();
             type.stub.properties.set(propertyName, value);
@@ -3171,10 +3173,10 @@ export class Interpreter {
       case "stub": {
         const property = type.stub.properties?.get(key);
         if (property) return property;
-        if (key === "displayName" || key === "name")
-          return type.stub.displayName === null
-            ? UNDEFINED_VALUE
-            : primitiveValue(type.stub.displayName);
+        if (key === "displayName" || key === "name") {
+          const ownName = getStubOwnName(type.stub, key);
+          return ownName === null ? UNDEFINED_VALUE : primitiveValue(ownName);
+        }
         return getStubOwnKeys(type.stub.tag).has(key)
           ? unknownValue(`${getStubDisplayName(type.stub) ?? "stub"}.${key}`, location)
           : UNDEFINED_VALUE;

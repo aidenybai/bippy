@@ -10,6 +10,7 @@ import {
   detectModuleTranspiler,
   readDocumentShell,
 } from "../graph/module-transpiler.js";
+import { readProjectJsxOptions } from "../graph/jsx-compiler-options.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
@@ -179,11 +180,14 @@ export class StaticRenderer {
       ),
       graph: new ModuleGraph({
         resolver,
-        sourceFileCache: new SourceFileCache([
-          ...(svgrTransform ? [svgrTransform] : []),
-          ...createYamlSourceTransforms(rootDirectory),
-          ...bundlerTransforms,
-        ]),
+        sourceFileCache: new SourceFileCache(
+          [
+            ...(svgrTransform ? [svgrTransform] : []),
+            ...createYamlSourceTransforms(rootDirectory),
+            ...bundlerTransforms,
+          ],
+          options.tsconfigPath ? readProjectJsxOptions(options.tsconfigPath, resolver) : null,
+        ),
         resolveExternalPackages: options.resolveExternalPackages,
         externalPackageAllowList: options.externalPackageAllowList,
       }),

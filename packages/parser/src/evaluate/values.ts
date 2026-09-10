@@ -36,6 +36,7 @@ import type {
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
+import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 import { composeFlattenedPredicate, recordBranchOrigin, recordDerivation } from "./predicates.js";
 
@@ -2135,6 +2136,12 @@ export const getStubDisplayName = (stub: StubComponent): string | null => {
   return assigned?.kind === "primitive" && typeof assigned.value === "string"
     ? assigned.value
     : stub.displayName;
+};
+
+/** What reading `displayName`/`name` off the stub's object yields: a wrapper named by its render function has no own `displayName`, and only a plain function has a `name`. */
+export const getStubOwnName = (stub: StubComponent, key: "displayName" | "name"): string | null => {
+  if (!stub.isNamedByRender) return stub.displayName;
+  return key === "name" && getStubOwnKeys(stub.tag) === FUNCTION_OWN_KEYS ? stub.displayName : null;
 };
 
 export const describeElementType = (type: StaticElementType): string => {

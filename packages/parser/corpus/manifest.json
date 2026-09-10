@@ -5421,19 +5421,25 @@
       "id": "morethan-log",
       "repository": "https://github.com/morethanmin/morethan-log",
       "revision": "272cd3e73d6fbc650c5d95c6da0846776d39e67a",
-      "description": "morethan-log feed page (Next 13.4 pages router, React 18, Emotion, @tanstack/react-query v4 hydration of posts fetched from the public template Notion page through notion-client)",
+      "description": "morethan-log feed page (Next 13.4 pages router, React 18, Emotion, @tanstack/react-query v4 hydration of posts read from a Notion database through notion-client)",
       "framework": "next-pages",
       "workingDirectory": ".",
       "install": "yarn install --frozen-lockfile",
-      "setup": ["printf 'NOTION_PAGE_ID=12c38b5f459d4eb9a759f92fba6cea36\\n' > .env.local"],
-      "dev": "yarn next dev -p 3022",
+      "setup": [
+        "sed -i 's/new NotionAPI()/new NotionAPI({ apiBaseUrl: process.env.NOTION_API_BASE_URL })/' src/apis/notion-client/getPosts.ts src/apis/notion-client/getRecordMap.ts src/libs/utils/notion/getPageProperties.ts"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/morethan-log-dev.sh\"",
+      "env": {
+        "NOTION_PAGE_ID": "12c38b5f459d4eb9a759f92fba6cea36",
+        "NOTION_API_PORT": "3122",
+        "NOTION_API_BASE_URL": "http://localhost:3122/api/v3"
+      },
       "url": "http://localhost:3022/",
       "readyTimeoutMs": 600000,
       "settleMs": 8000,
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "envFiles": [".env.local"],
         "externalPackageAllowList": [
           "@emotion/*",
           "@tanstack/react-query",
@@ -5441,7 +5447,8 @@
           "react-icons/*",
           "cookies-next"
         ]
-      }
+      },
+      "notes": "Notion's private API (www.notion.so/api/v3) answers 403 to unauthenticated requests from this network, so corpus/scripts/notion-api-server.ts stands in for it with a fixed four-row post database (three Public posts, one Private); the setup points notion-client at it through NOTION_API_BASE_URL. The feed itself is hydrated from the dehydrated react-query state in __NEXT_DATA__."
     },
     {
       "id": "nextly-template",
@@ -5486,7 +5493,16 @@
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "externalPackageAllowList": ["@mui/*", "@emotion/*"]
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*"
+        ]
       }
     },
     {

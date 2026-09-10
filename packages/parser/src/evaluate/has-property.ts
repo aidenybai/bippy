@@ -21,6 +21,7 @@ import { toPropertyKey } from "./primitive-shapes.js";
 import {
   branchValue,
   FALSE_VALUE,
+  getStubOwnName,
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
@@ -79,7 +80,7 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         : FALSE_VALUE;
     case "stub": {
       if (type.stub.properties?.has(name)) return TRUE_VALUE;
-      if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
+      if (name === "displayName") return primitiveValue(getStubOwnName(type.stub, name) !== null);
       const ownKeys = getStubOwnKeys(type.stub.tag);
       if (!ownKeys.has(name)) return FALSE_VALUE;
       return ownKeys === FUNCTION_OWN_KEYS ? null : TRUE_VALUE;

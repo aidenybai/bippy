@@ -334,6 +334,8 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
+  /** The name is the render function's (`forwardRef(function LinkComponent ...)`), not an own `displayName`: reading `displayName` gives undefined and `name` only exists on a plain function. */
+  isNamedByRender?: boolean;
   /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
   properties?: Map<string, StaticValue>;
   /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */

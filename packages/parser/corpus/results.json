@@ -6219,6 +6219,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -6232,7 +6233,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 10,
-        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -6307,6 +6307,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -6320,7 +6321,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 109,
-        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -22089,6 +22089,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 195,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -22102,7 +22103,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 15,
-        "status": "exact",
         "runtimeFibers": 203,
         "staticFibers": 203,
         "coverage": 1,
@@ -23629,6 +23629,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 689,
         "matchedText": 4,
         "opaqueSubtrees": 0,
@@ -23642,7 +23643,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 14,
-        "status": "exact",
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -27977,6 +27977,7 @@
         ]
       },
       "report": {
+        "status": "partial",
         "matchedFibers": 729,
         "matchedText": 9,
         "opaqueSubtrees": 0,
@@ -28071,7 +28072,6 @@
         "branchesResolved": 23,
         "repeatIterations": 25,
         "transparentFibers": 69,
-        "status": "partial",
         "runtimeFibers": 754,
         "staticFibers": 454,
         "coverage": 1,
@@ -29025,6 +29025,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -29038,7 +29039,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -29868,6 +29868,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1093,
         "matchedText": 51,
         "opaqueSubtrees": 0,
@@ -29881,7 +29882,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 126,
-        "status": "exact",
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -30341,6 +30341,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -30354,7 +30355,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -56110,12 +56110,21 @@
       "id": "morethan-log",
       "revision": "272cd3e73d6fbc650c5d95c6da0846776d39e67a",
       "framework": "next-pages",
-      "capturedAt": "2026-09-10T09:52:18.901Z",
-      "durationMs": 600736,
-      "runtime": null,
+      "capturedAt": "2026-09-10T10:23:59.430Z",
+      "durationMs": 680,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 337,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "morethan-log"
+      },
       "static": {
         "stats": {
-          "fiberCount": 225,
+          "fiberCount": 332,
           "textCount": 22,
           "branchCount": 2,
           "repeatCount": 0,
@@ -56123,19 +56132,95 @@
           "unknownCount": 0,
           "modulesLoaded": 91
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
-      "report": null,
-      "stateSpace": null,
-      "stateReplay": null,
+      "report": {
+        "status": "exact",
+        "matchedFibers": 296,
+        "matchedText": 16,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 19,
+        "runtimeFibers": 312,
+        "staticFibers": 312,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 314,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 316,
+          "inputs": 1,
+          "guards": 4,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "and(eq(#1, 2022), eq(#1, 2022))",
+              "reason": "conditional on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "and(eq(#1, 2022), eq(#1, 2022))",
+              "reason": "conditional on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
+              "side": 0,
+              "guard": "and(eq(#1, 2022), eq(#1, 2022))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(#1, 2022), eq(#1, 2022))",
+              "reason": "conditional on branch(<boolean> | false)",
+              "location": "/home/ubuntu/bippy-corpus/morethan-log/src/routes/Feed/Footer.tsx:21:34",
+              "side": 1,
+              "guard": "not(and(eq(#1, 2022), eq(#1, 2022)))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": null,
-      "failure": "http://localhost:3022/ did not answer within 600000ms; see /home/ubuntu/bippy-corpus/.logs/morethan-log.log"
+      "note": "runtime replayed from 2026-09-10T10:07:18.952Z",
+      "failure": null
     },
     {
       "id": "mui-admin-dashboard",
@@ -57596,6 +57681,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 139,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -57609,7 +57695,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 55,
-        "status": "exact",
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -57684,6 +57769,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -57697,7 +57783,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 33,
-        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -58492,8 +58577,8 @@
       "id": "nextsimplestarter",
       "revision": "338a8e4bb85181613fa9f344721307a4b693bb71",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T10:02:19.725Z",
-      "durationMs": 23155,
+      "capturedAt": "2026-09-10T10:26:34.393Z",
+      "durationMs": 2111,
       "runtime": {
         "reactVersion": "19.2.0-canary-0bdb9206-20250818",
         "rendererName": "react-dom",
@@ -58506,13 +58591,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 163,
+          "fiberCount": 166,
           "textCount": 6,
           "branchCount": 1,
           "repeatCount": 0,
-          "opaqueCount": 3,
+          "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 775
+          "modulesLoaded": 854
         },
         "diagnostics": [
           {
@@ -58522,10 +58607,10 @@
         ]
       },
       "report": {
-        "matchedFibers": 137,
+        "matchedFibers": 140,
         "matchedText": 6,
-        "opaqueSubtrees": 3,
-        "opaqueSkippedFibers": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -58534,12 +58619,12 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "transparentFibers": 27,
-        "status": "partial",
-        "runtimeFibers": 149,
+        "transparentFibers": 30,
+        "status": "exact",
+        "runtimeFibers": 146,
         "staticFibers": 146,
         "coverage": 1,
-        "strictCoverage": 0.959731543624161,
+        "strictCoverage": 1,
         "divergence": null,
         "stepsUsed": 147,
         "budgetExhausted": false
@@ -58554,7 +58639,7 @@
           "guards": 6,
           "branches": 2,
           "repeats": 0,
-          "opaque": 3,
+          "opaque": 0,
           "wildcards": 2
         },
         "matchedState": {
@@ -58629,7 +58714,7 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T10:02:39.386Z",
       "failure": null
     },
     {
@@ -59037,6 +59122,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 108,
         "matchedText": 20,
         "opaqueSubtrees": 0,
@@ -59050,7 +59136,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 7,
-        "status": "exact",
         "runtimeFibers": 128,
         "staticFibers": 128,
         "coverage": 1,
@@ -67028,6 +67113,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -67041,7 +67127,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -67176,6 +67261,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -67189,7 +67275,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 61,
-        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -67391,6 +67476,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 5501,
         "matchedText": 66,
         "opaqueSubtrees": 0,
@@ -67404,7 +67490,6 @@
         "branchesResolved": 2,
         "repeatIterations": 0,
         "transparentFibers": 13,
-        "status": "exact",
         "runtimeFibers": 5567,
         "staticFibers": 5577,
         "coverage": 1,
@@ -70485,6 +70570,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -70498,7 +70584,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 14,
-        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -82741,6 +82826,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 6,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -82754,7 +82840,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -103464,6 +103549,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -103477,7 +103563,6 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 9,
-        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -138248,6 +138333,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -138261,7 +138347,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 15,
-        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -139066,6 +139151,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 215,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -139079,7 +139165,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -139159,6 +139244,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -139172,7 +139258,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -139277,6 +139362,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1286,
         "matchedText": 80,
         "opaqueSubtrees": 0,
@@ -139290,7 +139376,6 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 1366,
         "staticFibers": 1366,
         "coverage": 1,
