@@ -69,4 +69,5 @@ export default function HostInstanceChecks() {
   );
 }
 
-export const isExact = true;
+export const isEnumerated = true;
+export const stateCount = 4;
