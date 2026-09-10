@@ -1341,7 +1341,11 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
         areValuesEquivalent(left.props, right.props, depth + 1)
       );
     case "function":
-      return right.kind === "function" && left.node === right.node;
+      return (
+        right.kind === "function" &&
+        left.node === right.node &&
+        areScopesEquivalent(left.scope, right.scope, depth + 1)
+      );
     case "symbol":
       return right.kind === "symbol" && left.key === right.key;
     case "external":
@@ -1354,6 +1358,18 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
     default:
       return false;
   }
+};
+
+/** Closures of one function node are equivalent when every variable they capture is. */
+const areScopesEquivalent = (left: Scope, right: Scope, depth: number): boolean => {
+  if (left === right) return true;
+  if (depth >= MAX_EQUIVALENCE_DEPTH || left.bindings.size !== right.bindings.size) return false;
+  for (const [name, value] of left.bindings) {
+    const other = right.bindings.get(name);
+    if (!other || !areValuesEquivalent(value, other, depth + 1)) return false;
+  }
+  if (left.parent === null || right.parent === null) return left.parent === right.parent;
+  return areScopesEquivalent(left.parent, right.parent, depth);
 };
 
 const areElementTypesEquivalent = (left: StaticElementType, right: StaticElementType): boolean => {

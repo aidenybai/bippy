@@ -121,5 +121,6 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     linguiCatalog: observations.lingui ?? null,
     routerState: observations.router ?? null,
     storeStates: stores ?? null,
+    findAutoImport: viteConfig.findAutoImport,
   };
 };

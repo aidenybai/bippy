@@ -456,6 +456,7 @@ export const UNKNOWN_PROJECT: ProjectContext = {
   linguiCatalog: null,
   routerState: null,
   storeStates: null,
+  findAutoImport: () => null,
 };
 
 /** The per-file names Node gives a module (CommonJS wrapper and `import.meta`); Vite's config loader injects the same. */
@@ -1129,11 +1130,13 @@ export class Interpreter {
   }
 
   /**
-   * The exports of a module as an object, for `{ ...m }` / `Object.keys(m)`
-   * over a namespace. An ESM namespace lists its exports in code-unit order;
+   * A module namespace as the object of its exports (`{ ...m }`, `Object.keys(m)`);
+   * other values unchanged. An ESM namespace lists its exports in code-unit order;
    * a CommonJS `exports` object keeps assignment order.
    */
-  materializeNamespace(module: ModuleRecord, environment: RenderEnvironment | null): StaticValue {
+  materializeNamespace(value: StaticValue, environment: RenderEnvironment | null): StaticValue {
+    if (value.kind !== "namespace") return value;
+    const { module } = value;
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
@@ -1595,13 +1598,13 @@ export class Interpreter {
         return target;
       }
       case "context":
-        if (
-          propertyName === "displayName" &&
-          value.kind === "primitive" &&
-          typeof value.value === "string"
-        ) {
-          target.context.displayName = value.value;
+        if (propertyName === "displayName") {
+          if (value.kind === "primitive" && typeof value.value === "string")
+            target.context.displayName = value.value;
+          return target;
         }
+        this.mutations.record(0);
+        (target.context.properties ??= new Map()).set(propertyName, value);
         return target;
       case "component-reference": {
         const type = target.type;
@@ -1859,6 +1862,14 @@ export class Interpreter {
       name,
     );
     if (runtimeSpecifier !== null) return this.importModule(runtimeSpecifier, context, null, true);
+    const autoImport = this.project.findAutoImport(context.module.filePath, name);
+    if (autoImport) {
+      return this.resolvedSymbolToValue(
+        this.graph.resolveImportedSymbol(autoImport.specifier, autoImport.imported, context.module),
+        name,
+        context.environment,
+      );
+    }
     return this.isAbsentGlobal(name, context.environment)
       ? thrownValue(
           `\`${name}\` is not defined`,
@@ -2317,10 +2328,7 @@ export class Interpreter {
         }
         entries.push({
           kind: "spread",
-          value:
-            spread.kind === "namespace"
-              ? this.materializeNamespace(spread.module, context.environment)
-              : spread,
+          value: this.materializeNamespace(spread, context.environment),
         });
         continue;
       }
@@ -3279,7 +3287,9 @@ export class Interpreter {
           key,
         );
       }
-      case "context":
+      case "context": {
+        const assigned = object.context.properties?.get(key);
+        if (assigned) return assigned;
         if (key === "Provider") {
           return componentReference({
             kind: "context-provider",
@@ -3301,6 +3311,7 @@ export class Interpreter {
         }
         if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
         return prototypeMember(object, Object.prototype, key);
+      }
       case "react-api": {
         const defined = this.reactApiProperties.get(object.api)?.get(key);
         if (defined) return defined;
@@ -3701,6 +3712,7 @@ export class Interpreter {
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+          materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
           project: this.project,
           recordStateMutation: (state) => this.recordStateMutation(state),
           realm: this.getRealm(context.environment),
@@ -4467,11 +4479,10 @@ export class Interpreter {
         const usedKeys = new Set<string>();
         for (const property of pattern.properties) {
           if (property.type === "RestElement") {
-            const source =
-              value.kind === "namespace"
-                ? this.materializeNamespace(value.module, context.environment)
-                : value;
-            destructure(property.argument, omitRestKeys(source, usedKeys));
+            destructure(
+              property.argument,
+              omitRestKeys(this.materializeNamespace(value, context.environment), usedKeys),
+            );
             continue;
           }
           const key = this.evaluatePropertyKey(
