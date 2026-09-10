@@ -9865,8 +9865,8 @@
       "id": "mantine-admin",
       "revision": "8b6f5dcdda08d355b9bb91a0355303ff18593995",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T17:17:37.476Z",
-      "durationMs": 7275,
+      "capturedAt": "2026-09-10T04:38:08.583Z",
+      "durationMs": 6658,
       "runtime": {
         "reactVersion": "18.3.0-canary-60a927d04-20240113",
         "rendererName": "react-dom",
@@ -9925,6 +9925,17 @@
       },
       "stateSpace": {
         "states": 186,
+        "stateCount": 186,
+        "clusters": 16,
+        "tree": {
+          "nodes": 8317,
+          "inputs": 9,
+          "guards": 50,
+          "branches": 22,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
         "matchedState": {
           "index": 5,
           "conditions": [
@@ -9935,7 +9946,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#2",
+              "variable": "choice(branch#2)",
               "reason": "if (branch(false | unknown))",
               "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
@@ -9943,7 +9954,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#1",
+              "variable": "choice(branch#1)",
               "reason": "if (branch(false | unknown))",
               "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
@@ -9952,7 +9963,194 @@
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:66:5",
+              "side": 0,
+              "guard": "eq(choice(branch#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:66:5",
+              "side": 1,
+              "guard": "eq(choice(branch#4), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#3), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:66:5",
+              "side": 0,
+              "guard": "eq(choice(branch#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:66:5",
+              "side": 1,
+              "guard": "eq(choice(branch#5), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:66:5",
+              "side": 0,
+              "guard": "eq(choice(branch#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:66:5",
+              "side": 1,
+              "guard": "eq(choice(branch#6), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 1), truthy(#2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-admin/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 1), truthy(#2)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 5,
+              "guard": "eq(choice(commit), 5)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 3,
+          "possible": 17,
+          "unreachable": 0
+        }
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-09T13:04:00.963Z",
@@ -9962,8 +10160,8 @@
       "id": "mantine-react-table",
       "revision": "d338579598b52a93045a96c55eacadfc8db331bb",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T17:24:16.694Z",
-      "durationMs": 28050,
+      "capturedAt": "2026-09-10T04:38:40.319Z",
+      "durationMs": 26097,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -9985,9 +10183,9 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 5982,
+          "fiberCount": 5985,
           "textCount": 303,
-          "branchCount": 30,
+          "branchCount": 31,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
@@ -10001,7 +10199,7 @@
         ]
       },
       "report": {
-        "status": "truncated",
+        "status": "exact",
         "matchedFibers": 5120,
         "matchedText": 302,
         "opaqueSubtrees": 0,
@@ -10012,7 +10210,7 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 14,
+        "branchesResolved": 15,
         "repeatIterations": 0,
         "transparentFibers": 383,
         "runtimeFibers": 5422,
@@ -10020,128 +10218,147 @@
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 5436,
+        "stepsUsed": 5437,
         "budgetExhausted": false
       },
       "stateSpace": {
         "states": 256,
+        "stateCount": 443451396,
+        "clusters": 82,
+        "tree": {
+          "nodes": 32768,
+          "inputs": 38,
+          "guards": 218,
+          "branches": 106,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
         "matchedState": {
           "index": null,
           "conditions": [
             {
               "kind": "transition",
               "commit": 2,
-              "commitCount": 7
+              "commitCount": 6
             },
             {
               "kind": "branch",
-              "variable": "truthy(8355)",
+              "variable": "and(eq(choice(#3), 1), truthy(#4))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#12",
+              "variable": "choice(branch#13)",
               "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#11",
+              "variable": "choice(branch#12)",
               "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "truthy(8338)",
+              "variable": "and(eq(choice(#1), 1), truthy(#2))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#10",
+              "variable": "choice(branch#11)",
               "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#9",
+              "variable": "choice(branch#10)",
               "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#8",
+              "variable": "choice(branch#9)",
+              "reason": "uncertain filter",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#7",
+              "variable": "choice(branch#7)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#6",
+              "variable": "choice(branch#6)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#5",
+              "variable": "choice(branch#5)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#4",
+              "variable": "choice(branch#4)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#3",
+              "variable": "choice(branch#3)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#2",
+              "variable": "choice(branch#2)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
             {
               "kind": "branch",
-              "variable": "branch#1",
+              "variable": "choice(branch#1)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -10149,417 +10366,627 @@
         },
         "closestState": null,
         "omitted": {
-          "total": 8,
-          "omissions": [
+          "total": 443451140,
+          "omissions": []
+        },
+        "coverage": {
+          "sides": [
             {
-              "kind": "state",
-              "conditions": [
-                {
-                  "kind": "transition",
-                  "commit": 2,
-                  "commitCount": 7
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#3",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#4",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#5",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#6",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#7",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#8",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#9",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#10",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(8338)",
-                  "reason": "conditional on branch(false | <boolean>)",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#11",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#12",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(8355)",
-                  "reason": "conditional on branch(false | <boolean>)",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "truthy(8355)",
+              "variable": "choice(branch#1)",
+              "reason": "uncertain filter",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "uncertain filter",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#3), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#4), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#5), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#6), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#7), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#7), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#8), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#8), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "uncertain filter",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#9), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "uncertain filter",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#9), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#10), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#10), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#11)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#11), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#11)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#11), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 1), truthy(#2))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#3",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#4",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#5",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#6",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#7",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#8",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#9",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#10",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "truthy(8338)",
-                  "reason": "conditional on branch(false | <boolean>)",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#11",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#12",
-                  "reason": "if (branch(<boolean> | false))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 1,
-                  "alternativeCount": 2
-                }
-              ]
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 1), truthy(#2))",
+              "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "branch#6",
-              "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#3",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#4",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#5",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
+              "variable": "and(eq(choice(#1), 1), truthy(#2))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 1), truthy(#2)))",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "branch#5",
-              "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#3",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#4",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
+              "variable": "choice(branch#12)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#12), 0)",
+              "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "branch#4",
-              "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#3",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
+              "variable": "choice(branch#12)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#12), 1)",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "branch#3",
-              "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                },
-                {
-                  "kind": "branch",
-                  "variable": "branch#2",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
+              "variable": "choice(branch#13)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#13), 0)",
+              "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "branch#2",
-              "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": [
-                {
-                  "kind": "branch",
-                  "variable": "branch#1",
-                  "reason": "if (branch(false | unknown))",
-                  "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-                  "alternativeIndex": 0,
-                  "alternativeCount": 2
-                }
-              ]
+              "variable": "choice(branch#13)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#13), 1)",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "branch#1",
+              "variable": "and(eq(choice(#3), 1), truthy(#4))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#3), 1), truthy(#4))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#3), 1), truthy(#4))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#3), 1), truthy(#4)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#14)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#14), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#14)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#14), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#15)",
               "reason": "if (branch(false | unknown))",
-              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components…",
-              "alternativeIndex": 1,
-              "conditions": []
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#15), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#16)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#16), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#16)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#16), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#15)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#15), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#17)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 0,
+              "guard": "eq(choice(branch#17), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#18)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#18), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#18)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#18), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#17)",
+              "reason": "if (branch(false | unknown))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaScrollbar/ScrollAreaScrollbarAuto.mjs:24:5",
+              "side": 1,
+              "guard": "eq(choice(branch#17), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#19)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#19), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#19)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#19), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#20)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#20), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#20)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#20), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#21)",
+              "reason": "uncertain filter",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(branch#21), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#21)",
+              "reason": "uncertain filter",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(branch#21), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#22)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#22), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#22)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#22), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#23)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#23), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#23)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#23), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#24)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#24), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#24)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#24), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#25)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 0,
+              "guard": "eq(choice(branch#25), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#25)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaThumb/ScrollAreaThumb.mjs:67:5",
+              "side": 1,
+              "guard": "eq(choice(branch#25), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#5), 1), truthy(#6))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#5), 1), truthy(#6))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#5), 1), truthy(#6))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#5), 1), truthy(#6)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#7), 1), truthy(#8))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#7), 1), truthy(#8))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#7), 1), truthy(#8))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#7), 1), truthy(#8)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#9), 1), truthy(#10))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#9), 1), truthy(#10))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#9), 1), truthy(#10))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#9), 1), truthy(#10)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#11), 1), truthy(#12))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 0,
+              "guard": "and(eq(choice(#11), 1), truthy(#12))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#11), 1), truthy(#12))",
+              "reason": "conditional on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/mantine-react-table/node_modules/.pnpm/@mantine+core@7.13.2_@mantine+hooks@7.13.2_@types+react@18.3.11_react-dom@18.3.1_react@18.3.1/node_modules/@mantine/core/esm/components/ScrollArea/ScrollAreaCorner/ScrollAreaCorner.mjs:23:10",
+              "side": 1,
+              "guard": "not(and(eq(choice(#11), 1), truthy(#12)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 5,
+              "guard": "eq(choice(commit), 5)",
+              "status": "possible"
             }
-          ]
+          ],
+          "witnessed": 16,
+          "possible": 52,
+          "unreachable": 0
         }
       },
       "anchor": null,
@@ -10657,8 +11084,8 @@
       "id": "material-kit-react",
       "revision": "69e780a40c455d664b2e13c525faf1d492a072a7",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T17:17:46.423Z",
-      "durationMs": 3737,
+      "capturedAt": "2026-09-10T04:38:16.735Z",
+      "durationMs": 3460,
       "runtime": {
         "reactVersion": "19.1.0",
         "rendererName": "react-dom",
@@ -10671,13 +11098,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 1866,
+          "fiberCount": 1881,
           "textCount": 20,
-          "branchCount": 0,
+          "branchCount": 5,
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 5,
-          "modulesLoaded": 987
+          "modulesLoaded": 984
         },
         "diagnostics": [
           {
@@ -10698,7 +11125,7 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 0,
+        "branchesResolved": 5,
         "repeatIterations": 0,
         "transparentFibers": 9,
         "runtimeFibers": 1850,
@@ -10710,19 +11137,203 @@
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 4,
+        "states": 97,
+        "stateCount": 97,
+        "clusters": 15,
+        "tree": {
+          "nodes": 6199,
+          "inputs": 6,
+          "guards": 34,
+          "branches": 15,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 15
+        },
         "matchedState": {
-          "index": 3,
+          "index": 65,
           "conditions": [
             {
               "kind": "transition",
               "commit": 3,
               "commitCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
             }
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 0,
+              "guard": "eq(choice(branch#3), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 1,
+              "guard": "eq(choice(branch#3), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 0,
+              "guard": "eq(choice(branch#4), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 1,
+              "guard": "eq(choice(branch#4), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 0,
+              "guard": "eq(choice(branch#5), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "loop iterations are uncertain",
+              "location": "/home/ubuntu/bippy-corpus/material-kit-react/node_modules/dayjs/plugin/relativeTime.js:1:583",
+              "side": 1,
+              "guard": "eq(choice(branch#5), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 6,
+          "possible": 8,
+          "unreachable": 0
+        }
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:03:38.246Z",
@@ -10732,8 +11343,8 @@
       "id": "material-react-table",
       "revision": "a16bafe78a547c423a72eff1dd000f3875885f86",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T17:24:03.734Z",
-      "durationMs": 11054,
+      "capturedAt": "2026-09-10T04:38:29.962Z",
+      "durationMs": 8796,
       "runtime": {
         "reactVersion": "19.0.0",
         "rendererName": "react-dom",
@@ -10779,7 +11390,7 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 3,
+        "branchesResolved": 2,
         "repeatIterations": 0,
         "transparentFibers": 274,
         "runtimeFibers": 8371,
@@ -10791,18 +11402,29 @@
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 41,
+        "states": 7,
+        "stateCount": 7,
+        "clusters": 3,
+        "tree": {
+          "nodes": 22150,
+          "inputs": 4,
+          "guards": 13,
+          "branches": 5,
+          "repeats": 0,
+          "opaque": 6,
+          "wildcards": 0
+        },
         "matchedState": {
-          "index": 34,
+          "index": 4,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 9,
-              "commitCount": 10
+              "commit": 2,
+              "commitCount": 3
             },
             {
               "kind": "branch",
-              "variable": "branch#1",
+              "variable": "choice(branch#1)",
               "reason": "if (branch(false | <boolean>))",
               "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/react-transition-group@4.4.5_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/react-transition-group/esm/Transition.js:380:5",
               "alternativeIndex": 1,
@@ -10810,24 +11432,86 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(743)",
+              "variable": "and(eq(choice(#1), 0), truthy(#2), truthy(#2))",
               "reason": "conditional on branch(unknown | false)",
-              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/…",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(744)",
-              "reason": "conditional on branch(unknown | false)",
-              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/…",
+              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/@mui/material/Tabs/Tabs.js:478:45",
               "alternativeIndex": 0,
               "alternativeCount": 2
             }
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 0), truthy(#2), truthy(#2))",
+              "reason": "conditional on branch(unknown | false)",
+              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/@mui/material/Tabs/Tabs.js:478:45",
+              "side": 0,
+              "guard": "and(eq(choice(#1), 0), truthy(#2), truthy(#2))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#1), 0), truthy(#2), truthy(#2))",
+              "reason": "conditional on branch(unknown | false)",
+              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/@mui+material@6.2.1_@emotion+react@11.14.0_@types+react@19.0.2_react@19.0.0__@emotion+styled@_ncstscufd3oawkjl5mfsxqev54/node_modules/@mui/material/Tabs/Tabs.js:478:45",
+              "side": 1,
+              "guard": "not(and(eq(choice(#1), 0), truthy(#2), truthy(#2)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/react-transition-group@4.4.5_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/react-transition-group/esm/Transition.js:380:5",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(false | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/material-react-table/node_modules/.pnpm/react-transition-group@4.4.5_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/react-transition-group/esm/Transition.js:380:5",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 3,
+          "possible": 4,
+          "unreachable": 0
+        }
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:05:21.864Z",
@@ -11595,8 +12279,8 @@
       "id": "mui-admin-dashboard",
       "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T17:18:00.427Z",
-      "durationMs": 2749,
+      "capturedAt": "2026-09-10T04:39:07.947Z",
+      "durationMs": 2655,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -11615,7 +12299,7 @@
           "repeatCount": 0,
           "opaqueCount": 3,
           "unknownCount": 0,
-          "modulesLoaded": 1248
+          "modulesLoaded": 1244
         },
         "diagnostics": []
       },
@@ -11644,6 +12328,17 @@
       },
       "stateSpace": {
         "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 1986,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 6,
+          "wildcards": 0
+        },
         "matchedState": {
           "index": 1,
           "conditions": [
@@ -11655,7 +12350,32 @@
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:10:38.966Z",
@@ -15649,8 +16369,8 @@
       "id": "react-admin-dashboard",
       "revision": "c7bf047a09745c744d020bb4e6e0da54b21378cd",
       "framework": "spa",
-      "capturedAt": "2026-09-09T17:18:08.570Z",
-      "durationMs": 353461,
+      "capturedAt": "2026-09-10T04:39:14.973Z",
+      "durationMs": 142986,
       "runtime": {
         "reactVersion": "16.13.1",
         "rendererName": "react-dom",
@@ -15663,32 +16383,28 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 305,
+          "fiberCount": 34,
           "textCount": 0,
-          "branchCount": 2,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 9,
-          "modulesLoaded": 101
+          "unknownCount": 3,
+          "modulesLoaded": 85
         },
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 129
+            "count": 49
           },
           {
             "code": "max-call-depth",
-            "count": 90
-          },
-          {
-            "code": "timers-unsettled",
-            "count": 1
+            "count": 17
           }
         ]
       },
       "report": {
         "status": "partial",
-        "matchedFibers": 9,
+        "matchedFibers": 29,
         "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
@@ -15696,14 +16412,30 @@
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 685,
+        "wildcardAbsorbedFibers": 665,
         "wildcards": [
           {
-            "path": "root > <ThemeProvider> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <BrowserRouter> [ClassComponent] > <Router> [ClassComponent] > <Router> [ContextProvider] > <Router-History> [ContextProvider] > <Routes> [FunctionComponent] > <PrivateSection> [FunctionComponent]",
+            "path": "root > <ThemeProvider> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <BrowserRouter> [ClassComponent] > <Router> [ClassComponent] > <Router> [ContextProvider] > <Router-History> [ContextProvider] > <Routes> [FunctionComponent] > <PrivateSection> [FunctionComponent] > <SidebarContext> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Row> [ClassComponent] > <Layout> [ClassComponent] > <div> [HostComponent] > <Column> [ClassComponent] > <Layout> [ClassComponent] > <div> [HostComponent] > <div> [HostComponent] > <PrivateRoutes> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Switch> [ClassComponent] > <Router> [ContextConsumer] > <Route> [ClassComponent] > <Router> [ContextConsumer] > <Router> [ContextProvider] > <DashboardComponent> [FunctionComponent]",
             "reason": "step budget exhausted",
-            "absorbedFibers": 685,
+            "absorbedFibers": 407,
             "heads": [
-              "<SidebarContext> [FunctionComponent]"
+              "<Column> [ClassComponent]"
+            ]
+          },
+          {
+            "path": "root > <ThemeProvider> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <BrowserRouter> [ClassComponent] > <Router> [ClassComponent] > <Router> [ContextProvider] > <Router-History> [ContextProvider] > <Routes> [FunctionComponent] > <PrivateSection> [FunctionComponent] > <SidebarContext> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Row> [ClassComponent] > <Layout> [ClassComponent] > <div> [HostComponent] > <SidebarComponent> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 228,
+            "heads": [
+              "<MenuComponent> [FunctionComponent]"
+            ]
+          },
+          {
+            "path": "root > <ThemeProvider> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <BrowserRouter> [ClassComponent] > <Router> [ClassComponent] > <Router> [ContextProvider] > <Router-History> [ContextProvider] > <Routes> [FunctionComponent] > <PrivateSection> [FunctionComponent] > <SidebarContext> [FunctionComponent] > <SidebarProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Row> [ClassComponent] > <Layout> [ClassComponent] > <div> [HostComponent] > <Column> [ClassComponent] > <Layout> [ClassComponent] > <div> [HostComponent] > <HeaderComponent> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 30,
+            "heads": [
+              "<Row> [ClassComponent]"
             ]
           }
         ],
@@ -15711,27 +16443,72 @@
         "repeatIterations": 0,
         "transparentFibers": 0,
         "runtimeFibers": 694,
-        "staticFibers": 9,
+        "staticFibers": 29,
         "coverage": 1,
-        "strictCoverage": 0.012968299711815562,
+        "strictCoverage": 0.04178674351585014,
         "divergence": null,
-        "stepsUsed": 10,
+        "stepsUsed": 32,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 63,
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 0,
+        "tree": {
+          "nodes": 77,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 7
+        },
         "matchedState": {
-          "index": 0,
+          "index": 2,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 0,
-              "commitCount": 6
+              "commit": 2,
+              "commitCount": 3
             }
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:04:35.975Z",
@@ -17674,8 +18451,8 @@
       "id": "react-material-admin",
       "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T17:17:52.039Z",
-      "durationMs": 6683,
+      "capturedAt": "2026-09-10T04:38:21.685Z",
+      "durationMs": 6797,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -17696,7 +18473,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 12289
+          "modulesLoaded": 12287
         },
         "diagnostics": [
           {
@@ -17730,6 +18507,17 @@
       },
       "stateSpace": {
         "states": 8,
+        "stateCount": 8,
+        "clusters": 2,
+        "tree": {
+          "nodes": 436,
+          "inputs": 2,
+          "guards": 10,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
         "matchedState": {
           "index": 5,
           "conditions": [
@@ -17740,7 +18528,7 @@
             },
             {
               "kind": "branch",
-              "variable": "branch#1",
+              "variable": "choice(branch#1)",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
               "alternativeIndex": 1,
@@ -17749,7 +18537,68 @@
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/react-material-admin/src/pages/login/Login.js:37:3",
+              "side": 3,
+              "guard": "eq(choice(branch#1), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 4,
+          "unreachable": 0
+        }
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:04:16.995Z",
@@ -44908,8 +45757,8 @@
       "id": "tremor-dashboard",
       "revision": "a20f619680e4582122c331bacf2efdef6daf460f",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T17:18:04.904Z",
-      "durationMs": 2068,
+      "capturedAt": "2026-09-10T04:39:12.084Z",
+      "durationMs": 1397,
       "runtime": {
         "reactVersion": "18.3.0-canary-178c267a4e-20241218",
         "rendererName": "react-dom",
@@ -44970,6 +45819,17 @@
       },
       "stateSpace": {
         "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 1007,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 96,
+          "wildcards": 0
+        },
         "matchedState": {
           "index": 1,
           "conditions": [
@@ -44981,7 +45841,32 @@
           ]
         },
         "closestState": null,
-        "omitted": null
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-09T13:04:59.834Z",
