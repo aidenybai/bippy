@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/about",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Declarative <BrowserRouter><Routes><Route> tree with a pathless layout route and NavLink; the matched branch is resolved statically from the fixture route."
+}

@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Web Crypto randomness: `crypto.getRandomValues` fills a typed array with unknown numbers and `crypto.randomUUID()` yields an unknown 36-character string, so `typeof`, length and identity comparisons against other scalar kinds resolve while the random contents stay unknown."
+}

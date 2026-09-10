@@ -1,0 +1,676 @@
+import { nativeFunction } from "./stubs.js";
+import {
+  createFunctionComponentDefinition,
+  type SplitElementProps,
+  splitElementKey,
+  toElementKey,
+  toElementType,
+} from "../react/element-type.js";
+import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
+import type {
+  ContextDefinition,
+  ReactApi,
+  SourceLocation,
+  StaticElementType,
+  StaticElementValue,
+  StaticNativeFunctionValue,
+  StaticObjectEntry,
+  StaticValue,
+  StubRenderTools,
+} from "../types.js";
+import { callUncertainCallback } from "./builtin-calls.js";
+import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
+import type { EvaluationContext } from "./context.js";
+import {
+  escapeReducerDispatch,
+  escapeStateCell,
+  escapedStateValue,
+  invokeHookFactory,
+  nextMemoCell,
+  nextStateCell,
+  queueStateUpdate,
+  type HookFrame,
+  type StateCell,
+} from "./hooks.js";
+import { awaitedValue } from "./promises.js";
+import { isElementValue } from "./type-predicates.js";
+import type { Interpreter } from "./interpreter.js";
+import {
+  branchValue,
+  componentReference,
+  describeValue,
+  FALSE_VALUE,
+  getObjectProperty,
+  isCallable,
+  isNullish,
+  listValue,
+  mapValue,
+  NULL_VALUE,
+  objectFromRecord,
+  objectValue,
+  optionalValue,
+  primitiveValue,
+  UNDEFINED_VALUE,
+  unknownPrimitiveValue,
+  unknownValue,
+  type CallableValue,
+} from "./values.js";
+
+const IDENTITY_MAPPER: StaticNativeFunctionValue = {
+  kind: "native-function",
+  name: "toArray",
+  call: ([child = NULL_VALUE]) => child,
+};
+
+const isValidElementValue = (value: StaticValue): StaticValue => {
+  const verdict = isElementValue(value);
+  return verdict === null
+    ? unknownPrimitiveValue("boolean", "isValidElement on dynamic value")
+    : primitiveValue(verdict);
+};
+
+/** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
+const stateHook = (
+  context: EvaluationContext,
+  name: string,
+  computeInitial: () => StaticValue,
+  reduce: (
+    action: StaticValue | undefined,
+    current: StaticValue,
+    tools: StubRenderTools,
+  ) => StaticValue,
+  escapeDispatch: (frame: HookFrame, cell: StateCell, action: StaticValue) => void,
+): StaticValue => {
+  const frame = context.hooks;
+  if (!frame) {
+    return listValue([
+      branchValue(
+        [computeInitial(), unknownValue(`updated state of ${name}`)],
+        "state may change",
+        null,
+      ),
+      unknownValue("state setter"),
+    ]);
+  }
+  const cell = nextStateCell(frame, name, () => invokeHookFactory(frame, computeInitial));
+  cell.setter ??= {
+    kind: "native-function",
+    name: `set ${name}`,
+    call: ([action], tools) => {
+      queueStateUpdate(
+        frame,
+        cell,
+        reduce(action, cell.next ?? cell.current, tools),
+        tools.isDeferred(),
+      );
+      return UNDEFINED_VALUE;
+    },
+    onEscape: (argumentValues) => {
+      if (argumentValues === null || argumentValues[0] === null) {
+        escapeStateCell(frame, cell, null);
+        return;
+      }
+      escapeDispatch(frame, cell, argumentValues[0] ?? UNDEFINED_VALUE);
+    },
+  };
+  return listValue([cell.current, cell.setter]);
+};
+
+/**
+ * Mirrors `mountSyncExternalStore`: the snapshot is read on every render, and a
+ * passive effect subscribes and re-checks it (`updateStoreInstance`), so a store
+ * mutated between render and commit re-renders with the latest value. The
+ * listener does the same for store changes triggered during evaluation; once
+ * it is held by code the analysis does not follow, the store may change at any
+ * time and the snapshot is one value among those the store may hold.
+ */
+const externalStoreHook = (
+  interpreter: Interpreter,
+  context: EvaluationContext,
+  subscribe: StaticValue | undefined,
+  getSnapshot: StaticValue | undefined,
+  location: SourceLocation | null,
+): StaticValue => {
+  const readSnapshot = (): StaticValue =>
+    getSnapshot
+      ? interpreter.callValue(getSnapshot, [], context, location)
+      : unknownValue("external store snapshot", location);
+  const snapshot = readSnapshot();
+  const frame = context.hooks;
+  if (!frame) return snapshot;
+  const cell = nextStateCell(frame, "useSyncExternalStore", () => snapshot);
+  cell.initial = snapshot;
+  cell.current = cell.isEscaped ? escapedStateValue(cell) : snapshot;
+  if (!frame.isRendering || !subscribe) return cell.current;
+  const handleStoreChange: StaticNativeFunctionValue = {
+    kind: "native-function",
+    name: "handleStoreChange",
+    call: (_args, tools) => {
+      queueStateUpdate(frame, cell, readSnapshot(), tools.isDeferred());
+      return UNDEFINED_VALUE;
+    },
+    onEscape: () => escapeStateCell(frame, cell, null),
+  };
+  frame.effects.push({
+    isLayout: false,
+    callback: {
+      kind: "native-function",
+      name: "subscribeToStore",
+      call: (_args, tools) => {
+        const unsubscribe = tools.call(subscribe, [handleStoreChange]);
+        handleStoreChange.call([], tools);
+        return unsubscribe;
+      },
+    },
+    deps: listValue([subscribe]),
+    cleanup: null,
+  });
+  return cell.current;
+};
+
+const configEntries = (value: StaticValue | undefined): StaticObjectEntry[] => {
+  if (!value || isNullish(value) === true) return [];
+  return value.kind === "object" ? value.entries : [{ kind: "spread", value }];
+};
+
+/** `jsx(type, config, maybeKey)`: `maybeKey` is read first, so a `key` in `config` wins over it. */
+const propsFromValue = (
+  config: StaticValue | undefined,
+  maybeKey: StaticValue | undefined = UNDEFINED_VALUE,
+): SplitElementProps =>
+  splitElementKey([{ kind: "property", key: "key", value: maybeKey }, ...configEntries(config)]);
+
+const resolveLazyTarget = (
+  interpreter: Interpreter,
+  resolved: StaticValue,
+): StaticElementType | null => {
+  switch (resolved.kind) {
+    case "namespace":
+      return toElementType(interpreter.evaluateModuleExport(resolved.module, "default"), null);
+    case "object": {
+      const defaultExport = getObjectProperty(resolved, "default");
+      if (defaultExport.kind === "primitive" && defaultExport.value === undefined) return null;
+      return toElementType(defaultExport, null);
+    }
+    case "external":
+      return toElementType({ ...resolved, importedName: `${resolved.importedName}.default` }, null);
+    case "function":
+    case "class":
+    case "component-reference":
+      return toElementType(resolved, null);
+    case "branch":
+      return resolveLazyTarget(interpreter, resolved.alternatives[resolved.preferredIndex]);
+    default:
+      return null;
+  }
+};
+
+/** What a consumer of `definition` sees when `provided` is what the nearest provider supplies (null without one). */
+export const providedContextValue = (
+  interpreter: Interpreter,
+  definition: ContextDefinition,
+  provided: StaticValue | null,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (provided) return provided;
+  if (!interpreter.assumeOuterProviders) return definition.defaultValue;
+  return branchValue(
+    [
+      definition.defaultValue,
+      unknownValue(`${definition.name} provided outside the analyzed tree`),
+    ],
+    `no provider for ${definition.name}`,
+    location,
+  );
+};
+
+const readContextValue = (
+  interpreter: Interpreter,
+  contextValue: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (contextValue.kind === "context") {
+    return providedContextValue(
+      interpreter,
+      contextValue.context,
+      context.readContext(contextValue.context),
+      location,
+    );
+  }
+  if (contextValue.kind === "external") {
+    return unknownValue(`context from ${contextValue.packageName}`, location);
+  }
+  interpreter.report("unknown-context", `useContext on ${describeValue(contextValue)}`, location);
+  return unknownValue(`useContext on ${describeValue(contextValue)}`, location);
+};
+
+/** Children whose shape is uncertain (repeats, branches, unknowns) are mapped item-wise without React's flattening or keys. */
+const mapUncertainChildren = (
+  interpreter: Interpreter,
+  children: StaticValue,
+  callback: CallableValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (children.kind === "list") {
+    return listValue(
+      children.items.map((item, index) =>
+        item.kind === "repeat"
+          ? {
+              kind: "repeat",
+              item: callUncertainCallback(
+                interpreter,
+                callback,
+                [item.item, unknownPrimitiveValue("number", "index")],
+                context,
+                true,
+              ),
+              location: item.location,
+            }
+          : interpreter.callValue(callback, [item, primitiveValue(index)], context, null),
+      ),
+    );
+  }
+  if (children.kind === "repeat") {
+    return {
+      kind: "repeat",
+      item: callUncertainCallback(
+        interpreter,
+        callback,
+        [children.item, unknownPrimitiveValue("number", "index")],
+        context,
+        true,
+      ),
+      location: children.location,
+    };
+  }
+  const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
+  if (children.kind === "branch") {
+    return mapValue(children, (alternative) =>
+      mapChildren(interpreter, alternative, callback, undefined, uncertainContext, location),
+    );
+  }
+  if (children.kind === "optional") {
+    return optionalValue(
+      mapChildren(interpreter, children.value, callback, undefined, uncertainContext, location),
+      children.reason,
+      children.location,
+    );
+  }
+  return {
+    kind: "repeat",
+    item: interpreter.callValue(
+      callback,
+      [unknownValue("child"), unknownPrimitiveValue("number", "index")],
+      context,
+      null,
+    ),
+    location: null,
+  };
+};
+
+/** `cloneElement(object)` reads `type`, `key` and `props` off any non-nullish object, element or not (react/src/jsx/ReactJSXElement.js). */
+const toCloneSource = (
+  element: StaticValue,
+  location: SourceLocation | null,
+): StaticElementValue | null => {
+  if (element.kind === "element") return element;
+  if (element.kind !== "object") return null;
+  const type = getObjectProperty(element, "type");
+  const key = getObjectProperty(element, "key");
+  return {
+    kind: "element",
+    type: toElementType(type, null),
+    key: isNullish(key) === true ? null : key,
+    props: objectValue([{ kind: "spread", value: getObjectProperty(element, "props") }]),
+    location,
+    environment: null,
+    owner: null,
+  };
+};
+
+const cloneElement = (
+  element: StaticValue,
+  props: StaticValue | undefined,
+  children: StaticValue[],
+  location: SourceLocation | null,
+): StaticValue => {
+  const source = toCloneSource(element, location);
+  if (source === null) return unknownValue(`cloneElement of ${describeValue(element)}`, location);
+  const { entries, key } = propsFromValue(props);
+  const merged = objectValue([{ kind: "spread", value: source.props }, ...entries]);
+  if (children.length === 1)
+    merged.entries.push({ kind: "property", key: "children", value: children[0] });
+  if (children.length > 1)
+    merged.entries.push({ kind: "property", key: "children", value: listValue(children) });
+  return {
+    kind: "element",
+    type: source.type,
+    key: toElementKey(key) ?? source.key,
+    props: merged,
+    location: source.location,
+    environment: source.environment,
+    owner: source.owner,
+  };
+};
+
+const childrenToArray = (
+  interpreter: Interpreter,
+  children: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (isNullish(children) === true) return listValue([]);
+  const mapped = mapChildrenExactly(
+    interpreter,
+    children,
+    IDENTITY_MAPPER,
+    undefined,
+    context,
+    location,
+  );
+  if (mapped) return mapped;
+  if (children.kind === "list" || children.kind === "repeat") return children;
+  if (children.kind === "element" || children.kind === "primitive") return listValue([children]);
+  return children;
+};
+
+const countChildren = (children: StaticValue): StaticValue => {
+  const count = countChildrenExactly(children);
+  return count === null ? unknownPrimitiveValue("number", "Children.count") : primitiveValue(count);
+};
+
+const createReactRoot = (interpreter: Interpreter): StaticValue =>
+  objectFromRecord({
+    render: nativeFunction("render", ([element]) => {
+      interpreter.recordRootRender(element ?? UNDEFINED_VALUE);
+      return UNDEFINED_VALUE;
+    }),
+    unmount: nativeFunction("unmount", () => UNDEFINED_VALUE),
+  });
+
+const mapChildren = (
+  interpreter: Interpreter,
+  children: StaticValue | undefined,
+  callback: StaticValue | undefined,
+  thisArg: StaticValue | undefined,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (!children || !isCallable(callback)) return unknownValue("Children.map with dynamic callback");
+  return (
+    mapChildrenExactly(interpreter, children, callback, thisArg, context, location) ??
+    mapUncertainChildren(interpreter, children, callback, context, location)
+  );
+};
+
+export const evaluateReactApiCall = (
+  interpreter: Interpreter,
+  api: ReactApi,
+  args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
+  nameHint: string | null,
+): StaticValue => {
+  const [first, second, third] = args;
+  switch (api) {
+    case "createElement": {
+      if (!first) return unknownValue("createElement without a type", location);
+      const { entries, key } = propsFromValue(second);
+      return interpreter.createElement(
+        first,
+        objectValue(entries),
+        key,
+        args.slice(2),
+        location,
+        nameHint,
+        context,
+      );
+    }
+    case "jsx":
+    case "jsxs":
+    case "jsxDEV": {
+      if (!first) return unknownValue(`${api} without a type`, location);
+      const { entries, key } = propsFromValue(second, third);
+      return interpreter.createElement(
+        first,
+        objectValue(entries),
+        key,
+        [],
+        location,
+        nameHint,
+        context,
+      );
+    }
+    case "cloneElement":
+      return first
+        ? mapValue(first, (element) => cloneElement(element, second, args.slice(2), location))
+        : unknownValue("cloneElement of nothing", location);
+    case "isValidElement":
+      return first ? mapValue(first, isValidElementValue) : FALSE_VALUE;
+    case "memo": {
+      if (!first) return unknownValue("memo without a component", location);
+      const inner = toElementType(first, null);
+      const hasCompare = second !== undefined && isNullish(second) !== true;
+      return componentReference({
+        kind: "memo",
+        inner,
+        hasCompare,
+        displayName: null,
+        properties: new Map(),
+      });
+    }
+    case "forwardRef": {
+      if (first?.kind !== "function") {
+        return componentReference({
+          kind: "unknown",
+          displayName: nameHint,
+          reason: "forwardRef with a non-function render",
+        });
+      }
+      return componentReference({
+        kind: "forward-ref",
+        component: createFunctionComponentDefinition(first),
+        render: first,
+        displayName: null,
+        properties: new Map(),
+      });
+    }
+    case "lazy": {
+      if (first?.kind !== "function") {
+        return componentReference({
+          kind: "lazy",
+          inner: null,
+          displayName: null,
+          properties: new Map(),
+        });
+      }
+      const resolved = interpreter.callFunction(first, [], context, { awaited: true });
+      return componentReference({
+        kind: "lazy",
+        inner: resolveLazyTarget(interpreter, resolved),
+        displayName: null,
+        properties: new Map(),
+      });
+    }
+    case "createContext":
+      return {
+        kind: "context",
+        context: {
+          name: nameHint ?? "Context",
+          displayName: null,
+          defaultValue: first ?? UNDEFINED_VALUE,
+          location,
+        },
+      };
+    case "useState": {
+      const computeInitial = (): StaticValue =>
+        first?.kind === "function"
+          ? interpreter.callFunction(first, [], context)
+          : (first ?? UNDEFINED_VALUE);
+      return stateHook(
+        context,
+        nameHint ?? "useState",
+        computeInitial,
+        (action, current, tools) =>
+          action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
+        (frame, cell, action) => escapeStateCell(frame, cell, isCallable(action) ? null : action),
+      );
+    }
+    case "useReducer": {
+      const computeInitial = (): StaticValue =>
+        third?.kind === "function"
+          ? interpreter.callFunction(third, [second ?? UNDEFINED_VALUE], context)
+          : (second ?? UNDEFINED_VALUE);
+      return stateHook(
+        context,
+        nameHint ?? "useReducer",
+        computeInitial,
+        (action, current, tools) =>
+          first
+            ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
+            : unknownValue("reducer state after dispatch"),
+        (frame, cell, action) => {
+          if (!first) {
+            escapeStateCell(frame, cell, null);
+            return;
+          }
+          escapeReducerDispatch(frame, cell, (state) =>
+            interpreter.callValue(first, [state, action], context, location),
+          );
+        },
+      );
+    }
+    case "useMemo": {
+      const compute = (): StaticValue =>
+        invokeHookFactory(context.hooks, () =>
+          first?.kind === "function"
+            ? interpreter.callFunction(first, [], context)
+            : unknownValue("useMemo factory", location),
+        );
+      return context.hooks && second?.kind === "list"
+        ? nextMemoCell(context.hooks, second, compute)
+        : compute();
+    }
+    case "useCallback": {
+      const callback = first ?? UNDEFINED_VALUE;
+      return context.hooks && second?.kind === "list"
+        ? nextMemoCell(context.hooks, second, () => callback)
+        : callback;
+    }
+    case "useRef": {
+      const createRef = (): StaticValue => objectFromRecord({ current: first ?? UNDEFINED_VALUE });
+      return context.hooks ? nextMemoCell(context.hooks, null, createRef) : createRef();
+    }
+    case "createRef":
+      return objectFromRecord({ current: NULL_VALUE });
+    case "useContext":
+      return first
+        ? readContextValue(interpreter, first, context, location)
+        : unknownValue("useContext without a context", location);
+    case "use":
+      if (first?.kind === "context") return readContextValue(interpreter, first, context, location);
+      return first
+        ? awaitedValue(first, location, () => interpreter.timers.drainMicrotasks())
+        : unknownValue("use() without an argument", location);
+    case "useEffect":
+    case "useLayoutEffect":
+    case "useInsertionEffect":
+      if (context.hooks?.isRendering && first) {
+        context.hooks.effects.push({
+          isLayout: api !== "useEffect",
+          callback: first,
+          deps: second ?? null,
+          cleanup: null,
+        });
+      }
+      return UNDEFINED_VALUE;
+    case "useImperativeHandle":
+    case "useDebugValue":
+      return UNDEFINED_VALUE;
+    case "startTransition":
+      return first ? interpreter.callValue(first, [], context, location) : UNDEFINED_VALUE;
+    case "useId": {
+      const createId = (): StaticValue => unknownPrimitiveValue("string", "useId");
+      return context.hooks ? nextMemoCell(context.hooks, null, createId) : createId();
+    }
+    case "useTransition":
+      return listValue([
+        FALSE_VALUE,
+        {
+          kind: "native-function",
+          name: "startTransition",
+          call: ([callback], tools) => (callback ? tools.call(callback, []) : UNDEFINED_VALUE),
+        },
+      ]);
+    case "useDeferredValue":
+      return first ?? UNDEFINED_VALUE;
+    case "useSyncExternalStore":
+      return externalStoreHook(interpreter, context, first, second, location);
+    case "useOptimistic":
+      return listValue([first ?? UNDEFINED_VALUE, unknownValue("optimistic setter")]);
+    case "useActionState":
+      return listValue([second ?? UNDEFINED_VALUE, unknownValue("form action"), FALSE_VALUE]);
+    case "useMemoCache": {
+      if (first?.kind !== "primitive" || typeof first.value !== "number") {
+        return unknownValue("memo cache of dynamic size", location);
+      }
+      const sentinel: StaticValue = { kind: "symbol", key: REACT_MEMO_CACHE_SENTINEL_KEY };
+      return listValue(Array.from({ length: first.value }, () => sentinel));
+    }
+    case "createPortal": {
+      const props = objectValue(first ? [{ kind: "property", key: "children", value: first }] : []);
+      return {
+        kind: "element",
+        type: { kind: "portal", container: second ?? UNDEFINED_VALUE },
+        key: third && isNullish(third) !== true ? toElementKey(third) : null,
+        props,
+        location,
+        environment: context.environment,
+        owner: context.owner,
+      };
+    }
+    case "flushSync":
+      return first?.kind === "function"
+        ? interpreter.callFunction(first, [], context)
+        : UNDEFINED_VALUE;
+    case "batchedUpdates":
+      return first
+        ? interpreter.callValue(first, second ? [second] : [], context, location)
+        : UNDEFINED_VALUE;
+    case "createRoot":
+      return createReactRoot(interpreter);
+    case "hydrateRoot":
+      interpreter.recordRootRender(second ?? UNDEFINED_VALUE);
+      return createReactRoot(interpreter);
+    case "render":
+    case "hydrate":
+      interpreter.recordRootRender(first ?? UNDEFINED_VALUE);
+      return unknownValue(`${api}() root`, location);
+    case "Children.map":
+      return mapChildren(interpreter, first, second, third, context, location);
+    case "Children.forEach":
+      mapChildren(interpreter, first, second, third, context, location);
+      return UNDEFINED_VALUE;
+    case "Children.toArray":
+      return first
+        ? mapValue(first, (children) => childrenToArray(interpreter, children, context, location))
+        : listValue([]);
+    case "Children.count":
+      return first ? mapValue(first, countChildren) : primitiveValue(0);
+    case "Children.only":
+      return first ?? unknownValue("Children.only without children", location);
+    case "Children":
+    case "Fragment":
+    case "StrictMode":
+    case "Suspense":
+    case "SuspenseList":
+    case "Profiler":
+    case "Activity":
+    case "ViewTransition":
+    case "Component":
+    case "PureComponent":
+      return unknownValue(`React.${api} called as a function`, location);
+  }
+};

@@ -1,0 +1,7 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["kit-*"],
+  "notes": "Workspace packages sharing a name prefix are allow-listed as `kit-*`: every `kit-` package is analyzed from source (including one reached only through another), while the rest of node_modules stays external."
+}

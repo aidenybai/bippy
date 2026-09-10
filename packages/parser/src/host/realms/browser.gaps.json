@@ -1,0 +1,1082 @@
+{
+  "total": 214,
+  "byReason": {
+    "type-parameter": 76,
+    "declared-any": 81,
+    "mixed-union": 47,
+    "overloads": 9,
+    "conditional": 1
+  },
+  "gaps": [
+    {
+      "site": "\"typescript/lib/lib.esnext.iterator\".Iterator.next",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "\"typescript/lib/lib.esnext.iterator\".Iterator.next",
+      "reason": "type-parameter",
+      "detail": "TResult"
+    },
+    {
+      "site": "AbortSignal.reason",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Animation.currentTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "Animation.startTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "AnimationPlaybackEvent.currentTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "AnimationPlaybackEvent.timelineTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "AnimationTimeline.currentTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "Array.at",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.find",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.findLast",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.pop",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.reduce",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Array.shift",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "AsyncDisposableStack.adopt",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Atomics.add",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.and",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.compareExchange",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.exchange",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.load",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.or",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.store",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.sub",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "Atomics.xor",
+      "reason": "overloads",
+      "detail": "number | bigint"
+    },
+    {
+      "site": "BeforeUnloadEvent.returnValue",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "BigInt64Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "BigInt64Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "BigUint64Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "BigUint64Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "CanvasFillStrokeStyles.fillStyle",
+      "reason": "mixed-union",
+      "detail": "string | object | object"
+    },
+    {
+      "site": "CanvasFillStrokeStyles.strokeStyle",
+      "reason": "mixed-union",
+      "detail": "string | object | object"
+    },
+    {
+      "site": "ComputedEffectTiming.activeDuration",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "ComputedEffectTiming.endTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "ComputedEffectTiming.localTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "ComputedEffectTiming.startTime",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CSPViolationReportBody.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "CSSPerspective.length",
+      "reason": "mixed-union",
+      "detail": "string | object"
+    },
+    {
+      "site": "CSSRotate.x",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CSSRotate.y",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CSSRotate.z",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CSSScale.x",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CSSScale.y",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CSSScale.z",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "CustomEvent.detail",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "DisposableStack.adopt",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "DOMMatrixReadOnly.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "DOMPointReadOnly.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "DOMQuad.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "DOMRectReadOnly.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "EffectTiming.duration",
+      "reason": "mixed-union",
+      "detail": "number | object | string"
+    },
+    {
+      "site": "Error.cause",
+      "reason": "declared-any",
+      "detail": "unknown"
+    },
+    {
+      "site": "ErrorEvent.error",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "FileReader.result",
+      "reason": "mixed-union",
+      "detail": "string | object"
+    },
+    {
+      "site": "Float16Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float16Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float32Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float32Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float64Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Float64Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "FormData.get",
+      "reason": "mixed-union",
+      "detail": "object | string"
+    },
+    {
+      "site": "Function.apply",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.arguments",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.bind",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.call",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Function.prototype",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "GeolocationCoordinates.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "GeolocationPosition.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "globalThis.eval",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "globalThis.opener",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "globalThis.structuredClone",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "History.state",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "IDBCursor.key",
+      "reason": "mixed-union",
+      "detail": "number | string | object | object | object"
+    },
+    {
+      "site": "IDBCursor.primaryKey",
+      "reason": "mixed-union",
+      "detail": "number | string | object | object | object"
+    },
+    {
+      "site": "IDBCursorWithValue.value",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "IDBIndex.keyPath",
+      "reason": "mixed-union",
+      "detail": "string | object"
+    },
+    {
+      "site": "IDBKeyRange.lower",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "IDBKeyRange.upper",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "IDBObjectStore.keyPath",
+      "reason": "mixed-union",
+      "detail": "string | object"
+    },
+    {
+      "site": "IDBRequest.result",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Int16Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int16Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int32Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int32Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int8Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Int8Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Intl.ResolvedNumberFormatOptions.useGrouping",
+      "reason": "mixed-union",
+      "detail": "string | boolean"
+    },
+    {
+      "site": "Intl.ResolvedNumberFormatOptions.useGrouping",
+      "reason": "conditional",
+      "detail": "boolean : any"
+    },
+    {
+      "site": "Iterator.next",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Iterator.next",
+      "reason": "type-parameter",
+      "detail": "TReturn"
+    },
+    {
+      "site": "Iterator.return",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Iterator.return",
+      "reason": "type-parameter",
+      "detail": "TReturn"
+    },
+    {
+      "site": "Iterator.throw",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Iterator.throw",
+      "reason": "type-parameter",
+      "detail": "TReturn"
+    },
+    {
+      "site": "IteratorObject.find",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "IteratorObject.reduce",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "IteratorObject.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "JSON.parse",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "LargestContentfulPaint.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Map.get",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "MediaDeviceInfo.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "MediaTrackConstraintSet.aspectRatio",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.autoGainControl",
+      "reason": "mixed-union",
+      "detail": "boolean | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.backgroundBlur",
+      "reason": "mixed-union",
+      "detail": "boolean | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.channelCount",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.deviceId",
+      "reason": "mixed-union",
+      "detail": "string | object | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.displaySurface",
+      "reason": "mixed-union",
+      "detail": "string | object | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.echoCancellation",
+      "reason": "mixed-union",
+      "detail": "boolean | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.facingMode",
+      "reason": "mixed-union",
+      "detail": "string | object | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.frameRate",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.groupId",
+      "reason": "mixed-union",
+      "detail": "string | object | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.height",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.noiseSuppression",
+      "reason": "mixed-union",
+      "detail": "boolean | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.sampleRate",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.sampleSize",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MediaTrackConstraintSet.width",
+      "reason": "mixed-union",
+      "detail": "number | object"
+    },
+    {
+      "site": "MessageEvent.data",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "namespace Reflect.apply",
+      "reason": "type-parameter",
+      "detail": "R"
+    },
+    {
+      "site": "namespace Reflect.apply",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "namespace Reflect.construct",
+      "reason": "type-parameter",
+      "detail": "R"
+    },
+    {
+      "site": "namespace Reflect.construct",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "namespace Reflect.get",
+      "reason": "type-parameter",
+      "detail": "P"
+    },
+    {
+      "site": "namespace Reflect.get",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "NavigationHistoryEntry.getState",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "NodeIterator.filter",
+      "reason": "mixed-union",
+      "detail": "function | object"
+    },
+    {
+      "site": "Notification.data",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "declared-any",
+      "detail": "{}"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "type-parameter",
+      "detail": "W"
+    },
+    {
+      "site": "ObjectConstructor.assign",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.create",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.defineProperties",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.defineProperty",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.freeze",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.fromEntries",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.getPrototypeOf",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ObjectConstructor.groupBy",
+      "reason": "mixed-union",
+      "detail": "string | number | symbol"
+    },
+    {
+      "site": "ObjectConstructor.preventExtensions",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.seal",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ObjectConstructor.setPrototypeOf",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PaymentAddress.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PaymentMethodChangeEvent.methodDetails",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PaymentResponse.details",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PaymentResponse.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Performance.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceEntry.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceEventTiming.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceMark.detail",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceMeasure.detail",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceNavigation.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceNavigationTiming.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceResourceTiming.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceServerTiming.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PerformanceTiming.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PopStateEvent.state",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PromiseRejectionEvent.reason",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PropertyDescriptor.get",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PropertyDescriptor.value",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "PublicKeyCredential.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ReadableStream.getReader",
+      "reason": "type-parameter",
+      "detail": "R"
+    },
+    {
+      "site": "ReadonlyArray.at",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ReadonlyArray.find",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ReadonlyArray.findLast",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ReadonlyArray.reduce",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ReadonlyArray.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "ReadonlyArray.reduceRight",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "ReadonlyArray.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "ReadonlyMap.get",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "Report.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "ReportBody.toJSON",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "SuppressedError.error",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "SuppressedError.suppressed",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "SVGElement.className",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "TreeWalker.filter",
+      "reason": "mixed-union",
+      "detail": "function | object"
+    },
+    {
+      "site": "TypedPropertyDescriptor.value",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "Uint16Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint16Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint32Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint32Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8Array.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8Array.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8ClampedArray.reduce",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "Uint8ClampedArray.reduceRight",
+      "reason": "type-parameter",
+      "detail": "U"
+    },
+    {
+      "site": "VTTCue.line",
+      "reason": "mixed-union",
+      "detail": "number | string"
+    },
+    {
+      "site": "VTTCue.position",
+      "reason": "mixed-union",
+      "detail": "number | string"
+    },
+    {
+      "site": "WeakMap.get",
+      "reason": "type-parameter",
+      "detail": "V"
+    },
+    {
+      "site": "WeakRef.deref",
+      "reason": "mixed-union",
+      "detail": "object | symbol"
+    },
+    {
+      "site": "WebAssembly.Global.value",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "WebAssembly.Global.valueOf",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "WebAssembly.Table.get",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getActiveUniformBlockParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getActiveUniforms",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getIndexedParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getInternalformatParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getQueryParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getSamplerParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGL2RenderingContextBase.getSyncParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getBufferParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getExtension",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getFramebufferAttachmentParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getProgramParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getRenderbufferParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getShaderParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getTexParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getUniform",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WebGLRenderingContextBase.getVertexAttrib",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "Window.opener",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "WindowOrWorkerGlobalScope.structuredClone",
+      "reason": "type-parameter",
+      "detail": "T"
+    },
+    {
+      "site": "XMLHttpRequest.response",
+      "reason": "declared-any",
+      "detail": "any"
+    },
+    {
+      "site": "XSLTProcessor.getParameter",
+      "reason": "declared-any",
+      "detail": "any"
+    }
+  ]
+}

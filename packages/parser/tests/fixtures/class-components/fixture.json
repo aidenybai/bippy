@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "Counter calls this.setState, so its state is a branch between the constructor value and an unknown update; StatsPanel never updates state and stays exact."
+}

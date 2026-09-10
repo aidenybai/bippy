@@ -1,0 +1,4 @@
+{
+  "externalPackages": ["styled-components"],
+  "notes": "styled-components 6 without its build transform: components keep the library's `styled.tag` / `Styled(...)` names, `withConfig` and the ThemeProvider context are evaluated from the real library source."
+}

@@ -1,0 +1,69 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["react-redux"],
+  "notes": "The Redux store captured at runtime is replayed into the static render: RTK Query hooks read their cache entry (fulfilled, rejected, skipped) from the observed api slice and react-redux's Provider is interpreted from its own source; `createSlice` yields typed action creators and the observed state answers `useSelector`.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "stores": [
+      {
+        "settings": { "theme": "dark", "labels": ["compact", "wide"] },
+        "pokemonApi": {
+          "queries": {
+            "getPokemonByName(\"bulbasaur\")": {
+              "status": "fulfilled",
+              "endpointName": "getPokemonByName",
+              "originalArgs": "bulbasaur",
+              "data": {
+                "name": "bulbasaur",
+                "sprites": {
+                  "front_default": "/sprites/1.png"
+                },
+                "abilities": [
+                  {
+                    "ability": {
+                      "name": "overgrow"
+                    }
+                  },
+                  {
+                    "ability": {
+                      "name": "chlorophyll"
+                    }
+                  }
+                ]
+              }
+            },
+            "getPokemonByName(\"missingno\")": {
+              "status": "rejected",
+              "endpointName": "getPokemonByName",
+              "originalArgs": "missingno",
+              "error": {
+                "message": "no pokemon named missingno"
+              }
+            }
+          },
+          "mutations": {},
+          "provided": {
+            "tags": {},
+            "keys": {
+              "getPokemonByName(\"bulbasaur\")": [],
+              "getPokemonByName(\"missingno\")": []
+            }
+          },
+          "config": {
+            "online": true,
+            "focused": true,
+            "middlewareRegistered": true,
+            "refetchOnFocus": false,
+            "refetchOnReconnect": false,
+            "refetchOnMountOrArgChange": false,
+            "keepUnusedDataFor": 60,
+            "reducerPath": "pokemonApi",
+            "invalidationBehavior": "delayed"
+          }
+        }
+      }
+    ]
+  }
+}

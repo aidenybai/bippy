@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "The entry has no root render call of its own; an imported embed function mounts the app with the entry's props."
+}
