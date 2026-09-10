@@ -1127,8 +1127,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T04:04:42.276Z",
-      "durationMs": 1071,
+      "capturedAt": "2026-09-10T05:09:41.620Z",
+      "durationMs": 952,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -1152,7 +1152,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1166,6 +1165,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 10,
+        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -1200,6 +1200,13 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:12:07.223Z",
       "failure": null
@@ -1208,15 +1215,15 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T04:42:57.755Z",
-      "durationMs": 2371,
+      "capturedAt": "2026-09-10T05:09:42.573Z",
+      "durationMs": 3271,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
         "fibers": 1194,
-        "commits": 25,
+        "commits": 16,
         "pageErrors": [],
         "title": "Login | Cal.diy"
       },
@@ -1233,7 +1240,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1247,6 +1253,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 109,
+        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -1341,8 +1348,15 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 6,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-09T16:04:42.665Z",
+      "note": "runtime replayed from 2026-09-07T11:40:39.987Z",
       "failure": null
     },
     {
@@ -4179,8 +4193,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T04:42:50.656Z",
-      "durationMs": 1930,
+      "capturedAt": "2026-09-10T05:11:16.015Z",
+      "durationMs": 2497,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -4209,7 +4223,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 195,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -4223,6 +4236,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 15,
+        "status": "exact",
         "runtimeFibers": 203,
         "staticFibers": 203,
         "coverage": 1,
@@ -4282,8 +4296,15 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T16:02:57.359Z",
+      "note": "runtime replayed from 2026-09-08T11:49:10.139Z",
       "failure": null
     },
     {
@@ -5467,8 +5488,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T04:04:43.407Z",
-      "durationMs": 818,
+      "capturedAt": "2026-09-10T05:09:45.850Z",
+      "durationMs": 825,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -5497,7 +5518,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 689,
         "matchedText": 4,
         "opaqueSubtrees": 0,
@@ -5511,6 +5531,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 14,
+        "status": "exact",
         "runtimeFibers": 693,
         "staticFibers": 693,
         "coverage": 1,
@@ -5544,6 +5565,13 @@
           "possible": 0,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:48:29.216Z",
@@ -9904,8 +9932,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:42:54.126Z",
-      "durationMs": 2428,
+      "capturedAt": "2026-09-10T05:09:46.679Z",
+      "durationMs": 3755,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -9938,7 +9966,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -9952,6 +9979,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -10046,8 +10074,15 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 4,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T14:02:46.413Z",
+      "note": "runtime replayed from 2026-09-08T03:45:17.260Z",
       "failure": null
     },
     {
@@ -10515,8 +10550,8 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T04:04:46.289Z",
-      "durationMs": 2395,
+      "capturedAt": "2026-09-10T05:09:50.436Z",
+      "durationMs": 2943,
       "runtime": {
         "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
         "rendererName": "react-dom",
@@ -10547,7 +10582,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 1093,
         "matchedText": 51,
         "opaqueSubtrees": 0,
@@ -10561,6 +10595,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 126,
+        "status": "exact",
         "runtimeFibers": 1144,
         "staticFibers": 1144,
         "coverage": 1,
@@ -10655,6 +10690,13 @@
           "possible": 5,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 6,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T11:14:21.196Z",
@@ -10975,8 +11017,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:04:48.724Z",
-      "durationMs": 3363,
+      "capturedAt": "2026-09-10T05:09:53.386Z",
+      "durationMs": 5005,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -11009,7 +11051,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 225,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -11023,6 +11064,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 225,
         "staticFibers": 225,
         "coverage": 1,
@@ -11090,6 +11132,13 @@
           "possible": 2,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 3,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T23:03:03.725Z",
@@ -24481,8 +24530,8 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T04:04:52.126Z",
-      "durationMs": 148,
+      "capturedAt": "2026-09-10T05:09:58.393Z",
+      "durationMs": 137,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -24511,7 +24560,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 139,
         "matchedText": 23,
         "opaqueSubtrees": 0,
@@ -24525,6 +24573,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 55,
+        "status": "exact",
         "runtimeFibers": 162,
         "staticFibers": 162,
         "coverage": 1,
@@ -24559,6 +24608,13 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T11:14:34.649Z",
       "failure": null
@@ -24567,8 +24623,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T04:04:52.313Z",
-      "durationMs": 260,
+      "capturedAt": "2026-09-10T05:09:58.531Z",
+      "durationMs": 234,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -24592,7 +24648,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 77,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -24606,6 +24661,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 33,
+        "status": "exact",
         "runtimeFibers": 83,
         "staticFibers": 83,
         "coverage": 1,
@@ -24639,6 +24695,13 @@
           "possible": 0,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
@@ -29769,8 +29832,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:43:01.341Z",
-      "durationMs": 54863,
+      "capturedAt": "2026-09-10T05:13:12.672Z",
+      "durationMs": 196917,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -29779,15 +29842,6 @@
         "fibers": 192,
         "commits": 54,
         "pageErrors": [
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
-          "Failed to load resource: the server responded with a status of 404 ()",
-          "Failed to load resource: the server responded with a status of 404 ()",
           "Failed to load resource: the server responded with a status of 404 ()",
           "Failed to load resource: the server responded with a status of 404 ()"
         ],
@@ -29801,7 +29855,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 5131
+          "modulesLoaded": 5132
         },
         "diagnostics": [
           {
@@ -29819,7 +29873,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -29833,6 +29886,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -29901,16 +29955,23 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 3,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T16:13:10.682Z",
+      "note": "runtime replayed from 2026-09-07T05:44:44.473Z",
       "failure": null
     },
     {
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T04:04:52.614Z",
-      "durationMs": 15171,
+      "capturedAt": "2026-09-10T05:09:58.766Z",
+      "durationMs": 27546,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -29923,7 +29984,7 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 494,
+          "fiberCount": 493,
           "textCount": 6,
           "branchCount": 1,
           "repeatCount": 0,
@@ -29934,7 +29995,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 444,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -29948,6 +30008,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 61,
+        "status": "exact",
         "runtimeFibers": 450,
         "staticFibers": 450,
         "coverage": 1,
@@ -30006,6 +30067,13 @@
           "possible": 1,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T14:42:06.387Z",
@@ -30111,8 +30179,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T04:44:07.910Z",
-      "durationMs": 10214,
+      "capturedAt": "2026-09-10T05:10:26.315Z",
+      "durationMs": 48456,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -30347,8 +30415,15 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 21,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T14:00:32.078Z",
+      "note": "runtime replayed from 2026-09-09T06:26:22.350Z",
       "failure": null
     },
     {
@@ -32547,8 +32622,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T04:42:48.861Z",
-      "durationMs": 621,
+      "capturedAt": "2026-09-10T05:11:14.823Z",
+      "durationMs": 208,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -32572,7 +32647,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -32586,6 +32660,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 14,
+        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -32645,8 +32720,15 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T13:59:43.900Z",
+      "note": "runtime replayed from 2026-09-08T11:39:09.076Z",
       "failure": null
     },
     {
@@ -34851,8 +34933,8 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:05:08.177Z",
-      "durationMs": 476,
+      "capturedAt": "2026-09-10T05:11:15.032Z",
+      "durationMs": 344,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -34876,7 +34958,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 6,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -34890,6 +34971,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 6,
         "staticFibers": 6,
         "coverage": 1,
@@ -34923,6 +35005,13 @@
           "possible": 0,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:12:03.185Z",
@@ -55535,8 +55624,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T04:43:57.555Z",
-      "durationMs": 9117,
+      "capturedAt": "2026-09-10T05:11:18.514Z",
+      "durationMs": 114152,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -55550,16 +55639,7 @@
           "Error tracking analytics event TypeError: Cannot read properties of null (reading 'dateJoined')\n    at getUserAge (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22306:86)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22384:29)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155933:140)\n    at https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155959:13\n    at t10 (https://localhost:7999/_assets/chunks/app_views_authV2_authLogin_index_tsx.d8f9372505bf4158.js:4318:72)\n    at Object.react_stack_bottom_frame (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:57788:22)\n    at runWithFiberInDEV (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:44823:74)\n    at commitHookEffectListMount (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:50965:167)\n    at commitHookPassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51000:60)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51989:33)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52037:428)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52029:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)",
           "Failed to load resource: the server responded with a status of 403 ()",
           "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "An unknown error occurred when fetching the script.",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Error tracking analytics event TypeError: Cannot read properties of null (reading 'dateJoined')\n    at getUserAge (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22306:86)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22384:29)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155933:140)\n    at https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155959:13\n    at t10 (https://localhost:7999/_assets/chunks/app_views_authV2_authLogin_index_tsx.d8f9372505bf4158.js:4318:72)\n    at Object.react_stack_bottom_frame (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:57788:22)\n    at runWithFiberInDEV (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:44823:74)\n    at commitHookEffectListMount (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:50965:167)\n    at commitHookPassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51000:60)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51989:33)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52037:428)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52029:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)"
+          "Failed to load resource: the server responded with a status of 403 ()"
         ],
         "title": "Sentry"
       },
@@ -55585,7 +55665,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -55599,6 +55678,7 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 9,
+        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -55608,8 +55688,8 @@
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 63,
-        "stateCount": 63,
+        "states": 52,
+        "stateCount": 52,
         "clusters": 11,
         "tree": {
           "nodes": 2039,
@@ -55621,7 +55701,7 @@
           "wildcards": 0
         },
         "matchedState": {
-          "index": 27,
+          "index": 24,
           "conditions": [
             {
               "kind": "transition",
@@ -55841,8 +55921,587 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 63,
+        "assignments": 40,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [
+          {
+            "stateIndices": [
+              0,
+              1,
+              3,
+              7,
+              23
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 3,
+            "replayedCommits": 2,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              1,
+              4,
+              20,
+              56
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 4 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              5,
+              13,
+              38
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              6,
+              10,
+              31
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              6,
+              14,
+              40
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              6,
+              14,
+              42
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              6,
+              18,
+              51
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              6,
+              22,
+              59
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              2,
+              6,
+              22,
+              62
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:94:15",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#1), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:81:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#2), 1)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/brandPageLayout/index.tsx:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)",
+                "reason": "if (branch(true | false))",
+                "location": "/home/ubuntu/bippy-corpus/sentry/static/app/components/core/slot/slot.tsx:256:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 3,
+            "replayedCommits": 1,
+            "divergence": {
+              "path": "commit 2 > root[0]",
+              "expected": "<Main> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          }
+        ]
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-09T16:19:00.781Z",
+      "note": "runtime replayed from 2026-09-06T23:25:35.602Z",
       "failure": null
     },
     {
@@ -58431,8 +59090,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T04:42:47.253Z",
-      "durationMs": 288,
+      "capturedAt": "2026-09-10T05:11:15.377Z",
+      "durationMs": 111,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -58456,7 +59115,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -58470,6 +59128,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 15,
+        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -58504,8 +59163,15 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-09T13:59:31.491Z",
+      "note": "runtime replayed from 2026-09-08T11:14:51.057Z",
       "failure": null
     },
     {
@@ -58841,8 +59507,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:05:08.910Z",
-      "durationMs": 177,
+      "capturedAt": "2026-09-10T05:11:15.489Z",
+      "durationMs": 185,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -58866,7 +59532,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 215,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -58880,6 +59545,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 217,
         "staticFibers": 217,
         "coverage": 1,
@@ -58914,6 +59580,13 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-07T12:08:20.819Z",
       "failure": null
@@ -58922,8 +59595,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:05:09.127Z",
-      "durationMs": 310,
+      "capturedAt": "2026-09-10T05:11:15.675Z",
+      "durationMs": 338,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -58952,7 +59625,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 45,
         "matchedText": 3,
         "opaqueSubtrees": 0,
@@ -58966,6 +59638,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 48,
         "staticFibers": 48,
         "coverage": 1,
@@ -59025,6 +59698,13 @@
           "unreachable": 0
         }
       },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:14:58.721Z",
       "failure": null
@@ -59033,8 +59713,8 @@
       "id": "tanstack-table",
       "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
       "framework": "spa",
-      "capturedAt": "2026-09-10T04:05:11.517Z",
-      "durationMs": 786,
+      "capturedAt": "2026-09-10T05:16:29.592Z",
+      "durationMs": 11400,
       "runtime": {
         "reactVersion": "19.2.6",
         "rendererName": "react-dom",
@@ -59063,7 +59743,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 1286,
         "matchedText": 80,
         "opaqueSubtrees": 0,
@@ -59077,6 +59756,7 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 1366,
         "staticFibers": 1366,
         "coverage": 1,
@@ -59268,6 +59948,13 @@
           "possible": 6,
           "unreachable": 0
         }
+      },
+      "stateReplay": {
+        "states": 64,
+        "assignments": 64,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T07:34:13.585Z",
