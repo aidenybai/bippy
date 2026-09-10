@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "@docusaurus/plugin-svgr runs @svgr/webpack with svgo keeping <title> and viewBox and titleProp: true, so the svg's own <title> renders unless a title prop replaces or removes it."
+}

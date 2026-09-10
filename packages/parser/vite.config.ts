@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transformAsync } from "@babel/core";
-import { transform as transformSvgr } from "@svgr/core";
+import { type Config as SvgrConfig, transform as transformSvgr } from "@svgr/core";
 import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
 
 const parserDirectory = import.meta.dirname;
@@ -33,6 +33,13 @@ const applyAlias = (source: string, alias: FixtureAlias): string | null =>
     ? resolveFile(join(alias.target, source.slice(alias.prefix.length)))
     : null;
 
+const getFixtureDirectory = (id: string): string | null => {
+  const relativeToFixtures = relative(fixturesDirectory, id);
+  if (relativeToFixtures.startsWith("..")) return null;
+  const [fixtureName] = relativeToFixtures.split(sep);
+  return join(fixturesDirectory, fixtureName);
+};
+
 // Fixtures declare path aliases in their own tsconfig so the static resolver
 // exercises tsconfig paths; this mirrors those mappings for the runtime import
 // that vitest performs when rendering the same fixture with react-dom.
@@ -48,37 +55,55 @@ const fixtureAliasPlugin = (): Plugin => ({
       }
       return null;
     }
-    const relativeToFixtures = relative(fixturesDirectory, importer);
-    if (relativeToFixtures.startsWith("..")) return null;
-    const [fixtureName] = relativeToFixtures.split(sep);
-    return applyAlias(source, {
-      prefix: "@/",
-      target: join(fixturesDirectory, fixtureName, "src"),
-    });
+    const fixtureDirectory = getFixtureDirectory(importer);
+    if (fixtureDirectory === null) return null;
+    return applyAlias(source, { prefix: "@/", target: join(fixtureDirectory, "src") });
   },
 });
 
+// HACK: `@svgr/plugin-svgo` runs svgo 3, whose preset still owns these two
+// plugins; `@svgr/core` types `svgoConfig` against svgo 4, which dropped them.
+const keepTitleAndViewBox: Record<string, false> = { removeTitle: false, removeViewBox: false };
+
+// What `@docusaurus/plugin-svgr` makes of an `.svg` import: `@svgr/webpack`
+// with svgo keeping `<title>` and `viewBox`, and the title exposed as a prop.
+const docusaurusSvgrOptions: SvgrConfig = {
+  plugins: ["@svgr/plugin-svgo", "@svgr/plugin-jsx"],
+  prettier: false,
+  svgo: true,
+  svgoConfig: {
+    plugins: [{ name: "preset-default", params: { overrides: keepTitleAndViewBox } }],
+  },
+  titleProp: true,
+};
+
 // What `react-scripts` makes of an `.svg` import (its webpack config chains
 // `@svgr/webpack` after `file-loader`), so fixtures render the real svgr output.
+const reactScriptsSvgrOptions: SvgrConfig = {
+  plugins: ["@svgr/plugin-jsx"],
+  svgo: false,
+  prettier: false,
+  titleProp: true,
+  ref: true,
+};
+
 const fixtureSvgrPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-svgr",
   enforce: "pre",
   async load(id) {
-    if (!id.endsWith(".svg") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    const fixtureDirectory = id.endsWith(".svg") ? getFixtureDirectory(id) : null;
+    if (fixtureDirectory === null) return null;
+    const isDocusaurus = existsSync(join(fixtureDirectory, "node_modules/@docusaurus/plugin-svgr"));
     const componentCode = await transformSvgr(
       readFileSync(id, "utf8"),
-      {
-        plugins: ["@svgr/plugin-jsx"],
-        svgo: false,
-        prettier: false,
-        titleProp: true,
-        ref: true,
-      },
+      isDocusaurus ? docusaurusSvgrOptions : reactScriptsSvgrOptions,
       {
         filePath: id,
         caller: {
           name: "@svgr/webpack",
-          previousExport: `export default ${JSON.stringify(`/static/media/${basename(id)}`)}`,
+          previousExport: isDocusaurus
+            ? undefined
+            : `export default ${JSON.stringify(`/static/media/${basename(id)}`)}`,
         },
       },
     );
