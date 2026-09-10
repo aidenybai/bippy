@@ -750,20 +750,51 @@ class CommonJsCollector {
       case "MemberExpression":
         this.collectExpression(expression.object);
         return;
+      case "LogicalExpression":
+        this.collectExpression(expression.left);
+        this.collectExpression(expression.right);
+        return;
       case "CallExpression":
         this.collectCall(expression);
+        for (const argument of expression.arguments) {
+          if (argument.type !== "SpreadElement") this.collectExpression(argument);
+        }
     }
   }
 
-  /** Follows `exports.a = exports.b = value` chains; returns the innermost value. */
+  /** TypeScript's `export enum`/`export namespace` emit: `Name = exports.Name || (exports.Name = {})`. */
+  private collectExportedAlias(localName: string, init: Expression): void {
+    const value = unwrapParentheses(init);
+    if (value.type !== "LogicalExpression" || value.operator !== "||") return;
+    const exportedName = getExportedMemberName(value.left);
+    if (exportedName === null) return;
+    const fallback = unwrapParentheses(value.right);
+    if (
+      fallback.type === "AssignmentExpression" &&
+      fallback.operator === "=" &&
+      fallback.left.type === "MemberExpression" &&
+      getExportedMemberName(fallback.left) === exportedName
+    ) {
+      this.setExport({ kind: "local", exportedName, localName });
+    }
+  }
+
+  /** Follows `exports.a = exports.b = value` and `exports.a = local = value` chains; returns the innermost value. */
   collectAssignment(expression: Expression, localName: string | null): Expression {
     if (expression.type !== "AssignmentExpression" || expression.operator !== "=") {
       return expression;
     }
-    const value = this.collectAssignment(expression.right, localName);
-    if (expression.left.type !== "MemberExpression" && expression.left.type !== "Identifier") {
+    const right = unwrapParentheses(expression.right);
+    const assignedLocal =
+      right.type === "AssignmentExpression" && right.left.type === "Identifier"
+        ? right.left.name
+        : localName;
+    const value = this.collectAssignment(right, assignedLocal);
+    if (expression.left.type === "Identifier") {
+      this.collectExportedAlias(expression.left.name, value);
       return value;
     }
+    if (expression.left.type !== "MemberExpression") return value;
     if (isExportsObject(expression.left)) {
       this.setModuleExports(value);
       return value;
@@ -777,8 +808,8 @@ class CommonJsCollector {
     ) {
       this.moduleExportsMembers.push(exportedName);
     }
-    if (localName !== null) {
-      this.setExport({ kind: "local", exportedName, localName });
+    if (assignedLocal !== null) {
+      this.setExport({ kind: "local", exportedName, localName: assignedLocal });
     } else {
       this.setExpression(exportedName, value);
     }
@@ -895,9 +926,13 @@ class CommonJsCollector {
     }
     if (statement.type !== "VariableDeclaration") return;
     for (const declarator of statement.declarations) {
-      if (!declarator.init || declarator.init.type !== "AssignmentExpression") continue;
+      if (!declarator.init) continue;
       const localName = declarator.id.type === "Identifier" ? declarator.id.name : null;
-      this.collectAssignment(declarator.init, localName);
+      if (declarator.init.type === "AssignmentExpression") {
+        this.collectAssignment(declarator.init, localName);
+      } else if (localName !== null) {
+        this.collectExportedAlias(localName, declarator.init);
+      }
     }
   }
 }

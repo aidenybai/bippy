@@ -13,6 +13,7 @@ import {
 import type { ReactPackageSpecifiers } from "../materialize/react-runtime.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticValue, StyledComponentsTransformOptions } from "../types.js";
+import { NEXT_PHASES } from "./next-externals.js";
 
 const NEXT_CONFIG_FILES = [
   "next.config.js",
@@ -21,7 +22,6 @@ const NEXT_CONFIG_FILES = [
   "next.config.ts",
   "next.config.mts",
 ];
-const DEVELOPMENT_PHASE = "phase-development-server";
 const EXPERIMENTAL_REACT_FLAGS = ["ppr", "taint", "viewTransition", "routerBFCache"];
 
 /**
@@ -39,9 +39,9 @@ export const evaluateNextConfig = (
   const module = renderer.loadModule(configPath);
   if (!module) return unknownValue("next.config could not be parsed");
   const exported = interpreter.evaluateModuleExport(module, "default");
-  if (exported.kind !== "function") return exported;
+  if (exported.kind !== "function" && exported.kind !== "native-function") return exported;
   const phaseArguments = [
-    primitiveValue(DEVELOPMENT_PHASE),
+    primitiveValue(NEXT_PHASES.PHASE_DEVELOPMENT_SERVER),
     objectFromRecord({ defaultConfig: unknownValue("next's default config") }),
   ];
   return interpreter.callAwaited(

@@ -51,6 +51,16 @@ import {
 // is set. Router hooks resolve from the URL being rendered; anything only the
 // running router knows is an explicit unknown.
 
+/** The build phases `next/constants` exports (`next/dist/shared/lib/constants`). */
+export const NEXT_PHASES: Record<string, string> = {
+  PHASE_EXPORT: "phase-export",
+  PHASE_PRODUCTION_BUILD: "phase-production-build",
+  PHASE_PRODUCTION_SERVER: "phase-production-server",
+  PHASE_DEVELOPMENT_SERVER: "phase-development-server",
+  PHASE_TEST: "phase-test",
+  PHASE_INFO: "phase-info",
+};
+
 export interface NextModel {
   externalValues: ExternalValueProvider;
   /**
@@ -625,6 +635,10 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return nextRequestValue(importedName, options.request ?? null, options.origin ?? null);
       case "next/router":
         return pagesRouterValue(importedName, url, params);
+      case "next/constants":
+        return Object.hasOwn(NEXT_PHASES, importedName)
+          ? primitiveValue(NEXT_PHASES[importedName])
+          : null;
       case STYLED_JSX_SPECIFIER:
         return importedName === "default" ? stubValue(emptyStub("JSXStyle")) : null;
       default:
