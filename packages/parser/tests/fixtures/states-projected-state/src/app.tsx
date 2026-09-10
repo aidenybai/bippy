@@ -1,7 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 
-const Indicator = ({ status }: { status: string }) =>
-  status !== "idle" ? <hr /> : <progress />;
+const Indicator = ({ status }: { status: string }) => (status !== "idle" ? <hr /> : <progress />);
 
 const Caption = ({ status }: { status: string }) =>
   status !== "idle" ? <output>ready</output> : <small>waiting</small>;

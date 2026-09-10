@@ -17,6 +17,11 @@ export const MARKER_NAMES = {
   suspenseBoundary: "$SuspenseBoundary",
 } as const;
 
+const markerNames: ReadonlySet<string> = new Set(Object.values(MARKER_NAMES));
+
+export const isMarkerName = (name: string | null): boolean =>
+  name !== null && markerNames.has(name);
+
 interface MarkerChildrenProps {
   children?: ReactNode;
 }
@@ -27,16 +32,14 @@ interface BranchMarkerProps extends MarkerChildrenProps {
   preferredIndex: number | null;
   /** Identity of the decision; branches sharing one are selected together. */
   predicate: string | null;
-  /** Identity of the position; state left behind by effects inside an alternative is decided with it. */
-  path: string | null;
 }
 
 interface RepeatMarkerProps extends MarkerChildrenProps {
   location: string | null;
+  /** Serialized `SymbolicCardinality`; null when the iterated collection is not an input the analysis can name. */
+  cardinality: string | null;
   countMin: number;
   countMax: number | null;
-  /** Identity of the count; repeats sharing one have the same number of items. */
-  predicate: string | null;
 }
 
 interface OpaqueMarkerProps extends MarkerChildrenProps {
@@ -58,6 +61,8 @@ interface UnknownMarkerProps {
 }
 
 export const TEXT_PLACEHOLDER = "\u2026";
+/** Stands in for a key the build alone knows; a keyed fragment must still mount as a fiber. */
+export const KEY_PLACEHOLDER = "\u2026";
 
 const named = <T extends (...args: never[]) => unknown>(name: string, component: T): T =>
   Object.defineProperty(component, "name", { value: name });

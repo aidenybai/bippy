@@ -1,7 +1,8 @@
 import path from "node:path";
 import { fromNativeValue, pureNativeFunction } from "../evaluate/native-values.js";
+import { memoizeScalarOperation } from "../evaluate/scalar-memo.js";
 import { getPackageNameFromSpecifier } from "../graph/module-resolver.js";
-import type { StaticValue } from "../types.js";
+import type { StaticExternalValue, StaticValue } from "../types.js";
 import {
   getDefaultExport,
   getInstalledModules,
@@ -15,6 +16,7 @@ import {
 // Exports that read the clock, randomness or module state are excluded.
 
 const PURE_PACKAGES: ReadonlySet<string> = new Set([
+  "@emotion/hash",
   "class-variance-authority",
   "classnames",
   "clsx",
@@ -41,14 +43,16 @@ const liftExport = (
   const packageName = getPackageNameFromSpecifier(specifier);
   if (packageName === null || exported === undefined) return null;
   const name = `${specifier}#${exportedName}`;
-  return typeof exported === "function"
-    ? pureNativeFunction(name, exported, undefined, null, () => ({
-        kind: "external",
-        packageName,
-        importedName: `${exportedName}()`,
-        origin: "derived",
-      }))
-    : fromNativeValue(exported, name, null);
+  if (typeof exported !== "function") return fromNativeValue(exported, name, null);
+  return pureNativeFunction(name, exported, undefined, null, (args) => {
+    const derive = (): StaticExternalValue => ({
+      kind: "external",
+      packageName,
+      importedName: `${exportedName}()`,
+      origin: "derived",
+    });
+    return memoizeScalarOperation(exported, args, derive) ?? derive();
+  });
 };
 
 const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([
@@ -73,7 +77,21 @@ const IMPURE_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["lodash-es", IMPURE_LODASH_EXPORTS],
 ]);
 
-export const isPurePackage = (packageName: string): boolean => PURE_PACKAGES.has(packageName);
+/** `lodash.mergewith`-style per-method packages: the same helper as `lodash/mergeWith`, published lowercase. */
+const LODASH_METHOD_PACKAGE_PREFIX = "lodash.";
+
+const IMPURE_LODASH_METHOD_PACKAGES: ReadonlySet<string> = new Set(
+  [...IMPURE_LODASH_EXPORTS].map(
+    (helperName) => `${LODASH_METHOD_PACKAGE_PREFIX}${helperName.toLowerCase()}`,
+  ),
+);
+
+const isPureLodashMethodPackage = (packageName: string): boolean =>
+  packageName.startsWith(LODASH_METHOD_PACKAGE_PREFIX) &&
+  !IMPURE_LODASH_METHOD_PACKAGES.has(packageName);
+
+export const isPurePackage = (packageName: string): boolean =>
+  PURE_PACKAGES.has(packageName) || isPureLodashMethodPackage(packageName);
 
 const NODE_PATH_PACKAGES: ReadonlySet<string> = new Set(["path", "node:path"]);
 

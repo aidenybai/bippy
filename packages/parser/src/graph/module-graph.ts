@@ -4,9 +4,9 @@ import type {
   ExternalModuleResolution,
   ImportBinding,
   ImportedName,
-  ModuleLayer,
   ModuleRecord,
   ModuleResolution,
+  RenderEnvironment,
   ResolvedSymbol,
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
@@ -15,8 +15,8 @@ import { isAssetImport, isUrlImport } from "./asset-module.js";
 import { readAssetModuleSource } from "./asset-modules.js";
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
-import { createModuleRecord, getModuleKey } from "./module-record.js";
-import { ModuleResolver } from "./module-resolver.js";
+import { createModuleRecord, getModuleEnvironment, isClientModule } from "./module-record.js";
+import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
 
 interface ExportNameSet {
   names: string[];
@@ -28,8 +28,6 @@ export interface ModuleGraphOptions {
   sourceFileCache?: SourceFileCache;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
-  /** React Server Components: entry modules and everything they import outside a `"use client"` boundary live in the `react-server` layer. */
-  serverComponents?: boolean;
 }
 
 const describeImportedName = (imported: ImportedName): string => {
@@ -48,7 +46,6 @@ export class ModuleGraph {
   readonly sourceFileCache: SourceFileCache;
   private readonly modules = new Map<string, ModuleRecord | null>();
   private readonly resolveExternalPackages: boolean;
-  private readonly entryLayer: ModuleLayer;
   private readonly externalPackageAllowList: Set<string>;
   private readonly externalScopeAllowList: Set<string>;
   /** `prefix-*` entries: unscoped workspace packages sharing a name prefix. */
@@ -58,7 +55,6 @@ export class ModuleGraph {
     this.resolver = options.resolver;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
-    this.entryLayer = options.serverComponents ? "react-server" : "client";
     const allowList = options.externalPackageAllowList ?? [];
     this.externalPackageAllowList = new Set(allowList.filter((name) => !name.endsWith("*")));
     this.externalScopeAllowList = new Set(
@@ -70,17 +66,18 @@ export class ModuleGraph {
   }
 
   get loadedModuleCount(): number {
-    const records = new Set<ModuleRecord>();
-    for (const record of this.modules.values()) if (record) records.add(record);
-    return records.size;
+    let count = 0;
+    for (const record of this.modules.values()) if (record) count++;
+    return count;
   }
 
-  /** The module as instantiated in `importerLayer` (an entry module's layer when omitted). */
-  getModule(filePath: string, importerLayer = this.entryLayer): ModuleRecord | null {
-    return this.loadModule(filePath, importerLayer, () => {
-      const file = this.sourceFileCache.read(filePath);
-      return file ? createModuleRecord(file, importerLayer) : null;
-    });
+  getModule(filePath: string): ModuleRecord | null {
+    const cached = this.modules.get(filePath);
+    if (cached !== undefined) return cached;
+    const file = this.sourceFileCache.read(filePath);
+    const record = file ? createModuleRecord(file) : null;
+    this.modules.set(filePath, record);
+    return record;
   }
 
   /** A module from source text rather than disk; a path already added is returned as is. */
@@ -88,122 +85,135 @@ export class ModuleGraph {
     filePath: string,
     sourceText: string,
     lang = getSourceLanguage(filePath),
-    importerLayer = this.entryLayer,
   ): ModuleRecord | null {
-    return this.loadModule(filePath, importerLayer, () => {
-      if (!lang) return null;
-      const file = this.sourceFileCache.readVirtual(filePath, sourceText, lang);
-      return file.errors.length === 0 ? createModuleRecord(file, importerLayer) : null;
-    });
-  }
-
-  /** A `"use client"` module reached from the server layer is the client layer's instance. */
-  private loadModule(
-    filePath: string,
-    importerLayer: ModuleLayer,
-    create: () => ModuleRecord | null,
-  ): ModuleRecord | null {
-    const requestedKey = getModuleKey(importerLayer, filePath);
-    const cached = this.modules.get(requestedKey);
+    const cached = this.modules.get(filePath);
     if (cached !== undefined) return cached;
-    let record = create();
-    if (record && record.layer !== importerLayer) {
-      const boundaryKey = getModuleKey(record.layer, filePath);
-      record = this.modules.get(boundaryKey) ?? record;
-      this.modules.set(boundaryKey, record);
-    }
-    this.modules.set(requestedKey, record);
+    if (!lang) return null;
+    const file = this.sourceFileCache.readVirtual(filePath, sourceText, lang);
+    const record = file.errors.length === 0 ? createModuleRecord(file) : null;
+    this.modules.set(filePath, record);
     return record;
   }
 
-  resolveSpecifier(specifier: string, fromModule: ModuleRecord): ModuleResolution {
+  /** `environment` is the importing module's own; a `"use client"` module's imports never see the `react-server` condition. */
+  resolveSpecifier(
+    specifier: string,
+    fromModule: ModuleRecord,
+    environment: RenderEnvironment | null = null,
+  ): ModuleResolution {
     return this.resolver.resolve(
       specifier,
       fromModule.filePath,
       fromModule.isCommonJs ? "commonjs" : "esm",
-      fromModule.layer,
+      getModuleEnvironment(fromModule, environment),
     );
   }
 
   resolveImportedModule(
     specifier: string,
     fromModule: ModuleRecord,
+    environment: RenderEnvironment | null = null,
   ): ModuleRecord | ModuleResolution {
     return this.getResolvedModule(
-      this.resolveSpecifier(specifier, fromModule),
+      this.resolveSpecifier(specifier, fromModule, environment),
       specifier,
-      fromModule.layer,
     );
   }
 
   private getResolvedModule(
     resolution: ModuleResolution,
     specifier: string,
-    importerLayer: ModuleLayer,
   ): ModuleRecord | ModuleResolution {
     if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
-    if (resolution.filePath === null) return resolution;
-    const assetModule = this.getAssetModule(resolution.filePath, specifier, importerLayer);
+    if (resolution.filePath === null || isInlineLoaderRequest(specifier)) return resolution;
+    const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
     if (isUrlImport(specifier)) return resolution;
     if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
       return resolution;
     }
-    return this.getModule(resolution.filePath, importerLayer) ?? resolution;
+    return this.getModule(resolution.filePath) ?? resolution;
   }
 
-  private getAssetModule(
-    filePath: string,
-    specifier: string,
-    importerLayer: ModuleLayer,
-  ): ModuleRecord | null {
-    if (!specifier.includes("?")) return null;
+  private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
+    const queryIndex = specifier.indexOf("?");
+    if (queryIndex === -1) return null;
+    for (const [query] of new URLSearchParams(specifier.slice(queryIndex + 1))) {
+      const file = this.sourceFileCache.readQueried(filePath, query);
+      if (!file) continue;
+      const cached = this.modules.get(file.filePath);
+      if (cached) return cached;
+      const record = createModuleRecord(file);
+      this.modules.set(file.filePath, record);
+      return record;
+    }
     const source = readAssetModuleSource(filePath, specifier);
     if (!source) return null;
-    return this.loadModule(source.moduleKey, importerLayer, () =>
-      createModuleRecord(
-        this.sourceFileCache.readVirtual(source.moduleKey, source.sourceText, "js"),
-        importerLayer,
-      ),
+    const cached = this.modules.get(source.moduleKey);
+    if (cached) return cached;
+    const record = createModuleRecord(
+      this.sourceFileCache.readVirtual(source.moduleKey, source.sourceText, "js"),
     );
+    this.modules.set(source.moduleKey, record);
+    return record;
   }
 
-  resolveImport(binding: ImportBinding, fromModule: ModuleRecord): ResolvedSymbol {
-    return this.resolveImportedSymbol(binding.specifier, binding.imported, fromModule);
+  resolveImport(
+    binding: ImportBinding,
+    fromModule: ModuleRecord,
+    environment: RenderEnvironment | null = null,
+  ): ResolvedSymbol {
+    return this.resolveImportedSymbol(binding.specifier, binding.imported, fromModule, environment);
   }
 
   resolveImportedSymbol(
     specifier: string,
     imported: ImportedName,
     fromModule: ModuleRecord,
+    environment: RenderEnvironment | null = null,
   ): ResolvedSymbol {
-    return this.resolveImportedName(specifier, imported, fromModule, new Set());
+    return this.resolveImportedName(specifier, imported, fromModule, environment, new Set());
   }
 
-  resolveLocalName(module: ModuleRecord, localName: string): ResolvedSymbol {
-    return this.resolveLocalNameWithVisited(module, localName, new Set());
+  resolveLocalName(
+    module: ModuleRecord,
+    localName: string,
+    environment: RenderEnvironment | null = null,
+  ): ResolvedSymbol {
+    return this.resolveLocalNameWithVisited(module, localName, environment, new Set());
   }
 
-  resolveExport(module: ModuleRecord, exportedName: string): ResolvedSymbol {
-    return this.resolveExportWithVisited(module, exportedName, new Set());
+  resolveExport(
+    module: ModuleRecord,
+    exportedName: string,
+    environment: RenderEnvironment | null = null,
+  ): ResolvedSymbol {
+    return this.resolveExportWithVisited(module, exportedName, environment, new Set());
   }
 
-  listExportNames(module: ModuleRecord): string[] {
-    return this.collectExportNames(module, new Set()).names;
+  listExportNames(module: ModuleRecord, environment: RenderEnvironment | null = null): string[] {
+    return this.collectExportNames(module, environment, new Set()).names;
   }
 
   /** Export names plus whether an `export *` from an unanalyzed module may add more. */
-  collectExportNames(module: ModuleRecord, visited = new Set<string>()): ExportNameSet {
-    const visitKey = getModuleKey(module.layer, module.filePath);
-    if (visited.has(visitKey)) return { names: [], complete: true };
-    visited.add(visitKey);
+  collectExportNames(
+    module: ModuleRecord,
+    environment: RenderEnvironment | null = null,
+    visited = new Set<string>(),
+  ): ExportNameSet {
+    if (visited.has(module.filePath)) return { names: [], complete: true };
+    visited.add(module.filePath);
     const names = new Set<string>();
     let complete = true;
     for (const entry of module.exports) {
       if (entry.kind === "re-export-all") {
-        const target = this.resolveImportedModule(entry.specifier, module);
+        const target = this.resolveImportedModule(entry.specifier, module, environment);
         if (isModuleRecord(target)) {
-          const nested = this.collectExportNames(target, visited);
+          const nested = this.collectExportNames(
+            target,
+            getModuleEnvironment(target, environment),
+            visited,
+          );
           complete &&= nested.complete;
           for (const name of nested.names) {
             if (name !== "default") names.add(name);
@@ -234,20 +244,33 @@ export class ModuleGraph {
     specifier: string,
     imported: ImportedName,
     fromModule: ModuleRecord,
+    environment: RenderEnvironment | null,
     visited: Set<string>,
   ): ResolvedSymbol {
-    const resolution = this.resolveSpecifier(specifier, fromModule);
+    const resolution = this.resolveSpecifier(specifier, fromModule, environment);
     if (
       resolution.kind === "external" &&
       imported.kind !== "namespace" &&
       isModeledLibraryExport(specifier, describeImportedName(imported))
     ) {
-      return externalSymbol(resolution, imported, specifier, fromModule.layer);
+      return {
+        kind: "external",
+        packageName: resolution.packageName,
+        imported,
+        specifier,
+        filePath: resolution.filePath,
+      };
     }
-    const target = this.getResolvedModule(resolution, specifier, fromModule.layer);
+    const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
-      return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);
+      return this.resolveExportFrom(
+        target,
+        describeImportedName(imported),
+        fromModule,
+        environment,
+        visited,
+      );
     }
     if (
       (target.kind === "internal" || target.kind === "external") &&
@@ -259,7 +282,7 @@ export class ModuleGraph {
     switch (target.kind) {
       case "external":
       case "builtin":
-        return externalSymbol(target, imported, specifier, fromModule.layer);
+        return externalSymbol(target, imported, specifier);
       case "internal":
         if (isCssModulePath(target.filePath)) {
           return { kind: "stylesheet", filePath: target.filePath, imported };
@@ -273,6 +296,7 @@ export class ModuleGraph {
   private resolveLocalNameWithVisited(
     module: ModuleRecord,
     localName: string,
+    environment: RenderEnvironment | null,
     visited: Set<string>,
   ): ResolvedSymbol {
     const binding = module.bindings.get(localName);
@@ -287,6 +311,7 @@ export class ModuleGraph {
         binding.binding.specifier,
         binding.binding.imported,
         module,
+        environment,
         visited,
       );
     }
@@ -297,10 +322,16 @@ export class ModuleGraph {
     target: ModuleRecord,
     exportedName: string,
     fromModule: ModuleRecord,
+    environment: RenderEnvironment | null,
     visited: Set<string>,
   ): ResolvedSymbol {
-    const symbol = this.resolveExportWithVisited(target, exportedName, visited);
-    return target.layer === "client" && fromModule.layer === "react-server"
+    const symbol = this.resolveExportWithVisited(
+      target,
+      exportedName,
+      getModuleEnvironment(target, environment),
+      visited,
+    );
+    return isClientModule(target) && !isClientModule(fromModule)
       ? toClientReferenceSymbol(symbol)
       : symbol;
   }
@@ -308,9 +339,10 @@ export class ModuleGraph {
   private resolveExportWithVisited(
     module: ModuleRecord,
     exportedName: string,
+    environment: RenderEnvironment | null,
     visited: Set<string>,
   ): ResolvedSymbol {
-    const visitKey = `${getModuleKey(module.layer, module.filePath)}\u0000${exportedName}`;
+    const visitKey = `${module.filePath}\u0000${exportedName}`;
     if (visited.has(visitKey)) {
       return { kind: "unresolved", reason: `cyclic re-export of "${exportedName}"` };
     }
@@ -319,7 +351,7 @@ export class ModuleGraph {
       switch (entry.kind) {
         case "local":
           if (entry.exportedName === exportedName) {
-            return this.resolveLocalNameWithVisited(module, entry.localName, visited);
+            return this.resolveLocalNameWithVisited(module, entry.localName, environment, visited);
           }
           break;
         case "expression":
@@ -338,7 +370,13 @@ export class ModuleGraph {
           break;
         case "re-export":
           if (entry.exportedName === exportedName) {
-            return this.resolveImportedName(entry.specifier, entry.imported, module, visited);
+            return this.resolveImportedName(
+              entry.specifier,
+              entry.imported,
+              module,
+              environment,
+              visited,
+            );
           }
           break;
         case "re-export-all":
@@ -350,31 +388,25 @@ export class ModuleGraph {
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
         if (isModeledLibraryExport(entry.specifier, exportedName)) {
-          const resolution = this.resolveSpecifier(entry.specifier, module);
+          const resolution = this.resolveSpecifier(entry.specifier, module, environment);
           if (resolution.kind === "external") {
             return externalSymbol(
               resolution,
               { kind: "named", name: exportedName },
               entry.specifier,
-              module.layer,
             );
           }
         }
-        const target = this.resolveImportedModule(entry.specifier, module);
+        const target = this.resolveImportedModule(entry.specifier, module, environment);
         if (!isModuleRecord(target)) {
           if (target.kind === "external" || target.kind === "builtin") {
             externalSources.push(
-              externalSymbol(
-                target,
-                { kind: "named", name: exportedName },
-                entry.specifier,
-                module.layer,
-              ),
+              externalSymbol(target, { kind: "named", name: exportedName }, entry.specifier),
             );
           }
           continue;
         }
-        const resolved = this.resolveExportFrom(target, exportedName, module, visited);
+        const resolved = this.resolveExportFrom(target, exportedName, module, environment, visited);
         if (resolved.kind !== "unresolved") return resolved;
       }
       if (externalSources.length === 1) return externalSources[0];
@@ -404,12 +436,10 @@ const externalSymbol = (
   target: ExternalModuleResolution | BuiltinModuleResolution,
   imported: ImportedName,
   specifier: string,
-  layer: ModuleLayer,
 ): ResolvedSymbol => ({
   kind: "external",
   packageName: target.kind === "external" ? target.packageName : target.specifier,
   imported,
   specifier,
   filePath: target.kind === "external" ? target.filePath : null,
-  layer,
 });

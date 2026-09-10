@@ -116,6 +116,7 @@ const partition = (
 const getNullishLiteral = (node: Expression): null | undefined | false => {
   if (node.type === "Literal" && node.value === null) return null;
   if (node.type === "Identifier" && node.name === "undefined") return undefined;
+  if (node.type === "UnaryExpression" && node.operator === "void") return undefined;
   return false;
 };
 

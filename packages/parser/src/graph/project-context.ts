@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { EMPTY_OBSERVATIONS } from "../observations.js";
 import { readPackageManifest } from "../package-manifest.js";
@@ -58,6 +58,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     origin = null,
     transpiler = "name-preserving",
     bundler = "unknown",
+    environment = null,
   } = options;
   const declared = new Set<string>();
   const installRoot = findInstallRoot(rootDirectory);
@@ -92,8 +93,11 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     publicDirectory,
     base: viteConfig.base,
     origin,
+    bundler,
+    environment,
     viteVersion:
       bundler === "vite" || hasDeclaredDependency("vite") ? readPackageVersion("vite") : null,
+    readPackageVersion,
     shouldInlineAsset: viteConfig.shouldInlineAsset,
     appType: bundler === "vite" ? viteConfig.appType : "custom",
     proxyContexts: viteConfig.proxyContexts,
@@ -108,7 +112,11 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     transpiler,
     bundler,
     getImportedAssetUrl: assets.getImportedUrl,
-    readServedAsset: assets.read,
+    findServedFile: assets.findServedFile,
+    readServedAsset: (url, request) => {
+      const filePath = assets.findServedFile(url, request);
+      return filePath === null ? null : readFileSync(filePath, "utf8");
+    },
     findQuery: (queryHash) => queries.get(queryHash) ?? null,
     findMutations: (mutationHash) =>
       mutations?.filter((mutation) => mutation.mutationHash === mutationHash) ?? null,

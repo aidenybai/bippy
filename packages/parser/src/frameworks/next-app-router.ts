@@ -156,7 +156,7 @@ const loadDefaultExport = (
   }
   return {
     module,
-    component: interpreter.evaluateModuleExport(module, "default"),
+    component: interpreter.evaluateModuleExport(module, "default", "server"),
   };
 };
 

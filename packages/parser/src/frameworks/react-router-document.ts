@@ -143,7 +143,11 @@ export const renderMetaDescriptors = (meta: StaticValue): StaticValue =>
 const OPEN_GRAPH_PROPERTY = /^(og|music|video|article|book|profile|fb):.+$/;
 const OPEN_GRAPH_PREFIX = "og:";
 
-const v1MetaContent = (name: string, content: StaticValue, isOpenGraphTag: boolean): StaticValue => {
+const v1MetaContent = (
+  name: string,
+  content: StaticValue,
+  isOpenGraphTag: boolean,
+): StaticValue => {
   if (isOpenGraphTag) {
     return hostElement(
       "meta",

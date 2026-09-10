@@ -1,16 +1,17 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { createServedAssets } from "../src/graph/served-assets.js";
 import type { ViteAppType } from "../src/graph/vite-config.js";
+import type { ServedRequest } from "../src/types.js";
 
 const INDEX_HTML = "<!doctype html><html><body><div id='root'></div></body></html>";
 const ABOUT_HTML = "<!doctype html><html><body>about</body></html>";
 const LOCALE_JSON = '{"Home":"Home"}';
 
 interface ServedProject {
-  read: ReturnType<typeof createServedAssets>["read"];
+  read: (url: string, request?: ServedRequest) => string | null;
 }
 
 const roots: string[] = [];
@@ -35,12 +36,20 @@ const createProject = (
     publicDirectory: path.join(rootDirectory, "public"),
     base: "/",
     origin: null,
+    bundler: "vite",
+    environment: null,
     viteVersion: "5.3.3",
+    readPackageVersion: () => null,
     shouldInlineAsset: () => null,
     appType: options.appType ?? "spa",
     proxyContexts: options.proxyContexts === undefined ? [] : options.proxyContexts,
   });
-  return { read: assets.read };
+  return {
+    read: (url, request) => {
+      const filePath = assets.findServedFile(url, request);
+      return filePath === null ? null : readFileSync(filePath, "utf8");
+    },
+  };
 };
 
 afterEach(() => {
@@ -92,7 +101,9 @@ describe("HTML fallback", () => {
   });
 
   it("never falls back outside a SPA or without a request", () => {
-    expect(createProject({ appType: "custom" }).read("/settings", { accept: undefined })).toBeNull();
+    expect(
+      createProject({ appType: "custom" }).read("/settings", { accept: undefined }),
+    ).toBeNull();
     expect(createProject().read("/settings")).toBeNull();
   });
 });

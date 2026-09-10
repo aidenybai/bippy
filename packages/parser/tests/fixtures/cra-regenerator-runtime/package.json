@@ -1,0 +1,9 @@
+{
+  "name": "fixture-cra-regenerator-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "debounce-kit": "0.0.0",
+    "react-scripts": "5.0.1"
+  }
+}

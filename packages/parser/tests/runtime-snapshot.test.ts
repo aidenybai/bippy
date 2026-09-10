@@ -7,10 +7,7 @@ import { BranchMarker, MARKER_NAMES } from "../src/materialize/markers.js";
 
 const LONG_TEXT = "x".repeat(500);
 
-const findFiber = (
-  fiber: RuntimeFiberSnapshot,
-  name: string,
-): RuntimeFiberSnapshot | undefined =>
+const findFiber = (fiber: RuntimeFiberSnapshot, name: string): RuntimeFiberSnapshot | undefined =>
   fiber.name === name
     ? fiber
     : fiber.children.map((child) => findFiber(child, name)).find((found) => found);
@@ -39,7 +36,7 @@ describe("runtime snapshot props", () => {
     const tree = await snapshotTree(
       createElement(
         BranchMarker,
-        { reason: "test", location: null, preferredIndex: 0, predicate: LONG_TEXT, path: null },
+        { reason: "test", location: null, preferredIndex: 0, predicate: LONG_TEXT },
         createElement("div", { title: LONG_TEXT }),
       ),
     );

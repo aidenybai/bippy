@@ -1,14 +1,16 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
+  getComponentProperty,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
 } from "../evaluate/class-component.js";
 import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
+import { getPathPredicate, getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
-import { getPathPredicate, getRepeatCountPredicate } from "../evaluate/predicates.js";
+import { isClientModule } from "../graph/module-record.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -57,12 +59,14 @@ import type {
   StubComponent,
   StubHooks,
   StubRenderTools,
+  WrapperElementType,
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
   AlternativeMarker,
   BranchMarker,
   createSuspendedMarker,
+  KEY_PLACEHOLDER,
   MARKER_NAMES,
   OpaqueMarker,
   RepeatMarker,
@@ -258,10 +262,10 @@ interface BranchNumbering {
 }
 
 /**
- * The path a branch's alternatives fork on when the materializer commits
- * effects and refs inside them. It names the position, not the branch's own
- * predicate: that predicate is re-derived from fresh values each render, while
- * the state left behind must still be undone by the same decision next commit.
+ * The decision a branch's alternatives fork on when the materializer commits
+ * effects and refs inside them: the branch's own predicate, or the position
+ * when the branch has none, so the state left behind is undone by that same
+ * decision next commit.
  */
 const getAlternativeConditions = (
   context: MaterializeContext,
@@ -269,15 +273,18 @@ const getAlternativeConditions = (
   reason: string,
   location: SourceLocation | null,
   preferredIndex: number,
+  predicate: string | null,
 ): AlternativeCondition[] => {
-  const path = getPathPredicate(context.numbering.owner, context.numbering.next++);
+  const decision =
+    predicate ??
+    getPathPredicate(context.numbering.owner, context.numbering.next++, reason, location);
   return Array.from({ length: count }, (_, index) => ({
     index,
     count,
     reason,
     location,
     preferredIndex,
-    predicate: path,
+    predicate: decision,
     parent: context.alternative,
   }));
 };
@@ -337,7 +344,7 @@ class StaticThrowError extends Error {
 }
 
 const isClientComponent = (component: ComponentDefinition): boolean =>
-  component.isClientReference || component.module.layer === "client";
+  component.isClientReference || isClientModule(component.module);
 
 const isClassNode = (node: ComponentDefinition["node"]): node is Class =>
   node.type === "ClassDeclaration" || node.type === "ClassExpression";
@@ -419,25 +426,35 @@ const textContentToNull = (value: StaticValue): StaticValue => {
 };
 
 const getComponentDisplayName = (component: ComponentDefinition): string | null => {
-  const displayName = component.properties.get("displayName");
+  const displayName = getComponentProperty(component, "displayName");
   if (displayName?.kind === "primitive" && typeof displayName.value === "string")
     return displayName.value;
   return component.name;
 };
 
 const hasDefaultProps = (component: ComponentDefinition): boolean => {
-  const defaults = component.properties.get("defaultProps");
-  return defaults !== undefined && isNonNullish(defaults);
+  const defaults = getComponentProperty(component, "defaultProps");
+  return defaults !== null && isNonNullish(defaults);
+};
+
+const withDefaultProps = (
+  defaults: StaticValue | null,
+  props: StaticObjectValue,
+): StaticObjectValue => {
+  if (!defaults || !isNonNullish(defaults)) return props;
+  return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
 };
 
 const applyDefaultProps = (
   component: ComponentDefinition,
   props: StaticObjectValue,
-): StaticObjectValue => {
-  const defaults = component.properties.get("defaultProps");
-  if (!defaults || !isNonNullish(defaults)) return props;
-  return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
-};
+): StaticObjectValue => withDefaultProps(getComponentProperty(component, "defaultProps"), props);
+
+/** `createElement` fills in `type.defaultProps` of a `memo`/`forwardRef` object like any other type's. */
+const applyWrapperDefaultProps = (
+  type: WrapperElementType,
+  props: StaticObjectValue,
+): StaticObjectValue => withDefaultProps(type.properties.get("defaultProps") ?? null, props);
 
 const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue => {
   const node = component.node;
@@ -526,12 +543,10 @@ export class Materializer {
     Context<StaticValue | null>
   >();
   private isInsideComponentRender = false;
-  /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
-  private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
   /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
   private readonly readContext: ContextReader = (definition) => {
     if (!this.isInsideComponentRender) return null;
-    const value = this.useStaticContext(this.getContext(definition));
+    const value = this.runtime.readContext(this.getContext(definition));
     this.contextReads?.push({ definition, value });
     return value;
   };
@@ -563,7 +578,6 @@ export class Materializer {
     this.maxRecursionPerComponent =
       options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.serverComponents = options.serverComponents ?? false;
-    this.useStaticContext = runtime.react.use ?? runtime.react.useContext;
     this.suspenseBoundaryProxy = setFunctionName(
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,
@@ -627,9 +641,9 @@ export class Materializer {
       case "repeat":
         return this.runtime.react.createElement(RepeatMarker, {
           location: value.location && formatSourceLocation(value.location),
+          cardinality: getRepeatCardinality(value),
           countMin: value.count?.min ?? 0,
           countMax: value.count?.max ?? null,
-          predicate: getRepeatCountPredicate(value),
           children: [this.toNode(value.item, context, false)],
         });
       case "branch": {
@@ -640,6 +654,7 @@ export class Materializer {
           value.reason,
           value.location,
           value.preferredIndex,
+          value.predicate,
         );
         return this.branchNode(
           value.alternatives.map((alternative, index) =>
@@ -649,7 +664,6 @@ export class Materializer {
           value.preferredIndex,
           isTopLevel,
           value.location,
-          value.predicate,
           conditions[0].predicate,
         );
       }
@@ -661,6 +675,7 @@ export class Materializer {
           value.reason,
           value.location,
           preferredIndex,
+          null,
         );
         return this.branchNode(
           [this.alternativeNode(value.value, present, context, isTopLevel), null],
@@ -668,7 +683,6 @@ export class Materializer {
           preferredIndex,
           isTopLevel,
           value.location,
-          null,
           present.predicate,
         );
       }
@@ -715,15 +729,13 @@ export class Materializer {
     isTopLevel: boolean,
     location: SourceLocation | null = null,
     predicate: string | null = null,
-    path: string | null = null,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     return createElement(BranchMarker, {
       reason,
       location: location && formatSourceLocation(location),
       preferredIndex,
-      predicate: predicate ?? path,
-      path,
+      predicate,
       children: alternatives.map((node, index) =>
         createElement(AlternativeMarker, { key: index, children: isTopLevel ? node : [node] }),
       ),
@@ -794,10 +806,7 @@ export class Materializer {
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
   private isFlightUnwrappedFragment(element: StaticElementValue): boolean {
-    return (
-      element.type.kind === "fragment" &&
-      this.keyToString(element.key, element.location) === undefined
-    );
+    return element.type.kind === "fragment" && isKeyless(element.key);
   }
 
   /**
@@ -878,7 +887,11 @@ export class Materializer {
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, {
           key: reactKey,
-          input: { ...input, isMemoized: !type.hasCompare },
+          input: {
+            ...input,
+            props: applyWrapperDefaultProps(type, props),
+            isMemoized: !type.hasCompare,
+          },
         });
       }
       case "forward-ref": {
@@ -888,7 +901,10 @@ export class Materializer {
           key: reactKey,
           input: {
             ...input,
-            props: renderProps.kind === "object" ? renderProps : props,
+            props: applyWrapperDefaultProps(
+              type,
+              renderProps.kind === "object" ? renderProps : props,
+            ),
             ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
           },
         });
@@ -908,7 +924,7 @@ export class Materializer {
       case "fragment":
         return createElement(
           this.runtime.react.Fragment,
-          { key: reactKey },
+          { key: isKeyless(key) ? undefined : (reactKey ?? KEY_PLACEHOLDER) },
           this.toNode(children, context, true),
         );
       case "strict-mode":
@@ -1131,11 +1147,8 @@ export class Materializer {
     key: StaticValue | null,
     location: SourceLocation | null,
   ): string | undefined {
-    if (!key) return undefined;
-    if (key.kind === "primitive") {
-      if (key.value === null || key.value === undefined) return undefined;
-      return String(key.value);
-    }
+    if (!key || isKeyless(key)) return undefined;
+    if (key.kind === "primitive") return String(key.value);
     this.interpreter.report("dynamic-key", `key is dynamic (${describeValue(key)})`, location);
     return undefined;
   }
@@ -1386,12 +1399,14 @@ export class Materializer {
       byVariant = new Map();
       this.memoTypes.set(inner, byVariant);
     }
-    const cacheKey = `${type.hasCompare ? "compare" : ""}\u0000${type.displayName ?? ""}`;
+    const hasWrapperDefaults = isNonNullish(type.properties.get("defaultProps") ?? NULL_VALUE);
+    const cacheKey = `${type.hasCompare ? "compare" : ""}\u0000${hasWrapperDefaults ? "defaults" : ""}\u0000${type.displayName ?? ""}`;
     let memoType = byVariant.get(cacheKey);
     if (!memoType) {
       const memoized = this.runtime.react.memo(inner, type.hasCompare ? () => false : undefined);
       if (type.displayName) memoized.displayName = type.displayName;
-      memoType = memoized;
+      // React 18 only takes the SimpleMemoComponent fast path when the memo object itself has no defaultProps.
+      memoType = hasWrapperDefaults ? Object.assign(memoized, { defaultProps: {} }) : memoized;
       byVariant.set(cacheKey, memoType);
     }
     return memoType;
@@ -1505,6 +1520,7 @@ export class Materializer {
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       pushItems: (list, items) => this.interpreter.pushItems(list, items),
+      setItem: (list, index, value) => this.interpreter.setItem(list, index, value),
       nameHint: null,
       templateArgumentNames: null,
       environment: context.environment,
@@ -1647,7 +1663,7 @@ export class Materializer {
     // so a timer task starts a new one.
     frame.requestRender = () => {
       if (frame.isFrozen) return;
-      this.interpreter.changeCount++;
+      this.interpreter.mutations.record(0);
       if (this.interpreter.timers.isFlushing) instance.passCount = 0;
       if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
       rerender();

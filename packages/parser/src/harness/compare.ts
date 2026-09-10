@@ -1,12 +1,14 @@
-import { isBundledDefaultExportName, isBundlerDedupedName } from "./bundler-names.js";
+import {
+  isBundledDefaultExportName,
+  isBundlerDedupedName,
+  isReactCompilerOutlinedName,
+} from "./bundler-names.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
-  findPathAlternative,
   formatRepeatBounds,
-  getPathAlternative,
   hasPatternDecisions,
-  scopePatternVariables,
+  scopeRepeatIteration,
   SelfContainedFiberIndex,
   type PatternBranch,
   type PatternFiber,
@@ -71,7 +73,17 @@ export interface ComparisonOptions {
    * matches its own fiber.
    */
   unwrapTransparentRuntimeFiber?: (fiber: RuntimeFiberSnapshot) => RuntimeFiberSnapshot[] | null;
+  /** Vetoes decisions inconsistent with those already in force on the path being tried. */
+  constraint?: DecisionConstraint;
 }
+
+export interface DecisionConstraint {
+  /** Whether `node` may take `choice` given the decisions in force; when it may, it is in force until `release`. */
+  decide: (node: PatternBranch | PatternRepeat, choice: number) => boolean;
+  release: () => void;
+}
+
+const UNCONSTRAINED: DecisionConstraint = { decide: () => true, release: () => {} };
 
 export interface ComparisonDivergence {
   path: string;
@@ -308,8 +320,6 @@ class Matcher {
   private positions: RuntimePositions = { start: new Map(), end: new Map() };
   /** Decisions in force on the path being tried; a variable met again must agree. */
   private readonly assignment = new Map<string, number>();
-  /** Decisions the `path` of a decided branch implies for branches on state set inside it. */
-  private readonly implied = new Map<string, number>();
   private readonly scopedRepeatChildren = new Map<PatternRepeat, PatternNode[][]>();
   private readonly selfContainedFibers = new SelfContainedFiberIndex();
   private readonly compareKeys: boolean;
@@ -319,6 +329,7 @@ class Matcher {
   private readonly unwrapTransparentRuntimeFiber: (
     fiber: RuntimeFiberSnapshot,
   ) => RuntimeFiberSnapshot[] | null;
+  private readonly constraint: DecisionConstraint;
 
   constructor(options: ComparisonOptions) {
     this.compareKeys = options.compareKeys ?? true;
@@ -326,6 +337,7 @@ class Matcher {
     this.compareText = options.compareText ?? true;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.unwrapTransparentRuntimeFiber = options.unwrapTransparentRuntimeFiber ?? (() => null);
+    this.constraint = options.constraint ?? UNCONSTRAINED;
   }
 
   get stepsUsed(): number {
@@ -515,37 +527,33 @@ class Matcher {
           }
           return this.matchList(alternative, 0, runtime, runtimeIndex, path, continuation);
         }
-        const resolve = (result: MatchTally, choice: number): MatchTally =>
-          addTally(result, { branchesResolved: 1, decisions: [{ node: pattern, choice }] });
-        const implied = this.findImpliedAlternative(pattern);
-        if (implied !== null) {
-          const result = this.matchDecidedBranch(
-            pattern,
-            implied,
-            runtime,
-            runtimeIndex,
-            path,
-            continuation,
-          );
-          return result && resolve(result, implied);
-        }
         const order = pattern.alternatives.map((_, alternativeIndex) => alternativeIndex);
         if (pattern.preferredIndex !== null && pattern.preferredIndex < order.length) {
           order.splice(order.indexOf(pattern.preferredIndex), 1);
           order.unshift(pattern.preferredIndex);
         }
+        const resolve = (result: MatchTally, choice: number): MatchTally =>
+          addTally(result, { branchesResolved: 1, decisions: [{ node: pattern, choice }] });
         // Alternatives are tried in preference order, but one that explains the
         // runtime without leaning on wildcards beats an earlier one that does.
         let best: RankedAlternative | null = null;
         for (const alternativeIndex of order) {
-          const result = this.matchDecidedBranch(
-            pattern,
-            alternativeIndex,
-            runtime,
-            runtimeIndex,
-            path,
-            continuation,
-          );
+          if (!this.constraint.decide(pattern, alternativeIndex)) continue;
+          this.assignment.set(pattern.variable, alternativeIndex);
+          let result: MatchTally | null;
+          try {
+            result = this.matchList(
+              pattern.alternatives[alternativeIndex],
+              0,
+              runtime,
+              runtimeIndex,
+              path,
+              continuation,
+            );
+          } finally {
+            this.assignment.delete(pattern.variable);
+            this.constraint.release();
+          }
           if (!result) continue;
           if (result.wildcardAbsorbedFibers === 0) return resolve(result, alternativeIndex);
           if (!best || result.wildcardAbsorbedFibers < best.tally.wildcardAbsorbedFibers) {
@@ -581,7 +589,13 @@ class Matcher {
             this.recordFailure(path, iterationRuntime, start, pattern);
             return null;
           }
-          const rest = continuation(iterationRuntime, start);
+          if (!this.constraint.decide(pattern, iteration)) return null;
+          let rest: MatchTally | null;
+          try {
+            rest = continuation(iterationRuntime, start);
+          } finally {
+            this.constraint.release();
+          }
           return rest
             ? addTally(rest, {
                 repeatIterations: iteration,
@@ -591,37 +605,6 @@ class Matcher {
         };
         return iterate(runtime, runtimeIndex, 0);
       }
-    }
-  }
-
-  private findImpliedAlternative(pattern: PatternBranch): number | null {
-    const lookup = (variable: string): number | null =>
-      this.assignment.get(variable) ?? this.implied.get(variable) ?? null;
-    return this.implied.get(pattern.variable) ?? findPathAlternative(pattern, lookup);
-  }
-
-  private matchDecidedBranch(
-    pattern: PatternBranch,
-    alternativeIndex: number,
-    runtime: RuntimeFiberSnapshot[],
-    runtimeIndex: number,
-    path: string[],
-    continuation: Continuation,
-  ): MatchTally | null {
-    const alternative = pattern.alternatives[alternativeIndex];
-    if (!alternative) {
-      this.recordFailure(path, runtime, runtimeIndex, pattern);
-      return null;
-    }
-    const pathAlternative = getPathAlternative(pattern, alternativeIndex);
-    const isImplying = pathAlternative !== null && !this.implied.has(pathAlternative.variable);
-    if (isImplying) this.implied.set(pathAlternative.variable, pathAlternative.alternativeIndex);
-    this.assignment.set(pattern.variable, alternativeIndex);
-    try {
-      return this.matchList(alternative, 0, runtime, runtimeIndex, path, continuation);
-    } finally {
-      this.assignment.delete(pattern.variable);
-      if (isImplying) this.implied.delete(pathAlternative.variable);
     }
   }
 
@@ -762,7 +745,7 @@ class Matcher {
       this.scopedRepeatChildren.set(pattern, iterations);
     }
     for (let index = iterations.length; index <= iteration; index++) {
-      const scoped = scopePatternVariables(pattern.children, `${pattern.variable}[${index}]`);
+      const scoped = scopeRepeatIteration(pattern, index);
       this.indexPatterns(scoped);
       iterations.push(scoped);
     }
@@ -784,7 +767,9 @@ class Matcher {
     return (
       isBundlerRenamedName(pattern.name, actual.name) ||
       isBundledDefaultExportName(pattern.name, actual.name) ||
-      (isClassTag(actual.tag) && isBundlerClassName(actual.name, pattern.name))
+      (isClassTag(actual.tag)
+        ? isBundlerClassName(actual.name, pattern.name)
+        : isReactCompilerOutlinedName(actual.name))
     );
   }
 

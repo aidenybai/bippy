@@ -6,11 +6,9 @@ import type {
   SnapshotPropValue,
   SnapshotWorkTag,
 } from "./snapshot.js";
-import { MARKER_NAMES } from "../materialize/markers.js";
+import { isMarkerName } from "../materialize/markers.js";
 
 const MAX_STRING_PROP_LENGTH = 200;
-// Markers carry the analysis's own decision identities, which must survive verbatim.
-const VERBATIM_PROP_NAMES = new Set<string>(Object.values(MARKER_NAMES));
 // Vite's SSR transform names an anonymous `export default` after its export slot.
 const VITE_SSR_DEFAULT_EXPORT_NAME = "__vite_ssr_export_default__";
 
@@ -61,10 +59,10 @@ const buildTagLookup = (workTags: Readonly<ReactWorkTagMap>): Map<number, Snapsh
   return lookup;
 };
 
-const toPropValue = (value: unknown, isVerbatim: boolean): SnapshotPropValue | undefined => {
+const toPropValue = (value: unknown, isUntruncated: boolean): SnapshotPropValue | undefined => {
   switch (typeof value) {
     case "string":
-      return value.length > MAX_STRING_PROP_LENGTH && !isVerbatim
+      return value.length > MAX_STRING_PROP_LENGTH && !isUntruncated
         ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…`
         : value;
     case "number":
@@ -85,15 +83,16 @@ const toPropValue = (value: unknown, isVerbatim: boolean): SnapshotPropValue | u
   }
 };
 
+/** Marker props carry serialized guards the pattern reader parses back, so they are kept whole. */
 const snapshotProps = (
   memoizedProps: unknown,
-  isVerbatim: boolean,
+  isMarker: boolean,
 ): Record<string, SnapshotPropValue> => {
   const result: Record<string, SnapshotPropValue> = {};
   if (typeof memoizedProps !== "object" || memoizedProps === null) return result;
   for (const [key, value] of Object.entries(memoizedProps)) {
     if (key === "children") continue;
-    const propValue = toPropValue(value, isVerbatim);
+    const propValue = toPropValue(value, isMarker);
     if (propValue !== undefined) result[key] = propValue;
   }
   return result;
@@ -167,10 +166,7 @@ const snapshotFiber = (
     name,
     key: typeof key === "string" ? key : null,
     text: tag === "HostText" ? String(fiber.memoizedProps) : null,
-    props:
-      tag === "HostText"
-        ? {}
-        : snapshotProps(fiber.memoizedProps, name !== null && VERBATIM_PROP_NAMES.has(name)),
+    props: tag === "HostText" ? {} : snapshotProps(fiber.memoizedProps, isMarkerName(name)),
     children,
   };
 };

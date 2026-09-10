@@ -1,5 +1,6 @@
 import type { ProjectContext, ServedRequest, SourceLocation, StaticValue } from "../types.js";
 import { nativeFunction } from "./stubs.js";
+import { recordInputSource } from "./predicates.js";
 import { createErrorValue } from "./errors.js";
 import { resolvedPromiseValue } from "./promises.js";
 import {
@@ -92,10 +93,12 @@ export const callFetch = (
   location: SourceLocation | null,
 ): StaticValue => {
   const [resource, init] = args;
-  if (!isKnownString(resource)) return unknownValue("fetch of a dynamic URL", location);
+  const response = (reason: string): StaticValue =>
+    recordInputSource(unknownValue(reason, location), "fetch", location);
+  if (!isKnownString(resource)) return response("fetch of a dynamic URL");
   const request = isGetRequest(init) === true ? readServedRequest(init) : null;
-  if (request === null) return unknownValue(`fetch(${resource.value}) request`, location);
+  if (request === null) return response(`fetch(${resource.value}) request`);
   const body = project.readServedAsset(resource.value, request);
-  if (body === null) return unknownValue(`fetch(${resource.value})`, location);
+  if (body === null) return response(`fetch(${resource.value})`);
   return resolvedPromiseValue(createServedResponse(resource.value, body, location));
 };

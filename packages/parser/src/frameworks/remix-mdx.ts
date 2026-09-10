@@ -122,7 +122,9 @@ const loadPlugin = async (
   const module = await importInstalled(requireFrom, spec.packageName);
   const plugin =
     module &&
-    (spec.importedName === "default" ? getDefaultExport(module) : Reflect.get(module, spec.importedName));
+    (spec.importedName === "default"
+      ? getDefaultExport(module)
+      : Reflect.get(module, spec.importedName));
   if (!isPlugin(plugin)) return null;
   return spec.options.length === 0 ? plugin : [plugin, ...spec.options];
 };

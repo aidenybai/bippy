@@ -1,4 +1,5 @@
-import type { ModuleLayer, ReactApi, StaticExternalValue, StaticValue } from "../types.js";
+import { recordDerivation } from "../evaluate/predicates.js";
+import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
 const REACT_DOM_PACKAGES = new Set(["react-dom", "preact/compat"]);
@@ -53,34 +54,6 @@ const REACT_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "jsxDEV",
 ]);
 
-/** What `react`'s `react-server` build exports (packages/react/src/ReactServer.js plus its jsx runtimes). */
-const REACT_SERVER_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
-  "Children",
-  "Activity",
-  "Fragment",
-  "Profiler",
-  "StrictMode",
-  "Suspense",
-  "ViewTransition",
-  "cloneElement",
-  "createElement",
-  "createRef",
-  "use",
-  "forwardRef",
-  "isValidElement",
-  "lazy",
-  "memo",
-  "useId",
-  "useCallback",
-  "useDebugValue",
-  "useMemo",
-  "useMemoCache",
-  "cache",
-  "jsx",
-  "jsxs",
-  "jsxDEV",
-]);
-
 const REACT_DOM_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "createPortal",
   "flushSync",
@@ -90,6 +63,40 @@ const REACT_DOM_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "render",
   "hydrate",
 ]);
+
+/**
+ * What `react`'s `react-server` export condition (ReactServer.js) leaves out:
+ * server code reading these gets `undefined`, which is how feature detection
+ * such as `React.createContext && React.createContext(...)` takes its other path.
+ */
+const CLIENT_ONLY_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
+  "createContext",
+  "SuspenseList",
+  "Component",
+  "PureComponent",
+  "useState",
+  "useReducer",
+  "useRef",
+  "useContext",
+  "useEffect",
+  "useLayoutEffect",
+  "useInsertionEffect",
+  "useImperativeHandle",
+  "useTransition",
+  "useDeferredValue",
+  "useSyncExternalStore",
+  "useOptimistic",
+  "useActionState",
+  "createPortal",
+  "flushSync",
+  "batchedUpdates",
+  "createRoot",
+  "hydrateRoot",
+  "render",
+  "hydrate",
+]);
+
+export const isClientOnlyReactApi = (api: ReactApi): boolean => CLIENT_ONLY_API_NAMES.has(api);
 
 const CHILDREN_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "Children.map",
@@ -127,12 +134,6 @@ export const resolveReactApi = (
   return null;
 };
 
-/** The API as the importing layer sees it: a missing export of the server build reads as `undefined`. */
-export const getReactApiValue = (api: ReactApi, layer: ModuleLayer = "client"): StaticValue =>
-  layer === "client" || REACT_SERVER_API_NAMES.has(api)
-    ? { kind: "react-api", api }
-    : { kind: "primitive", value: undefined };
-
 const SYMBOL_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
   "Fragment",
   "StrictMode",
@@ -158,14 +159,17 @@ export const getExternalMember = (object: StaticExternalValue, key: string): Sta
     (object.importedName === "*" || object.importedName === "default")
   ) {
     const api = resolveReactApi(object.packageName, key);
-    if (api) return getReactApiValue(api, object.layer);
+    if (api) return { kind: "react-api", api };
   }
-  return {
-    kind: "external",
-    packageName: object.packageName,
-    importedName: `${object.importedName}.${key}`,
-    origin: "derived",
-  };
+  return recordDerivation(
+    {
+      kind: "external",
+      packageName: object.packageName,
+      importedName: `${object.importedName}.${key}`,
+      origin: "derived",
+    },
+    { kind: "property", object, key },
+  );
 };
 
 export const resolveReactApiMember = (api: ReactApi, memberName: string): StaticValue | null => {

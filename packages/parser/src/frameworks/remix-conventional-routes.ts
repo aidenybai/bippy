@@ -127,7 +127,9 @@ const toRecords = (
         element: null,
         component: null,
         file: files.get(routeId) ?? null,
-        children: isIndex ? [] : toRecords(routeIds, files, parentIds, routeId, routesDirectoryName),
+        children: isIndex
+          ? []
+          : toRecords(routeIds, files, parentIds, routeId, routesDirectoryName),
         uncertainty: null,
       };
     });

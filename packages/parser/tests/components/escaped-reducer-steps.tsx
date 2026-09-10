@@ -24,11 +24,7 @@ const useAnimationTicks = () => {
 const Ticks = () => {
   const ticks = useAnimationTicks();
   const isClosed = useClosedFlag();
-  return (
-    <p data-closed={isClosed}>
-      {ticks > 0 ? <strong>{ticks}</strong> : <em>none</em>}
-    </p>
-  );
+  return <p data-closed={isClosed}>{ticks > 0 ? <strong>{ticks}</strong> : <em>none</em>}</p>;
 };
 
 export const isPartial = true;

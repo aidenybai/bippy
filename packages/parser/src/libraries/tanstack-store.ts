@@ -1,9 +1,8 @@
 import {
-  FALSE_VALUE,
-  UNDEFINED_VALUE,
   compareIdentity,
   compareShallowly,
   decidedBooleanValue,
+  FALSE_VALUE,
   getObjectProperty,
   getTruthiness,
   isCallable,
@@ -11,6 +10,7 @@ import {
   isUndefinedValue,
   mapValue,
   objectFromRecord,
+  UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
 import { nativeFunction } from "../evaluate/stubs.js";
