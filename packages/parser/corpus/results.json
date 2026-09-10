@@ -1039,8 +1039,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T23:53:39.119Z",
-      "durationMs": 707,
+      "capturedAt": "2026-09-10T04:04:42.276Z",
+      "durationMs": 1071,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -1120,8 +1120,8 @@
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T23:53:39.843Z",
-      "durationMs": 1840,
+      "capturedAt": "2026-09-10T04:05:20.418Z",
+      "durationMs": 2520,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -1145,7 +1145,6 @@
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -1159,6 +1158,7 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 109,
+        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -4091,8 +4091,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T23:51:54.346Z",
-      "durationMs": 1568,
+      "capturedAt": "2026-09-10T04:05:09.474Z",
+      "durationMs": 2005,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -4461,8 +4461,8 @@
       "id": "epic-stack",
       "revision": "8473afd804b66dba6a23f317908dc35d1535e90d",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T23:53:41.689Z",
-      "durationMs": 699,
+      "capturedAt": "2026-09-10T04:04:43.407Z",
+      "durationMs": 818,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -7033,8 +7033,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:53:42.394Z",
-      "durationMs": 1463,
+      "capturedAt": "2026-09-10T04:04:44.266Z",
+      "durationMs": 1965,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -7551,8 +7551,8 @@
       "id": "invoify",
       "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T23:53:43.860Z",
-      "durationMs": 1669,
+      "capturedAt": "2026-09-10T04:04:46.289Z",
+      "durationMs": 2395,
       "runtime": {
         "reactVersion": "19.2.0-canary-3fbfb9ba-20250409",
         "rendererName": "react-dom",
@@ -8011,8 +8011,8 @@
       "id": "lexical",
       "revision": "c3b629dcf6b5111811bb9ca5a3db0665099b2856",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:53:45.536Z",
-      "durationMs": 3467,
+      "capturedAt": "2026-09-10T04:04:48.724Z",
+      "durationMs": 3363,
       "runtime": {
         "reactVersion": "19.2.5",
         "rendererName": "react-dom",
@@ -8025,12 +8025,12 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 266,
+          "fiberCount": 228,
           "textCount": 0,
-          "branchCount": 3,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
+          "unknownCount": 0,
           "modulesLoaded": 1076
         },
         "diagnostics": [
@@ -8056,61 +8056,37 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 3,
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
         "runtimeFibers": 225,
-        "staticFibers": 253,
+        "staticFibers": 225,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 228,
+        "stepsUsed": 225,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 16,
-        "stateCount": 16,
-        "clusters": 5,
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 0,
         "tree": {
-          "nodes": 929,
-          "inputs": 5,
-          "guards": 20,
-          "branches": 8,
+          "nodes": 638,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
           "repeats": 0,
           "opaque": 0,
-          "wildcards": 3
+          "wildcards": 0
         },
         "matchedState": {
-          "index": 10,
+          "index": 2,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 3,
-              "commitCount": 4
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#2)",
-              "reason": "if (branch(true | <boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/lexical/packages/lexical-playground/src/plugins/FloatingTextFormatToolbarPlugin/index.tsx:477:3",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), truthy(#2)))",
-              "reason": "&& on branch(\"Arial\" | unknown)",
-              "location": "/home/ubuntu/bippy-corpus/lexical/packages/lexical-playground/src/ui/DropDown.tsx:282:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#1)",
-              "reason": "buttonLabel is truthy",
-              "location": null,
-              "alternativeIndex": 0,
-              "alternativeCount": 2
+              "commit": 2,
+              "commitCount": 3
             }
           ]
         },
@@ -8137,80 +8113,17 @@
               "status": "possible"
             },
             {
-              "kind": "branch",
-              "variable": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), truthy(#2)))",
-              "reason": "&& on branch(\"Arial\" | unknown)",
-              "location": "/home/ubuntu/bippy-corpus/lexical/packages/lexical-playground/src/ui/DropDown.tsx:282:10",
-              "side": 0,
-              "guard": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), truthy(#2)))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#1)",
-              "reason": "buttonLabel is truthy",
-              "location": null,
-              "side": 0,
-              "guard": "eq(choice(branch#1), 0)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#1)",
-              "reason": "buttonLabel is truthy",
-              "location": null,
-              "side": 1,
-              "guard": "eq(choice(branch#1), 1)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#1), 0), and(eq(choice(#1), 1), truthy(#2)))",
-              "reason": "&& on branch(\"Arial\" | unknown)",
-              "location": "/home/ubuntu/bippy-corpus/lexical/packages/lexical-playground/src/ui/DropDown.tsx:282:10",
-              "side": 1,
-              "guard": "not(or(eq(choice(#1), 0), and(eq(choice(#1), 1), truthy(#2))))",
-              "status": "possible"
-            },
-            {
               "kind": "commit",
               "variable": "commit",
               "reason": "committed render",
               "location": null,
               "side": 2,
               "guard": "eq(choice(commit), 2)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#2)",
-              "reason": "if (branch(true | <boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/lexical/packages/lexical-playground/src/plugins/FloatingTextFormatToolbarPlugin/index.tsx:477:3",
-              "side": 0,
-              "guard": "eq(choice(branch#2), 0)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#2)",
-              "reason": "if (branch(true | <boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/lexical/packages/lexical-playground/src/plugins/FloatingTextFormatToolbarPlugin/index.tsx:477:3",
-              "side": 1,
-              "guard": "eq(choice(branch#2), 1)",
-              "status": "possible"
-            },
-            {
-              "kind": "commit",
-              "variable": "commit",
-              "reason": "committed render",
-              "location": null,
-              "side": 3,
-              "guard": "eq(choice(commit), 3)",
               "status": "witnessed"
             }
           ],
-          "witnessed": 4,
-          "possible": 6,
+          "witnessed": 1,
+          "possible": 2,
           "unreachable": 0
         }
       },
@@ -21604,8 +21517,8 @@
       "id": "nextjs-boilerplate",
       "revision": "1dffa39a32450300c8b01d8cfd3819f9b6e95842",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T23:53:49.007Z",
-      "durationMs": 101,
+      "capturedAt": "2026-09-10T04:04:52.126Z",
+      "durationMs": 148,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -21690,8 +21603,8 @@
       "id": "nextjs-examples",
       "revision": "4fed8eaf197aaa60fd85371352482199a4c2107f",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T23:51:53.688Z",
-      "durationMs": 327,
+      "capturedAt": "2026-09-10T04:04:52.313Z",
+      "durationMs": 260,
       "runtime": {
         "reactVersion": "19.3.0-canary-cbb046ab-20260731",
         "rendererName": "react-dom",
@@ -23677,8 +23590,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:52:07.889Z",
-      "durationMs": 81369,
+      "capturedAt": "2026-09-10T04:05:47.836Z",
+      "durationMs": 84298,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -23700,16 +23613,16 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 3842
+          "modulesLoaded": 5132
         },
         "diagnostics": [
           {
             "code": "max-call-depth",
-            "count": 120
+            "count": 122
           },
           {
             "code": "budget-exhausted",
-            "count": 36
+            "count": 66
           },
           {
             "code": "dynamic-props",
@@ -23718,7 +23631,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -23732,6 +23644,7 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -23808,8 +23721,8 @@
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T23:53:49.109Z",
-      "durationMs": 14762,
+      "capturedAt": "2026-09-10T04:04:52.614Z",
+      "durationMs": 15171,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
@@ -24010,8 +23923,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T00:31:26.825Z",
-      "durationMs": 12205,
+      "capturedAt": "2026-09-10T04:05:22.988Z",
+      "durationMs": 12908,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -26446,8 +26359,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T23:51:54.035Z",
-      "durationMs": 184,
+      "capturedAt": "2026-09-10T04:05:07.824Z",
+      "durationMs": 315,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -28750,8 +28663,8 @@
       "id": "redux-toolkit",
       "revision": "e99fe6135188219f031c5028f653fb82e671de24",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:54:13.003Z",
-      "durationMs": 308,
+      "capturedAt": "2026-09-10T04:05:08.177Z",
+      "durationMs": 476,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -49434,8 +49347,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T23:51:55.921Z",
-      "durationMs": 11957,
+      "capturedAt": "2026-09-10T04:05:35.987Z",
+      "durationMs": 11807,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -49466,7 +49379,7 @@
         "diagnostics": [
           {
             "code": "max-call-depth",
-            "count": 12
+            "count": 13
           },
           {
             "code": "dynamic-key",
@@ -49475,7 +49388,6 @@
         ]
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -49489,6 +49401,7 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 9,
+        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -52321,8 +52234,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-09T23:51:54.226Z",
-      "durationMs": 114,
+      "capturedAt": "2026-09-10T04:05:08.698Z",
+      "durationMs": 174,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -52485,8 +52398,8 @@
       "id": "tanstack-query",
       "revision": "1893a965d219032207cbe147880d0e9f757a5a56",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:54:13.313Z",
-      "durationMs": 127,
+      "capturedAt": "2026-09-10T04:05:08.910Z",
+      "durationMs": 177,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -52566,8 +52479,8 @@
       "id": "tanstack-router",
       "revision": "cf166d160e6397007a979bfc7065b45ff69ea543",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:54:13.442Z",
-      "durationMs": 245,
+      "capturedAt": "2026-09-10T04:05:09.127Z",
+      "durationMs": 310,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -52677,8 +52590,8 @@
       "id": "tanstack-table",
       "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
       "framework": "spa",
-      "capturedAt": "2026-09-09T23:53:29.268Z",
-      "durationMs": 910,
+      "capturedAt": "2026-09-10T04:05:11.517Z",
+      "durationMs": 786,
       "runtime": {
         "reactVersion": "19.2.6",
         "rendererName": "react-dom",
