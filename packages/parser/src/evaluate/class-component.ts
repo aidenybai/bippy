@@ -77,7 +77,6 @@ export const collectClassMembers = (
       (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
       !element.declare
     ) {
-      if (element.declare) continue;
       members.push({ key, isStatic: element.static, kind: "field", value: element.value });
     }
   }

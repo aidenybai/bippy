@@ -1506,7 +1506,6 @@ const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
 
 /** What `Array.from(source)` copies: an iterable's items (including a native `NodeList`), else an array-like's indexed entries. */
-/** What `Array.from` consumes: an iterable's items, else `{ length: n }` (and sparse array-likes). */
 const iterableOrArrayLike = (
   interpreter: Interpreter,
   value: StaticValue,
