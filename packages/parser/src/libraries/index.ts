@@ -57,6 +57,10 @@ import {
 } from "./tanstack-query.js";
 import { TANSTACK_STORE_PACKAGES, tanstackStoreValue } from "./tanstack-store.js";
 import {
+  UNPLUGIN_AUTO_IMPORT_PACKAGES,
+  unpluginAutoImportValue,
+} from "./unplugin-auto-import.js";
+import {
   USE_SYNC_EXTERNAL_STORE_PACKAGES,
   useSyncExternalStoreValue,
 } from "./use-sync-external-store.js";
@@ -123,6 +127,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: TANSTACK_QUERY_MODELED_EXPORTS,
   },
   { packages: TANSTACK_STORE_PACKAGES, getValue: tanstackStoreValue },
+  { packages: UNPLUGIN_AUTO_IMPORT_PACKAGES, getValue: unpluginAutoImportValue },
   { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
   { packages: VITE_PACKAGES, getValue: viteValue },
 ];

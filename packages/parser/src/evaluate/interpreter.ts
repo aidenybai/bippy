@@ -439,6 +439,7 @@ export const UNKNOWN_PROJECT: ProjectContext = {
   linguiCatalog: null,
   routerState: null,
   storeStates: null,
+  findAutoImport: () => null,
 };
 
 /** The per-file names Node gives a module (CommonJS wrapper and `import.meta`); Vite's config loader injects the same. */
@@ -1064,11 +1065,13 @@ export class Interpreter {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
     return objectValue(
-      names.map((name) => ({
-        kind: "property",
-        key: name,
-        value: this.evaluateModuleExport(module, name, environment),
-      })),
+      [...names]
+        .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+        .map((name) => ({
+          kind: "property",
+          key: name,
+          value: this.evaluateModuleExport(module, name, environment),
+        })),
     );
   }
 
@@ -1697,6 +1700,14 @@ export class Interpreter {
       name,
     );
     if (runtimeSpecifier !== null) return this.importModule(runtimeSpecifier, context, null, true);
+    const autoImport = this.project.findAutoImport(context.module.filePath, name);
+    if (autoImport) {
+      return this.resolvedSymbolToValue(
+        this.graph.resolveImportedSymbol(autoImport.specifier, autoImport.imported, context.module),
+        name,
+        context.environment,
+      );
+    }
     return this.isAbsentGlobal(name, context.environment)
       ? thrownValue(
           `\`${name}\` is not defined`,

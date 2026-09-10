@@ -3607,6 +3607,150 @@
         "maxFiberCount": 20000
       },
       "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
+    },
+    {
+      "id": "magic-resume",
+      "repository": "https://github.com/joyceql/magic-resume",
+      "revision": "baec353da99cd0e2c857f814390ec406ffd1944c",
+      "description": "Magic Resume landing page (TanStack Start file routes with locale prefix, HeroUI, framer-motion, zustand, pnpm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/router.tsx",
+        "route": "/en"
+      }
+    },
+    {
+      "id": "playground-macos",
+      "repository": "https://github.com/Renovamen/playground-macos",
+      "revision": "2c9e82dca487432ad9922ddf9b0a26aadeae81e5",
+      "description": "playground-macos login screen (Vite SPA, React 18, UnoCSS, unplugin-auto-import, zustand, pnpm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "aliases": {
+          "~": "src"
+        }
+      }
+    },
+    {
+      "id": "transform",
+      "repository": "https://github.com/ritz078/transform",
+      "revision": "ff7557939be351706f4dc6f71cc375e3bc64c225",
+      "description": "transform.tools SVG to JSX page (Next 10 pages router, React 17, Evergreen UI, Monaco, web workers, yarn 1)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "github-profile-readme-generator",
+      "repository": "https://github.com/rahuldkjain/github-profile-readme-generator",
+      "revision": "5ae90bfcbd7ab2f69809b094601f7975c32ae077",
+      "description": "GitHub Profile README Generator home page (Next 15 app router with Turbopack, React 19, next-themes, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "react-spreadsheet",
+      "repository": "https://github.com/iddan/react-spreadsheet",
+      "revision": "bb80b60b82981527d5172ce8268af61a517f7e46",
+      "description": "react-spreadsheet Controlled Storybook story rendered in the preview iframe (Storybook 8 webpack5, React 18, use-context-selector, yarn 1)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn storybook --ci --no-open",
+      "url": "http://localhost:6006/iframe.html?id=spreadsheet--controlled&viewMode=story",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/stories/Spreadsheet.stories.tsx",
+        "rootComponent": "Controlled",
+        "anchor": "Spreadsheet"
+      },
+      "notes": "The repository is a component library; its Storybook preview iframe is the only runnable React root. Both trees are anchored on the library's Spreadsheet component so Storybook's decorators stay outside the comparison."
+    },
+    {
+      "id": "markdown-to-image",
+      "repository": "https://github.com/gcui-art/markdown-to-image",
+      "revision": "41e4f2252f8588f16385cd170d2bd89db675b48b",
+      "description": "markdown-to-image editor demo (Vite SPA, React 18, react-markdown, Tailwind, npm; both checked-in lockfiles are stale)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx"
+      },
+      "notes": "partial by design: 169 of the 190 runtime fibers are the output of react-markdown (unified + micromark + remark-gfm + rehype-raw/parse5) compiling a ~3KB markdown string character by character; that pipeline exhausts the evaluator step budget even for a two-line document, so <Markdown> stays an opaque external boundary. Every fiber outside it matches."
+    },
+    {
+      "id": "rapidraw",
+      "repository": "https://github.com/CyberTimon/RapidRAW",
+      "revision": "0da0182ff8a63ad64c1b2e3c1cb99e0ff3efd83e",
+      "description": "RapidRAW photo editor renderer (Tauri 2 + Vite SPA, React 19, zustand, Clerk, npm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:1420/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx"
+      }
+    },
+    {
+      "id": "react-video-editor",
+      "repository": "https://github.com/designcombo/react-video-editor",
+      "revision": "e2469bbffff8c5581e85f601d29fa77eab90468b",
+      "description": "React Video Editor home page (Next 16 app router, React 19, @designcombo timeline/state, Remotion player, zustand, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
     }
   ]
 }

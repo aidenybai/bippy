@@ -458,6 +458,14 @@ export interface ProjectContext {
   routerState: CapturedRouterState | null;
   /** The state of each Redux store the page created; `null` when no store was recorded. */
   storeStates: readonly CapturedValue[] | null;
+  /** The import a build-time transform (unplugin-auto-import) injects for a free identifier in a file; `null` when it injects none. */
+  findAutoImport: (filePath: string, name: string) => AutoImport | null;
+}
+
+/** An import a bundler plugin adds to a module for an identifier its source leaves unbound. */
+export interface AutoImport {
+  specifier: string;
+  imported: ImportedName;
 }
 
 export interface LibraryValueProvider {
