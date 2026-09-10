@@ -4,6 +4,7 @@ import { getRDTHook } from "bippy";
 import type { Context, ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
+import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
@@ -229,7 +230,10 @@ const loadReactModules = async (
   return { react, dom };
 };
 
-const hasHooks = (react: ReactModule): boolean => typeof react.useState === "function";
+const FIRST_REACT_WITH_HOOKS = "16.8.0";
+
+const hasHooks = (react: ReactModule): boolean =>
+  isVersionAtLeast(react.version, FIRST_REACT_WITH_HOOKS);
 
 const load = async (
   resolver: ModuleResolver | null,
