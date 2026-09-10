@@ -14,6 +14,8 @@ import {
   getAllocationCount,
   isSameValue,
   joinObjectEntries,
+  listValue,
+  spreadListItems,
 } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
@@ -356,11 +358,19 @@ export class HeapJournal {
         list.items = agreedItems;
         continue;
       }
-      const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original.items));
-      const uncertainItems = isEveryPathAppending
-        ? pathItems.flatMap((items) => items.slice(original.items.length))
-        : pathItems.flat();
-      list.items = isEveryPathAppending ? [...original.items] : [];
+      if (pathItems.every((items) => isExtensionOf(items, original.items))) {
+        const appended = branchValue(
+          pathItems.map((items) => listValue(items.slice(original.items.length))),
+          reason,
+          location,
+          preferredPath,
+          predicate,
+        );
+        list.items = [...original.items, ...spreadListItems(appended, location)];
+        continue;
+      }
+      list.items = [];
+      const uncertainItems = pathItems.flat();
       if (uncertainItems.length > 0) {
         list.items.push({
           kind: "repeat",

@@ -3,6 +3,7 @@ import type {
   SourceLocation,
   StaticBranchValue,
   StaticObjectValue,
+  StaticOptionalValue,
   StaticValue,
   StringComposition,
   StubRenderTools,
@@ -17,26 +18,31 @@ import {
   compareIdentity,
   FALSE_VALUE,
   getComponentIdentity,
+  itemCountValue,
   listValue,
   mapValue,
   mayOverlapCompositions,
   mayReadAsText,
   objectFromRecord,
   optionalValue,
-  primitiveValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
 
-/** The value an entry holds on each path of one fork (null where the path lacks it); entries of the same fork are present together. */
-interface EntryPresence {
-  predicate: string;
-  pathValues: (StaticValue | null)[];
-  preferredPath: number;
+/** One join of fork paths; every entry it left on some paths only refers to the same object. */
+interface EntryFork {
   reason: string;
   location: SourceLocation | null;
+  preferredPath: number;
+  predicate: string | null;
+}
+
+/** The value an entry holds on each path of one fork (null where the path lacks it); entries of the same fork are present together. */
+interface EntryPresence {
+  fork: EntryFork;
+  pathValues: (StaticValue | null)[];
 }
 
 /**
@@ -51,6 +57,8 @@ interface CollectionEntry {
   isDefinite: boolean;
   writeOrdinal: number;
   presence?: EntryPresence;
+  /** The optional item of the seeding list this entry is present with, so the size counts what the list's length counts. */
+  seed?: StaticOptionalValue;
 }
 
 interface CollectionState {
@@ -156,11 +164,25 @@ const MAX_KEY_ALTERNATIVES = 8;
 const MAX_PRESENCE_STATES = 16;
 
 const getPresenceStateCount = (entries: CollectionEntry[]): number => {
-  const pathCounts = new Map<string, number>();
+  const pathCounts = new Map<EntryFork, number>();
   for (const entry of entries) {
-    if (entry.presence) pathCounts.set(entry.presence.predicate, entry.presence.pathValues.length);
+    if (entry.presence) pathCounts.set(entry.presence.fork, entry.presence.pathValues.length);
   }
   return [...pathCounts.values()].reduce((product, count) => product * count, 1);
+};
+
+/** Entries of one fork present on disjoint paths never coexist. */
+const areMutuallyExclusive = (entry: CollectionEntry, other: CollectionEntry): boolean => {
+  const { presence } = entry;
+  const otherPresence = other.presence;
+  return (
+    presence !== undefined &&
+    otherPresence !== undefined &&
+    presence.fork === otherPresence.fork &&
+    presence.pathValues.every(
+      (pathValue, pathIndex) => pathValue === null || otherPresence.pathValues[pathIndex] === null,
+    )
+  );
 };
 
 /** A small branch of keys: the operation applies to each alternative, which stays findable under its own identity. */
@@ -247,6 +269,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     this.writeCount = Math.max(...snapshots.map((snapshot) => snapshot.writeCount));
     this.isExternallyMutable = snapshots.some((snapshot) => snapshot.isExternallyMutable);
     const joined = new Map<KeyIdentity, CollectionEntry>();
+    const fork: EntryFork = { reason, location, preferredPath, predicate };
     for (const snapshot of snapshots) {
       for (const [identity, entry] of snapshot.entries) {
         if (joined.has(identity)) continue;
@@ -260,8 +283,7 @@ class StaticCollection implements JournaledState<CollectionState> {
         const present = pathEntries.filter((pathEntry) => pathEntry !== null);
         const isEverywhere = present.length === pathEntries.length;
         const preferred = pathEntries[preferredPath];
-        const isCorrelated =
-          !isEverywhere && predicate !== null && present.every((pathEntry) => pathEntry.isDefinite);
+        const isCorrelated = !isEverywhere && present.every((pathEntry) => pathEntry.isDefinite);
         joined.set(identity, {
           key: entry.key,
           value: branchValue(
@@ -274,13 +296,7 @@ class StaticCollection implements JournaledState<CollectionState> {
           isDefinite: isEverywhere && present.every((pathEntry) => pathEntry.isDefinite),
           writeOrdinal: Math.max(...present.map((pathEntry) => pathEntry.writeOrdinal)),
           presence: isCorrelated
-            ? {
-                predicate,
-                pathValues: pathEntries.map((pathEntry) => pathEntry?.value ?? null),
-                preferredPath,
-                reason,
-                location,
-              }
+            ? { fork, pathValues: pathEntries.map((pathEntry) => pathEntry?.value ?? null) }
             : undefined,
         });
       }
@@ -315,7 +331,9 @@ class StaticCollection implements JournaledState<CollectionState> {
       return true;
     }
     return entries.some((entry, index) =>
-      entries.slice(index + 1).some((other) => mayEqualKeys(entry.key, other.key)),
+      entries
+        .slice(index + 1)
+        .some((other) => !areMutuallyExclusive(entry, other) && mayEqualKeys(entry.key, other.key)),
     );
   }
 
@@ -357,10 +375,10 @@ class StaticCollection implements JournaledState<CollectionState> {
       if (presence) {
         return branchValue(
           presence.pathValues.map((pathValue) => pathValue ?? UNDEFINED_VALUE),
-          presence.reason,
-          presence.location,
-          presence.preferredPath,
-          presence.predicate,
+          presence.fork.reason,
+          presence.fork.location,
+          presence.fork.preferredPath,
+          presence.fork.predicate,
         );
       }
       return branchValue(
@@ -371,9 +389,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     }
     const reason = this.describeUncertainty("get");
     const stored = [...(entry ? [entry.value] : []), ...possiblyEqual.map((other) => other.value)];
-    if (stored.length > MAX_FAN_OUT) {
-        return unknownValue(reason, this.location);
-    }
+    if (stored.length > MAX_FAN_OUT) return unknownValue(reason, this.location);
     if (this.isExternallyMutable) stored.push(unknownValue(reason, this.location));
     if (!isSettled) stored.push(UNDEFINED_VALUE);
     return branchValue(stored, reason, this.location);
@@ -395,10 +411,10 @@ class StaticCollection implements JournaledState<CollectionState> {
       if (presence) {
         return branchValue(
           presence.pathValues.map((pathValue) => (pathValue ? TRUE_VALUE : FALSE_VALUE)),
-          presence.reason,
-          presence.location,
-          presence.preferredPath,
-          presence.predicate,
+          presence.fork.reason,
+          presence.fork.location,
+          presence.fork.preferredPath,
+          presence.fork.predicate,
         );
       }
       return unknownPrimitiveValue("boolean", this.describeMaybePresent("has"));
@@ -438,7 +454,28 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   private unsettle(entries: CollectionEntry[]): void {
-    for (const entry of entries) this.replace({ ...entry, isDefinite: false });
+    for (const entry of entries) {
+      this.replace({ ...entry, isDefinite: false, seed: undefined });
+    }
+  }
+
+  /** `new Set([...maybeItems])`: an optional item is an entry present exactly when the item is. */
+  seed(item: StaticOptionalValue, key: StaticValue, value: StaticValue): void {
+    const existing = this.find(key);
+    if (existing) {
+      this.write(
+        existing.key,
+        branchValue(
+          [value, existing.value],
+          item.reason,
+          item.location,
+          item.isAbsentPreferred ? 1 : 0,
+        ),
+        existing.isDefinite,
+      );
+      return;
+    }
+    this.replace({ key, value, isDefinite: false, writeOrdinal: ++this.writeCount, seed: item });
   }
 
   delete(key: StaticValue): StaticValue {
@@ -484,7 +521,7 @@ class StaticCollection implements JournaledState<CollectionState> {
         presence.pathValues.map((_, pathIndex) =>
           this.projectEntries(
             entries.flatMap((entry) => {
-              if (entry.presence?.predicate !== presence.predicate) return [entry];
+              if (entry.presence?.fork !== presence.fork) return [entry];
               const pathValue = entry.presence.pathValues[pathIndex];
               return pathValue === null
                 ? []
@@ -500,17 +537,19 @@ class StaticCollection implements JournaledState<CollectionState> {
             select,
           ),
         ),
-        presence.reason,
-        presence.location,
-        presence.preferredPath,
-        presence.predicate,
+        presence.fork.reason,
+        presence.fork.location,
+        presence.fork.preferredPath,
+        presence.fork.predicate,
       );
     }
-    const items = entries.map((entry) =>
-      entry.isDefinite
-        ? select(entry)
-        : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location),
-    );
+    const items = entries.map((entry) => {
+      if (entry.isDefinite) return select(entry);
+      const { seed } = entry;
+      return seed
+        ? optionalValue(select(entry), seed.reason, seed.location, seed.isAbsentPreferred)
+        : optionalValue(select(entry), this.describeMaybePresent("entries"), this.location);
+    });
     if (this.isExternallyMutable) {
       items.push({
         kind: "repeat",
@@ -528,11 +567,14 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   size(): StaticValue {
+    const entries = [...this.entries.values()];
+    const indefinite = entries.filter((entry) => !entry.isDefinite);
+    const seeds = indefinite.flatMap((entry) => (entry.seed ? [entry.seed] : []));
     return this.hasPossiblyEqualKeys() ||
       this.isExternallyMutable ||
-      [...this.entries.values()].some((entry) => !entry.isDefinite)
+      seeds.length < indefinite.length
       ? unknownPrimitiveValue("number", `${this.kind}.size`)
-      : primitiveValue(this.entries.size);
+      : itemCountValue(`${this.kind}.size`, entries.length - indefinite.length, seeds);
   }
 }
 
@@ -549,6 +591,14 @@ const seedCollection = (
   const items = getCollectionItems(initial) ?? initial;
   if (items.kind !== "list") return false;
   for (const item of items.items) {
+    if (item.kind === "optional") {
+      const seeded = item.value;
+      if (!isKeyed(kind)) collection.seed(item, seeded, seeded);
+      else if (seeded.kind === "list" && seeded.items.length >= 2)
+        collection.seed(item, seeded.items[0], seeded.items[1]);
+      else return false;
+      continue;
+    }
     if (!isKeyed(kind)) {
       collection.set(item, item);
       continue;

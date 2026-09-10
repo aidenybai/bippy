@@ -769,6 +769,16 @@ export interface NumberRange {
   max: number;
 }
 
+/**
+ * An unknown number that is `base` plus however many of `items` (optional or
+ * repeated list items) are present: a list's length and the size of a `Set`
+ * seeded from it count the same items, so they are one number.
+ */
+export interface ItemCount {
+  base: number;
+  items: StaticValue[];
+}
+
 export interface StaticUnknownPrimitiveValue {
   kind: "unknown-primitive";
   primitiveType: UnknownPrimitiveType;
@@ -777,6 +787,7 @@ export interface StaticUnknownPrimitiveValue {
   stringShape?: StringShape;
   composition?: StringComposition;
   numberRange?: NumberRange;
+  itemCount?: ItemCount;
 }
 
 export interface StaticListValue {

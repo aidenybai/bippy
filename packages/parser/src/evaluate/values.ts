@@ -10,6 +10,7 @@ import type {
   CapturedExportReference,
   CapturedValue,
   FunctionLikeNode,
+  ItemCount,
   JsonValue,
   NumberRange,
   Scope,
@@ -1112,6 +1113,13 @@ export const isSameComposition = (
   left.prefix === right.prefix &&
   left.suffix === right.suffix;
 
+const isSameItemCount = (left: ItemCount | undefined, right: ItemCount | undefined): boolean =>
+  left !== undefined &&
+  right !== undefined &&
+  left.base === right.base &&
+  left.items.length === right.items.length &&
+  left.items.every((item) => right.items.includes(item));
+
 export const matchesComposition = (name: string, composition: StringComposition): boolean =>
   name.length >= composition.prefix.length + composition.suffix.length &&
   name.startsWith(composition.prefix) &&
@@ -1350,7 +1358,8 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
   if (
     left.kind === "unknown-primitive" &&
     right.kind === "unknown-primitive" &&
-    isSameComposition(left.composition, right.composition)
+    (isSameComposition(left.composition, right.composition) ||
+      isSameItemCount(left.itemCount, right.itemCount))
   )
     return true;
   if (left.kind === "function" && right.kind === "function" && left.scope !== right.scope) {
@@ -1665,7 +1674,8 @@ const haveSameShape = (
   (left.composition === right.composition ||
     isSameComposition(left.composition, right.composition)) &&
   left.numberRange?.min === right.numberRange?.min &&
-  left.numberRange?.max === right.numberRange?.max;
+  left.numberRange?.max === right.numberRange?.max &&
+  (left.itemCount === right.itemCount || isSameItemCount(left.itemCount, right.itemCount));
 
 const isSameLocation = (left: SourceLocation | null, right: SourceLocation | null): boolean =>
   left === right ||
@@ -2182,17 +2192,26 @@ const getItemCountRange = (item: StaticValue): NumberRange => {
   return item.kind === "optional" ? { min: 0, max: 1 } : { min: 1, max: 1 };
 };
 
-export const getListLength = (list: StaticListValue): StaticValue => {
-  if (!list.items.some(isIndefiniteItem)) return primitiveValue(list.items.length);
-  const ranges = list.items.map(getItemCountRange);
+/** `base` definite items plus however many of the indefinite `items` are present. */
+export const itemCountValue = (reason: string, base: number, items: StaticValue[]): StaticValue => {
+  if (items.length === 0) return primitiveValue(base);
+  const ranges = items.map(getItemCountRange);
   return {
-    ...unknownPrimitiveValue("number", "length of a partially known list"),
+    ...unknownPrimitiveValue("number", reason),
     numberRange: {
-      min: ranges.reduce((total, range) => total + range.min, 0),
-      max: ranges.reduce((total, range) => total + range.max, 0),
+      min: ranges.reduce((total, range) => total + range.min, base),
+      max: ranges.reduce((total, range) => total + range.max, base),
     },
+    itemCount: { base, items },
   };
 };
+
+export const getListLength = (list: StaticListValue): StaticValue =>
+  itemCountValue(
+    "length of a partially known list",
+    list.items.filter((item) => !isIndefiniteItem(item)).length,
+    list.items.filter(isIndefiniteItem),
+  );
 
 const MAX_LIST_GROWTH = 1_000;
 
