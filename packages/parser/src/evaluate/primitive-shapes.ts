@@ -119,6 +119,8 @@ const getComponentSourceText = (component: ComponentDefinition): string | null =
 /** `memo`/`forwardRef`/`lazy` results and context sides are plain objects; component functions and classes read as their source. */
 const getElementTypeText = (type: StaticElementType): string | null => {
   switch (type.kind) {
+    case "host":
+      return type.tagName;
     case "function":
     case "class":
       return getComponentSourceText(type.component);
