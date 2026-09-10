@@ -1,6 +1,8 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import { AXIOS_PACKAGES, axiosValue } from "./axios.js";
+import { DEEPMERGE_PACKAGES, deepmergeValue } from "./deepmerge.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
@@ -29,6 +31,15 @@ import {
   reactInlineSvgValue,
 } from "./react-inlinesvg.js";
 import {
+  REACT_LIFECYCLES_COMPAT_PACKAGES,
+  reactLifecyclesCompatValue,
+} from "./react-lifecycles-compat.js";
+import {
+  REDUX_PERSIST_MODELED_EXPORTS,
+  REDUX_PERSIST_PACKAGES,
+  reduxPersistValue,
+} from "./redux-persist.js";
+import {
   REDUX_MODELED_EXPORTS,
   REDUX_PACKAGES,
   REDUX_TOOLKIT_PACKAGES,
@@ -38,6 +49,7 @@ import {
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
+import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
 import {
   TANSTACK_QUERY_MODELED_EXPORTS,
   TANSTACK_QUERY_PACKAGES,
@@ -63,6 +75,8 @@ interface LibraryModel {
 }
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
+  { packages: AXIOS_PACKAGES, getValue: axiosValue },
+  { packages: DEEPMERGE_PACKAGES, getValue: deepmergeValue },
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
   { packages: FOREIGN_RENDERER_PACKAGES, getValue: foreignRendererValue },
@@ -91,11 +105,18 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: reactInlineSvgValue,
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
   },
+  { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
+  {
+    packages: REDUX_PERSIST_PACKAGES,
+    getValue: reduxPersistValue,
+    modeledExports: REDUX_PERSIST_MODELED_EXPORTS,
+  },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
+  { packages: STYLEX_PACKAGES, getValue: stylexValue },
   {
     packages: TANSTACK_QUERY_PACKAGES,
     getValue: tanstackQueryValue,

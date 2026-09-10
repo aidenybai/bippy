@@ -1,12 +1,9 @@
 import {
-  FALSE_VALUE,
-  NULL_VALUE,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
   booleanValue,
   branchValue,
   capturedValue,
   compareIdentity,
+  FALSE_VALUE,
   getObjectProperty,
   getTruthiness,
   hasDefiniteItems,
@@ -15,12 +12,16 @@ import {
   isUndefinedValue,
   listValue,
   mapValue,
+  NULL_VALUE,
   objectFromRecord,
   primitiveValue,
   toJsonValue,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { recordInputSource } from "../evaluate/predicates.js";
 import { nativeFunction } from "../evaluate/stubs.js";
 import { hashKey } from "../observations.js";
 import type {
@@ -58,6 +59,9 @@ const QUERY_HOOKS: ReadonlySet<string> = new Set([
 
 const noopPromise = (name: string): StaticValue =>
   nativeFunction(name, () => unknownValue(`promise returned by ${name}`));
+
+const fetchedData = (): StaticValue =>
+  recordInputSource(unknownValue("data fetched by the query at runtime"), "fetch");
 
 const unknownBoolean = (reason: string): StaticValue =>
   branchValue([FALSE_VALUE, TRUE_VALUE], reason);
@@ -223,7 +227,7 @@ const settledQueryResult = (
   extra: Record<string, StaticValue> = {},
 ): StaticValue => {
   const outcome = "whether the query succeeded or failed at runtime";
-  const data = selectData(options, unknownValue("data fetched by the query at runtime"), tools);
+  const data = selectData(options, fetchedData(), tools);
   return objectFromRecord({
     ...queryResultCommon(),
     status: branchValue([primitiveValue("success"), primitiveValue("error")], outcome),
@@ -263,7 +267,7 @@ const suspenseQueryResult = (
     isRefetchError: FALSE_VALUE,
     isFetched: TRUE_VALUE,
     isFetchedAfterMount: TRUE_VALUE,
-    data: selectData(options, unknownValue("data fetched by the query at runtime"), tools),
+    data: selectData(options, fetchedData(), tools),
     error: NULL_VALUE,
     failureCount: unknownCount("query failure count at runtime"),
     failureReason: NULL_VALUE,

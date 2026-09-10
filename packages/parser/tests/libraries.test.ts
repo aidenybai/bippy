@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer } from "../src/index.js";
+import { isPurePackage } from "../src/libraries/pure-packages.js";
 
 const LINARIA_SOURCE = `
 import { styled } from "@linaria/react";
@@ -34,6 +35,47 @@ export default () => (
 );
 `;
 
+const AXIOS_SOURCE = `
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+interface Item {
+  id: string;
+}
+
+const api = axios.create({ baseURL: "https://example.test", timeout: 500 });
+api.interceptors.request.use((config) => {
+  config.headers.Authorization = "Bearer token";
+  return config;
+});
+api.interceptors.response.use(
+  (response) => response.data,
+  (error) => Promise.reject(error),
+);
+
+export default function Items() {
+  const [items, setItems] = useState<Item[] | null>(null);
+  const [hasFailed, setHasFailed] = useState(false);
+  useEffect(() => {
+    api
+      .get<Item[]>("/items")
+      .then((loaded) => setItems(loaded))
+      .catch(() => setHasFailed(true));
+  }, []);
+  if (hasFailed) return <p>failed</p>;
+  if (!items?.length) return <p>loading</p>;
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>
+          <span>item</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+`;
+
 const OPAQUE_RENDER_PROP_SOURCE = `
 import { Highlight } from "prism-react-renderer";
 
@@ -54,7 +96,7 @@ const renderSource = async (source: string): Promise<string> => {
   const result = await renderer.renderComponent(entryFile, { exportName: "default" });
   expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
   expect(result.stats.unknownCount).toBe(0);
-  return formatPattern(getRenderPattern(result));
+  return formatPattern(getRenderPattern(result)).replaceAll(`${rootDirectory}/`, "");
 };
 
 describe("library models", () => {
@@ -70,6 +112,33 @@ describe("library models", () => {
         "            <div>",
         "              <Box>",
         "                <span>",
+      ].join("\n"),
+    );
+  });
+
+  it("treats lodash's per-method packages like the matching lodash export", () => {
+    expect(isPurePackage("lodash.mergewith")).toBe(true);
+    expect(isPurePackage("lodash.isequal")).toBe(true);
+    expect(isPurePackage("lodash.debounce")).toBe(false);
+    expect(isPurePackage("lodash.uniqueid")).toBe(false);
+    expect(isPurePackage("lodash-webpack-plugin")).toBe(false);
+  });
+
+  it("keeps an Axios response pending so the request's outcomes stay enumerated", async () => {
+    expect(await renderSource(AXIOS_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <Items>",
+        "    ?branch(if (branch(false | true))) @ app.tsx:28:3",
+        "      |0",
+        "        <p>",
+        "      |1 (preferred)",
+        "        <p>",
+        "      |2",
+        "        <ul>",
+        "          *repeat(0..) @ app.tsx:32:8",
+        "            <li>",
+        "              <span>",
       ].join("\n"),
     );
   });

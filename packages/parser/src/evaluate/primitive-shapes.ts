@@ -1,5 +1,6 @@
 import type {
   NumberRange,
+  StaticElementType,
   StaticUnknownPrimitiveValue,
   StaticValue,
   StringComposition,
@@ -11,6 +12,7 @@ import {
   hasDefiniteItems,
   mapValue,
   primitiveValue,
+  regExpToString,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
@@ -33,29 +35,47 @@ export const rangedNumberValue = (
   numberRange: NumberRange,
 ): StaticUnknownPrimitiveValue => ({ ...unknownPrimitiveValue("number", reason), numberRange });
 
+const PLAIN_OBJECT_ELEMENT_TYPES = new Set<StaticElementType["kind"]>([
+  "memo",
+  "forward-ref",
+  "lazy",
+  "context-provider",
+  "context-consumer",
+]);
+
+/** The text `value` coerces to when the language fixes it: primitives, and React's plain-object element types and elements. */
+export const getCoercedText = (value: StaticValue): string | null => {
+  if (value.kind === "primitive")
+    return typeof value.value === "symbol" ? null : String(value.value);
+  if (value.kind === "element" || value.kind === "context") return "[object Object]";
+  if (value.kind === "component-reference" && PLAIN_OBJECT_ELEMENT_TYPES.has(value.type.kind)) {
+    return "[object Object]";
+  }
+  return null;
+};
+
 /** How `value` reads once `+` coerces it to a string. */
 const getConcatenationShape = (value: StaticValue): StringShape => {
-  if (value.kind === "primitive" && typeof value.value !== "symbol") {
-    const text = String(value.value);
-    return fixedLengthShape(text, text.length);
-  }
+  const text = getCoercedText(value);
+  if (text !== null) return fixedLengthShape(text, text.length);
   if (value.kind === "unknown-primitive" && value.primitiveType === "string") {
     return value.stringShape ?? UNKNOWN_STRING_SHAPE;
   }
   return UNKNOWN_STRING_SHAPE;
 };
 
-const getCompleteText = (value: StaticValue): string | null =>
-  value.kind === "primitive" && typeof value.value !== "symbol" ? String(value.value) : null;
-
-const getConcatenationComposition = (value: StaticValue): StringComposition | null =>
-  value.kind === "unknown-primitive"
-    ? (value.composition ?? { prefix: "", source: value, suffix: "" })
+const getConcatenationComposition = (value: StaticValue): StringComposition | null => {
+  if (value.kind === "unknown-primitive") {
+    return value.composition ?? { prefix: "", source: value, suffix: "" };
+  }
+  return value.kind === "external" && value.origin === "derived"
+    ? { prefix: "", source: value, suffix: "" }
     : null;
+};
 
 const composeStrings = (left: StaticValue, right: StaticValue): StringComposition | null => {
-  const leftText = getCompleteText(left);
-  const rightText = getCompleteText(right);
+  const leftText = getCoercedText(left);
+  const rightText = getCoercedText(right);
   if (leftText !== null) {
     const composition = getConcatenationComposition(right);
     return composition && { ...composition, prefix: leftText + composition.prefix };
@@ -105,10 +125,11 @@ export const joinStrings = (items: StaticValue[], separator: string): StaticValu
     primitiveValue(""),
   );
 
-/** `String(value)`: primitives read as their text and arrays join their items, per alternative. */
+/** `String(value)`: primitives read as their text, RegExps as their source and arrays join their items, per alternative. */
 export const toStringValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     if (alternative.kind === "primitive") return primitiveValue(String(alternative.value));
+    if (alternative.kind === "regexp") return primitiveValue(regExpToString(alternative));
     if (hasDefiniteItems(alternative)) return joinStrings(alternative.items, ",");
     if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string")
       return alternative;

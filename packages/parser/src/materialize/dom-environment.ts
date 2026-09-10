@@ -23,6 +23,112 @@ const observePreloadLinks = (): void => {
   }).observe(document, { childList: true, subtree: true });
 };
 
+// HACK: happy-dom assigns slottables (`HTMLSlotElement.assignedNodes`) but
+// omits the reverse `assignedSlot` accessor, so define it from that assignment
+// (the "find a slot" step of the DOM spec) instead of leaving it undefined.
+const defineAssignedSlot = (view: Pick<typeof globalThis, "Element" | "Text">): void => {
+  const findAssignedSlot = (node: Node): HTMLSlotElement | null => {
+    const shadowRoot = node.parentElement?.shadowRoot;
+    if (!shadowRoot) return null;
+    return (
+      Array.from(shadowRoot.querySelectorAll("slot")).find((slot) =>
+        slot.assignedNodes().includes(node),
+      ) ?? null
+    );
+  };
+  for (const prototype of [view.Element.prototype, view.Text.prototype]) {
+    if ("assignedSlot" in prototype) continue;
+    Object.defineProperty(prototype, "assignedSlot", {
+      get(this: Node) {
+        return findAssignedSlot(this);
+      },
+      configurable: true,
+    });
+  }
+};
+
+interface RangeBoundary {
+  node: Node;
+  offset: number;
+}
+
+// HACK: happy-dom's Selection lacks `getComposedRanges` and the StaticRange it
+// returns, which every browser exposes; derive them from the live ranges as the
+// Selection API spec does, rescoping boundaries out of unlisted shadow roots.
+const defineGetComposedRanges = (
+  view: Pick<typeof globalThis, "Selection" | "ShadowRoot" | "StaticRange">,
+): void => {
+  if ("getComposedRanges" in view.Selection.prototype) return;
+  const isShadowRoot = (value: unknown): value is ShadowRoot => value instanceof view.ShadowRoot;
+  const listShadowRoots = (options: unknown[]): ShadowRoot[] =>
+    options.flatMap((option) => {
+      if (isShadowRoot(option)) return [option];
+      const shadowRoots: unknown =
+        typeof option === "object" && option !== null ? Reflect.get(option, "shadowRoots") : [];
+      return Array.isArray(shadowRoots) ? shadowRoots.filter(isShadowRoot) : [];
+    });
+  const rescope = (
+    boundary: RangeBoundary,
+    shadowRoots: readonly ShadowRoot[],
+    isEnd: boolean,
+  ): RangeBoundary => {
+    let { node, offset } = boundary;
+    for (let root = node.getRootNode(); isShadowRoot(root); root = node.getRootNode()) {
+      const hostParent = root.host.parentNode;
+      if (shadowRoots.includes(root) || hostParent === null) break;
+      offset = Array.prototype.indexOf.call(hostParent.childNodes, root.host) + (isEnd ? 1 : 0);
+      node = hostParent;
+    }
+    return { node, offset };
+  };
+  class StaticRange implements globalThis.StaticRange {
+    readonly startContainer: Node;
+    readonly startOffset: number;
+    readonly endContainer: Node;
+    readonly endOffset: number;
+    constructor(init: StaticRangeInit) {
+      this.startContainer = init.startContainer;
+      this.startOffset = init.startOffset;
+      this.endContainer = init.endContainer;
+      this.endOffset = init.endOffset;
+    }
+    get collapsed(): boolean {
+      return this.startContainer === this.endContainer && this.startOffset === this.endOffset;
+    }
+  }
+  Object.defineProperty(view, "StaticRange", {
+    value: StaticRange,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(view.Selection.prototype, "getComposedRanges", {
+    value(this: Selection, ...options: unknown[]): StaticRange[] {
+      const shadowRoots = listShadowRoots(options);
+      return Array.from({ length: this.rangeCount }, (_, index) => {
+        const range = this.getRangeAt(index);
+        const start = rescope(
+          { node: range.startContainer, offset: range.startOffset },
+          shadowRoots,
+          false,
+        );
+        const end = rescope(
+          { node: range.endContainer, offset: range.endOffset },
+          shadowRoots,
+          true,
+        );
+        return new StaticRange({
+          startContainer: start.node,
+          startOffset: start.offset,
+          endContainer: end.node,
+          endOffset: end.offset,
+        });
+      });
+    },
+    configurable: true,
+    writable: true,
+  });
+};
+
 let installedWindow: Window | null = null;
 const installedKeys = new Set<string>();
 
@@ -103,6 +209,8 @@ const isDomObject = (value: object): boolean => {
 /** The installed DOM as the document React DOM renders into and interpreted code reads from. */
 export const createDomHostDocument = (hasKnownMarkup: boolean): HostDocument => {
   ensureDomGlobals();
+  defineAssignedSlot(window);
+  defineGetComposedRanges(window);
   const browser = loadHostRealm("browser");
   return {
     realm: browser,
