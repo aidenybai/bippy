@@ -16,13 +16,21 @@ import {
   type PatternNode,
   type PatternRepeat,
 } from "./static-pattern.js";
-import { decisionGuard, type SymbolicCommit, type SymbolicTree } from "./symbolic-tree.js";
+import {
+  collectGuardVariables,
+  decisionGuard,
+  formatVariable,
+  type SymbolicCommit,
+  type SymbolicTree,
+  type SymbolicVariable,
+} from "./symbolic-tree.js";
 
-// States are derived from the symbolic tree on demand. Decisions that share an
-// input, or nest inside one another, form a cluster and are enumerated
-// together under the guard solver, so contradictory combinations never appear;
-// clusters that share nothing are enumerated apart and only multiplied when a
-// whole state is asked for.
+// States are derived from the symbolic tree on demand. Decisions that read a
+// shared projection of an input, or nest inside one another, form a cluster and
+// are enumerated together under the guard solver, so contradictory combinations
+// never appear; the solver decides atoms per projection, so decisions over
+// disjoint projections cannot constrain each other and are enumerated apart,
+// only multiplied when a whole state is asked for.
 
 /** Decisions over these inputs (by base id, before any iteration scope) decide together. */
 export interface GuardCluster {
@@ -76,6 +84,19 @@ export const baseInputId = (input: string): string => {
 const decisionInputs = (node: PatternBranch | PatternRepeat): string[] =>
   node.inputs.map((input) => baseInputId(input.id));
 
+const projectionKey = (variable: SymbolicVariable): string =>
+  formatVariable({ ...variable, input: baseInputId(variable.input), measure: "value" });
+
+/** The projections a decision's guards constrain; decisions over none fall back to their inputs. */
+const decisionProjections = (node: PatternBranch | PatternRepeat): string[] => {
+  const variables =
+    node.kind === "branch"
+      ? node.guards.flatMap((guard) => collectGuardVariables(guard))
+      : [node.cardinality];
+  const keys = [...new Set(variables.map(projectionKey))];
+  return keys.length > 0 ? keys : decisionInputs(node);
+};
+
 class InputUnion {
   private readonly parents = new Map<string, string>();
 
@@ -119,15 +140,17 @@ const uniteDecisions = (nodes: PatternNode[], enclosing: string[], union: InputU
         uniteDecisions(node.passedChildren, enclosing, union);
         break;
       case "branch": {
-        const inputs = decisionInputs(node);
-        union.unite([...enclosing, ...inputs]);
-        for (const alternative of node.alternatives) uniteDecisions(alternative, inputs, union);
+        const projections = decisionProjections(node);
+        union.unite([...enclosing, ...projections]);
+        for (const alternative of node.alternatives) {
+          uniteDecisions(alternative, projections, union);
+        }
         break;
       }
       case "repeat": {
-        const inputs = decisionInputs(node);
-        union.unite([...enclosing, ...inputs]);
-        uniteDecisions(node.children, inputs, union);
+        const projections = decisionProjections(node);
+        union.unite([...enclosing, ...projections]);
+        uniteDecisions(node.children, projections, union);
         break;
       }
       case "text":
@@ -137,12 +160,16 @@ const uniteDecisions = (nodes: PatternNode[], enclosing: string[], union: InputU
   }
 };
 
-/** Inputs decided together: they share a decision, or one decision only exists under another. */
-export const clusterInputs = (tree: PatternNode[]): string[][] => {
+/** Projections decided together: a decision reads several, or one decision only exists under another. */
+export const clusterProjections = (tree: PatternNode[]): string[][] => {
   const union = new InputUnion();
   uniteDecisions(tree, [], union);
   return union.members().sort((left, right) => left[0].localeCompare(right[0]));
 };
+
+const inputsOfProjections = (projections: string[]): string[] => [
+  ...new Set(projections.map((projection) => projection.split(".")[0])),
+];
 
 type ConditionMap = ReadonlyMap<string, StateCondition>;
 
@@ -196,7 +223,7 @@ class ClusterEnumerator {
   }
 
   private owns(node: PatternBranch | PatternRepeat): boolean {
-    return decisionInputs(node).some((input) => this.cluster.has(input));
+    return decisionProjections(node).some((projection) => this.cluster.has(projection));
   }
 
   private expandList(
@@ -378,10 +405,14 @@ const enumerateCommit = (
 ): CommitStateSpace => {
   const log = new OmissionLog();
   omitTruncatedSubtrees(commit.tree, log.omit);
-  const clusters = clusterInputs(commit.tree).map((inputs): GuardCluster => {
-    const enumerator = new ClusterEnumerator(new Set(inputs), budget, log.omit);
+  const clusters = clusterProjections(commit.tree).map((projections): GuardCluster => {
+    const enumerator = new ClusterEnumerator(new Set(projections), budget, log.omit);
     enumerator.enumerate(commit.tree);
-    return { inputs, states: enumerator.states, isTruncated: enumerator.isTruncated };
+    return {
+      inputs: inputsOfProjections(projections),
+      states: enumerator.states,
+      isTruncated: enumerator.isTruncated,
+    };
   });
   return {
     transition,

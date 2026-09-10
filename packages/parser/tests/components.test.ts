@@ -13,6 +13,7 @@ import {
  * subtrees. A fixture exporting `isExact` must leave no decision open (commits
  * are not decisions); one exporting `isPartial` must keep one, for uncertainty
  * happy-dom cannot exhibit (browser facts it only answers with placeholders).
+ * One exporting `stateCount` must enumerate exactly that many states.
  */
 describe("component fixtures: static fiber tree vs react-dom", () => {
   for (const fixture of listComponentFixtures()) {
@@ -35,6 +36,9 @@ describe("component fixtures: static fiber tree vs react-dom", () => {
         expect(decisionCount, detail).toBe(0);
       }
       if (run.isPartial) expect(decisionCount, detail).toBeGreaterThan(0);
+      if (run.stateCount !== null) {
+        expect(run.comparison.stateSpace.states.length, detail).toBe(run.stateCount);
+      }
     });
   }
 });

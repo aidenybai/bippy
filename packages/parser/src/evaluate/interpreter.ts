@@ -226,7 +226,14 @@ import {
 } from "./styled-components-transform.js";
 import type { CallFrame, ContextReader, EvaluationContext, StepBudget } from "./context.js";
 import type { StateCell } from "./hooks.js";
-import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
+import {
+  NO_PROVIDERS,
+  enterUncertainPath,
+  isCertainWrite,
+  withOutcomeHandler,
+  withScope,
+  withoutSuspension,
+} from "./context.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
@@ -333,6 +340,7 @@ import {
   getTruthinessPredicate,
   recordDerivation,
   recordNegation,
+  toCallLiterals,
 } from "./predicates.js";
 import type { CompareOperator, GuardLiteral } from "../harness/symbolic-tree.js";
 
@@ -945,7 +953,7 @@ export class Interpreter {
       superBinding: null,
       readContext,
       callStack: [],
-      uncertainDepth: 0,
+      uncertainSince: null,
       forkDepth: 0,
       environment,
       hooks: null,
@@ -1385,13 +1393,14 @@ export class Interpreter {
         const index = toIndexKey(propertyName);
         if (index !== null) {
           this.recordHeapMutation(target);
-          if (context.uncertainDepth > 0 && index >= target.items.length) {
+          const isCertain = isCertainWrite(context, target.allocation);
+          if (!isCertain && index >= target.items.length) {
             target.items.push({ kind: "repeat", item: value, location: null });
           } else {
             setListItem(
               target,
               index,
-              this.withUncertainAssignment(target.items[index], value, `[${index}]`, context),
+              isCertain ? value : uncertainAssignment(target.items[index], value, `[${index}]`),
             );
           }
           return target;
@@ -1419,12 +1428,13 @@ export class Interpreter {
         if (this.getRealm(context.environment).isGlobalAlias(target.name)) {
           this.windowGlobals.set(
             propertyName,
-            this.withUncertainAssignment(
-              this.windowGlobals.get(propertyName),
-              value,
-              `window.${propertyName}`,
-              context,
-            ),
+            isCertainWrite(context, undefined)
+              ? value
+              : uncertainAssignment(
+                  this.windowGlobals.get(propertyName),
+                  value,
+                  `window.${propertyName}`,
+                ),
           );
         }
         const hostDocument = this.getHostDocument(target, context.environment);
@@ -2793,7 +2803,9 @@ export class Interpreter {
       this.escapeWalk.memo.invalidate(owner, name);
       owner.bindings.set(
         name,
-        this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
+        isCertainWrite(context, owner.allocation)
+          ? value
+          : uncertainAssignment(owner.bindings.get(name), value, name),
       );
       return;
     }
@@ -2806,19 +2818,9 @@ export class Interpreter {
     this.mutations.record(0);
     this.escapeWalk.memo.invalidate(context.module, name);
     for (const journal of this.heapJournals) journal.recordModuleBinding(values, name, previous);
-    values.set(name, this.withUncertainAssignment(previous, value, name, context));
-  }
-
-  private withUncertainAssignment(
-    previous: StaticValue | undefined,
-    value: StaticValue,
-    name: string,
-    context: EvaluationContext,
-  ): StaticValue {
-    if (context.uncertainDepth === 0) return value;
-    return branchValue(
-      [value, previous ?? UNDEFINED_VALUE],
-      `assignment to ${name} in an uncertain path`,
+    values.set(
+      name,
+      isCertainWrite(context, undefined) ? value : uncertainAssignment(previous, value, name),
     );
   }
 
@@ -3427,14 +3429,19 @@ export class Interpreter {
         return this.callBuiltin(callee, args, context, location);
       case "global":
         return this.callBuiltin(callee, args, context, location);
-      case "external":
+      case "external": {
         this.markEscapes(args);
-        return {
+        const result: StaticValue = {
           kind: "external",
           packageName: callee.packageName,
           importedName: `${callee.importedName}()`,
           origin: "derived",
         };
+        const literals = toCallLiterals(args);
+        return literals === null
+          ? result
+          : recordDerivation(result, { kind: "call", callee, literals });
+      }
       case "native-function":
         return callee.call(args, {
           readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
@@ -3474,9 +3481,14 @@ export class Interpreter {
               location,
             );
       }
-      case "unknown":
+      case "unknown": {
         this.markEscapes(args);
-        return unknownValue(`call of ${callee.reason}`, location);
+        const result = unknownValue(`call of ${callee.reason}`, location);
+        const literals = toCallLiterals(args);
+        return literals === null
+          ? result
+          : recordDerivation(result, { kind: "call", callee, literals });
+      }
       case "primitive":
         return unknownValue(`call of ${String(callee.value)}`, location);
       default:
@@ -3934,7 +3946,7 @@ export class Interpreter {
           properties: new Map(functionValue.properties),
         },
       ],
-      uncertainDepth: context.uncertainDepth,
+      uncertainSince: context.uncertainSince,
       forkDepth: context.forkDepth,
       environment: context.environment,
       hooks: context.hooks,
@@ -4517,9 +4529,8 @@ export class Interpreter {
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
     const forkContext: EvaluationContext = {
-      ...context,
+      ...(isTooDeep ? enterUncertainPath(context) : context),
       forkDepth: context.forkDepth + 1,
-      uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
       suspension: null,
     };
     const entrySnapshot = snapshotScopes(context.scope);
@@ -4588,7 +4599,13 @@ export class Interpreter {
     const isRestPositional =
       outcomes.slice(0, -1).every(isPureReturn) && isPureCompletion(outcomes[outcomes.length - 1]);
     return mergeOutcomes(
-      [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+      [
+        ...(isRestPositional ? outcomes.slice(0, -1) : outcomes).map((outcome) => ({
+          ...outcome,
+          mayComplete: false,
+        })),
+        rest,
+      ],
       reason,
       location,
       preferredOutcome,
@@ -5214,6 +5231,13 @@ const nameAnonymousInner = (
   inner.name = displayName;
   inner.properties.set("displayName", primitiveValue(displayName));
 };
+
+const uncertainAssignment = (
+  previous: StaticValue | undefined,
+  value: StaticValue,
+  name: string,
+): StaticValue =>
+  branchValue([value, previous ?? UNDEFINED_VALUE], `assignment to ${name} in an uncertain path`);
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 

@@ -2,6 +2,7 @@ import {
   andGuard,
   compareGuard,
   constantGuard,
+  countGuardAtoms,
   ELEMENT_SEGMENT,
   equalsGuard,
   inSetGuard,
@@ -63,6 +64,13 @@ export interface AliasDerivation {
   operand: StaticValue;
 }
 
+/** The result of calling an opaque function with literal arguments; called again the same way it is the same result. */
+export interface CallDerivation {
+  kind: "call";
+  callee: StaticValue;
+  literals: GuardLiteral[];
+}
+
 export interface EqualityDerivation {
   kind: "equality";
   operand: StaticValue;
@@ -96,6 +104,7 @@ export type Derivation =
   | ElementDerivation
   | MeasureDerivation
   | AliasDerivation
+  | CallDerivation
   | EqualityDerivation
   | ComparisonDerivation
   | MembershipDerivation
@@ -202,9 +211,31 @@ const resolveTerm = (value: StaticValue): ResolvedTerm => {
           measure: derivation.kind,
         })) ?? rootTerm(subject)
       );
+    case "call":
+      return (
+        projectTerm(resolveTerm(derivation.callee), (variable) => ({
+          ...variable,
+          path: [...variable.path, `(${derivation.literals.map(formatLiteral).join(",")})`],
+        })) ?? rootTerm(subject)
+      );
     default:
       return rootTerm(subject);
   }
+};
+
+const formatLiteral = (literal: GuardLiteral): string => JSON.stringify(literal);
+
+/** The literal `arguments` of a call, or null when one is not a literal the result could be keyed on. */
+export const toCallLiterals = (args: StaticValue[]): GuardLiteral[] | null => {
+  const literals: GuardLiteral[] = [];
+  for (const argument of args) {
+    if (argument.kind !== "primitive") return null;
+    const { value } = argument;
+    if (typeof value === "undefined") literals.push(null);
+    else if (typeof value === "bigint" || typeof value === "symbol") return null;
+    else literals.push(value);
+  }
+  return literals;
 };
 
 interface ResolvedGuard {
@@ -293,6 +324,7 @@ export const recordBranchOrigin = (mapped: StaticValue, source: StaticBranchValu
 /** The choice a predicate-less branch stands for: one input, named after the branch it was mapped from. */
 const originChoicePredicate = (subject: StaticBranchValue): string => {
   const origin = branchOrigins.get(subject) ?? subject;
+  if (origin.predicate !== null) return origin.predicate;
   const record = inputSources.get(origin);
   const location = record?.location ?? origin.location;
   return choicePredicate({
@@ -303,10 +335,74 @@ const originChoicePredicate = (subject: StaticBranchValue): string => {
   });
 };
 
+/** The predicate a branch value is decided by: its own, or the choice it (or the branch it was mapped from) stands for. */
+export const getBranchPredicate = (branch: StaticBranchValue): string =>
+  branch.predicate ?? originChoicePredicate(branch);
+
+interface ResolvedGuards {
+  guards: Guard[];
+  inputs: InputVariable[];
+}
+
+/** The guard each alternative of `branch` is taken under. */
+export const getAlternativeGuards = (branch: StaticBranchValue): ResolvedGuards => {
+  const predicate = parseSymbolicPredicate(getBranchPredicate(branch));
+  return {
+    guards: predicateGuards(predicate, branch.alternatives.length),
+    inputs: predicate.inputs,
+  };
+};
+
+/** Past this many atoms a composed predicate is dropped for an anonymous choice rather than handed to the solver. */
+const MAX_PREDICATE_ATOMS = 64;
+
+/** The predicate of a branch whose alternative `index` is taken under `guards[index]`; null when the guards outgrew the solver's budget. */
+export const guardedPredicate = (guards: Guard[], inputs: InputVariable[][]): string | null =>
+  guards.reduce((total, guard) => total + countGuardAtoms(guard), 0) > MAX_PREDICATE_ATOMS
+    ? null
+    : serializeSymbolicPredicate({
+        formula: null,
+        choice: null,
+        guards,
+        inputs: mergeInputs(inputs),
+      });
+
+/**
+ * The predicate of a branch flattened out of `alternatives`, themselves
+ * decided by `predicate` (or by a fork the analysis cannot see): the value at
+ * `positions[index][innerIndex]` is taken when alternative `index` is and, if
+ * that alternative is a branch, its alternative `innerIndex` is too.
+ */
+export const composeFlattenedPredicate = (
+  predicate: string | null,
+  reason: string,
+  location: SourceLocation | null,
+  alternatives: StaticValue[],
+  positions: number[][],
+  positionCount: number,
+): string | null => {
+  const outer = parseSymbolicPredicate(predicate ?? createPathPredicate(reason, location));
+  const outerGuards = predicateGuards(outer, alternatives.length);
+  const inputs = [outer.inputs];
+  const sides: Guard[][] = Array.from({ length: positionCount }, () => []);
+  alternatives.forEach((alternative, index) => {
+    if (alternative.kind !== "branch") {
+      sides[positions[index][0]].push(outerGuards[index]);
+      return;
+    }
+    const inner = getAlternativeGuards(alternative);
+    inputs.push(inner.inputs);
+    inner.guards.forEach((guard, innerIndex) => {
+      sides[positions[index][innerIndex]].push(andGuard([outerGuards[index], guard]));
+    });
+  });
+  return guardedPredicate(sides.map(orGuard), inputs);
+};
+
 /** `a && b`, `a || b`, `c ? x : y` tested later: truthy under the alternatives' own guards, not a fresh variable. */
 const resolveBranchGuard = (subject: StaticValue): ResolvedGuard | null => {
   if (subject.kind !== "branch") return null;
-  const predicate = parseSymbolicPredicate(subject.predicate ?? originChoicePredicate(subject));
+  const predicate = parseSymbolicPredicate(getBranchPredicate(subject));
   const guards = predicateGuards(predicate, subject.alternatives.length);
   const inputs = [predicate.inputs];
   const sides = subject.alternatives.map((alternative, index) => {
@@ -331,6 +427,7 @@ export const getTruthinessPredicate = (test: StaticValue, isNegated = false): st
   return serializeSymbolicPredicate({
     formula: isNegated ? negateGuard(guard) : guard,
     choice: null,
+    guards: null,
     inputs: mergeInputs([inputs]),
   });
 };
@@ -341,6 +438,7 @@ export const getPresencePredicate = (value: StaticValue): string => {
   return serializeSymbolicPredicate({
     formula: negateGuard(orGuard([equalsGuard(term.variable, null), isUndefinedGuard(term)])),
     choice: null,
+    guards: null,
     inputs: [term.input],
   });
 };
@@ -349,6 +447,7 @@ const choicePredicate = (input: InputVariable): string =>
   serializeSymbolicPredicate({
     formula: null,
     choice: { input: input.id, path: [], measure: "choice" },
+    guards: null,
     inputs: [input],
   });
 
@@ -380,6 +479,7 @@ export const optionalInputValue = (
     serializeSymbolicPredicate({
       formula: isUndefinedGuard(term),
       choice: null,
+      guards: null,
       inputs: [term.input],
     }),
   );

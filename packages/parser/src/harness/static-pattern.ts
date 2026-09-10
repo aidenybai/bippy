@@ -148,6 +148,7 @@ const anonymousCardinality = (input: InputVariable): SymbolicCardinality => ({
 const anonymousChoice = (input: InputVariable): SymbolicPredicate => ({
   formula: null,
   choice: { input: input.id, path: [], measure: "choice" },
+  guards: null,
   inputs: [input],
 });
 
@@ -242,6 +243,11 @@ class PatternReader {
         predicate.formula &&
         mapGuardVariables(predicate.formula, (variable) => this.renameVariable(variable)),
       choice: predicate.choice && this.renameVariable(predicate.choice),
+      guards:
+        predicate.guards &&
+        predicate.guards.map((guard) =>
+          mapGuardVariables(guard, (variable) => this.renameVariable(variable)),
+        ),
       inputs: this.renameInputs(predicate.inputs),
     };
   }

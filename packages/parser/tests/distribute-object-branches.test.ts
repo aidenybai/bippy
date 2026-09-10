@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { StaticValue } from "../src/types.js";
+import { getTruthinessPredicate } from "../src/evaluate/predicates.js";
 import {
   branchValue,
   distributeObjectBranches,
@@ -7,11 +7,18 @@ import {
   objectFromRecord,
   primitiveValue,
   toJsonValue,
+  unknownValue,
 } from "../src/evaluate/values.js";
+import { parseSymbolicPredicate } from "../src/harness/symbolic-tree.js";
+import type { StaticValue } from "../src/types.js";
 
 const text = (value: string) => primitiveValue(value);
 
-const eitherHref = (predicate: string | null = "truthy(isDark)") =>
+const truthy = (name: string) => getTruthinessPredicate(unknownValue(name));
+const isDark = truthy("isDark");
+const isLarge = truthy("isLarge");
+
+const eitherHref = (predicate: string | null = isDark) =>
   branchValue([text("/dark.png"), text("/light.png")], "theme", null, 1, predicate);
 
 /** Each alternative as JSON, or the whole value when nothing was distributed. */
@@ -38,7 +45,7 @@ describe("distributeObjectBranches", () => {
       '{"rel":"icon","href":"/dark.png"}',
       '{"rel":"icon","href":"/light.png"}',
     ]);
-    expect(distributed.kind === "branch" && distributed.predicate).toBe("truthy(isDark)");
+    expect(distributed.kind === "branch" && distributed.predicate).toBe(isDark);
     expect(distributed.kind === "branch" && distributed.preferredIndex).toBe(1);
     expect(distributed.kind === "branch" && distributed.reason).toBe("theme");
   });
@@ -56,11 +63,11 @@ describe("distributeObjectBranches", () => {
     ]);
   });
 
-  it("takes the cartesian product of independent decisions", () => {
+  it("takes the cartesian product of independent decisions under their combined guards", () => {
     const distributed = distributeObjectBranches(
       objectFromRecord({
-        theme: branchValue([text("dark"), text("light")], "theme", null, 0, "truthy(isDark)"),
-        size: branchValue([text("sm"), text("lg")], "size", null, 0, "truthy(isLarge)"),
+        theme: branchValue([text("dark"), text("light")], "theme", null, 0, isDark),
+        size: branchValue([text("sm"), text("lg")], "size", null, 0, isLarge),
       }),
     );
     expect(alternativesOf(distributed)).toEqual([
@@ -69,7 +76,12 @@ describe("distributeObjectBranches", () => {
       '{"theme":"light","size":"sm"}',
       '{"theme":"light","size":"lg"}',
     ]);
-    expect(distributed.kind === "branch" && distributed.predicate).toBeNull();
+    if (distributed.kind !== "branch" || distributed.predicate === null) {
+      throw new Error("expected a branch decided by the combined predicate");
+    }
+    const predicate = parseSymbolicPredicate(distributed.predicate);
+    expect(predicate.guards).toHaveLength(4);
+    expect(predicate.inputs.map((candidate) => candidate.label)).toEqual(["isDark", "isLarge"]);
   });
 
   it("keeps repeated occurrences of one predicate correlated", () => {
@@ -78,7 +90,7 @@ describe("distributeObjectBranches", () => {
         icon: eitherHref(),
         nested: listValue([
           objectFromRecord({
-            label: branchValue([text("Dark"), text("Light")], "theme", null, 1, "truthy(isDark)"),
+            label: branchValue([text("Dark"), text("Light")], "theme", null, 1, isDark),
           }),
         ]),
       }),
@@ -87,7 +99,7 @@ describe("distributeObjectBranches", () => {
       '{"icon":"/dark.png","nested":[{"label":"Dark"}]}',
       '{"icon":"/light.png","nested":[{"label":"Light"}]}',
     ]);
-    expect(distributed.kind === "branch" && distributed.predicate).toBe("truthy(isDark)");
+    expect(distributed.kind === "branch" && distributed.predicate).toBe(isDark);
     expect(distributed.kind === "branch" && distributed.preferredIndex).toBe(1);
   });
 
@@ -101,9 +113,9 @@ describe("distributeObjectBranches", () => {
 
   it("returns the value unchanged once the product exceeds the limit", () => {
     const wide = objectFromRecord({
-      first: branchValue([text("a"), text("b")], "first", null, 0, "truthy(a)"),
-      second: branchValue([text("c"), text("d")], "second", null, 0, "truthy(b)"),
-      third: branchValue([text("e"), text("f")], "third", null, 0, "truthy(c)"),
+      first: branchValue([text("a"), text("b")], "first", null, 0, truthy("a")),
+      second: branchValue([text("c"), text("d")], "second", null, 0, truthy("b")),
+      third: branchValue([text("e"), text("f")], "third", null, 0, truthy("c")),
     });
     expect(distributeObjectBranches(wide, 4)).toBe(wide);
     expect(alternativesOf(distributeObjectBranches(wide, 8))).toHaveLength(8);

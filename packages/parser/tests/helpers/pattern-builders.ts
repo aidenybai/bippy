@@ -38,6 +38,7 @@ export const choiceBranch = (variable: string, ...alternatives: PatternNode[][])
       {
         formula: null,
         choice: { input: variable, path: [], measure: "choice" },
+        guards: null,
         inputs: [inputVariable],
       },
       alternatives.length,
@@ -60,7 +61,7 @@ export const guardedBranch = (
   reason: variable,
   location: null,
   preferredIndex: 0,
-  guards: predicateGuards({ formula: guard, choice: null, inputs }, 2),
+  guards: predicateGuards({ formula: guard, choice: null, guards: null, inputs }, 2),
   inputs,
   alternatives: [whenTrue, whenFalse],
 });

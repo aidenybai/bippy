@@ -36,8 +36,17 @@ import type {
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
+import { areGuardsSatisfiable } from "../harness/guard-solver.js";
+import { andGuard, type Guard, type InputVariable } from "../harness/symbolic-tree.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
-import { recordBranchOrigin, recordDerivation } from "./predicates.js";
+import {
+  composeFlattenedPredicate,
+  getAlternativeGuards,
+  getBranchPredicate,
+  guardedPredicate,
+  recordBranchOrigin,
+  recordDerivation,
+} from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -374,7 +383,7 @@ const lookupObjectProperty = (
         spread.reason,
         spread.location,
         spread.preferredIndex,
-        spread.predicate,
+        getBranchPredicate(spread),
       );
     }
     const own = getSpreadProperty(memo, spread, key);
@@ -431,7 +440,7 @@ const getSpreadProperty = (
         spread.reason,
         spread.location,
         spread.preferredIndex,
-        spread.predicate,
+        getBranchPredicate(spread),
       );
     default:
       return null;
@@ -779,7 +788,7 @@ const omitSpreadKeys = (
         spread.reason,
         spread.location,
         spread.preferredIndex,
-        spread.predicate,
+        getBranchPredicate(spread),
       );
     }
     default:
@@ -1403,7 +1412,9 @@ export const branchValue = (
   )
     return firstAlternative;
   const flattened: StaticValue[] = [];
+  const positions: number[][] = [];
   let resolvedPreferred = 0;
+  let hasNestedBranch = false;
   const add = (value: StaticValue): number => {
     const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
     if (existing !== -1) return existing;
@@ -1413,8 +1424,12 @@ export const branchValue = (
   for (const [index, alternative] of alternatives.entries()) {
     const inner = alternative.kind === "branch" ? alternative.alternatives : [alternative];
     const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
+    hasNestedBranch ||= alternative.kind === "branch";
+    const innerPositions: number[] = [];
+    positions.push(innerPositions);
     for (const [innerIndex, value] of inner.entries()) {
       const position = add(value);
+      innerPositions.push(position);
       if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
       if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
         return unknownValue(
@@ -1425,16 +1440,25 @@ export const branchValue = (
     }
   }
   if (flattened.length === 1) return flattened[0];
-  const isPositional =
-    flattened.length === alternatives.length &&
-    alternatives.every((alternative) => alternative.kind !== "branch");
+  const isPositional = flattened.length === alternatives.length && !hasNestedBranch;
   return {
     kind: "branch",
     alternatives: flattened,
     preferredIndex: resolvedPreferred,
     reason,
     location,
-    predicate: isPositional ? predicate : null,
+    predicate: isPositional
+      ? predicate
+      : predicate === null && !hasNestedBranch
+        ? null
+        : composeFlattenedPredicate(
+            predicate,
+            reason,
+            location,
+            alternatives,
+            positions,
+            flattened.length,
+          ),
   };
 };
 
@@ -1587,7 +1611,7 @@ export const joinMappedAlternatives = (
     source.reason,
     source.location,
     source.preferredIndex,
-    source.predicate,
+    getBranchPredicate(source),
   );
   if (
     mapped.kind === "branch" &&
@@ -1634,15 +1658,20 @@ export const distributeBinary = (
 
 type StructureDecision = string | StaticBranchValue;
 
+interface StructureChoice {
+  branch: StaticBranchValue;
+  index: number;
+}
+
 interface StructureInstance {
   value: StaticValue;
-  decisions: Map<StructureDecision, number>;
+  decisions: Map<StructureDecision, StructureChoice>;
   isPreferred: boolean;
 }
 
 interface SequenceInstance {
   values: StaticValue[];
-  decisions: Map<StructureDecision, number>;
+  decisions: Map<StructureDecision, StructureChoice>;
   isPreferred: boolean;
 }
 
@@ -1653,7 +1682,7 @@ interface StructureExpansion {
 
 const expandSequence = (
   values: StaticValue[],
-  decisions: Map<StructureDecision, number>,
+  decisions: Map<StructureDecision, StructureChoice>,
   isPreferred: boolean,
   expansion: StructureExpansion,
 ): SequenceInstance[] | null => {
@@ -1679,7 +1708,7 @@ const expandSequence = (
 
 const expandStructure = (
   value: StaticValue,
-  decisions: Map<StructureDecision, number>,
+  decisions: Map<StructureDecision, StructureChoice>,
   isPreferred: boolean,
   expansion: StructureExpansion,
 ): StructureInstance[] | null => {
@@ -1688,12 +1717,17 @@ const expandStructure = (
       expansion.firstBranch ??= value;
       const key: StructureDecision = value.predicate ?? value;
       const decided = decisions.get(key);
-      if (decided !== undefined && decided < value.alternatives.length) {
-        return expandStructure(value.alternatives[decided], decisions, isPreferred, expansion);
+      if (decided !== undefined && decided.index < value.alternatives.length) {
+        return expandStructure(
+          value.alternatives[decided.index],
+          decisions,
+          isPreferred,
+          expansion,
+        );
       }
       const instances: StructureInstance[] = [];
       for (const [index, alternative] of value.alternatives.entries()) {
-        const chosen = new Map(decisions).set(key, index);
+        const chosen = new Map(decisions).set(key, { branch: value, index });
         const expanded = expandStructure(
           alternative,
           chosen,
@@ -1748,37 +1782,77 @@ const expandStructure = (
   }
 };
 
+/** The guard under which every decision of an instance falls the way it did, with the inputs the decisions range over. */
+const instanceGuards = (
+  instances: StructureInstance[],
+): { guards: Guard[]; inputs: InputVariable[][] } => {
+  const resolved = new Map<StaticBranchValue, ReturnType<typeof getAlternativeGuards>>();
+  const guardsOf = (branch: StaticBranchValue): Guard[] => {
+    const existing = resolved.get(branch);
+    if (existing) return existing.guards;
+    const alternativeGuards = getAlternativeGuards(branch);
+    resolved.set(branch, alternativeGuards);
+    return alternativeGuards.guards;
+  };
+  const guards = instances.map((instance) =>
+    andGuard(
+      [...instance.decisions.values()].map((choice) => guardsOf(choice.branch)[choice.index]),
+    ),
+  );
+  return { guards, inputs: [...resolved.values()].map((entry) => entry.inputs) };
+};
+
 /**
  * Hoists branches nested anywhere inside an object or list into one branch of
  * fully concrete structures. Branches sharing a predicate take the same
- * alternative in every instance. Past `limit` instances the value is returned
- * as is, still holding its branches.
+ * alternative in every instance, and an instance whose decisions contradict
+ * one another is left out. Past `limit` instances the value is returned as
+ * is, still holding its branches.
  */
 export const distributeObjectBranches = (
   value: StaticValue,
   limit = MAX_DISTRIBUTED_ALTERNATIVES,
 ): StaticValue => {
   const expansion: StructureExpansion = { limit, firstBranch: null };
-  const instances = expandStructure(value, new Map(), true, expansion);
-  if (instances === null || instances.length < 2 || expansion.firstBranch === null) return value;
+  const expanded = expandStructure(value, new Map(), true, expansion);
+  if (expanded === null || expanded.length < 2 || expansion.firstBranch === null) return value;
   if (
     value.kind === "branch" &&
-    instances.every((instance, index) => instance.value === value.alternatives[index])
+    expanded.every((instance, index) => instance.value === value.alternatives[index])
   ) {
     return value;
   }
-  const keys = new Set(instances.flatMap((instance) => [...instance.decisions.keys()]));
+  const keys = new Set(expanded.flatMap((instance) => [...instance.decisions.keys()]));
   const [onlyKey] = keys;
-  const predicate = keys.size === 1 && typeof onlyKey === "string" ? onlyKey : null;
+  const { reason, location } = expansion.firstBranch;
+  if (keys.size === 1 && typeof onlyKey === "string") {
+    return branchValue(
+      expanded.map((instance) => instance.value),
+      reason,
+      location,
+      Math.max(
+        0,
+        expanded.findIndex((instance) => instance.isPreferred),
+      ),
+      onlyKey,
+    );
+  }
+  const { guards, inputs } = instanceGuards(expanded);
+  const consistent = expanded.filter((_, index) => areGuardsSatisfiable([guards[index]]));
+  if (consistent.length === 1) return consistent[0].value;
+  const instances = consistent.length === 0 ? expanded : consistent;
   return branchValue(
     instances.map((instance) => instance.value),
-    expansion.firstBranch.reason,
-    expansion.firstBranch.location,
+    reason,
+    location,
     Math.max(
       0,
       instances.findIndex((instance) => instance.isPreferred),
     ),
-    predicate,
+    guardedPredicate(
+      instances.map((instance) => guards[expanded.indexOf(instance)]),
+      inputs,
+    ),
   );
 };
 
@@ -1922,7 +1996,7 @@ export const spreadListItems = (
           value.reason,
           value.location,
           value.preferredIndex,
-          value.predicate,
+          getBranchPredicate(value),
         ),
       );
     }

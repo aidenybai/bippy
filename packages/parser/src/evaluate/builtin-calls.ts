@@ -80,7 +80,7 @@ import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
-import type { EvaluationContext } from "./context.js";
+import { type EvaluationContext, isCertainWrite } from "./context.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
 import {
   chainPromise,
@@ -2578,10 +2578,9 @@ export const evaluateBuiltinCall = (
       case "unshift": {
         // Inside an uncertain path (e.g. a loop of unknown length) the pushed
         // items may occur any number of times, so they become a repeat.
-        const pushed: StaticValue[] =
-          context.uncertainDepth > 0
-            ? [{ kind: "repeat", item: args.length === 1 ? args[0] : listValue(args), location }]
-            : args;
+        const pushed: StaticValue[] = isCertainWrite(context, receiver.allocation)
+          ? args
+          : [{ kind: "repeat", item: args.length === 1 ? args[0] : listValue(args), location }];
         interpreter.recordHeapMutation(receiver);
         if (name === "push") receiver.items.push(...pushed);
         else receiver.items.unshift(...pushed);
@@ -2590,7 +2589,7 @@ export const evaluateBuiltinCall = (
       case "pop":
       case "shift": {
         interpreter.recordHeapMutation(receiver);
-        if (hasDefiniteItems(receiver) && context.uncertainDepth === 0) {
+        if (hasDefiniteItems(receiver) && isCertainWrite(context, receiver.allocation)) {
           const removed = name === "pop" ? receiver.items.pop() : receiver.items.shift();
           return removed ?? UNDEFINED_VALUE;
         }
@@ -2610,7 +2609,7 @@ export const evaluateBuiltinCall = (
               : Number.NaN;
         if (
           hasDefiniteItems(receiver) &&
-          context.uncertainDepth === 0 &&
+          isCertainWrite(context, receiver.allocation) &&
           Number.isInteger(start) &&
           Number.isInteger(deleteCount)
         ) {

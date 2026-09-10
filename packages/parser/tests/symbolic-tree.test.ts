@@ -101,7 +101,7 @@ describe("symbolic tree: correlation by construction", () => {
       }
     }
     expect(space.omitted).toBeNull();
-    expect(formatSymbolicTree(space.tree)).toContain('eq(#1.0.role, "admin")');
+    expect(formatSymbolicTree(space.tree)).toContain('eq(#1.listeners.("viewer").0.role, "admin")');
   });
 });
 

@@ -10,6 +10,7 @@ import type {
 import type { HookFrame } from "./hooks.js";
 import type { StatementOutcome } from "./interpreter.js";
 import type { AsyncCall } from "./promises.js";
+import { getAllocationCount } from "./values.js";
 
 /** The value the nearest provider of a context supplies at the position being evaluated, or null without one. */
 export interface ContextReader {
@@ -67,7 +68,12 @@ export interface EvaluationContext {
   superBinding: SuperBinding | null;
   readContext: ContextReader;
   callStack: CallFrame[];
-  uncertainDepth: number;
+  /**
+   * `getAllocationCount()` when the innermost path that may not run at all
+   * (a callback over an uncertain child, a fork past the depth budget) was
+   * entered, or null on a path that certainly runs.
+   */
+  uncertainSince: number | null;
   forkDepth: number;
   environment: RenderEnvironment | null;
   hooks: HookFrame | null;
@@ -78,6 +84,23 @@ export const withScope = (context: EvaluationContext, scope: Scope): EvaluationC
   ...context,
   scope,
 });
+
+export const enterUncertainPath = (context: EvaluationContext): EvaluationContext => ({
+  ...context,
+  uncertainSince: getAllocationCount(),
+});
+
+/**
+ * Whether a write happens exactly once whenever the current path runs: always
+ * outside an uncertain path, and inside one only to a scope or heap value the
+ * path itself allocated, which then exists only when the write does.
+ */
+export const isCertainWrite = (
+  context: EvaluationContext,
+  allocation: number | undefined,
+): boolean =>
+  context.uncertainSince === null ||
+  (allocation !== undefined && allocation > context.uncertainSince);
 
 export const withoutSuspension = (context: EvaluationContext): EvaluationContext =>
   context.suspension ? { ...context, suspension: null } : context;

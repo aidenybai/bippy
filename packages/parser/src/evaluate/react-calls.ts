@@ -20,7 +20,7 @@ import type {
 } from "../types.js";
 import { callUncertainCallback } from "./builtin-calls.js";
 import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
-import type { EvaluationContext } from "./context.js";
+import { type EvaluationContext, enterUncertainPath } from "./context.js";
 import {
   escapeStateCell,
   invokeHookFactory,
@@ -102,7 +102,7 @@ const stateHook = (
       return UNDEFINED_VALUE;
     },
     onEscape: (argumentValues) => {
-      const action = argumentValues?.[0];
+      const action = argumentValues === null ? null : argumentValues[0];
       escapeStateCell(frame, cell, action === null ? null : reduceEscaped(action));
     },
   };
@@ -271,7 +271,7 @@ const mapUncertainChildren = (
       location: children.location,
     };
   }
-  const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
+  const uncertainContext = enterUncertainPath(context);
   if (children.kind === "branch") {
     return mapValue(children, (alternative) =>
       mapChildren(interpreter, alternative, callback, undefined, uncertainContext),
