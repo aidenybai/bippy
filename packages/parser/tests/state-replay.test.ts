@@ -11,45 +11,16 @@ import {
   formatCompareRenderResult,
 } from "../src/harness/index.js";
 import { enumerateStateSpace, pinDecisions } from "../src/harness/state-space.js";
-import type {
-  PatternBranch,
-  PatternFiber,
-  PatternNode,
-  PatternRepeat,
-} from "../src/harness/static-pattern.js";
 import {
   COMPONENTS_DIRECTORY,
   createComponentRenderer,
   runComponentFixture,
 } from "./helpers/component-runner.js";
+import { anonymousRepeat, choiceBranch, patternHost } from "./helpers/pattern-builders.js";
 
-const fiber = (name: string, children: PatternNode[] = []): PatternFiber => ({
-  kind: "fiber",
-  tag: "HostComponent",
-  name,
-  key: null,
-  children,
-});
-
-const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
-  kind: "branch",
-  variable,
-  decision: variable,
-  sharesScope: false,
-  reason: variable,
-  location: null,
-  preferredIndex: 0,
-  alternatives,
-});
-
-const repeat = (variable: string, children: PatternNode[]): PatternRepeat => ({
-  kind: "repeat",
-  variable,
-  decision: variable,
-  location: null,
-  count: { min: 0, max: null },
-  children,
-});
+const fiber = patternHost;
+const branch = choiceBranch;
+const repeat = anonymousRepeat;
 
 const describeAssignment = (conditions: { variable: string; kind: string }[]): string =>
   conditions
@@ -134,10 +105,9 @@ describe("pinDecisions", () => {
         describeAssignment(state.conditions.filter((c) => c.kind !== "transition")) === "a=0 b=1",
     );
     if (!nested) throw new Error("a=0 b=1 was not enumerated");
-    const pins = pinDecisions(
-      stateSpace,
-      nested.conditions.filter((c) => c.kind !== "transition"),
-    );
+    const pins = pinDecisions(stateSpace, [
+      nested.conditions.filter((condition) => condition.kind !== "transition"),
+    ]);
     const outer = pins.branches.get("a");
     expect(outer?.alternativeIndex).toBe(0);
     expect(outer?.inside.branches.get("b")?.alternativeIndex).toBe(1);
@@ -159,10 +129,9 @@ describe("pinDecisions", () => {
       return chosen.length === 2 && chosen[0] !== chosen[1];
     });
     if (!mixed) throw new Error("iterations deciding differently were not enumerated");
-    const pins = pinDecisions(
-      stateSpace,
-      mixed.conditions.filter((c) => c.kind !== "transition"),
-    );
+    const pins = pinDecisions(stateSpace, [
+      mixed.conditions.filter((condition) => condition.kind !== "transition"),
+    ]);
     const iterations = pins.repeats.get("items")?.iterations ?? [];
     expect(iterations).toHaveLength(2);
     const chosen = iterations.map((iteration) => iteration.branches.get("done")?.alternativeIndex);
@@ -175,7 +144,7 @@ describe("pinDecisions", () => {
       [fiber("main", [branch("b", [fiber("p")], [fiber("q")])])],
     ]);
     const [joint] = joinDecisionAssignments(stateSpace);
-    const pins = pinDecisions(stateSpace, joint.conditions);
+    const pins = pinDecisions(stateSpace, joint.pinnedConditions);
     expect([...pins.branches.keys()].sort()).toEqual(["a", "b"]);
   });
 });

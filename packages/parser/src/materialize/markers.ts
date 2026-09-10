@@ -17,6 +17,11 @@ export const MARKER_NAMES = {
   suspenseBoundary: "$SuspenseBoundary",
 } as const;
 
+const markerNames: ReadonlySet<string> = new Set(Object.values(MARKER_NAMES));
+
+export const isMarkerName = (name: string | null): boolean =>
+  name !== null && markerNames.has(name);
+
 interface MarkerChildrenProps {
   children?: ReactNode;
 }
@@ -40,23 +45,13 @@ interface BranchMarkerProps extends DecisionMarkerProps {
 }
 
 interface RepeatMarkerProps extends DecisionMarkerProps {
+  /** Serialized `SymbolicCardinality`; null when the iterated collection is not an input the analysis can name. */
+  cardinality: string | null;
   countMin: number;
   countMax: number | null;
   /** How many iterations were rendered, when a replay pinned this repeat. */
   pinnedCount: number | null;
 }
-
-const NEGATED_PREDICATE_PREFIX = "!";
-
-/** `!flag ? A : B` decides the same variable as `flag ? B : A`; the pattern reader stores such a branch as the latter. */
-export const isNegatedBranchPredicate = (
-  predicate: string | null,
-  alternativeCount: number,
-): boolean =>
-  predicate !== null && predicate.startsWith(NEGATED_PREDICATE_PREFIX) && alternativeCount === 2;
-
-export const stripNegatedPredicate = (predicate: string): string =>
-  predicate.slice(NEGATED_PREDICATE_PREFIX.length);
 
 interface OpaqueMarkerProps extends MarkerChildrenProps {
   displayName: string | null;
@@ -72,6 +67,8 @@ interface UnknownMarkerProps {
 }
 
 export const TEXT_PLACEHOLDER = "\u2026";
+/** Stands in for a key the build alone knows; a keyed fragment must still mount as a fiber. */
+export const KEY_PLACEHOLDER = "\u2026";
 
 const named = <T extends (...args: never[]) => unknown>(name: string, component: T): T =>
   Object.defineProperty(component, "name", { value: name });

@@ -13,6 +13,7 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
@@ -125,8 +126,7 @@ export class StaticRenderer {
       rootDirectory,
     });
     const devDirectory = this.resolveOptionalPath(options.devDirectory);
-    const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
-    const documentShell = readDocumentShell(rootDirectory, bundler);
+    const bundler = detectModuleBundler(rootDirectory, devDirectory);
     const project = createProjectContext({
       rootDirectory,
       resolver,
@@ -145,10 +145,18 @@ export class StaticRenderer {
       resolver,
       reactVersion: project.readPackageVersion("react"),
       project,
-      documentShell,
+      documentShell: readDocumentShell(
+        rootDirectory,
+        bundler,
+        options.environment ?? null,
+        project.servedDirectory ?? rootDirectory,
+      ),
       graph: new ModuleGraph({
         resolver,
-        sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+        sourceFileCache: new SourceFileCache([
+          ...(svgrTransform ? [svgrTransform] : []),
+          ...createYamlSourceTransforms(rootDirectory),
+        ]),
         resolveExternalPackages: options.resolveExternalPackages,
         externalPackageAllowList: options.externalPackageAllowList,
       }),

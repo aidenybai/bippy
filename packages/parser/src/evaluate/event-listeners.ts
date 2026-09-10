@@ -1,10 +1,12 @@
-import type { StaticValue } from "../types.js";
+import type { SourceLocation, StaticNativeObjectValue, StaticValue } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
+import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
-import { toNativeArguments } from "./native-values.js";
+import { fromNativeValue, toNativeArguments } from "./native-values.js";
+import { registerResourceListener } from "./resource-loading.js";
 import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
-import { UNDEFINED_VALUE } from "./values.js";
+import { isNullish, primitiveValue, UNDEFINED_VALUE } from "./values.js";
 
 /**
  * Event interfaces only an input device dispatches (lib.dom's `UIEvent` family
@@ -91,9 +93,12 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
   return isUserDrivenEventType(type) && !VALUE_EVENTS.has(type);
 };
 
+/** Events the browser fires from a queued task rather than at the moment the state changes. */
+const TASK_QUEUED_EVENTS = new Set(["selectionchange"]);
+
 interface NativeEventTarget {
-  addEventListener(type: string, listener: () => void): void;
-  removeEventListener(type: string, listener: () => void): void;
+  addEventListener(type: string, listener: (event: object) => void): void;
+  removeEventListener(type: string, listener: (event: object) => void): void;
 }
 
 // happy-dom nodes come from the renderer's own `EventTarget`, not this realm's.
@@ -119,16 +124,25 @@ const toNativeEventTarget = (
 /**
  * Real listeners standing in for interpreted ones, per target, listener and
  * type: an event the program dispatches itself (`element.focus()`, React's
- * `autoFocus`, `dispatchEvent`) reaches its handler through the DOM, so the
- * handler escapes exactly when such a dispatch happens.
+ * `autoFocus`, `Selection.setBaseAndExtent()`, `dispatchEvent`) reaches its
+ * handler through the DOM, so the handler runs exactly when such a dispatch
+ * happens, on the event the DOM built. A task-queued event fires once per
+ * task however many times the state changed, as the document's "has scheduled
+ * selectionchange event" flag arranges; a listener removed before the task
+ * runs no longer hears it.
  */
-const nativeListeners = new WeakMap<NativeEventTarget, Map<StaticValue, Map<string, () => void>>>();
+const nativeListeners = new WeakMap<
+  NativeEventTarget,
+  Map<StaticValue, Map<string, (event: object) => void>>
+>();
 
 const attachNativeListener = (
   interpreter: Interpreter,
   target: NativeEventTarget,
   type: string,
   listener: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
 ): void => {
   let byListener = nativeListeners.get(target);
   if (!byListener) {
@@ -141,7 +155,31 @@ const attachNativeListener = (
     byListener.set(listener, byType);
   }
   if (byType.has(type)) return;
-  const native = (): void => interpreter.markEscaped(listener);
+  const dispatch = (event: object): void => {
+    interpreter.callValue(
+      listener,
+      [fromNativeValue(event, `${type} event`, interpreter.hostDocument)],
+      context,
+      location,
+      { thisValue: fromNativeValue(target, `${type} event target`, interpreter.hostDocument) },
+    );
+  };
+  let isScheduled = false;
+  const native = (event: object): void => {
+    if (!TASK_QUEUED_EVENTS.has(type)) {
+      dispatch(event);
+      return;
+    }
+    if (isScheduled) return;
+    isScheduled = true;
+    const isDeferred = interpreter.timers.isDeferred;
+    interpreter.timers.enqueue(() => {
+      isScheduled = false;
+      if (byType.get(type) !== native) return;
+      if (isDeferred) interpreter.timers.runDeferred(() => dispatch(event));
+      else dispatch(event);
+    });
+  };
   byType.set(type, native);
   target.addEventListener(type, native);
 };
@@ -204,6 +242,39 @@ const isHistoryTraversalListener = (
   typeof type.value === "string" &&
   HISTORY_TRAVERSAL_EVENTS.has(type.value);
 
+const updateListener = (
+  interpreter: Interpreter,
+  realm: HostRealm,
+  receiver: StaticValue,
+  type: StaticValue | undefined,
+  listener: StaticValue,
+  isRegistration: boolean,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): void => {
+  if (isHistoryTraversalListener(realm, receiver, type)) {
+    if (isRegistration) interpreter.history.traversalListeners.add(listener);
+    else interpreter.history.traversalListeners.delete(listener);
+    return;
+  }
+  const target = toNativeEventTarget(receiver, interpreter.hostDocument);
+  const typeName = type?.kind === "primitive" && typeof type.value === "string" ? type.value : null;
+  if (
+    receiver.kind === "native-object" &&
+    typeName !== null &&
+    registerResourceListener(interpreter, receiver, typeName, listener, isRegistration)
+  ) {
+    return;
+  }
+  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
+    interpreter.markEscaped(listener);
+  if (target && typeName !== null) {
+    if (isRegistration) {
+      attachNativeListener(interpreter, target, typeName, listener, context, location);
+    } else detachNativeListener(target, typeName, listener);
+  }
+};
+
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
   interpreter: Interpreter,
@@ -211,22 +282,47 @@ export const callEventTargetMethod = (
   receiver: StaticValue,
   name: string,
   args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue | null => {
   if (!EVENT_LISTENER_METHODS.has(name) || !isEventTarget(realm, receiver)) return null;
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
-  if (isHistoryTraversalListener(realm, receiver, type)) {
-    if (isRegistration) interpreter.history.traversalListeners.add(listener);
-    else interpreter.history.traversalListeners.delete(listener);
-    return UNDEFINED_VALUE;
-  }
-  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
-    interpreter.markEscaped(listener);
-  const target = toNativeEventTarget(receiver, interpreter.hostDocument);
-  if (target && type?.kind === "primitive" && typeof type.value === "string") {
-    if (isRegistration) attachNativeListener(interpreter, target, type.value, listener);
-    else detachNativeListener(target, type.value, listener);
-  }
+  updateListener(interpreter, realm, receiver, type, listener, isRegistration, context, location);
   return UNDEFINED_VALUE;
+};
+
+const eventHandlerProperties = new WeakMap<object, Map<string, StaticValue>>();
+
+/**
+ * `target.onload = handler`: the event handler IDL attribute of a DOM node,
+ * which registers `handler` for the event named after it in place of the
+ * handler set before, or unregisters that one for a nullish value.
+ */
+export const assignEventHandlerProperty = (
+  interpreter: Interpreter,
+  realm: HostRealm,
+  receiver: StaticNativeObjectValue,
+  key: string,
+  value: StaticValue,
+  context: EvaluationContext,
+): boolean => {
+  const match = /^on([a-z]+)$/.exec(key);
+  if (!match || !(key in receiver.value) || !isNativeEventTarget(receiver)) return false;
+  const type = primitiveValue(match[1]);
+  let handlers = eventHandlerProperties.get(receiver.value);
+  if (!handlers) {
+    handlers = new Map();
+    eventHandlerProperties.set(receiver.value, handlers);
+  }
+  const previous = handlers.get(match[1]);
+  if (previous) updateListener(interpreter, realm, receiver, type, previous, false, context, null);
+  if (isNullish(value) === true) {
+    handlers.delete(match[1]);
+  } else {
+    handlers.set(match[1], value);
+    updateListener(interpreter, realm, receiver, type, value, true, context, null);
+  }
+  return true;
 };

@@ -8,6 +8,7 @@ import type {
   PatternOpaque,
   PatternWildcard,
 } from "../src/harness/static-pattern.js";
+import { choiceBranch } from "./helpers/pattern-builders.js";
 
 const runtimeFiber = (
   name: string,
@@ -32,16 +33,7 @@ const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiber
 const patternHost = (name: string, children: PatternNode[] = []): PatternFiber =>
   patternFiber(name, children, "HostComponent");
 
-const branch = (variable: string, ...alternatives: PatternNode[][]): PatternBranch => ({
-  kind: "branch",
-  variable,
-  decision: variable,
-  sharesScope: false,
-  reason: variable,
-  location: null,
-  preferredIndex: 0,
-  alternatives,
-});
+const branch = choiceBranch;
 
 const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque => ({
   kind: "opaque",
@@ -53,14 +45,8 @@ const opaqueFiber = (name: string, passedChildren: PatternNode[]): PatternOpaque
 });
 
 const patternBranch = (alternatives: PatternNode[][]): PatternBranch => ({
-  kind: "branch",
-  variable: "choice",
-  decision: "choice",
-  sharesScope: false,
+  ...choiceBranch("choice", ...alternatives),
   reason: "unknown flag",
-  location: null,
-  preferredIndex: 0,
-  alternatives,
 });
 
 const patternWildcard: PatternWildcard = {

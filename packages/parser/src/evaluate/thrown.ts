@@ -1,4 +1,4 @@
-import type { SourceLocation, StaticUnknownValue, StaticValue } from "../types.js";
+import type { SourceLocation, StaticListValue, StaticUnknownValue, StaticValue } from "../types.js";
 import { branchValue, getObjectProperty, unknownValue } from "./values.js";
 
 type ThrowCertainty = "never" | "maybe" | "always";
@@ -10,15 +10,39 @@ const combineSiblings = (left: ThrowCertainty, right: ThrowCertainty): ThrowCert
       ? "maybe"
       : "never";
 
-/** Branches, optionals and repeats are immutable, so their certainty is computed once; lists mutate in place and are re-walked. */
+interface ListCertainty {
+  items: readonly StaticValue[];
+  certainty: ThrowCertainty;
+}
+
+/** Branches, optionals and repeats are immutable; a list's entry is dropped when it mutates (`forgetThrowCertainty`) or its items are swapped. */
 const certaintyCache = new WeakMap<StaticValue, ThrowCertainty>();
+const listCertaintyCache = new WeakMap<StaticListValue, ListCertainty>();
+
+export const forgetThrowCertainty = (list: StaticListValue): void => {
+  listCertaintyCache.delete(list);
+};
+
+const getListThrowCertainty = (list: StaticListValue): ThrowCertainty => {
+  const cached = listCertaintyCache.get(list);
+  if (cached && cached.items === list.items) return cached.certainty;
+  const certainty = computeThrowCertainty(list);
+  listCertaintyCache.set(list, { items: list.items, certainty });
+  return certainty;
+};
 
 const computeThrowCertainty = (value: StaticValue): ThrowCertainty => {
   switch (value.kind) {
     case "unknown":
       return value.thrown ? "always" : "never";
-    case "list":
-      return value.items.map(getThrowCertainty).reduce(combineSiblings, "never");
+    case "list": {
+      let certainty: ThrowCertainty = "never";
+      for (const item of value.items) {
+        certainty = combineSiblings(certainty, getThrowCertainty(item));
+        if (certainty === "always") break;
+      }
+      return certainty;
+    }
     case "branch": {
       const outcomes = value.alternatives.map(getThrowCertainty);
       if (outcomes.every((outcome) => outcome === "always")) return "always";
@@ -36,8 +60,15 @@ const computeThrowCertainty = (value: StaticValue): ThrowCertainty => {
 
 /** Whether the paths `value` stands for throw; elements throw from their own proxies. */
 export const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
-  if (value.kind !== "branch" && value.kind !== "optional" && value.kind !== "repeat") {
-    return computeThrowCertainty(value);
+  switch (value.kind) {
+    case "branch":
+    case "optional":
+    case "repeat":
+      break;
+    case "list":
+      return getListThrowCertainty(value);
+    default:
+      return computeThrowCertainty(value);
   }
   const cached = certaintyCache.get(value);
   if (cached) return cached;

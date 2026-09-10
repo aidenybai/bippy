@@ -628,6 +628,7 @@
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.30.2 exec rspack serve",
       "env": {
+        "CI": "",
         "SENTRY_UI_DEV_ONLY": "1",
         "SENTRY_WEBPACK_PROXY_PORT": "7999"
       },
@@ -667,7 +668,7 @@
         },
         "maxFiberCount": 20000
       },
-      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints."
+      "notes": "index.tsx boots asynchronously: in SaaS mode it registers the getsentry overrides, loads the /api/client-config/ payload (window.__initialData, captured from the live page) into ConfigStore and then calls renderDom(Main), so the static side runs the same bootstrap before rendering the exported Main component. UI-only mode serves the SPA over a self-signed https certificate; the login page fetches from sentry.io and logs 403s for unauthenticated endpoints. rspack.config.ts turns Emotion's autoLabel off when CI is set, so the harness's CI=1 is cleared to keep the `styled` display names the label plugin produces (`MainContainer` rather than `Styled(div)`)."
     },
     {
       "id": "posthog",
@@ -676,7 +677,10 @@
       "description": "PostHog login scene (React 18 SPA on kea + kea-router, Vite dev server behind a stand-in for the Django app server that renders the boot HTML)",
       "framework": "spa",
       "workingDirectory": ".",
-      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile && bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 --filter '@posthog/quill...' build",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@10.29.3 --filter '@posthog/quill...' build"
+      ],
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/posthog-dev.sh\"",
       "url": "http://localhost:8000/login",
       "readyTimeoutMs": 900000,
@@ -2952,6 +2956,657 @@
         "tsconfig": "jsconfig.json"
       },
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
+    },
+    {
+      "id": "material-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/material-dashboard-react",
+      "revision": "a4db3e60d3b9e152c1db4aaa93b311aa164ad68b",
+      "description": "Creative Tim Material Dashboard 2 React (CRA 5, React 18, MUI 5 + Emotion, react-router-dom 6 declarative routes, react-chartjs-2 charts over local data, reducer context for the sidenav/configurator)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3010"
+      },
+      "url": "http://localhost:3010/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "react-table",
+          "chroma-js",
+          "prop-types",
+          "react-github-btn",
+          "react-chartjs-2",
+          "chart.js",
+          "stylis",
+          "stylis-plugin-rtl",
+          "clsx",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "hoist-non-react-statics",
+          "yup"
+        ],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "soft-ui-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/soft-ui-dashboard-react",
+      "revision": "e282bac09a784b2bab0371e18fd5fd024e798d9e",
+      "description": "Creative Tim Soft UI Dashboard React (CRA 5, React 18, MUI 5 + Emotion, react-router-dom 6 declarative routes, react-chartjs-2 charts, react-countup)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps react@18.2.0 react-dom@18.2.0",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3011"
+      },
+      "url": "http://localhost:3011/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "chroma-js",
+          "prop-types",
+          "react-chartjs-2",
+          "chart.js",
+          "react-countup",
+          "countup.js",
+          "react-flatpickr",
+          "flatpickr",
+          "stylis",
+          "stylis-plugin-rtl",
+          "clsx",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "hoist-non-react-statics",
+          "uuid"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19, on which the template crashes at mount (theme palette lookup `undefined.main`); the install pins the React 18.2 the template shipped against."
+    },
+    {
+      "id": "argon-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/argon-dashboard-react",
+      "revision": "04b58c36799220d0af4bb8f6e4b1f4a563f17994",
+      "description": "Creative Tim Argon Dashboard React (CRA 5, React 18, reactstrap/Bootstrap, react-router-dom 6 nested layout routes, react-chartjs-2 charts)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3012"
+      },
+      "url": "http://localhost:3012/admin/index",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/index",
+        "externalPackageAllowList": [
+          "reactstrap",
+          "react-popper",
+          "@hypnosphi/create-react-context",
+          "react-transition-group",
+          "react-chartjs-2",
+          "@babel/runtime/*",
+          "prop-types",
+          "classnames",
+          "react-copy-to-clipboard",
+          "copy-to-clipboard",
+          "warning",
+          "deep-equal",
+          "react-datetime"
+        ]
+      }
+    },
+    {
+      "id": "black-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/black-dashboard-react",
+      "revision": "26b59be1f1e5e3111f67461ebae393c31f95fa50",
+      "description": "Creative Tim Black Dashboard React (CRA 5, React 18, reactstrap/Bootstrap, react-router-dom 6 nested layout routes, perfect-scrollbar, react-chartjs-2 charts, theme + background color contexts)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps react@18.2.0 react-dom@18.2.0",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3013"
+      },
+      "url": "http://localhost:3013/admin/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/dashboard",
+        "externalPackageAllowList": [
+          "reactstrap",
+          "react-popper",
+          "@hypnosphi/create-react-context",
+          "react-transition-group",
+          "react-chartjs-2",
+          "react-notification-alert",
+          "@babel/runtime/*",
+          "prop-types",
+          "classnames",
+          "warning",
+          "deep-equal"
+        ]
+      },
+      "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19, on which the template crashes at mount (reactstrap 8 renders an undefined element type in `Nav`); the install pins the React 18.2 the template shipped against."
+    },
+    {
+      "id": "purity-ui-dashboard",
+      "repository": "https://github.com/creativetimofficial/purity-ui-dashboard",
+      "revision": "0cdbec0b17661abd280d3e38fafee8b8a3d81d97",
+      "description": "Creative Tim Purity UI Dashboard (CRA 5, React 16, Chakra UI 1 + Emotion + framer-motion, react-router-dom 5 HashRouter Switch/Route, react-apexcharts)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3014"
+      },
+      "url": "http://localhost:3014/#/admin/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context",
+          "hoist-non-react-statics",
+          "react-is",
+          "@chakra-ui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "framer-motion",
+          "stylis",
+          "react-icons",
+          "react-icons/*",
+          "react-fast-compare",
+          "tiny-invariant",
+          "tiny-warning",
+          "resolve-pathname",
+          "value-equal",
+          "path-to-regexp",
+          "isarray",
+          "prop-types",
+          "react-apexcharts"
+        ]
+      }
+    },
+    {
+      "id": "windmill-dashboard-react",
+      "repository": "https://github.com/estevanmaito/windmill-dashboard-react",
+      "revision": "da542836f945d08639fc34a3b6f91315965dc030",
+      "description": "Windmill Dashboard React (CRA 3 / React 16, legacy ReactDOM.render, react-router-dom 5 Switch/Route with lazy pages under Suspense, @windmill/react-ui, react-chartjs-2, faker table data)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3015",
+        "SKIP_PREFLIGHT_CHECK": "true"
+      },
+      "url": "http://localhost:3015/app",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context",
+          "hoist-non-react-statics",
+          "react-is",
+          "@windmill/react-ui",
+          "@babel/runtime/*",
+          "tiny-invariant",
+          "tiny-warning",
+          "resolve-pathname",
+          "value-equal",
+          "path-to-regexp",
+          "isarray",
+          "prop-types",
+          "classnames",
+          "react-chartjs-2",
+          "chart.js"
+        ]
+      }
+    },
+    {
+      "id": "material-tailwind-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/material-tailwind-dashboard-react",
+      "revision": "721f312c444ee7caa300963a042915c6bdcc883b",
+      "description": "Creative Tim Material Tailwind Dashboard React (Vite SPA, React 18 StrictMode, @material-tailwind/react, react-router-dom 6 nested layout routes, react-apexcharts)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx vite --port 5174 --strictPort",
+      "url": "http://localhost:5174/dashboard/home",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/main.jsx",
+        "route": "/dashboard/home",
+        "aliases": {
+          "@": "src"
+        },
+        "externalPackageAllowList": [
+          "@material-tailwind/react",
+          "@heroicons/react",
+          "@heroicons/react/*",
+          "prop-types",
+          "react-apexcharts",
+          "framer-motion",
+          "@floating-ui/*",
+          "material-ripple-effects",
+          "tailwind-merge",
+          "deepmerge",
+          "classnames"
+        ]
+      }
+    },
+    {
+      "id": "antd-multipurpose-dashboard",
+      "repository": "https://github.com/design-sparx/antd-multipurpose-dashboard",
+      "revision": "8e0844adca5413aab1f7ddec1274161ed6d4f481",
+      "description": "design-sparx antd multipurpose dashboard home page (Vite SPA, React 18 StrictMode, antd 5, redux-toolkit + redux-persist, TanStack Query, react-helmet-async, createBrowserRouter data router)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile --dangerously-allow-all-builds",
+      "dev": "pnpm exec vite --port 5175 --strictPort",
+      "url": "http://localhost:5175/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "aliases": {
+          "@mocks": "public/mocks"
+        },
+        "externalPackageAllowList": [
+          "antd",
+          "@ant-design/*",
+          "rc-*",
+          "@rc-component/*",
+          "react-redux",
+          "redux-persist",
+          "@reduxjs/toolkit",
+          "react-helmet-async",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "react-i18next",
+          "i18next",
+          "react-countup",
+          "countup.js",
+          "react-fast-marquee",
+          "react-responsive",
+          "@tanem/react-nprogress",
+          "react-transition-group",
+          "framer-motion",
+          "classnames",
+          "dayjs"
+        ]
+      }
+    },
+    {
+      "id": "planka",
+      "repository": "https://github.com/plankanban/planka",
+      "revision": "26b512193a6a726e4de46dcdbf21ddb1c34c365b",
+      "description": "PLANKA client login page (React 18 SPA on react-redux + redux-saga + react-router v7 + semantic-ui-react, Vite dev server proxying to the Sails server over a local PostgreSQL container)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --prefix client --no-audit --no-fund && npm install --prefix server --no-audit --no-fund",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-corpus-planka 54331 planka"],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/planka-setup.sh\""],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/planka-dev.sh\"",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "react-redux",
+          "use-sync-external-store",
+          "use-sync-external-store/*",
+          "@gravity-ui/uikit",
+          "semantic-ui-react",
+          "@fluentui/react-component-ref",
+          "react-is",
+          "react-i18next",
+          "i18next",
+          "i18next-browser-languagedetector",
+          "html-parse-stringify",
+          "void-elements"
+        ]
+      }
+    },
+    {
+      "id": "navidrome",
+      "repository": "https://github.com/navidrome/navidrome",
+      "revision": "bea9715001abc956c712f76bf87cd93fd41bd6f1",
+      "description": "Navidrome UI login page (React 17 SPA on react-admin 3 + Material-UI 4 + react-final-form + redux-saga, hash history, Vite dev server without the Go backend)",
+      "framework": "spa",
+      "workingDirectory": "ui",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm start",
+      "url": "http://localhost:4533/#/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "ui",
+        "entry": "src/index.jsx",
+        "route": "/login",
+        "defines": {
+          "process.env": {}
+        },
+        "externalPackageAllowList": [
+          "react-admin",
+          "ra-core",
+          "ra-ui-materialui",
+          "ra-i18n-polyglot",
+          "@material-ui/*",
+          "react-final-form",
+          "final-form",
+          "react-redux",
+          "react-hotkeys",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "connected-react-router",
+          "history",
+          "react-router-dom",
+          "react-router",
+          "navidrome-music-player",
+          "react-transition-group",
+          "node-polyglot",
+          "warning",
+          "object-assign",
+          "hasown",
+          "has-symbols",
+          "deepmerge",
+          "react-is",
+          "hoist-non-react-statics",
+          "prop-types",
+          "clsx",
+          "@babel/runtime/*",
+          "lodash",
+          "lodash/*",
+          "inflection",
+          "query-string",
+          "react-error-boundary"
+        ]
+      },
+      "notes": "`index.html` is a Go `html/template`; the Vite dev server serves it verbatim, so the inline `window.__APP_CONFIG__ = {{ .AppConfig }}` script is a syntax error and `src/config.js` falls back to its development defaults (`firstTime: false`), exactly as `make dev` behaves before the Go server answers. The Go backend (Go 1.27, cgo/taglib) is not started: the login page issues no request until the form is submitted; `/auth` and `/api` proxy targets are simply unreachable."
+    },
+    {
+      "id": "answer",
+      "repository": "https://github.com/apache/answer",
+      "revision": "3b9f1370612e690a0b7f230f05e688930db4c6d3",
+      "description": "Apache Answer login page (React 18 CRA/react-app-rewired SPA on react-router v7 createBrowserRouter + react-bootstrap + zustand + react-i18next, dev server proxying to the Go backend from the apache/answer image built at this revision with an auto-installed SQLite site)",
+      "framework": "react-router",
+      "workingDirectory": "ui",
+      "install": "cd ui && pnpm install --frozen-lockfile",
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/answer-backend.sh\" bippy-corpus-answer 9080 apache/answer:latest"
+      ],
+      "dev": "pnpm start",
+      "env": {
+        "PORT": "3010",
+        "BROWSER": "none",
+        "CI": "true",
+        "REACT_APP_API_URL": "http://localhost:9080"
+      },
+      "url": "http://localhost:3010/users/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "ui",
+        "entry": "src/index.tsx",
+        "route": "/users/login",
+        "aliases": {
+          "@": "src",
+          "@i18n": "../i18n",
+          "buffer": "buffer"
+        },
+        "envFiles": [".env.development"],
+        "externalPackageAllowList": [
+          "react-bootstrap",
+          "@restart/*",
+          "zustand",
+          "react-i18next",
+          "i18next",
+          "react-helmet-async",
+          "swr",
+          "classnames",
+          "@react-aria/ssr",
+          "uncontrollable",
+          "dom-helpers",
+          "prop-types-extra",
+          "warning",
+          "invariant",
+          "react-transition-group",
+          "html-parse-stringify",
+          "void-elements"
+        ]
+      },
+      "notes": "The `apache/answer:latest` image is built from revision 3b9f137 (v2.0.2), so the Go backend behind the CRA proxy is the exact same commit as the UI; `AUTO_INSTALL` provisions the SQLite site (name `Bippy Corpus`) so `/users/login` renders the real Layout + login form. CRA inlines shell variables over `.env.development`, hence `REACT_APP_API_URL` in `env`."
+    },
+    {
+      "id": "giscus",
+      "repository": "https://github.com/giscus/giscus",
+      "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
+      "description": "giscus.app landing page (Next 12 pages router built with next-plugin-preact: `react`/`react-dom` are `npm:@preact/compat`, next-translate, swr)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn next dev -p 3011",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://localhost:3011/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["next-translate", "swr", "@primer/octicons-react"]
+      },
+      "notes": "Static-only: the app renders with Preact (`react` and `react-dom` resolve to `@preact/compat`), which commits no React fibers, so neither a browser capture nor the static materialization through the app's own `react-dom` can produce a fiber tree. `getStaticProps` also needs a GitHub App private key (`services/github/getAppAccessToken`) to render the README through the GitHub Markdown API."
+    },
+    {
+      "id": "panwriter",
+      "repository": "https://github.com/mb21/panwriter",
+      "revision": "3bc3d60b700e83781369a789bd0078625e2756c6",
+      "description": "PanWriter renderer in website mode (CRA 5 / react-scripts, React 18 legacy `ReactDOM.render`, CodeMirror 6 editor + pandoc preview iframe; the Electron `ipcApi` preload is absent in a browser so the app shows its website.md)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "ELECTRON_SKIP_BINARY_DOWNLOAD": "1",
+        "PORT": "3012",
+        "BROWSER": "none",
+        "CI": "true"
+      },
+      "url": "http://localhost:3012/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "externalPackageAllowList": ["react-codemirror2"]
+      }
+    },
+    {
+      "id": "homarr",
+      "repository": "https://github.com/ajnart/homarr",
+      "revision": "c5873c6e481144cd18a70139ef23ac04ca8ab158",
+      "description": "Homarr onboarding page of a fresh install (Next 13 pages router, Yarn 3, Mantine 6 + emotion, tRPC/react-query, next-i18next, drizzle over a local SQLite file; the middleware sends every page to /onboard while the user table is empty)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "setup": ["cp -n .env.example .env || true", "yarn db:migrate"],
+      "dev": "yarn dev -p 3007",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "NEXTAUTH_URL": "http://localhost:3007",
+        "NEXTAUTH_URL_INTERNAL": "http://localhost:3007"
+      },
+      "url": "http://localhost:3007/onboard",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/onboard",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@mantine/*",
+          "@emotion/*",
+          "next-i18next",
+          "react-i18next",
+          "@tanstack/react-query",
+          "@trpc/*",
+          "next-auth",
+          "@tabler/icons-react",
+          "react-remove-scroll",
+          "react-remove-scroll-bar",
+          "react-style-singleton",
+          "use-sidecar",
+          "use-callback-ref",
+          "aria-hidden",
+          "react-transition-group",
+          "@tanstack/react-query-devtools"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "`.env.example` already points `DATABASE_URL` at `./database/db.sqlite`, so setup copies it and applies the drizzle migrations (`yarn db:migrate`). `/` redirects to `/board`, whose middleware redirects to `/onboard` until a user exists; `getServerSideProps` there counts users and probes the SQLite file for writability, so `databaseNotWriteable` is unknown to the static side. `NEXTAUTH_URL_INTERNAL` is what `_app.getInitialProps` uses for its server-side `getSession` fetch (next.config.js defaults it to :3000)."
+    },
+    {
+      "id": "museeks",
+      "repository": "https://github.com/martpie/museeks",
+      "revision": "7163f6019a3184043c06352caeec0ed1bf6ccff5",
+      "description": "Museeks music player renderer library view in a plain browser (Tauri 2 + Vite+ SPA, React 19 with React Compiler, TanStack Router file routes with a hash history, TanStack Query, Lingui macros, StyleX, Base UI, zustand)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/museeks-browser-setup.sh\""],
+      "dev": "pnpm dev",
+      "env": {
+        "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+      },
+      "url": "http://localhost:1420/#/library",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "capturedGlobals": [
+        "__MUSEEKS_INITIAL_CONFIG",
+        "__MUSEEKS_INITIAL_QUEUE",
+        "__MUSEEKS_PLATFORM"
+      ],
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "@tanstack/react-virtual",
+          "@tanstack/virtual-core",
+          "@lingui/react",
+          "@lingui/core",
+          "@base-ui/*",
+          "@floating-ui/*",
+          "@dnd-kit/*",
+          "zustand",
+          "zustand/*",
+          "react-keybinding-component",
+          "eventemitter3",
+          "lodash-es",
+          "nanoid",
+          "semver"
+        ]
+      },
+      "notes": "The desktop shell (Tauri) is not a browser target: the setup stubs the Tauri globals and points the IPC bridges at the repository's own E2E mocks (src/__tests__/e2e-helpers.tsx), which is how the project tests its renderer in Chromium. Not exact: the runtime capture is a real browser render (211 fibers, 12 commits), but the static side exhausts the fixed step budget inside TanStack Router's `loadMatches`/`Transitioner` while evaluating the `/library` route loader through the mocked bridges, so the root `CatchBoundary` commits TanStack's default `ErrorComponent` instead of the library view in the preferred state, and the state space stays incomplete (256 of 9705 states enumerated). The library view itself also depends on a passive-effect store write (`useGlobalTrackListStatus` -> `LibraryAPI.setTracksStatus`) that only commits after that loader resolves."
+    },
+    {
+      "id": "letterpad",
+      "repository": "https://github.com/letterpad/letterpad",
+      "revision": "91d3e2516987ea00b1f068bda20dcd8fd14eb90d",
+      "description": "Letterpad admin login page (Next 14 app router, Bun + turbo workspace, workspace `ui` package consumed from its tsup dist, next-auth, urql, Prisma over a local SQLite file)",
+      "framework": "next-app",
+      "workingDirectory": "apps/admin",
+      "install": "bun install --ignore-scripts",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/letterpad-setup.sh\""],
+      "dev": "bun run dev",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/admin",
+        "appDirectory": "src/app",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "@react-icons/all-files",
+          "ui",
+          "letterpad-graphql",
+          "letterpad-sdk",
+          "next-auth",
+          "next-nprogress-bar",
+          "urql",
+          "@urql/*",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "@tanstack/react-table",
+          "swr",
+          "classnames"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
     }
   ]
 }

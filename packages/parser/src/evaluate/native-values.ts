@@ -24,6 +24,8 @@ import {
   hasDefiniteItems,
   isSameComposition,
   listValue,
+  matchesComposition,
+  mayOverlapCompositions,
   nativeObjectValue,
   objectValue,
   primitiveValue,
@@ -48,11 +50,6 @@ interface ComposedExpando {
   value: StaticValue;
 }
 
-const matchesComposition = (name: string, composition: StringComposition): boolean =>
-  name.length >= composition.prefix.length + composition.suffix.length &&
-  name.startsWith(composition.prefix) &&
-  name.endsWith(composition.suffix);
-
 const hasMemberMatching = (
   object: StaticNativeObjectValue,
   composition: StringComposition,
@@ -75,16 +72,6 @@ const hasMemberMatching = (
   return false;
 };
 
-const isEitherPrefix = (left: string, right: string): boolean =>
-  left.startsWith(right) || right.startsWith(left);
-
-const isEitherSuffix = (left: string, right: string): boolean =>
-  left.endsWith(right) || right.endsWith(left);
-
-/** Whether some string could read as both compositions, so a write under one may be read under the other. */
-const mayOverlap = (left: StringComposition, right: StringComposition): boolean =>
-  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
-
 const findComposedExpando = (
   object: StaticNativeObjectValue,
   composition: StringComposition,
@@ -98,7 +85,7 @@ const getOverlappingComposedExpandos = (
   composition: StringComposition,
 ): ComposedExpando[] =>
   (composedExpandoProperties.get(object.value) ?? []).filter((expando) =>
-    mayOverlap(expando.key, composition),
+    mayOverlapCompositions(expando.key, composition),
   );
 
 const mayReadComposedExpando = (object: StaticNativeObjectValue, name: string): boolean =>
@@ -533,20 +520,26 @@ const getClassifiedMember = (
   return null;
 };
 
+const isLayoutMember = (object: StaticNativeObjectValue, key: string): boolean =>
+  object.host !== null &&
+  isClassifiedMember(object.host.realm, LAYOUT_MEMBERS, getNativeInterfaceName(object.value), key);
+
 /**
  * `object.key = value`: native properties take the native form of a known
- * value (a dynamic one makes the object unknown); any other key is an expando
- * kept on the interpreter's side.
+ * value (a dynamic one makes the object unknown, except layout state, which
+ * reads as unknown regardless); any other key is an expando kept on the
+ * interpreter's side.
  */
 export const setNativeObjectMember = (
   object: StaticNativeObjectValue,
   key: string,
   value: StaticValue,
 ): void => {
+  if (isLayoutMember(object, key)) return;
   if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
     const native = toNative(value, object.host);
-    if (native === UNCERTAIN) uncertainNativeObjects.add(object.value);
-    else Reflect.set(object.value, key, native);
+    if (native !== UNCERTAIN) Reflect.set(object.value, key, native);
+    else if (!LAYOUT_MEMBERS.has(key)) uncertainNativeObjects.add(object.value);
     return;
   }
   let expandos = expandoProperties.get(object.value);
@@ -752,9 +745,34 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
         realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
 };
 
+/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
+export const constructHostImage = (host: HostDocument, args: StaticValue[]): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, "Image");
+  const natives = toNativeArguments(args, host);
+  if (typeof constructor !== "function" || natives === null) return null;
+  return guardNativeCall("new Image", () =>
+    fromNativeValue(Reflect.construct(constructor, natives), "new Image()", host),
+  );
+};
+
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||
   (typeof value === "object" && value !== null && Reflect.get(value, "length") === 0);
+
+const hostDocumentValue = (host: HostDocument): StaticNativeObjectValue =>
+  nativeObjectValue(host.document, host);
+
+export const hasHostDocumentMember = (host: HostDocument, member: string): boolean =>
+  hasNativeObjectMember(hostDocumentValue(host), member);
+
+export const getHostDocumentExpando = (host: HostDocument, member: string): StaticValue | null =>
+  expandoProperties.get(host.document)?.get(member) ?? null;
+
+export const setHostDocumentMember = (
+  host: HostDocument,
+  member: string,
+  value: StaticValue,
+): void => setNativeObjectMember(hostDocumentValue(host), member, value);
 
 /**
  * A member of `document` or the global object (`objectPath` empty) served by the

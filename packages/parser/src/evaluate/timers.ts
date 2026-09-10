@@ -1,4 +1,5 @@
 import type { ClockReading, ClockTask, StaticValue } from "../types.js";
+import { recordInputSource } from "./predicates.js";
 import { rangedNumberValue } from "./primitive-shapes.js";
 import { primitiveValue } from "./values.js";
 
@@ -127,17 +128,20 @@ export class TimerQueue {
   }
 
   readClock(name: string): StaticValue {
-    return {
-      kind: "unknown-primitive",
-      primitiveType: "number",
-      reason: `${name}()`,
-      clock: {
-        ordering: this.isClockSettled ? "settled" : "reading",
-        sequence: ++this.clockSequence,
-        task: this.clockTask,
-        timerUnderrunMs: this.timerUnderrunMs,
+    return recordInputSource(
+      {
+        kind: "unknown-primitive",
+        primitiveType: "number",
+        reason: `${name}()`,
+        clock: {
+          ordering: this.isClockSettled ? "settled" : "reading",
+          sequence: ++this.clockSequence,
+          task: this.clockTask,
+          timerUnderrunMs: this.timerUnderrunMs,
+        },
       },
-    };
+      "clock",
+    );
   }
 }
 

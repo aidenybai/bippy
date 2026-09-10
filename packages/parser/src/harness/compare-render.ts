@@ -1,6 +1,7 @@
 import type { StaticRenderResult } from "../types.js";
 import type { ComparisonOptions, ComparisonReport } from "./compare.js";
 import { formatComparisonReport } from "./format-report.js";
+import { computeGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
 import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
 import {
   DEFAULT_STATE_SPACE_BUDGET,
@@ -20,6 +21,7 @@ import {
   type PatternNode,
 } from "./static-pattern.js";
 import type { StateReplaySummary } from "./state-replay.js";
+import { buildSymbolicTree } from "./symbolic-tree.js";
 
 export interface StaticStateSpaceOptions {
   anchor?: string;
@@ -45,6 +47,8 @@ export interface CompareRenderResult {
   stateSpace: StaticRenderStateSpace;
   matchedState: MatchedState | null;
   closestState: ClosestState | null;
+  /** Which side of every guard the capture took; distinct from the report's fiber coverage. */
+  coverage: GuardCoverage;
   runtimeSubtree: RuntimeFiberSnapshot[];
   note: string | null;
   /** Null until `replayEnumeratedStates` has re-rendered the states independently. */
@@ -99,10 +103,13 @@ const unresolvedStateSpace = (
   budget: StateSpaceBudget,
   unresolved: string,
 ): StaticRenderStateSpace => ({
-  states: [],
-  budget,
-  omitted: null,
+  tree: buildSymbolicTree([]),
   commits: [],
+  commitStates: [],
+  budget,
+  stateCount: 0,
+  states: [],
+  omitted: null,
   staticPattern,
   anchor: null,
   unresolved,
@@ -155,12 +162,11 @@ export const enumerateStaticStates = (
         : `anchor <${anchor}> not found in static tree`,
     );
   }
-  return {
-    ...enumerateStateSpace(anchoredCommits, budget),
+  return Object.assign(enumerateStateSpace(anchoredCommits, budget), {
     staticPattern: anchoredCommits[anchoredCommits.length - 1],
     anchor,
     unresolved: null,
-  };
+  });
 };
 
 const skipped = (
@@ -194,6 +200,7 @@ const skipped = (
   stateSpace,
   matchedState: null,
   closestState: null,
+  coverage: computeGuardCoverage(stateSpace.tree, []),
   runtimeSubtree: [],
   note,
   stateReplay: null,
@@ -265,6 +272,10 @@ export const compareStaticToRuntime = (
     stateSpace,
     matchedState: match.matched,
     closestState: match.closest,
+    coverage: computeGuardCoverage(
+      stateSpace.tree,
+      match.matched ? [match.matched.conditions] : [],
+    ),
     runtimeSubtree,
     note: null,
     stateReplay: null,
@@ -273,9 +284,16 @@ export const compareStaticToRuntime = (
 
 export const summarizeStateSpace = (comparison: CompareRenderResult): StateSpaceSummary => ({
   states: comparison.stateSpace.states.length,
+  stateCount: comparison.stateSpace.stateCount,
+  clusters: comparison.stateSpace.commitStates.reduce(
+    (sum, commit) => sum + commit.clusters.length,
+    0,
+  ),
+  tree: comparison.stateSpace.tree.stats,
   matchedState: comparison.matchedState,
   closestState: comparison.closestState,
   omitted: summarizeOmissions(comparison.stateSpace.omitted),
+  coverage: comparison.coverage,
 });
 
 export const formatCompareRenderResult = (comparison: CompareRenderResult): string =>

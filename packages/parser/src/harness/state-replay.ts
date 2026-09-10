@@ -10,12 +10,12 @@ import {
 import {
   enumerateStaticStates,
   type CompareRenderResult,
+  type StaticRenderStateSpace,
   type StaticStateSpaceOptions,
 } from "./compare-render.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import { hasPatternDecisions, type PatternNode } from "./static-pattern.js";
 import {
-  getStateCommit,
   pinDecisions,
   type DecisionCondition,
   type StateCondition,
@@ -180,12 +180,15 @@ const decisionValue = (condition: DecisionCondition): number =>
   condition.kind === "repeat" ? condition.count : condition.alternativeIndex;
 
 /**
- * Which decision every variable stands for. Each commit names its variables
- * on its own, so the same decision (one materializer id at one position) can
- * carry different variables in different commits; the join treats those as
- * one variable, since a replay can pin the decision only once for all
- * commits. Decisions inside a repeat are per iteration and keep their own
- * variables.
+ * Which decision every variable of a commit stands for. Each commit names
+ * its variables on its own, so the same decision (one materializer id at one
+ * position) can carry different variables in different commits and one
+ * variable name can mean different decisions; the join treats the variable of
+ * each commit as its own and unifies those naming one decision, since a
+ * replay can pin the decision only once for all commits. Decisions inside a
+ * repeat are per iteration and keep their own variables; alternatives of a
+ * branch sharing its scope were materialized in one scope, so their ids
+ * already tell them apart.
  */
 const collectDecisionVariables = (
   nodes: PatternNode[],
@@ -204,7 +207,11 @@ const collectDecisionVariables = (
         const decision = `${position}${node.decision}`;
         variableOf.set(decision, variableOf.get(decision) ?? node.variable);
         node.alternatives.forEach((alternative, alternativeIndex) => {
-          collectDecisionVariables(alternative, `${decision}|${alternativeIndex}/`, variableOf);
+          collectDecisionVariables(
+            alternative,
+            node.sharesScope ? position : `${decision}|${alternativeIndex}/`,
+            variableOf,
+          );
         });
         break;
       }
@@ -220,72 +227,84 @@ const collectDecisionVariables = (
   }
 };
 
-/** Variables that name the same decision in different commits, by union-find over the decision ids. */
+const commitVariableKey = (commit: number, variable: string): string => `${commit}:${variable}`;
+
+/** Commit-scoped variables that name the same decision, by union-find over the decision ids. */
 const unifyDecisionVariables = (commits: PatternNode[][]): Map<string, string> => {
   const parents = new Map<string, string>();
-  const resolve = (variable: string): string => {
-    const parent = parents.get(variable) ?? variable;
-    if (parent === variable) return variable;
+  const resolve = (key: string): string => {
+    const parent = parents.get(key) ?? key;
+    if (parent === key) return key;
     const root = resolve(parent);
-    parents.set(variable, root);
+    parents.set(key, root);
     return root;
   };
-  const variableOfDecision = new Map<string, string>();
-  for (const commit of commits) {
+  const keyOfDecision = new Map<string, string>();
+  commits.forEach((commit, commitIndex) => {
     const variableOf = new Map<string, string>();
     collectDecisionVariables(commit, "", variableOf);
     for (const [decision, variable] of variableOf) {
-      if (!parents.has(variable)) parents.set(variable, variable);
-      const earlier = variableOfDecision.get(decision);
-      if (earlier === undefined) variableOfDecision.set(decision, variable);
-      else parents.set(resolve(variable), resolve(earlier));
+      const key = commitVariableKey(commitIndex, variable);
+      if (!parents.has(key)) parents.set(key, key);
+      const earlier = keyOfDecision.get(decision);
+      if (earlier === undefined) keyOfDecision.set(decision, key);
+      else parents.set(resolve(key), resolve(earlier));
     }
-  }
-  return new Map([...parents.keys()].map((variable) => [variable, resolve(variable)]));
+  });
+  return new Map([...parents.keys()].map((key) => [key, resolve(key)]));
 };
 
-/** One joint assignment: the conditions deciding each canonical variable, one per alias variable. */
-interface Assignment extends ReadonlyMap<string, DecisionCondition[]> {}
+interface CommitDecision {
+  commit: number;
+  condition: DecisionCondition;
+}
+
+/** One joint assignment: the decisions of each canonical variable, one per commit deciding it. */
+interface Assignment extends ReadonlyMap<string, CommitDecision[]> {}
 
 const assignmentKey = (assignment: Assignment): string =>
   JSON.stringify(
     [...assignment]
-      .map(([variable, [condition]]): [string, number] => [variable, decisionValue(condition)])
+      .map(([variable, [decision]]): [string, number] => [
+        variable,
+        decisionValue(decision.condition),
+      ])
       .sort(([left], [right]) => left.localeCompare(right)),
   );
 
 class AssignmentJoin {
   constructor(private readonly canonical: Map<string, string>) {}
 
-  private decided(assignment: Assignment, condition: DecisionCondition): number | null {
-    const [existing] = assignment.get(this.canonicalOf(condition)) ?? [];
-    return existing === undefined ? null : decisionValue(existing);
+  private decided(assignment: Assignment, decision: CommitDecision): number | null {
+    const [existing] = assignment.get(this.canonicalOf(decision)) ?? [];
+    return existing === undefined ? null : decisionValue(existing.condition);
   }
 
-  private canonicalOf(condition: DecisionCondition): string {
-    return this.canonical.get(condition.variable) ?? condition.variable;
+  private canonicalOf({ commit, condition }: CommitDecision): string {
+    const key = commitVariableKey(commit, condition.variable);
+    return this.canonical.get(key) ?? key;
   }
 
-  agreesWith(assignment: Assignment, conditions: DecisionCondition[]): boolean {
-    return conditions.every((condition) => {
-      const value = this.decided(assignment, condition);
-      return value === null || value === decisionValue(condition);
+  agreesWith(assignment: Assignment, decisions: CommitDecision[]): boolean {
+    return decisions.every((decision) => {
+      const value = this.decided(assignment, decision);
+      return value === null || value === decisionValue(decision.condition);
     });
   }
 
-  isSubAssignment(assignment: Assignment, conditions: DecisionCondition[]): boolean {
-    return conditions.every(
-      (condition) => this.decided(assignment, condition) === decisionValue(condition),
+  isSubAssignment(assignment: Assignment, decisions: CommitDecision[]): boolean {
+    return decisions.every(
+      (decision) => this.decided(assignment, decision) === decisionValue(decision.condition),
     );
   }
 
-  merge(assignment: Assignment, conditions: DecisionCondition[]): Assignment {
+  merge(assignment: Assignment, decisions: CommitDecision[]): Assignment {
     const merged = new Map(assignment);
-    for (const condition of conditions) {
-      const variable = this.canonicalOf(condition);
+    for (const decision of decisions) {
+      const variable = this.canonicalOf(decision);
       const aliases = merged.get(variable) ?? [];
-      if (!aliases.some((alias) => alias.variable === condition.variable)) {
-        merged.set(variable, [...aliases, condition]);
+      if (!aliases.some((alias) => alias.commit === decision.commit)) {
+        merged.set(variable, [...aliases, decision]);
       }
     }
     return merged;
@@ -295,8 +314,8 @@ class AssignmentJoin {
 export interface DecisionAssignment {
   /** One condition per decision, under the variable of the earliest commit meeting it. */
   conditions: DecisionCondition[];
-  /** The same decisions under every commit's variable, so each commit finds its pin. */
-  pinnedConditions: DecisionCondition[];
+  /** The same decisions under each commit's own variables, so every commit finds its pins. */
+  pinnedConditions: DecisionCondition[][];
   /** The enumerated states the assignment claims, in enumeration order. */
   stateIndices: number[];
 }
@@ -310,35 +329,49 @@ export interface DecisionAssignment {
  */
 export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionAssignment[] => {
   const join = new AssignmentJoin(unifyDecisionVariables(stateSpace.commits));
-  const decisionsOf = stateSpace.states.map((state) =>
-    state.conditions.filter(isDecisionCondition),
-  );
-  const perCommit: DecisionCondition[][][] = stateSpace.commits.map(() => []);
-  stateSpace.states.forEach((state, stateIndex) => {
-    perCommit[getStateCommit(state)]?.push(decisionsOf[stateIndex]);
+  let commitStart = 0;
+  const decisionsOf: CommitDecision[][] = [];
+  const perCommit = stateSpace.commitStates.map((commitStates, commit) => {
+    const commitDecisions = stateSpace.states
+      .slice(commitStart, commitStart + commitStates.stateCount)
+      .map((state) =>
+        state.conditions
+          .filter(isDecisionCondition)
+          .map((condition): CommitDecision => ({ commit, condition })),
+      );
+    commitStart += commitStates.stateCount;
+    decisionsOf.push(...commitDecisions);
+    return commitDecisions;
   });
   let joint: Assignment[] = [new Map()];
   for (const commitAssignments of perCommit) {
     const extended = new Map<string, Assignment>();
     for (const assignment of joint) {
       let isExtended = false;
-      for (const conditions of commitAssignments) {
-        if (!join.agreesWith(assignment, conditions)) continue;
+      for (const decisions of commitAssignments) {
+        if (!join.agreesWith(assignment, decisions)) continue;
         isExtended = true;
-        const merged = join.merge(assignment, conditions);
+        const merged = join.merge(assignment, decisions);
         extended.set(assignmentKey(merged), merged);
       }
       if (!isExtended) extended.set(assignmentKey(assignment), assignment);
     }
     joint = [...extended.values()].slice(0, stateSpace.budget.maxStates);
   }
-  return joint.map((assignment) => ({
-    conditions: [...assignment.values()].map(([condition]) => condition),
-    pinnedConditions: [...assignment.values()].flat(),
-    stateIndices: decisionsOf.flatMap((conditions, stateIndex) =>
-      join.isSubAssignment(assignment, conditions) ? [stateIndex] : [],
-    ),
-  }));
+  return joint.map((assignment) => {
+    const decisions = [...assignment.values()];
+    return {
+      conditions: decisions.map(([decision]) => decision.condition),
+      pinnedConditions: stateSpace.commits.map((_, commit) =>
+        decisions.flatMap((aliases) =>
+          aliases.flatMap((alias) => (alias.commit === commit ? [alias.condition] : [])),
+        ),
+      ),
+      stateIndices: decisionsOf.flatMap((stateDecisions, stateIndex) =>
+        join.isSubAssignment(assignment, stateDecisions) ? [stateIndex] : [],
+      ),
+    };
+  });
 };
 
 /**
@@ -568,6 +601,23 @@ export const replayStateSpace = async (
   };
 };
 
+/** The state space with the replays' corrections in place of the states they contradicted; the tree and its clusters stay the enumeration's. */
+const withCorrectedStates = (
+  stateSpace: StaticRenderStateSpace,
+  states: StaticState[],
+): StaticRenderStateSpace => ({
+  tree: stateSpace.tree,
+  commits: stateSpace.commits,
+  commitStates: stateSpace.commitStates,
+  budget: stateSpace.budget,
+  stateCount: stateSpace.stateCount - stateSpace.states.length + states.length,
+  states,
+  omitted: stateSpace.omitted,
+  staticPattern: stateSpace.staticPattern,
+  anchor: stateSpace.anchor,
+  unresolved: stateSpace.unresolved,
+});
+
 /**
  * Replays the enumerated states and folds what they witnessed into the
  * comparison: the runtime must match a state some replay re-witnessed. A
@@ -590,7 +640,7 @@ export const replayEnumeratedStates = async (
   const matchedState = reindex(comparison.matchedState, kept);
   const replayed: CompareRenderResult = {
     ...comparison,
-    stateSpace: { ...stateSpace, states },
+    stateSpace: withCorrectedStates(stateSpace, states),
     matchedState,
     closestState: reindex(comparison.closestState, kept),
     stateReplay: summary,

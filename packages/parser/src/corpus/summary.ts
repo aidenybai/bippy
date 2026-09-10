@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
 import type { ComparisonDivergence, ComparisonReport } from "../harness/compare.js";
+import {
+  formatGuardCoverage,
+  guardCoverageSchema,
+  type GuardCoverage,
+} from "../harness/guard-coverage.js";
 import type { StateReplaySummary } from "../harness/state-replay.js";
 import type {
   DecisionCondition,
@@ -9,6 +14,7 @@ import type {
   StateOmission,
   StateSpaceSummary,
 } from "../harness/state-space.js";
+import { symbolicTreeStatsSchema, type SymbolicTreeStats } from "../harness/symbolic-tree.js";
 import type { StaticRenderStats } from "../types.js";
 import type {
   CorpusResult,
@@ -118,13 +124,29 @@ const stateOmissionSchema: z.ZodType<StateOmission> = z.discriminatedUnion("kind
   z.object({ kind: z.literal("subtree"), reason: z.string() }),
 ]);
 
+const emptyCoverage: GuardCoverage = { sides: [], witnessed: 0, possible: 0, unreachable: 0 };
+
+const emptyTreeStats: SymbolicTreeStats = {
+  nodes: 0,
+  inputs: 0,
+  guards: 0,
+  branches: 0,
+  repeats: 0,
+  opaque: 0,
+  wildcards: 0,
+};
+
 const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z.object({
   states: z.number(),
+  stateCount: z.number().default(0),
+  clusters: z.number().default(0),
+  tree: symbolicTreeStatsSchema.default(emptyTreeStats),
   matchedState: z
     .object({ index: z.number().nullable(), conditions: z.array(stateConditionSchema) })
     .nullable(),
   closestState: z.object({ index: z.number(), divergence: divergenceSchema }).nullable(),
   omitted: z.object({ total: z.number(), omissions: z.array(stateOmissionSchema) }).nullable(),
+  coverage: guardCoverageSchema.default(emptyCoverage),
 });
 
 const stateReplaySummarySchema: z.ZodType<StateReplaySummary> = z.object({
@@ -217,7 +239,12 @@ const outcome = (result: CorpusResult): string => {
 };
 
 const describeStateSpace = (stateSpace: StateSpaceSummary): string => {
-  const parts = [`${stateSpace.states} states${stateSpace.omitted ? " (incomplete)" : ""}`];
+  const enumerated =
+    stateSpace.states === stateSpace.stateCount ? "" : ` (${stateSpace.states} enumerated)`;
+  const parts = [
+    `${stateSpace.stateCount} states${enumerated} in ${stateSpace.clusters} clusters${stateSpace.omitted ? " (incomplete)" : ""}`,
+    `tree ${stateSpace.tree.nodes} nodes/${stateSpace.tree.inputs} inputs/${stateSpace.tree.guards} guards`,
+  ];
   if (stateSpace.matchedState) {
     parts.push(
       stateSpace.matchedState.index === null
@@ -228,6 +255,7 @@ const describeStateSpace = (stateSpace: StateSpaceSummary): string => {
     parts.push(`closest #${stateSpace.closestState.index + 1}`);
   }
   if (stateSpace.omitted) parts.push(`${stateSpace.omitted.total} omitted`);
+  parts.push(formatGuardCoverage(stateSpace.coverage));
   return parts.join(", ");
 };
 

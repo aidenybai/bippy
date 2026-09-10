@@ -1,9 +1,9 @@
 {
   "entry": "src/main.tsx",
-  "expectedStatus": "truncated",
+  "expectedStatus": "exact",
   "minCoverage": 1,
   "stateSpaceBudget": { "maxStates": 4 },
   "expectedStates": 4,
   "expectOmitted": true,
-  "notes": "Four independent flags reach sixteen states but the budget allows four. The remaining alternatives are reported as omitted, and a runtime match against the bounded space is truncated, never exact."
+  "notes": "Four independent flags reach sixteen states but the budget instantiates four. The flags are four independent clusters of two states each, so membership is decided against the clusters and the match is exact, while the twelve states never instantiated are reported as dropped."
 }
