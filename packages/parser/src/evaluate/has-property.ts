@@ -20,6 +20,7 @@ import {
   branchValue,
   FALSE_VALUE,
   getPropertyName,
+  getStubOwnDisplayName,
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
@@ -27,6 +28,8 @@ import {
   primitiveValue,
   thrownValue,
 } from "./values.js";
+
+export const OBJECT_PROTOTYPE_OWN_NAMES = Object.getOwnPropertyNames(Object.prototype);
 
 export const OBJECT_PROTOTYPE_METHODS = new Set([
   "hasOwnProperty",
@@ -67,7 +70,7 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
         : FALSE_VALUE;
     case "stub": {
       if (type.stub.properties?.has(name)) return TRUE_VALUE;
-      if (name === "displayName") return primitiveValue(type.stub.displayName !== null);
+      if (name === "displayName") return primitiveValue(getStubOwnDisplayName(type.stub) !== null);
       const ownKeys = getStubOwnKeys(type.stub.tag);
       if (!ownKeys.has(name)) return FALSE_VALUE;
       return ownKeys === FUNCTION_OWN_KEYS ? null : TRUE_VALUE;

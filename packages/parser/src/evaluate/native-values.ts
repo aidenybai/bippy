@@ -11,7 +11,7 @@ import type {
 } from "../types.js";
 import { element, nativeFunction } from "./stubs.js";
 import type { HostDocument } from "../host/host-document.js";
-import type { HostRealm } from "../host/host-realm.js";
+import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
@@ -35,6 +35,37 @@ import {
 } from "./values.js";
 
 const UNCERTAIN = Symbol("uncertain");
+
+export const isObjectLike = (value: unknown): value is object =>
+  (typeof value === "object" || typeof value === "function") && value !== null;
+
+const isLanguageGlobal = (name: string, value: unknown): boolean =>
+  loadHostRealm("ecmascript").hasGlobal(name) && Reflect.get(globalThis, name) === value;
+
+/**
+ * The canonical global path of a language object reached by another path, so
+ * `Object.prototype.constructor` is `Object` and `Array.prototype.constructor.prototype`
+ * is `Array.prototype`; null for objects only reachable by their own path.
+ */
+export const getCanonicalLanguageGlobal = (value: object): StaticValue | null => {
+  const ownName = Reflect.get(value, "name");
+  if (typeof ownName === "string" && isLanguageGlobal(ownName, value))
+    return { kind: "global", name: ownName };
+  const constructor = Reflect.get(value, "constructor");
+  if (
+    typeof constructor === "function" &&
+    constructor.prototype === value &&
+    isLanguageGlobal(constructor.name, constructor)
+  )
+    return { kind: "global", name: `${constructor.name}.prototype` };
+  return null;
+};
+
+/** The language global that is the `constructor` of a native prototype (`Array` for `Array.prototype`); null when the prototype is not an intrinsic's. */
+export const getPrototypeConstructorGlobal = (prototype: object | null): StaticValue | null => {
+  const constructor: unknown = prototype === null ? undefined : Reflect.get(prototype, "constructor");
+  return isObjectLike(constructor) ? getCanonicalLanguageGlobal(constructor) : null;
+};
 
 /** Native objects a mutator was called on with arguments the analysis could not see. */
 const uncertainNativeObjects = new WeakSet<object>();
@@ -257,6 +288,15 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
   }
 };
 
+/** The language object (`Object("abc")`, a `Date`) a value stands for exactly, whose coercions this process can run; null for host objects and objects the analysis lost track of or the program extended. */
+export const getExactLanguageObject = (object: StaticNativeObjectValue): object | null =>
+  object.host !== null ||
+  uncertainNativeObjects.has(object.value) ||
+  expandoProperties.has(object.value) ||
+  composedExpandoProperties.has(object.value)
+    ? null
+    : object.value;
+
 /** The JavaScript values `args` stand for; null when any part of one is uncertain. */
 export const toNativeArguments = (
   args: StaticValue[],
@@ -475,6 +515,8 @@ export const getNativeObjectMember = (
     }
   }
   if (typeof member !== "function") return fromNativeValue(member, name, object.host);
+  const languageGlobal = getCanonicalLanguageGlobal(member);
+  if (languageGlobal) return languageGlobal;
   return pureNativeFunction(name, member, object.value, object.host, () => {
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
     return unknownValue(`${name}() on dynamic arguments`);
@@ -745,13 +787,23 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
         realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
 };
 
-/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
-export const constructHostImage = (host: HostDocument, args: StaticValue[]): StaticValue | null => {
-  const constructor: unknown = Reflect.get(host.globalObject, "Image");
+/** Node interfaces the DOM lets a program construct directly, each creating a fresh node of the host document. */
+const HOST_NODE_CONSTRUCTORS = new Set(["Image", "Audio", "DocumentFragment", "Text", "Comment"]);
+
+export const isHostNodeConstructorName = (name: string): boolean =>
+  HOST_NODE_CONSTRUCTORS.has(name);
+
+/** `new Image(width, height)`, `new DocumentFragment()`, …: the node of the host document it constructs, as the matching `document.create*` would; null for dynamic arguments. */
+export const constructHostNode = (
+  host: HostDocument,
+  name: string,
+  args: StaticValue[],
+): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, name);
   const natives = toNativeArguments(args, host);
   if (typeof constructor !== "function" || natives === null) return null;
-  return guardNativeCall("new Image", () =>
-    fromNativeValue(Reflect.construct(constructor, natives), "new Image()", host),
+  return guardNativeCall(`new ${name}`, () =>
+    fromNativeValue(Reflect.construct(constructor, natives), `new ${name}()`, host),
   );
 };
 

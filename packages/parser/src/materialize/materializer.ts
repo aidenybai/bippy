@@ -45,6 +45,7 @@ import { getFunctionComponent } from "../react/element-type.js";
 import type {
   ComponentDefinition,
   ContextDefinition,
+  ForwardRefArguments,
   RenderEnvironment,
   Scope,
   SourceLocation,
@@ -148,6 +149,7 @@ interface MaterializeContext {
 interface ProxyInput {
   props: StaticObjectValue;
   ref: StaticValue | null;
+  renderArguments?: ForwardRefArguments;
   location: SourceLocation | null;
   context: MaterializeContext;
   /** Wrapped in `React.memo` without a custom compare, so shallow-equal props bail out. */
@@ -485,6 +487,7 @@ export class Materializer {
   private portalContainer: Element | null = null;
   private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
+  private readonly serverRenders = new WeakMap<StaticElementValue, StaticValue>();
 
   constructor(
     interpreter: Interpreter,
@@ -706,7 +709,8 @@ export class Materializer {
    * What Flight sends the client for an element server code created: a key-less
    * Fragment is flattened to its children (`renderElement` in
    * react-server/src/ReactFlightServer.js), and a server component's output
-   * replaces it.
+   * replaces it. Flight renders each element object once, so a client component
+   * placing the same server element at several positions reuses that output.
    */
   private serverElementToNode(
     element: StaticElementValue,
@@ -727,6 +731,7 @@ export class Materializer {
     }
     const serverComponent = getServerComponent(type);
     if (!serverComponent) return NOT_SERVER_RENDERED;
+    const previousRender = this.serverRenders.get(element);
     const server = this.evaluateComposite(
       serverComponent,
       props,
@@ -734,10 +739,12 @@ export class Materializer {
       location,
       null,
       (componentContext) =>
+        previousRender ??
         this.interpreter.callFunction(toFunctionValue(serverComponent), [props], componentContext, {
           awaited: true,
         }),
     );
+    if (server.componentContext) this.serverRenders.set(element, server.rendered);
     return this.toNode(server.rendered, server.childContext, isTopLevel);
   }
 
@@ -799,6 +806,7 @@ export class Materializer {
               renderProps.kind === "object" ? renderProps : props,
             ),
             ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
+            renderArguments: type.renderArguments,
           },
         });
       }
@@ -1416,10 +1424,24 @@ export class Materializer {
     return tools;
   }
 
+  private renderArguments(
+    input: ProxyInput,
+    props: StaticValue,
+    ref: StaticValue | null,
+  ): StaticValue[] {
+    if (ref === null) return [props];
+    return (
+      input.renderArguments?.(props, ref, this.stubTools(input.context, input.location)) ?? [
+        props,
+        ref,
+      ]
+    );
+  }
+
   renderFunctionProxy(
     input: ProxyInput,
     component: ComponentDefinition,
-    secondArgument: StaticValue | null,
+    ref: StaticValue | null,
   ): ReactNode {
     const { useRef, useState, useEffect, useLayoutEffect } = this.runtime.react;
     const instanceRef = useRef<ProxyInstance | null>(null);
@@ -1442,7 +1464,7 @@ export class Materializer {
           (componentContext) =>
             this.interpreter.callFunction(
               toFunctionValue(component),
-              secondArgument ? [props, secondArgument] : [props],
+              this.renderArguments(input, props, ref),
               componentContext,
               { awaited: true },
             ),

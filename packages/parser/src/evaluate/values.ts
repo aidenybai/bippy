@@ -2062,13 +2062,18 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
   }
 };
 
-/** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */
-export const getStubDisplayName = (stub: StubComponent): string | null => {
+const getAssignedStubDisplayName = (stub: StubComponent): string | null => {
   const assigned = stub.properties?.get("displayName");
-  return assigned?.kind === "primitive" && typeof assigned.value === "string"
-    ? assigned.value
-    : stub.displayName;
+  return assigned?.kind === "primitive" && typeof assigned.value === "string" ? assigned.value : null;
 };
+
+/** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */
+export const getStubDisplayName = (stub: StubComponent): string | null =>
+  getAssignedStubDisplayName(stub) ?? stub.displayName;
+
+/** What `Component.displayName || Component.name` reads on a stub. */
+export const getStubOwnDisplayName = (stub: StubComponent): string | null =>
+  getAssignedStubDisplayName(stub) ?? (stub.isRenderNamed ? null : stub.displayName);
 
 export const describeElementType = (type: StaticElementType): string => {
   switch (type.kind) {

@@ -3,6 +3,7 @@ import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
+  componentReference,
   getObjectProperty,
   getTruthiness,
   isFunctionValue,
@@ -17,7 +18,7 @@ import {
 } from "../evaluate/values.js";
 import { hasProperty } from "../evaluate/has-property.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../evaluate/stubs.js";
-import { toElementType } from "../react/element-type.js";
+import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
   LibraryValueProvider,
@@ -320,20 +321,40 @@ const styledFactory = (
     ),
   );
 
-/** `styled(tag, options?)`, which is also `styled.div`, `styled.span`, ... */
-const styledValue = (factoryOptions: StyledFactoryOptions): StaticValue => ({
-  kind: "proxy",
-  target: nativeFunction("styled", ([tag = UNDEFINED_VALUE, options]) =>
-    styledFactory(tag, options, factoryOptions),
+// The host tags `@emotion/styled` pre-binds as own properties (`styled.div`); `@emotion/styled/base` has none.
+const STYLED_TAGS = new Set([
+  ..."a abbr address area article aside audio b base bdi bdo big blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd keygen label legend li link main map mark marquee menu menuitem meta meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s samp script section select small source span strong style sub summary sup table tbody td textarea tfoot th thead time title tr track u ul var video wbr".split(
+    " ",
   ),
-  handler: objectFromRecord({
-    get: nativeFunction("styled.<tag>", ([, key]) =>
-      key?.kind === "primitive" && typeof key.value === "string"
-        ? styledFactory(primitiveValue(key.value), undefined, factoryOptions)
-        : unknownValue("styled tag name"),
-    ),
-  }),
+  ..."circle clipPath defs ellipse foreignObject g image line linearGradient mask path pattern polygon polyline radialGradient rect stop svg text tspan".split(
+    " ",
+  ),
+]);
+
+/** `styled(tag, options?)`, which is also `styled.div`, `styled.span`, ... */
+const styledValue = (factoryOptions: StyledFactoryOptions, hasTags: boolean): StaticValue => ({
+  kind: "native-function",
+  name: "styled",
+  call: ([tag = UNDEFINED_VALUE, options]) => styledFactory(tag, options, factoryOptions),
+  getOwnProperty: (key) =>
+    hasTags && STYLED_TAGS.has(key)
+      ? styledFactory(primitiveValue(key), undefined, factoryOptions)
+      : undefined,
 });
+
+/** `withEmotionCache(render)`: a `forwardRef` whose render receives `(props, cache, ref)`. */
+const withEmotionCache = (): StaticValue =>
+  nativeFunction("withEmotionCache", ([render = UNDEFINED_VALUE]) => {
+    if (render.kind !== "function") return unknownValue("withEmotionCache of a non-function");
+    return componentReference({
+      kind: "forward-ref",
+      component: createFunctionComponentDefinition(render),
+      render,
+      renderArguments: (props, ref, tools) => [props, tools.readContext(CACHE_CONTEXT), ref],
+      displayName: null,
+      properties: new Map(),
+    });
+  });
 
 const THEME_PROVIDER_STUB: StubComponent = {
   displayName: "ThemeProvider",
@@ -479,6 +500,8 @@ const reactValue = (importedName: string, runtime: EmotionRuntime): StaticValue 
       };
     case "__unsafe_useEmotionCache":
       return nativeFunction("useEmotionCache", (_args, tools) => tools.readContext(CACHE_CONTEXT));
+    case "withEmotionCache":
+      return runtime.hasConsumerFibers ? null : withEmotionCache();
     case "Global":
       return stubValue(GLOBAL_STUB);
     case "ClassNames":
@@ -503,12 +526,15 @@ export const emotionValue: LibraryValueProvider = (specifier, importedName, proj
   const packageName = isMacro ? specifier.slice(0, -MACRO_SUFFIX.length) : specifier;
   if (packageName === "@emotion/styled" || packageName === "@emotion/styled/base") {
     if (importedName !== "default") return null;
-    return styledValue({
-      hasAutoLabel:
-        isMacro ||
-        LABEL_PLUGIN_PACKAGES.some((pluginName) => project.hasDeclaredDependency(pluginName)),
-      runtime: readRuntime(project, "@emotion/styled"),
-    });
+    return styledValue(
+      {
+        hasAutoLabel:
+          isMacro ||
+          LABEL_PLUGIN_PACKAGES.some((pluginName) => project.hasDeclaredDependency(pluginName)),
+        runtime: readRuntime(project, "@emotion/styled"),
+      },
+      packageName === "@emotion/styled",
+    );
   }
   if (packageName === "@emotion/core") return reactValue(importedName, EMOTION_10);
   if (packageName === "@emotion/react") {

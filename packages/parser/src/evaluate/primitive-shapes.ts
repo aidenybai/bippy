@@ -24,6 +24,22 @@ const shapedStringValue = (reason: string, shape: StringShape): StaticValue =>
     ? primitiveValue(shape.prefix)
     : { ...unknownPrimitiveValue("string", reason), stringShape: shape };
 
+/** `JSON.stringify(text)` of an unknown string: a quoted string, one per source text. */
+export const quoteUnknownString = (
+  text: StaticUnknownPrimitiveValue,
+): StaticUnknownPrimitiveValue => {
+  const composition = text.composition ?? { prefix: "", source: text, suffix: "" };
+  return {
+    ...unknownPrimitiveValue("string", "JSON.stringify"),
+    stringShape: { prefix: '"', length: null },
+    composition: {
+      ...composition,
+      prefix: `"${composition.prefix}`,
+      suffix: `${composition.suffix}"`,
+    },
+  };
+};
+
 export const rangedNumberValue = (
   reason: string,
   numberRange: NumberRange,
@@ -303,6 +319,15 @@ export const applyMathToRanges = (method: string, args: StaticValue[]): StaticVa
       return rangeOf(reason, [round(first.min), round(first.max)]);
     }
   }
+};
+
+/** Whether a dynamic property key may read as `name`: an unknown string of another prefix or length, or a number, never does. */
+export const mayEqualPropertyKey = (key: StaticValue, name: string): boolean => {
+  if (key.kind !== "unknown-primitive") return true;
+  if (key.primitiveType === "number") return String(Number(name)) === name;
+  if (key.primitiveType !== "string" || !key.stringShape) return true;
+  const { prefix, length } = key.stringShape;
+  return name.startsWith(prefix) && (length === null || name.length === length);
 };
 
 const startsWithShapedString = (shape: StringShape, search: string): StaticValue | null => {

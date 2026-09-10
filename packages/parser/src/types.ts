@@ -277,6 +277,8 @@ export type StaticElementType =
       kind: "forward-ref";
       component: ComponentDefinition;
       render: StaticFunctionValue;
+      /** Set when a library's `forwardRef` wrapper hands `render` other arguments than React's `(props, ref)`. */
+      renderArguments?: ForwardRefArguments;
     } & WrapperElementType)
   | ({ kind: "lazy"; inner: StaticElementType | null } & WrapperElementType)
   | { kind: "fragment" }
@@ -292,6 +294,13 @@ export type StaticElementType =
   | { kind: "external"; packageName: string; importedName: string; displayName: string }
   | { kind: "stub"; stub: StubComponent }
   | { kind: "unknown"; displayName: string | null; reason: string };
+
+/** The arguments a wrapped `forwardRef` render receives (`withEmotionCache`: `(props, cache, ref)`). */
+export type ForwardRefArguments = (
+  props: StaticValue,
+  ref: StaticValue,
+  tools: StubRenderTools,
+) => StaticValue[];
 
 /** `React.memo`/`forwardRef`/`lazy` objects: statics assigned to them (`Button.__radixId = ...`) live on the object. */
 export interface WrapperElementType {
@@ -309,6 +318,8 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
+  /** The fiber name comes from a wrapped render function's `name`, so the component object itself has no `displayName` or `name`. */
+  isRenderNamed?: boolean;
   /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
   properties?: Map<string, StaticValue>;
   /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */

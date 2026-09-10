@@ -2,7 +2,12 @@ import type { StaticValue, UnknownPrimitiveType } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostValueKind } from "../host/realm-table.js";
-import { getHostDocumentMember, getNativeInterfaceName } from "./native-values.js";
+import {
+  getCanonicalLanguageGlobal,
+  getHostDocumentMember,
+  getNativeInterfaceName,
+  isObjectLike,
+} from "./native-values.js";
 import {
   isSymbolPropertyKey,
   NULL_VALUE,
@@ -14,9 +19,6 @@ import {
 } from "./values.js";
 
 export const GLOBAL_OBJECT_VALUE: StaticValue = { kind: "global", name: GLOBAL_INTERFACE_NAME };
-
-export const isObjectLike = (value: unknown): value is object =>
-  (typeof value === "object" || typeof value === "function") && value !== null;
 
 const PRIMITIVE_KINDS = new Set<HostValueKind>(["string", "number", "boolean", "bigint"]);
 
@@ -37,28 +39,6 @@ export const getPrimitiveWitness = (
 const getPrimitiveInterfaceName = (primitiveType: string): string | undefined => {
   const witness = getPrimitiveWitness(primitiveType);
   return witness === undefined ? undefined : getNativeInterfaceName(Object(witness));
-};
-
-const isLanguageGlobal = (name: string, value: unknown): boolean =>
-  loadHostRealm("ecmascript").hasGlobal(name) && Reflect.get(globalThis, name) === value;
-
-/**
- * The canonical global path of a language object reached by another path, so
- * `Object.prototype.constructor` is `Object` and `Array.prototype.constructor.prototype`
- * is `Array.prototype`; null for objects only reachable by their own path.
- */
-const getCanonicalLanguageGlobal = (value: object): StaticValue | null => {
-  const ownName = Reflect.get(value, "name");
-  if (typeof ownName === "string" && isLanguageGlobal(ownName, value))
-    return { kind: "global", name: ownName };
-  const constructor = Reflect.get(value, "constructor");
-  if (
-    typeof constructor === "function" &&
-    constructor.prototype === value &&
-    isLanguageGlobal(constructor.name, constructor)
-  )
-    return { kind: "global", name: `${constructor.name}.prototype` };
-  return null;
 };
 
 interface LanguagePathReading {

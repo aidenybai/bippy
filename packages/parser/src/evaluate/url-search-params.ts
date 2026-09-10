@@ -1,5 +1,6 @@
 import type { SourceLocation, StaticObjectValue, StaticValue, StubRenderTools } from "../types.js";
 import {
+  accessorEntry,
   getKnownObjectKeys,
   getObjectProperty,
   listValue,
@@ -104,12 +105,7 @@ export const createSearchParamsValue = (
     nativeMethod(name, () =>
       state.dynamicReason === null ? read() : unknownValue(state.dynamicReason, location),
     );
-  const sizeValue = (): StaticValue =>
-    state.dynamicReason === null
-      ? primitiveValue(params.size)
-      : unknownPrimitiveValue("number", state.dynamicReason);
   const self = objectFromRecord({
-    size: sizeValue(),
     get: reading("get", (key) => {
       const value = params.get(key);
       return value === null ? NULL_VALUE : primitiveValue(value);
@@ -134,7 +130,6 @@ export const createSearchParamsValue = (
       return UNDEFINED_VALUE;
     }),
   });
-  const sizeEntry = self.entries[0];
   const writing = (name: string, write: (key: string, value: string | null) => void): StaticValue =>
     nativeMethod(name, (args) => {
       if (isReadonly) return readonlyError(name);
@@ -145,10 +140,21 @@ export const createSearchParamsValue = (
       } else {
         write(key, value);
       }
-      if (sizeEntry.kind === "property") sizeEntry.value = sizeValue();
       return UNDEFINED_VALUE;
     });
   self.entries.push(
+    accessorEntry(
+      "size",
+      {
+        get: nativeMethod("size", () =>
+          state.dynamicReason === null
+            ? primitiveValue(params.size)
+            : unknownPrimitiveValue("number", state.dynamicReason),
+        ),
+        set: null,
+      },
+      location,
+    ),
     {
       kind: "property",
       key: "set",
@@ -179,6 +185,24 @@ export const getSearchParamsItems = (value: StaticValue): StaticValue | null => 
   const state = value.kind === "object" ? searchParamsByValue.get(value) : undefined;
   if (!state) return null;
   return state.dynamicReason === null ? pairList(state.params) : unknownValue(state.dynamicReason);
+};
+
+/**
+ * Replaces a modeled `URLSearchParams`' pairs the way a write to its `URL`'s
+ * `search` or `href` does; a null query makes the pairs dynamic for `reason`.
+ */
+export const replaceSearchParams = (
+  value: StaticValue,
+  query: string | null,
+  reason: string | null,
+): void => {
+  const state = value.kind === "object" ? searchParamsByValue.get(value) : undefined;
+  if (!state) return;
+  state.dynamicReason = reason;
+  if (query !== null) {
+    for (const key of [...state.params.keys()]) state.params.delete(key);
+    for (const [key, item] of new URLSearchParams(query)) state.params.append(key, item);
+  }
 };
 
 /** The serialized query of a modeled `URLSearchParams`; null once a write made it dynamic. */

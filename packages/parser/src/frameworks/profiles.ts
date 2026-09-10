@@ -82,8 +82,16 @@ const isNextLayerAsset = (fiber: RuntimeFiberSnapshot): boolean => {
   return (fiber.name === "link" || fiber.name === "style") && NEXT_LAYER_STYLE_KEY.test(fiber.key);
 };
 
+// Next DevTools mounts its overlay with its own `createRoot` on a
+// `<nextjs-portal>` custom element appended to `document.body` (both the app
+// and the pages dev overlay), so that root is never the application's.
+const isNextDevOverlayRoot = (fiber: RuntimeFiberSnapshot): boolean =>
+  fiber.tag === "HostRoot" && fiber.props.container === "nextjs-portal";
+
 const isNextAppInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean =>
-  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) || isNextLayerAsset(fiber);
+  (fiber.name !== null && NEXT_APP_INJECTED_FIBERS.has(fiber.name)) ||
+  isNextLayerAsset(fiber) ||
+  isNextDevOverlayRoot(fiber);
 
 const NEXT_SEGMENT_ACTIVITY_FIBERS: ReadonlySet<string> = new Set(["Activity", "Offscreen"]);
 
@@ -130,6 +138,7 @@ const NEXT_PAGES_RUNTIME_PROVIDERS = [
 const NEXT_PAGES_INJECTED_FIBERS = new Set(["FontStyles", "DevOverlay"]);
 
 const isNextPagesInjectedFiber = (fiber: RuntimeFiberSnapshot): boolean => {
+  if (isNextDevOverlayRoot(fiber)) return true;
   if (fiber.tag !== "FunctionComponent" || fiber.name === null) return false;
   if (NEXT_PAGES_INJECTED_FIBERS.has(fiber.name)) return true;
   if (fiber.name === "Head") {

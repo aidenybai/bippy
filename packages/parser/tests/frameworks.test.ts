@@ -165,6 +165,15 @@ describe("next app router", () => {
     );
   });
 
+  it("renders a server element once when a client component places it at several positions", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/mirror" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Mirror>\n\s+<div>\n\s+<section>\n\s+<ul>\n\s+<li> key="alpha"\n\s+<li> key="beta"\n\s+<aside>\n\s+<ul>\n\s+<li> key="alpha"\n\s+<li> key="beta"$/,
+    );
+    expect(tree).not.toContain("branch");
+  });
+
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);

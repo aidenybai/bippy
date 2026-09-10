@@ -171,18 +171,28 @@ import {
   isEnvironmentObject,
   isUnsettableDefineName,
 } from "./bundler-globals.js";
-import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
-import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
+import {
+  hasProperty,
+  OBJECT_PROTOTYPE_METHODS,
+  OBJECT_PROTOTYPE_OWN_NAMES,
+} from "./has-property.js";
+import { getBuiltinWitness, getPrototypeWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness, toLanguagePropertyKey } from "./host-globals.js";
+import {
+  GLOBAL_OBJECT_VALUE,
+  getLanguageObject,
+  getPrimitiveWitness,
+  toLanguagePropertyKey,
+} from "./host-globals.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
   concatenateStrings,
   getShapedStringCharacter,
   getShapedStringLength,
+  mayEqualPropertyKey,
   toStringValue,
 } from "./primitive-shapes.js";
 import {
@@ -200,7 +210,9 @@ import {
   deleteNativeObjectMember,
   getHostDocumentExpando,
   getNativeObjectComposedMember,
+  getExactLanguageObject,
   getNativeObjectMember,
+  getPrototypeConstructorGlobal,
   hasHostDocumentMember,
   setHostDocumentMember,
   setNativeObjectComposedMember,
@@ -290,11 +302,13 @@ import {
   getListItem,
   getListLength,
   getFunctionPrototype,
+  getKnownObjectOwnNames,
   getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
   getPropertyName,
   getStubDisplayName,
+  getStubOwnDisplayName,
   getAllocationCount,
   getTruthiness,
   hasDefiniteItems,
@@ -523,10 +537,25 @@ const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
   key: string,
-): StaticValue =>
-  prototype === null || (toLanguagePropertyKey(key) ?? key) in prototype
+): StaticValue => {
+  if (prototype === null) return { kind: "method", receiver, name: key };
+  if (key === "constructor") {
+    const constructor = getPrototypeConstructorGlobal(prototype);
+    if (constructor) return constructor;
+  }
+  return (toLanguagePropertyKey(key) ?? key) in prototype
     ? { kind: "method", receiver, name: key }
     : UNDEFINED_VALUE;
+};
+
+/** `object.constructor` of an object the program built without a class or explicit prototype: the intrinsic its prototype belongs to (`Object`, `Map`, `Promise`). */
+const getIntrinsicConstructor = (object: StaticObjectValue): StaticValue | null => {
+  let root = object;
+  while (root.prototype) root = root.prototype;
+  if (root.constructedBy || root.hasNullPrototype) return null;
+  const witness = getPrototypeWitness(root);
+  return witness === null ? null : getPrototypeConstructorGlobal(Object.getPrototypeOf(witness));
+};
 
 export type LoopJump = "break" | "continue";
 
@@ -1486,12 +1515,8 @@ export class Interpreter {
         const displayName =
           value.kind === "primitive" && typeof value.value === "string" ? value.value : null;
         if (type.kind === "stub") {
-          if (propertyName === "displayName") {
-            type.stub.displayName = displayName;
-          } else {
-            type.stub.properties ??= new Map();
-            type.stub.properties.set(propertyName, value);
-          }
+          type.stub.properties ??= new Map();
+          type.stub.properties.set(propertyName, value);
           return target;
         }
         if (type.kind !== "memo" && type.kind !== "forward-ref" && type.kind !== "lazy")
@@ -2873,8 +2898,20 @@ export class Interpreter {
         : branchValue(candidates, "dynamic list index", location);
     }
     if (object.kind === "object") {
+      const ownNames = getKnownObjectOwnNames(object);
+      const inheritedNames = object.hasNullPrototype
+        ? []
+        : object.prototype
+          ? null
+          : OBJECT_PROTOTYPE_OWN_NAMES;
+      if (
+        ownNames &&
+        inheritedNames &&
+        ![...ownNames, ...inheritedNames].some((name) => mayEqualPropertyKey(key, name))
+      )
+        return UNDEFINED_VALUE;
       const values = object.entries
-        .filter((entry) => entry.kind === "property")
+        .filter((entry) => entry.kind === "property" && mayEqualPropertyKey(key, entry.key))
         .map((entry) => entry.value);
       return values.length === 0
         ? unknownValue("dynamic key into an unknown object", location)
@@ -2941,10 +2978,10 @@ export class Interpreter {
       case "stub": {
         const property = type.stub.properties?.get(key);
         if (property) return property;
-        if (key === "displayName" || key === "name")
-          return type.stub.displayName === null
-            ? UNDEFINED_VALUE
-            : primitiveValue(type.stub.displayName);
+        if (key === "displayName" || key === "name") {
+          const ownName = getStubOwnDisplayName(type.stub);
+          return ownName === null ? UNDEFINED_VALUE : primitiveValue(ownName);
+        }
         return getStubOwnKeys(type.stub.tag).has(key)
           ? unknownValue(`${getStubDisplayName(type.stub) ?? "stub"}.${key}`, location)
           : UNDEFINED_VALUE;
@@ -2978,9 +3015,9 @@ export class Interpreter {
             : UNDEFINED_VALUE;
         }
         const property = getObjectProperty(object, key);
+        if (property.kind !== "primitive" || property.value !== undefined) return property;
+        if (key === "constructor") return getIntrinsicConstructor(object) ?? property;
         if (
-          property.kind === "primitive" &&
-          property.value === undefined &&
           !object.hasNullPrototype &&
           (OBJECT_PROTOTYPE_METHODS.has(key) ||
             (isPromiseMethodName(key) && getModeledPromise(object)))
@@ -5273,6 +5310,41 @@ const mayCoerce = (value: StaticValue): boolean =>
     ? value.value !== null && value.value !== undefined
     : value.kind !== "symbol";
 
+const isObjectTypeof = (value: StaticValue, realm: HostRealm | null): boolean => {
+  if (realm === null || value.kind === "primitive") return false;
+  const typeofValue = getTypeofValue(value, realm);
+  return (
+    typeofValue.kind === "primitive" &&
+    (typeofValue.value === "object" || typeofValue.value === "function")
+  );
+};
+
+/** `"" == Date`, `Object("a") == "a"`: what loosely comparing a primitive to a language object yields in this process, which implements the same language. */
+const compareLanguageObjectLoosely = (
+  left: StaticValue,
+  right: StaticValue,
+): boolean | null => {
+  if (right.kind !== "primitive") return null;
+  const object: unknown =
+    left.kind === "global"
+      ? getLanguageObject(left.name)
+      : left.kind === "native-object"
+        ? getExactLanguageObject(left)
+        : null;
+  // eslint-disable-next-line eqeqeq
+  return object === null ? null : object == right.value;
+};
+
+/** `==` between two objects never coerces: it is identity, as between two values of any one type. */
+const isLooseEqualityIdentity = (
+  left: StaticValue,
+  right: StaticValue,
+  realm: HostRealm | null,
+): boolean =>
+  !mayCoerce(left) ||
+  !mayCoerce(right) ||
+  (isObjectTypeof(left, realm) && isObjectTypeof(right, realm));
+
 /**
  * React's memo cache sentinel never reaches application values, so comparing
  * it against anything the interpreter cannot see is still a definite answer.
@@ -5302,7 +5374,9 @@ const compareEquality = (
     compareIdentity(left, right) ??
     compareGlobalToNullish(left, right, realm) ??
     compareGlobalToNullish(right, left, realm);
-  if (isEqual === false && !isStrict && mayCoerce(left) && mayCoerce(right)) isEqual = null;
+  if (isEqual === false && !isStrict && !isLooseEqualityIdentity(left, right, realm)) {
+    isEqual = compareLanguageObjectLoosely(left, right) ?? compareLanguageObjectLoosely(right, left);
+  }
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>
       value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;
