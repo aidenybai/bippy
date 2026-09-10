@@ -39,6 +39,14 @@ export default function IntlDateTimeFormat() {
       <p>
         {new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(RELEASE)}
       </p>
+      <p>
+        <span>now</span>
+        {clock.format(new Date())}
+      </p>
+      <p>
+        <span>now</span>
+        {clock.format(Date.now())}
+      </p>
       <Clock />
     </section>
   );

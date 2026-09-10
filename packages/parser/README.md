@@ -219,7 +219,7 @@ commands, URL, static target and notes; `corpus/results.json` holds the latest m
 Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
 capture runs where a dev server can start in this environment (195 entries so far).
 
-Live-verified so far: 111 entries are `exact` — the runtime capture is one of the enumerated
+Live-verified so far: 114 entries are `exact` — the runtime capture is one of the enumerated
 states and nothing was omitted — including `react-admin` (5,581 runtime nodes inside 21 states
 over the list query's pending/settled, the loading counter and the effect commits, with
 MUI, Emotion, React Router and React Hook Form interpreted from source), `cal-diy` (6 states:
@@ -232,9 +232,11 @@ compiled memo caches), `documenso`, `sentry`, `posthog`, `graphiql`, `invoify`, 
 `panwriter`, `letterpad`, the MUI/Mantine admin templates (`material-kit-react`,
 `react-material-admin`, `mantine-admin`, `mantine-react-table`) and the Creative Tim/Tailwind
 dashboard templates, and the Next.js blog/starter templates (`geeky-nextjs`, `morethan-log`,
-`notion-blog`, `nextly-template`, `nextsimplestarter`). 62 are `partial`:
+`notion-blog`, `nextly-template`, `nextsimplestarter`), `teable`, `magic-portfolio` and
+`shadcn-crm-dashboard`. 58 are `partial`:
 `formbricks` and `karakeep` at 100% strict coverage behind opaque nodes and the rest short of full coverage through dynamic data or
-opaque third-party providers; 7 are `mismatch`, 8 `truncated` (budget-omitted alternatives),
+opaque third-party providers; 1 is `unsound` (`typebot`: sampled replays reach an alternative
+the enumeration did not materialize); 7 are `mismatch`, 8 `truncated` (budget-omitted alternatives),
 7 `unresolved` and 12 render statically only (no dev server here). Provider packages
 become exact by listing them in an entry's `externalPackageAllowList` (their source is interpreted like application code, as `react-redux`
 and `@tanstack/react-query` are) or through a library model (`src/libraries`, as Redux Toolkit's
