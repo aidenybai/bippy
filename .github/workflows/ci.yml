@@ -32,4 +32,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ${{ matrix.task }}
       - if: matrix.task == 'build'
-        run: pnpm --filter conformance exec tsx scripts/check-built.ts
+        run: |
+          pnpm --filter conformance exec tsx scripts/check-built.ts
+          pnpm --filter conformance bench:smoke

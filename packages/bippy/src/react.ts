@@ -2,6 +2,7 @@ import "./install-hook-only.js";
 import React from "react";
 import { isFiber, traverseFiber } from "./core.js";
 import { _renderers } from "./rdt-hook.js";
+import { getCurrentFiberFromRoot } from "./react-internals/current-fiber.js";
 import type { Fiber } from "./react-internals/index.js";
 
 export type { Fiber } from "./react-internals/index.js";
@@ -115,6 +116,12 @@ const getRenderingFiberFromRoot = (
     return null;
   }
   const renderingRoot = root.current.alternate;
+  const renderingFiber = getCurrentFiberFromRoot(fiber)?.alternate;
+  if (renderingFiber) {
+    let ancestor = renderingFiber;
+    while (ancestor.return) ancestor = ancestor.return;
+    if (ancestor === renderingRoot) return renderingFiber;
+  }
   return traverseFiber(renderingRoot, (candidate) => {
     if (candidate !== fiber && candidate !== fiber.alternate) return false;
     let parent = candidate;
@@ -147,6 +154,9 @@ export const useFiber = (): Fiber | undefined => {
       : knownFiber.alternate && hasRenderMarker(knownFiber.alternate, renderMarker)
         ? knownFiber.alternate
         : getRenderingFiberFromRoot(knownCapture, renderMarker));
-  if (fiber) fiberRef.current = { fiber, queue: knownCapture.queue };
+  if (fiber) {
+    knownCapture.fiber = fiber;
+    fiberRef.current = knownCapture;
+  }
   return fiber ?? undefined;
 };

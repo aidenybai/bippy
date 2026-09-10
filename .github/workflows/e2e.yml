@@ -204,6 +204,8 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v6
       - name: Install emulator runtime dependencies
         run: sudo apt-get update && sudo apt-get install --yes libpulse0
@@ -229,7 +231,7 @@ jobs:
           cd packages/e2e/fixtures/expo-app
           npx expo prebuild --platform android --clean
           cd android
-          ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug --no-daemon
+          ./gradlew :app:assembleDebug :app:assembleAndroidTest -DtestBuildType=debug --no-daemon --stacktrace
       - name: Save Android app binaries
         if: steps.android-app-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4

@@ -62,8 +62,8 @@ describe("canonical upstream inventory", () => {
     }
   });
 
-  it("accounts for all 675 DevTools definitions without duplicate ports", () => {
-    expect(upstreamDefinitions).toHaveLength(675);
+  it("accounts for all 676 DevTools definitions without duplicate ports", () => {
+    expect(upstreamDefinitions).toHaveLength(676);
     const localTitleCounts = new Map<string, number>();
     for (const path of devtoolsFiles) {
       for (const title of getLocalTitles(path))
