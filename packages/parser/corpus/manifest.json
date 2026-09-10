@@ -5399,6 +5399,241 @@
           "@vercel/analytics/*"
         ]
       }
+    },
+    {
+      "id": "3d-portfolio",
+      "repository": "https://github.com/adrianhajdin/3d_portfolio",
+      "revision": "057380c3c325838333094e3fe2f68ec8403e9d9d",
+      "description": "JS Mastery 3D portfolio home page (Vite 4 / React 18 StrictMode, react-router-dom v6 BrowserRouter/Routes, @react-three/fiber Canvas with Suspense-loaded GLTF models, @react-spring/three)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npx vite --port 5181 --strictPort",
+      "url": "http://localhost:5181/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx",
+        "route": "/",
+        "externalPackageAllowList": ["@react-three/*", "@react-spring/*", "its-fine", "three"]
+      }
+    },
+    {
+      "id": "professional-portfolio",
+      "repository": "https://github.com/adrianhajdin/project_professional_portfolio",
+      "revision": "5b7daf016bfe78adda20da0a034cca85cfa90cd0",
+      "description": "JS Mastery professional portfolio (CRA 5 / React 17 StrictMode, legacy ReactDOM.render, framer-motion 6, react-tooltip, HOC wrappers, Sanity client fetches in effects) without a Sanity project",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "setup": [
+        "test -f .env || printf '%s\\n' 'REACT_APP_SANITY_PROJECT_ID=corpus' 'REACT_APP_SANITY_TOKEN=' > .env"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3021"
+      },
+      "url": "http://localhost:3021/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "framer-motion",
+          "react-tooltip",
+          "react-icons",
+          "react-icons/*"
+        ]
+      },
+      "notes": "`@sanity/client` throws at module scope without a `projectId`, so the setup step writes a placeholder `.env`; the effects' `client.fetch` calls then fail against the unreachable `corpus.apicdn.sanity.io` and every section keeps its initial empty state. node-sass 7 and react-scripts 5.0.0 need Node 16."
+    },
+    {
+      "id": "gericht-restaurant",
+      "repository": "https://github.com/adrianhajdin/project_modern_ui_ux_restaurant",
+      "revision": "0110dcad34908d2139d1ab8f0a15573f1f3317ed",
+      "description": "JS Mastery Gericht restaurant landing page (CRA 4 / React 17, legacy ReactDOM.render, react-icons, useState toggles, static data module)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "setup": [
+        "test -e src/components/MenuItem || ln -s Menuitem src/components/MenuItem",
+        "test -e src/container/FindUs || ln -s Findus src/container/FindUs"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3022"
+      },
+      "url": "http://localhost:3022/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons", "react-icons/*"]
+      },
+      "notes": "react-scripts 4 (webpack 4) needs Node 16 (ERR_OSSL_EVP_UNSUPPORTED on newer OpenSSL). The barrel files import `./MenuItem/MenuItem` and `./FindUs/FindUs` but the directories are committed as `Menuitem` and `Findus` (case-insensitive authoring), so the setup step symlinks the spelled names."
+    },
+    {
+      "id": "chanhdai",
+      "repository": "https://github.com/ncdai/chanhdai.com",
+      "revision": "6c4b07326ee867e4e0f13566606697daf0094e46",
+      "description": "chanhdai.com dev portfolio and shadcn registry home page (Next 16 app router, React 19 StrictMode, Tailwind 4, radix-ui + @base-ui/react, jotai, next-themes, nuqs, motion, server components fetching GitHub contributions)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@11.1.1 install --frozen-lockfile",
+      "setup": [
+        "test -f .env.local || printf '%s\\n' 'APP_URL=http://localhost:3000' 'NEXT_PUBLIC_REGISTRY_NAMESPACE=@ncdai' 'NEXT_PUBLIC_REGISTRY_NAMESPACE_URL=http://localhost:3000/r/{name}.json' 'GITHUB_CONTRIBUTIONS_API_URL=https://github-contributions-api.jogruber.de' > .env.local"
+      ],
+      "dev": "npx -y pnpm@11.1.1 exec next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "envFiles": [".env.local"],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "radix-ui",
+          "@base-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "jotai",
+          "jotai/*",
+          "nuqs",
+          "nuqs/*",
+          "motion",
+          "motion/*",
+          "framer-motion",
+          "sonner",
+          "cmdk",
+          "@bprogress/*",
+          "react-fast-marquee",
+          "@next/third-parties",
+          "@next/third-parties/*",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      },
+      "notes": "The checkout ships only .env.example; the setup step writes a minimal .env.local (APP_URL, registry namespace, the public GitHub contributions API) so analytics (PostHog, OpenPanel, GTM) stay disabled."
+    },
+    {
+      "id": "satnaing-dev",
+      "repository": "https://github.com/satnaing/satnaing.dev",
+      "revision": "d6d35ce1e435cfd96bac0dec31b9140452ff519f",
+      "description": "satnaing.dev portfolio home page (Next 13.5 pages router, React 18 StrictMode, next-themes, gsap, react-rough-notation, swiper, getStaticProps over markdown posts, baseUrl path aliases)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npx next dev -p 3011",
+      "url": "http://localhost:3011/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["next-themes", "react-rough-notation"]
+      },
+      "notes": "`swiper` is left external: analyzing `swiper/react` runs the core `Swiper` constructor in an effect, and the render then spends its time in the escape walk (`src/evaluate/escapes.ts`, closures re-followed over the instance's members) until it exhausts the heap. Its <Swiper>/<SwiperSlide> subtree stays opaque until the escape walk copes with such instances or the library gets a model."
+    },
+    {
+      "id": "hashirshoaeb-home",
+      "repository": "https://github.com/hashirshoaeb/home",
+      "revision": "9e027776ad6a3dd35d72e31696e363ffeedb1d68",
+      "description": "hashirshoaeb developer portfolio (CRA 5 / React 18 StrictMode, react-router-dom v6 BrowserRouter with a `homepage` basename, react-bootstrap, react-typist-component, axios fetch of GitHub repos in an effect)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3023"
+      },
+      "url": "http://localhost:3023/home/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/home/",
+        "externalPackageAllowList": [
+          "react-bootstrap",
+          "react-bootstrap/*",
+          "@restart/*",
+          "uncontrollable",
+          "dom-helpers",
+          "dom-helpers/*",
+          "prop-types-extra",
+          "prop-types-extra/*",
+          "warning",
+          "invariant",
+          "classnames",
+          "react-transition-group",
+          "@react-aria/ssr",
+          "react-typist-component",
+          "react-loading-skeleton"
+        ]
+      },
+      "notes": "`homepage` in package.json makes the CRA dev server serve the app under `/home/` (PUBLIC_URL), which `BrowserRouter basename` mirrors. The Project section fetches the live GitHub API in an effect."
+    },
+    {
+      "id": "react-resume-template",
+      "repository": "https://github.com/tbakerx/react-resume-template",
+      "revision": "49ce16c0dd1b382edc1ec2cef6120345776d19b9",
+      "description": "tbakerx react-resume-template (Next 14 pages router, React 18 StrictMode, memoized sections, `next/dynamic` ssr:false header, @headlessui/react, @heroicons/react, Yarn 4)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn next dev -p 3012",
+      "url": "http://localhost:3012/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/pages",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@headlessui/react",
+          "@heroicons/react",
+          "@heroicons/react/*",
+          "classnames",
+          "ts-pattern"
+        ]
+      }
+    },
+    {
+      "id": "react-landing-page-template",
+      "repository": "https://github.com/issaafalkattan/react-landing-page-template",
+      "revision": "25b0a543b9d676d85218eb8decf7b20d51008dfb",
+      "description": "issaafalkattan react-landing-page-template (CRA 5 / React 17 StrictMode, legacy ReactDOM.render, JSON data loaded into state in an effect, smooth-scroll, emailjs-com)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3024"
+      },
+      "url": "http://localhost:3024/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      }
     }
   ]
 }

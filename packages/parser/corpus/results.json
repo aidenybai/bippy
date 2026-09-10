@@ -117,6 +117,94 @@
       "failure": null
     },
     {
+      "id": "3d-portfolio",
+      "revision": "057380c3c325838333094e3fe2f68ec8403e9d9d",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T10:57:37.583Z",
+      "durationMs": 15614,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "@react-three/fiber",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 87,
+        "commits": 9,
+        "pageErrors": [],
+        "title": "Adrian Hajdin | Portfolio"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 42,
+          "textCount": 3,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 189
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 35,
+        "matchedText": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 4,
+        "status": "exact",
+        "runtimeFibers": 38,
+        "staticFibers": 38,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 38,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 38,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": null,
+      "failure": null
+    },
+    {
       "id": "actual",
       "revision": "8867158f0a2e101467fb191c9e253f47c75a9e2d",
       "framework": "react-router",
@@ -27942,6 +28030,96 @@
       "failure": null
     },
     {
+      "id": "gericht-restaurant",
+      "revision": "0110dcad34908d2139d1ab8f0a15573f1f3317ed",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T11:36:59.773Z",
+      "durationMs": 2511,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 372,
+        "commits": 1,
+        "pageErrors": [
+          "src/components/index.js\n  Line 4:22:  Unable to resolve path to module './MenuItem/MenuItem'  import/no-unresolved\n\nsrc/container/index.js\n  Line 3:20:  Unable to resolve path to module './FindUs/FindUs'  import/no-unresolved\n\nSearch for the keywords to learn more about each error."
+        ],
+        "title": "Gericht"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 372,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 30
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 371,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 371,
+        "staticFibers": 371,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 371,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 371,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T10:06:17.195Z",
+      "failure": null
+    },
+    {
       "id": "giscus",
       "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
       "framework": "next-pages",
@@ -28470,6 +28648,3097 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-10T05:26:55.121Z",
+      "failure": null
+    },
+    {
+      "id": "hashirshoaeb-home",
+      "revision": "9e027776ad6a3dd35d72e31696e363ffeedb1d68",
+      "framework": "react-router",
+      "capturedAt": "2026-09-10T10:56:26.998Z",
+      "durationMs": 6078,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 472,
+        "commits": 56,
+        "pageErrors": [
+          "Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?%s%s \n\nCheck the render method of `ForwardRef`. \n    at Jumbotron (http://localhost:3023/home/static/js/bundle.js:2208:41)\n    at http://localhost:3023/home/static/js/bundle.js:1830:5\n    at _c\n    at RenderedRoute (http://localhost:3023/home/static/js/bundle.js:51510:5)\n    at Routes (http://localhost:3023/home/static/js/bundle.js:52061:5)\n    at Router (http://localhost:3023/home/static/js/bundle.js:51999:15)\n    at BrowserRouter (http://localhost:3023/home/static/js/bundle.js:50249:5)\n    at App (http://localhost:3023/home/static/js/bundle.js:111:65)",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Request failed with status code 403",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Request failed with status code 403"
+        ],
+        "title": "Hashir Shoaib"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 926,
+          "textCount": 159,
+          "branchCount": 20,
+          "repeatCount": 4,
+          "opaqueCount": 0,
+          "unknownCount": 6,
+          "modulesLoaded": 245
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 433,
+        "matchedText": 34,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 6,
+        "repeatIterations": 0,
+        "transparentFibers": 4,
+        "status": "truncated",
+        "runtimeFibers": 467,
+        "staticFibers": 467,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 583,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 27649,
+        "clusters": 4,
+        "tree": {
+          "nodes": 2007,
+          "inputs": 19,
+          "guards": 195,
+          "branches": 32,
+          "repeats": 6,
+          "opaque": 0,
+          "wildcards": 12
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "alternativeIndex": 2,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "alternativeIndex": 53,
+              "alternativeCount": 54
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 27418,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[1]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[1]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[1]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[1]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[1]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)@len(#1)[1]",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[1]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.name)@len(#1)[1]",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)@len(#1)[0]",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.languages_url)@len(#1)[0]",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)@len(#1)[0]",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)@len(#1)[0]",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.name)@len(#1)[0]",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "alternativeIndex": 1,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "alternativeIndex": 2,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)@len(#1)[0]",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#3)@len(#1)[0]",
+                  "reason": "conditional on <number: length of a partially known list>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#4)@len(#1)[0]",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#4)@len(#1)[0]",
+                  "reason": "if (<boolean: < on dynamic values>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 4
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)@len(#1)[0]",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#3)@len(#1)[0]",
+                  "reason": "conditional on <number: length of a partially known list>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#4)@len(#1)[0]",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)@len(#1)[0]",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 2,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#3)@len(#1)[0]",
+                  "reason": "conditional on <number: length of a partially known list>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#4)@len(#1)[0]",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)@len(#1)[0]",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "alternativeIndex": 3,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#3)@len(#1)[0]",
+                  "reason": "conditional on <number: length of a partially known list>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#4)@len(#1)[0]",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)@len(#1)[0]",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#3)@len(#1)[0]",
+                  "reason": "conditional on <number: length of a partially known list>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#4)@len(#1)[0]",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)@len(#1)[0]",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#3)@len(#1)[0]",
+                  "reason": "conditional on <number: length of a partially known list>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)@len(#1)[0]",
+              "reason": "conditional on <number: length of a partially known list>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.languages_url)@len(#1)[0]",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                  "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 2
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.svn_url)@len(#1)[0]",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "alternativeIndex": 1,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                },
+                {
+                  "kind": "repeat",
+                  "variable": "len(#1)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                  "count": 1
+                },
+                {
+                  "kind": "branch",
+                  "variable": "truthy(#2.name)@len(#1)[0]",
+                  "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#3)@len(#1)[0]",
+                  "reason": "conditional on <boolean: negation of unknown>",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                  "alternativeIndex": 2,
+                  "alternativeCount": 3
+                }
+              ]
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "countsAbove": 1,
+              "max": null,
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "choice(branch#2)",
+                  "reason": "conditional on branch(0 | <number>)",
+                  "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                  "alternativeIndex": 0,
+                  "alternativeCount": 3
+                }
+              ]
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "alternativeIndex": 1,
+              "conditions": []
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "alternativeIndex": 2,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 3,
+              "guard": "eq(choice(branch#1), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 4,
+              "guard": "eq(choice(branch#1), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 5,
+              "guard": "eq(choice(branch#1), 5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 6,
+              "guard": "eq(choice(branch#1), 6)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 7,
+              "guard": "eq(choice(branch#1), 7)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 8,
+              "guard": "eq(choice(branch#1), 8)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 9,
+              "guard": "eq(choice(branch#1), 9)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 10,
+              "guard": "eq(choice(branch#1), 10)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 11,
+              "guard": "eq(choice(branch#1), 11)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 12,
+              "guard": "eq(choice(branch#1), 12)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 13,
+              "guard": "eq(choice(branch#1), 13)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 14,
+              "guard": "eq(choice(branch#1), 14)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 15,
+              "guard": "eq(choice(branch#1), 15)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 16,
+              "guard": "eq(choice(branch#1), 16)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 17,
+              "guard": "eq(choice(branch#1), 17)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 18,
+              "guard": "eq(choice(branch#1), 18)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 19,
+              "guard": "eq(choice(branch#1), 19)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 20,
+              "guard": "eq(choice(branch#1), 20)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 21,
+              "guard": "eq(choice(branch#1), 21)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 22,
+              "guard": "eq(choice(branch#1), 22)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 23,
+              "guard": "eq(choice(branch#1), 23)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 24,
+              "guard": "eq(choice(branch#1), 24)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 25,
+              "guard": "eq(choice(branch#1), 25)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 26,
+              "guard": "eq(choice(branch#1), 26)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 27,
+              "guard": "eq(choice(branch#1), 27)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 28,
+              "guard": "eq(choice(branch#1), 28)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 29,
+              "guard": "eq(choice(branch#1), 29)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 30,
+              "guard": "eq(choice(branch#1), 30)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 31,
+              "guard": "eq(choice(branch#1), 31)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 32,
+              "guard": "eq(choice(branch#1), 32)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 33,
+              "guard": "eq(choice(branch#1), 33)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 34,
+              "guard": "eq(choice(branch#1), 34)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 35,
+              "guard": "eq(choice(branch#1), 35)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 36,
+              "guard": "eq(choice(branch#1), 36)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 37,
+              "guard": "eq(choice(branch#1), 37)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 38,
+              "guard": "eq(choice(branch#1), 38)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 39,
+              "guard": "eq(choice(branch#1), 39)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 40,
+              "guard": "eq(choice(branch#1), 40)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 41,
+              "guard": "eq(choice(branch#1), 41)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 42,
+              "guard": "eq(choice(branch#1), 42)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 43,
+              "guard": "eq(choice(branch#1), 43)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 44,
+              "guard": "eq(choice(branch#1), 44)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 45,
+              "guard": "eq(choice(branch#1), 45)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 46,
+              "guard": "eq(choice(branch#1), 46)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 47,
+              "guard": "eq(choice(branch#1), 47)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 48,
+              "guard": "eq(choice(branch#1), 48)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 49,
+              "guard": "eq(choice(branch#1), 49)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 50,
+              "guard": "eq(choice(branch#1), 50)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 51,
+              "guard": "eq(choice(branch#1), 51)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 52,
+              "guard": "eq(choice(branch#1), 52)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "dynamic list index",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+              "side": 53,
+              "guard": "eq(choice(branch#1), 53)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "side": 0,
+              "guard": "eq(choice(branch#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.name)",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "side": 0,
+              "guard": "truthy(#2.name)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.name)",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "side": 1,
+              "guard": "not(truthy(#2.name))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 0,
+              "guard": "eq(choice(branch#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 1,
+              "guard": "eq(choice(branch#3), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#3)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 2,
+              "guard": "eq(choice(branch#3), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.svn_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "side": 0,
+              "guard": "truthy(#2.svn_url)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.svn_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "side": 1,
+              "guard": "not(truthy(#2.svn_url))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.languages_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "side": 0,
+              "guard": "truthy(#2.languages_url)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2.languages_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "side": 1,
+              "guard": "not(truthy(#2.languages_url))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "side": 0,
+              "guard": "truthy(#2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "side": 1,
+              "guard": "not(truthy(#2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "side": 1,
+              "guard": "eq(choice(branch#2), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "side": 0,
+              "guard": "eq(len(#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "side": 1,
+              "guard": "len(#3) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.name)",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "side": 0,
+              "guard": "truthy(#4.name)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.name)",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "side": 1,
+              "guard": "not(truthy(#4.name))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 0,
+              "guard": "eq(choice(branch#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 1,
+              "guard": "eq(choice(branch#4), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 2,
+              "guard": "eq(choice(branch#4), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.svn_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "side": 0,
+              "guard": "truthy(#4.svn_url)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.svn_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "side": 1,
+              "guard": "not(truthy(#4.svn_url))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.languages_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "side": 0,
+              "guard": "truthy(#4.languages_url)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.languages_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "side": 1,
+              "guard": "not(truthy(#4.languages_url))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "side": 0,
+              "guard": "truthy(#4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "side": 1,
+              "guard": "not(truthy(#4))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#2)",
+              "reason": "conditional on branch(0 | <number>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+              "side": 2,
+              "guard": "eq(choice(branch#2), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "conditional on <number: length of a partially known list>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+              "side": 0,
+              "guard": "truthy(#3)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+              "side": 0,
+              "guard": "eq(len(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+              "side": 1,
+              "guard": "len(#4) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "conditional on <number: length of a partially known list>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+              "side": 1,
+              "guard": "not(truthy(#3))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#4)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 3,
+              "guard": "eq(choice(branch#4), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#5)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "side": 0,
+              "guard": "eq(len(#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#5)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+              "side": 1,
+              "guard": "len(#5) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.name)",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "side": 0,
+              "guard": "truthy(#6.name)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.name)",
+              "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+              "side": 1,
+              "guard": "not(truthy(#6.name))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 0,
+              "guard": "eq(choice(branch#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 1,
+              "guard": "eq(choice(branch#5), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#5)",
+              "reason": "conditional on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+              "side": 2,
+              "guard": "eq(choice(branch#5), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.svn_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "side": 0,
+              "guard": "truthy(#6.svn_url)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.svn_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+              "side": 1,
+              "guard": "not(truthy(#6.svn_url))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.languages_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "side": 0,
+              "guard": "truthy(#6.languages_url)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#7)",
+              "reason": "conditional on <number: length of a partially known list>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+              "side": 0,
+              "guard": "truthy(#7)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+              "side": 0,
+              "guard": "eq(len(#8), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:74:3",
+              "side": 1,
+              "guard": "len(#8) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#7)",
+              "reason": "conditional on <number: length of a partially known list>",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:82:8",
+              "side": 1,
+              "guard": "not(truthy(#7))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.languages_url)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+              "side": 1,
+              "guard": "not(truthy(#6.languages_url))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "side": 0,
+              "guard": "truthy(#6)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 0,
+              "guard": "eq(choice(branch#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 1,
+              "guard": "eq(choice(branch#6), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 2,
+              "guard": "eq(choice(branch#6), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#6)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 3,
+              "guard": "eq(choice(branch#6), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6)",
+              "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+              "side": 1,
+              "guard": "not(truthy(#6))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 0,
+              "guard": "eq(choice(branch#7), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 1,
+              "guard": "eq(choice(branch#7), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 2,
+              "guard": "eq(choice(branch#7), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#7)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 3,
+              "guard": "eq(choice(branch#7), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 0,
+              "guard": "eq(choice(branch#8), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 1,
+              "guard": "eq(choice(branch#8), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 2,
+              "guard": "eq(choice(branch#8), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#8)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 3,
+              "guard": "eq(choice(branch#8), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 0,
+              "guard": "eq(choice(branch#9), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 1,
+              "guard": "eq(choice(branch#9), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 2,
+              "guard": "eq(choice(branch#9), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#9)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 3,
+              "guard": "eq(choice(branch#9), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 0,
+              "guard": "eq(choice(branch#10), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 1,
+              "guard": "eq(choice(branch#10), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 2,
+              "guard": "eq(choice(branch#10), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#10)",
+              "reason": "if (<boolean: < on dynamic values>)",
+              "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:113:7",
+              "side": 3,
+              "guard": "eq(choice(branch#10), 3)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 7,
+          "possible": 121,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 256,
+        "assignments": 255,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [
+          {
+            "stateIndices": [
+              0,
+              69
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 14,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              86
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 31,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              103
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 48,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              120
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 11,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              136
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 27,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              153
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 44,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              170
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 7,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              187
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 24,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              204
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(branch#2)",
+                "reason": "conditional on branch(0 | <number>)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:62:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/Project.jsx:35:19",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.name)@len(#1)[0]",
+                "reason": "|| on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:20:32",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#3)@len(#1)[0]",
+                "reason": "conditional on <boolean: negation of unknown>",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:21:23",
+                "alternativeIndex": 0,
+                "alternativeCount": 3
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.svn_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:22:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2.languages_url)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:24:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)@len(#1)[0]",
+                "reason": "conditional on unknown(spread of unknown(call of promise settled asynchronously))",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/src/components/home/ProjectCard.jsx:29:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "dynamic list index",
+                "location": "/home/ubuntu/bippy-corpus/hashirshoaeb-home/node_modules/react-typist-component/dist/react-typist-component.mjs:211:13",
+                "alternativeIndex": 41,
+                "alternativeCount": 54
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<StrictMode> [Mode]"
+            },
+            "isCorrected": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:57:20.680Z",
       "failure": null
     },
     {
@@ -65880,6 +69149,494 @@
       "failure": null
     },
     {
+      "id": "professional-portfolio",
+      "revision": "5b7daf016bfe78adda20da0a034cca85cfa90cd0",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T11:36:56.236Z",
+      "durationMs": 3533,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 394,
+        "commits": 1,
+        "pageErrors": [
+          "Access to XMLHttpRequest at 'https://corpus.apicdn.sanity.io/v2022-02-01/data/query/production?query=*%5B_type%20%3D%3D%20%22testimonials%22%5D' from origin 'http://localhost:3021' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED",
+          "Access to XMLHttpRequest at 'https://corpus.apicdn.sanity.io/v2022-02-01/data/query/production?query=*%5B_type%20%3D%3D%20%22skills%22%5D' from origin 'http://localhost:3021' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED",
+          "ProgressEvent",
+          "Access to XMLHttpRequest at 'https://corpus.apicdn.sanity.io/v2022-02-01/data/query/production?query=*%5B_type%20%3D%3D%20%22experiences%22%5D' from origin 'http://localhost:3021' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED",
+          "ProgressEvent",
+          "ProgressEvent",
+          "Access to XMLHttpRequest at 'https://corpus.apicdn.sanity.io/v2022-02-01/data/query/production?query=*%5B_type%20%3D%3D%20%22abouts%22%5D' from origin 'http://localhost:3021' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED",
+          "ProgressEvent",
+          "Access to XMLHttpRequest at 'https://corpus.apicdn.sanity.io/v2022-02-01/data/query/production?query=*%5B_type%20%3D%3D%20%22brands%22%5D' from origin 'http://localhost:3021' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED",
+          "ProgressEvent",
+          "Access to XMLHttpRequest at 'https://corpus.apicdn.sanity.io/v2022-02-01/data/query/production?query=*%5B_type%20%3D%3D%20%22works%22%5D' from origin 'http://localhost:3021' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED",
+          "ProgressEvent"
+        ],
+        "title": "Micael"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 557,
+          "textCount": 6,
+          "branchCount": 7,
+          "repeatCount": 6,
+          "opaqueCount": 0,
+          "unknownCount": 13,
+          "modulesLoaded": 207
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 6
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 387,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 6,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 393,
+        "staticFibers": 514,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 399,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 44545,
+        "clusters": 6,
+        "tree": {
+          "nodes": 934,
+          "inputs": 12,
+          "guards": 23,
+          "branches": 7,
+          "repeats": 6,
+          "opaque": 0,
+          "wildcards": 13
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(0 | @sanity/client#default().fetch().length)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:33:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 3
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#9)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#7)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#5)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 44296,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/About/About.jsx:24:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#10)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:59:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Work/Work.jsx:60:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#6)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:32:12",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:50:12",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8[].works)@len(#8)[0]",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:59:18",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8[].works)@len(#8)[1]",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:59:18",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/About/About.jsx:24:10",
+              "side": 0,
+              "guard": "eq(len(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/About/About.jsx:24:10",
+              "side": 1,
+              "guard": "len(#2) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#3), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#3), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Work/Work.jsx:60:10",
+              "side": 0,
+              "guard": "eq(len(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Work/Work.jsx:60:10",
+              "side": 1,
+              "guard": "len(#4) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#5), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#5), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#6)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:32:12",
+              "side": 0,
+              "guard": "eq(len(#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#6)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:32:12",
+              "side": 1,
+              "guard": "len(#6) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#7), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#7), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:50:12",
+              "side": 0,
+              "guard": "eq(len(#8), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:50:12",
+              "side": 1,
+              "guard": "len(#8) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8[].works)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:59:18",
+              "side": 0,
+              "guard": "eq(len(#8[].works), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#8[].works)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Skills/Skills.jsx:59:18",
+              "side": 1,
+              "guard": "len(#8[].works) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#8[].works[].desc)",
+              "reason": "if (unknown(item of unknown(item of @sanity/client#default().fetch())))",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/node_modules/react-tooltip/dist/index.es.js:865:3",
+              "side": 0,
+              "guard": "truthy(#8[].works[].desc)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#8[].works[].desc)",
+              "reason": "if (unknown(item of unknown(item of @sanity/client#default().fetch())))",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/node_modules/react-tooltip/dist/index.es.js:865:3",
+              "side": 1,
+              "guard": "not(truthy(#8[].works[].desc))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(0 | @sanity/client#default().fetch().length)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:33:8",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(0 | @sanity/client#default().fetch().length)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:33:8",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(0 | @sanity/client#default().fetch().length)",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:33:8",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#9)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#9), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#9)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#9), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#10)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:59:10",
+              "side": 0,
+              "guard": "eq(len(#10), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#10)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/professional-portfolio/src/container/Testimonial/Testimonial.jsx:59:10",
+              "side": 1,
+              "guard": "len(#10) > 0",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 7,
+          "possible": 22,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 256,
+        "assignments": 255,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:52:53.653Z",
+      "failure": null
+    },
+    {
       "id": "puck",
       "revision": "74a42c74db2b52da13ce1fc49087a07a6653dac8",
       "framework": "next-app",
@@ -68894,6 +72651,121 @@
       "failure": null
     },
     {
+      "id": "react-landing-page-template",
+      "revision": "25b0a543b9d676d85218eb8decf7b20d51008dfb",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T11:37:02.290Z",
+      "durationMs": 281,
+      "runtime": {
+        "reactVersion": "17.0.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 455,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}.%s true validate validate true validate \n    at form\n    at div\n    at div\n    at div\n    at div\n    at div\n    at Contact (http://localhost:3024/static/js/bundle.js:506:65)\n    at div\n    at App (http://localhost:3024/static/js/bundle.js:56:96)"
+        ],
+        "title": "A React Landing Page Template"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 455,
+          "textCount": 117,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 14
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 337,
+        "matchedText": 117,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 454,
+        "staticFibers": 454,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 454,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 619,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T09:57:29.849Z",
+      "failure": null
+    },
+    {
       "id": "react-material-admin",
       "revision": "dd136027c2253253cfb5b8a4cb698696fb63f8cd",
       "framework": "react-router",
@@ -69098,6 +72970,126 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:06:42.218Z",
+      "failure": null
+    },
+    {
+      "id": "react-resume-template",
+      "revision": "49ce16c0dd1b382edc1ec2cef6120345776d19b9",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T11:32:49.645Z",
+      "durationMs": 847,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 657,
+        "commits": 18,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+        ],
+        "title": "React Resume Template"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 643,
+          "textCount": 33,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 695
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 603,
+        "matchedText": 32,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 16,
+        "status": "exact",
+        "runtimeFibers": 635,
+        "staticFibers": 635,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 636,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 636,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "&& on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/react-resume-template/src/components/Sections/About.tsx:13:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "&& on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/react-resume-template/src/components/Sections/About.tsx:13:10",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "&& on <boolean: negation of unknown>",
+              "location": "/home/ubuntu/bippy-corpus/react-resume-template/src/components/Sections/About.tsx:13:10",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T11:28:07.817Z",
       "failure": null
     },
     {
@@ -102140,6 +106132,336 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T10:56:49.508Z",
+      "failure": null
+    },
+    {
+      "id": "satnaing-dev",
+      "revision": "d6d35ce1e435cfd96bac0dec31b9140452ff519f",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T11:33:34.062Z",
+      "durationMs": 2341,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 595,
+        "commits": 15,
+        "pageErrors": [],
+        "title": "Sat Naing - A Full-stack Developer"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 575,
+          "textCount": 29,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 5,
+          "unknownCount": 6,
+          "modulesLoaded": 35
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 434,
+        "matchedText": 13,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 121,
+        "slotsMatched": 0,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <BlogSection> [FunctionComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <Swiper> (opaque)",
+            "reason": "Swiper from swiper is not analyzed",
+            "head": "<Swiper> [ForwardRef]",
+            "skippedFibers": 121,
+            "divergence": {
+              "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <BlogSection> [FunctionComponent] > <div> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <Swiper> (opaque)[1]",
+              "expected": "<SwiperSlide> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 6,
+        "wildcards": [
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <ProjectSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <ProjectCard> key=\"Shadcn Admin\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "call of fetch(https://api.github.com/repos/satnaing/shadcn-admin)",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"14167\""
+            ]
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <ProjectSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <ProjectCard> key=\"Next Bookstore\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "call of fetch(https://api.github.com/repos/satnaing/next-bookstore)",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"110\""
+            ]
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <ProjectSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <ProjectCard> key=\"Haru API\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "call of fetch(https://api.github.com/repos/satnaing/haru-api)",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"34\""
+            ]
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <ProjectSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <ProjectCard> key=\"Haru Fashion\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "call of fetch(https://api.github.com/repos/satnaing/haru-fashion)",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"173\""
+            ]
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <ProjectSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <ProjectCard> key=\"Terminal Portfolio\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "call of fetch(https://api.github.com/repos/satnaing/terminal-portfolio)",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"819\""
+            ]
+          },
+          {
+            "path": "root > <MyApp> [FunctionComponent] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideFilter> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ProvideSection> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <main> [HostComponent] > <ProjectSection> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <ProjectCard> key=\"AstroPaper\" [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <a> [HostComponent]",
+            "reason": "call of fetch(https://api.github.com/repos/satnaing/astro-paper)",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"5033\""
+            ]
+          }
+        ],
+        "branchesResolved": 6,
+        "repeatIterations": 0,
+        "transparentFibers": 15,
+        "status": "partial",
+        "runtimeFibers": 574,
+        "staticFibers": 548,
+        "coverage": 1,
+        "strictCoverage": 0.7787456445993032,
+        "divergence": null,
+        "stepsUsed": 934,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 65,
+        "stateCount": 65,
+        "clusters": 6,
+        "tree": {
+          "nodes": 1100,
+          "inputs": 7,
+          "guards": 14,
+          "branches": 6,
+          "repeats": 0,
+          "opaque": 10,
+          "wildcards": 6
+        },
+        "matchedState": {
+          "index": 64,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#6)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#5)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#4)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#2)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#2)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#2)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#2), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#3), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#4)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#4)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#4), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#5), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#6)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#6)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#6), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 7,
+          "possible": 7,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 65,
+        "assignments": 64,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T10:35:20.831Z",
       "failure": null
     },
     {
