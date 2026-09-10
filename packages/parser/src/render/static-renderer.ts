@@ -13,6 +13,7 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
@@ -94,8 +95,7 @@ export class StaticRenderer {
     });
     const { rootDirectory } = this.options;
     const devDirectory = this.resolveOptionalPath(options.devDirectory);
-    const bundler = detectModuleBundler(devDirectory ?? rootDirectory, rootDirectory);
-    this.documentShell = readDocumentShell(rootDirectory, bundler);
+    const bundler = detectModuleBundler(rootDirectory, devDirectory);
     this.project = createProjectContext({
       rootDirectory,
       resolver: this.resolver,
@@ -109,6 +109,12 @@ export class StaticRenderer {
       transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
       bundler,
     });
+    this.documentShell = readDocumentShell(
+      rootDirectory,
+      bundler,
+      options.environment ?? null,
+      this.project.servedDirectory ?? rootDirectory,
+    );
     this.reactVersion = this.project.readPackageVersion("react");
     const svgrTransform = createSvgrSourceTransform(
       this.project,
@@ -118,7 +124,10 @@ export class StaticRenderer {
     );
     this.graph = new ModuleGraph({
       resolver: this.resolver,
-      sourceFileCache: new SourceFileCache(svgrTransform ? [svgrTransform] : []),
+      sourceFileCache: new SourceFileCache([
+        ...(svgrTransform ? [svgrTransform] : []),
+        ...createYamlSourceTransforms(rootDirectory),
+      ]),
       resolveExternalPackages: options.resolveExternalPackages,
       externalPackageAllowList: options.externalPackageAllowList,
     });

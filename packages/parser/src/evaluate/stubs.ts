@@ -70,7 +70,7 @@ export const passthroughStub = (displayName: string): StubComponent => ({
 });
 
 /** A component that renders nothing (effects, portals to `<head>`, metadata). */
-export const emptyStub = (displayName: string): StubComponent => ({
+export const emptyStub = (displayName: string | null): StubComponent => ({
   displayName,
   render: () => NULL_VALUE,
 });
