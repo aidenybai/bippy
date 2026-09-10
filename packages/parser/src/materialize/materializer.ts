@@ -265,9 +265,18 @@ interface CompositeEvaluation {
   componentContext: EvaluationContext | null;
 }
 
+/**
+ * Where React's `reconcileChildFibers` sees a value: at the `top` an array is
+ * the children list (nested arrays become Fragment fibers) and one unkeyed
+ * fragment is unwrapped; its children then sit `unwrapped`, still the children
+ * list but a fragment among them stays a fiber (a marker returns it from the
+ * top, so it is keyed with the placeholder to mount).
+ */
+type ChildPosition = "top" | "unwrapped" | "nested";
+
 interface MaterializedElement {
   context: MaterializeContext;
-  isTopLevel: boolean;
+  position: ChildPosition;
   node: ReactNode;
 }
 
@@ -624,15 +633,10 @@ export class Materializer {
 
   /** The React element tree for a root value, as `root.render(...)` would receive it. */
   toRootNode(value: StaticValue): ReactNode {
-    return this.toNode(value, this.createRootContext(), true);
+    return this.toNode(value, this.createRootContext(), "top");
   }
 
-  /**
-   * Materializes one child position. `isTopLevel` is React's own distinction
-   * in `reconcileChildFibers`: arrays at the top level are the children list,
-   * nested arrays become implicit Fragments.
-   */
-  toNode(value: StaticValue, context: MaterializeContext, isTopLevel: boolean): ReactNode {
+  toNode(value: StaticValue, context: MaterializeContext, position: ChildPosition): ReactNode {
     switch (value.kind) {
       case "primitive": {
         const primitive = value.value;
@@ -648,9 +652,9 @@ export class Materializer {
         if (value.primitiveType === "boolean") return null;
         return this.unknownNode(`dynamic child (${value.reason})`);
       case "element":
-        return this.elementToNode(value, context, isTopLevel);
+        return this.elementToNode(value, context, position);
       case "list":
-        return value.items.map((item) => this.toNode(item, context, false));
+        return value.items.map((item) => this.toNode(item, context, "nested"));
       case "repeat":
         return this.repeatNode(value, context);
       case "branch": {
@@ -664,12 +668,12 @@ export class Materializer {
                 alternative,
                 index === preferredIndex,
                 alternativeContext,
-                isTopLevel,
+                position,
               ),
           ),
           value.reason,
           preferredIndex,
-          isTopLevel,
+          position,
           value.location,
           value.predicate,
         );
@@ -678,12 +682,12 @@ export class Materializer {
         return this.branchNode(
           context,
           [
-            (alternativeContext) => this.toNode(value.value, alternativeContext, isTopLevel),
+            (alternativeContext) => this.toNode(value.value, alternativeContext, position),
             () => null,
           ],
           value.reason,
           value.isAbsentPreferred ? 1 : 0,
-          isTopLevel,
+          position,
           value.location,
         );
       case "unknown":
@@ -702,9 +706,9 @@ export class Materializer {
     value: StaticValue,
     isPreferred: boolean,
     context: MaterializeContext,
-    isTopLevel: boolean,
+    position: ChildPosition,
   ): ReactNode {
-    if (isPreferred) return this.toNode(value, context, isTopLevel);
+    if (isPreferred) return this.toNode(value, context, position);
     if (context.alternativeDepth >= MAX_ALTERNATIVE_DEPTH) {
       return this.unknownNode(
         `alternative nested ${MAX_ALTERNATIVE_DEPTH} branches away from the preferred path`,
@@ -714,7 +718,7 @@ export class Materializer {
     return this.toNode(
       value,
       { ...context, alternativeDepth: context.alternativeDepth + 1 },
-      isTopLevel,
+      position,
     );
   }
 
@@ -748,7 +752,7 @@ export class Materializer {
       countMax: value.count?.max ?? null,
       pinnedCount: pinned ? pinned.iterations.length : null,
       children: iterationScopes.map((decisions) =>
-        this.toNode(value.item, { ...context, decisions }, false),
+        this.toNode(value.item, { ...context, decisions }, "nested"),
       ),
     });
   }
@@ -764,7 +768,7 @@ export class Materializer {
     alternatives: Array<(alternativeContext: MaterializeContext) => ReactNode>,
     reason: string,
     preferredIndex: number | null,
-    isTopLevel: boolean,
+    position: ChildPosition,
     location: SourceLocation | null = null,
     predicate: string | null = null,
     sharesScope = false,
@@ -791,7 +795,7 @@ export class Materializer {
       children: rendered.map((node, index) =>
         createElement(AlternativeMarker, {
           key: pinnedIndex ?? index,
-          children: isTopLevel ? node : [node],
+          children: position === "nested" ? [node] : node,
         }),
       ),
     });
@@ -823,7 +827,7 @@ export class Materializer {
   private elementToNode(
     element: StaticElementValue,
     context: MaterializeContext,
-    isTopLevel: boolean,
+    position: ChildPosition,
   ): ReactNode {
     let materialized = this.materializedElements.get(element);
     if (!materialized) {
@@ -831,22 +835,21 @@ export class Materializer {
       this.materializedElements.set(element, materialized);
     }
     const previous = materialized.find(
-      (candidate) =>
-        candidate.isTopLevel === isTopLevel && isSamePosition(candidate.context, context),
+      (candidate) => candidate.position === position && isSamePosition(candidate.context, context),
     );
     if (previous) return previous.node;
-    const node = this.freshElementToNode(element, context, isTopLevel);
-    materialized.push({ context, isTopLevel, node });
+    const node = this.freshElementToNode(element, context, position);
+    materialized.push({ context, position, node });
     return node;
   }
 
   private freshElementToNode(
     element: StaticElementValue,
     context: MaterializeContext,
-    isTopLevel: boolean,
+    position: ChildPosition,
   ): ReactNode {
     if (this.isServerEnvironment(element, context)) {
-      const serverNode = this.serverElementToNode(element, context, isTopLevel);
+      const serverNode = this.serverElementToNode(element, context, position);
       if (serverNode !== NOT_SERVER_RENDERED) return serverNode;
     }
     if (!this.isServerEnvironment(element, context)) {
@@ -856,14 +859,14 @@ export class Materializer {
         element.props,
         element.location,
         context,
-        isTopLevel,
+        position,
       );
     }
     if (this.isFlightUnwrappedFragment(element)) {
-      return this.toNode(getObjectProperty(element.props, "children"), context, isTopLevel);
+      return this.toNode(getObjectProperty(element.props, "children"), context, position);
     }
     const props = this.serverEnvironment.stampProps(element.props);
-    return this.createNode(element.type, element.key, props, element.location, context, isTopLevel);
+    return this.createNode(element.type, element.key, props, element.location, context, position);
   }
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
@@ -880,7 +883,7 @@ export class Materializer {
   private serverElementToNode(
     element: StaticElementValue,
     context: MaterializeContext,
-    isTopLevel: boolean,
+    position: ChildPosition,
   ): ReactNode | typeof NOT_SERVER_RENDERED {
     const { type, props, location } = element;
     const serverContext: MaterializeContext = {
@@ -888,11 +891,11 @@ export class Materializer {
       environment: element.environment ?? context.environment,
     };
     if (type.kind === "fragment" && isKeyless(element.key)) {
-      return this.toNode(getObjectProperty(props, "children"), serverContext, isTopLevel);
+      return this.toNode(getObjectProperty(props, "children"), serverContext, position);
     }
     if (type.kind === "stub" && type.stub.isServerComponent) {
       const rendered = type.stub.render(props, this.stubTools(serverContext, location));
-      return this.toNode(rendered, { ...serverContext, depth: context.depth + 1 }, isTopLevel);
+      return this.toNode(rendered, { ...serverContext, depth: context.depth + 1 }, position);
     }
     const serverComponent = getServerComponent(type);
     if (!serverComponent) return NOT_SERVER_RENDERED;
@@ -907,7 +910,7 @@ export class Materializer {
           awaited: true,
         }),
     );
-    return this.toNode(server.rendered, server.childContext, isTopLevel);
+    return this.toNode(server.rendered, server.childContext, position);
   }
 
   private createNode(
@@ -916,7 +919,7 @@ export class Materializer {
     props: StaticObjectValue,
     location: SourceLocation | null,
     context: MaterializeContext,
-    isTopLevel: boolean,
+    position: ChildPosition,
   ): ReactNode {
     const { createElement } = this.runtime.react;
     if (type.kind !== "fragment" && this.materializedCount++ >= this.maxElementCount) {
@@ -998,27 +1001,30 @@ export class Materializer {
         return createElement(lazyType, { key: reactKey, input: proxyInput() });
       }
       case "fragment": {
-        // `reconcileChildFibers` unwraps an unkeyed top-level fragment without recursing,
-        // so its children take its position and a fragment among them stays a fiber.
-        const isUnwrapped = isTopLevel && reactKey === undefined;
+        const isUnwrapped = position === "top" && reactKey === undefined;
+        const fragmentKey = isKeyless(key)
+          ? position === "unwrapped"
+            ? KEY_PLACEHOLDER
+            : undefined
+          : (reactKey ?? KEY_PLACEHOLDER);
         return createElement(
           this.runtime.react.Fragment,
-          { key: isKeyless(key) ? undefined : (reactKey ?? KEY_PLACEHOLDER) },
-          this.toNode(children, context, !isUnwrapped),
+          { key: fragmentKey },
+          this.toNode(children, context, isUnwrapped ? "unwrapped" : "top"),
         );
       }
       case "strict-mode":
         return createElement(
           this.runtime.react.StrictMode,
           { key: reactKey },
-          this.toNode(children, { ...context, isStrictMode: true }, true),
+          this.toNode(children, { ...context, isStrictMode: true }, "top"),
         );
       case "profiler": {
         const id = this.toAttribute("id", getObjectProperty(props, "id"), context);
         return createElement(
           this.runtime.react.Profiler,
           { key: reactKey, id: typeof id === "string" ? id : "", onRender: noop },
-          this.toNode(children, context, true),
+          this.toNode(children, context, "top"),
         );
       }
       case "suspense":
@@ -1030,7 +1036,7 @@ export class Materializer {
         if (!exotic) {
           return this.unknownNode(`${type.kind} is not available in React ${this.runtime.version}`);
         }
-        return createElement(exotic, { key: reactKey }, this.toNode(children, context, true));
+        return createElement(exotic, { key: reactKey }, this.toNode(children, context, "top"));
       }
       case "context-provider": {
         const realContext = this.getContext(type.context ?? type);
@@ -1038,7 +1044,7 @@ export class Materializer {
         return createElement(
           realContext.Provider,
           { key: reactKey, value: type.context ? getObjectProperty(props, "value") : null },
-          this.toNode(children, context, true),
+          this.toNode(children, context, "top"),
         );
       }
       case "context-consumer": {
@@ -1059,7 +1065,7 @@ export class Materializer {
       }
       case "portal":
         return this.runtime.dom.createPortal(
-          this.toNode(children, context, true),
+          this.toNode(children, context, "top"),
           this.getPortalContainer(type.container),
           reactKey ?? null,
         );
@@ -1072,7 +1078,7 @@ export class Materializer {
           importedName: type.importedName,
           packageName: type.packageName,
           reason: `${type.importedName} from ${type.packageName} is not analyzed`,
-          children: this.toNode(children, context, true),
+          children: this.toNode(children, context, "top"),
         });
       }
       case "stub":
@@ -1099,7 +1105,7 @@ export class Materializer {
       return this.toNode(
         children.call([contextValue], this.stubTools(context, location)),
         context,
-        true,
+        "top",
       );
     }
     if (children.kind !== "function") {
@@ -1111,7 +1117,7 @@ export class Materializer {
     return this.toNode(
       this.interpreter.callFunction(children, [contextValue], evaluationContext),
       context,
-      true,
+      "top",
     );
   }
 
@@ -1204,7 +1210,7 @@ export class Materializer {
       case "list":
         return value.items.map((item) => this.toAttribute(key, item, context));
       case "element":
-        return this.toNode(value, context, false);
+        return this.toNode(value, context, "nested");
       case "branch": {
         const preferred = value.alternatives[value.preferredIndex ?? 0] ?? value.alternatives[0];
         return preferred ? this.toAttribute(key, preferred, context) : undefined;
@@ -1227,7 +1233,7 @@ export class Materializer {
     if (isTextContentChild(children)) {
       return children.kind === "primitive" ? String(children.value) : TEXT_PLACEHOLDER;
     }
-    return this.toNode(textContentToNull(children), context, true);
+    return this.toNode(textContentToNull(children), context, "top");
   }
 
   private keyToString(
@@ -1887,7 +1893,7 @@ export class Materializer {
         ],
         "a child may throw into this error boundary",
         0,
-        true,
+        "top",
       );
     }
     return renderBoundary(caught !== null, context);
@@ -1910,9 +1916,9 @@ export class Materializer {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
         throw new StaticThrowError(`component may throw: ${describeThrow(rendered)}`, true);
       }
-      return this.toNode(withoutThrows(rendered), childContext, true);
+      return this.toNode(withoutThrows(rendered), childContext, "top");
     }
-    return this.toNode(rendered, childContext, true);
+    return this.toNode(rendered, childContext, "top");
   }
 
   /**
@@ -2061,11 +2067,11 @@ export class Materializer {
     useLayoutEffect(() => this.commitSuspenseScope(scope));
     const { props } = input;
     const context = this.renderContext(input);
-    const fallback = this.toNode(getObjectProperty(props, "fallback"), context, true);
+    const fallback = this.toNode(getObjectProperty(props, "fallback"), context, "top");
     const primary = this.toNode(
       getObjectProperty(props, "children"),
       { ...context, suspenseScope: scope },
-      true,
+      "top",
     );
     const content = createElement(Suspense, { fallback }, primary);
     if (!isSuspendable) return content;
@@ -2077,7 +2083,7 @@ export class Materializer {
       ],
       "Suspense boundary may be suspended when observed",
       0,
-      true,
+      "top",
       null,
       null,
       true,
