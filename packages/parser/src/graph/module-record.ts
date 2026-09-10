@@ -1026,7 +1026,8 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     if (isSideEffectStatement(statement)) sideEffectStatements.push(statement);
   }
   for (const importBinding of imports) {
-    if (importBinding.isTypeOnly) continue;
+    // A declaration sharing an import's name is legal only when the import is a type; the build erases it.
+    if (importBinding.isTypeOnly || bindings.has(importBinding.localName)) continue;
     bindings.set(importBinding.localName, {
       kind: "import",
       name: importBinding.localName,
