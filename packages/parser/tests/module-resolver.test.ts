@@ -52,6 +52,7 @@ describe("module resolver", () => {
       kind: "external",
       packageName: "events",
       filePath: join(app, "node_modules/events/events.js"),
+      specifier: "events",
     });
     expect(resolver.resolve("node:events", importer)).toEqual({
       kind: "builtin",

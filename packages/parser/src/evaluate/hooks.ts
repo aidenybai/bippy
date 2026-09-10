@@ -219,8 +219,10 @@ const MAX_ESCAPED_REDUCER_STATES = 16;
  * `dispatchReducerAction` with a known action from code the analysis does not
  * follow: the reducer runs on a later render against whatever the cell holds by
  * then, and the code may dispatch again, so the cell may hold any value the
- * reducer reaches from the values it may already hold. A reducer that keeps
- * producing new values, or one the analysis cannot follow, escapes the cell.
+ * reducer reaches from the values it may already hold; a value the analysis
+ * cannot tell from one already reached (a fresh `{ ...state }` copy) adds none.
+ * A reducer that keeps producing new values, or one the analysis cannot
+ * follow, escapes the cell.
  */
 export const escapeReducerDispatch = (
   frame: HookFrame,
@@ -236,7 +238,7 @@ export const escapeReducerDispatch = (
       escapeStateCell(frame, cell, null);
       return;
     }
-    if (!reachable.some((state) => isSameHookValue(state, next))) reachable.push(next);
+    if (!reachable.some((state) => areValuesEquivalent(state, next))) reachable.push(next);
   }
   for (const state of reachable.slice(held.length)) escapeStateCell(frame, cell, state);
 };
