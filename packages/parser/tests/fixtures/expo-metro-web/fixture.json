@@ -1,0 +1,9 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "skipRuntime": true,
+  "externalPackages": ["react-native-web", "platform-badge"],
+  "expectedStats": { "unknownCount": 0, "branchCount": 0 },
+  "notes": "An Expo SDK 51 app served by Metro on web: `react-native` resolves to `react-native-web`, `banner.web.tsx` shadows `banner.tsx`, `platform-badge`'s `main` wins over its `exports` map (Metro 0.80 leaves `unstable_enablePackageExports` off), and the dev prelude's `__DEV__` plus babel-preset-expo's `process.env.EXPO_OS` are known. Vitest would resolve `react-native` to the monorepo's Flow-typed copy, so the tree is asserted statically in expo-web.test.ts."
+}

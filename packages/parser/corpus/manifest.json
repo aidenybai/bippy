@@ -5480,7 +5480,20 @@
         "rootDirectory": ".",
         "entry": "app/_layout.tsx",
         "rootComponent": "default",
-        "tsconfig": "tsconfig.json"
+        "anchor": "RootLayout",
+        "tsconfig": "tsconfig.json",
+        "externalPackageAllowList": [
+          "react-native-web",
+          "react-native-web/*",
+          "@react-navigation/native",
+          "react-native-gesture-handler",
+          "react-native-reanimated",
+          "react-native-safe-area-context",
+          "@expo/vector-icons",
+          "@expo/vector-icons/*",
+          "expo-font",
+          "expo-modules-core"
+        ]
       }
     },
     {
@@ -5665,6 +5678,8 @@
           "invariant",
           "react-responsive",
           "react-owl-carousel2",
+          "react-overlays",
+          "react-overlays/*",
           "aos"
         ]
       }

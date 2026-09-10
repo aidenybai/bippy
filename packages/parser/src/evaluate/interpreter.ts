@@ -175,6 +175,7 @@ import {
 import {
   BUNDLER_INJECTED_NAMES,
   DEV_SERVER_MODE,
+  getBundlerDefines,
   isBundlerUndeclaredName,
   isWebpackBundled,
   getInlinedNodeEnv,
@@ -947,6 +948,9 @@ export class Interpreter {
         const name = `process.env.${variable}`;
         if (!this.defines.has(name)) this.defines.set(name, primitiveValue(value));
       }
+    }
+    for (const [name, value] of Object.entries(getBundlerDefines(this.project.bundler))) {
+      if (!this.defines.has(name)) this.defines.set(name, value);
     }
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);

@@ -1,0 +1,7 @@
+{
+  "expo": {
+    "name": "fixture-expo-metro-web",
+    "slug": "fixture-expo-metro-web",
+    "web": { "bundler": "metro" }
+  }
+}

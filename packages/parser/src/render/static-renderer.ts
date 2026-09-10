@@ -10,6 +10,7 @@ import {
   detectModuleTranspiler,
   readDocumentShell,
 } from "../graph/module-transpiler.js";
+import { getExpoWebResolution } from "../graph/expo-web.js";
 import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
@@ -140,15 +141,21 @@ export class StaticRenderer {
   private createProject(bundlerTransforms: SourceTransform[]): RendererProject {
     const { options } = this;
     const { rootDirectory } = options;
+    const expoWeb = getExpoWebResolution(rootDirectory);
     const resolver = new ModuleResolver({
       tsconfigPath: options.tsconfigPath,
-      aliases: Object.fromEntries(
-        Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
-          specifier,
-          path.resolve(rootDirectory, target),
-        ]),
-      ),
+      aliases: {
+        ...expoWeb?.aliases,
+        ...Object.fromEntries(
+          Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
+            specifier,
+            path.resolve(rootDirectory, target),
+          ]),
+        ),
+      },
       conditionNames: options.conditionNames,
+      extensions: expoWeb?.extensions,
+      exportsFields: expoWeb?.exportsFields,
       rootDirectory,
     });
     const devDirectory = resolveOptionalPath(rootDirectory, options.devDirectory);

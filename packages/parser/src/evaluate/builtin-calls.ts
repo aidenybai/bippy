@@ -169,6 +169,13 @@ import {
   unknownValue,
 } from "./values.js";
 
+/** Pure natives whose only failure is a `RangeError` on an invalid argument. */
+const RANGE_CHECKED_NATIVES: Record<string, (...args: never[]) => unknown> = {
+  "Intl.getCanonicalLocales": Intl.getCanonicalLocales,
+  "String.fromCharCode": String.fromCharCode,
+  "String.fromCodePoint": String.fromCodePoint,
+};
+
 const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isNaN": Number.isNaN,
   "Number.isFinite": Number.isFinite,
@@ -1450,18 +1457,18 @@ const callGlobal = (
   }
   if (name === "Math.random")
     return recordInputSource(rangedNumberValue(name, { min: 0, max: 1 }), "random", location);
-  if (name === "Intl.getCanonicalLocales") {
+  if (name in RANGE_CHECKED_NATIVES) {
     const natives = toNativeArguments(args, null);
     if (natives === null) return unknownValue(`${name}() with dynamic arguments`, location);
     try {
       return fromNativeValue(
-        Reflect.apply(Intl.getCanonicalLocales, Intl, natives),
+        Reflect.apply(RANGE_CHECKED_NATIVES[name], null, natives),
         `${name}()`,
         null,
       );
     } catch (error) {
       return thrownValue(
-        `${name}() with an invalid language tag`,
+        `${name}() with an out-of-range argument`,
         createErrorValue(
           "RangeError",
           [primitiveValue(error instanceof Error ? error.message : String(error))],

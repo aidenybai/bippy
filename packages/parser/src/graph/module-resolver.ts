@@ -8,10 +8,14 @@ import type { ModuleResolution } from "../types.js";
 export interface ModuleResolverOptions {
   /** Path alias config; a sibling `jsconfig.json` stands in when this file does not exist. */
   tsconfigPath?: string;
-  /** Bundler `resolve.alias`: a specifier (or its subpaths) resolved from another absolute path. */
+  /** Bundler `resolve.alias`: a specifier (or its subpaths) resolved from another absolute path or package. */
   aliases?: Record<string, string>;
   conditionNames?: string[];
   requireConditionNames?: string[];
+  /** Extensions tried for an extensionless specifier, in order (Metro puts the `.web.*` platform variants first). */
+  extensions?: string[];
+  /** `package.json` fields consulted as an `exports` map; empty when the bundler ignores package exports. */
+  exportsFields?: string[];
   /**
    * Package specifiers that resolve outside this directory are external even
    * when the resolved file is not under `node_modules` (workspace symlinks
@@ -120,14 +124,16 @@ export class ModuleResolver {
   private readonly cache = new Map<string, ModuleResolution>();
   private readonly aliasNames: string[];
   readonly rootDirectory: string | null;
-  readonly extensions: readonly string[] = SOURCE_EXTENSIONS;
+  readonly extensions: string[];
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
     this.aliasNames = Object.keys(options.aliases ?? {});
+    this.extensions = options.extensions ?? SOURCE_EXTENSIONS;
     const createPair = (conditionNames: string[]): ResolverPair => {
       const baseOptions = {
-        extensions: SOURCE_EXTENSIONS,
+        extensions: this.extensions,
+        ...(options.exportsFields ? { exportsFields: options.exportsFields } : {}),
         extensionAlias: EXTENSION_ALIAS,
         alias: Object.fromEntries(
           Object.entries(options.aliases ?? {}).map(([specifier, target]) => [specifier, [target]]),

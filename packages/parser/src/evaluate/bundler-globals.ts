@@ -43,6 +43,15 @@ const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "de
 export const isBundlerUndeclaredName = (bundler: ModuleBundler, name: string): boolean =>
   bundler === "vite" && VITE_UNDECLARED_NAMES.has(name);
 
+/** Metro's dev prelude (`getPreludeCode`) declares `__DEV__`; `babel-preset-expo` inlines the bundled platform. */
+const METRO_WEB_DEFINES: Record<string, StaticValue> = {
+  __DEV__: TRUE_VALUE,
+  "process.env.EXPO_OS": primitiveValue("web"),
+};
+
+export const getBundlerDefines = (bundler: ModuleBundler): Record<string, StaticValue> =>
+  bundler === "metro" ? METRO_WEB_DEFINES : {};
+
 /** Packages that bundle the client with webpack, whose `node.global` polyfill makes the bare `global` the page's window. */
 const WEBPACK_BUNDLER_PACKAGES = ["webpack", "react-scripts", "next", "@rspack/core"];
 

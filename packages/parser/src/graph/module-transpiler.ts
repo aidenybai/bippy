@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseSync } from "oxc-parser";
 import type { ModuleBundler, ModuleTranspiler, ProcessEnvironment } from "../types.js";
+import { servesWebWithMetro } from "./expo-web.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 import { readDeclaredDependencies } from "./project-context.js";
@@ -26,12 +27,13 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
-/** A Vite config in the directory the dev server starts in or the root; otherwise `react-scripts` when the root declares it. */
+/** A Vite config in the directory the dev server starts in or the root; otherwise Expo's Metro web target, or `react-scripts` when the root declares it. */
 export const detectModuleBundler = (
   rootDirectory: string,
   devDirectory: string | null = null,
 ): ModuleBundler => {
   if ([devDirectory ?? rootDirectory, rootDirectory].some(hasViteConfig)) return "vite";
+  if (servesWebWithMetro(rootDirectory)) return "metro";
   const declared = readDeclaredDependencies(path.join(rootDirectory, "package.json"));
   return declared.includes(REACT_SCRIPTS_PACKAGE) ? "react-scripts" : "unknown";
 };

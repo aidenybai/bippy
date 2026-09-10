@@ -1,0 +1,10 @@
+{
+  "name": "fixture-expo-metro-web",
+  "private": true,
+  "dependencies": {
+    "expo": "~51.0.0",
+    "platform-badge": "0.0.0",
+    "react-native": "0.74.5",
+    "react-native-web": "~0.19.10"
+  }
+}

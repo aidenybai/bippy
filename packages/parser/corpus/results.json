@@ -25721,8 +25721,8 @@
       "id": "fashion-cube",
       "revision": "9b1f46b24e6469343e595d304f56638f9c0ecc33",
       "framework": "spa",
-      "capturedAt": "2026-09-10T10:53:07.495Z",
-      "durationMs": 16867,
+      "capturedAt": "2026-09-10T11:39:06.991Z",
+      "durationMs": 16996,
       "runtime": {
         "reactVersion": "16.14.0",
         "rendererName": "react-dom",
@@ -25739,17 +25739,18 @@
           "textCount": 17,
           "branchCount": 3,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 249
+          "modulesLoaded": 273
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 275,
+        "status": "exact",
+        "matchedFibers": 276,
         "matchedText": 16,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -25759,11 +25760,10 @@
         "branchesResolved": 3,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
         "runtimeFibers": 292,
         "staticFibers": 292,
         "coverage": 1,
-        "strictCoverage": 0.9965753424657534,
+        "strictCoverage": 1,
         "divergence": null,
         "stepsUsed": 295,
         "budgetExhausted": false
@@ -25778,7 +25778,7 @@
           "guards": 9,
           "branches": 3,
           "repeats": 0,
-          "opaque": 3,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -55726,8 +55726,8 @@
       "id": "multimart-react-ecommerce",
       "revision": "4bb42e5a59afa971cb97209f151324a2442430dd",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T10:49:15.864Z",
-      "durationMs": 226796,
+      "capturedAt": "2026-09-10T11:41:38.385Z",
+      "durationMs": 233154,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -58774,8 +58774,8 @@
       "id": "netflix-ui",
       "revision": "f0bc3631b2e1679f12169c3d0b16c557afd76fdc",
       "framework": "spa",
-      "capturedAt": "2026-09-10T10:49:11.919Z",
-      "durationMs": 712,
+      "capturedAt": "2026-09-10T11:45:32.805Z",
+      "durationMs": 233857,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -58795,20 +58795,24 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 104,
-          "textCount": 7,
-          "branchCount": 8,
+          "fiberCount": 197,
+          "textCount": 1,
+          "branchCount": 5,
           "repeatCount": 0,
-          "opaqueCount": 52,
-          "unknownCount": 1,
-          "modulesLoaded": 13
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 591
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
       },
       "report": {
-        "status": "mismatch",
-        "matchedFibers": 0,
-        "matchedText": 0,
+        "matchedFibers": 175,
+        "matchedText": 1,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
@@ -58817,52 +58821,83 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 0,
+        "branchesResolved": 5,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "runtimeFibers": 565,
-        "staticFibers": 69,
-        "coverage": 0,
-        "strictCoverage": 0,
-        "divergence": {
-          "path": "root[0]",
-          "expected": "<RootLayout> [FunctionComponent]",
-          "actual": "<LogBoxStateSubscription> [ClassComponent]"
-        },
-        "stepsUsed": 1,
+        "status": "exact",
+        "runtimeFibers": 176,
+        "staticFibers": 176,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 181,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 69,
-        "stateCount": 69,
-        "clusters": 2,
+        "states": 37,
+        "stateCount": 37,
+        "clusters": 7,
         "tree": {
-          "nodes": 163,
-          "inputs": 9,
-          "guards": 31,
-          "branches": 14,
+          "nodes": 543,
+          "inputs": 11,
+          "guards": 18,
+          "branches": 7,
           "repeats": 0,
-          "opaque": 95,
-          "wildcards": 1
+          "opaque": 0,
+          "wildcards": 0
         },
-        "matchedState": null,
-        "closestState": {
-          "index": 34,
-          "divergence": {
-            "path": "root[0]",
-            "expected": "<RootLayout> [FunctionComponent]",
-            "actual": "<LogBoxStateSubscription> [ClassComponent]"
-          }
-        },
-        "omitted": {
-          "total": 1,
-          "omissions": [
+        "matchedState": {
+          "index": 13,
+          "conditions": [
             {
-              "kind": "subtree",
-              "reason": "alternative nested 2 branches away from the preferred path"
+              "kind": "transition",
+              "commit": 3,
+              "commitCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#7), 0), eq(#8, \"LOADED\")), eq(choice(#7), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABfBs_RmrXu6XN02hkLZzUgrqSOMFIx6LUk_-T4dG4Vgr7rwnmYyejpUUebFqmVDbnrwxESqJu6ml0q-G6KQVzRqKA42KmNEPkDmn.png?r=f55\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#5), 0), eq(#6, \"LOADED\")), eq(choice(#5), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABZumJ3wvSKM7od-r3UjhVF9j3yteWlQYA-51F3SNoI682llhul1Xf_CUkMnfP_17Md2lpOOhbwHeGufvo8kOTjptoS_bcwtniHKz.png?r=e6e\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#3), 0), eq(#4, \"LOADED\")), eq(choice(#3), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABUA9QLiVGC4PuLGarV3oGLJhrOoIewsw54mdcsVtROUf1TRm69Wzoio5Ml2Vc09n4_MvJMUpo_FzjkVbnPBrFaZLHcKVgTt9lcBZ.png?r=508\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#1), 0), eq(#2, \"LOADED\")), eq(choice(#1), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABfnZLmfujuhA1nXtX4UoO77cH0CJNAFRN7-s4R92qiPUQqUgHh_Q_YscfkNEZNVc_0UAyoytd8gY4USUO7VSbKB0Zl806PdA3J6F.png?r=f4c\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
             }
           ]
         },
+        "closestState": null,
+        "omitted": null,
         "coverage": {
           "sides": [
             {
@@ -58885,110 +58920,20 @@
             },
             {
               "kind": "branch",
-              "variable": "eq(choice(#1), 0)",
-              "reason": "if (branch(true | false))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:162:5",
+              "variable": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet))))",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
               "side": 0,
-              "guard": "eq(choice(#1), 0)",
+              "guard": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "eq(choice(#1), 0)",
-              "reason": "if (branch(true | false))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:162:5",
+              "variable": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet))))",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
               "side": 1,
-              "guard": "not(eq(choice(#1), 0))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 0,
-              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 1,
-              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.1)))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 0,
-              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 1,
-              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.2)))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 0,
-              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 1,
-              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.3)))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 0,
-              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
-              "side": 1,
-              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3.4)))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "eq(choice(#4), 0)",
-              "reason": "&& on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
-              "side": 0,
-              "guard": "eq(choice(#4), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "eq(choice(#4), 0)",
-              "reason": "&& on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
-              "side": 1,
-              "guard": "not(eq(choice(#4), 0))",
+              "guard": "not(or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet)))))",
               "status": "possible"
             },
             {
@@ -59002,144 +58947,135 @@
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:42:5",
+              "variable": "or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
               "side": 0,
-              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3))))",
+              "guard": "or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#1), 0), eq(#2, \"LOADED\")), eq(choice(#1), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABfnZLmfujuhA1nXtX4UoO77cH0CJNAFRN7-s4R92qiPUQqUgHh_Q_YscfkNEZNVc_0UAyoytd8gY4USUO7VSbKB0Zl806PdA3J6F.png?r=f4c\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 0,
-              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1))))",
-              "status": "possible"
+              "guard": "or(and(eq(choice(#1), 0), eq(#2, \"LOADED\")), eq(choice(#1), 1))",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#1), 0), eq(#2, \"LOADED\")), eq(choice(#1), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABfnZLmfujuhA1nXtX4UoO77cH0CJNAFRN7-s4R92qiPUQqUgHh_Q_YscfkNEZNVc_0UAyoytd8gY4USUO7VSbKB0Zl806PdA3J6F.png?r=f4c\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 1,
-              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.1)))))",
+              "guard": "not(or(and(eq(choice(#1), 0), eq(#2, \"LOADED\")), eq(choice(#1), 1)))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#3), 0), eq(#4, \"LOADED\")), eq(choice(#3), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABUA9QLiVGC4PuLGarV3oGLJhrOoIewsw54mdcsVtROUf1TRm69Wzoio5Ml2Vc09n4_MvJMUpo_FzjkVbnPBrFaZLHcKVgTt9lcBZ.png?r=508\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 0,
-              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2))))",
-              "status": "possible"
+              "guard": "or(and(eq(choice(#3), 0), eq(#4, \"LOADED\")), eq(choice(#3), 1))",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#3), 0), eq(#4, \"LOADED\")), eq(choice(#3), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABUA9QLiVGC4PuLGarV3oGLJhrOoIewsw54mdcsVtROUf1TRm69Wzoio5Ml2Vc09n4_MvJMUpo_FzjkVbnPBrFaZLHcKVgTt9lcBZ.png?r=508\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 1,
-              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.2)))))",
+              "guard": "not(or(and(eq(choice(#3), 0), eq(#4, \"LOADED\")), eq(choice(#3), 1)))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#5), 0), eq(#6, \"LOADED\")), eq(choice(#5), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABZumJ3wvSKM7od-r3UjhVF9j3yteWlQYA-51F3SNoI682llhul1Xf_CUkMnfP_17Md2lpOOhbwHeGufvo8kOTjptoS_bcwtniHKz.png?r=e6e\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 0,
-              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3))))",
-              "status": "possible"
+              "guard": "or(and(eq(choice(#5), 0), eq(#6, \"LOADED\")), eq(choice(#5), 1))",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#5), 0), eq(#6, \"LOADED\")), eq(choice(#5), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABZumJ3wvSKM7od-r3UjhVF9j3yteWlQYA-51F3SNoI682llhul1Xf_CUkMnfP_17Md2lpOOhbwHeGufvo8kOTjptoS_bcwtniHKz.png?r=e6e\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 1,
-              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.3)))))",
+              "guard": "not(or(and(eq(choice(#5), 0), eq(#6, \"LOADED\")), eq(choice(#5), 1)))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#7), 0), eq(#8, \"LOADED\")), eq(choice(#7), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABfBs_RmrXu6XN02hkLZzUgrqSOMFIx6LUk_-T4dG4Vgr7rwnmYyejpUUebFqmVDbnrwxESqJu6ml0q-G6KQVzRqKA42KmNEPkDmn.png?r=f55\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 0,
-              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4))))",
-              "status": "possible"
+              "guard": "or(and(eq(choice(#7), 0), eq(#8, \"LOADED\")), eq(choice(#7), 1))",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:297:17",
+              "variable": "or(and(eq(choice(#7), 0), eq(#8, \"LOADED\")), eq(choice(#7), 1))",
+              "reason": "conditional on branch(\"https://occ-0-2430-2433.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABfBs_RmrXu6XN02hkLZzUgrqSOMFIx6LUk_-T4dG4Vgr7rwnmYyejpUUebFqmVDbnrwxESqJu6ml0q-G6KQVzRqKA42KmNEPkDmn.png?r=f55\" | null)",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/react-native-web/dist/exports/Image/index.js:194:21",
               "side": 1,
-              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(truthy(#5.4)))))",
+              "guard": "not(or(and(eq(choice(#7), 0), eq(#8, \"LOADED\")), eq(choice(#7), 1)))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "eq(choice(#6), 0)",
-              "reason": "&& on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
+              "variable": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
               "side": 0,
-              "guard": "eq(choice(#6), 0)",
+              "guard": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "eq(choice(#6), 0)",
-              "reason": "&& on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/components/WhoIsWatching.tsx:315:14",
+              "variable": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "reason": "if (branch(false | <boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
               "side": 1,
-              "guard": "not(eq(choice(#6), 0))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3))))",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:42:5",
-              "side": 1,
-              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(truthy(#3)))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
-              "reason": "&& on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:53:14",
-              "side": 0,
-              "guard": "or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
-              "reason": "&& on branch(false | true)",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/app/_layout.tsx:53:14",
-              "side": 1,
-              "guard": "not(or(and(not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))), or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))), eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))))",
-              "status": "possible"
+              "guard": "not(or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1)))))",
+              "status": "witnessed"
             }
           ],
-          "witnessed": 0,
-          "possible": 29,
+          "witnessed": 6,
+          "possible": 12,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "states": 69,
-        "assignments": 256,
+        "states": 37,
+        "assignments": 32,
         "replayed": 16,
         "maxReplayed": 16,
         "mismatched": []
       },
-      "anchor": null,
+      "anchor": "RootLayout",
       "note": "runtime replayed from 2026-09-10T09:56:54.980Z",
       "failure": null
     },
@@ -59147,8 +59083,8 @@
       "id": "next-ecommerce-shopco",
       "revision": "f360acb62dbccdeb421d0c261652deedc74829fd",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T10:47:10.919Z",
-      "durationMs": 118240,
+      "capturedAt": "2026-09-10T11:39:33.532Z",
+      "durationMs": 123576,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -70971,8 +70907,8 @@
       "id": "react-ecommerce-lydia",
       "revision": "10710c7750c3c02d8310e29361b6bd4c71d7b7d7",
       "framework": "spa",
-      "capturedAt": "2026-09-10T10:53:05.995Z",
-      "durationMs": 375,
+      "capturedAt": "2026-09-10T11:39:29.360Z",
+      "durationMs": 383,
       "runtime": null,
       "static": {
         "stats": {
@@ -71003,8 +70939,8 @@
       "id": "react-ecommerce-store",
       "revision": "ae46562743b2e350cfd52deab3f831008a9fcedf",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T10:53:03.829Z",
-      "durationMs": 1062,
+      "capturedAt": "2026-09-10T11:39:27.084Z",
+      "durationMs": 1056,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -72098,8 +72034,8 @@
       "id": "react-movies",
       "revision": "d4790df5a4017c56ba368c4d4dd3307cdc29feea",
       "framework": "spa",
-      "capturedAt": "2026-09-10T10:49:13.724Z",
-      "durationMs": 1044,
+      "capturedAt": "2026-09-10T11:39:31.099Z",
+      "durationMs": 1202,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -72803,8 +72739,8 @@
       "id": "react-shopping-cart",
       "revision": "9fa56244d0f0c0d363cab744a3305c50eabc08cb",
       "framework": "spa",
-      "capturedAt": "2026-09-10T10:49:10.300Z",
-      "durationMs": 494,
+      "capturedAt": "2026-09-10T11:39:25.301Z",
+      "durationMs": 561,
       "runtime": {
         "reactVersion": "18.0.0-fc46dba67-20220329",
         "rendererName": "react-dom",
