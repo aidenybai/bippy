@@ -46,14 +46,15 @@ const initialHistoryState = toCapturedValue(history.state) ?? null;
 const initialLocalStorage = readStorageArea(localStorage);
 const initialSessionStorage = readStorageArea(sessionStorage);
 
-const readWindowKeys = (): string[] => {
+const readKeysInChain = (root: object): string[] => {
   const names = new Set<string>();
-  for (let object: unknown = globalThis; object; object = Object.getPrototypeOf(object)) {
+  for (let object: unknown = root; object; object = Object.getPrototypeOf(object)) {
     for (const name of Object.getOwnPropertyNames(object)) names.add(name);
   }
   return [...names];
 };
-const initialWindowKeys = readWindowKeys();
+const initialWindowKeys = readKeysInChain(globalThis);
+const initialNavigatorKeys = readKeysInChain(navigator);
 const readImageOutcomes = installImageTracker();
 
 const readPageState = (): CapturedPageState => ({
@@ -61,8 +62,10 @@ const readPageState = (): CapturedPageState => ({
   name: window.name,
   historyState: initialHistoryState,
   windowKeys: initialWindowKeys,
+  navigatorKeys: initialNavigatorKeys,
   userAgent: navigator.userAgent,
   language: navigator.language,
+  languages: [...navigator.languages],
   maxTouchPoints: navigator.maxTouchPoints,
   images: readImageOutcomes(),
   localStorage: initialLocalStorage,

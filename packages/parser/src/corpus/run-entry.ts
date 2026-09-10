@@ -228,7 +228,10 @@ const captureLive = async (
       waitForSelector: entry.waitForSelector,
       settleMs: getSettleMs(entry),
       timeoutMs: CAPTURE_TIMEOUT_MS,
-      globals: entry.capturedGlobals,
+      globals: [
+        ...getFrameworkProfile(entry.framework).capturedGlobals,
+        ...(entry.capturedGlobals ?? []),
+      ],
     });
   } finally {
     await server.stop();
@@ -285,8 +288,8 @@ const writeStaticArtifacts = (
   );
 };
 
-// Saved as soon as the browser pass finishes so a static render that runs out of
-// memory afterwards still leaves a replayable capture behind.
+// Saved as soon as the browser run ends so a static render that never finishes
+// (budget, memory) still leaves a capture behind for `--static-only` replays.
 const writeCaptureArtifacts = (
   outputDirectory: string,
   entry: CorpusEntry,

@@ -1,12 +1,12 @@
-import type { StaticNativeObjectValue, StaticValue } from "../types.js";
+import type { SourceLocation, StaticNativeObjectValue, StaticValue } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
-import type { EvaluationContext } from "./context.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
-import { IMAGE_LOAD_EVENTS, isAwaitingImageSource, settleImageSource } from "./image-loading.js";
+import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
 import { fromNativeValue, toNativeArguments } from "./native-values.js";
+import { registerResourceListener } from "./resource-loading.js";
 import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
-import { UNDEFINED_VALUE, isCallable, primitiveValue } from "./values.js";
+import { isNullish, primitiveValue, UNDEFINED_VALUE } from "./values.js";
 
 /**
  * Event interfaces only an input device dispatches (lib.dom's `UIEvent` family
@@ -93,14 +93,12 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
   return isUserDrivenEventType(type) && !VALUE_EVENTS.has(type);
 };
 
-interface NativeEventListener {
-  (event: object): void;
-}
+/** Events the browser fires from a queued task rather than at the moment the state changes. */
+const TASK_QUEUED_EVENTS = new Set(["selectionchange"]);
 
 interface NativeEventTarget {
-  addEventListener(type: string, listener: NativeEventListener): void;
-  removeEventListener(type: string, listener: NativeEventListener): void;
-  dispatchEvent(event: object): boolean;
+  addEventListener(type: string, listener: (event: object) => void): void;
+  removeEventListener(type: string, listener: (event: object) => void): void;
 }
 
 // happy-dom nodes come from the renderer's own `EventTarget`, not this realm's.
@@ -110,9 +108,7 @@ const isNativeEventTargetObject = (value: unknown): value is NativeEventTarget =
   "addEventListener" in value &&
   typeof value.addEventListener === "function" &&
   "removeEventListener" in value &&
-  typeof value.removeEventListener === "function" &&
-  "dispatchEvent" in value &&
-  typeof value.dispatchEvent === "function";
+  typeof value.removeEventListener === "function";
 
 const isNativeEventTarget = (receiver: StaticValue): boolean =>
   receiver.kind === "native-object" && isNativeEventTargetObject(receiver.value);
@@ -128,24 +124,25 @@ const toNativeEventTarget = (
 /**
  * Real listeners standing in for interpreted ones, per target, listener and
  * type: an event the program dispatches itself (`element.focus()`, React's
- * `autoFocus`, `dispatchEvent`) reaches its handler through the DOM, so the
- * handler escapes exactly when such a dispatch happens. An event the capture
- * observed (an image settling) is dispatched with the context it runs in, and
- * the handler runs then like any timer task.
+ * `autoFocus`, `Selection.setBaseAndExtent()`, `dispatchEvent`) reaches its
+ * handler through the DOM, so the handler runs exactly when such a dispatch
+ * happens, on the event the DOM built. A task-queued event fires once per
+ * task however many times the state changed, as the document's "has scheduled
+ * selectionchange event" flag arranges; a listener removed before the task
+ * runs no longer hears it.
  */
 const nativeListeners = new WeakMap<
   NativeEventTarget,
-  Map<StaticValue, Map<string, NativeEventListener>>
+  Map<StaticValue, Map<string, (event: object) => void>>
 >();
-
-let observedDispatch: { context: EvaluationContext; host: HostDocument } | null = null;
-let isSettingImageSource = false;
 
 const attachNativeListener = (
   interpreter: Interpreter,
   target: NativeEventTarget,
   type: string,
   listener: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
 ): void => {
   let byListener = nativeListeners.get(target);
   if (!byListener) {
@@ -158,54 +155,33 @@ const attachNativeListener = (
     byListener.set(listener, byType);
   }
   if (byType.has(type)) return;
+  const dispatch = (event: object): void => {
+    interpreter.callValue(
+      listener,
+      [fromNativeValue(event, `${type} event`, interpreter.hostDocument)],
+      context,
+      location,
+      { thisValue: fromNativeValue(target, `${type} event target`, interpreter.hostDocument) },
+    );
+  };
+  let isScheduled = false;
   const native = (event: object): void => {
-    // HACK: happy-dom settles `data:` and unparsable sources inside the `src` setter; a browser fires load/error in a later task, which the observed outcome stands for.
-    if (isSettingImageSource && IMAGE_LOAD_EVENTS.has(type)) return;
-    if (observedDispatch === null) {
-      interpreter.markEscaped(listener);
+    if (!TASK_QUEUED_EVENTS.has(type)) {
+      dispatch(event);
       return;
     }
-    const args = [fromNativeValue(event, type, observedDispatch.host)];
-    if (interpreter.timers.isDeferred)
-      interpreter.callDeferred(listener, args, observedDispatch.context, null);
-    else interpreter.callValue(listener, args, observedDispatch.context, null);
+    if (isScheduled) return;
+    isScheduled = true;
+    const isDeferred = interpreter.timers.isDeferred;
+    interpreter.timers.enqueue(() => {
+      isScheduled = false;
+      if (byType.get(type) !== native) return;
+      if (isDeferred) interpreter.timers.runDeferred(() => dispatch(event));
+      else dispatch(event);
+    });
   };
   byType.set(type, native);
   target.addEventListener(type, native);
-};
-
-/** Dispatches `type` on a node as the browser did before the snapshot: its listeners run now, in `context`. */
-const dispatchObservedEvent = (
-  target: StaticNativeObjectValue,
-  type: string,
-  context: EvaluationContext,
-): void => {
-  const { host } = target;
-  const eventConstructor: unknown = host === null ? null : Reflect.get(host.globalObject, "Event");
-  if (typeof eventConstructor !== "function" || host === null) return;
-  const native = toNativeEventTarget(target, host);
-  if (native === null) return;
-  const previous = observedDispatch;
-  observedDispatch = { context, host };
-  try {
-    native.dispatchEvent(Reflect.construct(eventConstructor, [type]));
-  } finally {
-    observedDispatch = previous;
-  }
-};
-
-/** Escapes the listeners attached to a node for `types`: the events may fire before the snapshot after all. */
-const escapeAttachedListeners = (
-  interpreter: Interpreter,
-  target: StaticNativeObjectValue,
-  types: ReadonlySet<string>,
-): void => {
-  const native = toNativeEventTarget(target, target.host);
-  const byListener = native === null ? undefined : nativeListeners.get(native);
-  if (!byListener) return;
-  for (const [listener, byType] of byListener) {
-    if ([...byType.keys()].some((type) => types.has(type))) interpreter.markEscaped(listener);
-  }
 };
 
 const detachNativeListener = (
@@ -266,29 +242,36 @@ const isHistoryTraversalListener = (
   typeof type.value === "string" &&
   HISTORY_TRAVERSAL_EVENTS.has(type.value);
 
-const registerListener = (
+const updateListener = (
   interpreter: Interpreter,
   realm: HostRealm,
   receiver: StaticValue,
   type: StaticValue | undefined,
   listener: StaticValue,
   isRegistration: boolean,
+  context: EvaluationContext,
+  location: SourceLocation | null,
 ): void => {
   if (isHistoryTraversalListener(realm, receiver, type)) {
     if (isRegistration) interpreter.history.traversalListeners.add(listener);
     else interpreter.history.traversalListeners.delete(listener);
     return;
   }
-  if (
-    isRegistration &&
-    isEventBeforeCapture(realm, receiver, type) &&
-    !isAwaitingImageSource(receiver, type)
-  )
-    interpreter.markEscaped(listener);
   const target = toNativeEventTarget(receiver, interpreter.hostDocument);
-  if (target && type?.kind === "primitive" && typeof type.value === "string") {
-    if (isRegistration) attachNativeListener(interpreter, target, type.value, listener);
-    else detachNativeListener(target, type.value, listener);
+  const typeName = type?.kind === "primitive" && typeof type.value === "string" ? type.value : null;
+  if (
+    receiver.kind === "native-object" &&
+    typeName !== null &&
+    registerResourceListener(interpreter, receiver, typeName, listener, isRegistration)
+  ) {
+    return;
+  }
+  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
+    interpreter.markEscaped(listener);
+  if (target && typeName !== null) {
+    if (isRegistration) {
+      attachNativeListener(interpreter, target, typeName, listener, context, location);
+    } else detachNativeListener(target, typeName, listener);
   }
 };
 
@@ -299,82 +282,47 @@ export const callEventTargetMethod = (
   receiver: StaticValue,
   name: string,
   args: StaticValue[],
+  context: EvaluationContext,
+  location: SourceLocation | null,
 ): StaticValue | null => {
   if (!EVENT_LISTENER_METHODS.has(name) || !isEventTarget(realm, receiver)) return null;
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
-  registerListener(interpreter, realm, receiver, type, listener, isRegistration);
+  updateListener(interpreter, realm, receiver, type, listener, isRegistration, context, location);
   return UNDEFINED_VALUE;
 };
 
-/**
- * `image.src = url`: the browser fetches the source and fires `load` or
- * `error` in a later task. With the outcome the capture observed for that URL
- * the event is dispatched in the next task round; without one, the listeners
- * attached so far (and any attached later) may have run by the snapshot.
- */
-export const assignImageSource = (
-  interpreter: Interpreter,
-  image: StaticNativeObjectValue,
-  source: StaticValue,
-  context: EvaluationContext,
-  assign: () => void,
-): void => {
-  isSettingImageSource = true;
-  try {
-    assign();
-  } finally {
-    isSettingImageSource = false;
-  }
-  const settled = settleImageSource(
-    image,
-    source,
-    (url) => interpreter.resolvePageUrl(url),
-    interpreter.pageState?.images,
-  );
-  if (settled === null) {
-    escapeAttachedListeners(interpreter, image, IMAGE_LOAD_EVENTS);
-    return;
-  }
-  const dispatch = (): void => dispatchObservedEvent(image, settled, context);
-  interpreter.timers.enqueue(
-    interpreter.timers.isDeferred ? () => interpreter.timers.runDeferred(dispatch) : dispatch,
-  );
-};
-
-const EVENT_HANDLER_ATTRIBUTE = /^on([a-z]+)$/;
-
-/** The handler each node's `on<event>` attribute holds, so reassigning it replaces the previous listener. */
-const eventHandlerAttributes = new WeakMap<object, Map<string, StaticValue>>();
+const eventHandlerProperties = new WeakMap<object, Map<string, StaticValue>>();
 
 /**
- * `node.onload = handler`: an event handler IDL attribute registers its
- * callable value as a listener for the event, and a later assignment (or
- * null) removes the one before; true when `key` is such an attribute of a
- * DOM node.
+ * `target.onload = handler`: the event handler IDL attribute of a DOM node,
+ * which registers `handler` for the event named after it in place of the
+ * handler set before, or unregisters that one for a nullish value.
  */
-export const assignEventHandlerAttribute = (
+export const assignEventHandlerProperty = (
   interpreter: Interpreter,
   realm: HostRealm,
   receiver: StaticNativeObjectValue,
   key: string,
   value: StaticValue,
+  context: EvaluationContext,
 ): boolean => {
-  const type = EVENT_HANDLER_ATTRIBUTE.exec(key)?.[1];
-  if (type === undefined || !isNativeEventTarget(receiver) || !(key in receiver.value))
-    return false;
-  let handlers = eventHandlerAttributes.get(receiver.value);
+  const match = /^on([a-z]+)$/.exec(key);
+  if (!match || !(key in receiver.value) || !isNativeEventTarget(receiver)) return false;
+  const type = primitiveValue(match[1]);
+  let handlers = eventHandlerProperties.get(receiver.value);
   if (!handlers) {
     handlers = new Map();
-    eventHandlerAttributes.set(receiver.value, handlers);
+    eventHandlerProperties.set(receiver.value, handlers);
   }
-  const typeValue = primitiveValue(type);
-  const previous = handlers.get(key);
-  if (previous) registerListener(interpreter, realm, receiver, typeValue, previous, false);
-  handlers.delete(key);
-  if (!isCallable(value)) return true;
-  handlers.set(key, value);
-  registerListener(interpreter, realm, receiver, typeValue, value, true);
+  const previous = handlers.get(match[1]);
+  if (previous) updateListener(interpreter, realm, receiver, type, previous, false, context, null);
+  if (isNullish(value) === true) {
+    handlers.delete(match[1]);
+  } else {
+    handlers.set(match[1], value);
+    updateListener(interpreter, realm, receiver, type, value, true, context, null);
+  }
   return true;
 };

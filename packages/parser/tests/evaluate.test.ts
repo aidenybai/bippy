@@ -81,6 +81,60 @@ export const indexAssignmentPastRepeatIsDropped = () => {
   return list;
 };
 
+declare const isEnabled: boolean;
+declare const extra: number[];
+
+export const conditionalPushIsOptional = () => {
+  const list = [1];
+  if (isEnabled) list.push(2);
+  return list;
+};
+
+export const eitherPushIsPositional = () => {
+  const list = [1];
+  if (isEnabled) list.push(2);
+  else list.push(3);
+  return list;
+};
+
+export const conditionalMultiPushIsBoundedRepeat = () => {
+  const list = [1];
+  if (isEnabled) list.push(2, 3);
+  return list;
+};
+
+export const conditionalMultiPushBoundsLength = () => {
+  const list = [1];
+  if (isEnabled) list.push(2, 3);
+  return [list.length > 3, list.length > 0, list.length > 1];
+};
+
+export const conditionalLoopPushStaysUnbounded = () => {
+  const list = [1];
+  if (isEnabled) for (const item of extra) list.push(item);
+  return list;
+};
+
+export const loopPushRepeats = () => {
+  const list = [1];
+  for (const item of extra) list.push(item * 2);
+  return list;
+};
+
+export const forEachPushRepeats = () => {
+  const list = [1];
+  [...extra].forEach((item) => list.push(item * 2));
+  return list;
+};
+
+export const objectValuesOfPartialList = () => {
+  const list = [{ id: "a" }];
+  if (isEnabled) list.push({ id: "b" });
+  return Object.values(list)
+    .filter((item) => item.id !== "a")
+    .map((item) => item.id);
+};
+
 export const loopCarriedCounter = () => {
   let count = 0;
   let offset = 0;
@@ -96,6 +150,26 @@ export const loopInvariantStaysExact = () => {
   let offset = 0;
   while (offset < outerSize) offset += 100;
   return label;
+};
+`;
+
+const COLLECTION_SOURCE = `
+declare const salt: string;
+
+const fill = (size: number) => {
+  const cache = new Map<string, number>();
+  for (let index = 0; index < size; index++) cache.set(salt + index, index);
+  return cache;
+};
+
+export const smallDynamicMapEnumerates = () => fill(2).get(salt);
+
+export const largeDynamicMapIsUnknown = () => fill(9).get(salt);
+
+export const largeDynamicMapKeepsDecidedMembership = () => {
+  const cache = fill(9);
+  cache.set("pinned", 1);
+  return cache.has("pinned");
 };
 `;
 
@@ -169,6 +243,29 @@ describe("list mutation and uncertain loops", () => {
     });
   });
 
+  it("joins list growth from diverging paths by how many items each appended", async () => {
+    const results = await evaluateExports(MUTATION_SOURCE, [
+      "conditionalPushIsOptional",
+      "eitherPushIsPositional",
+      "conditionalMultiPushIsBoundedRepeat",
+      "conditionalMultiPushBoundsLength",
+      "conditionalLoopPushStaysUnbounded",
+      "loopPushRepeats",
+      "forEachPushRepeats",
+      "objectValuesOfPartialList",
+    ]);
+    expect(results).toEqual({
+      conditionalPushIsOptional: "[1, optional(2)]",
+      eitherPushIsPositional: "[1, branch(2 | 3)]",
+      conditionalMultiPushIsBoundedRepeat: "[1, repeat(branch(… | …))]",
+      conditionalMultiPushBoundsLength: "[false, true, <boolean>]",
+      conditionalLoopPushStaysUnbounded: "[1, repeat(unknown)]",
+      loopPushRepeats: "[1, repeat(<number>)]",
+      forEachPushRepeats: "[1, repeat(<number>)]",
+      objectValuesOfPartialList: '[optional("b")]',
+    });
+  });
+
   it("widens bindings a loop of unknown length keeps changing", async () => {
     const results = await evaluateExports(MUTATION_SOURCE, [
       "loopCarriedCounter",
@@ -177,6 +274,21 @@ describe("list mutation and uncertain loops", () => {
     expect(results).toEqual({
       loopCarriedCounter: "<number: loop-carried value>",
       loopInvariantStaysExact: '"row"',
+    });
+  });
+});
+
+describe("collections written under dynamic keys", () => {
+  it("enumerates a few stored values and gives up on many", async () => {
+    const results = await evaluateExports(COLLECTION_SOURCE, [
+      "smallDynamicMapEnumerates",
+      "largeDynamicMapIsUnknown",
+      "largeDynamicMapKeepsDecidedMembership",
+    ]);
+    expect(results).toEqual({
+      smallDynamicMapEnumerates: "branch(0 | 1 | undefined)",
+      largeDynamicMapIsUnknown: "unknown(Map.get() with a dynamic key)",
+      largeDynamicMapKeepsDecidedMembership: "true",
     });
   });
 });

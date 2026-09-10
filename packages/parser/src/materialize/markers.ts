@@ -56,6 +56,8 @@ interface UnknownMarkerProps {
 }
 
 export const TEXT_PLACEHOLDER = "\u2026";
+/** Stands in for a key the build alone knows; a keyed fragment must still mount as a fiber. */
+export const KEY_PLACEHOLDER = "\u2026";
 
 const named = <T extends (...args: never[]) => unknown>(name: string, component: T): T =>
   Object.defineProperty(component, "name", { value: name });

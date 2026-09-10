@@ -5,7 +5,14 @@ import {
   matchStateSpace,
   type StateCondition,
 } from "../src/harness/state-space.js";
-import { anonymousRepeat, choiceBranch, patternHost } from "./helpers/pattern-builders.js";
+import { equalsGuard, type SymbolicVariable } from "../src/harness/symbolic-tree.js";
+import {
+  anonymousRepeat,
+  choiceBranch,
+  guardedBranch,
+  input,
+  patternHost,
+} from "./helpers/pattern-builders.js";
 
 const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiberSnapshot => ({
   tag: "HostComponent",
@@ -19,6 +26,12 @@ const host = (name: string, children: RuntimeFiberSnapshot[] = []): RuntimeFiber
 const fiber = patternHost;
 const branch = choiceBranch;
 const repeat = anonymousRepeat;
+
+const variable = (inputId: string, ...path: string[]): SymbolicVariable => ({
+  input: inputId,
+  path,
+  measure: "value",
+});
 
 const describeConditions = (conditions: StateCondition[]): string =>
   conditions
@@ -226,6 +239,51 @@ describe("matchStateSpace", () => {
     const match = matchStateSpace(space, [host("table", [host("tbody", runtimeRows)])]);
     expect(match.status).toBe("exact");
     expect(describeConditions(match.matched?.conditions ?? [])).toBe("header=1");
+  });
+
+  it("keeps a decision made inside one fiber binding for guards on the same input in its siblings", () => {
+    const split = input("split", "state");
+    const correlated = enumerateStateSpace([
+      [
+        fiber("main", [
+          fiber("nav", [
+            guardedBranch(
+              "editorOnly",
+              equalsGuard(variable("split"), "onlyEditor"),
+              [split],
+              [fiber("x")],
+              [fiber("y")],
+            ),
+          ]),
+          fiber("aside", [
+            guardedBranch(
+              "previewOnly",
+              equalsGuard(variable("split"), "onlyPreview"),
+              [split],
+              [fiber("p")],
+              [fiber("q")],
+            ),
+          ]),
+        ]),
+      ],
+    ]);
+    expect(correlated.stateCount).toBe(3);
+
+    const consistent = matchStateSpace(correlated, [
+      host("main", [host("nav", [host("y")]), host("aside", [host("p")])]),
+    ]);
+    expect(consistent.status).toBe("exact");
+    expect(
+      describeConditions(consistent.matched?.conditions ?? [])
+        .split(" ")
+        .sort(),
+    ).toEqual(["editorOnly=1", "previewOnly=0"]);
+
+    const contradictory = matchStateSpace(correlated, [
+      host("main", [host("nav", [host("x")]), host("aside", [host("p")])]),
+    ]);
+    expect(contradictory.status).toBe("mismatch");
+    expect(contradictory.matched).toBeNull();
   });
 
   it("matches the runtime against the commit that produced it", () => {

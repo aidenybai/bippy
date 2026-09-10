@@ -11,8 +11,11 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   getAllocationCount,
+  getItemsCountRange,
+  isIndefiniteItem,
   isSameValue,
   joinObjectEntries,
+  optionalValue,
 } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
@@ -76,6 +79,53 @@ const joinListProperties = (
     );
   }
   return joined;
+};
+
+const unwrapIndefiniteItem = (item: StaticValue): StaticValue =>
+  item.kind === "repeat" ? item.item : item.kind === "optional" ? item.value : item;
+
+/**
+ * Items appended to a list by paths that each ran at most once: one positional
+ * item when every path appended one, an optional item when only some did,
+ * otherwise a repeat bounded by the shortest and longest appended run.
+ */
+const joinAppendedItems = (
+  suffixes: StaticValue[][],
+  reason: string,
+  location: SourceLocation | null,
+  preferredPath: number,
+  predicate: string | null,
+): StaticValue[] => {
+  const present = suffixes.flat();
+  if (present.length === 0) return [];
+  const preferredItem = suffixes[preferredPath]?.[0];
+  if (suffixes.every((suffix) => suffix.length <= 1 && !suffix.some(isIndefiniteItem))) {
+    const isEveryPathAppending = present.length === suffixes.length;
+    const joined = branchValue(
+      present,
+      reason,
+      location,
+      preferredItem === undefined ? 0 : present.indexOf(preferredItem),
+      isEveryPathAppending ? predicate : null,
+    );
+    return [
+      isEveryPathAppending
+        ? joined
+        : optionalValue(joined, reason, location, preferredItem === undefined),
+    ];
+  }
+  const ranges = suffixes.map(getItemsCountRange);
+  const max = Math.max(...ranges.map((range) => range.max));
+  return [
+    {
+      kind: "repeat",
+      item: branchValue(present.map(unwrapIndefiniteItem), reason, location),
+      location,
+      count: Number.isFinite(max)
+        ? { min: Math.min(...ranges.map((range) => range.min)), max }
+        : undefined,
+    },
+  ];
 };
 
 const isExtensionOf = <Item>(
@@ -199,13 +249,19 @@ export class HeapJournal {
     this.paths.push(path);
   }
 
+  /**
+   * `mayRepeat` marks a join whose ran path stands for any number of runs (an
+   * uncertain loop tail, a callback over unknown items): its appended list
+   * items are then a repeat rather than positional alternatives.
+   */
   join(
     reason: string,
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    mayRepeat = false,
   ): void {
-    this.applyJoin(this.paths, reason, location, preferredPath, predicate);
+    this.applyJoin(this.paths, reason, location, preferredPath, predicate, mayRepeat);
   }
 
   /**
@@ -222,7 +278,7 @@ export class HeapJournal {
   ): void {
     const selected = indices.map((index) => this.paths[index]);
     this.paths = this.paths.filter((_, index) => !indices.includes(index));
-    this.applyJoin(selected, reason, location, preferredPath, predicate);
+    this.applyJoin(selected, reason, location, preferredPath, predicate, false);
   }
 
   private applyJoin(
@@ -231,6 +287,7 @@ export class HeapJournal {
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    mayRepeat: boolean,
   ): void {
     for (const [cell, original] of this.updates) {
       const pathUpdates = paths.map((path) =>
@@ -293,6 +350,19 @@ export class HeapJournal {
         continue;
       }
       const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original.items));
+      if (isEveryPathAppending && !mayRepeat) {
+        list.items = [
+          ...original.items,
+          ...joinAppendedItems(
+            pathItems.map((items) => items.slice(original.items.length)),
+            reason,
+            location,
+            preferredPath,
+            predicate,
+          ),
+        ];
+        continue;
+      }
       const uncertainItems = isEveryPathAppending
         ? pathItems.flatMap((items) => items.slice(original.items.length))
         : pathItems.flat();

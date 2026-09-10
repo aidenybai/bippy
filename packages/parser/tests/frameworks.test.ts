@@ -157,6 +157,14 @@ describe("next app router", () => {
     );
   });
 
+  it("instantiates a shared module separately for the server graph, where client-only React APIs are undefined", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/social" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<ClientSocial>[\s\S]*?<GlobeIcon>\n\s+<svg>\n\s+<ContextIcon>\n\s+<ContextConsumer>\n\s+<svg>\n\s+<path>\n\s+<svg>\n\s+<path>$/,
+    );
+  });
+
   it("models next/link as LinkComponent -> anonymous provider -> <a>", async () => {
     const { tree } = await render("next-app", { framework: "next-app", route: "/" });
     expect(tree).toMatch(/<LinkComponent>\n\s+<ContextProvider>\n\s+<a>\n\s+<LinkComponent>/);
@@ -503,6 +511,40 @@ describe("next pages router", () => {
     expect(tree).not.toContain("?unknown");
   });
 
+  it("leaves pageProps of a data-fetching page unknown without a capture", async () => {
+    const { tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/greeting",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toContain("pageProps come from data fetching at request time");
+    expect(tree).toMatch(/<h1>\n\s+"Hello, "\n\s+\?unknown/);
+    expect(tree).toMatch(/\?branch\(conditional on unknown\([\s\S]*?<p>\n\s+\|1\n\s+<aside>/);
+  });
+
+  it("renders the App with the captured __NEXT_DATA__.props like next/client does", async () => {
+    const { tree, errors } = await render(
+      "next-pages",
+      { framework: "next-pages", route: "/greeting" },
+      [],
+      {
+        globals: {
+          __NEXT_DATA__: {
+            props: { pageProps: { name: "Ada", isReturning: true }, __N_SSP: true },
+            page: "/greeting",
+            query: {},
+            buildId: "development",
+          },
+        },
+        queries: [],
+      },
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<h1>\n\s+"Hello, "\n\s+"Ada"\n\s+<p>\n\s+<Script>/);
+    expect(tree).not.toContain("<aside>");
+    expect(tree).not.toContain("?");
+  });
+
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
@@ -797,6 +839,20 @@ describe("react router framework mode with branchy route descriptors", () => {
     );
     expect(tree).not.toContain("?unknown");
   });
+
+  it("derives useMatches() from the statically matched chain without a capture", async () => {
+    const { tree, errors } = await render("react-router-branchy-links", {
+      framework: "react-router",
+      route: "/",
+      entry: "app/routes.ts",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Breadcrumbs>\n\s+<nav>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0\n\s+<span> key="Home"\n\s+\|1 \(preferred\)\n\s+<span> key="Retina home"/,
+    );
+    expect(tree).not.toContain("?unknown");
+    expect(tree).not.toContain("*repeat");
+  });
 });
 
 describe("react router framework mode config", () => {
@@ -828,6 +884,15 @@ describe("react router data router with JSX routes", () => {
     );
     expect(tree).toMatch(/<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<h1>/);
     expect(tree).toMatch(/\|1\n\s+\?unknown\(react-router: route path is unknown\(JSON\.parse\)\)/);
+  });
+
+  it("calls <NavLink> render-prop children and className with the resolved active state", async () => {
+    const { tree, errors } = await target("/about");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<nav>\n\s+<NavLink>\n\s+<Link>\n\s+<a>\n\s+<span>\n\s+<NavLink>\n\s+<Link>\n\s+<a>\n\s+<i>\n\s+<Outlet>/,
+    );
+    expect(tree).not.toContain("?unknown(NavLink");
   });
 });
 

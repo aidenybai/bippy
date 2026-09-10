@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
+import { transformAsync } from "@babel/core";
 import { transform as transformSvgr } from "@svgr/core";
 import { withCompilerOptions as withDocgenCompilerOptions } from "react-docgen-typescript";
 import { JsxEmit, ModuleKind, ScriptTarget } from "typescript";
@@ -121,6 +122,55 @@ const fixtureStorybookDocgenPlugin = (): Plugin => {
   };
 };
 
+// What `vite-plugin-svgr` does with its default `include` of `**/*.svg?react`:
+// svgr with `@svgr/plugin-jsx` as the only default plugin and no caller name.
+// (The plugin itself types against a different `vite` than `vite-plus` bundles.)
+const fixtureViteSvgrPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-vite-svgr",
+  enforce: "pre",
+  async load(id) {
+    if (!id.endsWith(".svg?react") || relative(fixturesDirectory, id).startsWith("..")) return null;
+    const filePath = id.slice(0, -"?react".length);
+    const componentCode = await transformSvgr(
+      readFileSync(filePath, "utf8"),
+      { plugins: ["@svgr/plugin-jsx"] },
+      { filePath },
+    );
+    return transformWithOxc(componentCode, id, { lang: "jsx" });
+  },
+});
+
+// What `@stylexjs/unplugin` does in a dev server: compile `stylex.create` and
+// friends away with the babel plugin in debug mode, leaving `props` to run.
+const fixtureStylexPlugin = (): Plugin => ({
+  name: "bippy-parser-fixture-stylex",
+  enforce: "pre",
+  async transform(code, id) {
+    if (!code.includes("@stylexjs/stylex") || relative(componentsDirectory, id).startsWith(".."))
+      return null;
+    const result = await transformAsync(code, {
+      babelrc: false,
+      configFile: false,
+      cwd: parserDirectory,
+      filename: id,
+      parserOpts: { plugins: ["jsx", "typescript"] },
+      plugins: [
+        [
+          "@stylexjs/babel-plugin",
+          {
+            dev: true,
+            runtimeInjection: false,
+            unstable_moduleResolution: { type: "commonJS", rootDir: parserDirectory },
+          },
+        ],
+      ],
+    });
+    return result?.code === undefined || result.code === null
+      ? null
+      : { code: result.code, map: result.map };
+  },
+});
+
 const fixtureJsxInJsPlugin = (): Plugin => ({
   name: "bippy-parser-fixture-jsx-in-js",
   enforce: "pre",
@@ -135,6 +185,8 @@ export default defineConfig({
   plugins: [
     fixtureAliasPlugin(),
     fixtureSvgrPlugin(),
+    fixtureViteSvgrPlugin(),
+    fixtureStylexPlugin(),
     fixtureStorybookDocgenPlugin(),
     fixtureJsxInJsPlugin(),
   ],

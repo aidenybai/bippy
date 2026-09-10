@@ -107,6 +107,12 @@ export const unwrapExpression = (node: Expression): Expression => {
 /** An expression an async or generator body suspends at: `await`, or a `yield` that is not `yield*`. */
 export type SuspendingExpression = AwaitExpression | YieldExpression;
 
+/** The property name a non-computed member access reads (`#name` for a private field); null when the key is computed. */
+export const getStaticMemberKey = (node: MemberExpression): string | null => {
+  if (node.property.type === "PrivateIdentifier") return `#${node.property.name}`;
+  return !node.computed && node.property.type === "Identifier" ? node.property.name : null;
+};
+
 /** Decides which side of a short-circuiting operator runs; null when the source does not decide. */
 export interface LeadingAwaitOracle {
   getTruthiness: (expression: Expression) => boolean | null;
@@ -268,13 +274,6 @@ export const getLeadingAwait = (
     }
   })();
   return typeof scanned === "string" ? null : scanned;
-};
-
-/** The property key of a non-computed member access (`a.b`, `this.#b`), `null` when the key is computed. */
-export const getStaticMemberKey = (node: MemberExpression): string | null => {
-  if (node.computed) return null;
-  if (node.property.type === "Identifier") return node.property.name;
-  return node.property.type === "PrivateIdentifier" ? `#${node.property.name}` : null;
 };
 
 /** `["a", "b", "c"]` for `a.b.c` (non-computed identifiers only); null for any other shape. */

@@ -9,7 +9,6 @@ import type {
 } from "oxc-parser";
 import type { SourceLocation, StaticOptionalValue, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
-import { getCollectionItems } from "./collections.js";
 import { withScope } from "./context.js";
 import {
   COMPLETES,
@@ -94,7 +93,11 @@ const iterationValues = (
 ): IterationItems | null => {
   const right = interpreter.evaluateExpression(statement.right, context);
   if (statement.type === "ForOfStatement") {
-    const iterated = getCollectionItems(right) ?? right;
+    const iterated = interpreter.resolveIterable(
+      right,
+      context,
+      interpreter.locate(context.module, statement.right),
+    );
     if (iterated.kind === "list") {
       const positionalCount = iterated.items.findIndex((item) => !isPositionalItem(item));
       return positionalCount === -1
@@ -106,7 +109,9 @@ const iterationValues = (
     return null;
   }
   const enumerated = getEnumerationTarget(
-    right.kind === "namespace" ? interpreter.materializeNamespace(right.module) : right,
+    right.kind === "namespace"
+      ? interpreter.materializeNamespace(right.module, context.environment)
+      : right,
   );
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);
@@ -174,7 +179,7 @@ const runOptionalIteration = (
     () => runForEachIteration(interpreter, statement, item.value, context),
     item.reason,
     item.location,
-    !item.isAbsentPreferred,
+    { isLikelyRun: !item.isAbsentPreferred },
   );
   return { ...outcome, mayComplete: true };
 };
@@ -275,6 +280,7 @@ const evaluateUncertainTail = (
     () => whileTestHolds(runTailBody),
     "loop iterations are uncertain",
     location,
+    { mayRepeat: true },
   );
   whileTestHolds(() => interpreter.widenLoopCarriedBindings(context.scope, runTailBody, location));
   return { ...outcome, mayComplete: true, jump: null };

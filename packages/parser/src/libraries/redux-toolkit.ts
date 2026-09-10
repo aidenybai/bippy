@@ -1,10 +1,8 @@
 import {
-  FALSE_VALUE,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
   booleanValue,
   branchValue,
   compareIdentity,
+  FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
@@ -18,6 +16,8 @@ import {
   objectValue,
   primitiveValue,
   toJsonValue,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
@@ -62,10 +62,40 @@ const isCapturedRecord = (value: CapturedValue): value is Record<string, Capture
 const getOptionalProperty = (options: StaticValue | undefined, key: string): StaticValue =>
   options?.kind === "object" ? getObjectProperty(options, key) : UNDEFINED_VALUE;
 
-const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
+/** The keys of the state a reducer (or a map of slice reducers) produces; null when not statically known. */
+export const getReducerKeys = (reducer: StaticValue): readonly string[] | null =>
   reducer.kind === "object"
     ? getKnownObjectKeys(reducer)
     : (reducerKeysByReducer.get(reducer) ?? null);
+
+/** An opaque reducer whose state is known to have exactly `keys` (none recorded when null). */
+export const opaqueReducer = (
+  name: string,
+  keys: readonly string[] | null,
+  description: string,
+): StaticValue => {
+  const reducer = nativeFunction(name, () => unknownValue(description));
+  if (keys) reducerKeysByReducer.set(reducer, keys);
+  return reducer;
+};
+
+/**
+ * The keys of a root reducer's state: registered by `combineReducers`, or
+ * otherwise what the reducer returns for the `INIT` dispatch `createStore`
+ * probes it with, which sees through wrappers around a combined reducer.
+ */
+const getStoreStateKeys = (
+  reducer: StaticValue,
+  tools: StubRenderTools,
+): readonly string[] | null => {
+  const registered = getReducerKeys(reducer);
+  if (registered || !isCallable(reducer)) return registered;
+  const initialState = tools.call(reducer, [
+    UNDEFINED_VALUE,
+    objectFromRecord({ type: primitiveValue("@@redux/INIT") }),
+  ]);
+  return initialState.kind === "object" ? getKnownObjectKeys(initialState) : null;
+};
 
 const haveSameKeys = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((key) => right.includes(key));
@@ -82,10 +112,16 @@ const findStoreState = (
 };
 
 const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
-  const combined = nativeFunction("combination", () =>
-    unknownValue("state produced by a combined reducer"),
-  );
   const keys = reducers === undefined ? null : getReducerKeys(reducers);
+  const combined = nativeFunction("combination", () =>
+    keys
+      ? objectFromRecord(
+          Object.fromEntries(
+            keys.map((key) => [key, unknownValue(`state produced by the ${key} slice reducer`)]),
+          ),
+        )
+      : unknownValue("state produced by a combined reducer"),
+  );
   if (keys) reducerKeysByReducer.set(combined, keys);
   return combined;
 });
@@ -258,7 +294,7 @@ const storeValue = (
   middlewares: readonly StaticValue[] | null,
   tools: StubRenderTools,
 ): StaticValue => {
-  const reducerKeys = getReducerKeys(reducer);
+  const reducerKeys = getStoreStateKeys(reducer, tools);
   const state =
     reducerKeys && project.storeStates
       ? findStoreState(project.storeStates, reducerKeys)

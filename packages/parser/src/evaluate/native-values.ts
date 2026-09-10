@@ -24,6 +24,8 @@ import {
   hasDefiniteItems,
   isSameComposition,
   listValue,
+  matchesComposition,
+  mayOverlapCompositions,
   nativeObjectValue,
   objectValue,
   primitiveValue,
@@ -48,11 +50,6 @@ interface ComposedExpando {
   value: StaticValue;
 }
 
-const matchesComposition = (name: string, composition: StringComposition): boolean =>
-  name.length >= composition.prefix.length + composition.suffix.length &&
-  name.startsWith(composition.prefix) &&
-  name.endsWith(composition.suffix);
-
 const hasMemberMatching = (
   object: StaticNativeObjectValue,
   composition: StringComposition,
@@ -75,16 +72,6 @@ const hasMemberMatching = (
   return false;
 };
 
-const isEitherPrefix = (left: string, right: string): boolean =>
-  left.startsWith(right) || right.startsWith(left);
-
-const isEitherSuffix = (left: string, right: string): boolean =>
-  left.endsWith(right) || right.endsWith(left);
-
-/** Whether some string could read as both compositions, so a write under one may be read under the other. */
-const mayOverlap = (left: StringComposition, right: StringComposition): boolean =>
-  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
-
 const findComposedExpando = (
   object: StaticNativeObjectValue,
   composition: StringComposition,
@@ -98,7 +85,7 @@ const getOverlappingComposedExpandos = (
   composition: StringComposition,
 ): ComposedExpando[] =>
   (composedExpandoProperties.get(object.value) ?? []).filter((expando) =>
-    mayOverlap(expando.key, composition),
+    mayOverlapCompositions(expando.key, composition),
   );
 
 const mayReadComposedExpando = (object: StaticNativeObjectValue, name: string): boolean =>
@@ -551,8 +538,8 @@ export const setNativeObjectMember = (
   if (isLayoutMember(object, key)) return;
   if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
     const native = toNative(value, object.host);
-    if (native === UNCERTAIN) uncertainNativeObjects.add(object.value);
-    else Reflect.set(object.value, key, native);
+    if (native !== UNCERTAIN) Reflect.set(object.value, key, native);
+    else if (!LAYOUT_MEMBERS.has(key)) uncertainNativeObjects.add(object.value);
     return;
   }
   let expandos = expandoProperties.get(object.value);
@@ -721,7 +708,9 @@ export const constructHostNode = (
   const constructor: unknown = Reflect.get(host.globalObject, name);
   const natives = toNativeArguments(args, host);
   if (typeof constructor !== "function" || natives === null) return null;
-  return fromNativeValue(Reflect.construct(constructor, natives), `new ${name}()`, host);
+  return guardNativeCall(`new ${name}`, () =>
+    fromNativeValue(Reflect.construct(constructor, natives), `new ${name}()`, host),
+  );
 };
 
 /**
@@ -781,6 +770,7 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
         realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
 };
 
+/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
 const isEmptyQueryResult = (value: unknown): boolean =>
   value === null ||
   (typeof value === "object" && value !== null && Reflect.get(value, "length") === 0);
