@@ -5469,6 +5469,7 @@
           "@vercel/analytics",
           "@ai-sdk/react",
           "ai",
+          "throttleit",
           "react-textarea-autosize",
           "react-remove-scroll"
         ]
