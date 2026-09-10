@@ -3607,6 +3607,199 @@
         "maxFiberCount": 20000
       },
       "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
+    },
+    {
+      "id": "boxyhq-saas-starter-kit",
+      "repository": "https://github.com/boxyhq/saas-starter-kit",
+      "revision": "abc9b686823cbfb4973c79bc36fea37a3244be6c",
+      "description": "BoxyHQ SaaS Starter Kit landing page (Next 15 pages router on port 4002, next-auth, next-i18next, Prisma over a local PostgreSQL container, npm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "setup": [
+        "printf 'NEXTAUTH_URL=http://localhost:4002\\nNEXTAUTH_SECRET=bippy-corpus-nextauth-secret-0123456789abcdef\\nDATABASE_URL=postgresql://postgres:postgres@localhost:5452/saas-starter-kit\\nAPP_URL=http://localhost:4002\\nSVIX_URL=https://api.eu.svix.com\\nSVIX_API_KEY=\\nHIDE_LANDING_PAGE=false\\nGROUP_PREFIX=boxyhq-\\nCONFIRM_EMAIL=false\\nDISABLE_NON_BUSINESS_EMAIL_SIGNUP=false\\nAUTH_PROVIDERS=github,google,saml,email,credentials\\nFEATURE_TEAM_SSO=true\\nFEATURE_TEAM_DSYNC=true\\nFEATURE_TEAM_AUDIT_LOG=true\\nFEATURE_TEAM_WEBHOOK=true\\nFEATURE_TEAM_API_KEY=true\\nFEATURE_TEAM_DELETION=true\\nFEATURE_TEAM_PAYMENTS=true\\nNEXT_PUBLIC_TERMS_URL=/terms\\nNEXT_PUBLIC_PRIVACY_URL=/privacy\\nNEXT_PUBLIC_DARK_MODE=false\\n' > .env",
+        "npx prisma generate",
+        "npx prisma db push --skip-generate"
+      ],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-boxyhq-pg 5452 saas-starter-kit"
+      ],
+      "dev": "npm run dev",
+      "url": "http://localhost:4002/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "next-i18next",
+          "react-i18next",
+          "i18next",
+          "next-auth",
+          "react-daisyui",
+          "@heroicons/react",
+          "@boxyhq/react-ui",
+          "react-hot-toast"
+        ]
+      }
+    },
+    {
+      "id": "blazity-next-saas-starter",
+      "repository": "https://github.com/blazity/next-saas-starter",
+      "revision": "502d8f519dc1f55486cfe942026cd06d4ae2ad3e",
+      "description": "Blazity next-saas-starter landing page (Next 12.1 pages router, React 17, styled-components, TinaCMS, yarn 1)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@next/bundle-analyzer",
+          "@accessible/*",
+          "swiper",
+          "react-animate-height",
+          "react-share",
+          "nextjs-color-mode",
+          "tinacms",
+          "tinacms/*",
+          "@tinacms/sharedctx"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-postgres-nextauth-template",
+      "repository": "https://github.com/vercel/nextjs-postgres-nextauth-tailwindcss-template",
+      "revision": "fe026711c19ac3ee4589c86a738f59b84e611559",
+      "description": "Vercel admin dashboard template login page (Next 15 app router, Auth.js v5 GitHub provider, Drizzle over Neon serverless, shadcn/ui, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.12.1 install --frozen-lockfile --ignore-workspace",
+      "setup": [
+        "printf 'POSTGRES_URL=postgresql://postgres:postgres@localhost:5453/template\\nNEXTAUTH_URL=http://localhost:3000\\nAUTH_SECRET=bippy-corpus-auth-secret-0123456789abcdef\\nAUTH_GITHUB_ID=placeholder\\nAUTH_GITHUB_SECRET=placeholder\\n' > .env"
+      ],
+      "dev": "npx -y pnpm@10.12.1 dev",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/login",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["@radix-ui/*", "lucide-react", "@vercel/analytics"]
+      }
+    },
+    {
+      "id": "nextjs-postgres-auth-starter",
+      "repository": "https://github.com/vercel/nextjs-postgres-auth-starter",
+      "revision": "fde8ecf1da9337223081f70cf88b420060039d6e",
+      "description": "Vercel Next.js + Postgres auth starter landing page (Next 14 app router, Auth.js v5 credentials provider, Drizzle over postgres-js, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@8.15.9 install --frozen-lockfile --ignore-workspace",
+      "setup": [
+        "printf 'POSTGRES_URL=postgresql://postgres:postgres@localhost:5454/auth_starter\\nAUTH_SECRET=bippy-corpus-auth-secret-0123456789abcdef\\n' > .env"
+      ],
+      "dev": "npx -y pnpm@8.15.9 dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"]
+      }
+    },
+    {
+      "id": "startup-nextjs",
+      "repository": "https://github.com/nextjstemplates/startup-nextjs",
+      "revision": "e730b6a99c77b96c835f11347231faa4f4e9f767",
+      "description": "Startup Next.js template landing page (Next 16 app router with a client root layout, next-themes, Tailwind, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "externalPackageAllowList": ["next-themes"]
+      }
+    },
+    {
+      "id": "ts-nextjs-tailwind-starter",
+      "repository": "https://github.com/theodorusclarence/ts-nextjs-tailwind-starter",
+      "revision": "9a47d33ff5a329f38b9e1b923d881cbbf6b21345",
+      "description": "ts-nextjs-tailwind-starter landing page (Next 15 app router, Tailwind, react-icons, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.12.1 install --frozen-lockfile --ignore-workspace",
+      "dev": "npx -y pnpm@10.12.1 dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/"
+      }
+    },
+    {
+      "id": "tailwind-nextjs-starter-blog",
+      "repository": "https://github.com/timlrx/tailwind-nextjs-starter-blog",
+      "revision": "b45bef66b40c63b6f57c15ee8cd090682238df4c",
+      "description": "Tailwind Next.js starter blog home (Next 15 app router, contentlayer2, pliny, next-themes, Yarn 3 via yarnPath)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install --immutable",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "pliny",
+          "pliny/*",
+          "next-themes",
+          "@headlessui/react",
+          "@react-aria/*",
+          "@floating-ui/*",
+          "kbar"
+        ]
+      }
+    },
+    {
+      "id": "skolaczk-next-starter",
+      "repository": "https://github.com/skolaczk/next-starter",
+      "revision": "9580bcf3da204f2b1e028d59f59028898210e8d2",
+      "description": "Skolaczk next-starter home (Next 15 app router, next-intl locale segment, Auth.js v5 with the Drizzle adapter over Neon serverless, t3-env, shadcn/ui, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "setup": [
+        "printf 'DATABASE_URL=postgresql://postgres:postgres@localhost:5455/next_starter\\nAPP_URL=http://localhost:3000\\nGITHUB_ID=placeholder\\nGITHUB_SECRET=placeholder\\nNEXTAUTH_SECRET=bippy-corpus-nextauth-secret-0123456789abcdef\\nNEXTAUTH_URL=http://localhost:3000\\nSTRIPE_SECRET_KEY=sk_test_bippy_corpus_placeholder\\nSTRIPE_WEBHOOK_SECRET_KEY=whsec_bippy_corpus_placeholder\\nSTRIPE_SUBSCRIPTION_PRICE_ID=price_bippy_corpus_placeholder\\nNEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_bippy_corpus_placeholder\\n' > .env"
+      ],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/en",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["next-themes", "@radix-ui/*", "lucide-react"]
+      }
     }
   ]
 }

@@ -856,6 +856,144 @@
       "failure": null
     },
     {
+      "id": "blazity-next-saas-starter",
+      "revision": "502d8f519dc1f55486cfe942026cd06d4ae2ad3e",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T05:30:40.918Z",
+      "durationMs": 1682,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1129,
+        "commits": 37,
+        "pageErrors": [
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s Lorem ipsum dolor sit amet. \n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Features\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at div\n    at O (webpack-internal:///./node_modules/styled-components/dist/styled-components.browser.esm.js:31:19811)\n    at Homepage (webpack-internal:///./pages/index.tsx:73:23)\n    at TinaEditProviderInner (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:89:34)\n    at EditProvider (webpack-internal:///./node_modules/@tinacms/sharedctx/dist/index.es.js:43:3)\n    at TinaEditProvider (webpack-internal:///./node_modules/tinacms/dist/edit-state.es.js:17:3)\n    at Disclosure (webpack-internal:///./node_modules/@accessible/disclosure/dist/module/index.js:54:3)\n    at Drawer\n    at NavigationDrawer (webpack-internal:///./components/NavigationDrawer.tsx:83:26)\n    at NewsletterModalContextProvider (webpack-internal:///./contexts/newsletter-modal.context.tsx:16:26)\n    at Providers (webpack-internal:///./pages/_app.tsx:210:26)\n    at MyApp (webpack-internal:///./pages/_app.tsx:105:27)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:20584)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/client.js:8:23125)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:357:9)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:791:26)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)",
+          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.",
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+          "The above error occurred in the <Root> component:\n\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)\n\nConsider adding an error boundary to your tree to customize error handling behavior.\nVisit https://reactjs.org/link/error-boundaries to learn more about error boundaries.",
+          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.",
+          "The above error occurred in the <Root> component:\n\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)\n\nConsider adding an error boundary to your tree to customize error handling behavior.\nVisit https://reactjs.org/link/error-boundaries to learn more about error boundaries.",
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+          "The above error occurred in the <Root> component:\n\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:915:27)\n\nConsider adding an error boundary to your tree to customize error handling behavior.\nVisit https://reactjs.org/link/error-boundaries to learn more about error boundaries.",
+          "Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.",
+          "Cancel rendering route"
+        ],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1116,
+          "textCount": 32,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 229
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 1060,
+        "matchedText": 32,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 31,
+        "runtimeFibers": 1092,
+        "staticFibers": 1092,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1092,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 2026,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T04:43:23.647Z",
+      "failure": null
+    },
+    {
       "id": "blocknote",
       "revision": "c255558b2d4f2be6453c67df81bb702a1a586909",
       "framework": "react-router",
@@ -1033,6 +1171,87 @@
       },
       "anchor": "AppProviders",
       "note": "runtime replayed from 2026-09-08T13:28:16.674Z",
+      "failure": null
+    },
+    {
+      "id": "boxyhq-saas-starter-kit",
+      "revision": "abc9b686823cbfb4973c79bc36fea37a3244be6c",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T05:30:38.809Z",
+      "durationMs": 842,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 320,
+        "commits": 9,
+        "pageErrors": [],
+        "title": "Enterprise SaaS Starter Kit by BoxyHQ"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 251,
+          "textCount": 32,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 728
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 217,
+        "matchedText": 32,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 14,
+        "runtimeFibers": 249,
+        "staticFibers": 249,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 249,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 249,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T04:44:07.496Z",
       "failure": null
     },
     {
@@ -21678,6 +21897,168 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-06T04:55:26.311Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-postgres-auth-starter",
+      "revision": "fde8ecf1da9337223081f70cf88b420060039d6e",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T05:30:45.288Z",
+      "durationMs": 163,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-2c338b16f-20231116",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 82,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Next.js + Postgres Auth Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 28,
+          "textCount": 10,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 16,
+        "matchedText": 10,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 14,
+        "runtimeFibers": 26,
+        "staticFibers": 26,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 26,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 26,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:45:39.454Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-postgres-nextauth-template",
+      "revision": "fe026711c19ac3ee4589c86a738f59b84e611559",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T05:30:43.803Z",
+      "durationMs": 188,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 164,
+        "commits": 14,
+        "pageErrors": [],
+        "title": "Next.js App Router + NextAuth + Tailwind CSS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 12,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 10
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 9,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 43,
+        "runtimeFibers": 9,
+        "staticFibers": 9,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 9,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 9,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:43:37.500Z",
       "failure": null
     },
     {
@@ -52086,6 +52467,150 @@
       "failure": null
     },
     {
+      "id": "skolaczk-next-starter",
+      "revision": "9580bcf3da204f2b1e028d59f59028898210e8d2",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T05:30:53.551Z",
+      "durationMs": 1994,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 240,
+        "commits": 14,
+        "pageErrors": [],
+        "title": "Next.js Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 84,
+          "textCount": 7,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1665
+        },
+        "diagnostics": [
+          {
+            "code": "next-intl-request-config",
+            "count": 1
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 52,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "transparentFibers": 30,
+        "runtimeFibers": 58,
+        "staticFibers": 62,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 61,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 2,
+        "tree": {
+          "nodes": 68,
+          "inputs": 2,
+          "guards": 4,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on next-auth#default().auth()",
+              "location": "/home/ubuntu/bippy-corpus/skolaczk-next-starter/src/app/[locale]/page.tsx:37:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/skolaczk-next-starter/src/components/auth-controls.tsx:17:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/skolaczk-next-starter/src/components/auth-controls.tsx:17:3",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (<boolean: negation of unknown>)",
+              "location": "/home/ubuntu/bippy-corpus/skolaczk-next-starter/src/components/auth-controls.tsx:17:3",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on next-auth#default().auth()",
+              "location": "/home/ubuntu/bippy-corpus/skolaczk-next-starter/src/app/[locale]/page.tsx:37:12",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on next-auth#default().auth()",
+              "location": "/home/ubuntu/bippy-corpus/skolaczk-next-starter/src/app/[locale]/page.tsx:37:12",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:43:00.765Z",
+      "failure": null
+    },
+    {
       "id": "socialecho",
       "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
       "framework": "react-router",
@@ -52392,6 +52917,233 @@
       },
       "anchor": null,
       "note": "static render did not resolve to a component tree; runtime replayed from 2026-09-08T08:54:13.412Z",
+      "failure": null
+    },
+    {
+      "id": "startup-nextjs",
+      "revision": "e730b6a99c77b96c835f11347231faa4f4e9f767",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T05:30:46.781Z",
+      "durationMs": 458,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-52684925-20251110",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 1164,
+        "commits": 19,
+        "pageErrors": [
+          "%s must not return anything besides a function, which is used for clean-up.%s useEffect \n\nIt looks like you wrote useEffect(async () => ...) or returned a Promise. Instead, write the async function inside your effect and call it immediately:\n\nuseEffect(() => {\n  async function fetchData() {\n    // You can await here\n    const response = await MyAPI.getData(someId);\n    // ...\n  }\n  fetchData();\n}, [someId]); // Or [] if effect doesn't need props or state\n\nLearn more about data fetching with Hooks: https://react.dev/link/hooks-data-fetching"
+        ],
+        "title": "Free Next.js Template for Startup and SaaS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1015,
+          "textCount": 33,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 37
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 942,
+        "matchedText": 33,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 62,
+        "runtimeFibers": 975,
+        "staticFibers": 975,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 975,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 975,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:42:27.400Z",
+      "failure": null
+    },
+    {
+      "id": "tailwind-nextjs-starter-blog",
+      "revision": "b45bef66b40c63b6f57c15ee8cd090682238df4c",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T05:30:50.185Z",
+      "durationMs": 1817,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 546,
+        "commits": 15,
+        "pageErrors": [
+          "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <Fe ref={function} unmount={false} as={Symbol(react.fragment)} beforeEnter={function o.useCallback} ...>\n      <c value={2}>\n        <$e as=\"div\" onClose={function onClose} unmount={false} hidden={true} style={{display:\"none\"}} ref={function}>\n          <j>\n            <s>\n              <l force={true}>\n                <S>\n+                 <div data-headlessui-portal=\"\" ref={function ref}>\n-                 <span\n-                   hidden=\"\"\n-                   style={{position:\"fixed\",top:\"1px\",left:\"1px\",width:\"1px\",height:\"0px\",padding-top:\"0px\",padding-right:\"0px\",padding-bottom:\"0px\", ...}}\n-                 >\n            ...\n",
+          "Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <HotReload assetPrefix=\"\" globalError={[...]}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head headCacheNode={{lazyData:null, ...}}>\n                    <__next_viewport_boundary__>\n                    <meta>\n                    <MetadataTree>\n                      <__next_metadata_boundary__>\n                        <__next_metadata_boundary__>\n                          <div hidden={true}>\n+                           <Suspense fallback={null}>\n                  ...\n"
+        ],
+        "title": "Next.js Starter Blog"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 390,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 263
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 2
+          },
+          {
+            "code": "next-config",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 326,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 76,
+        "runtimeFibers": 326,
+        "staticFibers": 326,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 327,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 2,
+        "tree": {
+          "nodes": 655,
+          "inputs": 3,
+          "guards": 6,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#1), 0), truthy(#2)), eq(choice(#1), 1))",
+              "reason": "conditional on branch(unknown | native HTMLDivElement)",
+              "location": "/home/ubuntu/bippy-corpus/tailwind-nextjs-starter-blog/node_modules/@headlessui/react/dist/components/portal/portal.js:1:1392",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#1), 0), truthy(#2)), eq(choice(#1), 1))",
+              "reason": "conditional on branch(unknown | native HTMLDivElement)",
+              "location": "/home/ubuntu/bippy-corpus/tailwind-nextjs-starter-blog/node_modules/@headlessui/react/dist/components/portal/portal.js:1:1392",
+              "side": 0,
+              "guard": "or(and(eq(choice(#1), 0), truthy(#2)), eq(choice(#1), 1))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#1), 0), truthy(#2)), eq(choice(#1), 1))",
+              "reason": "conditional on branch(unknown | native HTMLDivElement)",
+              "location": "/home/ubuntu/bippy-corpus/tailwind-nextjs-starter-blog/node_modules/@headlessui/react/dist/components/portal/portal.js:1:1392",
+              "side": 1,
+              "guard": "not(or(and(eq(choice(#1), 0), truthy(#2)), eq(choice(#1), 1)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:42:46.239Z",
       "failure": null
     },
     {
@@ -53523,6 +54275,92 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T09:36:00.918Z",
+      "failure": null
+    },
+    {
+      "id": "ts-nextjs-tailwind-starter",
+      "revision": "9a47d33ff5a329f38b9e1b923d881cbbf6b21345",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T05:30:48.459Z",
+      "durationMs": 499,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-97cdd5d3-20250710",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 179,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Next.js + Tailwind CSS + TypeScript Starter"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 41,
+          "textCount": 8,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 11
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 30,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 19,
+        "runtimeFibers": 37,
+        "staticFibers": 37,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 37,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 37,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:42:06.559Z",
       "failure": null
     },
     {

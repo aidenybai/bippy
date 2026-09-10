@@ -1264,6 +1264,7 @@ export class Interpreter {
           kind: "external",
           packageName: symbol.packageName,
           importedName,
+          specifier: symbol.specifier,
           origin: "binding",
         };
       }
@@ -3087,7 +3088,7 @@ export class Interpreter {
               kind: "external",
               packageName: object.packageName,
               imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
-              specifier: object.packageName,
+              specifier: object.specifier ?? object.packageName,
               filePath: null,
             },
             null,

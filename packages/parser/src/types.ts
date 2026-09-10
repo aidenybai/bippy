@@ -849,6 +849,8 @@ export interface StaticExternalValue {
   kind: "external";
   packageName: string;
   importedName: string;
+  /** The module a binding imports (`next/constants`), whose members a namespace binding resolves like named imports of it. */
+  specifier?: string;
   /**
    * `binding` is the import itself, `instance` a `new` of one (an object, so
    * defined, but without identity), `derived` the result of calling or reading a

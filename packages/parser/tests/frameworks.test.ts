@@ -600,6 +600,33 @@ describe("next pages router", () => {
     expect(tree).toContain("<StrictMode>");
   });
 
+  it("compares the build phase against next/constants read off a namespace require", async () => {
+    const { tree, errors } = await render("next-pages-phase-config", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("reads reactStrictMode through @sentry/nextjs withSentryConfig", async () => {
+    const { tree, errors } = await render("next-pages-sentry-config", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("calls the next.config function withSentryConfig wraps with the build phase", async () => {
+    const { tree, errors } = await render("next-pages-sentry-config-function", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
   it("models next/head, next/image and next/legacy/image after the current next", async () => {
     const { tree, errors } = await renderPagesWithNext("15.5.0", "/media");
     expect(errors).toEqual([]);
