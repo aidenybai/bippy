@@ -5399,6 +5399,349 @@
           "@vercel/analytics/*"
         ]
       }
+    },
+    {
+      "id": "paper-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/paper-dashboard-react",
+      "revision": "c2ecf79745fde8ad3270482d371ea12106c0832a",
+      "description": "Creative Tim Paper Dashboard React (CRA 5, React 18, reactstrap/Bootstrap, react-router-dom 6 nested layout routes, perfect-scrollbar, react-chartjs-2 charts, react-notification-alert)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps react@18.2.0 react-dom@18.2.0",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3015"
+      },
+      "url": "http://localhost:3015/admin/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/dashboard",
+        "externalPackageAllowList": [
+          "reactstrap",
+          "react-popper",
+          "@hypnosphi/create-react-context",
+          "react-transition-group",
+          "react-chartjs-2",
+          "react-notification-alert",
+          "@babel/runtime/*",
+          "prop-types",
+          "classnames",
+          "warning",
+          "deep-equal"
+        ]
+      },
+      "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19; the install pins the React 18.2 the template shipped against."
+    },
+    {
+      "id": "now-ui-dashboard-react",
+      "repository": "https://github.com/creativetimofficial/now-ui-dashboard-react",
+      "revision": "882f872ad8745333cfa721798c48edd9cd834150",
+      "description": "Creative Tim Now UI Dashboard React (CRA 5, React 18, reactstrap/Bootstrap, react-router-dom 6 nested layout routes, perfect-scrollbar, react-chartjs-2 charts, react-notification-alert)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps react@18.2.0 react-dom@18.2.0",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3016"
+      },
+      "url": "http://localhost:3016/admin/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/dashboard",
+        "externalPackageAllowList": [
+          "reactstrap",
+          "react-popper",
+          "@hypnosphi/create-react-context",
+          "react-transition-group",
+          "react-chartjs-2",
+          "react-notification-alert",
+          "@babel/runtime/*",
+          "prop-types",
+          "classnames",
+          "warning",
+          "deep-equal"
+        ]
+      },
+      "notes": "package.json declares react/react-dom as `>=16.8.0` with no committed lockfile, so a plain install resolves React 19; the install pins the React 18.2 the template shipped against."
+    },
+    {
+      "id": "horizon-tailwind-react",
+      "repository": "https://github.com/horizon-ui/horizon-tailwind-react",
+      "revision": "8f17779f2b45419112f32541bb555817dabc5b7c",
+      "description": "Horizon UI Tailwind React (CRA 5, React 19, Tailwind, react-router-dom 6 nested layout routes, @tanstack/react-table tables, react-apexcharts, react-calendar, Chakra hooks/portal for the sidebar drawer)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3017"
+      },
+      "url": "http://localhost:3017/admin/default",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "entry": "src/index.js",
+        "route": "/admin/default",
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "@tanstack/react-table",
+          "@tanstack/table-core",
+          "react-apexcharts",
+          "react-calendar",
+          "react-icons",
+          "react-icons/*",
+          "framer-motion",
+          "@popperjs/*",
+          "react-fast-compare",
+          "hoist-non-react-statics",
+          "react-is",
+          "get-user-locale",
+          "@wojtekmaj/date-utils",
+          "clsx"
+        ]
+      }
+    },
+    {
+      "id": "horizon-ui-chakra-ts",
+      "repository": "https://github.com/horizon-ui/horizon-ui-chakra-ts",
+      "revision": "6ff149916977f7c2341b191d56c8242bb2a0d631",
+      "description": "Horizon UI Chakra TS (CRA 5 + TypeScript, React 19, Chakra UI 2.6 + Emotion + framer-motion 11, react-router-dom 6 nested layout routes, @tanstack/react-table, react-apexcharts, react-calendar)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps && npm install --no-audit --no-fund --legacy-peer-deps ajv@8",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3018",
+        "TSC_COMPILE_ON_ERROR": "true"
+      },
+      "url": "http://localhost:3018/admin/default",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "route": "/admin/default",
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "@tanstack/react-table",
+          "@tanstack/table-core",
+          "react-apexcharts",
+          "react-calendar",
+          "react-custom-scrollbars-2",
+          "react-dropzone",
+          "react-icons",
+          "react-icons/*",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "@popperjs/*",
+          "react-fast-compare",
+          "hoist-non-react-statics",
+          "react-is",
+          "stylis",
+          "stylis-plugin-rtl",
+          "get-user-locale",
+          "@wojtekmaj/date-utils",
+          "@zag-js/*",
+          "clsx"
+        ]
+      },
+      "notes": "A plain install hoists ajv@6 under ajv-keywords@5 (webpack-dev-server 4 needs ajv@8) so react-scripts start crashes with `Cannot find module ajv/dist/compile/codegen`; the second install step hoists ajv@8. The template also has ~70 TypeScript errors against React 19 typings (react-icons `IconType` vs Chakra `As`), which are type-only and only surface as the dev overlay, so TSC_COMPILE_ON_ERROR downgrades them to warnings."
+    },
+    {
+      "id": "react-crm",
+      "repository": "https://github.com/harryho/react-crm",
+      "revision": "fe9867a66606ce8165f461c0c5518088e0fea467",
+      "description": "harryho react-crm dashboard (Vite SPA, React 18.3 StrictMode, react-router 8 createBrowserRouter data router, MUI 7 + @toolpad/core DashboardLayout, react-helmet-async, react-apexcharts, localStorage-backed mock services)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn -s dev --port 5181 --strictPort",
+      "url": "http://localhost:5181/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "@toolpad/core",
+          "@toolpad/core/*",
+          "@toolpad/utils",
+          "@toolpad/utils/*",
+          "react-helmet-async",
+          "react-apexcharts",
+          "simplebar-react",
+          "simplebar-core",
+          "@iconify/react",
+          "prop-types",
+          "clsx",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "hoist-non-react-statics",
+          "invariant",
+          "dayjs"
+        ]
+      }
+    },
+    {
+      "id": "lemon-admin",
+      "repository": "https://github.com/sankeyangshu/lemon-admin",
+      "revision": "677fe6cf978d2e3201a17d5283f4907b198925a9",
+      "description": "Lemon Admin sign-in page (Vite+ SPA, React 19 StrictMode with React Compiler, TanStack Router file routes, TanStack Query, react-i18next, zustand, Base UI + Tailwind 4 shadcn components)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "dev": "pnpm exec vite --port 5182 --strictPort",
+      "env": {
+        "VITE_OPEN": "false"
+      },
+      "url": "http://localhost:5182/sign-in",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "envFiles": [".env.development", ".env"],
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-router-devtools",
+          "@tanstack/react-devtools",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@base-ui/*",
+          "@floating-ui/*",
+          "react-i18next",
+          "i18next",
+          "i18next-browser-languagedetector",
+          "@reactuses/core",
+          "@iconify/react",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "zustand",
+          "zustand/*",
+          "react-top-loading-bar",
+          "class-variance-authority",
+          "tailwind-merge",
+          "clsx",
+          "immer",
+          "es-toolkit",
+          "es-toolkit/*"
+        ]
+      },
+      "setup": [
+        "test -f src/store/route.ts || printf \"%s\\n\" \"import { create } from 'zustand';\" \"\" \"interface RouteState {\" \"  initMenus: () => Promise<void>;\" \"}\" \"\" \"export const useRouteStore = create<RouteState>()(() => ({\" \"  initMenus: async () => {},\" \"}));\" > src/store/route.ts"
+      ],
+      "notes": "The pinned commit imports `@/store/route` from src/pages/_authenticated/route.tsx but that store was never committed (absent from the whole upstream history), so Vite import analysis 500s on the generated route tree and nothing renders; the setup step stubs a zustand store with a no-op `initMenus` (unused by the captured /sign-in route)."
+    },
+    {
+      "id": "react-vite-admin",
+      "repository": "https://github.com/ychengcloud/react-vite-admin",
+      "revision": "15b751604c5a1b56e12b01ce56d0ba0103438726",
+      "description": "react-vite-admin login page (Vite 2 SPA, React 17 legacy ReactDOM.render, antd 4 ConfigProvider, react-intl, recoil, react-query 3 suspense, react-router-dom 6 useRoutes, vite-plugin-mock API)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "sed -i -E 's#https://registry\\.(nlark\\.com|npm\\.taobao\\.org|npmmirror\\.com)/#https://registry.yarnpkg.com/#; s#\\.tgz\\?[^#\"]*#.tgz#; s#/(@[^/]+)/([^/\"]+)/download/\\1/\\2-#/\\1/\\2/-/\\2-#; s#/([^/@\"]+)/download/\\1-#/\\1/-/\\1-#' yarn.lock && yarn install --frozen-lockfile --ignore-engines",
+      "dev": "yarn -s dev --port 5183 --strictPort",
+      "url": "http://localhost:5183/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/login",
+        "aliases": {
+          "@": "src"
+        },
+        "externalPackageAllowList": [
+          "antd",
+          "antd/*",
+          "@ant-design/*",
+          "rc-*",
+          "react-intl",
+          "@formatjs/*",
+          "intl-messageformat",
+          "recoil",
+          "react-query",
+          "react-error-boundary",
+          "classnames",
+          "hoist-non-react-statics"
+        ]
+      },
+      "notes": "yarn.lock resolves every tarball from Chinese npm mirrors (registry.nlark.com serves an expired certificate) using their /download/ URL layout, so the install rewrites each resolved URL to the equivalent registry.yarnpkg.com tarball before installing."
+    },
+    {
+      "id": "m6v3l9-react-material-admin",
+      "repository": "https://github.com/m6v3l9/react-material-admin",
+      "revision": "32a2764e44f45aeeb849e1c195a074e937b1937e",
+      "description": "m6v3l9 react-material-admin landing page (CRA 4, React 17 StrictMode, MUI 5 alpha + Emotion, react-router-dom 6 beta, react-query 3 suspense over an axios-mock-adapter API, react-i18next, Sentry error boundary)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx yarn@1.22.22 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "PORT": "3019",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "SKIP_YARN_COREPACK_CHECK": "1"
+      },
+      "url": "http://localhost:3019/react-material-admin/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "route": "/react-material-admin/",
+        "envFiles": [".env.development"],
+        "externalPackageAllowList": [
+          "@material-ui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "react-query",
+          "react-i18next",
+          "i18next",
+          "i18next-browser-languagedetector",
+          "i18next-xhr-backend",
+          "@sentry/react",
+          "@sentry/*",
+          "react-error-boundary",
+          "formik",
+          "prop-types",
+          "clsx",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*",
+          "hoist-non-react-statics"
+        ]
+      },
+      "notes": "react-scripts 4 (webpack 4) needs Node 16 (ERR_OSSL_EVP_UNSUPPORTED on newer OpenSSL) and exits when its stdin closes unless CI=true; the ambient yarn is a corepack shim that refuses to run under Node 16, so both commands go through npx. package.json `homepage` makes CRA serve the app under PUBLIC_URL `/react-material-admin`, which is also the `Routes` basename."
     }
   ]
 }
