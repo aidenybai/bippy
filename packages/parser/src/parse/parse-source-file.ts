@@ -91,15 +91,17 @@ export class SourceFileCache {
     return this.readTransformed(filePath, null);
   }
 
-  /** The module a plugin serves for `filePath?query`, or `null` when no plugin claims the query. */
-  readQuery(filePath: string, query: string): ParsedSourceFile | null {
+  /** The module a `query` import of `filePath` links, when a transform claims that query. */
+  readQueried(filePath: string, query: string): ParsedSourceFile | null {
     return this.readTransformed(filePath, query);
   }
 
   private readTransformed(filePath: string, query: string | null): ParsedSourceFile | null {
     const lang = getSourceLanguage(filePath);
     const extension = extname(filePath);
-    const transforms = this.transforms.filter((candidate) => candidate.appliesTo(extension, lang));
+    const transforms = this.transforms.filter((candidate) =>
+      candidate.appliesTo(extension, lang, query),
+    );
     if (!lang && transforms.length === 0) return null;
     const stats = statSync(filePath, { throwIfNoEntry: false });
     if (!stats || !stats.isFile()) return null;

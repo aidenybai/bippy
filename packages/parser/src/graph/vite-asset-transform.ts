@@ -4,9 +4,9 @@ import { ResolverFactory } from "oxc-resolver";
 import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
 import type { SourceTransform } from "../types.js";
-import { isAssetPath } from "./asset-module.js";
+import { isAssetImport } from "./asset-module.js";
 import { isCssModulePath, isStylesheetPath } from "./css-module.js";
-import { findViteConfig, readDocumentShell } from "./module-transpiler.js";
+import type { ViteConfigLocation } from "./vite-config.js";
 import {
   applyHtmlTransformHooks,
   applyTransformHooks,
@@ -58,9 +58,9 @@ const flattenPlugins = async (option: unknown, into: Set<unknown>): Promise<void
 const isPluginSetMember = (name: string, setName: string): boolean =>
   name === setName || name.startsWith(`${setName}:`) || name.startsWith(`${setName}-`);
 
-/** Files Vite's own plugins turn into modules, which the parser models itself. */
-const isViteNativeFile = (filePath: string): boolean =>
-  isAssetPath(filePath) || isStylesheetPath(filePath) || isCssModulePath(filePath);
+/** Extensions Vite's own plugins turn into modules, which the parser models itself. */
+const isViteNativeExtension = (extension: string): boolean =>
+  isAssetImport(extension, extension) || isStylesheetPath(extension) || isCssModulePath(extension);
 
 /**
  * The app's Vite config resolved the way `vite dev` resolves it (config and
@@ -70,11 +70,9 @@ const isViteNativeFile = (filePath: string): boolean =>
  * neither do the plugins a framework model stands in for.
  */
 export const loadViteUserPlugins = async (
-  rootDirectory: string,
+  { configPath, cwd: rootDirectory }: ViteConfigLocation,
   modeledPlugins: readonly string[] = [],
 ): Promise<ViteUserPlugins | null> => {
-  const configPath = findViteConfig(rootDirectory);
-  if (configPath === undefined) return null;
   const resolver = new ResolverFactory({ conditionNames: ["node", "import", "default"] });
   const viteEntry = resolver.sync(rootDirectory, VITE_PACKAGE).path;
   if (viteEntry === undefined) return null;
@@ -110,7 +108,6 @@ export const loadViteUserPlugins = async (
             ...loaded.config,
             plugins: [...userPlugins],
             configFile: false,
-            root: rootDirectory,
             logLevel: "silent",
           },
           SERVE_COMMAND,
@@ -134,29 +131,27 @@ export const createViteAssetTransform = ({
   rootDirectory,
   plugins,
 }: ViteUserPlugins): SourceTransform => ({
-  appliesTo: (extension, lang) => lang === null && !isViteNativeFile(extension),
+  appliesTo: (extension, lang) => lang === null && !isViteNativeExtension(extension),
   transform: (filePath, sourceText, query) =>
     applyTransformHooks(plugins, rootDirectory, filePath, sourceText, query, "js"),
 });
 
 /**
- * The HTML `vite dev` answers a page request with: the root `index.html` after
- * the config's `transformIndexHtml` hooks, which is how apps fill in `<base>`,
- * titles and injected scripts before the browser parses the page.
+ * The HTML `vite dev` answers a page request with: the served root's
+ * `index.html` after the config's `transformIndexHtml` hooks, which is how apps
+ * fill in `<base>`, titles and injected scripts before the browser parses the page.
  */
-export const readViteDocumentShell = async (
-  rootDirectory: string,
-  userPlugins: ViteUserPlugins | null,
+export const transformViteDocumentShell = (
+  { rootDirectory, config, plugins }: ViteUserPlugins,
+  html: string,
+  servedDirectory: string,
   route: string,
-): Promise<string | null> => {
-  const html = readDocumentShell(rootDirectory);
-  if (html === null || userPlugins === null) return html;
-  return loadFromDirectory(rootDirectory, () =>
-    applyHtmlTransformHooks(userPlugins.plugins, html, {
+): Promise<string> =>
+  loadFromDirectory(rootDirectory, () =>
+    applyHtmlTransformHooks(plugins, html, {
       path: `/${INDEX_HTML}`,
-      filename: path.join(rootDirectory, INDEX_HTML),
-      server: { config: userPlugins.config },
+      filename: path.join(servedDirectory, INDEX_HTML),
+      server: { config },
       originalUrl: route,
     }),
   );
-};

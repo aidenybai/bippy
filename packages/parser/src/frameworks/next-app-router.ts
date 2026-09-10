@@ -18,7 +18,7 @@ import {
   splitPathname,
 } from "./route-files.js";
 
-export interface NextAppRouteOptions {
+interface NextAppRouteOptions {
   /** URL pathname to render, e.g. `/` or `/posts/hello`. */
   route: string;
   /** Directory containing the `app/` tree; defaults to `app` or `src/app` under the renderer root. */
@@ -26,7 +26,7 @@ export interface NextAppRouteOptions {
 }
 
 /** One file-system segment on the matched route, from the app root down to the page. */
-export interface NextAppSegment {
+interface NextAppSegment {
   directory: string;
   layout: string | null;
   template: string | null;
@@ -156,7 +156,7 @@ const loadDefaultExport = (
   }
   return {
     module,
-    component: interpreter.evaluateModuleExport(module, "default"),
+    component: interpreter.evaluateModuleExport(module, "default", "server"),
   };
 };
 

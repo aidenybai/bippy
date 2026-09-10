@@ -65,6 +65,99 @@ export const createdIsNode = () => document.createElement("span") instanceof Nod
 export const documentContainsBody = () => document.contains(document.body);
 `;
 
+const MEMBER_PROBE = `
+export const query = () => document.querySelector("#root");
+export const queryAllLength = () => document.querySelectorAll(".x").length;
+export const boundingWidth = () => document.body.getBoundingClientRect().width;
+export const offsetWidth = () => document.body.offsetWidth;
+export const canvasContext = () => document.createElement("canvas").getContext("2d");
+export const undeclaredDocumentMember = () => document.notAMember;
+export const undeclaredWindowMember = () => window.notAMember;
+export const titleType = () => typeof document.title;
+export const hidden = () => document.hidden;
+export const requestFrameType = () => typeof window.requestAnimationFrame;
+export const userAgentType = () => typeof navigator.userAgent;
+export const userAgent = () => navigator.userAgent;
+export const language = () => navigator.language;
+export const sendBeaconType = () => typeof navigator.sendBeacon;
+export const filledFirst = () => [1, 2].fill(0)[0];
+export const listenerCount = () => {
+  let count = 0;
+  window.addEventListener("resize", () => count++);
+  document.addEventListener("visibilitychange", () => count++);
+  return count;
+};
+`;
+
+const INTRINSIC_PROBE = `
+export const arrowIsFunction = () => (() => 1) instanceof Function;
+export const objectIsFunction = () => ({}) instanceof Function;
+export const arrayIsObject = () => [1] instanceof Object;
+export const mapIsMap = () => new Map() instanceof Map;
+export const urlIsUrl = () => new URL("https://example.test/") instanceof URL;
+export const symbolIsSymbol = () => Symbol.iterator instanceof Symbol;
+export const functionProto = () => Object.getPrototypeOf(() => 1) === Function.prototype;
+export const functionProtoProto = () => Object.getPrototypeOf(Function.prototype) === Object.prototype;
+export const arrayProto = () => Object.getPrototypeOf([]) === Array.prototype;
+export const symbolLength = () => Symbol.length;
+`;
+
+describe("language intrinsics in the interpreter", () => {
+  it("answers instanceof and prototype identity for every shared ECMAScript and host constructor", async () => {
+    const values = await evaluateExports(INTRINSIC_PROBE);
+    expect(values.arrowIsFunction).toBe("true");
+    expect(values.objectIsFunction).toBe("false");
+    expect(values.arrayIsObject).toBe("true");
+    expect(values.mapIsMap).toBe("true");
+    expect(values.urlIsUrl).toBe("true");
+    expect(values.symbolIsSymbol).toBe("false");
+    expect(values.functionProto).toBe("true");
+    expect(values.functionProtoProto).toBe("true");
+    expect(values.arrayProto).toBe("true");
+    expect(values.symbolLength).toBe("0");
+  });
+});
+
+describe("host members in the interpreter", () => {
+  it("answers declared document and window members from lib.dom and the static document", async () => {
+    const values = await evaluateExports(MEMBER_PROBE);
+    expect(values.query).toBe(
+      "unknown(document.querySelector() finds nothing in the static document)",
+    );
+    expect(values.queryAllLength).toContain("unknown");
+    expect(values.titleType).toBe('"string"');
+    expect(values.requestFrameType).toBe('"function"');
+    expect(values.hidden).toBe("<boolean: document.hidden>");
+    expect(values.undeclaredDocumentMember).toBe("unknown(document.notAMember)");
+    expect(values.undeclaredWindowMember).toBe("unknown(globalThis.notAMember)");
+    expect(values.listenerCount).toBe("0");
+  });
+
+  it("keeps layout and raster results open on interfaces the declarations type as concrete", async () => {
+    const values = await evaluateExports(MEMBER_PROBE);
+    expect(values.boundingWidth).toBe(
+      "unknown(HTMLBodyElement.getBoundingClientRect() depends on layout)",
+    );
+    expect(values.offsetWidth).toBe("<number: HTMLBodyElement.offsetWidth depends on layout>");
+    expect(values.canvasContext).toBe(
+      "unknown(HTMLCanvasElement.getContext() depends on rasterization)",
+    );
+  });
+
+  it("types navigator members from the declarations without inventing their values", async () => {
+    const values = await evaluateExports(MEMBER_PROBE);
+    expect(values.userAgentType).toBe('"string"');
+    expect(values.userAgent).toBe("<string: navigator.userAgent>");
+    expect(values.language).toBe("<string: navigator.language>");
+    expect(values.sendBeaconType).toBe('"function"');
+  });
+
+  it("lets an array method that takes elements produce them", async () => {
+    const values = await evaluateExports(MEMBER_PROBE);
+    expect(values.filledFirst).toBe("0");
+  });
+});
+
 describe("host realms in the interpreter", () => {
   it("evaluates browser globals from the DOM declarations", async () => {
     const values = await evaluateExports(PROBE);

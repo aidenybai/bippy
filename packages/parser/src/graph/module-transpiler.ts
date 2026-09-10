@@ -1,13 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseSync } from "oxc-parser";
-import type { ModuleBundler, ModuleTranspiler } from "../types.js";
+import type { ModuleBundler, ModuleTranspiler, ProcessEnvironment } from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
-
-const VITE_CONFIG_FILES = ["js", "mjs", "cjs", "ts", "mts", "cts"].map(
-  (extension) => `vite.config.${extension}`,
-);
+import { readDeclaredDependencies } from "./project-context.js";
+import { REACT_SCRIPTS_PACKAGE, getReactScriptsClientEnvironment } from "./react-scripts.js";
+import { findViteConfig } from "./vite-config.js";
 
 /** Vite 8 transpiles with Oxc; in earlier majors these React plugins take over from `vite:esbuild`. */
 const LAST_ESBUILD_VITE_MAJOR = 7;
@@ -27,18 +26,40 @@ const importsReplacingPlugin = (configPath: string): boolean => {
   );
 };
 
-export const findViteConfig = (rootDirectory: string): string | undefined =>
-  VITE_CONFIG_FILES.map((fileName) => path.join(rootDirectory, fileName)).find((candidate) =>
-    existsSync(candidate),
+/** A Vite config in the directory the dev server starts in or the root; otherwise `react-scripts` when the root declares it. */
+export const detectModuleBundler = (
+  rootDirectory: string,
+  devDirectory: string | null = null,
+): ModuleBundler => {
+  if ([devDirectory ?? rootDirectory, rootDirectory].some(hasViteConfig)) return "vite";
+  const declared = readDeclaredDependencies(path.join(rootDirectory, "package.json"));
+  return declared.includes(REACT_SCRIPTS_PACKAGE) ? "react-scripts" : "unknown";
+};
+
+const hasViteConfig = (directory: string): boolean => findViteConfig(directory) !== undefined;
+
+const readOptionalFile = (filePath: string): string | null =>
+  existsSync(filePath) ? readFileSync(filePath, "utf8") : null;
+
+/**
+ * The HTML the bundler serves as the page: Vite's dev server answers `/` with
+ * the served root's `index.html`; `react-scripts` serves `public/index.html`
+ * after `InterpolateHtmlPlugin` replaced each `%NAME%` with its client environment.
+ */
+export const readDocumentShell = (
+  rootDirectory: string,
+  bundler: ModuleBundler,
+  environment: ProcessEnvironment | null,
+  servedDirectory: string = rootDirectory,
+): string | null => {
+  if (bundler === "vite") return readOptionalFile(path.join(servedDirectory, "index.html"));
+  if (bundler !== "react-scripts") return null;
+  const template = readOptionalFile(path.join(rootDirectory, "public", "index.html"));
+  if (template === null) return null;
+  return Object.entries(getReactScriptsClientEnvironment(rootDirectory, environment)).reduce(
+    (html, [name, value]) => html.replaceAll(`%${name}%`, String(value)),
+    template,
   );
-
-export const detectModuleBundler = (rootDirectory: string): ModuleBundler =>
-  findViteConfig(rootDirectory) === undefined ? "unknown" : "vite";
-
-/** The HTML Vite's dev server answers a page request with before its plugins transform it: the root `index.html`. */
-export const readDocumentShell = (rootDirectory: string): string | null => {
-  const indexPath = path.join(rootDirectory, "index.html");
-  return existsSync(indexPath) ? readFileSync(indexPath, "utf8") : null;
 };
 
 export const detectModuleTranspiler = (

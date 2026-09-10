@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import {
   createBrowserRouter,
   createRoutesFromElements,
+  NavLink,
   Outlet,
   Route,
   RouterProvider,
@@ -14,6 +15,14 @@ const router = createBrowserRouter(
     <Route
       element={
         <main>
+          <nav>
+            <NavLink to="/about" className={({ isActive }) => (isActive ? "current" : "idle")}>
+              {({ isActive }) => <span>{isActive ? "on about" : "elsewhere"}</span>}
+            </NavLink>
+            <NavLink to="/about/team" end>
+              {({ isActive }) => (isActive ? <b>team</b> : <i>team</i>)}
+            </NavLink>
+          </nav>
           <Outlet />
         </main>
       }

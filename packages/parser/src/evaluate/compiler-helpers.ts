@@ -5,7 +5,7 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import { isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
@@ -31,7 +31,7 @@ import {
   mapValue,
   objectFromRecord,
   objectValue,
-  omitObjectKeys,
+  omitRestKeys,
   primitiveValue,
   thrownValue,
   TRUE_VALUE,
@@ -146,12 +146,9 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
     if (key.kind !== "primitive") return unknownValue("rest with dynamic excluded keys");
     omitted.add(String(key.value));
   }
-  return mapValue(source, (alternative) => {
-    if (isNullish(alternative) === true) return objectValue();
-    return alternative.kind === "object"
-      ? omitObjectKeys(alternative, omitted)
-      : unknownValue("rest of a non-object");
-  });
+  return mapValue(source, (alternative) =>
+    isNullish(alternative) === true ? objectValue() : omitRestKeys(alternative, omitted),
+  );
 };
 
 const defineProperty: HelperImplementation = ([target, key, value], tools) => {

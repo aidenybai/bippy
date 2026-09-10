@@ -1,9 +1,13 @@
+import type { HostRealm } from "./host-realm.js";
+
 /**
  * The live document a renderer's host lends the analyzed program: the nodes,
  * ranges and selections it creates are the real objects, handed through
  * unchanged. A platform without a document (Node, React Native) has none.
  */
 export interface HostDocument {
+  /** The declarations of the platform whose document this is. */
+  readonly realm: HostRealm;
   readonly document: object;
   readonly globalObject: object;
   /** The document started from the page's own HTML shell, so a query that finds nothing is a real miss rather than a gap in what the analysis rendered. */

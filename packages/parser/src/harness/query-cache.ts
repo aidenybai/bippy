@@ -1,6 +1,6 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
-import { dateCapture, hashKey, isPlainObject, opaqueCapture } from "../observations.js";
+import { dateCapture, hashKey, isPlainObject, isRecord, opaqueCapture } from "../observations.js";
 import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 import type {
   CapturedMutation,
@@ -24,9 +24,6 @@ interface QueryClientLike {
   getQueryCache: () => { getAll: () => QueryLike[] };
   getMutationCache: () => { getAll: () => MutationLike[] };
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const describeOpaque = (value: unknown): string => {
   if (typeof value === "function") return `function ${value.name || "(anonymous)"}`;

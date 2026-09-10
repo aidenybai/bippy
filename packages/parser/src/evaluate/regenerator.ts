@@ -5,7 +5,7 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import { createErrorValue } from "./errors.js";
 import { getThrowCertainty } from "./thrown.js";
 import {

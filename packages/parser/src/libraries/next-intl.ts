@@ -1,20 +1,21 @@
 import semver from "semver";
 import { resolvedPromiseValue } from "../evaluate/promises.js";
 import {
+  FALSE_VALUE,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
   branchValue,
   describeValue,
-  FALSE_VALUE,
   getObjectProperty,
   getTruthiness,
   hasDefiniteItems,
   isKnownString,
   isNullish,
+  isUndefinedValue,
   objectFromRecord,
   objectValue,
   primitiveValue,
   thrownValue,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
@@ -24,7 +25,7 @@ import {
   nativeFunction,
   omitProps,
   stubValue,
-} from "../frameworks/stubs.js";
+} from "../evaluate/stubs.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,
@@ -42,7 +43,7 @@ import { formatIcuMessage } from "./icu-message-format.js";
 // Components. Translations resolve from the configured messages; what only the
 // request decides (a negotiated locale, the current time) stays uncertain.
 
-export interface NextIntlModelOptions {
+interface NextIntlModelOptions {
   /** The `next/link` component navigation links render through. */
   link: StubComponent;
   /** `next/navigation` exports the navigation hooks wrap. */
@@ -99,9 +100,6 @@ const PROVIDER_INFERRED_PROPS: ReadonlySet<string> = new Set([
   "now",
   "timeZone",
 ]);
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
 
 const orValue = (left: StaticValue, right: StaticValue): StaticValue => {
   const truthiness = getTruthiness(left);
@@ -190,7 +188,7 @@ const resolveTarget = (
 ): TranslationTarget | string => {
   if (config.kind !== "object") return `intl config is ${describeValue(config)}`;
   if (!isKnownString(keyValue)) return `message key is ${describeValue(keyValue)}`;
-  if (!isUndefined(namespaceValue) && !isKnownString(namespaceValue)) {
+  if (!isUndefinedValue(namespaceValue) && !isKnownString(namespaceValue)) {
     return `namespace is ${describeValue(namespaceValue)}`;
   }
   return { config, namespace: knownString(namespaceValue), key: keyValue.value };
@@ -282,7 +280,7 @@ const configFromProviderProps = (
     inherited.kind === "object" ? getObjectProperty(inherited, key) : UNDEFINED_VALUE;
   const own = (key: string): StaticValue => getObjectProperty(props, key);
   const unlessUndefined = (key: string): StaticValue =>
-    isUndefined(own(key)) ? parent(key) : own(key);
+    isUndefinedValue(own(key)) ? parent(key) : own(key);
   return objectFromRecord({
     locale: own("locale"),
     formats: unlessUndefined("formats"),
@@ -489,7 +487,7 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
   const getConfig = (tools: StubRenderTools): StaticValue => {
     if (tools.environment === "server") return getServerConfig(tools, null);
     const context = tools.readContext(INTL_CONTEXT);
-    if (!isUndefined(context)) return context;
+    if (!isUndefinedValue(context)) return context;
     if (tools.environment === null && requestConfig !== null) return getServerConfig(tools, null);
     return thrownValue(
       "no IntlProvider above",
@@ -519,7 +517,7 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
   const localeArgument = (callOptions: StaticValue): StaticValue | null => {
     const locale =
       callOptions.kind === "object" ? getObjectProperty(callOptions, "locale") : UNDEFINED_VALUE;
-    return isUndefined(locale) ? null : locale;
+    return isUndefinedValue(locale) ? null : locale;
   };
 
   const clientProviderStub = createClientProviderStub(isLegacy);
@@ -531,9 +529,11 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
       const config = getServerConfig(tools, null);
       const own = (key: string): StaticValue => getObjectProperty(props, key);
       const inferred = objectFromRecord({
-        formats: isUndefined(own("formats")) ? configProperty(config, "formats") : own("formats"),
+        formats: isUndefinedValue(own("formats"))
+          ? configProperty(config, "formats")
+          : own("formats"),
         locale: nullishValue(own("locale"), configProperty(config, "locale")),
-        messages: isUndefined(own("messages")) ? getMessages(config) : own("messages"),
+        messages: isUndefinedValue(own("messages")) ? getMessages(config) : own("messages"),
         now: nullishValue(own("now"), configProperty(config, "now")),
         timeZone: nullishValue(own("timeZone"), configProperty(config, "timeZone")),
       });
@@ -825,7 +825,7 @@ export const createNextIntlModel = (options: NextIntlModelOptions): NextIntlMode
           : pathOrOptions;
       requestConfigPath = knownString(configured) ?? DEFAULT_REQUEST_CONFIG_PATH;
       return nativeFunction("withNextIntl", ([nextConfig = UNDEFINED_VALUE]) =>
-        isUndefined(nextConfig) ? objectValue() : nextConfig,
+        isUndefinedValue(nextConfig) ? objectValue() : nextConfig,
       );
     },
   );

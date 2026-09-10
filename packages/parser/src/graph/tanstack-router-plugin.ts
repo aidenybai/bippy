@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
-import type { Expression, Program } from "@oxc-project/types";
+import type { Expression, Node, Program } from "@oxc-project/types";
 import { parseSync } from "oxc-parser";
 import { parseWithSchema } from "../errors.js";
 import { getInstalledModules } from "../libraries/installed-modules.js";
-import { isStringLiteralNode, someNode, unwrapExpression } from "../parse/ast-walk.js";
+import { forEachChildNode, isStringLiteralNode, unwrapExpression } from "../parse/ast-walk.js";
 import { getSourceLanguage } from "../parse/parse-source-file.js";
 import type { JsonValue, SourceTransform } from "../types.js";
-import { findViteConfig } from "./module-transpiler.js";
+import type { ViteConfigLocation } from "./vite-config.js";
 import { applyTransformHooks, loadWithoutDom, vitePluginsSchema } from "./vite-plugins.js";
 
 const PLUGIN_ENTRY = "@tanstack/router-plugin/vite";
@@ -79,20 +79,26 @@ const findPluginCall = (program: Program): PluginCall | null => {
   }
   if (factoryByLocalName.size === 0) return null;
   let pluginCall: PluginCall | null = null;
-  someNode(program, (node) => {
-    if (node.type !== "CallExpression" || node.callee.type !== "Identifier") return false;
-    const exportName = factoryByLocalName.get(node.callee.name);
-    if (exportName === undefined) return false;
-    const [argument] = node.arguments;
-    if (argument === undefined) {
-      pluginCall = { exportName, options: undefined };
-      return true;
+  let isCallFound = false;
+  const visit = (node: Node): void => {
+    if (isCallFound) return;
+    const exportName =
+      node.type === "CallExpression" && node.callee.type === "Identifier"
+        ? factoryByLocalName.get(node.callee.name)
+        : undefined;
+    if (node.type !== "CallExpression" || exportName === undefined) {
+      forEachChildNode(node, visit);
+      return;
     }
-    if (argument.type === "SpreadElement") return true;
-    const options = readJsonLiteral(argument);
-    if (options !== undefined) pluginCall = { exportName, options };
-    return true;
-  });
+    isCallFound = true;
+    const [argument] = node.arguments;
+    if (argument === undefined) pluginCall = { exportName, options: undefined };
+    else if (argument.type !== "SpreadElement") {
+      const options = readJsonLiteral(argument);
+      if (options !== undefined) pluginCall = { exportName, options };
+    }
+  };
+  visit(program);
   return pluginCall;
 };
 
@@ -103,11 +109,10 @@ const findPluginCall = (program: Program): PluginCall | null => {
  * module loaded through `lazyRouteComponent`. The app's installed plugin is
  * run the way Vite runs it, so the modules analyzed are the ones served.
  */
-export const createTanStackRouterTransform = async (
-  rootDirectory: string,
-): Promise<SourceTransform | null> => {
-  const configPath = findViteConfig(rootDirectory);
-  if (configPath === undefined) return null;
+export const createTanStackRouterTransform = async ({
+  configPath,
+  cwd: rootDirectory,
+}: ViteConfigLocation): Promise<SourceTransform | null> => {
   const { program } = parseSync(configPath, readFileSync(configPath, "utf8"), {
     sourceType: "module",
   });

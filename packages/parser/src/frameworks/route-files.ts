@@ -1,13 +1,13 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-export const ROUTE_FILE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts"] as const;
+const ROUTE_FILE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts"] as const;
 
 /** `createRouteId` in `@react-router/dev`: the route file relative to the app directory, minus its extension. */
 export const routeIdFromFile = (file: string): string => file.replace(/\.[a-z0-9]+$/i, "");
 
 /** `pageExtensions` that `@next/mdx` adds: routes the bundler compiles from markup rather than JavaScript. */
-export const CONTENT_ROUTE_FILE_EXTENSIONS = [".mdx", ".md"] as const;
+const CONTENT_ROUTE_FILE_EXTENSIONS = [".mdx", ".md"] as const;
 
 const findFileWithExtension = (
   directory: string,

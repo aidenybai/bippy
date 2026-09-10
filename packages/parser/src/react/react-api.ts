@@ -1,3 +1,4 @@
+import { recordDerivation } from "../evaluate/predicates.js";
 import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
@@ -62,6 +63,40 @@ const REACT_DOM_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "hydrate",
 ]);
 
+/**
+ * What `react`'s `react-server` export condition (ReactServer.js) leaves out:
+ * server code reading these gets `undefined`, which is how feature detection
+ * such as `React.createContext && React.createContext(...)` takes its other path.
+ */
+const CLIENT_ONLY_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
+  "createContext",
+  "SuspenseList",
+  "Component",
+  "PureComponent",
+  "useState",
+  "useReducer",
+  "useRef",
+  "useContext",
+  "useEffect",
+  "useLayoutEffect",
+  "useInsertionEffect",
+  "useImperativeHandle",
+  "useTransition",
+  "useDeferredValue",
+  "useSyncExternalStore",
+  "useOptimistic",
+  "useActionState",
+  "createPortal",
+  "flushSync",
+  "batchedUpdates",
+  "createRoot",
+  "hydrateRoot",
+  "render",
+  "hydrate",
+]);
+
+export const isClientOnlyReactApi = (api: ReactApi): boolean => CLIENT_ONLY_API_NAMES.has(api);
+
 const CHILDREN_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "Children.map",
   "Children.forEach",
@@ -125,12 +160,15 @@ export const getExternalMember = (object: StaticExternalValue, key: string): Sta
     const api = resolveReactApi(object.packageName, key);
     if (api) return { kind: "react-api", api };
   }
-  return {
-    kind: "external",
-    packageName: object.packageName,
-    importedName: `${object.importedName}.${key}`,
-    origin: "derived",
-  };
+  return recordDerivation(
+    {
+      kind: "external",
+      packageName: object.packageName,
+      importedName: `${object.importedName}.${key}`,
+      origin: "derived",
+    },
+    { kind: "property", object, key },
+  );
 };
 
 export const resolveReactApiMember = (api: ReactApi, memberName: string): StaticValue | null => {

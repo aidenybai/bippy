@@ -182,6 +182,37 @@ export const returnOrContinueInLoop = () => {
 };
 `;
 
+const COLLECTION_SOURCE = `
+declare const salt: string;
+
+const fill = (size: number) => {
+  const cache = new Map<string, number>();
+  for (let index = 0; index < size; index++) cache.set(salt + index, index);
+  return cache;
+};
+
+export const smallDynamicMapEnumerates = () => fill(2).get(salt);
+
+export const largeDynamicMapIsUnknown = () => fill(9).get(salt);
+
+export const largeDynamicMapKeepsDecidedMembership = () => {
+  const cache = fill(9);
+  cache.set("pinned", 1);
+  return cache.has("pinned");
+};
+`;
+
+const EXTERNAL_SOURCE = `
+import { cache } from "opaque-store";
+declare const isWide: boolean;
+
+export const sameMemberOfEitherLookup = () =>
+  isWide ? cache.get("a").error : cache.get("b").error;
+
+export const differentMembersOfEitherLookup = () =>
+  isWide ? cache.get("a").error : cache.get("b").result;
+`;
+
 const evaluateExports = async (
   source: string,
   exportNames: string[],
@@ -286,6 +317,35 @@ describe("switch dispatch and mixed loop exits", () => {
       returnOrBreakInSwitchLoop: 'branch("beacon" | "fetch")',
       machineStateAfterLoop: "branch(4 | 10)",
       returnOrContinueInLoop: 'branch("beacon" | "fetch")',
+    });
+  });
+});
+
+describe("values derived from external packages", () => {
+  it("keeps one alternative for derivations analysis cannot tell apart", async () => {
+    const results = await evaluateExports(EXTERNAL_SOURCE, [
+      "sameMemberOfEitherLookup",
+      "differentMembersOfEitherLookup",
+    ]);
+    expect(results).toEqual({
+      sameMemberOfEitherLookup: "opaque-store#cache.get().error",
+      differentMembersOfEitherLookup:
+        "branch(opaque-store#cache.get().error | opaque-store#cache.get().result)",
+    });
+  });
+});
+
+describe("collections written under dynamic keys", () => {
+  it("enumerates a few stored values and gives up on many", async () => {
+    const results = await evaluateExports(COLLECTION_SOURCE, [
+      "smallDynamicMapEnumerates",
+      "largeDynamicMapIsUnknown",
+      "largeDynamicMapKeepsDecidedMembership",
+    ]);
+    expect(results).toEqual({
+      smallDynamicMapEnumerates: "branch(0 | 1 | undefined)",
+      largeDynamicMapIsUnknown: "unknown(Map.get() with a dynamic key)",
+      largeDynamicMapKeepsDecidedMembership: "true",
     });
   });
 });

@@ -23,15 +23,17 @@ export interface CallFrame {
   scope: Scope;
   args: StaticValue[];
   thisValue: StaticValue | null;
-  /** `Interpreter.changeCount` when the activation began. */
+  /** `MutationLog.changeCount` when the activation began. */
   changeCount: number;
+  /** `getAllocationCount()` when the activation began: everything allocated later is the activation's own. */
+  allocation: number;
   /** `EvaluationContext.forkDepth` at the call site. */
   forkDepth: number;
   /** The callee's own properties when the activation began. */
   properties: Map<string, StaticValue>;
 }
 
-export interface OutcomeHandler {
+interface OutcomeHandler {
   (outcome: StatementOutcome): StatementOutcome;
 }
 

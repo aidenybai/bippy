@@ -1,0 +1,8 @@
+{
+  "name": "fixture-svgr-vite",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite-plugin-svgr": "5.2.0"
+  }
+}

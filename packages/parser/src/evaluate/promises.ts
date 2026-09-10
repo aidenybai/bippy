@@ -42,7 +42,7 @@ export interface AsyncCall {
  * analysis, so the outcome is unknown and the updates the rest makes are deferred.
  * Returns the body's eventual return value, or null when it suspended again.
  */
-export interface AwaitResumption {
+interface AwaitResumption {
   (outcome: StaticValue, isEscaped: boolean): StaticValue | null;
 }
 
@@ -143,7 +143,7 @@ export const suspendOnPromise = (
   });
 };
 
-export const escapePromise = (promise: ModeledPromise, tools: PromiseTools): void => {
+const escapePromise = (promise: ModeledPromise, tools: PromiseTools): void => {
   if (promise.settled || promise.isEscaped) return;
   promise.isEscaped = true;
   for (const reaction of promise.reactions.splice(0)) reaction.escape(tools);

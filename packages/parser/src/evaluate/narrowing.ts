@@ -35,12 +35,12 @@ interface Refinement {
   (value: StaticValue): StaticValue;
 }
 
-export interface NarrowingLookup {
+interface NarrowingLookup {
   (target: NarrowingTarget): StaticValue | undefined;
 }
 
 /** `typeof value` as the interpreter evaluates it for the current rendering environment. */
-export interface TypeofEvaluator {
+interface TypeofEvaluator {
   (value: StaticValue): StaticValue;
 }
 
@@ -84,12 +84,12 @@ const isSameTarget = (left: NarrowingTarget, right: NarrowingTarget): boolean =>
   left.name === right.name && left.key === right.key;
 
 /** Resolves a test's callee without side effects; `null` when it is not a plain identifier or member path. */
-export interface CalleeResolver {
+interface CalleeResolver {
   (callee: Expression): StaticValue | null;
 }
 
 /** Evaluates a test expression with `name` bound to `alternative`. */
-export interface TestEvaluator {
+interface TestEvaluator {
   (name: string, alternative: StaticValue): StaticValue;
 }
 
@@ -125,6 +125,7 @@ const partition = (
 const getNullishLiteral = (node: Expression): null | undefined | false => {
   if (node.type === "Literal" && node.value === null) return null;
   if (node.type === "Identifier" && node.name === "undefined") return undefined;
+  if (node.type === "UnaryExpression" && node.operator === "void") return undefined;
   return false;
 };
 
@@ -453,7 +454,7 @@ export const narrowTestByEvaluation = (
 };
 
 /** Records that `object` is about to change so an enclosing fork can undo it for its other paths. */
-export interface HeapJournalEntry {
+interface HeapJournalEntry {
   (object: StaticObjectValue): void;
 }
 

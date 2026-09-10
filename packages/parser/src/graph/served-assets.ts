@@ -1,43 +1,64 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { primitiveValue, unknownValue } from "../evaluate/values.js";
-import { getInstalledModules } from "../libraries/installed-modules.js";
-import { readPackageManifest } from "../package-manifest.js";
-import type { StaticValue } from "../types.js";
+import { lookup as lookupMimeType } from "mrmime";
+import { branchValue, primitiveValue, unknownValue } from "../evaluate/values.js";
+import type { ModuleBundler, ProcessEnvironment, StaticValue } from "../types.js";
+import { createReactScriptsAssets } from "./react-scripts.js";
 
-// Vite's dev server hands an imported asset the URL it serves the file at:
-// root-relative under the served root, `/@fs/<path>` outside it, and from Vite 6
-// a small SVG is inlined as a data URL exactly as at build time. Webpack-style
-// bundlers emit content-hashed URLs the source does not decide.
+// Vite's dev server hands an imported asset the URL it serves the file at
+// (`fileToDevUrl`): root-relative under the served root, `/@fs/<path>` outside
+// it, under the configured base, keeping the import's query. From Vite 6 an
+// `?inline` import, or an SVG `build.assetsInlineLimit` admits (`shouldInline`),
+// is a data URL exactly as at build time. react-scripts emits content-hashed
+// URLs its webpack config decides; other bundlers' URLs are not modeled.
 
-export interface ServedAssetsOptions {
+interface ServedAssetsOptions {
   rootDirectory: string;
   /** The bundler's served root (Vite `root`). */
   servedDirectory: string;
-  /** Directory served as-is at the URL root (Vite `publicDir`). */
-  publicDirectory: string;
+  /** Directory served as-is at the URL root (Vite `publicDir`); null when disabled. */
+  publicDirectory: string | null;
+  /** Public base path URLs are served under (Vite `base`). */
+  base: string;
   origin: string | null;
-  hasDeclaredDependency: (packageName: string) => boolean;
+  bundler: ModuleBundler;
+  environment: ProcessEnvironment | null;
+  /** The installed Vite's version; null when Vite does not serve the project. */
+  viteVersion: string | null;
+  readPackageVersion: (packageName: string) => string | null;
+  /** Whether the configured `build.assetsInlineLimit` inlines a file; null when it does not decide statically. */
+  shouldInlineAsset: (filePath: string, content: Buffer) => boolean | null;
 }
 
-export interface ServedAssets {
-  /** The value an `import` of the asset file evaluates to. */
-  getImportedUrl: (filePath: string) => StaticValue;
-  /** The text served for a same-origin or root-relative URL; `null` when nothing is. */
-  read: (url: string) => string | null;
+interface ServedAssets {
+  /** The value an `import` of the asset file evaluates to, given the import's original specifier. */
+  getImportedUrl: (filePath: string, specifier: string) => StaticValue;
+  /** The file served for a same-origin or root-relative URL; `null` when nothing is. */
+  findServedFile: (url: string) => string | null;
 }
 
 const FS_URL_PREFIX = "/@fs/";
-const DEFAULT_ASSETS_INLINE_LIMIT = 4096;
 const FIRST_INLINING_VITE_MAJOR = 6;
 const NESTED_QUOTES = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/;
+const POSTFIX = /[?#].*$/;
+const URL_QUERY = /(\?|&)url(?:&|$)/;
+const TRAILING_QUERY_SEPARATOR = /[?&]$/;
+const INLINE_QUERY = /[?&]inline\b/;
+const NO_INLINE_QUERY = /[?&]no-inline\b/;
+const DEFAULT_MIME_TYPE = "application/octet-stream";
 
-const readViteMajor = (rootDirectory: string): number | null => {
-  const manifestPath = getInstalledModules(rootDirectory).resolve("vite/package.json");
-  const version = manifestPath === null ? undefined : readPackageManifest(manifestPath).version;
-  const major = version === undefined ? null : /^(\d+)\./.exec(version);
+/** Vite's `removeUrlQuery`: the `?url` marker is dropped from the postfix the served URL keeps. */
+const getPostfix = (specifier: string): string =>
+  (POSTFIX.exec(specifier)?.[0] ?? "")
+    .replace(URL_QUERY, "$1")
+    .replace(TRAILING_QUERY_SEPARATOR, "");
+
+const readMajor = (version: string | null): number | null => {
+  const major = version === null ? null : /^(\d+)\./.exec(version);
   return major === null ? null : Number(major[1]);
 };
+
+const isSvgFile = (filePath: string): boolean => filePath.endsWith(".svg");
 
 const svgToDataUrl = (content: Buffer): string => {
   const text = content.toString();
@@ -58,19 +79,22 @@ const svgToDataUrl = (content: Buffer): string => {
   );
 };
 
-const readInlinedSvg = (filePath: string, viteMajor: number): string | null => {
-  if (viteMajor < FIRST_INLINING_VITE_MAJOR || !filePath.endsWith(".svg") || !existsSync(filePath))
-    return null;
-  const content = readFileSync(filePath);
-  return content.length < DEFAULT_ASSETS_INLINE_LIMIT ? svgToDataUrl(content) : null;
-};
+const assetToDataUrl = (filePath: string, content: Buffer): string =>
+  isSvgFile(filePath)
+    ? svgToDataUrl(content)
+    : `data:${lookupMimeType(filePath) ?? DEFAULT_MIME_TYPE};base64,${content.toString("base64")}`;
 
 const toUrlPath = (relativePath: string): string => relativePath.split(path.sep).join("/");
 
-const readFileUnder = (directory: string, relativePath: string): string | null => {
+const joinUrlSegments = (base: string, url: string): string =>
+  `${base.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
+
+const findFileUnder = (directory: string | null, relativePath: string): string | null => {
+  if (directory === null) return null;
   const filePath = path.join(directory, relativePath);
-  if (path.relative(directory, filePath).startsWith("..") || !existsSync(filePath)) return null;
-  return readFileSync(filePath, "utf8");
+  return path.relative(directory, filePath).startsWith("..") || !existsSync(filePath)
+    ? null
+    : filePath;
 };
 
 const getPathname = (url: string, origin: string | null): string | null => {
@@ -81,30 +105,91 @@ const getPathname = (url: string, origin: string | null): string | null => {
   return decodeURIComponent(parsed.pathname);
 };
 
-export const createServedAssets = (options: ServedAssetsOptions): ServedAssets => {
-  const { rootDirectory, servedDirectory, publicDirectory, origin } = options;
-  const viteMajor = options.hasDeclaredDependency("vite") ? readViteMajor(rootDirectory) : null;
+const createViteAssets = (options: ServedAssetsOptions, viteMajor: number): ServedAssets => {
+  const { rootDirectory, servedDirectory, publicDirectory, base } = options;
+  const decodedBase = decodeURI(base);
+  const basePrefix = joinUrlSegments(decodedBase, "");
+  const getServedUrl = (filePath: string, postfix: string): string => {
+    const relativePath = path.relative(servedDirectory, filePath);
+    const servedPath = relativePath.startsWith("..")
+      ? `${FS_URL_PREFIX}${toUrlPath(filePath).replace(/^\//, "")}`
+      : `/${toUrlPath(relativePath)}`;
+    return `${joinUrlSegments(decodedBase, servedPath)}${postfix}`;
+  };
+  /** `shouldInline` for an SVG: `?no-inline` and fragment ids opt out before the configured limit decides. */
+  const shouldInlineSvg = (filePath: string, id: string, content: Buffer): boolean | null =>
+    NO_INLINE_QUERY.test(id) || id.includes("#")
+      ? false
+      : options.shouldInlineAsset(filePath, content);
   return {
-    getImportedUrl: (filePath) => {
-      if (viteMajor === null) {
-        return unknownValue(`URL the bundler emits for ${path.basename(filePath)}`);
+    getImportedUrl: (filePath, specifier) => {
+      const postfix = getPostfix(specifier);
+      const id = `${filePath}${postfix}`;
+      const servedUrl = primitiveValue(getServedUrl(filePath, postfix));
+      const isInlineCandidate = INLINE_QUERY.test(id) || isSvgFile(filePath);
+      if (viteMajor < FIRST_INLINING_VITE_MAJOR || !isInlineCandidate || !existsSync(filePath)) {
+        return servedUrl;
       }
-      const inlined = readInlinedSvg(filePath, viteMajor);
-      if (inlined !== null) return primitiveValue(inlined);
-      const relativePath = path.relative(servedDirectory, filePath);
-      return primitiveValue(
-        relativePath.startsWith("..")
-          ? `${FS_URL_PREFIX}${toUrlPath(filePath).replace(/^\//, "")}`
-          : `/${toUrlPath(relativePath)}`,
+      const content = readFileSync(filePath);
+      const dataUrl = primitiveValue(assetToDataUrl(filePath, content));
+      if (INLINE_QUERY.test(id)) return dataUrl;
+      const isInlined = shouldInlineSvg(filePath, id, content);
+      if (isInlined !== null) return isInlined ? dataUrl : servedUrl;
+      return branchValue(
+        [dataUrl, servedUrl],
+        `whether build.assetsInlineLimit inlines ${path.basename(filePath)}`,
+        null,
       );
     },
-    read: (url) => {
-      const pathname = getPathname(url, origin);
-      if (pathname === null) return null;
-      if (pathname.startsWith(FS_URL_PREFIX)) {
-        return readFileUnder(path.parse(rootDirectory).root, pathname.slice(FS_URL_PREFIX.length));
+    findServedFile: (pathname) => {
+      if (!pathname.startsWith(basePrefix)) return null;
+      const servedPath = pathname.slice(basePrefix.length - 1);
+      if (servedPath.startsWith(FS_URL_PREFIX)) {
+        return findFileUnder(
+          path.parse(rootDirectory).root,
+          servedPath.slice(FS_URL_PREFIX.length),
+        );
       }
-      return readFileUnder(publicDirectory, pathname) ?? readFileUnder(servedDirectory, pathname);
+      return (
+        findFileUnder(publicDirectory, servedPath) ?? findFileUnder(servedDirectory, servedPath)
+      );
+    },
+  };
+};
+
+const createUnmodeledAssets = (options: ServedAssetsOptions): ServedAssets => ({
+  getImportedUrl: (filePath) =>
+    unknownValue(`URL the bundler emits for ${path.basename(filePath)}`),
+  findServedFile: (pathname) =>
+    findFileUnder(options.publicDirectory, pathname) ??
+    findFileUnder(options.servedDirectory, pathname),
+});
+
+const createBundlerAssets = (options: ServedAssetsOptions): ServedAssets => {
+  const { rootDirectory, publicDirectory, environment } = options;
+  if (options.bundler === "react-scripts" && publicDirectory !== null) {
+    const assets = createReactScriptsAssets(
+      rootDirectory,
+      publicDirectory,
+      environment,
+      options.readPackageVersion("react-scripts"),
+    );
+    return {
+      getImportedUrl: (filePath) => primitiveValue(assets.getImportedUrl(filePath)),
+      findServedFile: assets.findServedFile,
+    };
+  }
+  const viteMajor = readMajor(options.viteVersion);
+  return viteMajor === null ? createUnmodeledAssets(options) : createViteAssets(options, viteMajor);
+};
+
+export const createServedAssets = (options: ServedAssetsOptions): ServedAssets => {
+  const assets = createBundlerAssets(options);
+  return {
+    getImportedUrl: assets.getImportedUrl,
+    findServedFile: (url) => {
+      const pathname = getPathname(url, options.origin);
+      return pathname === null ? null : assets.findServedFile(pathname);
     },
   };
 };
