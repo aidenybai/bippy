@@ -38,6 +38,7 @@ import type {
 } from "../types.js";
 import { areGuardsSatisfiable } from "../harness/guard-solver.js";
 import { andGuard, type Guard, type InputVariable } from "../harness/symbolic-tree.js";
+import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 import {
   composeFlattenedPredicate,
@@ -2251,6 +2252,12 @@ export const getStubDisplayName = (stub: StubComponent): string | null =>
 /** What `Component.displayName || Component.name` reads on a stub. */
 export const getStubOwnDisplayName = (stub: StubComponent): string | null =>
   getAssignedStubDisplayName(stub) ?? (stub.isRenderNamed ? null : stub.displayName);
+
+/** What `Component.name` reads on a stub: a render-named plain function is that function, so it has the name its `displayName` lacks. */
+export const getStubOwnName = (stub: StubComponent): string | null =>
+  stub.isRenderNamed && getStubOwnKeys(stub.tag) === FUNCTION_OWN_KEYS
+    ? stub.displayName
+    : getStubOwnDisplayName(stub);
 
 export const describeElementType = (type: StaticElementType): string => {
   switch (type.kind) {

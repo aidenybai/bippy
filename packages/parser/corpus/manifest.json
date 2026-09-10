@@ -5934,6 +5934,211 @@
           "swr"
         ]
       }
+    },
+    {
+      "id": "notion-blog",
+      "repository": "https://github.com/ijjk/notion-blog",
+      "revision": "362af9e5457cdc8c11fa4d0adac6e81dcb902975",
+      "description": "ijjk/notion-blog home page (Next 11 pages router, React 17, static index page over CSS modules; the Notion-backed blog routes are not captured)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx -y yarn@1.22.22 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx -y yarn@1.22.22 next dev -p 3021",
+      "url": "http://localhost:3021/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "morethan-log",
+      "repository": "https://github.com/morethanmin/morethan-log",
+      "revision": "272cd3e73d6fbc650c5d95c6da0846776d39e67a",
+      "description": "morethan-log feed page (Next 13.4 pages router, React 18, Emotion, @tanstack/react-query v4 hydration of posts read from a Notion database through notion-client)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "setup": [
+        "sed -i 's/new NotionAPI()/new NotionAPI({ apiBaseUrl: process.env.NOTION_API_BASE_URL })/' src/apis/notion-client/getPosts.ts src/apis/notion-client/getRecordMap.ts src/libs/utils/notion/getPageProperties.ts"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/morethan-log-dev.sh\"",
+      "env": {
+        "NOTION_PAGE_ID": "12c38b5f459d4eb9a759f92fba6cea36",
+        "NOTION_API_PORT": "3122",
+        "NOTION_API_BASE_URL": "http://localhost:3122/api/v3"
+      },
+      "url": "http://localhost:3022/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@emotion/*",
+          "@tanstack/react-query",
+          "react-icons",
+          "react-icons/*",
+          "cookies-next"
+        ]
+      },
+      "notes": "Notion's private API (www.notion.so/api/v3) answers 403 to unauthenticated requests from this network, so corpus/scripts/notion-api-server.ts stands in for it with a fixed four-row post database (three Public posts, one Private); the setup points notion-client at it through NOTION_API_BASE_URL. The feed itself is hydrated from the dehydrated react-query state in __NEXT_DATA__."
+    },
+    {
+      "id": "nextly-template",
+      "repository": "https://github.com/web3templates/nextly-template",
+      "revision": "97b3fe2b2bf0a40cf3ca2350752f9aec42748867",
+      "description": "Nextly landing template (Next 14.2 app router, React 18, next-themes, @headlessui/react v2 disclosure FAQ, react-hook-form popup widget, next/font Inter)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn next dev -p 3023",
+      "url": "http://localhost:3023/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "next-themes",
+          "@headlessui/react",
+          "@headlessui/*",
+          "@floating-ui/*",
+          "@react-aria/*",
+          "@tanstack/react-virtual",
+          "react-hook-form",
+          "@heroicons/react",
+          "@heroicons/react/*"
+        ]
+      }
+    },
+    {
+      "id": "nextsimplestarter",
+      "repository": "https://github.com/ooade/nextsimplestarter",
+      "revision": "338a8e4bb85181613fa9f344721307a4b693bb71",
+      "description": "NextSimpleStarter todo app (Next 15.5 app router, React 19, MUI 5 with @mui/styles providers in a client root, next-pwa disabled in dev, async server page fetching GitHub stars)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn next dev -p 3024",
+      "url": "http://localhost:3024/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*"
+        ]
+      }
+    },
+    {
+      "id": "typescript-nextjs-starter",
+      "repository": "https://github.com/jpedroschmitz/typescript-nextjs-starter",
+      "revision": "059eaaadc746d48bc54015f904ff52e117aad77f",
+      "description": "typescript-nextjs-starter home (Next 16.2 app router with Turbopack and React Compiler, React 19.2 StrictMode, t3-env, next/font Geist, CSS modules, pnpm 11)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@11.1.1 install --frozen-lockfile",
+      "dev": "npx -y pnpm@11.1.1 exec next dev -p 3025",
+      "url": "http://localhost:3025/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/"
+      }
+    },
+    {
+      "id": "nextjs-mdx-blog",
+      "repository": "https://github.com/changoman/nextjs-mdx-blog",
+      "revision": "ecdb127d1d450b96fd20d759f16be53fa210b37a",
+      "description": "ChangoMan nextjs-mdx-blog home (Next 13.4 app router, React 18, contentlayer 0.3 generated posts, next-themes, shadcn/ui button, lucide-react)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm exec next dev -- -p 3026",
+      "url": "http://localhost:3026/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "externalPackageAllowList": [
+          "next-themes",
+          "@radix-ui/*",
+          "lucide-react",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-velite-blog-template",
+      "repository": "https://github.com/jolbol1/nextjs-velite-blog-template",
+      "revision": "fd8820501be4a36fd47c1abd04bca42760408111",
+      "description": "jolbol1 velite blog template home (Next 14.1 app router, React 18, velite-generated posts via the #site/content path alias, next-themes, shadcn/ui, radix dropdown/dialog/avatar, next/font Inter)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@9.15.9 install --frozen-lockfile",
+      "dev": "npx -y pnpm@9.15.9 exec next dev -p 3027",
+      "url": "http://localhost:3027/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "next-themes",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+          "github-slugger"
+        ]
+      }
+    },
+    {
+      "id": "geeky-nextjs",
+      "repository": "https://github.com/statichunt/geeky-nextjs",
+      "revision": "dc59a2bd646b6e1fed01e5a37d779879964a6428",
+      "description": "Statichunt Geeky blog theme home (Next 13.1 pages router, React 18 StrictMode, markdown posts read at getStaticProps, next-themes, react-icons, JSON config, jsconfig path aliases)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "node lib/jsonGenerator.js && npm exec next dev -- -p 3028",
+      "url": "http://localhost:3028/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "jsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": [
+          "next-themes",
+          "react-icons",
+          "react-icons/*",
+          "react-gtm-module",
+          "react-lite-youtube-embed",
+          "react-mailchimp-subscribe",
+          "disqus-react",
+          "date-fns",
+          "date-fns/*",
+          "date-fns-tz"
+        ]
+      }
     }
   ]
 }

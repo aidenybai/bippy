@@ -54,6 +54,7 @@ import {
   getNativeOwnEntries,
   isNativeConstructorName,
   toNativeArguments,
+  toNativeObjectPrimitive,
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob, isImportGlobName } from "./import-glob.js";
@@ -97,7 +98,7 @@ import {
   type PromiseHandlers,
   type PromiseTools,
 } from "./promises.js";
-import { createDateTimeFormat, createNumberFormat } from "./intl-format.js";
+import { createNumberFormat } from "./intl-format.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
@@ -437,10 +438,26 @@ export const getBuiltinGlobal = (
   getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
 
 const toNumberValue = (value: StaticValue): StaticValue => {
-  if (value.kind === "primitive" && typeof value.value !== "bigint")
+  if (value.kind === "native-object")
+    return toNumberValue(toNativeObjectPrimitive(value, "number"));
+  if (
+    value.kind === "primitive" &&
+    typeof value.value !== "bigint" &&
+    typeof value.value !== "symbol"
+  ) {
     return primitiveValue(Number(value.value));
+  }
   return unknownPrimitiveValue("number", `Number(${describeValue(value)})`);
 };
+
+const toStringOfValue = (value: StaticValue): StaticValue =>
+  toStringValue(
+    mapValue(value, (alternative) =>
+      alternative.kind === "native-object"
+        ? toNativeObjectPrimitive(alternative, "string")
+        : alternative,
+    ),
+  );
 
 const getDescriptorAccessor = (descriptor: StaticObjectValue): StaticAccessor | null => {
   const keys = getKnownObjectKeys(descriptor);
@@ -992,7 +1009,6 @@ const callGlobal = (
     if (ofItems) return ofItems;
   }
   if (name === "Intl.NumberFormat") return createNumberFormat(args, location);
-  if (name === "Intl.DateTimeFormat") return createDateTimeFormat(args, location);
   if (isConstructor && name === "TextEncoder") return createTextEncoder();
   if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
@@ -1018,7 +1034,7 @@ const callGlobal = (
     case "Object":
       return first ? toObjectValue(first, location) : objectValue([]);
     case "String":
-      return first ? toStringValue(first) : primitiveValue("");
+      return first ? toStringOfValue(first) : primitiveValue("");
     case "Number":
       return first ? toNumberValue(first) : primitiveValue(0);
     case "Boolean":
@@ -1363,12 +1379,15 @@ const callGlobal = (
         return primitiveValue(Number.parseFloat(String(first.value)));
       return unknownPrimitiveValue("number", name);
     case "isNaN":
-    case "isFinite":
-      if (first?.kind === "primitive" && typeof first.value !== "symbol") {
-        const number = Number(first.value);
-        return primitiveValue(name === "isNaN" ? Number.isNaN(number) : Number.isFinite(number));
+    case "isFinite": {
+      const number = first === undefined ? primitiveValue(Number.NaN) : toNumberValue(first);
+      if (number.kind === "primitive" && typeof number.value === "number") {
+        return primitiveValue(
+          name === "isNaN" ? Number.isNaN(number.value) : Number.isFinite(number.value),
+        );
       }
       return unknownPrimitiveValue("boolean", name);
+    }
     case "Number.isNaN":
     case "Number.isFinite":
     case "Number.isInteger":
@@ -1506,6 +1525,13 @@ const callGlobal = (
     if (typeof mathFunction === "function" && natives !== null)
       return fromNativeValue(Reflect.apply(mathFunction, Math, natives), `${name}()`, null);
     return applyMathToRanges(method, args) ?? unknownPrimitiveValue("number", name);
+  }
+  if (name === "Date.UTC" || name === "Date.parse") {
+    const natives = toNativeArguments(args, null);
+    if (natives === null)
+      return unknownPrimitiveValue("number", `${name}() with dynamic arguments`);
+    const dateFunction = name === "Date.UTC" ? Date.UTC : Date.parse;
+    return fromNativeValue(Reflect.apply(dateFunction, Date, natives), `${name}()`, null);
   }
   if (isConstructor) return unknownValue(`new ${name}()`, location);
   return unknownValue(`${name}()`, location);

@@ -205,6 +205,36 @@ describe("build.assetsInlineLimit", () => {
   });
 });
 
+describe("transformIndexHtml hooks", () => {
+  const HTML_TRANSFORM_CONTEXT = {
+    path: "/",
+    filename: "index.html",
+    server: { config: {} },
+    originalUrl: "/",
+  };
+
+  it("orders Vite 2 `enforce`/`transform` hooks as Vite does", async () => {
+    const plugins = vitePluginsSchema.parse([
+      { name: "plain", transformIndexHtml: (html: string) => `${html}plain;` },
+      {
+        name: "legacy-post",
+        transformIndexHtml: { enforce: "post", transform: (html: string) => `${html}post;` },
+      },
+      {
+        name: "legacy-pre",
+        transformIndexHtml: { enforce: "pre", transform: (html: string) => `${html}pre;` },
+      },
+      {
+        name: "ordered",
+        transformIndexHtml: { order: "post", handler: (html: string) => `${html}ordered;` },
+      },
+    ]);
+    expect(await applyHtmlTransformHooks(plugins, "", HTML_TRANSFORM_CONTEXT)).toBe(
+      "pre;plain;post;ordered;",
+    );
+  });
+});
+
 describe("unplugin-auto-import", () => {
   const AUTO_IMPORT_CONFIG = [
     "import react from '@vitejs/plugin-react';",
@@ -293,28 +323,5 @@ describe("unplugin-auto-import", () => {
     expect(
       project.load().findAutoImport(path.join(project.rootDirectory, "src/app.tsx"), "useState"),
     ).toBeNull();
-  });
-});
-
-describe("transformIndexHtml hooks", () => {
-  const context = { path: "/", filename: "index.html", server: { config: {} }, originalUrl: "/" };
-  const appending = (marker: string) => (html: string) => `${html}${marker}`;
-
-  it("orders `pre`, plain, then `post` hooks and accepts the deprecated `enforce`/`transform` spelling", async () => {
-    const plugins = vitePluginsSchema.parse([
-      { name: "plain", transformIndexHtml: appending("|plain") },
-      { name: "post", transformIndexHtml: { order: "post", handler: appending("|post") } },
-      {
-        name: "legacy-pre",
-        transformIndexHtml: { enforce: "pre", transform: appending("|legacy-pre") },
-      },
-      {
-        name: "legacy-post",
-        transformIndexHtml: { enforce: "post", transform: appending("|legacy-post") },
-      },
-    ]);
-    await expect(applyHtmlTransformHooks(plugins, "<html/>", context)).resolves.toBe(
-      "<html/>|legacy-pre|plain|legacy-post|post",
-    );
   });
 });

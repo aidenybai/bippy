@@ -113,11 +113,9 @@ const iterationValues = (
     return null;
   }
   const enumerated = getEnumerationTarget(right);
-  if (
-    enumerated.kind === "primitive" &&
-    (enumerated.value === null || enumerated.value === undefined)
-  ) {
-    return { items: [], isComplete: true };
+  if (enumerated.kind === "primitive") {
+    const keys = typeof enumerated.value === "string" ? Object.keys(enumerated.value) : [];
+    return { items: keys.map(primitiveValue), isComplete: true };
   }
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);

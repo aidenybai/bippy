@@ -589,6 +589,14 @@ describe("next pages router", () => {
     );
   });
 
+  it("gives the forwardRef Link no own displayName or name: styled(Link) is Styled(Component)", async () => {
+    const { tree, errors } = await renderPagesWithNext("13.4.9", "/link-name");
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<nav>\n\s+<Styled\(Component\)>\n\s+<Insertion>\n\s+<LinkComponent>\n\s+<a>\n\s+<em>\n\s+"undefined"\n\s+" "\n\s+"false"\n\s+" "\n\s+"undefined"$/m,
+    );
+  });
+
   it("feeds dynamic segments into useRouter().query", async () => {
     const { tree } = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
@@ -774,6 +782,24 @@ describe("next pages router", () => {
     });
     expect(errors).toEqual([]);
     expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("compiles the css prop through the tsconfig's inherited jsxImportSource unless a file names its own", async () => {
+    const { tree, errors } = await render("next-pages-emotion-jsx", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual([
+      "<HostRoot>",
+      "<Home>",
+      "<EmotionCssPropInternal>",
+      "<Insertion>",
+      "<main>",
+      "<Badge>",
+      "<span>",
+      "<p>",
+    ]);
   });
 
   it("keeps StrictMode a branch when a config plugin hides reactStrictMode", async () => {
