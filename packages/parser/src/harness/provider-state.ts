@@ -13,6 +13,7 @@ import type {
 import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 import { readQueryCaches, toCapturedValue } from "./query-cache.js";
 import { captureStores, readProviderStores, type ReduxStoreLike } from "./redux-store.js";
+import { readSwrCaches } from "./swr-cache.js";
 
 const unknownRecordSchema = z.record(z.string(), z.unknown());
 
@@ -122,9 +123,9 @@ const captureRouterState = (state: DataRouterStateLike): CapturedRouterState => 
 /**
  * Library state the page's code reads at render, taken from the providers
  * mounted in the roots: TanStack caches, the active Lingui catalog, React
- * Router's data-router state and Redux stores (those handed down by a
+ * Router's data-router state, Redux stores (those handed down by a
  * react-redux provider plus `hookedStores`, the ones the page created through
- * the DevTools hook). The outermost provider of each kind wins.
+ * the DevTools hook) and the SWR caches. The outermost provider of each kind wins.
  */
 export const readRootObservations = (
   roots: FiberRoot[],
@@ -137,6 +138,8 @@ export const readRootObservations = (
     if (!stores.includes(store)) stores.push(store);
   }
   if (stores.length > 0) observations.stores = captureStores(stores, exports);
+  const swr = readSwrCaches(roots, exports);
+  if (swr) observations.swr = swr;
   for (const root of roots) {
     traverseFiber(root.current, (fiber) => {
       const value = getProviderValue(fiber);

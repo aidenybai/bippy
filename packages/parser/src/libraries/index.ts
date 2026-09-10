@@ -56,6 +56,7 @@ import {
   TANSTACK_QUERY_PACKAGES,
   tanstackQueryValue,
 } from "./tanstack-query.js";
+import { SWR_PACKAGES, swrValue } from "./swr.js";
 import { TANSTACK_STORE_PACKAGES, tanstackStoreValue } from "./tanstack-store.js";
 import { UNPLUGIN_AUTO_IMPORT_PACKAGES, unpluginAutoImportValue } from "./unplugin-auto-import.js";
 import {
@@ -120,6 +121,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
   { packages: STYLEX_PACKAGES, getValue: stylexValue },
+  { packages: SWR_PACKAGES, getValue: swrValue },
   {
     packages: TANSTACK_QUERY_PACKAGES,
     getValue: tanstackQueryValue,

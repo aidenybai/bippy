@@ -15,6 +15,7 @@ import type { HostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
+import { getIntrinsicGlobal } from "./host-globals.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
 import {
@@ -298,6 +299,15 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
   }
 };
 
+/** The language object (`Object("abc")`, a `Date`) a value stands for exactly, whose coercions this process can run; null for host objects and objects the analysis lost track of or the program extended. */
+export const getExactLanguageObject = (object: StaticNativeObjectValue): object | null =>
+  object.host !== null ||
+  uncertainNativeObjects.has(object.value) ||
+  expandoProperties.has(object.value) ||
+  composedExpandoProperties.has(object.value)
+    ? null
+    : object.value;
+
 /** The JavaScript values `args` stand for; null when any part of one is uncertain. */
 export const toNativeArguments = (
   args: StaticValue[],
@@ -520,6 +530,8 @@ export const getNativeObjectMember = (
     }
   }
   if (typeof member !== "function") return fromNativeValue(member, name, object.host);
+  const intrinsicGlobal = getIntrinsicGlobal(member);
+  if (intrinsicGlobal) return intrinsicGlobal;
   const heldValue = standInValues.get(member);
   if (heldValue) return heldValue;
   return pureNativeFunction(name, member, object.value, object.host, () => {
@@ -800,13 +812,23 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
         realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
 };
 
-/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
-export const constructHostImage = (host: HostDocument, args: StaticValue[]): StaticValue | null => {
-  const constructor: unknown = Reflect.get(host.globalObject, "Image");
+/** Node interfaces the DOM lets a program construct directly, each creating a fresh node of the host document. */
+const HOST_NODE_CONSTRUCTORS = new Set(["Image", "Audio", "DocumentFragment", "Text", "Comment"]);
+
+export const isHostNodeConstructorName = (name: string): boolean =>
+  HOST_NODE_CONSTRUCTORS.has(name);
+
+/** `new Image(width, height)`, `new DocumentFragment()`, …: the node of the host document it constructs, as the matching `document.create*` would; null for dynamic arguments. */
+export const constructHostNode = (
+  host: HostDocument,
+  name: string,
+  args: StaticValue[],
+): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, name);
   const natives = toNativeArguments(args, host);
   if (typeof constructor !== "function" || natives === null) return null;
-  return guardNativeCall("new Image", () =>
-    fromNativeValue(Reflect.construct(constructor, natives), "new Image()", host),
+  return guardNativeCall(`new ${name}`, () =>
+    fromNativeValue(Reflect.construct(constructor, natives), `new ${name}()`, host),
   );
 };
 

@@ -47,7 +47,8 @@ import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
 import { nativeFunction } from "./stubs.js";
 import {
-  constructHostImage,
+  constructHostNode,
+  isHostNodeConstructorName,
   constructNativeObject,
   fromNativeValue,
   getNativeOwnEntries,
@@ -77,7 +78,13 @@ import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import type { EvaluationContext } from "./context.js";
-import { createCollectionValue, getCollectionItems } from "./collections.js";
+import {
+  createCollectionValue,
+  getCollectionItems,
+  getKeyIdentity,
+  isDefiniteKey,
+  type KeyIdentity,
+} from "./collections.js";
 import {
   chainPromise,
   combinePromises,
@@ -95,6 +102,7 @@ import {
   getCoercedText,
   getFunctionSourceText,
   joinStrings,
+  quoteUnknownString,
   rangedNumberValue,
   toPropertyKey,
   toStringValue,
@@ -903,7 +911,9 @@ const toObjectValue = (value: StaticValue, location: SourceLocation | null): Sta
           : nativeObjectValue(Object(alternative.value), null);
       case "unknown-primitive":
       case "symbol":
-        return unknownValue(`boxed ${describeValue(alternative)}`, location);
+        return objectValue([
+          { kind: "spread", value: unknownValue(`boxed ${describeValue(alternative)}`, location) },
+        ]);
       default:
         return alternative;
     }
@@ -986,9 +996,9 @@ const callGlobal = (
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
   }
-  if (isConstructor && name === "Image" && interpreter.hostDocument) {
-    const image = constructHostImage(interpreter.hostDocument, args);
-    if (image) return image;
+  if (isConstructor && isHostNodeConstructorName(name) && interpreter.hostDocument) {
+    const node = constructHostNode(interpreter.hostDocument, name, args);
+    if (node) return node;
   }
   switch (name) {
     case "Date": {
@@ -1323,6 +1333,11 @@ const callGlobal = (
       }
       return unknownValue("Object.fromEntries of dynamic entries", location);
     }
+    case "Object.groupBy":
+    case "Map.groupBy":
+      return first && isCallable(second)
+        ? groupItems(interpreter, name, first, second, context, location)
+        : unknownValue(`${name} without a callback`, location);
     case "parseInt":
     case "Number.parseInt":
       if (
@@ -1358,6 +1373,9 @@ const callGlobal = (
     case "JSON.stringify": {
       if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
       return mapValue(distributeObjectBranches(first), (alternative) => {
+        if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string") {
+          return quoteUnknownString(alternative);
+        }
         const json = toJsonValue(alternative);
         return json === undefined
           ? unknownPrimitiveValue("string", "JSON.stringify")
@@ -1517,6 +1535,9 @@ const iterableOrArrayLike = (
 ): StaticValue | null => {
   const iterated = interpreter.resolveIterable(value, context, location);
   if (iterated !== value) return iterated;
+  if (value.kind === "primitive" && typeof value.value === "string") {
+    return listValue(spreadListItems(value, location));
+  }
   if (value.kind === "object") return arrayLikeToList(value);
   return value.kind === "native-object" ? null : value;
 };
@@ -1587,6 +1608,56 @@ const callCallback = (
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticValue => interpreter.callValue(callback, args, context, null);
+
+/**
+ * `Object.groupBy` / `Map.groupBy`: every item's key must be decided for the
+ * groups to be, so a dynamic key or an indefinite item list yields `unknown`.
+ * Object groups are keyed by property name on a null-prototype object; Map
+ * groups by key identity (SameValueZero), both in first-seen order.
+ */
+const groupItems = (
+  interpreter: Interpreter,
+  name: "Object.groupBy" | "Map.groupBy",
+  iterable: StaticValue,
+  callback: CallableValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  const items = interpreter.resolveIterable(iterable, context, location);
+  if (!hasDefiniteItems(items)) return unknownValue(`${name} of a dynamic iterable`, location);
+  const isObjectGroups = name === "Object.groupBy";
+  const groups = new Map<KeyIdentity, { key: StaticValue; members: StaticValue[] }>();
+  for (const [index, item] of items.items.entries()) {
+    const key = callCallback(interpreter, callback, [item, primitiveValue(index)], context);
+    const propertyName = isObjectGroups ? getPropertyName(key) : null;
+    if (isObjectGroups ? propertyName === null : !isDefiniteKey(key)) {
+      return unknownValue(`${name} with a dynamic key (${describeValue(key)})`, location);
+    }
+    const groupKey: StaticValue = propertyName === null ? key : primitiveValue(propertyName);
+    const identity = getKeyIdentity(groupKey);
+    const group = groups.get(identity);
+    if (group) group.members.push(item);
+    else groups.set(identity, { key: groupKey, members: [item] });
+  }
+  const entries = [...groups.values()];
+  if (isObjectGroups) {
+    return {
+      ...objectValue(
+        entries.map(({ key, members }) => ({
+          kind: "property",
+          key: getPropertyName(key) ?? "",
+          value: listValue(members),
+        })),
+      ),
+      hasNullPrototype: true,
+    };
+  }
+  return createCollectionValue(
+    "Map",
+    listValue(entries.map(({ key, members }) => listValue([key, listValue(members)]))),
+    location,
+  );
+};
 
 const MAX_FILTERED_ALTERNATIVES = 16;
 

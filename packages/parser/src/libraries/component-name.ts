@@ -1,4 +1,4 @@
-import { describeElementType } from "../evaluate/values.js";
+import { describeElementType, getStubOwnDisplayName } from "../evaluate/values.js";
 import { toElementType } from "../react/element-type.js";
 import type { StaticValue } from "../types.js";
 
@@ -28,7 +28,7 @@ export const describeTag = (tag: StaticValue): string => {
     case "lazy":
       return type.displayName ?? "Component";
     case "stub":
-      return type.stub.displayName ?? "Component";
+      return getStubOwnDisplayName(type.stub) ?? "Component";
     default:
       return describeElementType(type);
   }

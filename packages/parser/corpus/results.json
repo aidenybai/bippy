@@ -27701,6 +27701,2062 @@
       "failure": null
     },
     {
+      "id": "form-builder",
+      "revision": "cc595f5fe74b353a9eaa9e0ad8d8ea4a0d45e50e",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:02:27.160Z",
+      "durationMs": 210699,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 4424,
+        "commits": 75,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_UNSAFE_PORT",
+          "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `div`.  It was passed a child from Header.",
+          "Failed to load resource: the server responded with a status of 403 ()",
+          "Failed to load resource: the server responded with a status of 404 ()",
+          "Failed to load resource: the server responded with a status of 404 ()",
+          "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "Failed to load resource: the server responded with a status of 404 ()",
+          "Failed to load resource: the server responded with a status of 404 ()",
+          "Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "Failed to load resource: the server responded with a status of 404 ()"
+        ],
+        "title": "Shadcn Form Builder"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 4421,
+          "textCount": 326,
+          "branchCount": 18,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2021
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 14
+          },
+          {
+            "code": "timers-unsettled",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 3760,
+        "matchedText": 301,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 11,
+        "repeatIterations": 0,
+        "transparentFibers": 236,
+        "status": "exact",
+        "runtimeFibers": 4061,
+        "staticFibers": 4077,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 4082,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 68097,
+        "clusters": 63,
+        "tree": {
+          "nodes": 28732,
+          "inputs": 12,
+          "guards": 275,
+          "branches": 98,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 5,
+              "commitCount": 7
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#10), 0), and(not(eq(choice(#10), 0)), not(eq(choice(#10), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#9), 0), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#5), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:61:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#4), 0)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: whether the element is in view>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/features-vertical.tsx:109:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 14
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 67841,
+          "omissions": []
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 2,
+              "guard": "eq(choice(branch#1), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 3,
+              "guard": "eq(choice(branch#1), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 4,
+              "guard": "eq(choice(branch#1), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 5,
+              "guard": "eq(choice(branch#1), 5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 6,
+              "guard": "eq(choice(branch#1), 6)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 7,
+              "guard": "eq(choice(branch#1), 7)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 8,
+              "guard": "eq(choice(branch#1), 8)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 9,
+              "guard": "eq(choice(branch#1), 9)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 10,
+              "guard": "eq(choice(branch#1), 10)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 11,
+              "guard": "eq(choice(branch#1), 11)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 12,
+              "guard": "eq(choice(branch#1), 12)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+              "side": 13,
+              "guard": "eq(choice(branch#1), 13)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#3), 0)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "eq(choice(#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#3), 0)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(eq(choice(#3), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#4), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:61:12",
+              "side": 0,
+              "guard": "eq(choice(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#4), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:61:12",
+              "side": 1,
+              "guard": "not(eq(choice(#4), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#9), 0), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#9), 0), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#9), 0), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#9), 0), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: whether the element is in view>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/features-vertical.tsx:109:7",
+              "side": 0,
+              "guard": "truthy(#2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "if (<boolean: whether the element is in view>)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/components/features-vertical.tsx:109:7",
+              "side": 1,
+              "guard": "not(truthy(#2))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#3), 0), and(not(eq(choice(#3), 0)), not(eq(choice(#3), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#5), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:61:12",
+              "side": 0,
+              "guard": "eq(choice(#5), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#5), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:61:12",
+              "side": 1,
+              "guard": "not(eq(choice(#5), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#10), 0), and(not(eq(choice(#10), 0)), not(eq(choice(#10), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 0,
+              "guard": "or(eq(choice(#10), 0), and(not(eq(choice(#10), 0)), not(eq(choice(#10), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#10), 0), and(not(eq(choice(#10), 0)), not(eq(choice(#10), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#10), 0), and(not(eq(choice(#10), 0)), not(eq(choice(#10), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 5,
+              "guard": "eq(choice(commit), 5)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 6,
+              "guard": "eq(choice(commit), 6)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 12,
+          "possible": 37,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 256,
+        "assignments": 255,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [
+          {
+            "stateIndices": [
+              0,
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 0,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              18
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 3,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              35
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 6,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              52
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 9,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              69
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 12,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              86
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              103
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 4,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              120
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 7,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              136
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 9,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              153
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 12,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              170
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              187
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 4,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              204
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 7,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              221
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 10,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              238
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 13,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          },
+          {
+            "stateIndices": [
+              0,
+              255
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#2), 0), and(not(eq(choice(#2), 0)), not(eq(choice(#2), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(choice(#3), 0)",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#4), 0), and(not(eq(choice(#4), 0)), not(eq(choice(#4), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(eq(choice(#5), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#6), 0), and(not(eq(choice(#6), 0)), not(eq(choice(#6), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#7), 0), and(not(eq(choice(#7), 0)), not(eq(choice(#7), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#8), 0), and(not(eq(choice(#8), 0)), not(eq(choice(#8), 1))))",
+                "reason": "conditional on branch(false | true)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/node_modules/@radix-ui/react-avatar/dist/index.mjs:45:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(branch#1)",
+                "reason": "|| on branch(\"\" | \"just now\" | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string> | <string>)",
+                "location": "/home/ubuntu/bippy-corpus/form-builder/components/sections/hero/index.tsx:96:24",
+                "alternativeIndex": 2,
+                "alternativeCount": 14
+              }
+            ],
+            "claimedCommits": 2,
+            "replayedCommits": 7,
+            "divergence": {
+              "path": "commit 3 > root[0]",
+              "expected": "<end of children>",
+              "actual": "<body> [HostSingleton]"
+            },
+            "isCorrected": false
+          }
+        ]
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T07:28:48.196Z",
+      "failure": null
+    },
+    {
       "id": "formbricks",
       "revision": "1380c81bffe44f3ea9e7ff0d9a95fd37044ddc83",
       "framework": "next-app",
@@ -27834,6 +29890,181 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T07:24:29.116Z",
+      "failure": null
+    },
+    {
+      "id": "fragments",
+      "revision": "b5e627dc89b96ca0d9580bcd5ce3d7afba5f3290",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:08:21.077Z",
+      "durationMs": 3906,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-178c267a4e-20241218",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 2104,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Fragments by E2B"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2033,
+          "textCount": 2,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1676
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 1881,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 159,
+        "status": "exact",
+        "runtimeFibers": 1883,
+        "staticFibers": 1883,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1884,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 7,
+        "stateCount": 7,
+        "clusters": 1,
+        "tree": {
+          "nodes": 8010,
+          "inputs": 2,
+          "guards": 8,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 6,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 5,
+              "commitCount": 6
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/fragments/node_modules/@radix-ui/react-avatar/dist/index.mjs:46:12",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 5,
+              "guard": "eq(choice(commit), 5)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/fragments/node_modules/@radix-ui/react-avatar/dist/index.mjs:46:12",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
+              "reason": "conditional on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/fragments/node_modules/@radix-ui/react-avatar/dist/index.mjs:46:12",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1)))))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 6,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 7,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:48:24.204Z",
       "failure": null
     },
     {
@@ -29658,6 +31889,101 @@
       "stateReplay": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T11:35:21.672Z",
+      "failure": null
+    },
+    {
+      "id": "langchain-nextjs-template",
+      "revision": "1565feeb96e3c38a0f9332a64920ce6a11d84a70",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:02:48.000Z",
+      "durationMs": 613,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 258,
+        "commits": 10,
+        "pageErrors": [
+          "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <LoadingBoundary loading={null}>\n      <HTTPAccessFallbackBoundary notFound={<SegmentViewNode>} forbidden={undefined} unauthorized={undefined}>\n        <HTTPAccessFallbackErrorBoundary pathname=\"/\" notFound={<SegmentViewNode>} forbidden={undefined} ...>\n          <RedirectBoundary>\n            <RedirectErrorBoundary router={{...}}>\n              <InnerLayoutRouter url=\"/\" tree={[...]} cacheNode={{lazyData:null, ...}} segmentPath={[...]}>\n                <SegmentViewNode type=\"page\" pagePath=\"page.tsx\">\n                  <SegmentTrieNode>\n                  <Home>\n                    <ChatWindow endpoint=\"api/chat\" emoji=\"🏴‍☠️\" placeholder={\"I'm an L...\"} emptyStateComponent={<div>}>\n                      <ChatLayout content={<div>} footer={<ChatInput>}>\n                        <StickToBottom>\n                          <div>\n                            <StickyToBottomContent className=\"absolute i...\" contentClassName=\"py-8 px-2\" content={<div>} ...>\n                              <div\n                                ref={function}\n                                style={{\n+                                 width: \"100%\"\n-                                 width: \"100%\"\n+                                 height: \"100%\"\n-                                 height: \"100%\"\n-                                 overflow-x: \"auto\"\n-                                 overflow-y: \"auto\"\n                                }}\n                                className=\"grid grid-rows-[1fr,auto] absolute inset-0\"\n                              >\n                ...\n              ...\n"
+        ],
+        "title": "LangChain + Next.js Template"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 130,
+          "textCount": 24,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1601
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 85,
+        "matchedText": 24,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 33,
+        "status": "exact",
+        "runtimeFibers": 109,
+        "staticFibers": 109,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 109,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 109,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:47:04.397Z",
       "failure": null
     },
     {
@@ -55820,6 +58146,99 @@
       "failure": null
     },
     {
+      "id": "morphic",
+      "revision": "be62d2a85c0397c4b3cb3315cd3a5c56a44f6425",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:02:44.389Z",
+      "durationMs": 3606,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 718,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "Morphic"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 514,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1844
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 467,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 95,
+        "status": "exact",
+        "runtimeFibers": 468,
+        "staticFibers": 468,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 468,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 468,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T05:31:03.191Z",
+      "failure": null
+    },
+    {
       "id": "mui-admin-dashboard",
       "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
       "framework": "react-router",
@@ -57423,6 +59842,323 @@
       },
       "anchor": "body",
       "note": "runtime replayed from 2026-09-10T05:28:19.076Z",
+      "failure": null
+    },
+    {
+      "id": "nextjs-notion-starter-kit",
+      "revision": "379c735bc3b4c1d9f36f74311a503b41e78cd2cb",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T10:02:54.230Z",
+      "durationMs": 3125,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 954,
+        "commits": 16,
+        "pageErrors": [
+          "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <NotionDomainPage site={{domain:\"ne...\", ...}} recordMap={{__version__:3, ...}} pageId=\"7875426197...\">\n      <NotionPage site={{domain:\"ne...\", ...}} recordMap={{__version__:3, ...}} pageId=\"7875426197...\">\n        <PageHead>\n        <NotionRenderer bodyClassName=\"index-page\" darkMode={false} components={{...}} recordMap={{__version__:3, ...}} ...>\n          <NotionContextProvider components={{...}} recordMap={{__version__:3, ...}} mapPageUrl={function} ...>\n            <NotionBlockRenderer bodyClassName=\"index-page\" pageAside={<PageAside>} footer={<FooterImpl>}>\n              <Block level={0} block={{id:\"787542...\", ...}} bodyClassName=\"index-page\" pageAside={<PageAside>} ...>\n                <div className=\"notion not...\">\n                  <div>\n                  <div className=\"notion-frame\">\n                    <NotionPageHeader>\n                    <div className=\"notion-pag...\">\n                      <div>\n                      <main className=\"notion-pag...\">\n                        <PageIconImpl>\n                        <h1>\n                        <div className=\"notion-pag...\">\n                          <article className=\"notion-pag...\">\n                            <NotionBlockRenderer>\n                            <NotionBlockRenderer>\n                            <NotionBlockRenderer>\n                            <NotionBlockRenderer blockId=\"c610ad02-6...\" level={1} bodyClassName=\"index-page\" ...>\n                              <Block level={1} block={{id:\"c610ad...\", ...}} bodyClassName=\"index-page\" ...>\n                                <div\n+                                 className=\"notion-blank notion-block-c610ad02670049f6aadda1f6f2461f15\"\n-                                 className={null}\n                                >\n+                                 {\" \"}\n-                                 Blog Posts\n                            ...\n                          ...\n                      ...\n        ...\n",
+          "Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of \"application/json\". Strict MIME type checking is enforced for module scripts per HTML spec."
+        ],
+        "title": "Next.js Notion Starter Kit Template"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 585,
+          "textCount": 34,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 175
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 287,
+        "matchedText": 19,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 6,
+        "repeatIterations": 0,
+        "transparentFibers": 31,
+        "status": "exact",
+        "runtimeFibers": 306,
+        "staticFibers": 321,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 314,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 36,
+        "stateCount": 36,
+        "clusters": 6,
+        "tree": {
+          "nodes": 1380,
+          "inputs": 8,
+          "guards": 31,
+          "branches": 14,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 27,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2, \"true\"))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/NotionPage.tsx:301:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/NotionPage.tsx:302:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(#2, \"true\"))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:2774:9",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(eq(choice(#5), 0)), truthy(#6))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/Footer.tsx:45:14",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#3), \"undefined\")), truthy(#3))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1943:5",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(or(and(not(eq(choice(#4), 0)), eq(typeof(#3), \"undefined\")), eq(choice(#4), 0))), truthy(#3))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1955:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/NotionPage.tsx:302:8",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "&& on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/NotionPage.tsx:302:8",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#1), \"undefined\")), truthy(#1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1943:5",
+              "side": 0,
+              "guard": "and(not(eq(typeof(#1), \"undefined\")), truthy(#1))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#1), \"undefined\")), truthy(#1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1943:5",
+              "side": 1,
+              "guard": "not(and(not(eq(typeof(#1), \"undefined\")), truthy(#1)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(eq(choice(#2), 0)), eq(typeof(#1), \"undefined\")), eq(choice(#2), 0))), truthy(#1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1955:5",
+              "side": 0,
+              "guard": "and(not(or(and(not(eq(choice(#2), 0)), eq(typeof(#1), \"undefined\")), eq(choice(#2), 0))), truthy(#1))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(eq(choice(#2), 0)), eq(typeof(#1), \"undefined\")), eq(choice(#2), 0))), truthy(#1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1955:5",
+              "side": 1,
+              "guard": "not(and(not(or(and(not(eq(choice(#2), 0)), eq(typeof(#1), \"undefined\")), eq(choice(#2), 0))), truthy(#1)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2, \"true\"))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/NotionPage.tsx:301:8",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), eq(#2, \"true\"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2, \"true\"))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/NotionPage.tsx:301:8",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), eq(#2, \"true\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(#2, \"true\"))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:2774:9",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(#2, \"true\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#3), \"undefined\")), truthy(#3))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1943:5",
+              "side": 0,
+              "guard": "and(not(eq(typeof(#3), \"undefined\")), truthy(#3))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#3), \"undefined\")), truthy(#3))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1943:5",
+              "side": 1,
+              "guard": "not(and(not(eq(typeof(#3), \"undefined\")), truthy(#3)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(eq(choice(#4), 0)), eq(typeof(#3), \"undefined\")), eq(choice(#4), 0))), truthy(#3))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1955:5",
+              "side": 0,
+              "guard": "and(not(or(and(not(eq(choice(#4), 0)), eq(typeof(#3), \"undefined\")), eq(choice(#4), 0))), truthy(#3))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(and(not(eq(choice(#4), 0)), eq(typeof(#3), \"undefined\")), eq(choice(#4), 0))), truthy(#3))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:1955:5",
+              "side": 1,
+              "guard": "not(and(not(or(and(not(eq(choice(#4), 0)), eq(typeof(#3), \"undefined\")), eq(choice(#4), 0))), truthy(#3)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(#2, \"true\"))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/node_modules/.pnpm/react-notion-x@7.10.0_@babel+runtime@7.28.6_@types+react@19.2.14_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/react-notion-x/build/index.js:2774:9",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(eq(#2, \"true\")))))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#5), 0)), truthy(#6))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/Footer.tsx:45:14",
+              "side": 0,
+              "guard": "and(not(eq(choice(#5), 0)), truthy(#6))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#5), 0)), truthy(#6))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/home/ubuntu/bippy-corpus/nextjs-notion-starter-kit/components/Footer.tsx:45:14",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#5), 0)), truthy(#6)))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 7,
+          "possible": 12,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 36,
+        "assignments": 72,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T06:24:14.670Z",
       "failure": null
     },
     {
@@ -64662,6 +67398,127 @@
       "stateReplay": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-09T13:30:27.008Z",
+      "failure": null
+    },
+    {
+      "id": "pagescms",
+      "revision": "69d0215298e4055fd05ccbb428c9bcc881fab448",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:02:58.171Z",
+      "durationMs": 773,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 256,
+        "commits": 16,
+        "pageErrors": [],
+        "title": "Pages CMS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 60,
+          "textCount": 8,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 1778
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 41,
+        "matchedText": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 79,
+        "status": "exact",
+        "runtimeFibers": 49,
+        "staticFibers": 49,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 50,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 51,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.user)",
+              "reason": "if (better-auth#betterAuth().api.getSession().user)",
+              "location": "/home/ubuntu/bippy-corpus/pagescms/app/(auth)/sign-in/page.tsx:18:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.user)",
+              "reason": "if (better-auth#betterAuth().api.getSession().user)",
+              "location": "/home/ubuntu/bippy-corpus/pagescms/app/(auth)/sign-in/page.tsx:18:3",
+              "side": 0,
+              "guard": "truthy(#1.user)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.user)",
+              "reason": "if (better-auth#betterAuth().api.getSession().user)",
+              "location": "/home/ubuntu/bippy-corpus/pagescms/app/(auth)/sign-in/page.tsx:18:3",
+              "side": 1,
+              "guard": "not(truthy(#1.user))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T07:31:29.610Z",
       "failure": null
     },
     {
@@ -125351,6 +128208,189 @@
       "failure": null
     },
     {
+      "id": "rustpad",
+      "revision": "54e4a9383c84d7317af42a7ddb177ce8bcba058d",
+      "framework": "spa",
+      "capturedAt": "2026-09-10T10:02:48.614Z",
+      "durationMs": 5614,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 508,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Rustpad"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 517,
+          "textCount": 13,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 806
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 494,
+        "matchedText": 13,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 507,
+        "staticFibers": 509,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 509,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 12,
+        "stateCount": 12,
+        "clusters": 6,
+        "tree": {
+          "nodes": 2033,
+          "inputs": 6,
+          "guards": 16,
+          "branches": 6,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 4
+        },
+        "matchedState": {
+          "index": 8,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 3,
+              "commitCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(truthy(#1), and(not(truthy(#1)), or(truthy(#2), and(not(truthy(#2)), or(truthy(#3), and(not(truthy(#3)), truthy(#4))))))), truthy(#1))",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/rustpad/node_modules/@monaco-editor/react/dist/index.mjs:1:768",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/rustpad/node_modules/use-local-storage-state/src/useLocalStorageState.js:51:9",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/rustpad/node_modules/use-local-storage-state/src/useLocalStorageState.js:51:9",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/home/ubuntu/bippy-corpus/rustpad/node_modules/use-local-storage-state/src/useLocalStorageState.js:51:9",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(truthy(#1), and(not(truthy(#1)), or(truthy(#2), and(not(truthy(#2)), or(truthy(#3), and(not(truthy(#3)), truthy(#4))))))), truthy(#1))",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/rustpad/node_modules/@monaco-editor/react/dist/index.mjs:1:768",
+              "side": 0,
+              "guard": "and(or(truthy(#1), and(not(truthy(#1)), or(truthy(#2), and(not(truthy(#2)), or(truthy(#3), and(not(truthy(#3)), truthy(#4))))))), truthy(#1))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(truthy(#1), and(not(truthy(#1)), or(truthy(#2), and(not(truthy(#2)), or(truthy(#3), and(not(truthy(#3)), truthy(#4))))))), truthy(#1))",
+              "reason": "&& on branch(false | true)",
+              "location": "/home/ubuntu/bippy-corpus/rustpad/node_modules/@monaco-editor/react/dist/index.mjs:1:768",
+              "side": 1,
+              "guard": "not(and(or(truthy(#1), and(not(truthy(#1)), or(truthy(#2), and(not(truthy(#2)), or(truthy(#3), and(not(truthy(#3)), truthy(#4))))))), truthy(#1)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 3,
+          "possible": 5,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 12,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-10T05:48:40.863Z",
+      "failure": null
+    },
+    {
       "id": "saas-boilerplate",
       "revision": "4d81106bd2abf2f1309a6c73f97be4c63c54b700",
       "framework": "next-app",
@@ -134541,6 +137581,142 @@
       "stateReplay": null,
       "anchor": "body",
       "note": "runtime replayed from 2026-09-08T08:40:51.563Z",
+      "failure": null
+    },
+    {
+      "id": "shadcn-ui-sidebar",
+      "revision": "25a8c1295514fe1fc923997b9c4dac9a84453559",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:02:57.358Z",
+      "durationMs": 810,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 595,
+        "commits": 10,
+        "pageErrors": [],
+        "title": "shadcn/ui sidebar"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 499,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1568
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 446,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 89,
+        "status": "exact",
+        "runtimeFibers": 451,
+        "staticFibers": 451,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 451,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 0,
+        "tree": {
+          "nodes": 937,
+          "inputs": 1,
+          "guards": 4,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 3,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 3,
+              "commitCount": 4
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 4,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-10T04:42:25.686Z",
       "failure": null
     },
     {

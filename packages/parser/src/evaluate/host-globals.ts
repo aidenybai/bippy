@@ -110,6 +110,19 @@ const getCanonicalLanguageGlobal = (value: object): StaticValue | null => {
   return null;
 };
 
+/** The canonical global of one of this process's intrinsics (`String` for `Object("a").constructor`); null for any other object. */
+export const getIntrinsicGlobal = (shared: object): StaticValue | null => {
+  const language = getLanguageCounterpart(shared);
+  return language === null ? null : getCanonicalLanguageGlobal(language);
+};
+
+/** The language global that is the `constructor` of a native prototype (`Array` for `Array.prototype`); null when the prototype is not an intrinsic's. */
+export const getPrototypeConstructorGlobal = (prototype: object | null): StaticValue | null => {
+  const constructor: unknown =
+    prototype === null ? undefined : Reflect.get(prototype, "constructor");
+  return isObjectLike(constructor) ? getIntrinsicGlobal(constructor) : null;
+};
+
 interface LanguagePathReading {
   readonly value: unknown;
 }
