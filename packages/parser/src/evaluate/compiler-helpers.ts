@@ -18,7 +18,7 @@ import {
   listValue,
   mapValue,
   objectValue,
-  omitObjectKeys,
+  omitRestKeys,
   primitiveValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -146,12 +146,9 @@ const objectWithoutProperties: HelperImplementation = ([source, excluded]) => {
     if (key.kind !== "primitive") return unknownValue("rest with dynamic excluded keys");
     omitted.add(String(key.value));
   }
-  return mapValue(source, (alternative) => {
-    if (isNullish(alternative) === true) return objectValue();
-    return alternative.kind === "object"
-      ? omitObjectKeys(alternative, omitted)
-      : unknownValue("rest of a non-object");
-  });
+  return mapValue(source, (alternative) =>
+    isNullish(alternative) === true ? objectValue() : omitRestKeys(alternative, omitted),
+  );
 };
 
 const defineProperty: HelperImplementation = ([target, key, value], tools) => {

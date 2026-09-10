@@ -1,5 +1,41 @@
-import type { ComponentDefinition, ReactApi, StaticElementType, StaticValue } from "../types.js";
-import { primitiveValue } from "../evaluate/values.js";
+import type {
+  ComponentDefinition,
+  ReactApi,
+  StaticElementType,
+  StaticObjectEntry,
+  StaticValue,
+} from "../types.js";
+import {
+  getObjectProperty,
+  isUndefinedValue,
+  mapValue,
+  objectValue,
+  primitiveValue,
+  UNDEFINED_VALUE,
+} from "../evaluate/values.js";
+
+export interface SplitElementProps {
+  entries: StaticObjectEntry[];
+  key: StaticValue | null;
+}
+
+/**
+ * `key` the way `jsx(type, config, maybeKey)` and `createElement(type, config)`
+ * read it: a defined `config.key` (the last one in source order, written directly
+ * or carried by a spread) wins, else `maybeKey`, and it is not passed on as a prop.
+ */
+export const splitElementKey = (
+  entries: StaticObjectEntry[],
+  maybeKey: StaticValue = UNDEFINED_VALUE,
+): SplitElementProps => {
+  const key = mapValue(getObjectProperty(objectValue(entries), "key"), (configKey) =>
+    isUndefinedValue(configKey) ? maybeKey : configKey,
+  );
+  return {
+    entries: entries.filter((entry) => entry.kind !== "property" || entry.key !== "key"),
+    key: isUndefinedValue(key) ? null : key,
+  };
+};
 
 /** `shared/ReactSymbols`: the registered symbols React accepts as built-in element types. */
 const REACT_TYPE_SYMBOL_APIS = new Map<string, ReactApi>([

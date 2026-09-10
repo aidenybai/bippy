@@ -1,15 +1,18 @@
-import type { Class, ClassElement, ParamPattern } from "oxc-parser";
+import type { Class, ClassElement, ParamPattern, PropertyKey } from "oxc-parser";
 import type {
   ClassBody,
   ClassFieldMember,
   ClassFunctionMember,
   ClassMember,
+  ComponentDefinition,
   ContextDefinition,
   FunctionLikeNode,
+  ReactApi,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
   StaticNativeFunctionValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
   SuperBinding,
@@ -38,7 +41,9 @@ import {
   isNullish,
   NULL_VALUE,
   objectFromRecord,
+  objectValue,
   setObjectProperty,
+  TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
@@ -46,24 +51,30 @@ import {
 
 const MAX_INHERITANCE_DEPTH = 8;
 
-const getElementName = (element: ClassElement): string | null => {
+const getElementName = (
+  element: ClassElement,
+  resolveComputedKey: (key: PropertyKey) => string | null,
+): string | null => {
   if (element.type === "StaticBlock" || element.type === "TSIndexSignature") return null;
-  if (element.computed) return null;
   const key = element.key;
+  if (element.computed) return resolveComputedKey(key);
   if (key.type === "Identifier") return key.name;
   if (key.type === "PrivateIdentifier") return `#${key.name}`;
   if (key.type === "Literal") return String(key.value);
   return null;
 };
 
-export const collectClassMembers = (node: Class): ClassMember[] => {
+export const collectClassMembers = (
+  node: Class,
+  resolveComputedKey: (key: PropertyKey) => string | null,
+): ClassMember[] => {
   const members: ClassMember[] = [];
   for (const element of node.body.body) {
     if (element.type === "StaticBlock") {
       members.push({ kind: "static-block", isStatic: true, body: element.body });
       continue;
     }
-    const key = getElementName(element);
+    const key = getElementName(element, resolveComputedKey);
     if (key === null) continue;
     if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
       if (element.kind === "set" || element.value.body === null) continue;
@@ -132,6 +143,13 @@ const bindMethods = (
   seen: Set<string>,
 ): InstanceMembers => {
   const members: InstanceMembers = { constructor: null, fields: [], getters: [] };
+  for (const entry of getPrototypeAssignments(classValue)) {
+    if (entry.kind === "property") {
+      if (seen.has(entry.key)) continue;
+      seen.add(entry.key);
+    }
+    target.entries.push(entry);
+  }
   const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
     const functionValue = interpreter.createFunctionValue(member.functionNode, methodContext, name);
     return functionValue.kind === "function"
@@ -194,8 +212,18 @@ export const getSuperObject = (
   return prototype;
 };
 
-const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
+/** Keyed by the evaluated class body, which a class value and the component definition derived from it share. */
+const classPrototypes = new WeakMap<ClassBody, StaticObjectValue>();
 const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
+/** How many entries each `Class.prototype` held once its own members were bound; later ones were assigned onto it. */
+const prototypeMemberCounts = new WeakMap<StaticObjectValue, number>();
+
+/** Members written onto `Class.prototype` after the class was defined (`Class.prototype.render = …`), which instances inherit like its own. */
+const getPrototypeAssignments = (classValue: StaticClassValue): StaticObjectEntry[] => {
+  const prototype = classPrototypes.get(classValue.body);
+  const memberCount = prototype && prototypeMemberCounts.get(prototype);
+  return prototype && memberCount !== undefined ? prototype.entries.slice(memberCount) : [];
+};
 
 /** The class whose `.prototype` this object is, or null for any other object. */
 export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
@@ -216,12 +244,12 @@ export const getClassPrototypeObject = (
   classValue: StaticClassValue,
   context: EvaluationContext,
 ): StaticObjectValue => {
-  const cached = classPrototypes.get(classValue);
+  const cached = classPrototypes.get(classValue.body);
   if (cached) return cached;
   const superValue = classValue.body.superValue;
   const prototype = objectFromRecord({ constructor: classValue });
   if (superValue?.kind === "class") prototype.constructedBy = superValue;
-  classPrototypes.set(classValue, prototype);
+  classPrototypes.set(classValue.body, prototype);
   prototypeOwners.set(prototype, classValue);
   const seen = new Set<string>();
   for (const current of collectClassChain(classValue)) {
@@ -233,6 +261,7 @@ export const getClassPrototypeObject = (
       );
     }
   }
+  prototypeMemberCounts.set(prototype, prototype.entries.length);
   return prototype;
 };
 
@@ -272,9 +301,46 @@ export const getStaticProperty = (
   return null;
 };
 
-/** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */
-export const hasKnownStaticChain = (classValue: StaticClassValue): boolean =>
-  collectClassChain(classValue).at(-1)?.body.superValue === null;
+/**
+ * `Component.key` as React reads statics such as `defaultProps`: the component's
+ * own property, or for a class one inherited through the constructor chain.
+ */
+export const getComponentProperty = (
+  component: ComponentDefinition,
+  key: string,
+): StaticValue | null => {
+  const own = component.properties.get(key);
+  if (own) return own;
+  const superValue = component.classBody?.superValue;
+  return superValue?.kind === "class" ? getStaticProperty(superValue, key) : null;
+};
+
+export const isReactComponentBase = (value: StaticValue | null): boolean =>
+  value?.kind === "react-api" && (value.api === "Component" || value.api === "PureComponent");
+
+const reactBasePrototypes = new Map<ReactApi, StaticObjectValue>();
+
+/** `Component.prototype` / `PureComponent.prototype` as `ReactBaseClasses.js` builds them: the `isReactComponent` marker, the updater methods, and `isPureReactComponent` on the pure variant. */
+export const getReactBasePrototype = (api: ReactApi): StaticObjectValue => {
+  const cached = reactBasePrototypes.get(api);
+  if (cached) return cached;
+  const constructor: StaticValue = { kind: "react-api", api };
+  const prototype = objectFromRecord({
+    constructor,
+    isReactComponent: objectValue(),
+    setState: unknownValue(`${api}.prototype.setState`),
+    forceUpdate: unknownValue(`${api}.prototype.forceUpdate`),
+    ...(api === "PureComponent" ? { isPureReactComponent: TRUE_VALUE } : {}),
+  });
+  reactBasePrototypes.set(api, prototype);
+  return prototype;
+};
+
+/** Whether every class up the `extends` chain is known (ending in nothing or `React.Component`, which has no statics), so a missing static is `undefined`. */
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {
+  const baseValue = collectClassChain(classValue).at(-1)?.body.superValue ?? null;
+  return baseValue === null || isReactComponentBase(baseValue);
+};
 
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
@@ -349,6 +415,7 @@ const getInstanceContext = (
   if (isDefinedStatic(contextType) && contextType.kind !== "primitive") {
     return unknownValue(`context read from ${describeValue(contextType)}`);
   }
+  if (!hasKnownStaticChain(classValue)) return unknownValue("legacy class context");
   const contextTypes = getStaticProperty(classValue, "contextTypes");
   if (source.legacyContext === null || !isDefinedStatic(contextTypes)) return objectFromRecord({});
   const keys = contextTypes.kind === "object" ? getKnownObjectKeys(contextTypes) : null;
