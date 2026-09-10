@@ -1,9 +1,11 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { getRDTHook } from "bippy";
+import type { Context, ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
 import { createCommitRecorder, getRootContainer } from "../harness/commit-recorder.js";
+import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
 export type ReactModule = typeof import("react");
@@ -23,24 +25,49 @@ export const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
   domClient: "react-dom/client",
 };
 
+/** `react-dom` before 18: roots are created by `render(element, container)` and are always legacy (sync) roots. */
+export interface LegacyReactDomModule extends ReactDomModule {
+  render: (element: ReactNode, container: Element) => void;
+  unmountComponentAtNode: (container: Element) => boolean;
+}
+
+export interface RootErrorCallbacks {
+  onUncaughtError: (error: unknown) => void;
+  onCaughtError: (error: unknown) => void;
+}
+
+export interface MountedRoot {
+  render: (node: ReactNode) => void;
+  unmount: () => void;
+}
+
+/** The reconciler's `readContext`, installed on the current dispatcher for every render (class bodies included). */
+export interface ContextDispatcher {
+  readContext: <T>(context: Context<T>) => T;
+}
+
+export interface LegacyReactInternals {
+  ReactCurrentDispatcher: { current: ContextDispatcher | null };
+}
+
 /**
  * The React installation the static tree is materialized with: the app's own
  * `react`/`react-dom` (or the build its framework bundles in their place) when
  * they resolve from the analyzed root, so the fibers React constructs carry the
- * same work tags and naming as the app's runtime. An app whose `react-dom` has
- * no `client` entry (React 17) is mounted with the harness's copy of all three
- * modules; mixing its `react` with a newer `react-dom` cannot render.
+ * same work tags, naming and reconciliation rules as the app's runtime.
+ * `createRoot` mounts a concurrent root when the app's
+ * `react-dom` has a `client` entry and a legacy `ReactDOM.render` root
+ * otherwise (React 16/17); an app without its own React uses the harness's copy.
  */
 export interface ReactRuntime {
   react: ReactModule;
-  domClient: ReactDomClientModule;
   dom: ReactDomModule;
+  createRoot: (container: Element, callbacks: RootErrorCallbacks) => MountedRoot;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
+  /** Reads a context at the rendering fiber the way `readContext(contextType)` does for classes: `use` on React 19, the dispatcher's `readContext` before. */
+  readContext: <T>(context: Context<T>) => T;
   version: string;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const isReactModule = (value: unknown): value is ReactModule =>
   isRecord(value) &&
@@ -53,6 +80,32 @@ const isReactDomClientModule = (value: unknown): value is ReactDomClientModule =
 
 const isReactDomModule = (value: unknown): value is ReactDomModule =>
   isRecord(value) && typeof value.createPortal === "function";
+
+const isLegacyReactDomModule = (value: ReactDomModule): value is LegacyReactDomModule =>
+  "render" in value &&
+  typeof value.render === "function" &&
+  "unmountComponentAtNode" in value &&
+  typeof value.unmountComponentAtNode === "function";
+
+const noop = (): void => {};
+
+const concurrentRootFactory =
+  (domClient: ReactDomClientModule): ReactRuntime["createRoot"] =>
+  (container, callbacks) =>
+    domClient.createRoot(container, { ...callbacks, onRecoverableError: noop });
+
+/**
+ * Legacy roots have no error callbacks: an uncaught render error is rethrown
+ * synchronously out of `render`, which is how the caller observes it.
+ */
+const legacyRootFactory =
+  (dom: LegacyReactDomModule): ReactRuntime["createRoot"] =>
+  (container) => ({
+    render: (node) => dom.render(node, container),
+    unmount: () => {
+      dom.unmountComponentAtNode(container);
+    },
+  });
 
 const unwrapModule = (loaded: unknown): unknown =>
   isRecord(loaded) && "default" in loaded && isRecord(loaded.default) ? loaded.default : loaded;
@@ -78,6 +131,29 @@ const importResolved = async (
   );
 };
 
+const isContextDispatcher = (value: unknown): value is ContextDispatcher =>
+  isRecord(value) && typeof value.readContext === "function";
+
+const isLegacyReactInternals = (value: unknown): value is LegacyReactInternals =>
+  isRecord(value) &&
+  isRecord(value.ReactCurrentDispatcher) &&
+  "current" in value.ReactCurrentDispatcher;
+
+const loadContextReader = (react: ReactModule): ReactRuntime["readContext"] => {
+  if (react.use) return react.use;
+  const internals = Reflect.get(react, "__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED");
+  if (!isLegacyReactInternals(internals)) {
+    throw new ReactRuntimeError("react exposes neither `use` nor its current dispatcher");
+  }
+  return (context) => {
+    const dispatcher = internals.ReactCurrentDispatcher.current;
+    if (!isContextDispatcher(dispatcher)) {
+      throw new ReactRuntimeError("context read outside a React render");
+    }
+    return dispatcher.readContext(context);
+  };
+};
+
 const hasAct = (
   value: unknown,
 ): value is { act: <T>(callback: () => T | Promise<T>) => Promise<T> } =>
@@ -94,7 +170,7 @@ const loadAct = async (
   throw new ReactRuntimeError("neither React.act nor react-dom/test-utils act is available");
 };
 
-export interface LoadReactRuntimeOptions {
+interface LoadReactRuntimeOptions {
   /** Resolves `react`/`react-dom` the way the analyzed app does; falls back to the harness's own copy. */
   resolver?: ModuleResolver;
   rootDirectory?: string;
@@ -118,6 +194,14 @@ export const loadReactRuntime = ({
   return pending;
 };
 
+const hasOwnReact = (
+  resolver: ModuleResolver | null,
+  rootDirectory: string | null,
+  packages: ReactPackageSpecifiers,
+): boolean =>
+  resolveFromApp(resolver, packages.react, rootDirectory) !== null &&
+  resolveFromApp(resolver, packages.dom, rootDirectory) !== null;
+
 /** React < 18 has no `react-dom/client`; a clone nested under another project would resolve that project's. */
 const hasClientEntry = (
   resolver: ModuleResolver | null,
@@ -131,45 +215,63 @@ const hasClientEntry = (
   );
 };
 
+const loadRootFactory = async (
+  dom: ReactDomModule,
+  appResolver: ModuleResolver | null,
+  rootDirectory: string | null,
+  packages: ReactPackageSpecifiers,
+): Promise<ReactRuntime["createRoot"]> => {
+  if (appResolver === null || hasClientEntry(appResolver, rootDirectory, packages)) {
+    const domClient = await importResolved(appResolver, packages.domClient, rootDirectory);
+    if (!isReactDomClientModule(domClient)) {
+      throw new ReactRuntimeError("could not load react-dom/client");
+    }
+    return concurrentRootFactory(domClient);
+  }
+  if (!isLegacyReactDomModule(dom)) {
+    throw new ReactRuntimeError(
+      "the app's react-dom has neither a client entry nor a legacy render export",
+    );
+  }
+  return legacyRootFactory(dom);
+};
+
 const loadPackages = async (
-  resolver: ModuleResolver | null,
+  appResolver: ModuleResolver | null,
   rootDirectory: string | null,
   packages: ReactPackageSpecifiers,
 ): Promise<ReactRuntime> => {
-  const [react, domClient, dom] = await Promise.all([
-    importResolved(resolver, packages.react, rootDirectory),
-    importResolved(resolver, packages.domClient, rootDirectory),
-    importResolved(resolver, packages.dom, rootDirectory),
+  const [react, dom] = await Promise.all([
+    importResolved(appResolver, packages.react, rootDirectory),
+    importResolved(appResolver, packages.dom, rootDirectory),
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
-  if (!isReactDomClientModule(domClient)) {
-    throw new ReactRuntimeError("could not load react-dom/client");
-  }
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
   return {
     react,
-    domClient,
     dom,
-    act: await loadAct(react, resolver, rootDirectory),
+    createRoot: await loadRootFactory(dom, appResolver, rootDirectory, packages),
+    act: await loadAct(react, appResolver, rootDirectory),
+    readContext: loadContextReader(react),
     version: react.version,
   };
 };
 
 /**
- * Whether `react-dom/client` mounts roots through this `react-dom`: only then
- * does its `flushSync` commit the root synchronously. A `client` entry that
- * re-exports whichever `react-dom` Node resolves from it (Next 14's vendored
- * copy) drives the app's own renderer, whose dispatcher `react` never sees.
+ * Whether the runtime's roots mount through its `react-dom`: only then does its
+ * `flushSync` commit the root synchronously. A `client` entry that re-exports
+ * whichever `react-dom` Node resolves from it (Next 14's vendored copy) drives
+ * the app's own renderer, whose dispatcher `react` never sees.
  */
 const isClientOfDom = (runtime: ReactRuntime): boolean => {
   const container = document.createElement("div");
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
   });
-  const root = runtime.domClient.createRoot(container);
+  const root = runtime.createRoot(container, { onUncaughtError: noop, onCaughtError: noop });
   const { error: consoleError } = console;
   // HACK: a mismatched pair logs React warnings while this probe render mounts; they are not app output
-  console.error = () => {};
+  console.error = noop;
   try {
     runtime.dom.flushSync(() => root.render(runtime.react.createElement("div")));
     return recorder.commitCount() > 0;
@@ -193,7 +295,7 @@ const load = async (
     const framework = await loadPackages(resolver, rootDirectory, packages);
     if (isClientOfDom(framework)) return framework;
   }
-  const appResolver = hasClientEntry(resolver, rootDirectory, DEFAULT_REACT_PACKAGES)
+  const appResolver = hasOwnReact(resolver, rootDirectory, DEFAULT_REACT_PACKAGES)
     ? resolver
     : null;
   return loadPackages(appResolver, rootDirectory, DEFAULT_REACT_PACKAGES);

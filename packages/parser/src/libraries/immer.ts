@@ -2,12 +2,14 @@ import {
   FALSE_VALUE,
   TRUE_VALUE,
   UNDEFINED_VALUE,
+  isFunctionValue,
+  isUndefinedValue,
   listValue,
   mapValue,
   objectValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
   StaticListValue,
@@ -31,12 +33,6 @@ const IMMERABLE: StaticSymbolValue = { kind: "symbol", key: "immer-draftable" };
 type Draftable = StaticObjectValue | StaticListValue;
 
 const draftBases = new WeakMap<Draftable, Draftable>();
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
-
-const isCallable = (value: StaticValue | undefined): value is StaticValue =>
-  value?.kind === "function" || value?.kind === "native-function";
 
 /** Plain objects and arrays; class instances and prototype-carrying objects are shared, as Immer leaves them. */
 const isDraftable = (value: StaticValue): value is Draftable =>
@@ -110,13 +106,13 @@ const produceFrom = (
 ): StaticValue => {
   if (!isDraftable(base)) {
     const returned = tools.call(recipe, [base]);
-    if (isUndefined(returned)) return base;
+    if (isUndefinedValue(returned)) return base;
     return returned === NOTHING ? UNDEFINED_VALUE : returned;
   }
   const drafts = new Map<Draftable, Draftable>();
   const draft = createDraft(base, drafts);
   const returned = tools.call(recipe, [draft]);
-  if (isUndefined(returned) || returned === draft) return finalize(draft, drafts);
+  if (isUndefinedValue(returned) || returned === draft) return finalize(draft, drafts);
   if (returned === NOTHING) return UNDEFINED_VALUE;
   return returned.kind === "unknown"
     ? unknownValue("state returned by an Immer recipe")
@@ -125,12 +121,12 @@ const produceFrom = (
 
 const produce = ([base, recipe, ...rest]: StaticValue[], tools: StubRenderTools): StaticValue => {
   if (base === undefined) return UNDEFINED_VALUE;
-  if (isCallable(base) && !isCallable(recipe)) {
+  if (isFunctionValue(base) && !isFunctionValue(recipe)) {
     const curriedRecipe = base;
     const defaultBase = recipe;
     return nativeFunction("produce", ([state = UNDEFINED_VALUE, ...recipeArgs], curriedTools) =>
       produceFrom(
-        isUndefined(state) ? (defaultBase ?? UNDEFINED_VALUE) : state,
+        isUndefinedValue(state) ? (defaultBase ?? UNDEFINED_VALUE) : state,
         nativeFunction("recipe", ([draft = UNDEFINED_VALUE]) =>
           curriedTools.call(curriedRecipe, [draft, ...recipeArgs]),
         ),
@@ -138,8 +134,8 @@ const produce = ([base, recipe, ...rest]: StaticValue[], tools: StubRenderTools)
       ),
     );
   }
-  if (!isCallable(recipe)) return unknownValue("Immer recipe that is not a function");
-  if (rest.length > 0 && !isUndefined(rest[0]))
+  if (!isFunctionValue(recipe)) return unknownValue("Immer recipe that is not a function");
+  if (rest.length > 0 && !isUndefinedValue(rest[0]))
     return unknownValue("state produced with a patch listener");
   return mapValue(base, (alternative) => produceFrom(alternative, recipe, tools));
 };

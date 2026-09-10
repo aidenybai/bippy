@@ -1,11 +1,27 @@
 import type {
+  ComponentDefinition,
   NumberRange,
+  StaticClassValue,
+  StaticElementType,
+  StaticObjectValue,
   StaticUnknownPrimitiveValue,
   StaticValue,
   StringComposition,
   StringShape,
 } from "../types.js";
-import { distributeBinary, primitiveValue, unknownPrimitiveValue, unknownValue } from "./values.js";
+import { getBuiltinFunctionSource, getPrototypeWitness } from "./instance-of.js";
+import {
+  describeValue,
+  distributeBinary,
+  getPropertyName,
+  hasDefiniteItems,
+  hasOwnKey,
+  mapValue,
+  primitiveValue,
+  regExpToString,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
 
 const UNKNOWN_STRING_SHAPE: StringShape = { prefix: "", length: null };
 
@@ -19,29 +35,171 @@ export const rangedNumberValue = (
   numberRange: NumberRange,
 ): StaticUnknownPrimitiveValue => ({ ...unknownPrimitiveValue("number", reason), numberRange });
 
+const PLAIN_OBJECT_ELEMENT_TYPES = new Set<StaticElementType["kind"]>([
+  "memo",
+  "forward-ref",
+  "lazy",
+  "context-provider",
+  "context-consumer",
+]);
+
+const PLAIN_OBJECT_TEXT = "[object Object]";
+
+const CONVERSION_METHOD_KEYS = [
+  "toString",
+  "valueOf",
+  "@@Symbol.toPrimitive",
+  "@@Symbol.toStringTag",
+];
+
+const hasConversionOverride = (properties: Map<string, StaticValue>): boolean =>
+  CONVERSION_METHOD_KEYS.some((key) => properties.has(key));
+
+/** Whether a class chain defines its own conversion; null once the chain reaches a base the analysis cannot see. */
+const classOverridesConversion = (classValue: StaticClassValue): boolean | null => {
+  let current: StaticValue | null = classValue;
+  while (current !== null) {
+    if (current.kind !== "class") return null;
+    const overrides: boolean = current.body.members.some(
+      (member) => !member.isStatic && CONVERSION_METHOD_KEYS.includes(member.key),
+    );
+    if (overrides) return true;
+    current = current.body.superValue;
+  }
+  return false;
+};
+
+/** Whether `Object.prototype.toString` is what `ToPrimitive` reaches for the object; null when its shape or prototype chain is not fully known. */
+const isPlainObjectConversion = (object: StaticObjectValue): boolean | null => {
+  for (const key of CONVERSION_METHOD_KEYS) {
+    const isOwn = hasOwnKey(object, key);
+    if (isOwn !== false) return isOwn === true ? false : null;
+  }
+  if (object.prototype) {
+    const prototypeConversion = isPlainObjectConversion(object.prototype);
+    if (prototypeConversion !== true) return prototypeConversion;
+  }
+  if (object.constructedBy) {
+    const overrides = classOverridesConversion(object.constructedBy);
+    if (overrides !== false) return overrides === true ? false : null;
+  }
+  const witness = getPrototypeWitness(object);
+  return witness === null ? null : Object.getPrototypeOf(witness) === Object.prototype;
+};
+
+/** `Function.prototype.toString`: the source text of program functions, V8's `[native code]` form for intrinsics and bound functions. */
+export const getFunctionSourceText = (receiver: StaticValue): string | null => {
+  switch (receiver.kind) {
+    case "function":
+      return receiver.boundArgs || receiver.boundThis
+        ? "function () { [native code] }"
+        : receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+    case "class":
+      return receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
+    case "method":
+      return receiver.receiver.kind === "global"
+        ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
+        : receiver.receiver.kind === "external" || receiver.receiver.kind === "unknown"
+          ? null
+          : `function ${receiver.name}() { [native code] }`;
+    case "global":
+      return getBuiltinFunctionSource(receiver.name);
+    default:
+      return null;
+  }
+};
+
+const getComponentSourceText = (component: ComponentDefinition): string | null => {
+  if (hasConversionOverride(component.properties)) return null;
+  return component.boundArgs || component.boundThis
+    ? "function () { [native code] }"
+    : component.module.file.sourceText.slice(component.node.start, component.node.end);
+};
+
+/** `memo`/`forwardRef`/`lazy` results and context sides are plain objects; component functions and classes read as their source. */
+const getElementTypeText = (type: StaticElementType): string | null => {
+  switch (type.kind) {
+    case "function":
+    case "class":
+      return getComponentSourceText(type.component);
+    case "memo":
+    case "forward-ref":
+    case "lazy":
+      return hasConversionOverride(type.properties) ? null : PLAIN_OBJECT_TEXT;
+    default:
+      return PLAIN_OBJECT_ELEMENT_TYPES.has(type.kind) ? PLAIN_OBJECT_TEXT : null;
+  }
+};
+
+const getJoinedItemText = (item: StaticValue): string | null =>
+  item.kind === "primitive" && (item.value === null || item.value === undefined)
+    ? ""
+    : getCoercedText(item);
+
+/**
+ * `ToString(ToPrimitive(value, "string"))` when the text is statically decided:
+ * `Object.prototype.toString` for plain objects (and React's element, context
+ * and wrapper objects), `Function.prototype.toString` for program functions,
+ * `Array.prototype.join` for arrays. Null for symbols, for objects with their
+ * own conversion methods, and for values the analysis cannot see.
+ */
+export const getCoercedText = (value: StaticValue): string | null => {
+  switch (value.kind) {
+    case "primitive":
+      return typeof value.value === "symbol" ? null : String(value.value);
+    case "function":
+    case "class":
+      return hasConversionOverride(value.properties) ? null : getFunctionSourceText(value);
+    case "component-reference":
+      return getElementTypeText(value.type);
+    case "element":
+    case "context":
+      return PLAIN_OBJECT_TEXT;
+    case "regexp":
+      return regExpToString(value);
+    case "list": {
+      if (!hasDefiniteItems(value)) return null;
+      if (
+        value.properties &&
+        (value.properties.has("join") || hasConversionOverride(value.properties))
+      )
+        return null;
+      const texts = value.items.map(getJoinedItemText);
+      return texts.every((text) => text !== null) ? texts.join(",") : null;
+    }
+    case "object":
+      return isPlainObjectConversion(value) === true ? PLAIN_OBJECT_TEXT : null;
+    default:
+      return null;
+  }
+};
+
+/** `ToPropertyKey`: symbols keep their identity, everything else is coerced to a string; null when the key is not statically known. */
+export const toPropertyKey = (key: StaticValue): string | null =>
+  getPropertyName(key) ?? getCoercedText(key);
+
 /** How `value` reads once `+` coerces it to a string. */
 const getConcatenationShape = (value: StaticValue): StringShape => {
-  if (value.kind === "primitive" && typeof value.value !== "symbol") {
-    const text = String(value.value);
-    return { prefix: text, length: text.length };
-  }
+  const text = getCoercedText(value);
+  if (text !== null) return { prefix: text, length: text.length };
   if (value.kind === "unknown-primitive" && value.primitiveType === "string") {
     return value.stringShape ?? UNKNOWN_STRING_SHAPE;
   }
   return UNKNOWN_STRING_SHAPE;
 };
 
-const getCompleteText = (value: StaticValue): string | null =>
-  value.kind === "primitive" && typeof value.value !== "symbol" ? String(value.value) : null;
-
-const getConcatenationComposition = (value: StaticValue): StringComposition | null =>
-  value.kind === "unknown-primitive"
-    ? (value.composition ?? { prefix: "", source: value, suffix: "" })
+const getConcatenationComposition = (value: StaticValue): StringComposition | null => {
+  if (value.kind === "unknown-primitive") {
+    return value.composition ?? { prefix: "", source: value, suffix: "" };
+  }
+  return value.kind === "external" && value.origin === "derived"
+    ? { prefix: "", source: value, suffix: "" }
     : null;
+};
 
 const composeStrings = (left: StaticValue, right: StaticValue): StringComposition | null => {
-  const leftText = getCompleteText(left);
-  const rightText = getCompleteText(right);
+  const leftText = getCoercedText(left);
+  const rightText = getCoercedText(right);
   if (leftText !== null) {
     const composition = getConcatenationComposition(right);
     return composition && { ...composition, prefix: leftText + composition.prefix };
@@ -71,10 +229,11 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
 };
 
 /** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */
-const toJoinedItem = (item: StaticValue): StaticValue =>
-  item.kind === "primitive" && (item.value === null || item.value === undefined)
-    ? primitiveValue("")
-    : item;
+const toJoinedItem = (item: StaticValue): StaticValue => {
+  if (item.kind === "primitive" && (item.value === null || item.value === undefined))
+    return primitiveValue("");
+  return item.kind === "list" ? toStringValue(item) : item;
+};
 
 const concatenateAlternatives = (left: StaticValue, right: StaticValue): StaticValue =>
   distributeBinary(left, right, concatenateAlternatives) ?? concatenateStrings(left, right);
@@ -88,6 +247,17 @@ export const joinStrings = (items: StaticValue[], separator: string): StaticValu
       ),
     primitiveValue(""),
   );
+
+/** `String(value)`: primitives read as their text, RegExps as their source and arrays join their items, per alternative. */
+export const toStringValue = (value: StaticValue): StaticValue =>
+  mapValue(value, (alternative) => {
+    const text = getCoercedText(alternative);
+    if (text !== null) return primitiveValue(text);
+    if (hasDefiniteItems(alternative)) return joinStrings(alternative.items, ",");
+    if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string")
+      return alternative;
+    return unknownPrimitiveValue("string", `String(${describeValue(alternative)})`);
+  });
 
 const toIndexArgument = (argument: StaticValue | undefined): number | null | undefined => {
   if (argument === undefined) return undefined;

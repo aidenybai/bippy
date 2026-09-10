@@ -1,10 +1,14 @@
-import { isBundledDefaultExportName, isBundlerDedupedName } from "./bundler-names.js";
+import {
+  isBundledDefaultExportName,
+  isBundlerDedupedName,
+  isReactCompilerOutlinedName,
+} from "./bundler-names.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   countPatternFibers,
   formatRepeatBounds,
   hasPatternDecisions,
-  scopePatternVariables,
+  scopeRepeatIteration,
   SelfContainedFiberIndex,
   type PatternBranch,
   type PatternFiber,
@@ -69,7 +73,17 @@ export interface ComparisonOptions {
    * matches its own fiber.
    */
   unwrapTransparentRuntimeFiber?: (fiber: RuntimeFiberSnapshot) => RuntimeFiberSnapshot[] | null;
+  /** Vetoes decisions inconsistent with those already in force on the path being tried. */
+  constraint?: DecisionConstraint;
 }
+
+export interface DecisionConstraint {
+  /** Whether `node` may take `choice` given the decisions in force; when it may, it is in force until `release`. */
+  decide: (node: PatternBranch | PatternRepeat, choice: number) => boolean;
+  release: () => void;
+}
+
+const UNCONSTRAINED: DecisionConstraint = { decide: () => true, release: () => {} };
 
 export interface ComparisonDivergence {
   path: string;
@@ -315,6 +329,7 @@ class Matcher {
   private readonly unwrapTransparentRuntimeFiber: (
     fiber: RuntimeFiberSnapshot,
   ) => RuntimeFiberSnapshot[] | null;
+  private readonly constraint: DecisionConstraint;
 
   constructor(options: ComparisonOptions) {
     this.compareKeys = options.compareKeys ?? true;
@@ -322,6 +337,7 @@ class Matcher {
     this.compareText = options.compareText ?? true;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
     this.unwrapTransparentRuntimeFiber = options.unwrapTransparentRuntimeFiber ?? (() => null);
+    this.constraint = options.constraint ?? UNCONSTRAINED;
   }
 
   get stepsUsed(): number {
@@ -522,6 +538,7 @@ class Matcher {
         // runtime without leaning on wildcards beats an earlier one that does.
         let best: RankedAlternative | null = null;
         for (const alternativeIndex of order) {
+          if (!this.constraint.decide(pattern, alternativeIndex)) continue;
           this.assignment.set(pattern.variable, alternativeIndex);
           let result: MatchTally | null;
           try {
@@ -535,6 +552,7 @@ class Matcher {
             );
           } finally {
             this.assignment.delete(pattern.variable);
+            this.constraint.release();
           }
           if (!result) continue;
           if (result.wildcardAbsorbedFibers === 0) return resolve(result, alternativeIndex);
@@ -571,7 +589,13 @@ class Matcher {
             this.recordFailure(path, iterationRuntime, start, pattern);
             return null;
           }
-          const rest = continuation(iterationRuntime, start);
+          if (!this.constraint.decide(pattern, iteration)) return null;
+          let rest: MatchTally | null;
+          try {
+            rest = continuation(iterationRuntime, start);
+          } finally {
+            this.constraint.release();
+          }
           return rest
             ? addTally(rest, {
                 repeatIterations: iteration,
@@ -721,7 +745,7 @@ class Matcher {
       this.scopedRepeatChildren.set(pattern, iterations);
     }
     for (let index = iterations.length; index <= iteration; index++) {
-      const scoped = scopePatternVariables(pattern.children, `${pattern.variable}[${index}]`);
+      const scoped = scopeRepeatIteration(pattern, index);
       this.indexPatterns(scoped);
       iterations.push(scoped);
     }
@@ -743,7 +767,9 @@ class Matcher {
     return (
       isBundlerRenamedName(pattern.name, actual.name) ||
       isBundledDefaultExportName(pattern.name, actual.name) ||
-      (isClassTag(actual.tag) && isBundlerClassName(actual.name, pattern.name))
+      (isClassTag(actual.tag)
+        ? isBundlerClassName(actual.name, pattern.name)
+        : isReactCompilerOutlinedName(actual.name))
     );
   }
 

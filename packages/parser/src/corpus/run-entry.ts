@@ -2,8 +2,14 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CorpusRevisionError, NoCommitsError, parseWithSchema } from "../errors.js";
-import { renderFramework } from "../frameworks/render-framework.js";
+import {
+  CorpusRevisionError,
+  NoCommitsError,
+  StaleCaptureError,
+  describeError,
+  parseWithSchema,
+} from "../errors.js";
+import { renderCorpusEntry } from "./render-entry.js";
 import {
   dropInjectedFibers,
   unwrapTransparentRuntimeFiber,
@@ -29,7 +35,7 @@ import {
   type DiagnosticCount,
 } from "./manifest.js";
 
-export interface RunEntryOptions {
+interface RunEntryOptions {
   corpusDirectory: string;
   /** Helper scripts manifest commands may call through `$BIPPY_CORPUS_SCRIPTS`. */
   scriptsDirectory: string;
@@ -152,9 +158,6 @@ const summarizeRuntime = (capture: BrowserCaptureResult): CorpusRuntimeSummary =
   title: capture.title,
 });
 
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);
 
@@ -171,7 +174,7 @@ const savedCaptureSchema = z.object({
 
 // A browser capture saved by an earlier live run; static-only passes replay it so
 // evaluator changes are re-verified against the same runtime tree without a dev server.
-const readSavedCapture = (
+export const readSavedCapture = (
   outputDirectory: string,
   entry: CorpusEntry,
 ): BrowserCaptureResult | null => {
@@ -182,7 +185,9 @@ const readSavedCapture = (
     JSON.parse(readFileSync(filePath, "utf8")),
     filePath,
   );
-  if (saved.revision !== entry.revision) return null;
+  if (saved.revision !== entry.revision) {
+    throw new StaleCaptureError(filePath, saved.revision, entry.revision);
+  }
   return {
     snapshot: readSnapshot(saved.snapshot),
     commits: saved.commits,
@@ -223,7 +228,10 @@ const captureLive = async (
       waitForSelector: entry.waitForSelector,
       settleMs: getSettleMs(entry),
       timeoutMs: CAPTURE_TIMEOUT_MS,
-      globals: entry.capturedGlobals,
+      globals: [
+        ...getFrameworkProfile(entry.framework).capturedGlobals,
+        ...(entry.capturedGlobals ?? []),
+      ],
     });
   } finally {
     await server.stop();
@@ -259,38 +267,43 @@ const compareEntry = (
   result.note = comparison.note;
 };
 
-const writeArtifacts = (
+const writeStaticArtifacts = (
   outputDirectory: string,
   entry: CorpusEntry,
-  staticResult: StaticRenderResult | null,
-  capture: BrowserCaptureResult | null,
+  staticResult: StaticRenderResult,
 ): void => {
   mkdirSync(outputDirectory, { recursive: true });
-  if (staticResult) {
+  writeFileSync(
+    path.join(outputDirectory, `${entry.id}.static.txt`),
+    formatPattern(getRenderPattern(staticResult)),
+  );
+  if (process.env.BIPPY_DEBUG_STATIC_JSON)
     writeFileSync(
-      path.join(outputDirectory, `${entry.id}.static.txt`),
-      formatPattern(getRenderPattern(staticResult)),
+      path.join(outputDirectory, `${entry.id}.static.json`),
+      JSON.stringify(staticResult.snapshot),
     );
-    if (process.env.BIPPY_DEBUG_STATIC_JSON)
-      writeFileSync(
-        path.join(outputDirectory, `${entry.id}.static.json`),
-        JSON.stringify(staticResult.snapshot),
-      );
-    writeFileSync(
-      path.join(outputDirectory, `${entry.id}.diagnostics.json`),
-      JSON.stringify(staticResult.diagnostics, null, 2),
-    );
-  }
-  if (capture && capture.commits > 0) {
-    writeFileSync(
-      capturePath(outputDirectory, entry),
-      JSON.stringify({ revision: entry.revision, ...capture }, null, 2),
-    );
-    writeFileSync(
-      path.join(outputDirectory, `${entry.id}.runtime.txt`),
-      capture.snapshot.roots.map((root) => formatRuntimeSnapshot(root)).join("\n\n"),
-    );
-  }
+  writeFileSync(
+    path.join(outputDirectory, `${entry.id}.diagnostics.json`),
+    JSON.stringify(staticResult.diagnostics, null, 2),
+  );
+};
+
+// Saved as soon as the browser run ends so a static render that never finishes
+// (budget, memory) still leaves a capture behind for `--static-only` replays.
+const writeCaptureArtifacts = (
+  outputDirectory: string,
+  entry: CorpusEntry,
+  capture: BrowserCaptureResult,
+): void => {
+  mkdirSync(outputDirectory, { recursive: true });
+  writeFileSync(
+    capturePath(outputDirectory, entry),
+    JSON.stringify({ revision: entry.revision, ...capture }, null, 2),
+  );
+  writeFileSync(
+    path.join(outputDirectory, `${entry.id}.runtime.txt`),
+    capture.snapshot.roots.map((root) => formatRuntimeSnapshot(root)).join("\n\n"),
+  );
 };
 
 export const runCorpusEntry = async (
@@ -318,7 +331,6 @@ export const runCorpusEntry = async (
   mkdirSync(path.dirname(logPath), { recursive: true });
 
   let staticResult: StaticRenderResult | null = null;
-  let capture: BrowserCaptureResult | null = null;
   let cloneDirectory: string | null = null;
   // The runtime is captured first so what the page fetched (bootstrap payloads,
   // query caches) can be handed to the static render as observed inputs.
@@ -327,7 +339,7 @@ export const runCorpusEntry = async (
     runtime: BrowserCaptureResult | null,
   ): Promise<StaticRenderResult> => {
     log("static render");
-    staticResult = await renderFramework(entry, directory, runtime?.observations);
+    staticResult = await renderCorpusEntry(entry, directory, runtime?.observations);
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),
@@ -350,6 +362,7 @@ export const runCorpusEntry = async (
         .join("; ");
       return result;
     }
+    let capture: BrowserCaptureResult;
     try {
       capture = await captureLive(entry, cloneDirectory, options, logPath, log);
     } catch (error) {
@@ -360,6 +373,7 @@ export const runCorpusEntry = async (
       await renderStatic(cloneDirectory, null);
       throw new NoCommitsError(entry.url, capture.title, capture.pageErrors);
     }
+    writeCaptureArtifacts(outputDirectory, entry, capture);
     compareEntry(entry, await renderStatic(cloneDirectory, capture), capture, result);
     return result;
   } catch (error) {
@@ -368,6 +382,6 @@ export const runCorpusEntry = async (
     return result;
   } finally {
     result.durationMs = Date.now() - startedAt;
-    if (cloneDirectory) writeArtifacts(outputDirectory, entry, staticResult, capture);
+    if (cloneDirectory && staticResult) writeStaticArtifacts(outputDirectory, entry, staticResult);
   }
 };

@@ -1,26 +1,28 @@
 import {
-  FALSE_VALUE,
-  NULL_VALUE,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
   branchValue,
+  FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
   hasDefiniteItems,
+  isUndefinedValue,
   listValue,
   mapValue,
+  NULL_VALUE,
   objectFromRecord,
   objectValue,
   primitiveValue,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
 import {
   element,
   lazyProperties,
   nativeFunction,
+  noopFunction,
   passthroughStub,
   stubValue,
-} from "../frameworks/stubs.js";
+} from "../evaluate/stubs.js";
 import type {
   CapturedValue,
   ContextDefinition,
@@ -81,9 +83,6 @@ const STORE_STATE = unknownValue("the Redux store state");
 
 const isCallable = (value: StaticValue): boolean =>
   value.kind === "function" || value.kind === "native-function" || value.kind === "proxy";
-
-const isUndefined = (value: StaticValue): boolean =>
-  value.kind === "primitive" && value.value === undefined;
 
 const pathSegment = (segment: StaticValue): string | null =>
   segment.kind === "primitive" &&
@@ -251,8 +250,6 @@ const actionTypesValue = (build: KeaLogicBuild): StaticValue =>
 const defaultsValue = (build: KeaLogicBuild): StaticValue =>
   lazyProperties(objectValue(), (key) => build.defaults.get(key) ?? UNDEFINED_VALUE);
 
-const noop = (name: string): StaticValue => nativeFunction(name, () => UNDEFINED_VALUE);
-
 const isMountedValue = (build: KeaLogicBuild): StaticValue => {
   switch (lookupStore(build, null).kind) {
     case "unobserved":
@@ -295,16 +292,16 @@ const builtLogicProperty = (build: KeaLogicBuild, key: string): StaticValue => {
       return defaultsValue(build);
     case "reducers":
       return lazyProperties(objectValue(), (reducerKey) =>
-        build.selectors.has(reducerKey) ? noop(reducerKey) : UNDEFINED_VALUE,
+        build.selectors.has(reducerKey) ? noopFunction(reducerKey) : UNDEFINED_VALUE,
       );
     case "cache":
       return build.cache;
     case "wrapper":
       return build.wrapper.value;
     case "mount":
-      return nativeFunction("mount", () => noop("unmount"));
+      return nativeFunction("mount", () => noopFunction("unmount"));
     case "unmount":
-      return noop("unmount");
+      return noopFunction("unmount");
     case "isMounted":
       return nativeFunction("isMounted", () => isMountedValue(build));
     case "extend":
@@ -343,7 +340,7 @@ const applyPath: (input: StaticValue) => KeaBuilder = (input) => (build, tools) 
   if (build.path) return;
   const resolved = isCallable(input) ? tools.call(input, [build.key ?? UNDEFINED_VALUE]) : input;
   if (!hasDefiniteItems(resolved)) return;
-  const segments = resolved.items.filter((segment) => !isUndefined(segment));
+  const segments = resolved.items.filter((segment) => !isUndefinedValue(segment));
   build.path = build.key && !isCallable(input) ? [...segments, build.key] : segments;
 };
 
@@ -369,7 +366,7 @@ const applyDefaults: (input: StaticValue) => KeaBuilder = (input) => (build, too
 const applyActions: (input: StaticValue) => KeaBuilder = (input) => (build, tools) => {
   const entries = knownEntries(resolveInput(input, build, tools));
   if (!entries) return markUncertain(build, `kea actions of ${describePath(build)}`);
-  for (const [key] of entries) build.actions.set(key, noop(key));
+  for (const [key] of entries) build.actions.set(key, noopFunction(key));
 };
 
 const defaultOf = (
@@ -387,7 +384,7 @@ const defaultOf = (
       ]),
       key,
     );
-    return isUndefined(fromStar) ? initialValue : fromStar;
+    return isUndefinedValue(fromStar) ? initialValue : fromStar;
   }
   return initialValue;
 };
@@ -401,7 +398,7 @@ const applyReducers: (input: StaticValue) => KeaBuilder = (input) => (build, too
     const defaultValue = defaultOf(
       build,
       key,
-      isUndefined(initialValue) ? NULL_VALUE : initialValue,
+      isUndefinedValue(initialValue) ? NULL_VALUE : initialValue,
       tools,
     );
     build.defaults.set(key, defaultValue);
@@ -491,16 +488,16 @@ const applyConnect: (input: StaticValue) => KeaBuilder = (input) => (build, tool
     for (const source of connectedLogic.items) resolveConnected(source, build, tools);
   }
   const actions = getObjectProperty(resolved, "actions");
-  if (!isUndefined(actions)) {
+  if (!isUndefinedValue(actions)) {
     const pairs = connectMapping(actions);
     if (!pairs) return markUncertain(build, `kea connected actions of ${describePath(build)}`);
     for (const [source, from, to] of pairs) {
       const other = resolveConnected(source, build, tools);
-      build.actions.set(to, other?.actions.get(from) ?? noop(to));
+      build.actions.set(to, other?.actions.get(from) ?? noopFunction(to));
     }
   }
   const values = getObjectProperty(resolved, "values");
-  if (!isUndefined(values)) {
+  if (!isUndefinedValue(values)) {
     const pairs = connectMapping(values);
     if (!pairs) return markUncertain(build, `kea connected values of ${describePath(build)}`);
     for (const [source, from, to] of pairs) {
@@ -543,7 +540,7 @@ const applyInput = (build: KeaLogicBuild, input: StaticValue, tools: StubRenderT
   if (input.kind === "object") {
     for (const [key, apply] of LEGACY_INPUT_BUILDERS) {
       const value = getObjectProperty(input, key);
-      if (!isUndefined(value)) apply(value)(build, tools);
+      if (!isUndefinedValue(value)) apply(value)(build, tools);
     }
     return;
   }
@@ -642,10 +639,10 @@ const wrapperProperty = (wrapper: KeaWrapper, key: string, tools: StubRenderTool
     case "mount":
       return nativeFunction(key, ([props], callTools) => {
         buildLogic(wrapper, toProps(props), callTools);
-        return noop("unmount");
+        return noopFunction("unmount");
       });
     case "unmount":
-      return noop(key);
+      return noopFunction(key);
     case "extend":
       return nativeFunction(key, ([input]) => {
         if (input) wrapper.inputs.push(...(hasDefiniteItems(input) ? input.items : [input]));
@@ -787,7 +784,7 @@ export const keaValue: LibraryValueProvider = (specifier, importedName, project)
     case "resetContext":
     case "setPluginContext":
     case "activatePlugin":
-      return noop(importedName);
+      return noopFunction(importedName);
     case "getContext":
       return nativeFunction(importedName, () => unknownValue("kea's context"));
     case "getPluginContext":

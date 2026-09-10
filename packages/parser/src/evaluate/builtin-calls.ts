@@ -9,8 +9,10 @@ import type {
   StaticObjectEntry,
   StaticPropertyEntry,
   StaticObjectValue,
+  StaticOptionalValue,
   StaticPrimitive,
   StaticRegExpValue,
+  StaticRepeatValue,
   StaticValue,
 } from "../types.js";
 import { getReactApiTypeof } from "../react/react-api.js";
@@ -22,7 +24,8 @@ import {
   SimpleMemoComponentTag,
 } from "../work-tags.js";
 import type { HostDocument } from "../host/host-document.js";
-import type { HostRealm } from "../host/host-realm.js";
+import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
+import type { HostMember } from "../host/realm-table.js";
 import {
   type EnvironmentLookup,
   BUNDLER_INJECTED_NAMES,
@@ -42,8 +45,9 @@ import { createAbortController } from "./abort-controller.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
-import { nativeFunction } from "../frameworks/stubs.js";
+import { nativeFunction } from "./stubs.js";
 import {
+  constructHostImage,
   constructNativeObject,
   fromNativeValue,
   getNativeOwnEntries,
@@ -56,7 +60,6 @@ import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
-import { getCoercedText, getFunctionSourceText, toPropertyKey } from "./string-coercion.js";
 import { getBuiltinPrototypeName, getPrototypeWitness, isPrototypeOf } from "./instance-of.js";
 import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
 import {
@@ -88,10 +91,17 @@ import { createNumberFormat } from "./intl-format.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
+  getCoercedText,
+  getFunctionSourceText,
   joinStrings,
   rangedNumberValue,
+  toPropertyKey,
+  toStringValue,
 } from "./primitive-shapes.js";
+import { memoizeScalarOperation } from "./scalar-memo.js";
 import { isArrayValue } from "./type-predicates.js";
+import { recordDerivation, recordInputSource, recordRepeatSource } from "./predicates.js";
+import type { GuardLiteral } from "../harness/symbolic-tree.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
   callStringCodec,
@@ -113,6 +123,7 @@ import {
   branchValue,
   createSymbolValue,
   describeValue,
+  distributeObjectBranches,
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
@@ -127,6 +138,7 @@ import {
   getTruthiness,
   compareIdentity,
   hasDefiniteItems,
+  ITERATOR_PROPERTY_KEY,
   hasOwnKey,
   isIndefiniteItem,
   isKnownList,
@@ -144,6 +156,7 @@ import {
   objectValue,
   optionalValue,
   primitiveValue,
+  regExpToString,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -152,8 +165,6 @@ import {
   unknownValue,
 } from "./values.js";
 
-const PROMISE_METHOD_NAMES = new Set(["then", "catch", "finally"]);
-
 const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isNaN": Number.isNaN,
   "Number.isFinite": Number.isFinite,
@@ -161,7 +172,8 @@ const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isSafeInteger": Number.isSafeInteger,
 };
 
-export const isPromiseMethodName = (name: string): boolean => PROMISE_METHOD_NAMES.has(name);
+export const isPromiseMethodName = (name: string): boolean =>
+  loadHostRealm("ecmascript").getMember("Promise", name)?.type.kind === "function";
 
 /** A fresh deep copy of plain data (primitives, arrays, plain objects); null when some part is not statically cloneable. */
 const structuredCloneValue = (value: StaticValue): StaticValue | null => {
@@ -231,29 +243,34 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
   return { kind: "property", key: String(key.value), value };
 };
 
+/** Collection methods whose callback runs synchronously for every item, a shape the language shares across `Array`, `Map` and `Set`. */
 const ITERATION_METHOD_NAMES = new Set(["map", "forEach", "flatMap", "filter"]);
 
-const THIS_ARG_METHOD_NAMES = new Set([
-  ...ITERATION_METHOD_NAMES,
-  "some",
-  "every",
-  "find",
-  "findIndex",
-  "findLast",
-  "findLastIndex",
-]);
+/** Collection interfaces whose signatures stand for every list-like receiver's (`Array.filter(): T[]`, `IteratorObject.take(): IteratorObject<T>`). */
+const LIST_INTERFACE_NAMES = ["Array", "IteratorObject"];
 
-/** `list.forEach(callback, thisArg)`: the callback runs with `this` set to `thisArg` (arrows keep their lexical `this`). */
+const getListMethod = (name: string): HostMember | null => {
+  const language = loadHostRealm("ecmascript");
+  for (const interfaceName of LIST_INTERFACE_NAMES) {
+    const member = language.getMember(interfaceName, name);
+    if (member?.type.kind === "function") return member;
+  }
+  return null;
+};
+
+/** `list.forEach(callback, thisArg)`: the callback runs with `this` set to the declared `thisArg` parameter (arrows keep their lexical `this`). */
 const bindCallbackThisArg = (name: string, args: StaticValue[]): StaticValue[] => {
-  const [callback, thisArg] = args;
+  const thisArgIndex = getListMethod(name)?.parameterNames?.indexOf("thisArg") ?? -1;
+  const [callback] = args;
+  const thisArg = args[thisArgIndex];
   if (
+    thisArgIndex < 1 ||
     thisArg === undefined ||
-    !THIS_ARG_METHOD_NAMES.has(name) ||
     callback?.kind !== "function" ||
     callback.boundThis
   )
     return args;
-  return [{ ...callback, boundThis: thisArg }];
+  return [{ ...callback, boundThis: thisArg }, ...args.slice(thisArgIndex + 1)];
 };
 
 /** `flatMap`/`concat` flattening: arrays contribute their items, anything else itself. */
@@ -267,23 +284,38 @@ const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): S
     location,
   );
 
+/**
+ * `list.slice(start, end)`: exact on a fully known list; on a partially known
+ * one, known non-negative bounds inside the definite prefix select its items and
+ * a `start` inside the prefix keeps the indefinite tail.
+ */
+const sliceList = (
+  receiver: StaticListValue,
+  first: StaticValue | undefined,
+  second: StaticValue | undefined,
+  location: SourceLocation | null,
+): StaticValue => {
+  const indefiniteIndex = receiver.items.findIndex(isIndefiniteItem);
+  const start = toIndex(first, 0);
+  if (indefiniteIndex === -1) {
+    const end = toIndex(second, receiver.items.length);
+    return start === null || end === null
+      ? unknownValue("slice with dynamic bounds", location)
+      : listValue(receiver.items.slice(start, end));
+  }
+  const end = toIndex(second, Number.POSITIVE_INFINITY);
+  if (start === null || end === null || start < 0 || end < 0 || start > indefiniteIndex)
+    return receiver;
+  return listValue(receiver.items.slice(start, end <= indefiniteIndex ? end : undefined));
+};
+
 /** Methods whose callbacks run synchronously (or on promise settlement) even when the receiver is opaque. */
 export const isModeledOpaqueMethodName = (name: string): boolean =>
-  PROMISE_METHOD_NAMES.has(name) || ITERATION_METHOD_NAMES.has(name);
+  isPromiseMethodName(name) || ITERATION_METHOD_NAMES.has(name);
 
-/** Methods whose result is a list with the items' shape preserved, so an indefinite receiver stands for its own result. */
-const LIST_PRESERVING_METHODS = new Set([
-  "filter",
-  "slice",
-  "sort",
-  "toSorted",
-  "reverse",
-  "toReversed",
-  "concat",
-  "flat",
-  "values",
-  "toArray",
-]);
+/** Methods declared to return the receiver's own items (`filter`, `slice`, `sort`), so an indefinite receiver stands for its own result. */
+const isListPreservingMethod = (name: string): boolean =>
+  getListMethod(name)?.returnsReceiverItems === true;
 
 /** `typeof <global>` in the rendering host; null when its declarations leave it open, or when only the bundler could provide it. */
 export const getGlobalTypeof = (name: string, realm: HostRealm): string | null => {
@@ -335,7 +367,7 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return primitiveValue(typeof value.value);
     case "unknown-primitive":
       return value.primitiveType === "any"
-        ? unknownPrimitiveValue("string", `typeof ${describeValue(value)}`)
+        ? unknownTypeofValue(value)
         : primitiveValue(value.primitiveType);
     case "function":
     case "class":
@@ -346,9 +378,7 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return primitiveValue(getReactApiTypeof(value.api));
     case "component-reference": {
       const componentTypeof = getComponentTypeof(value.type);
-      return componentTypeof
-        ? primitiveValue(componentTypeof)
-        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+      return componentTypeof ? primitiveValue(componentTypeof) : unknownTypeofValue(value);
     }
     case "proxy":
       return getTypeofValue(value.target, realm);
@@ -366,17 +396,21 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
       return (value.importedName === "*" && value.origin === "binding") ||
         value.origin === "instance"
         ? primitiveValue("object")
-        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+        : unknownTypeofValue(value);
     case "global": {
       const globalType = getGlobalTypeof(value.name, realm);
-      return globalType
-        ? primitiveValue(globalType)
-        : unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+      return globalType ? primitiveValue(globalType) : unknownTypeofValue(value);
     }
     default:
-      return unknownPrimitiveValue("string", `typeof ${describeValue(value)}`);
+      return unknownTypeofValue(value);
   }
 };
+
+const unknownTypeofValue = (value: StaticValue): StaticValue =>
+  recordDerivation(unknownPrimitiveValue("string", `typeof ${describeValue(value)}`), {
+    kind: "typeof",
+    operand: value,
+  });
 
 /** A global the bundler injects or the host declares; null when the name is undeclared in this host. */
 export const getBuiltinGlobal = (
@@ -386,12 +420,6 @@ export const getBuiltinGlobal = (
   environment?: EnvironmentLookup,
 ): StaticValue | null =>
   getBundlerGlobal(name, environment) ?? getHostGlobal(realm, hostDocument, name);
-
-const toStringValue = (value: StaticValue): StaticValue => {
-  const text = getCoercedText(value);
-  if (text !== null) return primitiveValue(text);
-  return unknownPrimitiveValue("string", `String(${describeValue(value)})`);
-};
 
 const toNumberValue = (value: StaticValue): StaticValue => {
   if (value.kind === "primitive" && typeof value.value !== "bigint")
@@ -526,7 +554,31 @@ const defineOwnProperties = (
   }
 };
 
-const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+export const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+
+const INTRINSIC_PROTOTYPE_GLOBAL = /^([A-Z]\w*)\.prototype$/;
+
+/**
+ * `Object.create(Iterator.prototype)` and the like: an object inheriting an
+ * intrinsic prototype the analysis does not model, whose members are unknown
+ * rather than absent (tslib's `__generator` builds its iterators this way).
+ */
+const getIntrinsicPrototypeObject = (globalName: string): StaticObjectValue | null => {
+  const constructorName = INTRINSIC_PROTOTYPE_GLOBAL.exec(globalName)?.[1];
+  const constructor: unknown = constructorName
+    ? Reflect.get(globalThis, constructorName)
+    : undefined;
+  if (typeof constructor !== "function") return null;
+  const prototype: unknown = constructor.prototype;
+  if (typeof prototype !== "object" || prototype === null) return null;
+  return objectFromRecord(
+    Object.fromEntries(
+      Object.getOwnPropertyNames(prototype)
+        .filter((key) => key !== "constructor")
+        .map((key) => [key, unknownValue(`${globalName}.${key}`, null)]),
+    ),
+  );
+};
 
 /** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
 const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
@@ -777,7 +829,15 @@ const callHostObjectMethod = (
   location: SourceLocation | null,
 ): StaticValue | null => {
   const realm = interpreter.getRealm(context.environment);
-  const listened = callEventTargetMethod(interpreter, realm, receiver, name, args);
+  const listened = callEventTargetMethod(
+    interpreter,
+    realm,
+    receiver,
+    name,
+    args,
+    context,
+    location,
+  );
   if (listened) return listened;
   if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
     return mediaQueryListValue(args[0]);
@@ -911,6 +971,10 @@ const callGlobal = (
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
   }
+  if (isConstructor && name === "Image" && interpreter.hostDocument) {
+    const image = constructHostImage(interpreter.hostDocument, args);
+    if (image) return image;
+  }
   switch (name) {
     case "Date": {
       if (!isConstructor) break;
@@ -937,9 +1001,15 @@ const callGlobal = (
     case "Set":
     case "WeakMap":
     case "WeakSet":
-      return createCollectionValue(name, first, location);
+      return createCollectionValue(
+        name,
+        first && interpreter.resolveIterable(first, context, location),
+        location,
+      );
     case "URLSearchParams":
-      return createSearchParamsValue(first, { location });
+      return mapValue(distributeObjectBranches(first ?? UNDEFINED_VALUE), (init) =>
+        createSearchParamsValue(init, { location }),
+      );
     case "URL":
       return createUrlValue(args, location);
     case "AbortController":
@@ -997,8 +1067,7 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
-      const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      const source = first && iterableOrArrayLike(interpreter, first, context, location);
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context, location);
         return source;
@@ -1014,8 +1083,7 @@ const callGlobal = (
     case "Uint32Array.from":
     case "Float32Array.from":
     case "Float64Array.from": {
-      const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      const source = first && iterableOrArrayLike(interpreter, first, context, location);
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
       const mapped = isCallable(second)
         ? mapList(interpreter, source, second, context, location)
@@ -1027,12 +1095,18 @@ const callGlobal = (
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {
-      const ownEntries = first ? getOwnEnumerableEntries(first) : null;
-      if (!ownEntries)
-        return unknownValue(`${name} of ${first ? describeValue(first) : "nothing"}`, location);
-      if (name === "Object.keys") return listValue(ownEntries.map(([key]) => primitiveValue(key)));
-      if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
-      return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
+      const inspect = (target: StaticValue): StaticValue => {
+        const ownEntries = getOwnEnumerableEntries(target);
+        if (!ownEntries) return unknownValue(`${name} of ${describeValue(target)}`, location);
+        if (name === "Object.keys")
+          return listValue(ownEntries.map(([key]) => primitiveValue(key)));
+        if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
+        return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
+      };
+      const target = first ?? UNDEFINED_VALUE;
+      return getOwnEnumerableEntries(target)
+        ? inspect(target)
+        : mapValue(distributeObjectBranches(target), inspect);
     }
     case "Object.assign":
       if (
@@ -1133,12 +1207,18 @@ const callGlobal = (
         const isNull = prototype.kind === "primitive" && prototype.value === null;
         const isIntrinsicPrototype =
           prototype.kind === "global" && INTRINSIC_PROTOTYPE_NAMES.has(prototype.name);
-        if (!isNull && !isIntrinsicPrototype && prototype.kind !== "object")
+        const intrinsicPrototype =
+          prototype.kind === "global" && !isIntrinsicPrototype
+            ? getIntrinsicPrototypeObject(prototype.name)
+            : null;
+        if (!isNull && !isIntrinsicPrototype && !intrinsicPrototype && prototype.kind !== "object")
           return unknownValue(`Object.create with ${describeValue(prototype)}`, location);
         const created: StaticObjectValue =
           prototype.kind === "object"
             ? { ...objectValue(), prototype }
-            : { ...objectValue(), hasNullPrototype: isNull };
+            : intrinsicPrototype
+              ? { ...objectValue(), prototype: intrinsicPrototype }
+              : { ...objectValue(), hasNullPrototype: isNull };
         if (second?.kind === "object") {
           defineOwnProperties(interpreter, created, second, context, location);
         }
@@ -1204,7 +1284,7 @@ const callGlobal = (
       return first;
     }
     case "Object.fromEntries": {
-      const entries = first?.kind === "object" ? (getCollectionItems(first) ?? first) : first;
+      const entries = first && interpreter.resolveIterable(first, context, location);
       if (entries?.kind === "list" && !entries.items.some((item) => item.kind === "repeat")) {
         return objectValue(
           entries.items.map(
@@ -1248,19 +1328,22 @@ const callGlobal = (
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
-      const json = first && args.length === 1 ? toJsonValue(first) : undefined;
-      return json === undefined
-        ? unknownPrimitiveValue("string", "JSON.stringify")
-        : primitiveValue(JSON.stringify(json));
+      if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
+      return mapValue(distributeObjectBranches(first), (alternative) => {
+        const json = toJsonValue(alternative);
+        return json === undefined
+          ? unknownPrimitiveValue("string", "JSON.stringify")
+          : primitiveValue(JSON.stringify(json));
+      });
     }
-    case "JSON.parse":
+    case "JSON.parse": {
+      const text = first ?? UNDEFINED_VALUE;
       if (
-        first?.kind === "primitive" &&
-        typeof first.value === "string" &&
+        text.kind === "primitive" &&
         (second === undefined || (second.kind === "primitive" && second.value === undefined))
       ) {
         try {
-          return jsonValue(JSON.parse(first.value));
+          return jsonValue(JSON.parse(String(text.value)));
         } catch (error) {
           return thrownValue(
             "JSON.parse of invalid JSON",
@@ -1274,6 +1357,7 @@ const callGlobal = (
         }
       }
       return unknownValue("JSON.parse", location);
+    }
     case "structuredClone":
       return (
         (first && args.length === 1 ? structuredCloneValue(first) : null) ??
@@ -1336,7 +1420,29 @@ const callGlobal = (
     default:
       break;
   }
-  if (name === "Math.random") return rangedNumberValue(name, { min: 0, max: 1 });
+  if (name === "Math.random")
+    return recordInputSource(rangedNumberValue(name, { min: 0, max: 1 }), "random", location);
+  if (name === "Intl.getCanonicalLocales") {
+    const natives = toNativeArguments(args, null);
+    if (natives === null) return unknownValue(`${name}() with dynamic arguments`, location);
+    try {
+      return fromNativeValue(
+        Reflect.apply(Intl.getCanonicalLocales, Intl, natives),
+        `${name}()`,
+        null,
+      );
+    } catch (error) {
+      return thrownValue(
+        `${name}() with an invalid language tag`,
+        createErrorValue(
+          "RangeError",
+          [primitiveValue(error instanceof Error ? error.message : String(error))],
+          location,
+        ),
+        location,
+      );
+    }
+  }
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
@@ -1373,7 +1479,19 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
 const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
 
-// `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
+/** What `Array.from(source)` copies: an iterable's items (including a native `NodeList`), else an array-like's indexed entries. */
+const iterableOrArrayLike = (
+  interpreter: Interpreter,
+  value: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const iterated = interpreter.resolveIterable(value, context, location);
+  if (iterated !== value) return iterated;
+  if (value.kind === "object") return arrayLikeToList(value);
+  return value.kind === "native-object" ? null : value;
+};
+
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
   const length = getObjectProperty(value, "length");
   if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
@@ -1454,7 +1572,7 @@ const filterItem = (
   list: StaticListValue,
   predicate: CallableValue,
   item: StaticValue,
-  index: number,
+  index: StaticValue,
   context: EvaluationContext,
 ): StaticValue | null => {
   const alternatives =
@@ -1462,9 +1580,7 @@ const filterItem = (
       ? item.alternatives
       : [item];
   const verdicts = alternatives.map((alternative) =>
-    getTruthiness(
-      callCallback(interpreter, predicate, [alternative, primitiveValue(index), list], context),
-    ),
+    getTruthiness(callCallback(interpreter, predicate, [alternative, index, list], context)),
   );
   if (verdicts.every((verdict) => verdict === true)) return item;
   const accepted = alternatives.filter((_, position) => verdicts[position] !== false);
@@ -1476,6 +1592,54 @@ const filterItem = (
       ? branchValue(accepted, item.reason, item.location, Math.max(0, accepted.indexOf(preferred)))
       : item;
   return optionalValue(kept, "uncertain filter", null, verdicts[preferredIndex] === false);
+};
+
+const filterIndefiniteItem = (
+  interpreter: Interpreter,
+  list: StaticListValue,
+  predicate: CallableValue,
+  item: StaticRepeatValue | StaticOptionalValue,
+  context: EvaluationContext,
+): StaticValue | null => {
+  const inner = item.kind === "repeat" ? item.item : item.value;
+  const verdict = getTruthiness(
+    callUncertainCallback(
+      interpreter,
+      predicate,
+      [inner, unknownPrimitiveValue("number", "index"), list],
+      context,
+    ),
+  );
+  if (verdict === false) return null;
+  if (verdict === true || item.kind === "optional") return item;
+  return item.count ? { ...item, count: { min: 0, max: item.count.max } } : item;
+};
+
+const filterList = (
+  interpreter: Interpreter,
+  list: StaticListValue,
+  predicate: CallableValue,
+  context: EvaluationContext,
+): StaticListValue => {
+  const firstIndefiniteIndex = list.items.findIndex(isIndefiniteItem);
+  return listValue(
+    list.items.flatMap((item, index) => {
+      const kept =
+        item.kind === "repeat" || item.kind === "optional"
+          ? filterIndefiniteItem(interpreter, list, predicate, item, context)
+          : filterItem(
+              interpreter,
+              list,
+              predicate,
+              item,
+              firstIndefiniteIndex === -1 || index < firstIndefiniteIndex
+                ? primitiveValue(index)
+                : unknownPrimitiveValue("number", "index"),
+              context,
+            );
+      return kept ? [kept] : [];
+    }),
+  );
 };
 
 const MAX_JOINED_COMBINATIONS = 16;
@@ -1562,6 +1726,17 @@ const sortListItems = (
   return isDecidable ? sorted : null;
 };
 
+const toGuardLiteral = (value: StaticValue): GuardLiteral | undefined =>
+  value.kind === "primitive" &&
+  typeof value.value !== "bigint" &&
+  value.value !== undefined &&
+  !Number.isNaN(value.value)
+    ? value.value
+    : undefined;
+
+const isGuardLiteral = (literal: GuardLiteral | undefined): literal is GuardLiteral =>
+  literal !== undefined;
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -1573,17 +1748,20 @@ const mapList = (
     return listValue(
       receiver.items.map((item, index) => {
         if (item.kind === "repeat") {
-          return {
-            kind: "repeat",
-            item: callUncertainCallback(
-              interpreter,
-              callback,
-              [item.item, unknownPrimitiveValue("number", "index"), receiver],
-              context,
-            ),
-            location: item.location,
-            count: item.count,
-          };
+          return recordRepeatSource(
+            {
+              kind: "repeat",
+              item: callUncertainCallback(
+                interpreter,
+                callback,
+                [item.item, unknownPrimitiveValue("number", "index"), receiver],
+                context,
+              ),
+              location: item.location,
+              count: item.count,
+            },
+            item,
+          );
         }
         if (item.kind === "optional") {
           return optionalValue(
@@ -1607,32 +1785,41 @@ const mapList = (
     );
   }
   if (receiver.kind === "repeat") {
-    return {
+    return recordRepeatSource(
+      {
+        kind: "repeat",
+        item: callUncertainCallback(
+          interpreter,
+          callback,
+          [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+          context,
+        ),
+        location: receiver.location,
+        count: receiver.count,
+      },
+      receiver,
+    );
+  }
+  return recordRepeatSource(
+    {
       kind: "repeat",
       item: callUncertainCallback(
         interpreter,
         callback,
-        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        [
+          recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
+            kind: "element",
+            list: receiver,
+          }),
+          unknownPrimitiveValue("number", "index"),
+          receiver,
+        ],
         context,
       ),
-      location: receiver.location,
-      count: receiver.count,
-    };
-  }
-  return {
-    kind: "repeat",
-    item: callUncertainCallback(
-      interpreter,
-      callback,
-      [
-        unknownValue(`item of ${describeValue(receiver)}`),
-        unknownPrimitiveValue("number", "index"),
-        receiver,
-      ],
-      context,
-    ),
-    location,
-  };
+      location,
+    },
+    receiver,
+  );
 };
 
 const toRegExp = (value: StaticRegExpValue): RegExp | null => {
@@ -1751,6 +1938,17 @@ const callStringMethod = (
     const matched = regExp.exec(receiver);
     return matched ? matchResultValue(matched, receiver) : NULL_VALUE;
   }
+  if (name === "concat") {
+    const texts = args.map(getCoercedText);
+    return texts.every((text) => text !== null) ? primitiveValue(receiver + texts.join("")) : null;
+  }
+  if (name === "matchAll" && first?.kind === "regexp") {
+    const regExp = toRegExp(first);
+    if (!regExp?.global) return null;
+    return listValue(
+      [...receiver.matchAll(regExp)].map((matched) => matchResultValue(matched, receiver)),
+    );
+  }
   if (!allKnown) return null;
   const position = primitiveArgs[1] === undefined ? undefined : Number(primitiveArgs[1]);
   switch (name) {
@@ -1771,6 +1969,8 @@ const callStringMethod = (
           ? receiver.slice(Number(primitiveArgs[0] ?? 0), position)
           : receiver.substring(Number(primitiveArgs[0] ?? 0), position),
       );
+    case "substr":
+      return primitiveValue(receiver.substr(Number(primitiveArgs[0] ?? 0), position));
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "charCodeAt":
@@ -1804,8 +2004,6 @@ const callStringMethod = (
     case "toString":
     case "valueOf":
       return primitiveValue(receiver);
-    case "concat":
-      return primitiveValue(receiver + primitiveArgs.map(String).join(""));
     case "repeat":
       return primitiveValue(receiver.repeat(Number(primitiveArgs[0] ?? 0)));
     case "localeCompare":
@@ -1848,7 +2046,7 @@ const callRegExpMethod = (
   const [first] = args;
   const regExp = toRegExp(receiver);
   if (!regExp) return unknownValue(`invalid RegExp /${receiver.pattern}/`, location);
-  if (name === "toString") return primitiveValue(regExp.toString());
+  if (name === "toString") return primitiveValue(regExpToString(receiver));
   if (name !== "test" && name !== "exec") return unknownValue(`RegExp.${name}()`, location);
   if (first?.kind === "branch" && !regExp.global && !regExp.sticky) {
     return mapValue(first, (alternative) =>
@@ -1874,10 +2072,7 @@ const fallbackMethodResult = (
   location: SourceLocation | null,
 ): StaticValue => {
   if (name === "split") return dynamicSplitResult(location);
-  if (
-    LIST_PRESERVING_METHODS.has(name) &&
-    (receiver.kind === "unknown" || receiver.kind === "repeat")
-  ) {
+  if (isListPreservingMethod(name) && (receiver.kind === "unknown" || receiver.kind === "repeat")) {
     return receiver;
   }
   return (
@@ -2031,6 +2226,8 @@ export const evaluateBuiltinCall = (
     receiver,
     name,
     args,
+    context,
+    location,
   );
   if (listened) return listened;
 
@@ -2102,6 +2299,16 @@ export const evaluateBuiltinCall = (
   if (receiver.kind === "unknown-primitive") {
     const shaped = callShapedPrimitiveMethod(receiver, name, args);
     if (shaped) return shaped;
+    const declared = getLanguageMethodResult(receiver, name);
+    if (declared) {
+      return (
+        memoizeScalarOperation(
+          `${receiver.primitiveType}.${name}`,
+          [receiver, ...args],
+          () => declared,
+        ) ?? declared
+      );
+    }
   }
 
   if (name === "map" && isCallable(first)) {
@@ -2154,23 +2361,9 @@ export const evaluateBuiltinCall = (
     if (binaryResult) return binaryResult;
     switch (name) {
       case "filter":
-        if (isCallable(first) && hasDefiniteItems(receiver)) {
-          return listValue(
-            receiver.items.flatMap((item, index) => {
-              const kept = filterItem(interpreter, receiver, first, item, index, context);
-              return kept ? [kept] : [];
-            }),
-          );
-        }
-        return receiver;
-      case "slice": {
-        if (!isKnownList(receiver)) return receiver;
-        const start = toIndex(first, 0);
-        const end = toIndex(second, receiver.items.length);
-        if (start === null || end === null)
-          return unknownValue("slice with dynamic bounds", location);
-        return listValue(receiver.items.slice(start, end));
-      }
+        return isCallable(first) ? filterList(interpreter, receiver, first, context) : receiver;
+      case "slice":
+        return sliceList(receiver, first, second, location);
       case "concat": {
         return listValue([
           ...receiver.items,
@@ -2192,6 +2385,7 @@ export const evaluateBuiltinCall = (
       case "toReversed":
         return listValue([...receiver.items].reverse());
       case "values":
+      case ITERATOR_PROPERTY_KEY:
         return receiver;
       case "keys":
         if (!hasDefiniteItems(receiver)) break;
@@ -2264,6 +2458,15 @@ export const evaluateBuiltinCall = (
         }
         if (verdicts.every((verdict) => verdict === false)) {
           return name === "includes" ? FALSE_VALUE : primitiveValue(-1);
+        }
+        if (name === "includes" && second === undefined) {
+          const literals = receiver.items.map(toGuardLiteral);
+          if (literals.every(isGuardLiteral)) {
+            return recordDerivation(
+              unknownPrimitiveValue("boolean", `includes on ${describeValue(first)}`),
+              { kind: "membership", operand: first, literals },
+            );
+          }
         }
         break;
       }

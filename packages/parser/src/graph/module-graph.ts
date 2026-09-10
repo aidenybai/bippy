@@ -10,14 +10,14 @@ import type {
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isPurePackage } from "../libraries/pure-packages.js";
-import { isAssetPath } from "./asset-module.js";
+import { isAssetImport, isUrlImport } from "./asset-module.js";
 import { readAssetModuleSource } from "./asset-modules.js";
 import { isCssModulePath } from "./css-module.js";
 import { isCompilerHelperPackage } from "./helper-packages.js";
 import { createModuleRecord, isClientModule } from "./module-record.js";
-import { ModuleResolver } from "./module-resolver.js";
+import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
 
-export interface ExportNameSet {
+interface ExportNameSet {
   names: string[];
   complete: boolean;
 }
@@ -29,7 +29,7 @@ export interface ModuleGraphOptions {
   externalPackageAllowList?: string[];
 }
 
-export const describeImportedName = (imported: ImportedName): string => {
+const describeImportedName = (imported: ImportedName): string => {
   switch (imported.kind) {
     case "default":
       return "default";
@@ -111,9 +111,10 @@ export class ModuleGraph {
     specifier: string,
   ): ModuleRecord | ModuleResolution {
     if (resolution.kind !== "internal" && resolution.kind !== "external") return resolution;
-    if (resolution.filePath === null) return resolution;
+    if (resolution.filePath === null || isInlineLoaderRequest(specifier)) return resolution;
     const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
+    if (isUrlImport(specifier)) return resolution;
     if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
       return resolution;
     }
@@ -121,7 +122,17 @@ export class ModuleGraph {
   }
 
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
-    if (!specifier.includes("?")) return null;
+    const queryIndex = specifier.indexOf("?");
+    if (queryIndex === -1) return null;
+    for (const [query] of new URLSearchParams(specifier.slice(queryIndex + 1))) {
+      const file = this.sourceFileCache.readQueried(filePath, query);
+      if (!file) continue;
+      const cached = this.modules.get(file.filePath);
+      if (cached) return cached;
+      const record = createModuleRecord(file);
+      this.modules.set(file.filePath, record);
+      return record;
+    }
     const source = readAssetModuleSource(filePath, specifier);
     if (!source) return null;
     const cached = this.modules.get(source.moduleKey);
@@ -219,6 +230,13 @@ export class ModuleGraph {
       if (imported.kind === "namespace") return { kind: "namespace", module: target };
       return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);
     }
+    if (
+      (target.kind === "internal" || target.kind === "external") &&
+      target.filePath !== null &&
+      isAssetImport(target.filePath, specifier)
+    ) {
+      return { kind: "asset", filePath: target.filePath, specifier, imported };
+    }
     switch (target.kind) {
       case "external":
       case "builtin":
@@ -226,9 +244,6 @@ export class ModuleGraph {
       case "internal":
         if (isCssModulePath(target.filePath)) {
           return { kind: "stylesheet", filePath: target.filePath, imported };
-        }
-        if (isAssetPath(target.filePath)) {
-          return { kind: "asset", filePath: target.filePath, imported };
         }
         return { kind: "unresolved", reason: `unsupported module ${target.filePath}` };
       case "unresolved":

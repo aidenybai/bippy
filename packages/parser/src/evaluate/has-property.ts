@@ -16,7 +16,7 @@ import { createErrorValue } from "./errors.js";
 import { toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
-import { toPropertyKey } from "./string-coercion.js";
+import { toPropertyKey } from "./primitive-shapes.js";
 import {
   branchValue,
   FALSE_VALUE,

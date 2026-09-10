@@ -19,7 +19,8 @@ export interface ObservedRouterState {
   search: string;
   navigation: StaticValue;
   revalidation: StaticValue;
-  matches: StaticValue;
+  /** `useMatches()`, with each match's `handle` read from its route (module) by `readHandle`. */
+  matches: (readHandle: (routeId: string) => StaticValue) => StaticValue;
   isMatched: (routeId: string) => boolean;
   loaderData: (routeId: string) => StaticValue;
   actionData: (routeId: string) => StaticValue;
@@ -106,18 +107,19 @@ export const observeRouterState = (
         : unknownValue(`react-router navigation is ${state.navigationState}`),
     search: state.location.search,
     revalidation: primitiveValue(state.revalidationState),
-    matches: listValue(
-      state.matches.map((match) =>
-        objectFromRecord({
-          id: primitiveValue(match.id),
-          pathname: primitiveValue(match.pathname),
-          params: stringRecordValue(match.params),
-          data: loaderData(match.id),
-          loaderData: loaderData(match.id),
-          handle: unknownValue(`handle export of route ${match.id}`),
-        }),
+    matches: (readHandle) =>
+      listValue(
+        state.matches.map((match) =>
+          objectFromRecord({
+            id: primitiveValue(match.id),
+            pathname: primitiveValue(match.pathname),
+            params: stringRecordValue(match.params),
+            data: loaderData(match.id),
+            loaderData: loaderData(match.id),
+            handle: readHandle(match.id),
+          }),
+        ),
       ),
-    ),
     isMatched: (routeId) => state.matches.some((match) => match.id === routeId),
     loaderData,
     actionData,

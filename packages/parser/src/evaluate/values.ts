@@ -1,4 +1,5 @@
 import type { HostDocument } from "../host/host-document.js";
+import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import {
   getCapturedDate,
   getCapturedExportReference,
@@ -10,9 +11,11 @@ import type {
   CapturedValue,
   FunctionLikeNode,
   JsonValue,
+  NumberRange,
   Scope,
   SourceLocation,
   StaticAccessor,
+  StaticBranchValue,
   StaticClassValue,
   StaticElementType,
   StaticFunctionValue,
@@ -24,6 +27,7 @@ import type {
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticRegExpValue,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
@@ -33,6 +37,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
+import { recordBranchOrigin, recordDerivation } from "./predicates.js";
 
 export const isKnownString = (
   value: StaticValue,
@@ -48,6 +53,17 @@ export const primitiveValue = (value: StaticPrimitive): StaticPrimitiveValue => 
   kind: "primitive",
   value,
 });
+
+export const booleanValue = (value: boolean): StaticPrimitiveValue =>
+  value ? TRUE_VALUE : FALSE_VALUE;
+
+export const isUndefinedValue = (value: StaticValue | undefined): boolean =>
+  value === undefined || (value.kind === "primitive" && value.value === undefined);
+
+export const isFunctionValue = (
+  value: StaticValue | undefined,
+): value is Extract<StaticValue, { kind: "function" | "native-function" }> =>
+  value?.kind === "function" || value?.kind === "native-function";
 
 export const unknownValue = (
   reason: string,
@@ -87,11 +103,13 @@ let allocationCount = 0;
 /** Ordinal of the most recent heap allocation; later allocations get larger ordinals. */
 export const getAllocationCount = (): number => allocationCount;
 
+export const allocate = (): number => ++allocationCount;
+
 /** A newly allocated array: `===` to no other value analysis constructs. */
 export const listValue = (items: StaticValue[]): StaticListValue => ({
   kind: "list",
   items,
-  allocation: ++allocationCount,
+  allocation: allocate(),
 });
 
 /** `Class.__proto__` / `Object.getPrototypeOf(Class)`: the parent class, or `Function.prototype` for a base class. */
@@ -102,7 +120,7 @@ export const getClassPrototype = (classValue: StaticClassValue): StaticValue =>
 export const objectValue = (entries: StaticObjectEntry[] = []): StaticObjectValue => ({
   kind: "object",
   entries,
-  allocation: ++allocationCount,
+  allocation: allocate(),
 });
 
 export const objectFromRecord = (record: Record<string, StaticValue>): StaticObjectValue =>
@@ -145,7 +163,7 @@ export const partialJsonValue = (json: JsonValue, name: string): StaticValue => 
 };
 
 /** Evaluates the module export a captured node referenced; null when the module is not part of the analyzed project. */
-export interface CapturedExportResolver {
+interface CapturedExportResolver {
   (reference: CapturedExportReference): StaticValue | null;
 }
 
@@ -434,7 +452,7 @@ const unregisteredSymbols = new Map<string, StaticSymbolValue>();
 
 /** `Symbol(description)`: identical only to itself, unlike `Symbol.for` registry symbols. */
 export const createSymbolValue = (description: string | undefined): StaticSymbolValue => {
-  const symbol: StaticSymbolValue = { kind: "symbol", key: `#${++allocationCount}` };
+  const symbol: StaticSymbolValue = { kind: "symbol", key: `#${allocate()}` };
   if (description !== undefined) symbol.description = description;
   unregisteredSymbols.set(symbol.key, symbol);
   return symbol;
@@ -451,6 +469,8 @@ export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
 
 export const isSymbolPropertyKey = (key: string): boolean =>
   key.startsWith(SYMBOL_PROPERTY_KEY_PREFIX);
+
+export const ITERATOR_PROPERTY_KEY = `${SYMBOL_PROPERTY_KEY_PREFIX}Symbol.iterator`;
 
 /** The property name a computed key denotes, or `null` when the key is not statically known. */
 export const getPropertyName = (key: StaticValue): string | null => {
@@ -544,19 +564,6 @@ export const getOwnPropertyDescriptor = (
   });
 };
 
-/** `Object.getOwnPropertyDescriptors(object)`, or null when a dynamic spread could own a key. */
-export const getOwnPropertyDescriptors = (object: StaticObjectValue): StaticObjectValue | null => {
-  const ownKeys = getKnownOwnKeys(object, () => true);
-  if (!ownKeys) return null;
-  const descriptors: Record<string, StaticValue> = {};
-  for (const key of ownKeys.keys()) {
-    const descriptor = getOwnPropertyDescriptor(object, key);
-    if (descriptor === null) return null;
-    descriptors[key] = descriptor;
-  }
-  return objectFromRecord(descriptors);
-};
-
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null => {
   const keys = getKnownOwnKeys(object, isSymbolPropertyKey);
@@ -568,11 +575,15 @@ export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolVa
     : null;
 };
 
+/** Own enumerable string and symbol keys, as `Object.keys` followed by the enumerable `Object.getOwnPropertySymbols`; null when the shape is not fully known. */
+export const getKnownEnumerableOwnKeys = (object: StaticObjectValue): string[] | null =>
+  getEnumerableKeys(getKnownOwnKeys(object, () => true));
+
 /** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
     case "object":
-      return getEnumerableKeys(getKnownOwnKeys(spread, () => true));
+      return getKnownEnumerableOwnKeys(spread);
     case "primitive":
       return [];
     case "branch": {
@@ -692,6 +703,26 @@ const getJoinedPropertyKeys = (
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {
   const rest = omitObjectKeysShared(object, omitted, new Map());
   return rest === object ? objectValue([...object.entries]) : rest;
+};
+
+/**
+ * The rest of destructuring `source`: its own enumerable keys minus `omitted`.
+ * A primitive has none but a string's indices, so its rest is a fresh object.
+ */
+export const omitRestKeys = (source: StaticValue, omitted: Set<string>): StaticValue => {
+  if (source.kind === "object") return omitObjectKeys(source, omitted);
+  if (source.kind !== "primitive" || source.value === null || source.value === undefined) {
+    return unknownValue(`rest of ${describeValue(source)}`);
+  }
+  return typeof source.value === "string"
+    ? objectValue(
+        [...source.value].flatMap((character, index) =>
+          omitted.has(String(index))
+            ? []
+            : [{ kind: "property", key: String(index), value: primitiveValue(character) }],
+        ),
+      )
+    : objectValue();
 };
 
 const omitObjectKeysShared = (
@@ -974,6 +1005,10 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
 const INTRINSIC_GLOBAL_NAME = /^[A-Z]\w*(\.prototype)?$/;
 const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.test(name);
 
+/** The document or global object, which native code hands back as this global rather than as a native object. */
+const isHostObjectGlobal = (value: StaticValue): boolean =>
+  value.kind === "global" && (value.name === "document" || value.name === GLOBAL_INTERFACE_NAME);
+
 export const isSameComposition = (
   left: StringComposition | undefined,
   right: StringComposition | undefined,
@@ -983,6 +1018,32 @@ export const isSameComposition = (
   left.source === right.source &&
   left.prefix === right.prefix &&
   left.suffix === right.suffix;
+
+export const matchesComposition = (name: string, composition: StringComposition): boolean =>
+  name.length >= composition.prefix.length + composition.suffix.length &&
+  name.startsWith(composition.prefix) &&
+  name.endsWith(composition.suffix);
+
+const isEitherPrefix = (left: string, right: string): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isEitherSuffix = (left: string, right: string): boolean =>
+  left.endsWith(right) || right.endsWith(left);
+
+/** Whether some string could read as both compositions, so a write under one may be read under the other. */
+export const mayOverlapCompositions = (
+  left: StringComposition,
+  right: StringComposition,
+): boolean =>
+  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
+
+/** Whether the dynamic string `value` may read as `text`, given the prefix, length or composition it is known to have. */
+export const mayReadAsText = (value: StaticUnknownPrimitiveValue, text: string): boolean => {
+  if (value.composition && !matchesComposition(text, value.composition)) return false;
+  const shape = value.stringShape;
+  if (!shape) return true;
+  return text.startsWith(shape.prefix) && (shape.length === null || text.length === shape.length);
+};
 
 /**
  * `===` between two values, or null when analysis cannot decide. Import
@@ -1007,6 +1068,14 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     return left.allocation === right.allocation;
   }
   if (left.kind === "symbol" && right.kind === "symbol") return left.key === right.key;
+  if (left.kind === "native-object" && right.kind === "native-object") {
+    return left.value === right.value;
+  }
+  if (
+    (isHostObjectGlobal(left) && right.kind === "native-object") ||
+    (isHostObjectGlobal(right) && left.kind === "native-object")
+  )
+    return false;
   if (left.kind === "namespace" && right.kind === "namespace")
     return left.module.filePath === right.module.filePath;
   if (left.kind === "global" && right.kind === "global") {
@@ -1327,6 +1396,12 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const [firstAlternative] = alternatives;
+  if (
+    firstAlternative !== undefined &&
+    alternatives.every((alternative) => isInterchangeable(alternative, firstAlternative))
+  )
+    return firstAlternative;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1335,23 +1410,21 @@ export const branchValue = (
     flattened.push(value);
     return flattened.length - 1;
   };
-  alternatives.forEach((alternative, index) => {
-    if (alternative.kind === "branch") {
-      alternative.alternatives.forEach((inner, innerIndex) => {
-        const position = add(inner);
-        if (index === preferredIndex && innerIndex === alternative.preferredIndex) {
-          resolvedPreferred = position;
-        }
-      });
-    } else {
-      const position = add(alternative);
-      if (index === preferredIndex) resolvedPreferred = position;
+  for (const [index, alternative] of alternatives.entries()) {
+    const inner = alternative.kind === "branch" ? alternative.alternatives : [alternative];
+    const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
+    for (const [innerIndex, value] of inner.entries()) {
+      const position = add(value);
+      if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
+      if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
+        return unknownValue(
+          `${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`,
+          location,
+        );
+      }
     }
-  });
-  if (flattened.length === 1) return flattened[0];
-  if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
-    return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
+  if (flattened.length === 1) return flattened[0];
   const isPositional =
     flattened.length === alternatives.length &&
     alternatives.every((alternative) => alternative.kind !== "branch");
@@ -1364,15 +1437,6 @@ export const branchValue = (
     predicate: isPositional ? predicate : null,
   };
 };
-
-export const isRenderableValue = (value: StaticValue): boolean =>
-  value.kind === "element" ||
-  value.kind === "list" ||
-  value.kind === "repeat" ||
-  value.kind === "primitive" ||
-  value.kind === "unknown-primitive" ||
-  value.kind === "branch" ||
-  value.kind === "unknown";
 
 const getAgreedTruthiness = (alternatives: StaticValue[]): boolean | null => {
   const truthiness = alternatives.map(getTruthiness);
@@ -1439,7 +1503,10 @@ export const toBooleanValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     const truthiness = getTruthiness(alternative);
     if (truthiness === null) {
-      return unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`);
+      return recordDerivation(
+        unknownPrimitiveValue("boolean", `Boolean(${describeValue(alternative)})`),
+        { kind: "alias", operand: alternative },
+      );
     }
     return truthiness ? TRUE_VALUE : FALSE_VALUE;
   });
@@ -1457,6 +1524,10 @@ export type CallableValue = Extract<
 
 export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
+
+/** `RegExp.prototype.toString`, the string a RegExp coerces to. */
+export const regExpToString = (value: StaticRegExpValue): string =>
+  `/${value.pattern}/${value.flags}`;
 
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
@@ -1497,16 +1568,35 @@ export const falsyCounterpart = (value: StaticValue): StaticValue => {
 
 export const mapValue = (
   value: StaticValue,
-  transform: (alternative: StaticValue) => StaticValue,
+  transform: (alternative: StaticValue, index: number) => StaticValue,
 ): StaticValue => {
-  if (value.kind !== "branch") return transform(value);
-  return branchValue(
-    value.alternatives.map(transform),
-    value.reason,
-    value.location,
-    value.preferredIndex,
-    value.predicate,
+  if (value.kind !== "branch") return transform(value, 0);
+  return joinMappedAlternatives(
+    value,
+    value.alternatives.map((alternative, index) => transform(alternative, index)),
   );
+};
+
+/** Rebuilds `source` around one mapped value per alternative, keeping the decision it stands for. */
+export const joinMappedAlternatives = (
+  source: StaticBranchValue,
+  alternatives: StaticValue[],
+): StaticValue => {
+  const mapped = branchValue(
+    alternatives,
+    source.reason,
+    source.location,
+    source.preferredIndex,
+    source.predicate,
+  );
+  if (
+    mapped.kind === "branch" &&
+    mapped.predicate === null &&
+    alternatives.every((alternative) => alternative.kind !== "branch")
+  ) {
+    recordBranchOrigin(mapped, source);
+  }
+  return mapped;
 };
 
 const MAX_DISTRIBUTED_ALTERNATIVES = 16;
@@ -1520,6 +1610,17 @@ export const distributeBinary = (
   right: StaticValue,
   operation: (leftAlternative: StaticValue, rightAlternative: StaticValue) => StaticValue,
 ): StaticValue | null => {
+  if (
+    left.kind === "branch" &&
+    right.kind === "branch" &&
+    left.predicate !== null &&
+    left.predicate === right.predicate &&
+    left.alternatives.length === right.alternatives.length
+  ) {
+    return mapValue(left, (alternative, index) =>
+      operation(alternative, right.alternatives[index]),
+    );
+  }
   if (countAlternatives(left) * countAlternatives(right) > MAX_DISTRIBUTED_ALTERNATIVES)
     return null;
   if (left.kind === "branch") {
@@ -1531,18 +1632,183 @@ export const distributeBinary = (
   return null;
 };
 
-export const getStaticPrimitive = (value: StaticValue): StaticPrimitive | undefined =>
-  value.kind === "primitive" ? value.value : undefined;
+type StructureDecision = string | StaticBranchValue;
+
+interface StructureInstance {
+  value: StaticValue;
+  decisions: Map<StructureDecision, number>;
+  isPreferred: boolean;
+}
+
+interface SequenceInstance {
+  values: StaticValue[];
+  decisions: Map<StructureDecision, number>;
+  isPreferred: boolean;
+}
+
+interface StructureExpansion {
+  limit: number;
+  firstBranch: StaticBranchValue | null;
+}
+
+const expandSequence = (
+  values: StaticValue[],
+  decisions: Map<StructureDecision, number>,
+  isPreferred: boolean,
+  expansion: StructureExpansion,
+): SequenceInstance[] | null => {
+  let partials: SequenceInstance[] = [{ values: [], decisions, isPreferred }];
+  for (const value of values) {
+    const next: SequenceInstance[] = [];
+    for (const partial of partials) {
+      const instances = expandStructure(value, partial.decisions, partial.isPreferred, expansion);
+      if (instances === null) return null;
+      for (const instance of instances) {
+        next.push({
+          values: [...partial.values, instance.value],
+          decisions: instance.decisions,
+          isPreferred: instance.isPreferred,
+        });
+      }
+      if (next.length > expansion.limit) return null;
+    }
+    partials = next;
+  }
+  return partials;
+};
+
+const expandStructure = (
+  value: StaticValue,
+  decisions: Map<StructureDecision, number>,
+  isPreferred: boolean,
+  expansion: StructureExpansion,
+): StructureInstance[] | null => {
+  switch (value.kind) {
+    case "branch": {
+      expansion.firstBranch ??= value;
+      const key: StructureDecision = value.predicate ?? value;
+      const decided = decisions.get(key);
+      if (decided !== undefined && decided < value.alternatives.length) {
+        return expandStructure(value.alternatives[decided], decisions, isPreferred, expansion);
+      }
+      const instances: StructureInstance[] = [];
+      for (const [index, alternative] of value.alternatives.entries()) {
+        const chosen = new Map(decisions).set(key, index);
+        const expanded = expandStructure(
+          alternative,
+          chosen,
+          isPreferred && index === value.preferredIndex,
+          expansion,
+        );
+        if (expanded === null) return null;
+        instances.push(...expanded);
+        if (instances.length > expansion.limit) return null;
+      }
+      return instances;
+    }
+    case "object": {
+      const expanded = expandSequence(
+        value.entries.map((entry) => entry.value),
+        decisions,
+        isPreferred,
+        expansion,
+      );
+      return (
+        expanded?.map((instance) => ({
+          value: instance.values.every(
+            (entryValue, index) => entryValue === value.entries[index].value,
+          )
+            ? value
+            : {
+                ...value,
+                entries: value.entries.map((entry, index) => ({
+                  ...entry,
+                  value: instance.values[index],
+                })),
+              },
+          decisions: instance.decisions,
+          isPreferred: instance.isPreferred,
+        })) ?? null
+      );
+    }
+    case "list": {
+      const expanded = expandSequence(value.items, decisions, isPreferred, expansion);
+      return (
+        expanded?.map((instance) => ({
+          value: instance.values.every((item, index) => item === value.items[index])
+            ? value
+            : { ...value, items: instance.values },
+          decisions: instance.decisions,
+          isPreferred: instance.isPreferred,
+        })) ?? null
+      );
+    }
+    default:
+      return [{ value, decisions, isPreferred }];
+  }
+};
+
+/**
+ * Hoists branches nested anywhere inside an object or list into one branch of
+ * fully concrete structures. Branches sharing a predicate take the same
+ * alternative in every instance. Past `limit` instances the value is returned
+ * as is, still holding its branches.
+ */
+export const distributeObjectBranches = (
+  value: StaticValue,
+  limit = MAX_DISTRIBUTED_ALTERNATIVES,
+): StaticValue => {
+  const expansion: StructureExpansion = { limit, firstBranch: null };
+  const instances = expandStructure(value, new Map(), true, expansion);
+  if (instances === null || instances.length < 2 || expansion.firstBranch === null) return value;
+  if (
+    value.kind === "branch" &&
+    instances.every((instance, index) => instance.value === value.alternatives[index])
+  ) {
+    return value;
+  }
+  const keys = new Set(instances.flatMap((instance) => [...instance.decisions.keys()]));
+  const [onlyKey] = keys;
+  const predicate = keys.size === 1 && typeof onlyKey === "string" ? onlyKey : null;
+  return branchValue(
+    instances.map((instance) => instance.value),
+    expansion.firstBranch.reason,
+    expansion.firstBranch.location,
+    Math.max(
+      0,
+      instances.findIndex((instance) => instance.isPreferred),
+    ),
+    predicate,
+  );
+};
 
 export const isIndefiniteItem = (item: StaticValue): boolean =>
   item.kind === "repeat" || item.kind === "optional";
 
-export const getListLength = (list: StaticListValue): StaticValue =>
-  list.items.some(isIndefiniteItem)
-    ? unknownPrimitiveValue("number", "length of a partially known list")
-    : primitiveValue(list.items.length);
+const getItemCountRange = (item: StaticValue): NumberRange => {
+  if (item.kind === "repeat") return item.count ?? { min: 0, max: Number.POSITIVE_INFINITY };
+  return item.kind === "optional" ? { min: 0, max: 1 } : { min: 1, max: 1 };
+};
+
+export const getListLength = (list: StaticListValue): StaticValue => {
+  if (!list.items.some(isIndefiniteItem)) return primitiveValue(list.items.length);
+  const ranges = list.items.map(getItemCountRange);
+  return {
+    ...unknownPrimitiveValue("number", "length of a partially known list"),
+    numberRange: {
+      min: ranges.reduce((total, range) => total + range.min, 0),
+      max: ranges.reduce((total, range) => total + range.max, 0),
+    },
+  };
+};
 
 const MAX_LIST_GROWTH = 1_000;
+
+/** The array index a property key names, as `"3"` does and `"03"` or `"-1"` do not. */
+export const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
 
 /**
  * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
@@ -1706,27 +1972,34 @@ export const getListItem = (
 ): StaticValue => {
   const candidates: StaticValue[] = [];
   const pick = (remaining: StaticValue[], offset: number): boolean => {
-    if (candidates.length > MAX_OPTIONAL_CANDIDATES) return false;
-    const [head, ...rest] = remaining;
-    if (head === undefined) {
-      candidates.push(UNDEFINED_VALUE);
-      return true;
+    let position = 0;
+    let remainingOffset = offset;
+    while (candidates.length <= MAX_OPTIONAL_CANDIDATES) {
+      const head = remaining[position];
+      if (head === undefined) {
+        candidates.push(UNDEFINED_VALUE);
+        return true;
+      }
+      if (head.kind === "repeat") return false;
+      if (head.kind === "optional") {
+        const rest = remaining.slice(position + 1);
+        return head.isAbsentPreferred
+          ? pick(rest, remainingOffset) && pick([head.value, ...rest], remainingOffset)
+          : pick([head.value, ...rest], remainingOffset) && pick(rest, remainingOffset);
+      }
+      if (remainingOffset === 0) {
+        candidates.push(head);
+        return true;
+      }
+      position += 1;
+      remainingOffset -= 1;
     }
-    if (head.kind === "repeat") return false;
-    if (head.kind === "optional") {
-      return head.isAbsentPreferred
-        ? pick(rest, offset) && pick([head.value, ...rest], offset)
-        : pick([head.value, ...rest], offset) && pick(rest, offset);
-    }
-    if (offset === 0) {
-      candidates.push(head);
-      return true;
-    }
-    return pick(rest, offset - 1);
+    return false;
   };
   if (!pick(items, index)) {
     return unknownValue(`index ${index} of a partially known list`, location);
   }
+  if (candidates.length === 1) return candidates[0];
   return branchValue(candidates, `item ${index} of a filtered list`, location);
 };
 
