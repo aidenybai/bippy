@@ -1,0 +1,4 @@
+{
+  "externalPackages": ["styled-components"],
+  "notes": "styled-components 4 (the fixture's `node_modules/styled-components` re-exports the workspace's `styled-components-v4` alias): every styled element renders the `StyledComponent` class under `StyleSheetConsumer` and `ThemeConsumer` fibers, `ThemeProvider` is a class consuming the outer theme, `withTheme` and `createGlobalStyle` consume it too, and an `as` prop beats an `as` attr."
+}

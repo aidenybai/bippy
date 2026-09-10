@@ -22,11 +22,15 @@ import { callUncertainCallback } from "./builtin-calls.js";
 import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
 import { type EvaluationContext, enterUncertainPath } from "./context.js";
 import {
+  escapeReducerDispatch,
   escapeStateCell,
+  escapedStateValue,
   invokeHookFactory,
   nextMemoCell,
   nextStateCell,
   queueStateUpdate,
+  type HookFrame,
+  type StateCell,
 } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
 import { isElementValue } from "./type-predicates.js";
@@ -75,7 +79,7 @@ const stateHook = (
     current: StaticValue,
     tools: StubRenderTools,
   ) => StaticValue,
-  reduceEscaped: (action: StaticValue | undefined, current: StaticValue) => StaticValue | null,
+  escapeDispatch: (frame: HookFrame, cell: StateCell, action: StaticValue) => void,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -102,12 +106,11 @@ const stateHook = (
       return UNDEFINED_VALUE;
     },
     onEscape: (argumentValues) => {
-      const action = argumentValues === null ? null : argumentValues[0];
-      escapeStateCell(
-        frame,
-        cell,
-        action === null ? null : reduceEscaped(action, cell.next ?? cell.current),
-      );
+      if (argumentValues === null || argumentValues[0] === null) {
+        escapeStateCell(frame, cell, null);
+        return;
+      }
+      escapeDispatch(frame, cell, argumentValues[0] ?? UNDEFINED_VALUE);
     },
   };
   return listValue([cell.current, cell.setter]);
@@ -117,7 +120,9 @@ const stateHook = (
  * Mirrors `mountSyncExternalStore`: the snapshot is read on every render, and a
  * passive effect subscribes and re-checks it (`updateStoreInstance`), so a store
  * mutated between render and commit re-renders with the latest value. The
- * listener does the same for store changes triggered during evaluation.
+ * listener does the same for store changes triggered during evaluation; once
+ * it is held by code the analysis does not follow, the store may change at any
+ * time and the snapshot is one value among those the store may hold.
  */
 const externalStoreHook = (
   interpreter: Interpreter,
@@ -134,8 +139,9 @@ const externalStoreHook = (
   const frame = context.hooks;
   if (!frame) return snapshot;
   const cell = nextStateCell(frame, "useSyncExternalStore", () => snapshot);
-  cell.current = snapshot;
-  if (!frame.isRendering || !subscribe) return snapshot;
+  cell.initial = snapshot;
+  cell.current = cell.isEscaped ? escapedStateValue(cell) : snapshot;
+  if (!frame.isRendering || !subscribe) return cell.current;
   const handleStoreChange: StaticNativeFunctionValue = {
     kind: "native-function",
     name: "handleStoreChange",
@@ -143,6 +149,7 @@ const externalStoreHook = (
       queueStateUpdate(frame, cell, readSnapshot(), tools.isDeferred());
       return UNDEFINED_VALUE;
     },
+    onEscape: () => escapeStateCell(frame, cell, null),
   };
   frame.effects.push({
     isLayout: false,
@@ -158,7 +165,7 @@ const externalStoreHook = (
     deps: listValue([subscribe]),
     cleanup: null,
   });
-  return snapshot;
+  return cell.current;
 };
 
 const configEntries = (value: StaticValue | undefined): StaticObjectEntry[] => {
@@ -256,6 +263,7 @@ const mapUncertainChildren = (
                 callback,
                 [item.item, unknownPrimitiveValue("number", "index")],
                 context,
+                true,
               ),
               location: item.location,
             }
@@ -271,6 +279,7 @@ const mapUncertainChildren = (
         callback,
         [children.item, unknownPrimitiveValue("number", "index")],
         context,
+        true,
       ),
       location: children.location,
     };
@@ -494,7 +503,7 @@ export const evaluateReactApiCall = (
         computeInitial,
         (action, current, tools) =>
           action?.kind === "function" ? tools.call(action, [current]) : (action ?? UNDEFINED_VALUE),
-        (action) => (isCallable(action) ? null : (action ?? UNDEFINED_VALUE)),
+        (frame, cell, action) => escapeStateCell(frame, cell, isCallable(action) ? null : action),
       );
     }
     case "useReducer": {
@@ -510,15 +519,15 @@ export const evaluateReactApiCall = (
           first
             ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
-        (action, current) =>
-          first
-            ? interpreter.callValue(
-                first,
-                [current, action ?? UNDEFINED_VALUE],
-                enterUncertainPath(context),
-                location,
-              )
-            : null,
+        (frame, cell, action) => {
+          if (!first) {
+            escapeStateCell(frame, cell, null);
+            return;
+          }
+          escapeReducerDispatch(frame, cell, (state) =>
+            interpreter.callValue(first, [state, action], context, location),
+          );
+        },
       );
     }
     case "useMemo": {

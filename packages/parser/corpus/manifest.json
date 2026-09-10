@@ -1398,7 +1398,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/dashboard",
-        "externalPackageAllowList": ["react-redux"]
+        "externalPackageAllowList": ["react-redux", "formik", "react-chartjs-2"]
       }
     },
     {
@@ -2986,6 +2986,299 @@
       "notes": "Static-only: src/index.jsx only calls render() after appService.getConfig() (GET /api/config, proxied to the NestJS server on localhost:3000) resolves, so without the server, its Postgres database and migrations no React commit ever happens (the page stays on the static 'Loading...' shell). The frontend also imports @tooljet/plugins/client, a generated entry over the checked-in plugin manifests; the setup step installs the plugins workspace and generates that entry so the webpack dev server compiles."
     },
     {
+      "id": "ens-app-v3",
+      "repository": "https://github.com/ensdomains/ens-app-v3",
+      "revision": "89f8681d524e9f40511dadd016ee95a6abff346d",
+      "description": "ENS Manager App v3 landing page (Next 13.5 pages router, styled-components + thorin, wagmi/RainbowKit, TanStack Query, i18next, pnpm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.23.0 install --frozen-lockfile",
+      "dev": "npx -y pnpm@10.23.0 exec next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["@ensdomains/*"],
+        "maxFiberCount": 20000
+      }
+    },
+    {
+      "id": "heyform",
+      "repository": "https://github.com/heyform/heyform",
+      "revision": "92aa9f4269a8f6b61d5154d00f8a3ca11d5c5ee3",
+      "description": "HeyForm webapp login page (Vite + React 19 SPA, @heyooo-inc/react-router over react-router-dom v6, react-i18next, Radix UI, pnpm workspaces)",
+      "framework": "spa",
+      "workingDirectory": "packages/webapp",
+      "install": "npx -y pnpm@9 install --frozen-lockfile",
+      "setup": ["cp -n .env.example .env; true"],
+      "dev": "npx -y pnpm@9 exec vite --port 3000",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/webapp",
+        "entry": "src/main.tsx",
+        "route": "/login",
+        "aliases": {
+          "@": "src",
+          "@heyform-inc/form-renderer": "../form-renderer/src/index.ts"
+        },
+        "externalPackageAllowList": [
+          "@heyooo-inc/*",
+          "@heyform-inc/*",
+          "@radix-ui/*",
+          "react-i18next",
+          "i18next",
+          "react-error-boundary",
+          "react-router-dom",
+          "react-router",
+          "@remix-run/router"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The webapp's own API (NestJS on 127.0.0.1:9157 behind the Vite proxy) is not started: main.tsx swallows the failed GET /api/config and mounts anyway, and `/login` needs no query on mount."
+    },
+    {
+      "id": "open-tacos",
+      "repository": "https://github.com/OpenBeta/open-tacos",
+      "revision": "30aa8c7f2843f077842b3ae34fb8d6845fa942b3",
+      "description": "OpenBeta climbing catalog home page (Next 14.2 app router under src/app with route groups, async server components over the staging GraphQL API, next-auth, Tailwind/daisyUI, Yarn 1, Node 20)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@heroicons/*",
+          "@openbeta/*",
+          "@radix-ui/*",
+          "@phosphor-icons/react",
+          "@headlessui/react",
+          "react-toastify",
+          "next-auth",
+          "swr",
+          "underscore",
+          "@apollo/*"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The committed .env points the dev server at OpenBeta's public staging API (stg-api.openbeta.io) and OpenCollective; server components fetch from them at request time, so their rows are network data."
+    },
+    {
+      "id": "sqlrooms-ai-agent",
+      "repository": "https://github.com/sqlrooms/sqlrooms",
+      "revision": "e32002430a308284ef021c9345aeb12fdc87ff42",
+      "description": "SQLRooms ai-agent example (Vite + React 19 SPA over the @sqlrooms/* workspace packages: zustand room store, DuckDB-wasm, Radix UI, ai-sdk; pnpm 11, Node 24)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.1.2 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.1.2 exec turbo build --filter=ai-agent-example^..."
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.1.2 --filter ai-agent-example exec vite --port 5173 --strictPort",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "examples/ai-agent",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@sqlrooms/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "@dnd-kit/*",
+          "react-markdown",
+          "zustand"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "Workspace packages are built with tsc (dist/*.js keeps component names) before the example's Vite server starts; the example needs no backend (DuckDB runs in-browser, AI providers are only contacted after the user configures a key)."
+    },
+    {
+      "id": "openstatus",
+      "repository": "https://github.com/openstatusHQ/openstatus",
+      "revision": "e89b614b7b838e4831699c5789cd68f17fa8fbd6",
+      "description": "OpenStatus marketing site home page (Next 16.3 app router with route groups, MDX content rendered by server components, @openstatus/ui shadcn/Radix primitives, next-themes, nuqs, tRPC/TanStack Query providers; pnpm 11, Node 24)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.2.1 install --frozen-lockfile",
+      "setup": ["cp -n apps/web/.env.example apps/web/.env; true"],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx -y pnpm@11.2.1 --filter @openstatus/web exec next dev --port 3000",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "appDirectory": "src/app",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@openstatus/*",
+          "@radix-ui/*",
+          "lucide-react",
+          "nuqs",
+          "next-themes",
+          "@tanstack/react-query",
+          "@trpc/*",
+          "next-plausible",
+          "@openpanel/nextjs",
+          "sonner",
+          "@t3-oss/*",
+          "zod",
+          "next-mdx-remote",
+          "slugify",
+          "@tanstack/react-query-devtools"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "The home page is filesystem MDX content plus static header/footer data; .env is the repository's placeholder example (env validation is skipped), so no Turso/Tinybird/Stripe service is contacted on this route."
+    },
+    {
+      "id": "excel-collab",
+      "repository": "https://github.com/nusr/excel",
+      "revision": "0bcd8992021db01f28285c307a9ac4d2793d1217",
+      "description": "nusr/excel demo frontend (Vite + React 19 SPA that mounts the excel-collab spreadsheet library from source through a Vite alias; Yarn 1 workspaces + lerna). packages/excel-collab itself is a library and renders no page, so the demo that embeds it is the target.",
+      "framework": "spa",
+      "workingDirectory": "packages/demo/frontend",
+      "install": "yarn install --frozen-lockfile --ignore-scripts",
+      "dev": "yarn vite dev --mode development --port 3000 --strictPort",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "packages/demo/frontend",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "aliases": {
+          "excel-collab": "../../excel-collab/src"
+        },
+        "maxFiberCount": 20000,
+        "externalPackageAllowList": ["excel-collab", "zustand"]
+      },
+      "notes": "No env file: VITE_BACKEND_URL/VITE_WEBSOCKET_URL are unset so the demo uses its localStorage LocalProvider and seeds a template document from scripts/model.json before mounting."
+    },
+    {
+      "id": "bldrs-share",
+      "repository": "https://github.com/bldrs-ai/Share",
+      "revision": "4e1443551d84a24e669bbdc699f48b0ff87947ac",
+      "description": "Bldrs Share CAD viewer, /share/about page (esbuild-bundled React 18 SPA served through the repository's own esbuild+proxy dev server; react-router-dom v6, MUI, Auth0, Zustand, Sentry, flagged-feature-flags; Yarn 1)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "setup": [
+        "mkdir -p docs/static/js && cp node_modules/@bldrs-ai/conway/compiled/dependencies/conway-geom/Dist/* docs/static/js"
+      ],
+      "env": {
+        "SHARE_CONFIG": "dev",
+        "MINIFY": "false",
+        "USE_WEBIFC_SHIM": "true",
+        "serveHttps": "false"
+      },
+      "dev": "node tools/esbuild/serve.js",
+      "url": "http://localhost:8080/share/about",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.jsx",
+        "route": "/share/about",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@auth0/auth0-react",
+          "flagged",
+          "react-helmet-async",
+          "@sentry/react",
+          "zustand",
+          "react-transition-group",
+          "react-feature-flags"
+        ],
+        "maxFiberCount": 20000,
+        "svgr": {
+          "plugins": ["@svgr/plugin-jsx"],
+          "dimensions": false
+        },
+        "defines": {
+          "process.env.APPS_IS_ENABLED": true,
+          "process.env.AUTH0_DOMAIN": "https://bldrs.us.auth0.com.msw",
+          "process.env.OAUTH2_CLIENT_ID": "cypresstestaudience",
+          "process.env.OAUTH2_REDIRECT_URI": null,
+          "process.env.CORS_PROXY_HOST": "http://localhost:8090",
+          "process.env.CORS_PROXY_PATH": "/.netlify/functions/proxy-handler",
+          "process.env.GITHUB_API_TOKEN": null,
+          "process.env.GITHUB_BASE_URL": "https://git.bldrs.dev.msw/p/gh",
+          "process.env.GITHUB_BASE_URL_UNAUTHENTICATED": "https://api.github.com.msw",
+          "process.env.NODE_ENV": "development",
+          "process.env.SENTRY_DSN": null,
+          "process.env.SENTRY_ENVIRONMENT": null,
+          "process.env.OPFS_IS_ENABLED": true,
+          "process.env.THEME_IS_ENABLED": true,
+          "process.env.USE_WEBIFC_SHIM": true,
+          "process.env.GOOGLE_API_KEY": "test-key-12345",
+          "process.env.GOOGLE_OAUTH2_CLIENT_ID": "test-oauth-client-id",
+          "process.env.GOOGLE_APP_ID": "test-app-id",
+          "process.env.GH_OAUTH_CLIENT_ID": "test-gh-client-id",
+          "process.env.OPENROUTER_BASE_URL": "https://localhost/openrouter",
+          "process.env.MSW_IS_ENABLED": true,
+          "process.env.THREE_PDB_IS_ENABLED": false,
+          "process.env.PLATFORM": "web",
+          "process.env.FORCE_SINGLE_THREAD": "false",
+          "process.env.ESBUILD_WATCH": true
+        }
+      },
+      "notes": "tools/esbuild/serve.js bundles src/index.jsx into docs/ (copying public/ alongside) and fronts esbuild's server with the repo's SPA-fallback proxy on 8080; MINIFY=false keeps component names in the bundle. The Conway wasm copy mirrors `build-share-copy-wasm-conway-MT`; the marketing overlay is not built so /share/about is the SPA's own About page. `static.defines` is the output of tools/esbuild/defines.js under the entry env (SHARE_CONFIG=dev), which the runtime bundle inlines."
+    },
+    {
+      "id": "standardnotes",
+      "repository": "https://github.com/standardnotes/app",
+      "revision": "6fcb991e626b0388a2220fa0d94815bf6c0c9f8d",
+      "description": "Standard Notes web client (webpack-dev-server React 18 SPA in packages/web; the app boots a WebApplicationGroup from @standardnotes/snjs and renders ApplicationGroupView; Yarn 3 workspaces, Node 20)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --immutable",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn workspaces foreach -pt --topological-dev -R --from @standardnotes/web --exclude @standardnotes/web run build"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn workspace @standardnotes/web start --port 3001",
+      "url": "http://localhost:3001/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 15000,
+      "static": {
+        "rootDirectory": "packages/web",
+        "entry": "src/javascripts/index.ts",
+        "route": "/",
+        "aliases": {
+          "@": "src/javascripts",
+          "@Controllers": "src/javascripts/Controllers"
+        },
+        "externalPackageAllowList": ["@standardnotes/*", "@ariakit/*", "@reach/*"],
+        "maxFiberCount": 20000,
+        "defines": {
+          "__WEB_VERSION__": "3.202.4"
+        },
+        "globals": {
+          "defaultSyncServer": "https://api.standardnotes.com",
+          "defaultFilesHost": "https://files.standardnotes.com",
+          "enabledUnfinishedFeatures": false,
+          "websocketUrl": "wss://sockets.standardnotes.com",
+          "purchaseUrl": "https://standardnotes.com/purchase",
+          "plansUrl": "https://standardnotes.com/plans",
+          "dashboardUrl": "https://standardnotes.com/dashboard"
+        }
+      },
+      "notes": "The web package imports its @standardnotes/* siblings through their built dist, so the workspace dependency graph is built first. The client points at api.standardnotes.com from src/index.html; with no account the first render is the sign-in/launch UI, and the sync server is not contacted before that."
+    },
+    {
       "id": "material-dashboard-react",
       "repository": "https://github.com/creativetimofficial/material-dashboard-react",
       "revision": "a4db3e60d3b9e152c1db4aaa93b311aa164ad68b",
@@ -3635,6 +3928,1296 @@
         "maxFiberCount": 20000
       },
       "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
+    },
+    {
+      "id": "create-vite",
+      "repository": "https://github.com/vitejs/vite",
+      "revision": "e6f6b3e3119256daa837b2dc399058c8aa45b470",
+      "description": "create-vite `template-react` scaffold (Vite 8 SPA, React 19, StrictMode + useState counter)",
+      "framework": "spa",
+      "workingDirectory": "packages/create-vite/template-react",
+      "install": "cd packages/create-vite/template-react && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "packages/create-vite/template-react",
+        "entry": "src/main.jsx"
+      }
+    },
+    {
+      "id": "create-t3-app",
+      "repository": "https://github.com/t3-oss/create-t3-app",
+      "revision": "4709861f7e67a15564c0460c13e7b4b6cfcae40d",
+      "description": "create-t3-app scaffold from `cli/template/base` + the app-router/tailwind extras (Next 15, Geist font, tailwind 4)",
+      "framework": "next-app",
+      "workingDirectory": "scaffold/t3-app",
+      "install": "pnpm install --filter ./cli && pnpm --filter ./cli build && node cli/dist/index.js scaffold/t3-app --CI --appRouter --tailwind --noGit --noInstall && cd scaffold/t3-app && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "scaffold/t3-app",
+        "route": "/"
+      },
+      "notes": "`cli/template/base` has no pages on its own: the CLI assembles a project from it plus `cli/template/extras`, so the install builds the CLI at the pinned revision and scaffolds the app-router + tailwind flavor into `scaffold/t3-app`."
+    },
+    {
+      "id": "zustand-demo",
+      "repository": "https://github.com/pmndrs/zustand",
+      "revision": "b57db4f86ef179285da216eeb291266da82c361c",
+      "description": "zustand examples/demo (Vite 4 SPA, React 18, zustand stores, prism-react-renderer, react-three-fiber canvas root)",
+      "framework": "spa",
+      "workingDirectory": "examples/demo",
+      "install": "cd examples/demo && npm install --legacy-peer-deps",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/demo",
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["zustand", "zustand/*", "prism-react-renderer"]
+      },
+      "notes": "`prism-react-renderer` bundles Prism with ~30 grammars; building them (21 `insertBefore` calls, each a DFS over every grammar) is one `var Prism = __toESM(require_prism())` declaration that needs ~3.2M interpreter steps, above the 2M default budget, so the code block's Prism-driven subtree stays unknown."
+    },
+    {
+      "id": "docusaurus-classic-ts",
+      "repository": "https://github.com/facebook/docusaurus",
+      "revision": "1434f56a07d83b6d52c6db2c7ef6403221747256",
+      "description": "Docusaurus examples/classic-typescript (Docusaurus 3.10 classic preset, React 19, theme-classic Layout + homepage features)",
+      "framework": "spa",
+      "workingDirectory": "examples/classic-typescript",
+      "install": "cd examples/classic-typescript && npm install",
+      "dev": "npm run start -- --port 3000 --no-open",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/classic-typescript",
+        "entry": "node_modules/@docusaurus/core/lib/client/clientEntry.js",
+        "aliases": {
+          "@generated": ".docusaurus",
+          "@site": ".",
+          "@docusaurus/BrowserOnly": "node_modules/@docusaurus/core/lib/client/exports/BrowserOnly.js",
+          "@docusaurus/ComponentCreator": "node_modules/@docusaurus/core/lib/client/exports/ComponentCreator.js",
+          "@docusaurus/ErrorBoundary": "node_modules/@docusaurus/core/lib/client/exports/ErrorBoundary.js",
+          "@docusaurus/ExecutionEnvironment": "node_modules/@docusaurus/core/lib/client/exports/ExecutionEnvironment.js",
+          "@docusaurus/Head": "node_modules/@docusaurus/core/lib/client/exports/Head.js",
+          "@docusaurus/Interpolate": "node_modules/@docusaurus/core/lib/client/exports/Interpolate.js",
+          "@docusaurus/Link": "node_modules/@docusaurus/core/lib/client/exports/Link.js",
+          "@docusaurus/Noop": "node_modules/@docusaurus/core/lib/client/exports/Noop.js",
+          "@docusaurus/Translate": "node_modules/@docusaurus/core/lib/client/exports/Translate.js",
+          "@docusaurus/constants": "node_modules/@docusaurus/core/lib/client/exports/constants.js",
+          "@docusaurus/isInternalUrl": "node_modules/@docusaurus/core/lib/client/exports/isInternalUrl.js",
+          "@docusaurus/renderRoutes": "node_modules/@docusaurus/core/lib/client/exports/renderRoutes.js",
+          "@docusaurus/router": "node_modules/@docusaurus/core/lib/client/exports/router.js",
+          "@docusaurus/useBaseUrl": "node_modules/@docusaurus/core/lib/client/exports/useBaseUrl.js",
+          "@docusaurus/useBrokenLinks": "node_modules/@docusaurus/core/lib/client/exports/useBrokenLinks.js",
+          "@docusaurus/useDocusaurusContext": "node_modules/@docusaurus/core/lib/client/exports/useDocusaurusContext.js",
+          "@docusaurus/useGlobalData": "node_modules/@docusaurus/core/lib/client/exports/useGlobalData.js",
+          "@docusaurus/useIsBrowser": "node_modules/@docusaurus/core/lib/client/exports/useIsBrowser.js",
+          "@docusaurus/useIsomorphicLayoutEffect": "node_modules/@docusaurus/core/lib/client/exports/useIsomorphicLayoutEffect.js",
+          "@docusaurus/useRouteContext": "node_modules/@docusaurus/core/lib/client/exports/useRouteContext.js",
+          "@theme/Root": "node_modules/@docusaurus/core/lib/client/theme-fallback/Root",
+          "@theme/Error": "node_modules/@docusaurus/core/lib/client/theme-fallback/Error",
+          "@theme/Loading": "node_modules/@docusaurus/core/lib/client/theme-fallback/Loading",
+          "@theme": "node_modules/@docusaurus/theme-classic/lib/theme"
+        },
+        "externalPackageAllowList": [
+          "@docusaurus/*",
+          "react-router",
+          "react-router-dom",
+          "react-router-config",
+          "react-helmet-async",
+          "react-loadable",
+          "history",
+          "prism-react-renderer",
+          "@mdx-js/react",
+          "clsx"
+        ]
+      }
+    },
+    {
+      "id": "react-hook-form",
+      "repository": "https://github.com/react-hook-form/react-hook-form",
+      "revision": "1c12bcd256f35efc5edc47d5a51340499014a151",
+      "description": "react-hook-form `app` e2e playground (Vite 6 SPA, React 19, react-router-dom 6 routes, `/` welcome index linking every form scenario)",
+      "framework": "react-router",
+      "workingDirectory": "app",
+      "install": "pnpm install --ignore-scripts && pnpm build && cd app && pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 300000,
+      "static": {
+        "rootDirectory": "app",
+        "entry": "src/main.tsx",
+        "route": "/"
+      },
+      "notes": "`app` depends on `react-hook-form: file:..`, so the library is built from the pinned revision first; root install skips husky/prepare scripts."
+    },
+    {
+      "id": "chakra-ui",
+      "repository": "https://github.com/chakra-ui/chakra-ui",
+      "revision": "c455101cfaa02527bbaf06b90de5cb26b18a2b7b",
+      "description": "Chakra UI v3 `sandbox/vite-ts` (Vite 8 SPA, React 19, `@chakra-ui/react` aliased to `packages/react/src`, next-themes, ClientOnly color-mode toggle)",
+      "framework": "spa",
+      "workingDirectory": "sandbox/vite-ts",
+      "install": "npx -y pnpm@11.10.0 install --ignore-scripts --filter ./sandbox/vite-ts --filter ./packages/react",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 300000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "sandbox/vite-ts",
+        "entry": "src/main.tsx",
+        "aliases": {
+          "@chakra-ui/react": "../../packages/react/src"
+        },
+        "externalPackageAllowList": [
+          "@chakra-ui/react",
+          "@ark-ui/*",
+          "@zag-js/*",
+          "@emotion/*",
+          "@pandacss/*",
+          "next-themes",
+          "react-icons",
+          "react-icons/*",
+          "@internationalized/*"
+        ]
+      },
+      "notes": "`apps/compositions` is a component registry (no dev script, no entry html; its examples are rendered by `apps/www`), so the runnable Chakra app in the repo is `sandbox/vite-ts`, whose vite config aliases `@chakra-ui/react` to the library source. Root install skips husky `prepare`; pnpm 11 is pinned by `packageManager`."
+    },
+    {
+      "id": "trpc-next-app-dir",
+      "repository": "https://github.com/trpc/trpc",
+      "revision": "66d054454a3339dd8421da9dcf0648f92816f704",
+      "description": "tRPC `examples/.experimental/next-app-dir` home page (Next 15 app router, React 19, next-auth v5 session gate, react-hot-toast Toaster)",
+      "framework": "next-app",
+      "workingDirectory": "examples/.experimental/next-app-dir",
+      "install": "npx -y pnpm@10.33.1 install --ignore-scripts",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/.experimental/next-app-dir",
+        "route": "/",
+        "externalPackageAllowList": ["next-auth", "react-hot-toast"]
+      },
+      "notes": "The home page is a server component gated on `auth()` (next-auth v5 with an unconfigured GitHub provider; the checked-in `.env` sets `NEXTAUTH_SECRET`), so the session is unknowable statically and the sign-in/sign-out link is an honest branch. The index page and layout only import next-auth, next/link and react-hot-toast, so the workspace `@trpc/*` packages need no build."
+    },
+    {
+      "id": "react-compiler-playground",
+      "repository": "https://github.com/facebook/react",
+      "revision": "78c2d377d79a7284339fc24b560dd503daf314cc",
+      "description": "React Compiler playground (Next 15 app router, React 19.2, notistack, next/dynamic Monaco editor, in-browser babel-plugin-react-compiler)",
+      "framework": "next-app",
+      "workingDirectory": "compiler/apps/playground",
+      "install": "cd compiler/apps/playground && yarn install --frozen-lockfile && yarn build:compiler",
+      "dev": "NODE_ENV=development npx next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "compiler/apps/playground",
+        "route": "/",
+        "externalPackageAllowList": [
+          "notistack",
+          "re-resizable",
+          "@heroicons/react",
+          "@use-gesture/react",
+          "lru-cache",
+          "@monaco-editor/react",
+          "@monaco-editor/loader",
+          "state-local"
+        ]
+      },
+      "notes": "`yarn install` in the playground runs the compiler workspace install (preinstall) and `yarn link`s `babel-plugin-react-compiler` + `react-compiler-runtime` (postinstall); `build:compiler` produces the `dist/` the playground imports. The dev server is started directly instead of the package's `dev` script, which wraps the same `next dev` in `concurrently` watch builds."
+    },
+    {
+      "id": "boxyhq-saas-starter-kit",
+      "repository": "https://github.com/boxyhq/saas-starter-kit",
+      "revision": "abc9b686823cbfb4973c79bc36fea37a3244be6c",
+      "description": "BoxyHQ SaaS Starter Kit landing page (Next 15 pages router on port 4002, next-auth, next-i18next, Prisma over a local PostgreSQL container, npm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "setup": [
+        "printf 'NEXTAUTH_URL=http://localhost:4002\\nNEXTAUTH_SECRET=bippy-corpus-nextauth-secret-0123456789abcdef\\nDATABASE_URL=postgresql://postgres:postgres@localhost:5452/saas-starter-kit\\nAPP_URL=http://localhost:4002\\nSVIX_URL=https://api.eu.svix.com\\nSVIX_API_KEY=\\nHIDE_LANDING_PAGE=false\\nGROUP_PREFIX=boxyhq-\\nCONFIRM_EMAIL=false\\nDISABLE_NON_BUSINESS_EMAIL_SIGNUP=false\\nAUTH_PROVIDERS=github,google,saml,email,credentials\\nFEATURE_TEAM_SSO=true\\nFEATURE_TEAM_DSYNC=true\\nFEATURE_TEAM_AUDIT_LOG=true\\nFEATURE_TEAM_WEBHOOK=true\\nFEATURE_TEAM_API_KEY=true\\nFEATURE_TEAM_DELETION=true\\nFEATURE_TEAM_PAYMENTS=true\\nNEXT_PUBLIC_TERMS_URL=/terms\\nNEXT_PUBLIC_PRIVACY_URL=/privacy\\nNEXT_PUBLIC_DARK_MODE=false\\n' > .env",
+        "npx prisma generate",
+        "npx prisma db push --skip-generate"
+      ],
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-boxyhq-pg 5452 saas-starter-kit"
+      ],
+      "dev": "npm run dev",
+      "url": "http://localhost:4002/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "next-i18next",
+          "react-i18next",
+          "i18next",
+          "next-auth",
+          "react-daisyui",
+          "@heroicons/react",
+          "@boxyhq/react-ui",
+          "react-hot-toast"
+        ]
+      }
+    },
+    {
+      "id": "blazity-next-saas-starter",
+      "repository": "https://github.com/blazity/next-saas-starter",
+      "revision": "502d8f519dc1f55486cfe942026cd06d4ae2ad3e",
+      "description": "Blazity next-saas-starter landing page (Next 12.1 pages router, React 17, styled-components, TinaCMS, yarn 1)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@next/bundle-analyzer",
+          "@accessible/*",
+          "swiper",
+          "react-animate-height",
+          "react-share",
+          "nextjs-color-mode",
+          "tinacms",
+          "tinacms/*",
+          "@tinacms/sharedctx"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-postgres-nextauth-template",
+      "repository": "https://github.com/vercel/nextjs-postgres-nextauth-tailwindcss-template",
+      "revision": "fe026711c19ac3ee4589c86a738f59b84e611559",
+      "description": "Vercel admin dashboard template login page (Next 15 app router, Auth.js v5 GitHub provider, Drizzle over Neon serverless, shadcn/ui, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.12.1 install --frozen-lockfile --ignore-workspace",
+      "setup": [
+        "printf 'POSTGRES_URL=postgresql://postgres:postgres@localhost:5453/template\\nNEXTAUTH_URL=http://localhost:3000\\nAUTH_SECRET=bippy-corpus-auth-secret-0123456789abcdef\\nAUTH_GITHUB_ID=placeholder\\nAUTH_GITHUB_SECRET=placeholder\\n' > .env"
+      ],
+      "dev": "npx -y pnpm@10.12.1 dev",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/login",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["@radix-ui/*", "lucide-react", "@vercel/analytics"]
+      }
+    },
+    {
+      "id": "nextjs-postgres-auth-starter",
+      "repository": "https://github.com/vercel/nextjs-postgres-auth-starter",
+      "revision": "fde8ecf1da9337223081f70cf88b420060039d6e",
+      "description": "Vercel Next.js + Postgres auth starter landing page (Next 14 app router, Auth.js v5 credentials provider, Drizzle over postgres-js, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@8.15.9 install --frozen-lockfile --ignore-workspace",
+      "setup": [
+        "printf 'POSTGRES_URL=postgresql://postgres:postgres@localhost:5454/auth_starter\\nAUTH_SECRET=bippy-corpus-auth-secret-0123456789abcdef\\n' > .env"
+      ],
+      "dev": "npx -y pnpm@8.15.9 dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env"]
+      }
+    },
+    {
+      "id": "startup-nextjs",
+      "repository": "https://github.com/nextjstemplates/startup-nextjs",
+      "revision": "e730b6a99c77b96c835f11347231faa4f4e9f767",
+      "description": "Startup Next.js template landing page (Next 16 app router with a client root layout, next-themes, Tailwind, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/",
+        "externalPackageAllowList": ["next-themes"]
+      }
+    },
+    {
+      "id": "ts-nextjs-tailwind-starter",
+      "repository": "https://github.com/theodorusclarence/ts-nextjs-tailwind-starter",
+      "revision": "9a47d33ff5a329f38b9e1b923d881cbbf6b21345",
+      "description": "ts-nextjs-tailwind-starter landing page (Next 15 app router, Tailwind, react-icons, pnpm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.12.1 install --frozen-lockfile --ignore-workspace",
+      "dev": "npx -y pnpm@10.12.1 dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/"
+      }
+    },
+    {
+      "id": "tailwind-nextjs-starter-blog",
+      "repository": "https://github.com/timlrx/tailwind-nextjs-starter-blog",
+      "revision": "b45bef66b40c63b6f57c15ee8cd090682238df4c",
+      "description": "Tailwind Next.js starter blog home (Next 15 app router, contentlayer2, pliny, next-themes, Yarn 3 via yarnPath)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install --immutable",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "pliny",
+          "pliny/*",
+          "next-themes",
+          "@headlessui/react",
+          "@react-aria/*",
+          "@floating-ui/*",
+          "kbar"
+        ]
+      }
+    },
+    {
+      "id": "skolaczk-next-starter",
+      "repository": "https://github.com/skolaczk/next-starter",
+      "revision": "9580bcf3da204f2b1e028d59f59028898210e8d2",
+      "description": "Skolaczk next-starter home (Next 15 app router, next-intl locale segment, Auth.js v5 with the Drizzle adapter over Neon serverless, t3-env, shadcn/ui, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install",
+      "setup": [
+        "printf 'DATABASE_URL=postgresql://postgres:postgres@localhost:5455/next_starter\\nAPP_URL=http://localhost:3000\\nGITHUB_ID=placeholder\\nGITHUB_SECRET=placeholder\\nNEXTAUTH_SECRET=bippy-corpus-nextauth-secret-0123456789abcdef\\nNEXTAUTH_URL=http://localhost:3000\\nSTRIPE_SECRET_KEY=sk_test_bippy_corpus_placeholder\\nSTRIPE_WEBHOOK_SECRET_KEY=whsec_bippy_corpus_placeholder\\nSTRIPE_SUBSCRIPTION_PRICE_ID=price_bippy_corpus_placeholder\\nNEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_bippy_corpus_placeholder\\n' > .env"
+      ],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/en",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "appDirectory": "src/app",
+        "route": "/en",
+        "envFiles": [".env"],
+        "externalPackageAllowList": ["next-themes", "@radix-ui/*", "lucide-react"]
+      }
+    },
+    {
+      "id": "react-phone-e-commerce",
+      "repository": "https://github.com/john-smilga/react-phone-e-commerce-project",
+      "revision": "a6c25aac214915e9d0700f1789c356bdeb542759",
+      "description": "John Smilga's phone store (CRA 2 / React 16.7, legacy ReactDOM.render, class-component context provider, react-router-dom v4 Switch/Route, styled-components v4)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3011"
+      },
+      "url": "http://localhost:3011/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "styled-components"
+        ]
+      }
+    },
+    {
+      "id": "pizza-man",
+      "repository": "https://github.com/ruppysuppy/Pizza-Man",
+      "revision": "fbba955958c5c3eaa144fee50266b3a8c0e0f913",
+      "description": "Pizza Man online ordering landing page (CRA 3 / React 16, legacy ReactDOM.render, react-redux 7 connect, react-router-dom v5 Switch/Route behind React.lazy + Suspense, Firebase 7 auth listener)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "setup": [
+        "test -f src/firebase/config.js || printf '%s\\n' 'const firebaseConfig = {' '  apiKey: \"corpus\",' '  authDomain: \"localhost\",' '  databaseURL: \"http://localhost:9/?ns=pizza-man\",' '  projectId: \"pizza-man\",' '  storageBucket: \"pizza-man.appspot.com\",' '  messagingSenderId: \"0\",' '  appId: \"1:0:web:0\",' '};' '' 'export default firebaseConfig;' > src/firebase/config.js"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3012"
+      },
+      "url": "http://localhost:3012/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux"
+        ]
+      },
+      "notes": "The repository gitignores src/firebase/config.js; the setup step writes a placeholder pointing at an unreachable local database URL, which is enough for firebase.initializeApp and for the auth listener to report no signed-in user."
+    },
+    {
+      "id": "mern-ecommerce-frontend",
+      "repository": "https://github.com/coderdost/MERN-ecommerce-Frontend",
+      "revision": "89845dd6f2ec3cc9719775299a561cb2da86bfbf",
+      "description": "CoderDost MERN e-commerce frontend login page (CRA 5 / React 18, Redux Toolkit, react-router-dom v6 createBrowserRouter, react-alert, react-hook-form, Tailwind) without its Express backend",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3013"
+      },
+      "url": "http://localhost:3013/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/login",
+        "externalPackageAllowList": ["react-redux", "react-alert", "react-alert-template-basic"]
+      }
+    },
+    {
+      "id": "react-ecommerce-client",
+      "repository": "https://github.com/ed-roh/react-ecommerce",
+      "revision": "d59ca117e7d80cd67275d8b4a50946499e531fba",
+      "description": "EdRoh's React e-commerce storefront home page (CRA 5 / React 18, MUI 5 + Emotion, Redux Toolkit, react-router-dom v6 Routes, react-responsive-carousel) without its Strapi backend",
+      "framework": "react-router",
+      "workingDirectory": "client",
+      "install": "cd client && npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3014"
+      },
+      "url": "http://localhost:3014/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "react-responsive-carousel",
+          "react-easy-swipe",
+          "@mui/*",
+          "@emotion/*",
+          "@babel/runtime/*",
+          "clsx",
+          "prop-types",
+          "react-is",
+          "react-transition-group",
+          "@popperjs/*"
+        ]
+      }
+    },
+    {
+      "id": "mern-ecommerce",
+      "repository": "https://github.com/mohamedsamara/mern-ecommerce",
+      "revision": "7f73dfbd68a27b6945fe7fbf654067004816d09e",
+      "description": "MERN Ecommerce storefront login page (webpack 4 dev server / React 16, legacy ReactDOM.render, react-redux 7 connect, connected-react-router, react-router-dom v5 Switch/Route, reactstrap) against its Express + MongoDB backend",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm run dev",
+      "env": {
+        "BROWSER": "none"
+      },
+      "url": "http://localhost:8080/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "app/index.js",
+        "envFiles": [".env"],
+        "envPrefix": "",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux",
+          "connected-react-router",
+          "reactstrap",
+          "react-popper",
+          "create-react-context",
+          "react-notification-system-redux",
+          "react-notification-system",
+          "create-react-class",
+          "object-assign",
+          "react-autosuggest",
+          "react-themeable",
+          "section-iterator",
+          "shallow-equal"
+        ]
+      },
+      "setup": [
+        "test -f client/.env || cp client/.env.example client/.env",
+        "test -f server/.env || printf '%s\\n' PORT=3000 MONGO_URI=mongodb://127.0.0.1:27017/mern_ecommerce JWT_SECRET=corpus CLIENT_URL=http://localhost:8080 BASE_API_URL=api GOOGLE_CLIENT_ID=corpus GOOGLE_CLIENT_SECRET=corpus GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback FACEBOOK_CLIENT_ID=corpus FACEBOOK_CLIENT_SECRET=corpus FACEBOOK_CALLBACK_URL=http://localhost:3000/api/auth/facebook/callback > server/.env"
+      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/mongo.sh\" bippy-mern-ecommerce-mongo 27017"]
+    },
+    {
+      "id": "ecommerce-react",
+      "repository": "https://github.com/jgudo/ecommerce-react",
+      "revision": "8d37028200dc1475d78f27d3b352a4d0384a4ab1",
+      "description": "Salinaka eyewear storefront (Vite 3 / React 17, legacy render, react-redux 7 + redux-saga + redux-persist PersistGate, react-router-dom v5 Router/Switch, Firebase 8 auth + Firestore) without a real Firebase project",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx vite --port 3015 --strictPort",
+      "env": {
+        "VITE_FIREBASE_API_KEY": "corpus",
+        "VITE_FIREBASE_AUTH_DOMAIN": "localhost",
+        "VITE_FIREBASE_DB_URL": "http://localhost:9/?ns=salinaka",
+        "VITE_FIREBASE_PROJECT_ID": "salinaka",
+        "VITE_FIREBASE_STORAGE_BUCKET": "salinaka.appspot.com",
+        "VITE_FIREBASE_MSG_SENDER_ID": "0",
+        "VITE_FIREBASE_APP_ID": "1:0:web:0"
+      },
+      "url": "http://localhost:3015/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.jsx",
+        "tsconfig": "jsconfig.json",
+        "aliases": {
+          "@": "src"
+        },
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux",
+          "redux-persist",
+          "redux-persist/*",
+          "react-modal",
+          "exenv",
+          "warning",
+          "react-lifecycles-compat",
+          "formik",
+          "react-fast-compare",
+          "deepmerge",
+          "tslib",
+          "@ant-design/*",
+          "rc-util",
+          "rc-util/*",
+          "classnames",
+          "@ctrl/tinycolor",
+          "@babel/runtime",
+          "@babel/runtime/*"
+        ]
+      }
+    },
+    {
+      "id": "social-media-app",
+      "repository": "https://github.com/adrianhajdin/social_media_app",
+      "revision": "9fa032dd198c92aa498db82d248c0d93f28ebf5c",
+      "description": "JS Mastery Snapgram sign-in page (Vite 4 / React 18, react-router-dom v6 Routes, TanStack Query 4, react-hook-form + zod, shadcn/Radix UI, Appwrite SDK) without an Appwrite project",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx vite --port 3016 --strictPort",
+      "env": {
+        "VITE_APPWRITE_URL": "http://localhost:9/v1",
+        "VITE_APPWRITE_PROJECT_ID": "corpus",
+        "VITE_APPWRITE_DATABASE_ID": "corpus",
+        "VITE_APPWRITE_STORAGE_ID": "corpus",
+        "VITE_APPWRITE_USER_COLLECTION_ID": "users",
+        "VITE_APPWRITE_POST_COLLECTION_ID": "posts",
+        "VITE_APPWRITE_SAVES_COLLECTION_ID": "saves"
+      },
+      "url": "http://localhost:3016/sign-in",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "route": "/sign-in",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "@radix-ui/*",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      }
+    },
+    {
+      "id": "social-network-client",
+      "repository": "https://github.com/misa-j/social-network",
+      "revision": "d99ef7b3c56599e95db7b3d14bbcda76ec3e6714",
+      "description": "misa-j social-network client login page (CRA 2 / React 16, legacy ReactDOM.render, react-redux 6 connect, react-router-dom v4 Switch/Route behind React.lazy + Suspense, semantic-ui-react) without its Express backend",
+      "framework": "spa",
+      "workingDirectory": "client",
+      "install": "cd client && bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "CI": "true",
+        "SKIP_PREFLIGHT_CHECK": "true",
+        "PORT": "3017"
+      },
+      "url": "http://localhost:3017/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "history",
+          "hoist-non-react-statics",
+          "react-is",
+          "mini-create-react-context",
+          "path-to-regexp",
+          "resolve-pathname",
+          "value-equal",
+          "tiny-invariant",
+          "tiny-warning",
+          "isarray",
+          "react-redux",
+          "semantic-ui-react",
+          "@semantic-ui-react/*",
+          "@stardust-ui/react-component-*",
+          "@fluentui/react-component-*",
+          "keyboard-key",
+          "shallowequal",
+          "classnames",
+          "lodash",
+          "lodash/*"
+        ]
+      }
+    },
+    {
+      "id": "fastapi-template",
+      "repository": "https://github.com/fastapi/full-stack-fastapi-template",
+      "revision": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+      "description": "Full Stack FastAPI Template frontend login page (React 19 SPA on TanStack Router file routes + TanStack Query + shadcn/ui + react-hook-form, Vite dev server without the FastAPI backend)",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "bun install",
+      "dev": "bun run dev --port 5180",
+      "env": {
+        "VITE_API_URL": "http://localhost:8000"
+      },
+      "url": "http://localhost:5180/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/main.tsx",
+        "aliases": {
+          "@": "src"
+        },
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-router-devtools",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "radix-ui",
+          "@radix-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "react-icons"
+        ]
+      }
+    },
+    {
+      "id": "ant-design-pro",
+      "repository": "https://github.com/ant-design/ant-design-pro",
+      "revision": "adfd44085738ca953573a13322c1ba84aca8b9e3",
+      "description": "Ant Design Pro login page (React 19 on Umi Max 4 conventional routing + antd 6 + ProComponents, umi dev server with the repo's mock API)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "setup": ["npx max setup"],
+      "dev": "npx cross-env UMI_ENV=dev PORT=8020 max dev",
+      "url": "http://localhost:8020/user/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/.umi/umi.ts",
+        "aliases": {
+          "@": "src",
+          "@@": "src/.umi",
+          "@root": ".",
+          "umi": "src/.umi/exports",
+          "@umijs/max": "src/.umi/exports"
+        },
+        "externalPackageAllowList": [
+          "umi",
+          "@umijs/*",
+          "antd",
+          "@ant-design/*",
+          "antd-style",
+          "rc-*",
+          "@rc-component/*",
+          "react-intl",
+          "@formatjs/*",
+          "intl-messageformat",
+          "react-helmet-async",
+          "react-router",
+          "react-router-dom",
+          "@remix-run/router",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "clsx",
+          "dayjs",
+          "ahooks",
+          "history"
+        ]
+      }
+    },
+    {
+      "id": "hyper",
+      "repository": "https://github.com/vercel/hyper",
+      "revision": "30ec0a2a91de17eeb32dd71998fe8a8ec59f98eb",
+      "description": "Hyper terminal renderer (Electron BrowserWindow, React 18 + react-redux, webpack bundle loaded from app/index.html)",
+      "notes": "Not a web app: lib/index.tsx imports `electron` (webFrame) and drives the UI through an ipcRenderer rpc bridge to node-pty sessions in the main process; the bundle only loads inside the Electron BrowserWindow (app/index.html), there is no browser target to serve. Recorded static-only; `pnpm install --ignore-scripts` skips the Electron download, v8 snapshot and native rebuilds the postinstall needs.",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-scripts",
+      "dev": "pnpm run dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "lib/index.tsx",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "redux-thunk",
+          "reselect",
+          "seamless-immutable",
+          "clsx",
+          "color",
+          "ms",
+          "uuid",
+          "lodash",
+          "react-use",
+          "styled-jsx",
+          "stylis",
+          "mousetrap",
+          "php-escape-shell",
+          "xterm",
+          "xterm-addon-*",
+          "@react-icons/*"
+        ]
+      },
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000
+    },
+    {
+      "id": "api-platform-admin",
+      "repository": "https://github.com/api-platform/admin",
+      "revision": "ab9239cc0b750ad9339de0bc856031b0da47dc38",
+      "description": "@api-platform/admin library root (react-admin 5 HydraAdmin/OpenApiAdmin, MUI 5); src/index.ts is the package entry",
+      "notes": "Not a runnable app: the repository root is the `@api-platform/admin` library (`src/index.ts` only re-exports components, nothing mounts a root). Its Storybook stories (src/stories) render `<HydraAdmin entrypoint={process.env.ENTRYPOINT}>` against an API Platform backend that has to be built from `api/` with compose.yaml (FrankenPHP + PostgreSQL + Mercure) and the admin only shows resources after fetching the Hydra API documentation from that server. Recorded static-only from the library entry.",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile --ignore-scripts",
+      "dev": "yarn storybook",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.ts",
+        "externalPackageAllowList": [
+          "react-admin",
+          "ra-*",
+          "@mui/*",
+          "@emotion/*",
+          "react-router",
+          "react-router-dom",
+          "@api-platform/*",
+          "history",
+          "jsonld",
+          "lodash.*",
+          "inflection",
+          "@tanstack/*"
+        ]
+      }
+    },
+    {
+      "id": "whodb",
+      "repository": "https://github.com/clidey/whodb",
+      "revision": "0699737c37b86a700571a7eacdebcb7d89ecdf78",
+      "description": "WhoDB frontend login page (Vite 8 SPA, react-router-dom 7 BrowserRouter, Apollo Client 4, Redux Toolkit + redux-persist, @clidey/ux) proxying /api to the repo's Go backend",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "cd frontend && pnpm install --frozen-lockfile && cd ../core && bash \"$BIPPY_CORPUS_SCRIPTS/with-go.sh\" 1.27.0 go build -o ../whodb-server ./cmd/whodb",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/whodb-dev.sh\" 3011",
+      "url": "http://localhost:3011/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/index.tsx",
+        "route": "/login",
+        "defines": {
+          "process.env.NODE_ENV": "development",
+          "__APP_VERSION__": "development",
+          "__WHODB_EDITION__": "ce"
+        },
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "@apollo/client",
+          "@apollo/client/*",
+          "react-redux",
+          "@reduxjs/toolkit",
+          "redux-persist",
+          "redux-persist/*",
+          "@clidey/ux",
+          "@clidey/connparse",
+          "@radix-ui/*",
+          "sonner",
+          "cmdk",
+          "next-themes",
+          "class-variance-authority",
+          "clsx",
+          "classnames",
+          "tailwind-merge",
+          "lucide-react",
+          "@heroicons/react/*",
+          "framer-motion",
+          "posthog-js",
+          "uuid",
+          "lodash"
+        ]
+      }
+    },
+    {
+      "id": "insforge",
+      "repository": "https://github.com/InsForge/InsForge",
+      "revision": "ccb1703242bd1b5ffbc250f0acb866cd36e56ce1",
+      "description": "InsForge self-hosting dashboard login page (Vite 8 SPA host app over the shared @insforge/dashboard package: react-router-dom BrowserRouter, TanStack Query, react-hook-form + zod, i18next, PostHog; /api proxied to a stand-in for the Express backend)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/insforge-dev.sh\" 7141 7140",
+      "url": "http://localhost:7141/dashboard/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/main.tsx",
+        "route": "/dashboard/login",
+        "aliases": {
+          "@insforge/dashboard": "../packages/dashboard/src",
+          "#app": "../packages/dashboard/src/app",
+          "#assets": "../packages/dashboard/src/assets",
+          "#components": "../packages/dashboard/src/components",
+          "#features": "../packages/dashboard/src/features",
+          "#layout": "../packages/dashboard/src/layout",
+          "#lib": "../packages/dashboard/src/lib",
+          "#navigation": "../packages/dashboard/src/navigation",
+          "#router": "../packages/dashboard/src/router",
+          "#types": "../packages/dashboard/src/types",
+          "@insforge/shared-schemas": "../packages/shared-schemas/src",
+          "@insforge/ui": "../packages/ui/src"
+        },
+        "externalPackageAllowList": [
+          "@insforge/*",
+          "react-router-dom",
+          "react-router",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "zod",
+          "i18next",
+          "react-i18next",
+          "lucide-react",
+          "@radix-ui/*",
+          "radix-ui",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+          "posthog-js",
+          "sonner",
+          "next-themes"
+        ]
+      },
+      "notes": "The Express backend needs the ghcr.io/insforge/postgres image plus PostgREST; `corpus/scripts/insforge-api-server.ts` stands in for it on an anonymous visit, answering `/api/auth/admin/sessions/current` and `/api/auth/admin/refresh` with the backend's 401 bodies so `RequireAuth` redirects to `/dashboard/login`, which is captured directly."
+    },
+    {
+      "id": "blinko",
+      "repository": "https://github.com/blinkospace/blinko",
+      "revision": "b2586d03fddb796252f050a96922879bf4a41fad",
+      "description": "Blinko sign-in page (Vite 6 SPA served by the Express + vite-express backend on :1111: react-router-dom BrowserRouter with lazy routes, MobX stores, HeroUI, next-themes, i18next; Prisma over a local PostgreSQL container)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/blinko-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-blinko-pg 5452 blinko"],
+      "dev": "cd server && bun --env-file ../.env index.ts",
+      "url": "http://localhost:1111/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "app",
+        "entry": "src/main.tsx",
+        "route": "/signin",
+        "aliases": {
+          "@": "./src",
+          "@shared": "../shared"
+        },
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "next-themes",
+          "mobx",
+          "mobx-react-lite",
+          "i18next",
+          "react-i18next",
+          "i18next-http-backend",
+          "i18next-browser-languagedetector",
+          "@heroui/*",
+          "@react-aria/*",
+          "@react-stately/*",
+          "@react-types/*"
+        ]
+      },
+      "notes": "Partial. The page mounts two React roots: react-dom for the sign-in form and a @react-three/fiber root for the shader gradient background (ShaderGradientCanvas, three.js WebGL that happy-dom cannot host), so the R3F root is opaque. `AppProvider` (an `observer`) maps `rootStore.providers`, which `initStore` pushes `ToastPlugin` into from a `useEffect`; the MobX model treats observability as transparent, so it never replays that reaction and the static side misses the `<provider key=\"ToastPlugin\">` subtree. `Layout` calls `useTranslation` before its `/signin` early return; `fetch` now serves `public/locales/<lng>/translation.json`, so i18next-http-backend loads real resources and i18next replays its load -> `loaded` -> `changeLanguage` callback cascade across the forks of the detected language (about 18k `hasLanguageSomeTranslations` calls), which exhausts the step budget inside the render and leaves `Layout` unknown. HeroUI's Input/Checkbox/Button/Image run through @react-aria hooks and tailwind-variants slot functions whose props are runtime state (`useInput` focus/hover/filled, `tv()` reducers). framer-motion's `MotionConfig` and react-dev-inspector's `Inspector` are opaque pass-throughs. The `packageManager` field pins bun@1.2.8 but `bun install` resolves the lockfile with the ambient bun."
+    },
+    {
+      "id": "fiora-app",
+      "repository": "https://github.com/yinxin630/fiora",
+      "revision": "d741c006c5a0a5b904dec742ac09dbc51bd7860d",
+      "description": "Fiora mobile client packages/app (Expo SDK 42 / React Native 0.63, react-native-router-flux, native-base, react-redux; App.tsx wraps src/App in the redux Provider)",
+      "notes": "Not a web app: packages/app is Expo/React Native only. Its scripts are `expo start`, `expo build:android`, `expo build:ios`; app.json declares ios/android targets only; the dependencies have react-native and react-native-router-flux but no react-dom or react-native-web, and src/App.tsx renders react-native `View`s and native-base `Root` through react-native-router-flux scenes, so nothing here can be served to a browser. The repository's browser client is the separate packages/web (webpack), outside the requested root. Recorded static-only from App.tsx (`yarn install --ignore-scripts` skips the expo/jest-expo postinstall downloads).",
+      "framework": "spa",
+      "workingDirectory": "packages/app",
+      "install": "cd packages/app && yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "yarn dev:app",
+      "url": "http://localhost:19006/",
+      "static": {
+        "rootDirectory": "packages/app",
+        "entry": "App.tsx",
+        "tsconfig": "tsconfig.json",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "react-native-router-flux",
+          "native-base"
+        ]
+      }
+    },
+    {
+      "id": "texlyre",
+      "repository": "https://github.com/TeXlyre/texlyre",
+      "revision": "421c1fdcab56bd4c939675d22b60ce76e70337f3",
+      "description": "TeXlyre local-first LaTeX/Typst editor (Vite SPA under the /texlyre/ base path, React 19 StrictMode, IndexedDB auth, Yjs)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx pnpm@10.20.0 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx pnpm@10.20.0 run generate:plugins"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx pnpm@10.20.0 dev",
+      "url": "http://localhost:5173/texlyre/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "defines": {
+          "__BASE_PATH__": "/texlyre",
+          "__APP_VERSION__": "0.12.1",
+          "process.env.npm_package_version": "0.12.1"
+        }
+      },
+      "notes": "package.json requires Node >= 24 and pnpm 10.20; `src/plugins/index.ts` is generated from `extras/` by `generate:plugins` (only the build scripts run it), so setup runs it before the dev server; `predev` (scripts/setup-assets.cjs) copies pdf.js/mathlive/typst assets into public/ and downloads the busytex, grammar and font bundles from GitHub releases, so the first dev start needs network. vite.config.ts defines `__BASE_PATH__` and `__APP_VERSION__` from the package version."
+    },
+    {
+      "id": "unforget",
+      "repository": "https://github.com/computing-den/unforget",
+      "revision": "9b5e84dfb17e796d76f741665c29a13cb217129b",
+      "description": "Unforget login page (React 18 SPA with a hand-rolled history router, esbuild client bundle served by the app's own Express server through barefront)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "setup": [
+        "printf 'PORT=3007\\nNODE_ENV=development\\nDISABLE_CACHE=1\\nLOG_TO_CONSOLE=1\\nFORWARD_LOGS_TO_SERVER=0\\nFORWARD_ERRORS_TO_SERVER=0\\n' > .env",
+        "mkdir -p private"
+      ],
+      "dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" npx barefront dev",
+      "url": "http://localhost:3007/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/client/index.tsx",
+        "envFiles": [".env"],
+        "envPrefix": ""
+      },
+      "notes": "The server refuses to start without the six environment variables validateEnvVars.ts lists, so the setup step writes the `.env` that both the Express server and the esbuild `define` map read. esbuild.config.mjs inlines every `process.env` variable of the dev process (hence the empty `envPrefix`), and rejects values that are not JS literals, so the dev server runs with a clean environment. The SQLite database is created on first start; `/login` renders without a user."
+    },
+    {
+      "id": "noteworthy",
+      "repository": "https://github.com/guyariely/noteworthy",
+      "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
+      "description": "Noteworthy notes app (react-scripts 3 SPA, React 16.8 hooks, draft-js editor, react-modal)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 12 npm install --no-audit --no-fund",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 12 npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3008",
+        "SKIP_PREFLIGHT_CHECK": "true"
+      },
+      "url": "http://localhost:3008/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-modal",
+          "@fortawesome/react-fontawesome",
+          "@fortawesome/fontawesome-svg-core",
+          "@fortawesome/free-solid-svg-icons",
+          "draft-js"
+        ]
+      },
+      "notes": "Pinned to node-sass 4.12.0, whose newest prebuilt binding targets Node 12, so install and dev run under Node 12."
+    },
+    {
+      "id": "dazzle",
+      "repository": "https://github.com/Raathigesh/dazzle",
+      "revision": "c4a46f62401a0a1b34efa3a45134a6a34a121770",
+      "description": "react-dazzle sample dashboard (webpack 4 dev server, React 16 class components, react-dnd v2 DragDropContext, react-modal)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx cross-env NODE_ENV=development webpack-dev-server --mode development --port 8093",
+      "url": "http://localhost:8093/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "sample/index.js",
+        "defines": {
+          "__DEV__": true,
+          "__PRODUCTION__": false
+        },
+        "externalPackageAllowList": [
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "dnd-core",
+          "redux",
+          "symbol-observable",
+          "invariant",
+          "disposables",
+          "react-modal",
+          "exenv"
+        ]
+      },
+      "notes": "webpack.config.js defines `__DEV__`/`__PRODUCTION__` from NODE_ENV; the sample page mounts `sample/components/app.jsx` around the library in `lib/`."
+    },
+    {
+      "id": "mdsilo-web",
+      "repository": "https://github.com/danloh/mdSilo-web",
+      "revision": "ad05af63072cace38cd09f2082ab5e4443f3b7be",
+      "description": "mdSilo web app view (Next 12 pages router, React 17, zustand store with a local demo workspace)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 18 npx -y yarn@1.22.22 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 18 npx -y yarn@1.22.22 next dev -p 3009",
+      "url": "http://localhost:3009/app/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/app/",
+        "externalPackageAllowList": [
+          "zustand",
+          "zustand/*",
+          "@headlessui/react",
+          "@react-spring/web",
+          "@react-spring/core",
+          "@react-spring/shared",
+          "@react-spring/animated",
+          "@tabler/icons",
+          "@tippyjs/react",
+          "react-toastify",
+          "react-virtualized",
+          "mdsmirror",
+          "react-portal"
+        ]
+      }
+    },
+    {
+      "id": "mathberet",
+      "repository": "https://github.com/yonatanmgr/mathberet",
+      "revision": "818c54c51df9ba9ecf177d495d016422d1598dee",
+      "description": "Mathberet Electron renderer (electron-forge webpack plugin, React 18 with a custom WindowFrame chrome, react-grid-layout pages, Slate and MathLive blocks)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --ignore-scripts",
+      "dev": "npm start",
+      "url": "http://localhost:3000/app_window",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/renderer/appRenderer.tsx",
+        "tsconfig": "tsconfig.json"
+      },
+      "notes": "Static-only: an Electron-only desktop app with no web target. `npm start` runs `electron-forge start`, whose webpack dev server only serves the renderer to the Electron BrowserWindow, and the renderer depends on the preload bridge (`window.api.getOS()`, `getNotebooks()`, `receive()` from src/renderer/appPreload.tsx over ipcRenderer) inside its mount effects, so a plain browser page throws on mount and commits nothing comparable. Install skips lifecycle scripts to avoid downloading the Electron binary the static analysis never runs."
+    },
+    {
+      "id": "uxie",
+      "repository": "https://github.com/zeus-12/uxie",
+      "revision": "29e4586e48a5c5fd060b5db3e2740aa8bcfe58db",
+      "description": "Uxie local demo workspace (Next 14 pages router, React 18 StrictMode, client-only reader seeded from apps/web/src/lib/demo with react-pdf-highlighter)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/web",
+      "install": "npx -y pnpm@9.14.2 install --frozen-lockfile --filter @uxie/web...",
+      "setup": [
+        "printf 'DATABASE_URL=postgresql://uxie:uxie@localhost:5432/uxie\\nNEXTAUTH_URL=http://localhost:3010\\nNEXTAUTH_SECRET=bippy-corpus\\nGOOGLE_CLIENT_ID=placeholder\\nGOOGLE_CLIENT_SECRET=placeholder\\nUPLOADTHING_TOKEN=placeholder\\nGOOGLE_GENERATIVE_AI_API_KEY=placeholder\\nPINECONE_ENVIRONMENT=placeholder\\nPINECONE_API_KEY=placeholder\\nHUGGINGFACE_API_KEY=placeholder\\nSUPABASE_SERVICE_KEY=placeholder\\nPUBLIC_SUPABASE_URL=placeholder\\nNEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY=pk_placeholder\\nNEXT_PUBLIC_ENV=development\\nMOCK_AI=1\\n' > .env"
+      ],
+      "dev": "npx -y pnpm@9.14.2 exec next dev -p 3010",
+      "url": "http://localhost:3010/demo",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/demo",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@uxie/*",
+          "@trpc/*",
+          "@tanstack/react-query",
+          "next-auth",
+          "next-seo",
+          "lucide-react",
+          "@radix-ui/*",
+          "react-resizable-panels",
+          "zustand",
+          "usehooks-ts",
+          "sonner",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "react-virtuoso",
+          "react-pdf-highlighter",
+          "@blocknote/*"
+        ]
+      },
+      "notes": "The web app's `src/env.mjs` (t3-env) refuses to boot without every server variable, so the setup step writes placeholder values; `/demo` is the repository's fully client-side reader (components/demo + lib/demo) and never calls the tRPC, Prisma, NextAuth, Liveblocks or AI backends those variables configure. The root package.json pins pnpm 9.14.2 (patchedDependencies for react-pdf-highlighter); the install filters to the web app and the shared workspace package so the Electron desktop app is not built."
+    },
+    {
+      "id": "sokuji",
+      "repository": "https://github.com/kizuna-ai-lab/sokuji",
+      "revision": "874c87612535b9777ed4f824ccfc117804dcbe73",
+      "description": "Sokuji live-translation app rendered in its plain-browser `web` environment (Vite 8 dev server serving shared/index.tsx, React 19, Zustand stores; the same React tree the Electron renderer and browser extension load)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --ignore-scripts",
+      "setup": [
+        "bash scripts/copy-ort-wasm.sh",
+        "mkdir -p .bippy-electron-stub && printf '#!/bin/sh\\nexec sleep infinity\\n' > .bippy-electron-stub/electron && chmod +x .bippy-electron-stub/electron"
+      ],
+      "dev": "npx vite --port 5175 --strictPort",
+      "env": {
+        "ELECTRON_OVERRIDE_DIST_PATH": ".bippy-electron-stub"
+      },
+      "url": "http://localhost:5175/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "shared/index.tsx",
+        "externalPackageAllowList": ["react-router-dom", "react-router"]
+      },
+      "notes": "src/utils/environment.ts resolves to the `web` platform when neither the Electron preload nor chrome.runtime is present, which is what the Vite dev server gives a plain browser (CLAUDE.md: `npm run dev` runs the React app only). `npm ci --ignore-scripts` skips the postinstall (`electron-rebuild` + copy-ort-wasm) so the Electron binary and native modules are never downloaded or built; setup re-runs only the WASM copy the renderer needs. vite-plugin-electron's `onstart` spawns `electron .` and exits the dev server when that child exits, so the setup writes a sleeping stand-in executable and ELECTRON_OVERRIDE_DIST_PATH points the `electron` package at it; nothing of the app's source is patched."
     }
   ]
 }

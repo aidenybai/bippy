@@ -3,6 +3,7 @@ import {
   compareGuard,
   constantGuard,
   countGuardAtoms,
+  decidesAlternatives,
   ELEMENT_SEGMENT,
   equalsGuard,
   inSetGuard,
@@ -120,10 +121,30 @@ export const recordDerivation = <T extends StaticValue>(value: T, derivation: De
 
 const negations = new WeakMap<StaticValue, StaticValue>();
 
+const isDerivedFrom = (value: StaticValue, candidate: StaticValue): boolean => {
+  for (let current: StaticValue | undefined = value; current;) {
+    if (current === candidate) return true;
+    const derivation = derivations.get(current);
+    current = derivation?.kind === "alias" ? derivation.operand : negations.get(current);
+  }
+  return false;
+};
+
 /** Records that `negated` is `!operand`, so tests of either take opposite sides. */
 export const recordNegation = (negated: StaticValue, operand: StaticValue): StaticValue => {
-  negations.set(negated, operand);
+  if (!isDerivedFrom(operand, negated)) negations.set(negated, operand);
   return negated;
+};
+
+/**
+ * Records that `refined` is a branch rebuilt from `subject` by a test that
+ * narrowed it (on one path, or rejoining both): it names the same runtime
+ * value, so testing it again decides nothing new.
+ */
+export const recordRefinement = (refined: StaticValue, subject: StaticValue): void => {
+  if (refined.kind === "branch" && !isDerivedFrom(subject, refined)) {
+    recordDerivation(refined, { kind: "alias", operand: subject });
+  }
 };
 
 interface InputSourceRecord {
@@ -339,14 +360,17 @@ const originChoicePredicate = (subject: StaticBranchValue): string => {
 export const getBranchPredicate = (branch: StaticBranchValue): string =>
   branch.predicate ?? originChoicePredicate(branch);
 
-interface ResolvedGuards {
+export interface ResolvedAlternativeGuards {
   guards: Guard[];
   inputs: InputVariable[];
 }
 
-/** The guard each alternative of `branch` is taken under. */
-export const getAlternativeGuards = (branch: StaticBranchValue): ResolvedGuards => {
+/** The guard each alternative of `branch` is taken under; null when its predicate does not decide that many. */
+export const getAlternativeGuards = (
+  branch: StaticBranchValue,
+): ResolvedAlternativeGuards | null => {
   const predicate = parseSymbolicPredicate(getBranchPredicate(branch));
+  if (!decidesAlternatives(predicate, branch.alternatives.length)) return null;
   return {
     guards: predicateGuards(predicate, branch.alternatives.length),
     inputs: predicate.inputs,
@@ -382,29 +406,32 @@ export const composeFlattenedPredicate = (
   positionCount: number,
 ): string | null => {
   const outer = parseSymbolicPredicate(predicate ?? createPathPredicate(reason, location));
+  if (!decidesAlternatives(outer, alternatives.length)) return null;
   const outerGuards = predicateGuards(outer, alternatives.length);
   const inputs = [outer.inputs];
   const sides: Guard[][] = Array.from({ length: positionCount }, () => []);
-  alternatives.forEach((alternative, index) => {
+  for (const [index, alternative] of alternatives.entries()) {
     if (alternative.kind !== "branch") {
       sides[positions[index][0]].push(outerGuards[index]);
-      return;
+      continue;
     }
     const inner = getAlternativeGuards(alternative);
+    if (!inner) return null;
     inputs.push(inner.inputs);
-    inner.guards.forEach((guard, innerIndex) => {
+    for (const [innerIndex, guard] of inner.guards.entries()) {
       sides[positions[index][innerIndex]].push(andGuard([outerGuards[index], guard]));
-    });
-  });
+    }
+  }
   return guardedPredicate(sides.map(orGuard), inputs);
 };
 
 /** `a && b`, `a || b`, `c ? x : y` tested later: truthy under the alternatives' own guards, not a fresh variable. */
 const resolveBranchGuard = (subject: StaticValue): ResolvedGuard | null => {
   if (subject.kind !== "branch") return null;
-  const predicate = parseSymbolicPredicate(getBranchPredicate(subject));
-  const guards = predicateGuards(predicate, subject.alternatives.length);
-  const inputs = [predicate.inputs];
+  const alternativeGuards = getAlternativeGuards(subject);
+  if (!alternativeGuards) return null;
+  const { guards } = alternativeGuards;
+  const inputs = [alternativeGuards.inputs];
   const sides = subject.alternatives.map((alternative, index) => {
     const truthiness = getTruthiness(alternative);
     if (truthiness !== null) return andGuard([guards[index], constantGuard(truthiness)]);

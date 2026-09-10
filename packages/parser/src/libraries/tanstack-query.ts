@@ -434,7 +434,7 @@ const useMutation = (project: ProjectContext): StaticValue =>
     }),
   );
 
-export const tanstackQueryValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const tanstackQueryValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!TANSTACK_QUERY_PACKAGES.includes(specifier)) return null;
   if (importedName === "skipToken") return SKIP_TOKEN;
   if (QUERY_HOOKS.has(importedName)) {

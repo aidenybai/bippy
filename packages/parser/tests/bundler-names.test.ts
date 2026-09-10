@@ -50,6 +50,12 @@ describe("bundler-renamed fibers", () => {
     expect(isBundledDefaultExportName("App", "App_default")).toBe(false);
   });
 
+  it("matches webpack's and rspack's local for an anonymous default export", () => {
+    expect(isBundledDefaultExportName("default", "__WEBPACK_DEFAULT_EXPORT__")).toBe(true);
+    expect(isBundledDefaultExportName("default", "__rspack_default_export")).toBe(true);
+    expect(isBundledDefaultExportName("Noop", "__rspack_default_export")).toBe(false);
+  });
+
   it("splices out a re-export wrapper around the fiber it was renamed against", () => {
     const flattened = flattenTransparentFibers(
       snapshotOf([

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getInstalledModules } from "../libraries/installed-modules.js";
-import type { ProjectContext, SourceTransform, TransformedSource } from "../types.js";
+import type { JsonValue, ProjectContext, SourceTransform, TransformedSource } from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 
@@ -9,6 +9,7 @@ const SVGR_CORE_PACKAGE = "@svgr/core";
 const SVGR_DEFAULT_PLUGIN_PACKAGES = ["@svgr/plugin-svgo", "@svgr/plugin-jsx"];
 const SVG_EXTENSION = ".svg";
 const REACT_SCRIPTS_PACKAGE = "react-scripts";
+const DOCUSAURUS_PLUGIN_SVGR_PACKAGE = "@docusaurus/plugin-svgr";
 const VITE_PLUGIN_SVGR_PACKAGE = "vite-plugin-svgr";
 
 const svgrConfigSchema = z.object({ typescript: z.boolean().optional() });
@@ -31,7 +32,7 @@ interface SvgrState {
 interface SvgrLoaderRule {
   bundlerPackage: string;
   callerName?: string;
-  options: Record<string, boolean>;
+  options: Record<string, JsonValue>;
   defaultPluginPackages: string[];
   getPreviousExport: ((filePath: string) => string) | null;
   query?: string;
@@ -49,6 +50,31 @@ const REACT_SCRIPTS_RULE: SvgrLoaderRule = {
   defaultPluginPackages: SVGR_DEFAULT_PLUGIN_PACKAGES,
   getPreviousExport: (filePath) =>
     `export default require(${JSON.stringify(`file-loader!${filePath}`)});`,
+};
+
+/**
+ * `@docusaurus/plugin-svgr` (bundled by preset-classic) wraps the site's `.svg`
+ * rule in `@svgr/webpack` with svgo told to keep `<title>` and `viewBox`, and
+ * the title exposed as a prop.
+ */
+const DOCUSAURUS_PLUGIN_SVGR_RULE: SvgrLoaderRule = {
+  bundlerPackage: "@svgr/webpack",
+  callerName: "@svgr/webpack",
+  options: {
+    prettier: false,
+    svgo: true,
+    svgoConfig: {
+      plugins: [
+        {
+          name: "preset-default",
+          params: { overrides: { removeTitle: false, removeViewBox: false } },
+        },
+      ],
+    },
+    titleProp: true,
+  },
+  defaultPluginPackages: SVGR_DEFAULT_PLUGIN_PACKAGES,
+  getPreviousExport: null,
 };
 
 /**
@@ -108,8 +134,11 @@ const createTransform = (rootDirectory: string, rule: SvgrLoaderRule): SourceTra
   }
   if (!loadConfig || !transform) return null;
   return {
-    extension: SVG_EXTENSION,
-    query: rule.query,
+    appliesTo: (extension, _lang, query) =>
+      extension === SVG_EXTENSION &&
+      (rule.query === undefined
+        ? query === null
+        : query !== null && new URLSearchParams(query).has(rule.query)),
     transform: (filePath, sourceText) =>
       transformSvg(
         loadConfig,
@@ -128,14 +157,29 @@ const createTransform = (rootDirectory: string, rule: SvgrLoaderRule): SourceTra
   };
 };
 
+/**
+ * A bundler plugin that calls `@svgr/core`'s `transform(svg, options, { filePath })`
+ * itself (`esbuild-plugin-svgr`, `vite-plugin-svgr`) supplies no default plugins:
+ * `options.plugins` decides the pipeline, and without it the SVG text passes through.
+ */
+const directTransformRule = (options: Record<string, JsonValue>): SvgrLoaderRule => ({
+  bundlerPackage: SVGR_CORE_PACKAGE,
+  options,
+  defaultPluginPackages: [],
+  getPreviousExport: null,
+});
+
 const findLoaderRule = (
   project: ProjectContext,
   resolver: ModuleResolver,
   rootDirectory: string,
+  options: Record<string, JsonValue> | undefined,
 ): SvgrLoaderRule | null => {
+  if (options !== undefined) return directTransformRule(options);
   if (project.hasDeclaredDependency(REACT_SCRIPTS_PACKAGE)) return REACT_SCRIPTS_RULE;
   const isInstalled = (packageName: string): boolean =>
     readInstalledPackage(resolver, rootDirectory, packageName) !== null;
+  if (isInstalled(DOCUSAURUS_PLUGIN_SVGR_PACKAGE)) return DOCUSAURUS_PLUGIN_SVGR_RULE;
   if (project.bundler === "vite" && isInstalled(VITE_PLUGIN_SVGR_PACKAGE))
     return VITE_PLUGIN_SVGR_RULE;
   const bundlerPackage = SVGR_BUNDLER_PACKAGES.find(isInstalled);
@@ -154,7 +198,8 @@ export const createSvgrSourceTransform = (
   project: ProjectContext,
   resolver: ModuleResolver,
   rootDirectory: string,
+  options: Record<string, JsonValue> | undefined,
 ): SourceTransform | null => {
-  const rule = findLoaderRule(project, resolver, rootDirectory);
+  const rule = findLoaderRule(project, resolver, rootDirectory, options);
   return rule === null ? null : createTransform(rootDirectory, rule);
 };

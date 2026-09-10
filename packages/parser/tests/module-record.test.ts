@@ -61,3 +61,29 @@ describe("CommonJS exports behind inlined NODE_ENV guards", () => {
     ).toEqual(["Tag"]);
   });
 });
+
+describe("CommonJS exports of tsc enum and namespace emit", () => {
+  it("aliases `exports.Name` to the local the IIFE populates", () => {
+    const record = createModuleRecord(
+      parseSourceText(
+        "/app/node_modules/lib/types.js",
+        `
+          exports.Density = exports.VisualState = void 0;
+          var VisualState;
+          (function (VisualState) {
+            VisualState["hidden"] = "hidden";
+          })(VisualState = exports.VisualState || (exports.VisualState = {}));
+          var Density;
+          (function (Density) {
+            Density[Density["compact"] = 0] = "compact";
+          })(Density || (exports.Density = Density = {}));
+        `,
+        "js",
+      ),
+    );
+    expect(record.exports).toEqual([
+      { kind: "local", exportedName: "VisualState", localName: "VisualState" },
+      { kind: "local", exportedName: "Density", localName: "Density" },
+    ]);
+  });
+});

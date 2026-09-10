@@ -70,6 +70,7 @@ const itemsRepeat = (
 ): PatternNode => ({
   kind: "repeat",
   variable: "items",
+  decision: "items",
   location: null,
   cardinality: { ...items, measure: "length" },
   inputs,
@@ -79,7 +80,7 @@ const itemsRepeat = (
 });
 
 const renderFixture = async (name: string) => {
-  const renderer = createStaticRenderer({
+  const renderer = await createStaticRenderer({
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
   });
@@ -119,6 +120,17 @@ describe("symbolic tree: input provenance", () => {
     const rendered = formatSymbolicTree(space.tree);
     expect(rendered).toContain('and(not(eq(typeof(#1), "undefined")), eq(#1, "beta"))');
     expect(rendered).toContain("#3 < 0.5");
+  });
+});
+
+describe("symbolic tree: guard literals", () => {
+  it("keeps every guard literal finite so the tree survives JSON serialization", async () => {
+    const space = await renderFixture("infinite-bound.tsx");
+    const rendered = formatSymbolicTree(space.tree);
+    expect(rendered).toContain("#2 < 50");
+    expect(rendered).toContain("truthy(#1)");
+    expect(rendered).not.toContain("Infinity");
+    expect(parseSymbolicTree(JSON.stringify(space.tree))).toEqual(space.tree);
   });
 });
 

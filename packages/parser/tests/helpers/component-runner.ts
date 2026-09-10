@@ -14,6 +14,7 @@ import {
   formatRuntimeSnapshot,
   getRenderPattern,
   getRootContainer,
+  replayEnumeratedStates,
   type CompareRenderResult,
   type RuntimeSnapshot,
 } from "../../src/harness/index.js";
@@ -28,6 +29,8 @@ export interface ComponentFixtureModule {
   minCoverage?: number;
   isExact?: boolean;
   isPartial?: boolean;
+  isEnumerated?: boolean;
+  isReplayCorrected?: boolean;
   /** How many states the analysis must enumerate: fewer or more means decisions were lost or duplicated. */
   stateCount?: number;
 }
@@ -39,6 +42,8 @@ export interface ComponentRunResult {
   minCoverage: number;
   isExact: boolean;
   isPartial: boolean;
+  isEnumerated: boolean;
+  isReplayCorrected: boolean;
   stateCount: number | null;
 }
 
@@ -100,6 +105,14 @@ const mountComponent = async (Component: ComponentType): Promise<RuntimeSnapshot
   }
 };
 
+export const createComponentRenderer = () =>
+  createStaticRenderer({
+    rootDirectory: COMPONENTS_DIRECTORY,
+    tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
+    settleMs: QUIET_COMMIT_MS,
+    timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
+  });
+
 export const runComponentFixture = async (
   fixture: ComponentFixture,
 ): Promise<ComponentRunResult> => {
@@ -109,15 +122,13 @@ export const runComponentFixture = async (
   if (!isComponentModule(loaded)) {
     throw new Error(`${fixture.name} has no default export component`);
   }
-  const renderer = createStaticRenderer({
-    rootDirectory: COMPONENTS_DIRECTORY,
-    tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
-    settleMs: QUIET_COMMIT_MS,
-    timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
-  });
+  const renderer = await createComponentRenderer();
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));
-  const comparison = compareStaticToRuntime(enumerateStaticStates(staticResult), runtime);
+  const comparison = await replayEnumeratedStates(
+    compareStaticToRuntime(enumerateStaticStates(staticResult), runtime),
+    (decisions) => renderer.derive({ decisions }).renderComponent(fixture.filePath),
+  );
   return {
     staticResult,
     runtime,
@@ -125,6 +136,8 @@ export const runComponentFixture = async (
     minCoverage: loaded.minCoverage ?? 1,
     isExact: loaded.isExact ?? false,
     isPartial: loaded.isPartial ?? false,
+    isEnumerated: loaded.isEnumerated ?? false,
+    isReplayCorrected: loaded.isReplayCorrected ?? false,
     stateCount: loaded.stateCount ?? null,
   };
 };

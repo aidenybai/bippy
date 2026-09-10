@@ -1,5 +1,32 @@
+import type { HostDocument } from "../host/host-document.js";
 import type { StaticValue } from "../types.js";
 import { primitiveValue } from "./values.js";
+
+/**
+ * `document.baseURI`: the page's first `<base href>` resolved against the
+ * document URL, else that URL (HTML's document base URL). Known only from the
+ * page's own markup: a `<base>` the analysis never saw would win. Needs the
+ * parts of the document URL the resolution reads: none for an absolute
+ * `href`, the origin for a root-relative one, the whole URL otherwise.
+ */
+export const getDocumentBaseUri = (
+  origin: string | null,
+  route: string | null,
+  hostDocument: HostDocument | null,
+): StaticValue | null => {
+  if (!hostDocument?.hasKnownMarkup) return null;
+  const baseHref = hostDocument.getBaseHref();
+  if (baseHref !== null && URL.canParse(baseHref)) return primitiveValue(new URL(baseHref).href);
+  if (origin === null) return null;
+  const isRootRelative = baseHref !== null && /^\/(?!\/)/.test(baseHref);
+  if (route === null && !isRootRelative) return null;
+  const documentUrl = new URL(route ?? "/", origin);
+  const baseUrl =
+    baseHref !== null && URL.canParse(baseHref, documentUrl)
+      ? new URL(baseHref, documentUrl)
+      : documentUrl;
+  return primitiveValue(baseUrl.href);
+};
 
 const ROUTE_MEMBERS = new Set(["pathname", "search", "hash"]);
 const ORIGIN_MEMBERS = new Set(["origin", "protocol", "host", "hostname", "port"]);

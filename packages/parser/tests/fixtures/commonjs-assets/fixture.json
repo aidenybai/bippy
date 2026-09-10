@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "skipRuntime": true,
+  "expectedStats": { "branchCount": 1, "unknownCount": 0 },
+  "notes": "webpack lets CommonJS `require()` load asset and CSS-module files through the same loaders as `import`: the asset URL is the path the bundler emits, which only the build knows (so its truthiness stays a branch), the CSS module's `:export` values are exact. Static-only because Vite, which mounts the fixtures at runtime, does not serve `require`."
+}

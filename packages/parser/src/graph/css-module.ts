@@ -8,6 +8,8 @@ import {
 import type { ImportedName, StaticValue } from "../types.js";
 
 const CSS_MODULE_PATH = /\.module\.(css|pcss|postcss|scss|sass|less|styl|stylus)$/;
+/** Vite's `CSS_LANGS_RE`: files its own css plugin serves. */
+const STYLESHEET_PATH = /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)$/;
 const COMMENTS = /\/\*[\s\S]*?\*\/|(^|[^:\\])\/\/[^\n]*/gm;
 const VARIABLE_DECLARATION = /^\s*[$@]([\w-]+)\s*:\s*([^;{}]+?)\s*(?:!default\s*)?;/gm;
 const EXPORT_BLOCK = /:export\s*\{((?:#\{[^}]*\}|[^}])*)\}/g;
@@ -21,6 +23,8 @@ interface CssModuleExports {
 }
 
 export const isCssModulePath = (filePath: string): boolean => CSS_MODULE_PATH.test(filePath);
+
+export const isStylesheetPath = (filePath: string): boolean => STYLESHEET_PATH.test(filePath);
 
 const resolveVariable = (
   value: string,

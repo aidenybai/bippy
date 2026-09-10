@@ -51,6 +51,16 @@ import {
 // is set. Router hooks resolve from the URL being rendered; anything only the
 // running router knows is an explicit unknown.
 
+/** The build phases `next/constants` exports (`next/dist/shared/lib/constants`). */
+export const NEXT_PHASES: Record<string, string> = {
+  PHASE_EXPORT: "phase-export",
+  PHASE_PRODUCTION_BUILD: "phase-production-build",
+  PHASE_PRODUCTION_SERVER: "phase-production-server",
+  PHASE_DEVELOPMENT_SERVER: "phase-development-server",
+  PHASE_TEST: "phase-test",
+  PHASE_INFO: "phase-info",
+};
+
 export interface NextModel {
   externalValues: ExternalValueProvider;
   /**
@@ -59,16 +69,14 @@ export interface NextModel {
    * same match the page was composed from.
    */
   params: Record<string, string>;
-  /**
-   * The matched page's route pattern (`router.pathname`, e.g. `/base/[baseId]`),
-   * filled in by the pages-router adapter alongside `params`.
-   */
+  /** The matched page file's route, which the pages router reports as `pathname`; filled in with `params`. */
   page: NextPageRoute;
   /** `next-intl`, whose request configuration `next.config` registers through its plugin. */
   intl: NextIntlModel;
 }
 
 export interface NextPageRoute {
+  /** `/posts/[slug]` for `pages/posts/[slug].tsx`; `null` until a page matched. */
   pathname: string | null;
 }
 
@@ -320,9 +328,9 @@ interface NextImageStubs {
   legacyImage: StaticValue;
 }
 
-/** `next/image` before 13.0 is today's `next/legacy/image`; the inner `ImageElement` forwardRef arrived in 12.2. */
+/** `next/image` before 13.0 is today's `next/legacy/image`; the inner `ImageElement` component arrived in 12.1.1. */
 const imageStubs = (options: NextModelOptions, head: StubComponent): NextImageStubs => {
-  const hasImageElement = options.version === null || isVersionAtLeast(options.version, "12.2.0");
+  const hasImageElement = options.version === null || isVersionAtLeast(options.version, "12.1.1");
   const legacyImage = stubValue(legacyImageStub({ hasImageElement, head }));
   return {
     image:
@@ -640,6 +648,10 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return nextRequestValue(importedName, options.request ?? null, options.origin ?? null);
       case "next/router":
         return pagesRouterValue(importedName, url, params, page);
+      case "next/constants":
+        return Object.hasOwn(NEXT_PHASES, importedName)
+          ? primitiveValue(NEXT_PHASES[importedName])
+          : null;
       case STYLED_JSX_SPECIFIER:
         return importedName === "default" ? stubValue(emptyStub("JSXStyle")) : null;
       default:

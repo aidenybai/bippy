@@ -7,7 +7,7 @@ const APP = join(import.meta.dirname, "fixtures/styled-components-transform");
 
 describe("styled-components build transform", () => {
   it("names styled components `file__Binding` when the project declares babel-plugin-styled-components", async () => {
-    const renderer = createStaticRenderer({
+    const renderer = await createStaticRenderer({
       rootDirectory: APP,
       tsconfigPath: join(APP, "tsconfig.json"),
       externalPackageAllowList: ["styled-components"],

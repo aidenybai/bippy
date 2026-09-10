@@ -13,6 +13,12 @@ import {
  * subtrees. A fixture exporting `isExact` must leave no decision open (commits
  * are not decisions); one exporting `isPartial` must keep one, for uncertainty
  * happy-dom cannot exhibit (browser facts it only answers with placeholders).
+ * One exporting `isEnumerated` may keep decisions but the runtime tree must be
+ * a member of the enumerated state space: no state may be omitted by budget.
+ * Every enumerated state is replayed with its decisions pinned and must be
+ * reproduced, unless the fixture exports `isReplayCorrected`: its alternatives
+ * interfere when materialized together, so the replay must contradict the
+ * enumeration and replace the contradicted states with what it witnessed.
  * One exporting `stateCount` must enumerate exactly that many states.
  */
 describe("component fixtures: static fiber tree vs react-dom", () => {
@@ -36,9 +42,41 @@ describe("component fixtures: static fiber tree vs react-dom", () => {
         expect(decisionCount, detail).toBe(0);
       }
       if (run.isPartial) expect(decisionCount, detail).toBeGreaterThan(0);
+      if (run.isEnumerated) expect(report.status, detail).toBe("exact");
+      const replay = run.comparison.stateReplay;
+      expect(replay, detail).not.toBeNull();
+      if (replay === null) return;
+      if (run.isReplayCorrected) {
+        expect(replay.mismatched.length, detail).toBeGreaterThan(0);
+        expect(
+          replay.mismatched.every((mismatch) => mismatch.isCorrected),
+          detail,
+        ).toBe(true);
+      } else {
+        expect(replay.mismatched, detail).toEqual([]);
+      }
       if (run.stateCount !== null) {
         expect(run.comparison.stateSpace.states.length, detail).toBe(run.stateCount);
       }
     });
   }
+});
+
+/**
+ * Twelve rows read one uncertain map by three distinct keys, so the space is
+ * the state transition times one decision per key: correlated repeated reads
+ * must not multiply into an enumeration that hits the state budget.
+ */
+describe("repeated reads of one uncertain value share one decision", () => {
+  it("keyed-lookups.tsx", async () => {
+    const fixture = listComponentFixtures().find(
+      (candidate) => candidate.name === "keyed-lookups.tsx",
+    );
+    if (!fixture) throw new Error("missing keyed-lookups fixture");
+    const run = await runComponentFixture(fixture);
+    const detail = describeComponentRun(fixture, run);
+    expect(run.comparison.report.status, detail).toBe("exact");
+    expect(run.comparison.stateSpace.omitted, detail).toBeNull();
+    expect(run.comparison.stateSpace.states.length, detail).toBe(2 + 2 ** 3);
+  });
 });

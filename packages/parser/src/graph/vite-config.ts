@@ -87,17 +87,23 @@ export const findViteConfig = (rootDirectory: string): string | undefined =>
     existsSync(candidate),
   );
 
-interface ViteConfigLocation {
+export interface ViteConfigLocation {
   configPath: string;
   /** The directory Vite runs in, which `root` and `--config` resolve against. */
   cwd: string;
 }
 
-const locateViteConfig = (
-  directories: string[],
-  configPath: string | null,
-): ViteConfigLocation | null => {
-  for (const cwd of directories) {
+/** The config file the dev command starts Vite with, looked up where the command runs before the app's directory. */
+export const locateViteConfig = ({
+  rootDirectory,
+  devDirectory = rootDirectory,
+  devCommand,
+}: Pick<
+  ViteConfigOptions,
+  "rootDirectory" | "devDirectory" | "devCommand"
+>): ViteConfigLocation | null => {
+  const { configPath } = parseViteCli(devCommand);
+  for (const cwd of new Set([devDirectory, rootDirectory])) {
     const candidate = configPath === null ? findViteConfig(cwd) : path.resolve(cwd, configPath);
     if (candidate !== undefined && existsSync(candidate)) return { configPath: candidate, cwd };
   }
@@ -167,7 +173,7 @@ export const loadViteConfig = ({
 }: ViteConfigOptions): ViteConfig => {
   const cli = parseViteCli(devCommand);
   const cliMode = cli.mode ?? DEV_SERVER_MODE;
-  const location = locateViteConfig([...new Set([devDirectory, rootDirectory])], cli.configPath);
+  const location = locateViteConfig({ rootDirectory, devDirectory, devCommand });
   if (location === null) return defaultViteConfig(rootDirectory, cliMode);
   const { configPath, cwd } = location;
   const graph = new ModuleGraph({ resolver, sourceFileCache: new SourceFileCache() });

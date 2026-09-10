@@ -1,5 +1,5 @@
 import path from "node:path";
-import { renderFrameworkTarget } from "../frameworks/render-framework.js";
+import { createFrameworkRenderer, type FrameworkRenderer } from "../frameworks/render-framework.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import { getSettleMs, type CorpusEntry } from "./manifest.js";
 import { readProcessEnvironment } from "./process-environment.js";
@@ -20,6 +20,7 @@ const rendererOptionsForEntry = (
     bootstrap: entry.static.bootstrap,
     globals: entry.static.globals,
     defines: entry.static.defines,
+    svgr: entry.static.svgr,
     environment: readProcessEnvironment(entry, rootDirectory),
     devCommand: entry.dev,
     devDirectory: path.join(cloneDirectory, entry.workingDirectory),
@@ -37,12 +38,12 @@ const getPageRoute = (url: string): string => {
   return `${pathname}${search}${hash}`;
 };
 
-export const renderCorpusEntry = (
+export const createCorpusEntryRenderer = (
   entry: CorpusEntry,
   cloneDirectory: string,
   observations?: RuntimeObservations,
-): Promise<StaticRenderResult> =>
-  renderFrameworkTarget(
+): Promise<FrameworkRenderer> =>
+  createFrameworkRenderer(
     {
       framework: entry.framework,
       entry: entry.static.entry,
@@ -52,3 +53,10 @@ export const renderCorpusEntry = (
     },
     rendererOptionsForEntry(entry, cloneDirectory, observations),
   );
+
+export const renderCorpusEntry = async (
+  entry: CorpusEntry,
+  cloneDirectory: string,
+  observations?: RuntimeObservations,
+): Promise<StaticRenderResult> =>
+  (await createCorpusEntryRenderer(entry, cloneDirectory, observations)).render();

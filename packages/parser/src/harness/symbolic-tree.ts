@@ -247,6 +247,8 @@ export const patternNodeSchema: z.ZodType<PatternNode> = z.lazy(() =>
     z.object({
       kind: z.literal("branch"),
       variable: z.string(),
+      decision: z.string(),
+      sharesScope: z.boolean(),
       reason: z.string(),
       location: z.string().nullable(),
       preferredIndex: z.number().nullable(),
@@ -257,6 +259,7 @@ export const patternNodeSchema: z.ZodType<PatternNode> = z.lazy(() =>
     z.object({
       kind: z.literal("repeat"),
       variable: z.string(),
+      decision: z.string(),
       location: z.string().nullable(),
       cardinality: symbolicVariableSchema,
       inputs: z.array(inputVariableSchema),
@@ -301,6 +304,23 @@ export const serializeSymbolicPredicate = (predicate: SymbolicPredicate): string
 
 export const parseSymbolicPredicate = (serialized: string): SymbolicPredicate =>
   parseWithSchema(symbolicPredicateSchema, JSON.parse(serialized), "branch predicate");
+
+export interface NormalizedPredicate {
+  predicate: SymbolicPredicate;
+  /** The branch's alternatives are stored in the opposite order from the materializer's. */
+  isSwapped: boolean;
+}
+
+/** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
+export const normalizePredicate = (
+  predicate: SymbolicPredicate,
+  alternativeCount: number,
+): NormalizedPredicate => {
+  if (predicate.formula?.kind !== "not" || alternativeCount !== 2) {
+    return { predicate, isSwapped: false };
+  }
+  return { predicate: { ...predicate, formula: predicate.formula.operand }, isSwapped: true };
+};
 
 export const serializeSymbolicCardinality = (cardinality: SymbolicCardinality): string =>
   JSON.stringify(cardinality);
@@ -503,6 +523,15 @@ export const predicateGuards = (
   }
   throw new Error(`predicate does not decide ${alternativeCount} alternatives`);
 };
+
+/** Whether `predicateGuards` can name a guard per alternative: a formula only decides two. */
+export const decidesAlternatives = (
+  predicate: SymbolicPredicate,
+  alternativeCount: number,
+): boolean =>
+  predicate.choice !== null ||
+  (predicate.formula !== null && alternativeCount === 2) ||
+  predicate.guards?.length === alternativeCount;
 
 const countNodes = (nodes: PatternNode[], stats: SymbolicTreeStats): void => {
   for (const node of nodes) {

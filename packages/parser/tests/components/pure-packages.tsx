@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import fs from "fs";
 import { flattenDeep, isEqual, isNil } from "lodash-es";
 import isEmpty from "lodash-es/isEmpty";
+import numeral from "numeral";
 import { basename, join } from "path";
 import { twMerge } from "tailwind-merge";
 
@@ -39,6 +40,14 @@ const ClassNames = ({ isActive }: { isActive: boolean }) => (
     <Shown value={classNames("chip", ["a", "b"], { active: isActive })} />
     <Shown value={twMerge("px-2 py-1", "px-4")} />
   </>
+);
+
+/** admin-one-react-tailwind's NumberDynamic: the project's own numeral formats a known number through a Numeral instance. */
+const FormattedNumber = ({ value }: { value: number }) => (
+  <data value={value}>
+    <Shown value={value < 1000 ? String(value) : numeral(value).format("0,0")} />
+    <Shown value={numeral(value / 1000).format("0.0a")} />
+  </data>
 );
 
 const PROJECT_FILES = fs.readdirSync(process.cwd());
@@ -116,6 +125,8 @@ export default function PurePackages() {
       <Shown value={ROLLED_OVER} />
       <ClassNames isActive />
       <ClassNames isActive={false} />
+      <FormattedNumber value={512} />
+      <FormattedNumber value={7770} />
       <ProjectFiles />
       <Board />
     </section>

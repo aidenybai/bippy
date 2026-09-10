@@ -20,6 +20,8 @@ export interface ModuleResolverOptions {
   rootDirectory?: string;
 }
 
+const SCRIPT_EXTENSIONS = new Set([".js", ".mjs", ".cjs"]);
+
 const SOURCE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".cjs", ".mts", ".cts", ".json"];
 
 const EXTENSION_ALIAS: Record<string, string[]> = {
@@ -118,6 +120,7 @@ export class ModuleResolver {
   private readonly cache = new Map<string, ModuleResolution>();
   private readonly aliasNames: string[];
   readonly rootDirectory: string | null;
+  readonly extensions: readonly string[] = SOURCE_EXTENSIONS;
 
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
@@ -171,7 +174,7 @@ export class ModuleResolver {
     if (isBuiltin(specifier)) {
       const installed = result.path ?? fallback.resolveFileSync(fromFile, cleanSpecifier).path;
       return installed !== undefined && getPackageNameFromFilePath(installed) === specifier
-        ? { kind: "external", packageName: specifier, filePath: installed }
+        ? { kind: "external", packageName: specifier, filePath: installed, specifier }
         : { kind: "builtin", specifier };
     }
     const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);
@@ -192,14 +195,49 @@ export class ModuleResolver {
           ? specifierPackage
           : null);
       if (packageName) {
-        return { kind: "external", packageName, filePath };
+        return {
+          kind: "external",
+          packageName,
+          filePath,
+          specifier: this.canonicalizeExternalSpecifier(
+            cleanSpecifier,
+            filePath,
+            fromFile,
+            importer,
+          ),
+        };
       }
       return { kind: "internal", filePath };
     }
     if (specifierPackage) {
-      return { kind: "external", packageName: specifierPackage, filePath: null };
+      return {
+        kind: "external",
+        packageName: specifierPackage,
+        filePath: null,
+        specifier: cleanSpecifier,
+      };
     }
     return { kind: "unresolved", specifier, error: result.error ?? "not found" };
+  }
+
+  /**
+   * `next/script.js` and `next/script` load the same file (`LOAD_AS_FILE` probes the
+   * extension), so the extensionless form names the module wherever it is modeled.
+   */
+  private canonicalizeExternalSpecifier(
+    specifier: string,
+    filePath: string,
+    fromFile: string,
+    importer: ImporterKind,
+  ): string {
+    const extension = path.extname(specifier);
+    if (!SCRIPT_EXTENSIONS.has(extension)) return specifier;
+    const extensionless = specifier.slice(0, -extension.length);
+    if (getPackageNameFromSpecifier(extensionless) === extensionless) return specifier;
+    const resolution = this.resolve(extensionless, fromFile, importer);
+    return resolution.kind === "external" && resolution.filePath === filePath
+      ? extensionless
+      : specifier;
   }
 
   /** A bundler-aliased specifier is a path of the app itself however package-like it reads (tsconfig `paths` likewise). */

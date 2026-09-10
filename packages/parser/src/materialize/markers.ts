@@ -26,20 +26,31 @@ interface MarkerChildrenProps {
   children?: ReactNode;
 }
 
-interface BranchMarkerProps extends MarkerChildrenProps {
-  reason: string;
+/** Props every decision marker carries so a replay can find the same decision again. */
+interface DecisionMarkerProps extends MarkerChildrenProps {
   location: string | null;
+  /** Digest of the decision's structural path, numbered per decision scope in materialization order. */
+  decision: string;
+  /** The alternatives (or iterations) were materialized in the enclosing decision scope, not one of their own. */
+  sharesScope: boolean;
+}
+
+interface BranchMarkerProps extends DecisionMarkerProps {
+  reason: string;
   preferredIndex: number | null;
   /** Identity of the decision; branches sharing one are selected together. */
   predicate: string | null;
+  /** The only alternative rendered, when a replay pinned this branch. */
+  pinnedIndex: number | null;
 }
 
-interface RepeatMarkerProps extends MarkerChildrenProps {
-  location: string | null;
+interface RepeatMarkerProps extends DecisionMarkerProps {
   /** Serialized `SymbolicCardinality`; null when the iterated collection is not an input the analysis can name. */
   cardinality: string | null;
   countMin: number;
   countMax: number | null;
+  /** How many iterations were rendered, when a replay pinned this repeat. */
+  pinnedCount: number | null;
 }
 
 interface OpaqueMarkerProps extends MarkerChildrenProps {

@@ -12,7 +12,7 @@ export default function Post() {
   return (
     <article>
       <h1>Post {router.query.id}</h1>
-      <p>Route {router.pathname}</p>
+      {router.pathname === "/posts/[id]" ? <em>post route</em> : <strong>elsewhere</strong>}
       {isNavigating ? <progress /> : null}
     </article>
   );
