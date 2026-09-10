@@ -1695,14 +1695,16 @@ export class Materializer {
     const withEffectCall = (run: (call: EffectCall) => void): void => {
       const { componentContext } = rendered;
       if (!componentContext) return;
-      run(
-        (callback) =>
+      run((callback) => {
+        const result =
           this.interpreter.runInAlternative(
             rendered.context.alternative,
             componentContext.scope,
             () => this.interpreter.callValue(callback, [], componentContext, location),
-          ) ?? UNDEFINED_VALUE,
-      );
+          ) ?? UNDEFINED_VALUE;
+        resolveAlternativeUpdates(frame, rendered.context.alternative);
+        return result;
+      });
     };
     const mount = (isLayout: boolean): void => {
       instance.committed = rendered;

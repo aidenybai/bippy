@@ -105,6 +105,15 @@ describe("symbolic tree: correlation by construction", () => {
   });
 });
 
+describe("symbolic tree: effects committed under an alternative", () => {
+  it("settles a component's own effect state without forking on a decision the next render renames", async () => {
+    const space = await renderFixture("effects-under-unstable-decisions.tsx");
+    expect(space.tree.inputs).toHaveLength(2);
+    expect(space.stateCount).toBe(4);
+    expect(formatSymbolicTree(space.tree)).not.toContain("branch(false | true)");
+  });
+});
+
 describe("symbolic tree: input provenance", () => {
   it("names the source of every input and keeps an optional input's tests on one variable", async () => {
     const space = await renderFixture("input-provenance.tsx");

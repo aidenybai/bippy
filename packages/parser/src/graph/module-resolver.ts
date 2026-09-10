@@ -29,8 +29,8 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
   ".cjs": [".cjs", ".cts"],
 };
 
-const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
-const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
+const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "development", "default"];
+const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "development", "default"];
 /** The export condition React Server Components bundlers add for modules outside a client boundary. */
 const REACT_SERVER_CONDITION_NAME = "react-server";
 
