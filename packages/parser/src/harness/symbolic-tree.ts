@@ -105,6 +105,11 @@ export type Guard =
   | GuardAnd
   | GuardOr;
 
+export interface GuardContext {
+  guard: Guard;
+  inputs: InputVariable[];
+}
+
 /** What a `$Branch` marker carries: either a two-way formula or an N-way choice variable. */
 export interface SymbolicPredicate {
   formula: Guard | null;
@@ -118,7 +123,7 @@ export interface SymbolicCardinality {
   inputs: InputVariable[];
 }
 
-/** One committed tree and the guard over the `commit` input under which the capture shows it. */
+/** One committed tree, guarded by its scheduling causes and the capture's commit selection. */
 export interface SymbolicCommit {
   guard: Guard;
   tree: PatternNode[];
@@ -378,6 +383,18 @@ export const andGuard = (operands: Guard[]): Guard => combineGuards("and", opera
 
 export const orGuard = (operands: Guard[]): Guard => combineGuards("or", operands, true);
 
+export const combineGuardContexts = (
+  contexts: GuardContext[],
+  combine: (guards: Guard[]) => Guard,
+): GuardContext => ({
+  guard: combine(contexts.map((context) => context.guard)),
+  inputs: [
+    ...new Map(
+      contexts.flatMap((context) => context.inputs).map((input) => [input.id, input]),
+    ).values(),
+  ],
+});
+
 export const isSameVariable = (left: SymbolicVariable, right: SymbolicVariable): boolean =>
   left.input === right.input &&
   left.measure === right.measure &&
@@ -572,7 +589,7 @@ export const computeSymbolicStats = (
   const stats: SymbolicTreeStats = {
     nodes: 0,
     inputs: inputs.length,
-    guards: commits.length > 1 ? commits.length : 0,
+    guards: commits.filter((commit) => !isSameGuard(commit.guard, constantGuard(true))).length,
     branches: 0,
     repeats: 0,
     opaque: 0,
@@ -619,16 +636,24 @@ export const COMMIT_INPUT: InputVariable = {
 
 /**
  * The symbolic tree of the committed pattern trees: the inputs every guard and
- * cardinality in them ranges over, and each commit guarded by which commit the
- * capture observed (a single commit needs no guard).
+ * cardinality in them ranges over, and each commit guarded by its causes and
+ * which commit the capture observed (a single commit needs no selector).
  */
-export const buildSymbolicTree = (commits: PatternNode[][]): SymbolicTree => {
+export const buildSymbolicTree = (
+  commits: PatternNode[][],
+  causes: GuardContext[] = [],
+): SymbolicTree => {
   const inputs = new Map<string, InputVariable>();
   if (commits.length > 1) inputs.set(COMMIT_INPUT.id, COMMIT_INPUT);
   const symbolicCommits = commits.map((tree, index) => {
     collectInputs(tree, inputs);
+    const cause = causes[index];
+    for (const input of cause?.inputs ?? []) inputs.set(input.id, input);
     return {
-      guard: commits.length > 1 ? choiceGuard(COMMIT_VARIABLE, index) : constantGuard(true),
+      guard: andGuard([
+        commits.length > 1 ? choiceGuard(COMMIT_VARIABLE, index) : constantGuard(true),
+        cause?.guard ?? constantGuard(true),
+      ]),
       tree,
     };
   });

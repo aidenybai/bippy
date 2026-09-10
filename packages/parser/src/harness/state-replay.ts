@@ -14,7 +14,9 @@ import {
   type StaticStateSpaceOptions,
 } from "./compare-render.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
-import { hasPatternDecisions, type PatternNode } from "./static-pattern.js";
+import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
+import { areGuardsSatisfiable } from "./guard-solver.js";
+import { decisionGuard, type Guard } from "./symbolic-tree.js";
 import {
   pinDecisions,
   type DecisionCondition,
@@ -313,6 +315,40 @@ class AssignmentJoin {
   }
 }
 
+const collectAssignedGuards = (
+  nodes: PatternNode[],
+  conditions: ReadonlyMap<string, DecisionCondition>,
+): Guard[] =>
+  nodes.flatMap((node): Guard[] => {
+    switch (node.kind) {
+      case "fiber":
+        return collectAssignedGuards(node.children, conditions);
+      case "opaque":
+        return collectAssignedGuards(node.passedChildren, conditions);
+      case "branch": {
+        const condition = conditions.get(node.variable);
+        if (condition?.kind !== "branch" && condition?.kind !== "state-update") return [];
+        return [
+          decisionGuard(node, condition.alternativeIndex),
+          ...collectAssignedGuards(node.alternatives[condition.alternativeIndex] ?? [], conditions),
+        ];
+      }
+      case "repeat": {
+        const condition = conditions.get(node.variable);
+        if (condition?.kind !== "repeat") return [];
+        return [
+          decisionGuard(node, condition.count),
+          ...Array.from({ length: condition.count }, (_, iteration) =>
+            collectAssignedGuards(scopeRepeatIteration(node, iteration), conditions),
+          ).flat(),
+        ];
+      }
+      case "text":
+      case "wildcard":
+        return [];
+    }
+  });
+
 export interface DecisionAssignment {
   /** One condition per decision, under the variable of the earliest commit meeting it. */
   conditions: DecisionCondition[];
@@ -362,16 +398,32 @@ export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionA
   }
   return joint.map((assignment) => {
     const decisions = [...assignment.values()];
+    const pinnedConditions = stateSpace.commits.map((_, commit) =>
+      decisions.flatMap((aliases) =>
+        aliases.flatMap((alias) => (alias.commit === commit ? [alias.condition] : [])),
+      ),
+    );
+    const guards = stateSpace.commits.flatMap((commit, index) =>
+      collectAssignedGuards(
+        commit,
+        new Map(pinnedConditions[index].map((condition) => [condition.variable, condition])),
+      ),
+    );
+    const reachable = stateSpace.tree.commits.map((commit) =>
+      areGuardsSatisfiable([...guards, commit.guard]),
+    );
     return {
       conditions: decisions.map(([decision]) => decision.condition),
-      pinnedConditions: stateSpace.commits.map((_, commit) =>
-        decisions.flatMap((aliases) =>
-          aliases.flatMap((alias) => (alias.commit === commit ? [alias.condition] : [])),
-        ),
-      ),
-      stateIndices: decisionsOf.flatMap((stateDecisions, stateIndex) =>
-        join.isSubAssignment(assignment, stateDecisions) ? [stateIndex] : [],
-      ),
+      pinnedConditions,
+      stateIndices: decisionsOf.flatMap((stateDecisions, stateIndex) => {
+        const transition = stateSpace.states[stateIndex].conditions.find(
+          (condition) => condition.kind === "transition",
+        );
+        return reachable[transition?.commit ?? 0] &&
+          join.isSubAssignment(assignment, stateDecisions)
+          ? [stateIndex]
+          : [];
+      }),
     };
   });
 };

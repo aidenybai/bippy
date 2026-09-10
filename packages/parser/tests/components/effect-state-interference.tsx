@@ -47,4 +47,3 @@ export default function EffectStateInterference() {
 }
 
 export const isPartial = true;
-export const isReplayCorrected = true;

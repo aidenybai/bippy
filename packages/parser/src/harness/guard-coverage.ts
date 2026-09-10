@@ -3,10 +3,14 @@ import { areGuardsSatisfiable } from "./guard-solver.js";
 import type { StateCondition } from "./state-space.js";
 import { scopeRepeatIteration, type PatternNode, type PatternRepeat } from "./static-pattern.js";
 import {
+  andGuard,
   COMMIT_INPUT,
   compareGuard,
+  constantGuard,
   equalsGuard,
   formatGuard,
+  isSameGuard,
+  orGuard,
   type Guard,
   type SymbolicTree,
 } from "./symbolic-tree.js";
@@ -78,6 +82,23 @@ const repeatSides = (node: PatternRepeat): Array<[number, Guard]> => {
   return sides;
 };
 
+const recordSide = (sides: Map<string, GuardSide>, side: GuardSide): void => {
+  const existing = sides.get(side.key);
+  sides.set(
+    side.key,
+    existing
+      ? {
+          ...side,
+          guard: orGuard([
+            andGuard([...existing.pathGuards, existing.guard]),
+            andGuard([...side.pathGuards, side.guard]),
+          ]),
+          pathGuards: [],
+        }
+      : side,
+  );
+};
+
 const collectSides = (
   nodes: PatternNode[],
   pathGuards: Guard[],
@@ -95,36 +116,32 @@ const collectSides = (
         node.alternatives.forEach((alternative, index) => {
           const guard = node.guards[index];
           const key = sideKey(node.variable, index);
-          if (!sides.has(key)) {
-            sides.set(key, {
-              key,
-              kind: "branch",
-              variable: node.variable,
-              reason: node.reason,
-              location: node.location,
-              side: index,
-              guard,
-              pathGuards,
-            });
-          }
+          recordSide(sides, {
+            key,
+            kind: "branch",
+            variable: node.variable,
+            reason: node.reason,
+            location: node.location,
+            side: index,
+            guard,
+            pathGuards,
+          });
           collectSides(alternative, [...pathGuards, guard], sides);
         });
         break;
       case "repeat":
         for (const [side, guard] of repeatSides(node)) {
           const key = sideKey(node.variable, side);
-          if (!sides.has(key)) {
-            sides.set(key, {
-              key,
-              kind: "repeat",
-              variable: node.variable,
-              reason: "repeated list",
-              location: node.location,
-              side,
-              guard,
-              pathGuards,
-            });
-          }
+          recordSide(sides, {
+            key,
+            kind: "repeat",
+            variable: node.variable,
+            reason: "repeated list",
+            location: node.location,
+            side,
+            guard,
+            pathGuards,
+          });
         }
         collectSides(node.children, [...pathGuards, compareGuard(node.cardinality, ">", 0)], sides);
         break;
@@ -139,7 +156,7 @@ const collectSides = (
 export const collectGuardSides = (tree: SymbolicTree): GuardSide[] => {
   const sides = new Map<string, GuardSide>();
   tree.commits.forEach((commit, index) => {
-    if (tree.commits.length > 1) {
+    if (!isSameGuard(commit.guard, constantGuard(true))) {
       const key = sideKey(COMMIT_INPUT.id, index);
       sides.set(key, {
         key,
@@ -227,7 +244,7 @@ const witnessedSides = (tree: SymbolicTree, captures: StateCondition[][]): Set<s
   for (const capture of captures) {
     const transition = capture.find((condition) => condition.kind === "transition");
     const commit = transition?.kind === "transition" ? transition.commit : tree.commits.length - 1;
-    if (transition?.kind === "transition") witnessed.add(sideKey(COMMIT_INPUT.id, commit));
+    witnessed.add(sideKey(COMMIT_INPUT.id, commit));
     const conditions = new Map(
       capture.flatMap((condition): Array<[string, StateCondition]> =>
         condition.kind === "transition" ? [] : [[condition.variable, condition]],

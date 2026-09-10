@@ -1,4 +1,4 @@
-import { GuardSolver } from "./guard-solver.js";
+import { areGuardsSatisfiable, GuardSolver } from "./guard-solver.js";
 import type {
   BranchCondition,
   OmittedRepeatStates,
@@ -16,7 +16,15 @@ import {
   type PatternNode,
   type PatternRepeat,
 } from "./static-pattern.js";
-import { decisionGuard, type SymbolicCommit, type SymbolicTree } from "./symbolic-tree.js";
+import {
+  collectGuardVariables,
+  COMMIT_INPUT_ID,
+  constantGuard,
+  decisionGuard,
+  type Guard,
+  type SymbolicCommit,
+  type SymbolicTree,
+} from "./symbolic-tree.js";
 
 // States are derived from the symbolic tree on demand. Decisions that share an
 // input, or nest inside one another, form a cluster and are enumerated
@@ -138,9 +146,17 @@ const uniteDecisions = (nodes: PatternNode[], enclosing: string[], union: InputU
 };
 
 /** Inputs decided together: they share a decision, or one decision only exists under another. */
-export const clusterInputs = (tree: PatternNode[]): string[][] => {
+export const clusterInputs = (
+  tree: PatternNode[],
+  guard: Guard = constantGuard(true),
+): string[][] => {
   const union = new InputUnion();
   uniteDecisions(tree, [], union);
+  union.unite(
+    collectGuardVariables(guard)
+      .map((variable) => baseInputId(variable.input))
+      .filter((input) => input !== COMMIT_INPUT_ID),
+  );
   return union.members().sort((left, right) => left[0].localeCompare(right[0]));
 };
 
@@ -183,7 +199,8 @@ class ClusterEnumerator {
     private readonly omit: (key: string, omission: StateOmission) => void,
   ) {}
 
-  enumerate(tree: PatternNode[]): void {
+  enumerate(tree: PatternNode[], guard: Guard): void {
+    if (!this.solver.push(guard)) return;
     this.expandList(tree, 0, new Map(), (conditions) => {
       if (this.states.length >= this.budget.maxStates) {
         this.isTruncated = true;
@@ -378,16 +395,18 @@ const enumerateCommit = (
 ): CommitStateSpace => {
   const log = new OmissionLog();
   omitTruncatedSubtrees(commit.tree, log.omit);
-  const clusters = clusterInputs(commit.tree).map((inputs): GuardCluster => {
+  const clusters = clusterInputs(commit.tree, commit.guard).map((inputs): GuardCluster => {
     const enumerator = new ClusterEnumerator(new Set(inputs), budget, log.omit);
-    enumerator.enumerate(commit.tree);
+    enumerator.enumerate(commit.tree, commit.guard);
     return { inputs, states: enumerator.states, isTruncated: enumerator.isTruncated };
   });
   return {
     transition,
     tree: commit.tree,
     clusters,
-    stateCount: clusters.reduce((product, cluster) => product * cluster.states.length, 1),
+    stateCount: areGuardsSatisfiable([commit.guard])
+      ? clusters.reduce((product, cluster) => product * cluster.states.length, 1)
+      : 0,
     omissions: log.list(),
   };
 };
