@@ -16,7 +16,7 @@ import type {
 import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
 import { findOwningScope } from "./scope.js";
-import { getObjectProperty, primitiveValue } from "./values.js";
+import { getObjectProperty, objectFromRecord, primitiveValue, unknownValue } from "./values.js";
 
 /** `this`, `editor`, `callbackRef.current`, `this.update`: a value named from inside a closure body. */
 export type AccessPath = string[];
@@ -39,10 +39,28 @@ export interface ItemBinding {
   receiver: AccessPath;
 }
 
-/** An argument at an escaped call site: a plain path, a literal, or neither (`{ onDone: setX }`, `x + 1`). */
+/**
+ * An argument at an escaped call site: a plain path, a literal, an object
+ * literal of such members (`{ type: "add", item }`), or none of those (`x + 1`).
+ * An object is built once per tuple of member values so a closure followed
+ * with the same members sees the same argument.
+ */
 interface EscapedArgument {
   path: AccessPath | null;
   literal: StaticPrimitiveValue | null;
+  members: EscapedMember[] | null;
+  instances: EscapedObjectInstance[];
+}
+
+interface EscapedMember {
+  key: string;
+  argument: EscapedArgument;
+  fallback: StaticValue;
+}
+
+interface EscapedObjectInstance {
+  memberValues: StaticValue[];
+  object: StaticValue;
 }
 
 interface EscapedCallSite {
@@ -138,6 +156,55 @@ const getLiteralValue = (node: Node): StaticPrimitiveValue | null => {
     default:
       return null;
   }
+};
+
+const toEscapedArgument = (node: Node): EscapedArgument => {
+  const path = getAccessPath(node);
+  const literal = path ? null : getLiteralValue(node);
+  return {
+    path,
+    literal,
+    members: path || literal ? null : getEscapedMembers(node),
+    instances: [],
+  };
+};
+
+const getEscapedMembers = (node: Node): EscapedMember[] | null => {
+  if (node.type !== "ObjectExpression") return null;
+  const members: EscapedMember[] = [];
+  for (const property of node.properties) {
+    if (property.type !== "Property" || property.kind !== "init" || property.computed) return null;
+    const key =
+      property.key.type === "Identifier"
+        ? property.key.name
+        : property.key.type === "Literal" && typeof property.key.value === "string"
+          ? property.key.value
+          : null;
+    if (key === null) return null;
+    members.push({
+      key,
+      argument: toEscapedArgument(property.value),
+      fallback: unknownValue(`property "${key}" of an argument of code that is not evaluated`),
+    });
+  }
+  return members;
+};
+
+const buildEscapedObject = (
+  argument: EscapedArgument,
+  members: EscapedMember[],
+  resolveArgument: (argument: EscapedArgument) => StaticValue | null,
+): StaticValue => {
+  const memberValues = members.map((member) => resolveArgument(member.argument) ?? member.fallback);
+  const instance = argument.instances.find((candidate) =>
+    candidate.memberValues.every((value, index) => value === memberValues[index]),
+  );
+  if (instance) return instance.object;
+  const object = objectFromRecord(
+    Object.fromEntries(members.map((member, index) => [member.key, memberValues[index]])),
+  );
+  argument.instances.push({ memberValues, object });
+  return object;
 };
 
 const collectAccessPaths = (node: Node, paths: AccessPath[]): void => {
@@ -249,11 +316,10 @@ const collectClosureShape = (node: Node, shape: ClosureShape, bindings: ItemBind
     case "CallExpression":
     case "NewExpression": {
       const nestedPaths: AccessPath[] = [];
-      const escapedArguments = node.arguments.map((argument): EscapedArgument => {
-        const path = getAccessPath(argument);
-        const literal = path ? null : getLiteralValue(argument);
-        if (!path && !literal) collectAccessPaths(argument, nestedPaths);
-        return { path, literal };
+      const escapedArguments = node.arguments.map((argument) => {
+        const escaped = toEscapedArgument(argument);
+        if (!escaped.path && !escaped.literal) collectAccessPaths(argument, nestedPaths);
+        return escaped;
       });
       shape.callSites.push({
         callee: getAccessPath(node.callee),
@@ -648,11 +714,13 @@ const forEachInvokedCallable = (
         for (const value of resolve(path)) forEachHandedCallable(value, walk, visits);
       }
     };
-    const argumentValues = callSite.arguments.map(({ path, literal }) => {
-      if (literal) return literal;
-      const [value, ...others] = path ? resolve(path) : [];
+    const resolveArgument = (argument: EscapedArgument): StaticValue | null => {
+      if (argument.literal) return argument.literal;
+      if (argument.members) return buildEscapedObject(argument, argument.members, resolveArgument);
+      const [value, ...others] = argument.path ? resolve(argument.path) : [];
       return value && others.length === 0 ? value : null;
-    });
+    };
+    const argumentValues = callSite.arguments.map(resolveArgument);
     const callees = callSite.callee ? resolve(callSite.callee) : [];
     const isEveryCalleeFollowed =
       callees.length > 0 && callees.every((callee) => callee.kind === "function");

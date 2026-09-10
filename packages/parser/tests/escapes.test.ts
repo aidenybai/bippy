@@ -21,8 +21,8 @@ describe("escaped handlers", () => {
     expect(await countStaticBranches("observer-callback-ref")).toBe(1);
   });
 
-  it("leave state reachable only from user-gesture listeners at its initial value", async () => {
-    expect(await countStaticBranches("pointer-hover-listener")).toBe(0);
+  it("widen the state reachable from pointer position listeners, which Chromium dispatches to the element at the pointer once navigation commits", async () => {
+    expect(await countStaticBranches("pointer-hover-listener")).toBe(1);
   });
 
   it("leave an instance handed to unresolved code as it was, since its methods run on a receiver of the caller's choosing", async () => {

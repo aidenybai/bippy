@@ -144,6 +144,15 @@ const matchPage = (
   return null;
 };
 
+/** `pages/a/[b]/index.tsx` → `/a/[b]`, `pages/index.tsx` → `/`: the pattern `router.pathname` reports. */
+const pageRoutePattern = (pagesDirectory: string, file: string): string => {
+  const segments = path
+    .relative(pagesDirectory, file.slice(0, -path.extname(file).length))
+    .split(path.sep);
+  if (segments.at(-1) === "index") segments.pop();
+  return `/${segments.join("/")}`;
+};
+
 /**
  * The props `next/client` renders the App with: `{...__NEXT_DATA__.props,
  * Component, router}`. Without a capture of the payload, `pageProps` is `{}`
@@ -210,6 +219,7 @@ export const renderNextPagesRoute = (
       return unknownValue(`no page for ${options.route}`);
     }
     Object.assign(model.params, match.params);
+    model.page.pathname = pageRoutePattern(pagesDirectory, match.file);
     const pagePath = match.file;
     const pageModule = renderer.loadModule(pagePath);
     if (!pageModule) {

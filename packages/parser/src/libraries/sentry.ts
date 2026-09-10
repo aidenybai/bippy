@@ -1,9 +1,16 @@
-import { getObjectProperty, objectValue, primitiveValue } from "../evaluate/values.js";
+import {
+  getObjectProperty,
+  mapValue,
+  objectValue,
+  primitiveValue,
+  unknownValue,
+} from "../evaluate/values.js";
 import { element, nativeFunction, passthroughStub, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ExternalValueProvider,
   StaticElementType,
+  StaticObjectEntry,
   StaticValue,
   StubComponent,
 } from "../types.js";
@@ -14,7 +21,18 @@ import { ClassComponentTag } from "../work-tags.js";
 // wrappers return a router built by the wrapped `create*Router`, and its
 // boundary/profiler components render their children until an error is caught.
 
-export const SENTRY_PACKAGES = ["@sentry/react"];
+export const SENTRY_PACKAGES = ["@sentry/react", "@sentry/nextjs"];
+
+/** The `next.config` keys `withSentryConfig` rewrites for build-time instrumentation; the rest spread through. */
+const SENTRY_BUILD_CONFIG_KEYS = [
+  "env",
+  "rewrites",
+  "experimental",
+  "serverExternalPackages",
+  "productionBrowserSourceMaps",
+  "webpack",
+  "turbopack",
+];
 
 const ERROR_BOUNDARY_STUB: StubComponent = {
   ...passthroughStub("ErrorBoundary"),
@@ -63,6 +81,44 @@ const withSentryRouting = (): StaticValue =>
     return stubValue(wrapped);
   });
 
+const sentryBuildConfigEntry = (key: string): StaticObjectEntry => ({
+  kind: "property",
+  key,
+  value: unknownValue(`next.config ${key} as @sentry/nextjs's withSentryConfig rewrites it`),
+});
+
+const finalSentryConfig = (nextConfig: StaticValue): StaticValue =>
+  mapValue(nextConfig, (alternative) => {
+    if (alternative.kind !== "object" && alternative.kind !== "primitive") return alternative;
+    const userConfig = alternative.kind === "object" ? alternative : objectValue();
+    const compiler = getObjectProperty(userConfig, "compiler");
+    return objectValue([
+      { kind: "spread", value: userConfig },
+      ...SENTRY_BUILD_CONFIG_KEYS.map(sentryBuildConfigEntry),
+      {
+        kind: "property",
+        key: "compiler",
+        value:
+          compiler.kind === "object"
+            ? objectValue([
+                { kind: "spread", value: compiler },
+                sentryBuildConfigEntry("runAfterProductionCompile"),
+              ])
+            : compiler,
+      },
+    ]);
+  });
+
+const withSentryConfig = (): StaticValue =>
+  nativeFunction("withSentryConfig", ([nextConfig = objectValue()]) => {
+    const isFunctionConfig =
+      nextConfig.kind === "function" || nextConfig.kind === "native-function";
+    if (!isFunctionConfig) return finalSentryConfig(nextConfig);
+    return nativeFunction("sentryNextConfig", (args, tools) =>
+      finalSentryConfig(tools.callAwaited(nextConfig, args)),
+    );
+  });
+
 const getComponentDisplayName = (
   type: StaticElementType,
   options: StaticValue | undefined,
@@ -88,8 +144,10 @@ const getComponentDisplayName = (
 };
 
 export const sentryValue: ExternalValueProvider = (specifier, importedName) => {
-  if (specifier !== "@sentry/react") return null;
+  if (!SENTRY_PACKAGES.includes(specifier)) return null;
   switch (importedName) {
+    case "withSentryConfig":
+      return specifier === "@sentry/nextjs" ? withSentryConfig() : null;
     case "wrapCreateBrowserRouterV6":
     case "wrapCreateBrowserRouterV7":
     case "wrapCreateMemoryRouterV6":

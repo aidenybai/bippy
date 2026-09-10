@@ -12,11 +12,9 @@ import { isNullish, primitiveValue, UNDEFINED_VALUE } from "./values.js";
  * Event interfaces only an input device dispatches (lib.dom's `UIEvent` family
  * minus `UIEvent` itself, which also types `resize` and `load`): whichever
  * event the DOM declares with one of them never fires before the runtime
- * snapshot. Pointer arrival events (`pointerover`, `pointerenter`,
- * `pointermove` and their mouse twins) are covered: Chromium only synthesizes
- * them once a real pointer event has told it where the pointer is, which never
- * happens in the headless capture. Focus moves only for a user or a script
- * (`element.focus()`); script moves reach the native listeners below.
+ * snapshot, except the pointer position events below. Focus moves only for a
+ * user or a script (`element.focus()`); script moves reach the native
+ * listeners below.
  */
 const INPUT_DEVICE_EVENT_INTERFACES = [
   "KeyboardEvent",
@@ -27,6 +25,26 @@ const INPUT_DEVICE_EVENT_INTERFACES = [
   "ClipboardEvent",
   "FocusEvent",
 ];
+
+/**
+ * Chromium hit-tests the pointer position (the viewport origin in a fresh
+ * headless page) once a navigation commits and again whenever layout changes
+ * what lies there, dispatching the boundary events and a synthetic move to that
+ * element; without layout the analysis cannot tell which element that is, so
+ * such a listener may run before the snapshot.
+ */
+const POINTER_POSITION_EVENTS = new Set([
+  "pointerover",
+  "pointerenter",
+  "pointerout",
+  "pointerleave",
+  "pointermove",
+  "mouseover",
+  "mouseenter",
+  "mouseout",
+  "mouseleave",
+  "mousemove",
+]);
 
 /** Events the browser dispatches only when the page is being left, after any snapshot. */
 const PAGE_UNLOAD_EVENTS = new Set(["pagehide", "beforeunload", "unload"]);
@@ -72,7 +90,7 @@ const isInputDeviceEventType = (type: string): boolean => {
 };
 
 const isUserDrivenEventType = (type: string): boolean =>
-  isInputDeviceEventType(type) ||
+  (isInputDeviceEventType(type) && !POINTER_POSITION_EVENTS.has(type)) ||
   VALUE_EVENTS.has(type) ||
   PAGE_UNLOAD_EVENTS.has(type) ||
   SCROLL_EVENTS.has(type) ||

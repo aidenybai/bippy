@@ -400,7 +400,10 @@ const lookupObjectProperty = (
 };
 
 const unknownSpreadProperty = (spread: StaticValue, key: string): StaticUnknownValue =>
-  unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`);
+  recordDerivation(
+    unknownValue(`property "${key}" may come from a spread of ${describeValue(spread)}`),
+    { kind: "property", object: spread, key },
+  );
 
 const getInheritedProperty = (
   memo: LookupMemo,
@@ -1138,7 +1141,14 @@ export const compareIdentity = (left: StaticValue, right: StaticValue): boolean 
     const rightType = getScalarTypeof(right);
     return leftType !== null && rightType !== null && leftType !== rightType ? false : null;
   }
-  return null;
+  return compareTruthinessToPrimitive(left, right) ?? compareTruthinessToPrimitive(right, left);
+};
+
+/** A value of known truthiness is never the same as a primitive of the other truthiness. */
+const compareTruthinessToPrimitive = (value: StaticValue, other: StaticValue): boolean | null => {
+  if (other.kind !== "primitive") return null;
+  const truthiness = getTruthiness(value);
+  return truthiness !== null && truthiness !== Boolean(other.value) ? false : null;
 };
 
 /** `shallowEqual` as React and TanStack Store define it: same known keys, each identical (`Object.is`). */

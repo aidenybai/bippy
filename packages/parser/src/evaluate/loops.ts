@@ -7,7 +7,12 @@ import type {
   Statement,
   WhileStatement,
 } from "oxc-parser";
-import type { SourceLocation, StaticOptionalValue, StaticValue } from "../types.js";
+import type {
+  SourceLocation,
+  StaticBranchValue,
+  StaticOptionalValue,
+  StaticValue,
+} from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { withScope } from "./context.js";
 import {
@@ -84,9 +89,9 @@ const isPositionalItem = (item: StaticValue): boolean =>
 const iterationValues = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
   context: EvaluationContext,
 ): IterationItems | null => {
-  const right = interpreter.evaluateExpression(statement.right, context);
   if (statement.type === "ForOfStatement") {
     const iterated = interpreter.resolveIterable(
       right,
@@ -104,6 +109,12 @@ const iterationValues = (
     return null;
   }
   const enumerated = getEnumerationTarget(right);
+  if (
+    enumerated.kind === "primitive" &&
+    (enumerated.value === null || enumerated.value === undefined)
+  ) {
+    return { items: [], isComplete: true };
+  }
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);
   return entries ? { items: entries.map(([key]) => primitiveValue(key)), isComplete: true } : null;
@@ -178,9 +189,10 @@ const runOptionalIteration = (
 const unrollForEach = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
   context: EvaluationContext,
 ): UnrollResult | null => {
-  const iteration = iterationValues(interpreter, statement, context);
+  const iteration = iterationValues(interpreter, statement, right, context);
   if (!iteration || iteration.items.length > MAX_UNROLLED_ITERATIONS) return null;
   const outcomes: StatementOutcome[] = [];
   for (const item of iteration.items) {
@@ -276,11 +288,46 @@ const evaluateUncertainTail = (
   return { ...outcome, mayComplete: true, jump: null };
 };
 
+const completeLoop = (
+  interpreter: Interpreter,
+  statement: LoopStatement,
+  unrolled: UnrollResult | null,
+  context: EvaluationContext,
+  location: SourceLocation,
+): StatementOutcome => {
+  if (unrolled?.kind === "exact") return unrolled.outcome;
+  const tail = evaluateUncertainTail(interpreter, statement, context, location);
+  return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
+};
+
+const evaluateForEach = (
+  interpreter: Interpreter,
+  statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation,
+): StatementOutcome =>
+  completeLoop(
+    interpreter,
+    statement,
+    unrollForEach(interpreter, statement, right, context),
+    context,
+    location,
+  );
+
+const isIteratedAlternative = (alternative: StaticValue): boolean =>
+  alternative.kind === "object" || alternative.kind === "list" || alternative.kind === "primitive";
+
+const isIteratedBranch = (right: StaticValue): right is StaticBranchValue =>
+  right.kind === "branch" && right.alternatives.every(isIteratedAlternative);
+
 /**
  * Loops are unrolled while their iteration count is statically known (a known
  * list, a known key set, or a counter whose test stays decidable) and every
  * `break`/`continue` is definite. Once that stops being true the remaining
- * iterations collapse into a single uncertain evaluation.
+ * iterations collapse into a single uncertain evaluation. A `for..of`/`for..in`
+ * over an uncertain value runs once per alternative as paths of that value's
+ * decision, so each path enumerates one known collection.
  */
 export const evaluateLoop = (
   interpreter: Interpreter,
@@ -288,11 +335,20 @@ export const evaluateLoop = (
   context: EvaluationContext,
   location: SourceLocation,
 ): StatementOutcome => {
-  const unrolled =
-    statement.type === "ForOfStatement" || statement.type === "ForInStatement"
-      ? unrollForEach(interpreter, statement, context)
-      : unrollConditional(interpreter, statement, context);
-  if (unrolled?.kind === "exact") return unrolled.outcome;
-  const tail = evaluateUncertainTail(interpreter, statement, context, location);
-  return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
+  if (statement.type !== "ForOfStatement" && statement.type !== "ForInStatement") {
+    return completeLoop(
+      interpreter,
+      statement,
+      unrollConditional(interpreter, statement, context),
+      context,
+      location,
+    );
+  }
+  const right = interpreter.evaluateExpression(statement.right, context);
+  if (isIteratedBranch(right)) {
+    return interpreter.forkAlternatives(right, context, location, (alternative, pathContext) =>
+      evaluateForEach(interpreter, statement, alternative, pathContext, location),
+    );
+  }
+  return evaluateForEach(interpreter, statement, right, context, location);
 };

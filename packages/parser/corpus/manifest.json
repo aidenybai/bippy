@@ -1122,7 +1122,14 @@
         "rootDirectory": "web",
         "route": "/auth/sign-in",
         "envFiles": ["../.env"],
-        "externalPackageAllowList": ["@trpc/*", "@tanstack/react-query", "@radix-ui/*"],
+        "externalPackageAllowList": [
+          "@trpc/*",
+          "@tanstack/react-query",
+          "@radix-ui/*",
+          "lucide-react",
+          "react-icons",
+          "react-icons/*"
+        ],
         "maxFiberCount": 20000
       },
       "notes": "`docker-compose.dev.yml` publishes PostgreSQL :5432, ClickHouse :8123/:9000, Redis :6379 and MinIO :9090 on their default ports. The setup script copies `.env.dev.example` to `.env` (telemetry disabled), generates the Prisma client, builds `@langfuse/shared` (the web app resolves its `dist/`) and applies the Prisma migrations; the ClickHouse migrations are not applied (they need the golang-migrate CLI and the sign-in page does not query ClickHouse)."
@@ -1149,9 +1156,13 @@
         "externalPackageAllowList": [
           "next-i18next",
           "react-i18next",
+          "i18next",
           "@teable/*",
           "@radix-ui/*",
-          "@tanstack/react-query"
+          "@tanstack/react-query",
+          "next-seo",
+          "sonner",
+          "react-joyride"
         ]
       },
       "notes": "Teable's backend (`nest start --webpackPath ./webpack.dev.js -w`) embeds the Next.js app and reads `apps/nextjs-app/.env.development{,.local}`; the setup script writes the `.local` override with the corpus PostgreSQL URL, generates both Prisma clients, deploys both schemas and runs `pnpm build:packages` (the workspace packages export `dist/`)."
@@ -1424,7 +1435,13 @@
         "rootDirectory": ".",
         "entry": "src/main.tsx",
         "route": "/login",
-        "externalPackageAllowList": ["react-redux", "hoist-non-react-statics", "redux-persist"]
+        "externalPackageAllowList": [
+          "react-redux",
+          "hoist-non-react-statics",
+          "redux-persist",
+          "i18next",
+          "react-i18next"
+        ]
       }
     },
     {
@@ -1489,7 +1506,17 @@
       "static": {
         "rootDirectory": ".",
         "route": "/dashboard/overview",
-        "externalPackageAllowList": ["@uidotdev/usehooks"]
+        "externalPackageAllowList": [
+          "@uidotdev/usehooks",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "@tanstack/react-query",
+          "@tanstack/react-table",
+          "@tanstack/table-core"
+        ]
       }
     },
     {
@@ -2002,7 +2029,7 @@
       "static": {
         "rootDirectory": ".",
         "route": "/",
-        "externalPackageAllowList": ["@once-ui-system/*"]
+        "externalPackageAllowList": ["@once-ui-system/*", "react-icons", "react-icons/*"]
       }
     },
     {
@@ -2805,7 +2832,8 @@
           "history",
           "mini-create-react-context",
           "hoist-non-react-statics",
-          "react-is"
+          "react-is",
+          "events"
         ]
       },
       "notes": "The dev server targets the API at localhost:8000 which is not started here; the public login page renders and logs the failed requests. The Express dev server serves /config/project-overrides.js, which sets window.projectOverrides from its environment; it is captured and replayed into `common/project`."

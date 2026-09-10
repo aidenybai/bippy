@@ -7,7 +7,7 @@ import type {
   StubRenderTools,
   UnknownPrimitiveType,
 } from "../types.js";
-import { getGeneratorItems } from "./generators.js";
+import { createItemsIteratorValue, getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getSearchParamsItems } from "./url-search-params.js";
 import {
@@ -457,10 +457,14 @@ export const createCollectionValue = (
       collection.clear();
       return UNDEFINED_VALUE;
     }),
-    keys: nativeMethod("keys", () => collection.project((entry) => entry.key)),
-    values: nativeMethod("values", () => collection.project((entry) => entry.value)),
+    keys: nativeMethod("keys", () =>
+      createItemsIteratorValue(collection.project((entry) => entry.key)),
+    ),
+    values: nativeMethod("values", () =>
+      createItemsIteratorValue(collection.project((entry) => entry.value)),
+    ),
     entries: nativeMethod("entries", () =>
-      collection.project((entry) => listValue([entry.key, entry.value])),
+      createItemsIteratorValue(collection.project((entry) => listValue([entry.key, entry.value]))),
     ),
     forEach: nativeMethod("forEach", ([callback], tools) => {
       const entries = collection.project((entry) => listValue([entry.value, entry.key, self]));

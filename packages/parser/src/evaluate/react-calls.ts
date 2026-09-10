@@ -75,7 +75,7 @@ const stateHook = (
     current: StaticValue,
     tools: StubRenderTools,
   ) => StaticValue,
-  reduceEscaped: (action: StaticValue | undefined) => StaticValue | null,
+  reduceEscaped: (action: StaticValue | undefined, current: StaticValue) => StaticValue | null,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -103,7 +103,11 @@ const stateHook = (
     },
     onEscape: (argumentValues) => {
       const action = argumentValues === null ? null : argumentValues[0];
-      escapeStateCell(frame, cell, action === null ? null : reduceEscaped(action));
+      escapeStateCell(
+        frame,
+        cell,
+        action === null ? null : reduceEscaped(action, cell.next ?? cell.current),
+      );
     },
   };
   return listValue([cell.current, cell.setter]);
@@ -506,7 +510,15 @@ export const evaluateReactApiCall = (
           first
             ? tools.call(first, [current, action ?? UNDEFINED_VALUE])
             : unknownValue("reducer state after dispatch"),
-        () => null,
+        (action, current) =>
+          first
+            ? interpreter.callValue(
+                first,
+                [current, action ?? UNDEFINED_VALUE],
+                enterUncertainPath(context),
+                location,
+              )
+            : null,
       );
     }
     case "useMemo": {

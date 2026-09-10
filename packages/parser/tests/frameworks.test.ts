@@ -453,6 +453,21 @@ describe("next pages router", () => {
     expect(tree).toMatch(/<h1>\n\s+"Post "\n\s+"42"/);
   });
 
+  it("reports the matched page's route pattern as useRouter().pathname", async () => {
+    const { tree } = await render("next-pages", { framework: "next-pages", route: "/posts/42" });
+    expect(tree).toMatch(/<p>\n\s+"Route "\n\s+"\/posts\/\[id\]"/);
+  });
+
+  it("keeps router.events listeners dormant: route events only fire on navigation", async () => {
+    const { tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/posts/42",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).not.toContain("<progress>");
+    expect(tree).not.toContain("?");
+  });
+
   it("matches catch-all pages", async () => {
     const { tree, errors } = await render("next-pages", {
       framework: "next-pages",
@@ -584,6 +599,15 @@ describe("next pages router", () => {
 
   it("wraps the tree in StrictMode when a next.config function sets reactStrictMode", async () => {
     const { tree, errors } = await render("next-pages-strict", {
+      framework: "next-pages",
+      route: "/",
+    });
+    expect(errors).toEqual([]);
+    expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
+  });
+
+  it("reads reactStrictMode through @sentry/nextjs's withSentryConfig", async () => {
+    const { tree, errors } = await render("next-pages-sentry-config", {
       framework: "next-pages",
       route: "/",
     });

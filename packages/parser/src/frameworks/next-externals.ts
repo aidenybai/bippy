@@ -59,8 +59,17 @@ export interface NextModel {
    * same match the page was composed from.
    */
   params: Record<string, string>;
+  /**
+   * The matched page's route pattern (`router.pathname`, e.g. `/base/[baseId]`),
+   * filled in by the pages-router adapter alongside `params`.
+   */
+  page: NextPageRoute;
   /** `next-intl`, whose request configuration `next.config` registers through its plugin. */
   intl: NextIntlModel;
+}
+
+export interface NextPageRoute {
+  pathname: string | null;
 }
 
 type NextRouterKind = Extract<FrameworkKind, "next-app" | "next-pages">;
@@ -541,6 +550,7 @@ const pagesRouterValue = (
   importedName: string,
   url: URL,
   params: Record<string, string>,
+  page: NextPageRoute,
 ): StaticValue | null => {
   if (importedName !== "useRouter" && importedName !== "default") return null;
   const query = objectFromRecord({
@@ -552,13 +562,17 @@ const pagesRouterValue = (
     ),
   });
   const router = objectFromRecord({
-    pathname: unknownValue("pathname is the page's route pattern"),
+    pathname:
+      page.pathname === null
+        ? unknownValue("pathname is the page's route pattern")
+        : primitiveValue(page.pathname),
     asPath: primitiveValue(`${url.pathname}${url.search}`),
     query,
     isReady: primitiveValue(true),
     isFallback: primitiveValue(false),
     isPreview: primitiveValue(false),
     locale: UNDEFINED_VALUE,
+    events: objectFromRecord(Object.fromEntries(routerMethods(["on", "off"]))),
     ...Object.fromEntries(
       routerMethods(["push", "replace", "reload", "back", "prefetch", "beforePopState"]),
     ),
@@ -583,6 +597,7 @@ interface NextModelOptions {
 export const createNextModel = (options: NextModelOptions): NextModel => {
   const url = new URL(options.route, options.origin ?? "http://static.invalid");
   const params: Record<string, string> = {};
+  const page: NextPageRoute = { pathname: null };
   const linkStub = createLinkStub(options);
   const intl = createNextIntlModel({
     link: linkStub,
@@ -624,12 +639,12 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
       case "next/headers":
         return nextRequestValue(importedName, options.request ?? null, options.origin ?? null);
       case "next/router":
-        return pagesRouterValue(importedName, url, params);
+        return pagesRouterValue(importedName, url, params, page);
       case STYLED_JSX_SPECIFIER:
         return importedName === "default" ? stubValue(emptyStub("JSXStyle")) : null;
       default:
         return intl.externalValues(packageName, importedName);
     }
   };
-  return { externalValues, params, intl };
+  return { externalValues, params, page, intl };
 };

@@ -82,6 +82,7 @@ import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
 import { type EvaluationContext, isCertainWrite } from "./context.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
+import { createItemsIteratorValue } from "./generators.js";
 import {
   chainPromise,
   combinePromises,
@@ -92,7 +93,7 @@ import {
   type PromiseHandlers,
   type PromiseTools,
 } from "./promises.js";
-import { createNumberFormat } from "./intl-format.js";
+import { createDateTimeFormat, createNumberFormat } from "./intl-format.js";
 import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
@@ -989,6 +990,7 @@ const callGlobal = (
     if (ofItems) return ofItems;
   }
   if (name === "Intl.NumberFormat") return createNumberFormat(args, location);
+  if (name === "Intl.DateTimeFormat") return createDateTimeFormat(args, location);
   if (isConstructor && name === "TextEncoder") return createTextEncoder();
   if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
@@ -1448,18 +1450,19 @@ const callGlobal = (
   }
   if (name === "Math.random")
     return recordInputSource(rangedNumberValue(name, { min: 0, max: 1 }), "random", location);
-  if (name === "Intl.getCanonicalLocales") {
+  const pureStatic = PURE_STATIC_NATIVES[name];
+  if (pureStatic) {
     const natives = toNativeArguments(args, null);
     if (natives === null) return unknownValue(`${name}() with dynamic arguments`, location);
     try {
       return fromNativeValue(
-        Reflect.apply(Intl.getCanonicalLocales, Intl, natives),
+        Reflect.apply(pureStatic.method, pureStatic.receiver, natives),
         `${name}()`,
         null,
       );
     } catch (error) {
       return thrownValue(
-        `${name}() with an invalid language tag`,
+        `${name}() with invalid arguments`,
         createErrorValue(
           "RangeError",
           [primitiveValue(error instanceof Error ? error.message : String(error))],
@@ -1479,6 +1482,18 @@ const callGlobal = (
   }
   if (isConstructor) return unknownValue(`new ${name}()`, location);
   return unknownValue(`${name}()`, location);
+};
+
+interface PureStaticNative {
+  receiver: object;
+  method: (...args: never[]) => unknown;
+}
+
+/** Static natives whose result depends on their arguments alone. */
+const PURE_STATIC_NATIVES: Record<string, PureStaticNative | undefined> = {
+  "Intl.getCanonicalLocales": { receiver: Intl, method: Intl.getCanonicalLocales },
+  "Date.UTC": { receiver: Date, method: Date.UTC },
+  "Date.parse": { receiver: Date, method: Date.parse },
 };
 
 const MAX_ARRAY_LIKE_LENGTH = 1_000;
@@ -2412,14 +2427,16 @@ export const evaluateBuiltinCall = (
         return listValue([...receiver.items].reverse());
       case "values":
       case ITERATOR_PROPERTY_KEY:
-        return receiver;
+        return createItemsIteratorValue(receiver);
       case "keys":
         if (!hasDefiniteItems(receiver)) break;
-        return listValue(receiver.items.map((_item, index) => primitiveValue(index)));
+        return createItemsIteratorValue(
+          listValue(receiver.items.map((_item, index) => primitiveValue(index))),
+        );
       case "entries":
         if (!hasDefiniteItems(receiver)) break;
-        return listValue(
-          receiver.items.map((item, index) => listValue([primitiveValue(index), item])),
+        return createItemsIteratorValue(
+          listValue(receiver.items.map((item, index) => listValue([primitiveValue(index), item]))),
         );
       case "sort":
       case "toSorted": {

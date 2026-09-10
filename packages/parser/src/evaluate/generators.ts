@@ -2,6 +2,7 @@ import type { StaticObjectValue, StaticValue } from "../types.js";
 import { nativeFunction } from "./stubs.js";
 import {
   hasDefiniteItems,
+  ITERATOR_PROPERTY_KEY,
   listValue,
   objectFromRecord,
   primitiveValue,
@@ -45,9 +46,18 @@ export const createGeneratorValue = (
     return: nativeFunction("return", () => finish()),
     throw: nativeFunction("throw", () => finish()),
   });
+  generator.entries.push({
+    kind: "property",
+    key: ITERATOR_PROPERTY_KEY,
+    value: nativeFunction("[Symbol.iterator]", () => generator),
+  });
   generatorsByValue.set(generator, state);
   return generator;
 };
+
+/** `array.values()`, `map.entries()` and the like: an iterator that walks already-known items. */
+export const createItemsIteratorValue = (items: StaticValue): StaticValue =>
+  items.kind === "list" ? createGeneratorValue(items.items, UNDEFINED_VALUE) : items;
 
 /** What iterating a generator object yields from its current position; iterating exhausts it. */
 export const getGeneratorItems = (value: StaticValue): StaticValue | null => {

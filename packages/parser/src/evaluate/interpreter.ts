@@ -2473,6 +2473,24 @@ export class Interpreter {
     );
   }
 
+  /** Runs a statement once per alternative of an uncertain value, as paths of that value's decision. */
+  forkAlternatives(
+    branch: StaticBranchValue,
+    context: EvaluationContext,
+    location: SourceLocation,
+    run: (alternative: StaticValue, pathContext: EvaluationContext) => StatementOutcome,
+  ): StatementOutcome {
+    return this.forkPaths(
+      branch.alternatives.map((alternative) => (pathContext) => run(alternative, pathContext)),
+      context,
+      completeBlock,
+      branch.reason,
+      branch.location ?? location,
+      branch.preferredIndex,
+      branch.predicate ?? undefined,
+    );
+  }
+
   private evaluateUnaryExpression(node: UnaryExpression, context: EvaluationContext): StaticValue {
     if (node.operator === "delete") return this.evaluateDelete(node.argument, context);
     if (node.operator === "typeof") return this.evaluateTypeof(node.argument, context);
@@ -5256,7 +5274,9 @@ const MIRRORED_COMPARISONS: Record<CompareOperator, CompareOperator> = {
 };
 
 const isGuardLiteral = (value: StaticPrimitive): value is GuardLiteral =>
-  typeof value !== "bigint" && value !== undefined && !Number.isNaN(value);
+  typeof value !== "bigint" &&
+  value !== undefined &&
+  (typeof value !== "number" || Number.isFinite(value));
 
 /** Records an undecided comparison of a dynamic operand against a literal as a guard over that operand. */
 const deriveComparison = (
@@ -5280,7 +5300,7 @@ const deriveComparison = (
     });
   }
   const compareOperator = COMPARE_OPERATORS[operator];
-  if (compareOperator === undefined || typeof literal !== "number" || Number.isNaN(literal)) {
+  if (compareOperator === undefined || typeof literal !== "number" || !Number.isFinite(literal)) {
     return result;
   }
   return recordDerivation(result, {

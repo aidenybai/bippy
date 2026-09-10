@@ -165,12 +165,15 @@ export class ModuleResolver {
     importer: ImporterKind,
   ): ModuleResolution {
     const { primary, fallback } = this.resolvers[importer];
-    const bareSpecifier = specifier.replace(/^node:/, "");
-    if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
-      return { kind: "builtin", specifier };
-    }
+    if (specifier.startsWith("node:")) return { kind: "builtin", specifier };
     const cleanSpecifier = stripInlineLoaders(specifier).split("?")[0];
     let result = primary.resolveFileSync(fromFile, cleanSpecifier);
+    if (isBuiltin(specifier)) {
+      const installed = result.path ?? fallback.resolveFileSync(fromFile, cleanSpecifier).path;
+      return installed !== undefined && getPackageNameFromFilePath(installed) === specifier
+        ? { kind: "external", packageName: specifier, filePath: installed }
+        : { kind: "builtin", specifier };
+    }
     const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);
     const isPathMapped = result.path !== undefined && result.path !== fallbackResult.path;
     if (!result.path && fallbackResult.path) result = fallbackResult;
