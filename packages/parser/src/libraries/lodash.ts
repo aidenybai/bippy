@@ -9,13 +9,15 @@ import {
 } from "../evaluate/values.js";
 import { nativeFunction } from "../evaluate/stubs.js";
 import type { ExternalValueProvider, ModeledExports, StaticValue } from "../types.js";
+import { merge, mergeWith } from "./lodash-merge.js";
 
 // Lodash function wrappers: `memoize`/`once` return the wrapped function's own
 // result on first call, `debounce`/`throttle` decide from their options whether
-// the first call runs synchronously. `isEqual` is decided over static values
-// directly rather than through lodash's own Stack/MapCache machinery. Every
-// other helper runs from lodash's own source as a pure package or is analyzed
-// when the package is allow-listed.
+// the first call runs synchronously. `isEqual` and `merge`/`mergeWith` are
+// decided over static values directly rather than through lodash's own
+// Stack/MapCache machinery. Every other helper runs from lodash's own source as
+// a pure package or is analyzed when the package is allow-listed. Each modeled
+// helper is also its own per-method package (`lodash.mergewith`).
 
 export const LODASH_PACKAGES = ["lodash", "lodash-es"];
 
@@ -23,17 +25,30 @@ const TRANSPARENT_WRAPPERS = ["memoize", "once"];
 
 const RATE_LIMITERS = ["debounce", "throttle"];
 
-const MODELED_HELPERS = [...TRANSPARENT_WRAPPERS, ...RATE_LIMITERS, "isEqual"];
+const MERGERS: Record<string, StaticValue> = { merge, mergeWith };
 
-export const LODASH_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
-  LODASH_PACKAGES.flatMap((packageName): Array<[string, string[]]> => [
+const MODELED_HELPERS = [
+  ...TRANSPARENT_WRAPPERS,
+  ...RATE_LIMITERS,
+  ...Object.keys(MERGERS),
+  "isEqual",
+];
+
+const getMethodPackageName = (helperName: string): string => `lodash.${helperName.toLowerCase()}`;
+
+export const LODASH_MODELED_EXPORTS: ModeledExports = Object.fromEntries([
+  ...LODASH_PACKAGES.flatMap((packageName): Array<[string, string[]]> => [
     [packageName, MODELED_HELPERS],
     ...MODELED_HELPERS.flatMap((helperName): Array<[string, string[]]> => [
       [`${packageName}/${helperName}`, ["default"]],
       [`${packageName}/${helperName}.js`, ["default"]],
     ]),
   ]),
-);
+  ...MODELED_HELPERS.map((helperName): [string, string[]] => [
+    getMethodPackageName(helperName),
+    ["default"],
+  ]),
+]);
 
 const transparentWrapper = (name: string): StaticValue =>
   nativeFunction(name, ([wrapped]) => wrapped);
@@ -95,14 +110,24 @@ const rateLimiter = (helperName: string): StaticValue =>
     };
   });
 
-export const lodashValue: ExternalValueProvider = (specifier, importedName) => {
+const getHelperName = (specifier: string, importedName: string): string | null => {
   const [packageName, ...modulePath] = specifier.split("/");
-  if (!LODASH_PACKAGES.includes(packageName)) return null;
-  const helperName =
-    modulePath.length === 1 && importedName === "default"
+  if (LODASH_PACKAGES.includes(packageName)) {
+    return modulePath.length === 1 && importedName === "default"
       ? modulePath[0].replace(/\.js$/, "")
       : importedName;
+  }
+  if (modulePath.length > 0 || importedName !== "default") return null;
+  return (
+    MODELED_HELPERS.find((helperName) => getMethodPackageName(helperName) === specifier) ?? null
+  );
+};
+
+export const lodashValue: ExternalValueProvider = (specifier, importedName) => {
+  const helperName = getHelperName(specifier, importedName);
+  if (helperName === null) return null;
   if (helperName === "isEqual") return isEqual;
+  if (helperName in MERGERS) return MERGERS[helperName];
   if (TRANSPARENT_WRAPPERS.includes(helperName)) return transparentWrapper(helperName);
   return RATE_LIMITERS.includes(helperName) ? rateLimiter(helperName) : null;
 };

@@ -1,6 +1,7 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import { DEEPMERGE_PACKAGES, deepmergeValue } from "./deepmerge.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
@@ -28,6 +29,15 @@ import {
   REACT_INLINESVG_PACKAGES,
   reactInlineSvgValue,
 } from "./react-inlinesvg.js";
+import {
+  REACT_LIFECYCLES_COMPAT_PACKAGES,
+  reactLifecyclesCompatValue,
+} from "./react-lifecycles-compat.js";
+import {
+  REDUX_PERSIST_MODELED_EXPORTS,
+  REDUX_PERSIST_PACKAGES,
+  reduxPersistValue,
+} from "./redux-persist.js";
 import {
   REDUX_MODELED_EXPORTS,
   REDUX_PACKAGES,
@@ -63,6 +73,7 @@ interface LibraryModel {
 }
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
+  { packages: DEEPMERGE_PACKAGES, getValue: deepmergeValue },
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
   { packages: FOREIGN_RENDERER_PACKAGES, getValue: foreignRendererValue },
@@ -91,7 +102,13 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     getValue: reactInlineSvgValue,
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
   },
+  { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
+  {
+    packages: REDUX_PERSIST_PACKAGES,
+    getValue: reduxPersistValue,
+    modeledExports: REDUX_PERSIST_MODELED_EXPORTS,
+  },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },

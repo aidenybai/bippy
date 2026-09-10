@@ -24,6 +24,8 @@ import {
   hasDefiniteItems,
   isSameComposition,
   listValue,
+  matchesComposition,
+  mayOverlapCompositions,
   nativeObjectValue,
   objectValue,
   primitiveValue,
@@ -48,11 +50,6 @@ interface ComposedExpando {
   value: StaticValue;
 }
 
-const matchesComposition = (name: string, composition: StringComposition): boolean =>
-  name.length >= composition.prefix.length + composition.suffix.length &&
-  name.startsWith(composition.prefix) &&
-  name.endsWith(composition.suffix);
-
 const hasMemberMatching = (
   object: StaticNativeObjectValue,
   composition: StringComposition,
@@ -75,16 +72,6 @@ const hasMemberMatching = (
   return false;
 };
 
-const isEitherPrefix = (left: string, right: string): boolean =>
-  left.startsWith(right) || right.startsWith(left);
-
-const isEitherSuffix = (left: string, right: string): boolean =>
-  left.endsWith(right) || right.endsWith(left);
-
-/** Whether some string could read as both compositions, so a write under one may be read under the other. */
-const mayOverlap = (left: StringComposition, right: StringComposition): boolean =>
-  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
-
 const findComposedExpando = (
   object: StaticNativeObjectValue,
   composition: StringComposition,
@@ -98,7 +85,7 @@ const getOverlappingComposedExpandos = (
   composition: StringComposition,
 ): ComposedExpando[] =>
   (composedExpandoProperties.get(object.value) ?? []).filter((expando) =>
-    mayOverlap(expando.key, composition),
+    mayOverlapCompositions(expando.key, composition),
   );
 
 const mayReadComposedExpando = (object: StaticNativeObjectValue, name: string): boolean =>
@@ -756,6 +743,16 @@ const isTreeQuery = (realm: HostRealm, member: HostMember): boolean => {
     ? realm.isSubtype(returnType.interfaceName, "Node")
     : realm.isSubtype(returnType.interfaceName, "NodeList") ||
         realm.isSubtype(returnType.interfaceName, "HTMLCollectionBase");
+};
+
+/** `new Image(width, height)`: the `<img>` of the host document it constructs, as `document.createElement("img")` would; null for dynamic arguments. */
+export const constructHostImage = (host: HostDocument, args: StaticValue[]): StaticValue | null => {
+  const constructor: unknown = Reflect.get(host.globalObject, "Image");
+  const natives = toNativeArguments(args, host);
+  if (typeof constructor !== "function" || natives === null) return null;
+  return guardNativeCall("new Image", () =>
+    fromNativeValue(Reflect.construct(constructor, natives), "new Image()", host),
+  );
 };
 
 const isEmptyQueryResult = (value: unknown): boolean =>

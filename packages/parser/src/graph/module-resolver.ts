@@ -91,13 +91,19 @@ export const getPackageNameFromSpecifier = (specifier: string): string | null =>
   return segments[0] || null;
 };
 
-const getPackageNameFromFilePath = (filePath: string): string | null => {
+export const getPackageNameFromFilePath = (filePath: string): string | null => {
   const posixPath = filePath.replaceAll("\\", "/");
   const index = posixPath.lastIndexOf(NODE_MODULES_SEGMENT);
   if (index === -1) return null;
   const remainder = posixPath.slice(index + NODE_MODULES_SEGMENT.length);
   return getPackageNameFromSpecifier(remainder);
 };
+
+/** webpack's inline loader syntax (`loader!request`, `!!loader!request`): loaders transform the file the last segment resolves to. */
+export const isInlineLoaderRequest = (specifier: string): boolean => specifier.includes("!");
+
+const stripInlineLoaders = (specifier: string): string =>
+  specifier.slice(specifier.lastIndexOf("!") + 1);
 
 export const isInsideNodeModules = (filePath: string): boolean =>
   filePath.replaceAll("\\", "/").includes(NODE_MODULES_SEGMENT);
@@ -161,7 +167,7 @@ export class ModuleResolver {
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };
     }
-    const cleanSpecifier = specifier.split("?")[0];
+    const cleanSpecifier = stripInlineLoaders(specifier).split("?")[0];
     let result = primary.resolveFileSync(fromFile, cleanSpecifier);
     if (!result.path) {
       const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);

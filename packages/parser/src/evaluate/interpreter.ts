@@ -42,9 +42,11 @@ import type {
 } from "oxc-parser";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { getAssetModuleValue } from "../graph/asset-module.js";
+import { getAssetModuleValue, isAssetImport } from "../graph/asset-module.js";
 import { getCssModuleValue } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
+import { getTransformedRuntimeSpecifier } from "../graph/helper-packages.js";
+import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "./stubs.js";
@@ -72,7 +74,12 @@ import {
   getReactElementSymbolKey,
   REACT_ELEMENT_SYMBOL_KEYS,
 } from "../react/element-shape.js";
-import { toClientReference, toElementKey, toElementType } from "../react/element-type.js";
+import {
+  splitElementKey,
+  toClientReference,
+  toElementKey,
+  toElementType,
+} from "../react/element-type.js";
 import {
   getExternalMember,
   isReactLikePackage,
@@ -118,6 +125,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import {
+  INTRINSIC_PROTOTYPE_NAMES,
   evaluateBuiltinCall,
   getBuiltinGlobal,
   getGlobalTypeof,
@@ -131,10 +139,12 @@ import {
   getClassLength,
   getClassPrototypeObject,
   getFunctionLength,
+  getReactBasePrototype,
   getStaticProperty,
   getSuperObject,
   hasKnownStaticChain,
   getValueParams,
+  isReactComponentBase,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
@@ -172,11 +182,14 @@ import {
 } from "./primitive-shapes.js";
 import {
   getCaughtValue,
+  forgetThrowCertainty,
   getThrowCertainty,
   getThrownOperand,
   getThrownPaths,
   withoutThrows,
 } from "./thrown.js";
+import { assignEventHandlerProperty } from "./event-listeners.js";
+import { startImageLoad } from "./resource-loading.js";
 import {
   deleteNativeObjectComposedMember,
   deleteNativeObjectMember,
@@ -291,11 +304,13 @@ import {
   objectFromRecord,
   objectValue,
   deleteObjectProperty,
-  omitObjectKeys,
+  omitRestKeys,
   partialJsonValue,
   primitiveValue,
+  regExpToString,
   setListItem,
   setListLength,
+  toIndexKey,
   spreadListItems,
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -380,6 +395,7 @@ export const UNKNOWN_PROJECT: ProjectContext = {
   getImportedAssetUrl: (filePath) => unknownValue(`URL the bundler emits for ${filePath}`),
   transpiler: "name-preserving",
   bundler: "unknown",
+  findServedFile: () => null,
   readServedAsset: () => null,
   findQuery: () => null,
   findMutations: () => null,
@@ -459,11 +475,6 @@ const REGEXP_FLAG_ACCESSORS = new Map([
 ]);
 
 /** A member read on a value whose prototype chain is fully known: absent names are `undefined`. */
-const toIndexKey = (key: string): number | null => {
-  const index = Number(key);
-  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
-};
-
 const prototypeMember = (
   receiver: StaticValue,
   prototype: object | null,
@@ -809,6 +820,16 @@ export class Interpreter {
       const isUnset = json === null && isUnsettableDefineName(name);
       this.defines.set(name, isUnset ? UNDEFINED_VALUE : jsonValue(json));
     }
+    if (this.project.bundler === "react-scripts" && this.project.rootDirectory !== null) {
+      const clientEnvironment = getReactScriptsClientEnvironment(
+        this.project.rootDirectory,
+        this.processEnvironment,
+      );
+      for (const [variable, value] of Object.entries(clientEnvironment)) {
+        const name = `process.env.${variable}`;
+        if (!this.defines.has(name)) this.defines.set(name, primitiveValue(value));
+      }
+    }
     this.reactVersion = options.reactVersion ?? null;
     this.elementSymbolKey = getReactElementSymbolKey(this.reactVersion);
     this.doesStrictModeDoubleInvokeHookFactories = doesStrictModeDoubleInvokeHookFactories(
@@ -911,7 +932,7 @@ export class Interpreter {
 
   private evaluateModuleExports(module: ModuleRecord): StaticValue {
     if (!module.moduleExports) return { kind: "namespace", module };
-    return this.resolvedSymbolToValue(
+    const value = this.resolvedSymbolToValue(
       {
         kind: "expression",
         module,
@@ -921,6 +942,14 @@ export class Interpreter {
       },
       "default",
     );
+    if (value.kind === "function" || value.kind === "class") {
+      for (const name of module.moduleExportsMembers) {
+        if (!value.properties.has(name)) {
+          value.properties.set(name, this.evaluateModuleExport(module, name));
+        }
+      }
+    }
+    return value;
   }
 
   /**
@@ -1274,7 +1303,19 @@ export class Interpreter {
         }
         return target;
       case "native-object":
+        if (
+          assignEventHandlerProperty(
+            this,
+            this.getRealm(context.environment),
+            target,
+            propertyName,
+            value,
+          )
+        ) {
+          return target;
+        }
         setNativeObjectMember(target, propertyName, value);
+        startImageLoad(this, target, propertyName, value, context);
         return target;
       case "proxy": {
         const trap = getObjectProperty(target.handler, "set");
@@ -1505,6 +1546,12 @@ export class Interpreter {
   lookupIdentifier(name: string, context: EvaluationContext): StaticValue {
     const resolved = this.resolveIdentifier(name, context);
     if (resolved) return resolved;
+    const runtimeSpecifier = getTransformedRuntimeSpecifier(
+      this.project,
+      context.module.filePath,
+      name,
+    );
+    if (runtimeSpecifier !== null) return this.importModule(runtimeSpecifier, context, null, true);
     return this.isAbsentGlobal(name, context.environment)
       ? thrownValue(
           `\`${name}\` is not defined`,
@@ -1826,7 +1873,10 @@ export class Interpreter {
   /** Mutating a value that predates an enclosing fork must be undone for the fork's other paths. */
   recordHeapMutation(target: MutableHeapValue): void {
     this.changeCount++;
-    if (target.kind === "list") this.escapeWalk.memo.invalidate(target, null);
+    if (target.kind === "list") {
+      forgetThrowCertainty(target);
+      this.escapeWalk.memo.invalidate(target, null);
+    }
     this.journalHeapValue(target);
   }
 
@@ -2328,7 +2378,8 @@ export class Interpreter {
   /**
    * `name in window`: a name the page assigned, one the captured browser exposed, or,
    * without a capture, one the host declares outright (optional members stay open).
-   * `name in document` is answered by the host document itself.
+   * `name in document` is answered by the host document itself; `name in history`
+   * by a member the host declares on the global's interface.
    */
   private hasGlobalObjectProperty(
     key: StaticValue,
@@ -2341,7 +2392,10 @@ export class Interpreter {
     const hostDocument = this.getHostDocument(target, environment);
     if (hostDocument !== null) return primitiveValue(hasHostDocumentMember(hostDocument, name));
     const realm = this.getRealm(environment);
-    if (!realm.isGlobalAlias(target.name)) return null;
+    if (!realm.isGlobalAlias(target.name)) {
+      const declared = realm.getGlobal(`${target.name}.${name}`);
+      return declared !== null && !declared.type.isNullable ? TRUE_VALUE : null;
+    }
     if (environment !== "server") {
       if (this.windowGlobals.has(name)) return TRUE_VALUE;
       const windowKeys = this.pageState?.windowKeys;
@@ -2374,7 +2428,10 @@ export class Interpreter {
     const nameHint = target.type === "Identifier" ? target.name : null;
     if (node.operator === "=") {
       const value = this.evaluateExpression(node.right, context, nameHint);
-      this.assignTarget(target, value, context);
+      const certainty = getThrowCertainty(value);
+      if (certainty !== "always") {
+        this.assignTarget(target, certainty === "never" ? value : withoutThrows(value), context);
+      }
       return value;
     }
     if (target.type === "ObjectPattern" || target.type === "ArrayPattern") {
@@ -2498,6 +2555,12 @@ export class Interpreter {
     target.items.push(...items);
   }
 
+  setItem(target: StaticListValue, index: number, value: StaticValue): void {
+    if (target.isFrozen) return;
+    this.recordHeapMutation(target);
+    setListItem(target, index, value);
+  }
+
   private assignDynamicEntry(
     target: StaticObjectValue,
     key: StaticValue,
@@ -2523,7 +2586,8 @@ export class Interpreter {
       );
       return;
     }
-    if (context.module.bindings.get(name)?.kind !== "variable") return;
+    const bindingKind = context.module.bindings.get(name)?.kind;
+    if (bindingKind === undefined || bindingKind === "typescript") return;
     const values = this.getModuleValues(context.module);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name);
     const previous = values.get(name);
@@ -2798,6 +2862,8 @@ export class Interpreter {
         return prototypeMember(object, Object.prototype, key);
       case "react-api": {
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
+        if (key === "prototype" && isReactComponentBase(object))
+          return getReactBasePrototype(object.api);
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
         return unknownValue(`React.${object.api}.${key}`, location);
@@ -2865,6 +2931,14 @@ export class Interpreter {
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
+        if (
+          intrinsic !== null &&
+          INTRINSIC_PROTOTYPE_NAMES.has(object.name) &&
+          !isSymbolPropertyKey(key) &&
+          !(key in intrinsic)
+        ) {
+          return UNDEFINED_VALUE;
+        }
         const hostDocument = this.getHostDocument(object, context.environment);
         const declaredMember =
           (hostDocument === null ? null : getHostDocumentExpando(hostDocument, key)) ??
@@ -2983,6 +3057,9 @@ export class Interpreter {
     const target = this.graph.resolveImportedModule(specifier, context.module);
     if (isModuleRecord(target)) {
       return isRequire ? this.evaluateModuleExports(target) : { kind: "namespace", module: target };
+    }
+    if (target.kind === "internal" && isAssetImport(target.filePath, specifier)) {
+      return getAssetModuleValue(target.filePath, specifier, { kind: "default" }, this.project);
     }
     if (target.kind === "external" || target.kind === "builtin") {
       const packageName = target.kind === "external" ? target.packageName : target.specifier;
@@ -3156,6 +3233,7 @@ export class Interpreter {
           recordStateMutation: (state) => this.recordStateMutation(state),
           realm: this.getRealm(context.environment),
           pushItems: (list, items) => this.pushItems(list, items),
+          setItem: (list, index, value) => this.setItem(list, index, value),
           nameHint: options.nameHint ?? null,
           templateArgumentNames: options.templateArgumentNames ?? null,
           environment: context.environment,
@@ -3820,11 +3898,7 @@ export class Interpreter {
           if (property.type === "RestElement") {
             const source =
               value.kind === "namespace" ? this.materializeNamespace(value.module) : value;
-            const rest =
-              source.kind === "object"
-                ? omitObjectKeys(source, usedKeys)
-                : unknownValue(`rest of ${describeValue(source)}`);
-            destructure(property.argument, rest);
+            destructure(property.argument, omitRestKeys(source, usedKeys));
             continue;
           }
           const key = this.evaluatePropertyKey(
@@ -4404,7 +4478,7 @@ export class Interpreter {
     context: EvaluationContext,
   ): JsxAttributeValues {
     const entries: StaticObjectEntry[] = [];
-    let key: StaticValue | null = null;
+    let maybeKey: StaticValue = UNDEFINED_VALUE;
     for (const attribute of attributes) {
       if (attribute.type === "JSXSpreadAttribute") {
         entries.push({
@@ -4434,13 +4508,14 @@ export class Interpreter {
       } else {
         value = this.evaluateExpression(attribute.value, context, name);
       }
-      if (name === "key") {
-        key = value;
+      if (name === "key" && entries.every((entry) => entry.kind === "property")) {
+        maybeKey = value;
         continue;
       }
       entries.push({ kind: "property", key: name, value });
     }
-    return { props: objectValue(entries), key };
+    const { entries: propEntries, key } = splitElementKey(entries, maybeKey);
+    return { props: objectValue(propEntries), key };
   }
 
   evaluateJsxChildren(children: JSXChild[], context: EvaluationContext): StaticValue[] {
@@ -4841,6 +4916,9 @@ const applyBinaryOperator = (
   if (distributed) return distributed;
   const thrownOperand = getThrownOperand([left, right]);
   if (thrownOperand) return thrownOperand;
+  if (operator === "+" && (left.kind === "regexp" || right.kind === "regexp")) {
+    return applyBinaryOperator(operator, toCoercedOperand(left), toCoercedOperand(right), realm);
+  }
   if (left.kind === "primitive" && right.kind === "primitive") {
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
@@ -4880,14 +4958,25 @@ const applyBinaryOperator = (
         (right.kind === "primitive" && typeof right.value === "string") ||
         (left.kind === "unknown-primitive" && left.primitiveType === "string") ||
         (right.kind === "unknown-primitive" && right.primitiveType === "string");
-      return isString
-        ? concatenateStrings(left, right)
+      if (isString) return concatenateStrings(left, right);
+      return isNumberValue(left) && isNumberValue(right)
+        ? unknownPrimitiveValue("number", "+ on dynamic values")
         : unknownPrimitiveValue("any", "+ on dynamic values");
     }
     default:
       return unknownPrimitiveValue("number", `${operator} on dynamic values`);
   }
 };
+
+/** `ToPrimitive` of a RegExp operand: `RegExp.prototype.toString`. */
+const toCoercedOperand = (value: StaticValue): StaticValue =>
+  value.kind === "regexp" ? primitiveValue(regExpToString(value)) : value;
+
+/** A value that is a number for sure, known or not. */
+const isNumberValue = (value: StaticValue): boolean =>
+  value.kind === "primitive"
+    ? typeof value.value === "number"
+    : value.kind === "unknown-primitive" && value.primitiveType === "number";
 
 /** React's dev `displayName` setter on `memo`/`forwardRef` also names an anonymous inner function. */
 const nameAnonymousInner = (

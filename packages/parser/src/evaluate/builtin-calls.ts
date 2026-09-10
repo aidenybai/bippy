@@ -9,8 +9,10 @@ import type {
   StaticObjectEntry,
   StaticPropertyEntry,
   StaticObjectValue,
+  StaticOptionalValue,
   StaticPrimitive,
   StaticRegExpValue,
+  StaticRepeatValue,
   StaticValue,
 } from "../types.js";
 import { getReactApiTypeof } from "../react/react-api.js";
@@ -45,6 +47,7 @@ import { createErrorValue, isErrorConstructorName } from "./errors.js";
 import { callFetch } from "./fetch.js";
 import { nativeFunction } from "./stubs.js";
 import {
+  constructHostImage,
   constructNativeObject,
   fromNativeValue,
   getNativeOwnEntries,
@@ -97,6 +100,7 @@ import {
   rangedNumberValue,
   toStringValue,
 } from "./primitive-shapes.js";
+import { memoizeScalarOperation } from "./scalar-memo.js";
 import { isArrayValue } from "./type-predicates.js";
 import { recordDerivation, recordInputSource, recordRepeatSource } from "./predicates.js";
 import type { GuardLiteral } from "../harness/symbolic-tree.js";
@@ -154,6 +158,7 @@ import {
   objectValue,
   optionalValue,
   primitiveValue,
+  regExpToString,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -280,6 +285,31 @@ const flattenOneLevel = (value: StaticValue, location: SourceLocation | null): S
     ),
     location,
   );
+
+/**
+ * `list.slice(start, end)`: exact on a fully known list; on a partially known
+ * one, known non-negative bounds inside the definite prefix select its items and
+ * a `start` inside the prefix keeps the indefinite tail.
+ */
+const sliceList = (
+  receiver: StaticListValue,
+  first: StaticValue | undefined,
+  second: StaticValue | undefined,
+  location: SourceLocation | null,
+): StaticValue => {
+  const indefiniteIndex = receiver.items.findIndex(isIndefiniteItem);
+  const start = toIndex(first, 0);
+  if (indefiniteIndex === -1) {
+    const end = toIndex(second, receiver.items.length);
+    return start === null || end === null
+      ? unknownValue("slice with dynamic bounds", location)
+      : listValue(receiver.items.slice(start, end));
+  }
+  const end = toIndex(second, Number.POSITIVE_INFINITY);
+  if (start === null || end === null || start < 0 || end < 0 || start > indefiniteIndex)
+    return receiver;
+  return listValue(receiver.items.slice(start, end <= indefiniteIndex ? end : undefined));
+};
 
 /** Methods whose callbacks run synchronously (or on promise settlement) even when the receiver is opaque. */
 export const isModeledOpaqueMethodName = (name: string): boolean =>
@@ -526,7 +556,7 @@ const defineOwnProperties = (
   }
 };
 
-const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
+export const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
 
 /** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
 const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
@@ -933,6 +963,10 @@ const callGlobal = (
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
   }
+  if (isConstructor && name === "Image" && interpreter.hostDocument) {
+    const image = constructHostImage(interpreter.hostDocument, args);
+    if (image) return image;
+  }
   switch (name) {
     case "Date": {
       if (!isConstructor) break;
@@ -1021,8 +1055,7 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
-      const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      const source = getArrayFromSource(first);
       if (source?.kind === "list" || source?.kind === "repeat") {
         if (isCallable(second)) return mapList(interpreter, source, second, context, location);
         return source;
@@ -1038,8 +1071,7 @@ const callGlobal = (
     case "Uint32Array.from":
     case "Float32Array.from":
     case "Float64Array.from": {
-      const source =
-        first?.kind === "object" ? (getCollectionItems(first) ?? arrayLikeToList(first)) : first;
+      const source = getArrayFromSource(first);
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
       const mapped = isCallable(second)
         ? mapList(interpreter, source, second, context, location)
@@ -1407,6 +1439,13 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
 const toLength = (value: unknown): number =>
   Math.min(Math.max(Math.trunc(Number(value)) || 0, 0), Number.MAX_SAFE_INTEGER);
 
+/** What `Array.from(source)` copies: an iterable's items (including a native `NodeList`), else an array-like's indexed entries. */
+const getArrayFromSource = (source: StaticValue | undefined): StaticValue | null => {
+  if (source?.kind === "object") return getCollectionItems(source) ?? arrayLikeToList(source);
+  if (source?.kind === "native-object") return getCollectionItems(source);
+  return source ?? null;
+};
+
 // `{ length: n }` (and sparse array-likes) as consumed by `Array.from`.
 const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
   const length = getObjectProperty(value, "length");
@@ -1488,7 +1527,7 @@ const filterItem = (
   list: StaticListValue,
   predicate: CallableValue,
   item: StaticValue,
-  index: number,
+  index: StaticValue,
   context: EvaluationContext,
 ): StaticValue | null => {
   const alternatives =
@@ -1496,9 +1535,7 @@ const filterItem = (
       ? item.alternatives
       : [item];
   const verdicts = alternatives.map((alternative) =>
-    getTruthiness(
-      callCallback(interpreter, predicate, [alternative, primitiveValue(index), list], context),
-    ),
+    getTruthiness(callCallback(interpreter, predicate, [alternative, index, list], context)),
   );
   if (verdicts.every((verdict) => verdict === true)) return item;
   const accepted = alternatives.filter((_, position) => verdicts[position] !== false);
@@ -1510,6 +1547,54 @@ const filterItem = (
       ? branchValue(accepted, item.reason, item.location, Math.max(0, accepted.indexOf(preferred)))
       : item;
   return optionalValue(kept, "uncertain filter", null, verdicts[preferredIndex] === false);
+};
+
+const filterIndefiniteItem = (
+  interpreter: Interpreter,
+  list: StaticListValue,
+  predicate: CallableValue,
+  item: StaticRepeatValue | StaticOptionalValue,
+  context: EvaluationContext,
+): StaticValue | null => {
+  const inner = item.kind === "repeat" ? item.item : item.value;
+  const verdict = getTruthiness(
+    callUncertainCallback(
+      interpreter,
+      predicate,
+      [inner, unknownPrimitiveValue("number", "index"), list],
+      context,
+    ),
+  );
+  if (verdict === false) return null;
+  if (verdict === true || item.kind === "optional") return item;
+  return item.count ? { ...item, count: { min: 0, max: item.count.max } } : item;
+};
+
+const filterList = (
+  interpreter: Interpreter,
+  list: StaticListValue,
+  predicate: CallableValue,
+  context: EvaluationContext,
+): StaticListValue => {
+  const firstIndefiniteIndex = list.items.findIndex(isIndefiniteItem);
+  return listValue(
+    list.items.flatMap((item, index) => {
+      const kept =
+        item.kind === "repeat" || item.kind === "optional"
+          ? filterIndefiniteItem(interpreter, list, predicate, item, context)
+          : filterItem(
+              interpreter,
+              list,
+              predicate,
+              item,
+              firstIndefiniteIndex === -1 || index < firstIndefiniteIndex
+                ? primitiveValue(index)
+                : unknownPrimitiveValue("number", "index"),
+              context,
+            );
+      return kept ? [kept] : [];
+    }),
+  );
 };
 
 const MAX_JOINED_COMBINATIONS = 16;
@@ -1828,6 +1913,8 @@ const callStringMethod = (
           ? receiver.slice(Number(primitiveArgs[0] ?? 0), position)
           : receiver.substring(Number(primitiveArgs[0] ?? 0), position),
       );
+    case "substr":
+      return primitiveValue(receiver.substr(Number(primitiveArgs[0] ?? 0), position));
     case "charAt":
       return primitiveValue(receiver.charAt(Number(primitiveArgs[0] ?? 0)));
     case "charCodeAt":
@@ -1905,7 +1992,7 @@ const callRegExpMethod = (
   const [first] = args;
   const regExp = toRegExp(receiver);
   if (!regExp) return unknownValue(`invalid RegExp /${receiver.pattern}/`, location);
-  if (name === "toString") return primitiveValue(regExp.toString());
+  if (name === "toString") return primitiveValue(regExpToString(receiver));
   if (name !== "test" && name !== "exec") return unknownValue(`RegExp.${name}()`, location);
   if (first?.kind === "branch" && !regExp.global && !regExp.sticky) {
     return mapValue(first, (alternative) =>
@@ -2156,6 +2243,16 @@ export const evaluateBuiltinCall = (
   if (receiver.kind === "unknown-primitive") {
     const shaped = callShapedPrimitiveMethod(receiver, name, args);
     if (shaped) return shaped;
+    const declared = getLanguageMethodResult(receiver, name);
+    if (declared) {
+      return (
+        memoizeScalarOperation(
+          `${receiver.primitiveType}.${name}`,
+          [receiver, ...args],
+          () => declared,
+        ) ?? declared
+      );
+    }
   }
 
   if (name === "map" && isCallable(first)) {
@@ -2208,23 +2305,9 @@ export const evaluateBuiltinCall = (
     if (binaryResult) return binaryResult;
     switch (name) {
       case "filter":
-        if (isCallable(first) && hasDefiniteItems(receiver)) {
-          return listValue(
-            receiver.items.flatMap((item, index) => {
-              const kept = filterItem(interpreter, receiver, first, item, index, context);
-              return kept ? [kept] : [];
-            }),
-          );
-        }
-        return receiver;
-      case "slice": {
-        if (!isKnownList(receiver)) return receiver;
-        const start = toIndex(first, 0);
-        const end = toIndex(second, receiver.items.length);
-        if (start === null || end === null)
-          return unknownValue("slice with dynamic bounds", location);
-        return listValue(receiver.items.slice(start, end));
-      }
+        return isCallable(first) ? filterList(interpreter, receiver, first, context) : receiver;
+      case "slice":
+        return sliceList(receiver, first, second, location);
       case "concat": {
         return listValue([
           ...receiver.items,

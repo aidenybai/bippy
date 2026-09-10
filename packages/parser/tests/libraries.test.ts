@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer } from "../src/index.js";
+import { isPurePackage } from "../src/libraries/pure-packages.js";
 
 const LINARIA_SOURCE = `
 import { styled } from "@linaria/react";
@@ -60,5 +61,13 @@ describe("library models", () => {
         "                <span>",
       ].join("\n"),
     );
+  });
+
+  it("treats lodash's per-method packages like the matching lodash export", () => {
+    expect(isPurePackage("lodash.mergewith")).toBe(true);
+    expect(isPurePackage("lodash.isequal")).toBe(true);
+    expect(isPurePackage("lodash.debounce")).toBe(false);
+    expect(isPurePackage("lodash.uniqueid")).toBe(false);
+    expect(isPurePackage("lodash-webpack-plugin")).toBe(false);
   });
 });

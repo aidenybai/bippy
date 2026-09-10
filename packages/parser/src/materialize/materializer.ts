@@ -56,6 +56,7 @@ import type {
   StubComponent,
   StubHooks,
   StubRenderTools,
+  WrapperElementType,
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
 import {
@@ -363,10 +364,10 @@ const hasDefaultProps = (component: ComponentDefinition): boolean => {
 };
 
 const applyDefaultProps = (
-  component: ComponentDefinition,
+  owner: ComponentDefinition | WrapperElementType,
   props: StaticObjectValue,
 ): StaticObjectValue => {
-  const defaults = component.properties.get("defaultProps");
+  const defaults = owner.properties.get("defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
   return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
 };
@@ -458,12 +459,10 @@ export class Materializer {
     Context<StaticValue | null>
   >();
   private isInsideComponentRender = false;
-  /** `use` reads a context from any render (class bodies, Consumer render props included); older Reacts only have `useContext`. */
-  private readonly useStaticContext: (context: Context<StaticValue | null>) => StaticValue | null;
   /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
   private readonly readContext: ContextReader = (definition) => {
     if (!this.isInsideComponentRender) return null;
-    const value = this.useStaticContext(this.getContext(definition));
+    const value = this.runtime.readContext(this.getContext(definition));
     this.contextReads?.push({ definition, value });
     return value;
   };
@@ -489,7 +488,6 @@ export class Materializer {
     this.maxRecursionPerComponent =
       options.maxRecursionPerComponent ?? DEFAULT_MAX_RECURSION_PER_COMPONENT;
     this.serverComponents = options.serverComponents ?? false;
-    this.useStaticContext = runtime.react.use ?? runtime.react.useContext;
     this.suspenseBoundaryProxy = setFunctionName(
       ({ input }: ProxyProps): ReactNode => this.renderSuspenseBoundary(input),
       MARKER_NAMES.suspenseBoundary,
@@ -773,7 +771,7 @@ export class Materializer {
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, {
           key: reactKey,
-          input: { ...input, isMemoized: !type.hasCompare },
+          input: { ...input, props: applyDefaultProps(type, props), isMemoized: !type.hasCompare },
         });
       }
       case "forward-ref": {
@@ -783,7 +781,7 @@ export class Materializer {
           key: reactKey,
           input: {
             ...input,
-            props: renderProps.kind === "object" ? renderProps : props,
+            props: applyDefaultProps(type, renderProps.kind === "object" ? renderProps : props),
             ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
           },
         });
@@ -1395,6 +1393,7 @@ export class Materializer {
       recordStateMutation: (state) => this.interpreter.recordStateMutation(state),
       realm: this.interpreter.getRealm(context.environment),
       pushItems: (list, items) => this.interpreter.pushItems(list, items),
+      setItem: (list, index, value) => this.interpreter.setItem(list, index, value),
       nameHint: null,
       templateArgumentNames: null,
       environment: context.environment,

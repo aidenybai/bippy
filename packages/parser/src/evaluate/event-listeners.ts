@@ -1,10 +1,11 @@
-import type { StaticValue } from "../types.js";
+import type { StaticNativeObjectValue, StaticValue } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import type { Interpreter } from "./interpreter.js";
 import { toNativeArguments } from "./native-values.js";
+import { registerResourceListener } from "./resource-loading.js";
 import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
-import { UNDEFINED_VALUE } from "./values.js";
+import { isNullish, primitiveValue, UNDEFINED_VALUE } from "./values.js";
 
 /**
  * Event interfaces only an input device dispatches (lib.dom's `UIEvent` family
@@ -204,6 +205,36 @@ const isHistoryTraversalListener = (
   typeof type.value === "string" &&
   HISTORY_TRAVERSAL_EVENTS.has(type.value);
 
+const updateListener = (
+  interpreter: Interpreter,
+  realm: HostRealm,
+  receiver: StaticValue,
+  type: StaticValue | undefined,
+  listener: StaticValue,
+  isRegistration: boolean,
+): void => {
+  if (isHistoryTraversalListener(realm, receiver, type)) {
+    if (isRegistration) interpreter.history.traversalListeners.add(listener);
+    else interpreter.history.traversalListeners.delete(listener);
+    return;
+  }
+  const target = toNativeEventTarget(receiver, interpreter.hostDocument);
+  const typeName = type?.kind === "primitive" && typeof type.value === "string" ? type.value : null;
+  if (
+    receiver.kind === "native-object" &&
+    typeName !== null &&
+    registerResourceListener(interpreter, receiver, typeName, listener, isRegistration)
+  ) {
+    return;
+  }
+  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
+    interpreter.markEscaped(listener);
+  if (target && typeName !== null) {
+    if (isRegistration) attachNativeListener(interpreter, target, typeName, listener);
+    else detachNativeListener(target, typeName, listener);
+  }
+};
+
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
   interpreter: Interpreter,
@@ -216,17 +247,39 @@ export const callEventTargetMethod = (
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
-  if (isHistoryTraversalListener(realm, receiver, type)) {
-    if (isRegistration) interpreter.history.traversalListeners.add(listener);
-    else interpreter.history.traversalListeners.delete(listener);
-    return UNDEFINED_VALUE;
-  }
-  if (isRegistration && isEventBeforeCapture(realm, receiver, type))
-    interpreter.markEscaped(listener);
-  const target = toNativeEventTarget(receiver, interpreter.hostDocument);
-  if (target && type?.kind === "primitive" && typeof type.value === "string") {
-    if (isRegistration) attachNativeListener(interpreter, target, type.value, listener);
-    else detachNativeListener(target, type.value, listener);
-  }
+  updateListener(interpreter, realm, receiver, type, listener, isRegistration);
   return UNDEFINED_VALUE;
+};
+
+const eventHandlerProperties = new WeakMap<object, Map<string, StaticValue>>();
+
+/**
+ * `target.onload = handler`: the event handler IDL attribute of a DOM node,
+ * which registers `handler` for the event named after it in place of the
+ * handler set before, or unregisters that one for a nullish value.
+ */
+export const assignEventHandlerProperty = (
+  interpreter: Interpreter,
+  realm: HostRealm,
+  receiver: StaticNativeObjectValue,
+  key: string,
+  value: StaticValue,
+): boolean => {
+  const match = /^on([a-z]+)$/.exec(key);
+  if (!match || !(key in receiver.value) || !isNativeEventTarget(receiver)) return false;
+  const type = primitiveValue(match[1]);
+  let handlers = eventHandlerProperties.get(receiver.value);
+  if (!handlers) {
+    handlers = new Map();
+    eventHandlerProperties.set(receiver.value, handlers);
+  }
+  const previous = handlers.get(match[1]);
+  if (previous) updateListener(interpreter, realm, receiver, type, previous, false);
+  if (isNullish(value) === true) {
+    handlers.delete(match[1]);
+  } else {
+    handlers.set(match[1], value);
+    updateListener(interpreter, realm, receiver, type, value, true);
+  }
+  return true;
 };

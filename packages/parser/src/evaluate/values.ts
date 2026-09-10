@@ -11,6 +11,7 @@ import type {
   CapturedValue,
   FunctionLikeNode,
   JsonValue,
+  NumberRange,
   Scope,
   SourceLocation,
   StaticAccessor,
@@ -26,6 +27,7 @@ import type {
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticRegExpValue,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
@@ -569,11 +571,15 @@ export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolVa
     : null;
 };
 
+/** Own enumerable string and symbol keys, as `Object.keys` followed by the enumerable `Object.getOwnPropertySymbols`; null when the shape is not fully known. */
+export const getKnownEnumerableOwnKeys = (object: StaticObjectValue): string[] | null =>
+  getEnumerableKeys(getKnownOwnKeys(object, () => true));
+
 /** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
     case "object":
-      return getEnumerableKeys(getKnownOwnKeys(spread, () => true));
+      return getKnownEnumerableOwnKeys(spread);
     case "primitive":
       return [];
     case "branch": {
@@ -693,6 +699,26 @@ const getJoinedPropertyKeys = (
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {
   const rest = omitObjectKeysShared(object, omitted, new Map());
   return rest === object ? objectValue([...object.entries]) : rest;
+};
+
+/**
+ * The rest of destructuring `source`: its own enumerable keys minus `omitted`.
+ * A primitive has none but a string's indices, so its rest is a fresh object.
+ */
+export const omitRestKeys = (source: StaticValue, omitted: Set<string>): StaticValue => {
+  if (source.kind === "object") return omitObjectKeys(source, omitted);
+  if (source.kind !== "primitive" || source.value === null || source.value === undefined) {
+    return unknownValue(`rest of ${describeValue(source)}`);
+  }
+  return typeof source.value === "string"
+    ? objectValue(
+        [...source.value].flatMap((character, index) =>
+          omitted.has(String(index))
+            ? []
+            : [{ kind: "property", key: String(index), value: primitiveValue(character) }],
+        ),
+      )
+    : objectValue();
 };
 
 const omitObjectKeysShared = (
@@ -988,6 +1014,32 @@ export const isSameComposition = (
   left.source === right.source &&
   left.prefix === right.prefix &&
   left.suffix === right.suffix;
+
+export const matchesComposition = (name: string, composition: StringComposition): boolean =>
+  name.length >= composition.prefix.length + composition.suffix.length &&
+  name.startsWith(composition.prefix) &&
+  name.endsWith(composition.suffix);
+
+const isEitherPrefix = (left: string, right: string): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isEitherSuffix = (left: string, right: string): boolean =>
+  left.endsWith(right) || right.endsWith(left);
+
+/** Whether some string could read as both compositions, so a write under one may be read under the other. */
+export const mayOverlapCompositions = (
+  left: StringComposition,
+  right: StringComposition,
+): boolean =>
+  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
+
+/** Whether the dynamic string `value` may read as `text`, given the prefix, length or composition it is known to have. */
+export const mayReadAsText = (value: StaticUnknownPrimitiveValue, text: string): boolean => {
+  if (value.composition && !matchesComposition(text, value.composition)) return false;
+  const shape = value.stringShape;
+  if (!shape) return true;
+  return text.startsWith(shape.prefix) && (shape.length === null || text.length === shape.length);
+};
 
 /**
  * `===` between two values, or null when analysis cannot decide. Import
@@ -1467,6 +1519,10 @@ export type CallableValue = Extract<
 export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
 
+/** `RegExp.prototype.toString`, the string a RegExp coerces to. */
+export const regExpToString = (value: StaticRegExpValue): string =>
+  `/${value.pattern}/${value.flags}`;
+
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
   if (value.kind === "unknown" || value.kind === "branch") return null;
@@ -1723,12 +1779,30 @@ export const distributeObjectBranches = (
 export const isIndefiniteItem = (item: StaticValue): boolean =>
   item.kind === "repeat" || item.kind === "optional";
 
-export const getListLength = (list: StaticListValue): StaticValue =>
-  list.items.some(isIndefiniteItem)
-    ? unknownPrimitiveValue("number", "length of a partially known list")
-    : primitiveValue(list.items.length);
+const getItemCountRange = (item: StaticValue): NumberRange => {
+  if (item.kind === "repeat") return item.count ?? { min: 0, max: Number.POSITIVE_INFINITY };
+  return item.kind === "optional" ? { min: 0, max: 1 } : { min: 1, max: 1 };
+};
+
+export const getListLength = (list: StaticListValue): StaticValue => {
+  if (!list.items.some(isIndefiniteItem)) return primitiveValue(list.items.length);
+  const ranges = list.items.map(getItemCountRange);
+  return {
+    ...unknownPrimitiveValue("number", "length of a partially known list"),
+    numberRange: {
+      min: ranges.reduce((total, range) => total + range.min, 0),
+      max: ranges.reduce((total, range) => total + range.max, 0),
+    },
+  };
+};
 
 const MAX_LIST_GROWTH = 1_000;
+
+/** The array index a property key names, as `"3"` does and `"03"` or `"-1"` do not. */
+export const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
 
 /**
  * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
@@ -1913,6 +1987,7 @@ export const getListItem = (
   if (!pick(items, index)) {
     return unknownValue(`index ${index} of a partially known list`, location);
   }
+  if (candidates.length === 1) return candidates[0];
   return branchValue(candidates, `item ${index} of a filtered list`, location);
 };
 

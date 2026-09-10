@@ -433,6 +433,20 @@ const getModuleWrapperBody = (statement: Statement): Statement[] | null => {
   return callee && callee.params.length === 0 ? callee.body.body : null;
 };
 
+/**
+ * Arguments of the factory call on a UMD wrapper's CommonJS path: none, the
+ * exports object among `require`d dependencies (rollup's `factory(exports,
+ * require("react"))`), or `require`d dependencies alone when the factory
+ * returns its exports (webpack's `module.exports = factory(require("react"))`).
+ */
+const isFactoryCallArguments = (callArguments: CallExpression["arguments"]): boolean =>
+  callArguments.every(
+    (argument) =>
+      argument.type !== "SpreadElement" &&
+      (isExportsObject(argument) || getRequiredSpecifier(argument) !== null),
+  ) ||
+  callArguments.some((argument) => argument.type !== "SpreadElement" && isExportsObject(argument));
+
 /** The `factory(exports, require("x"), …)` call on the CommonJS path of a UMD wrapper body. */
 const findFactoryCall = (
   node: Expression | Statement,
@@ -468,10 +482,7 @@ const findFactoryCall = (
     case "CallExpression":
       return node.callee.type === "Identifier" &&
         node.callee.name === factoryName &&
-        (node.arguments.length === 0 ||
-          node.arguments.some(
-            (argument) => argument.type !== "SpreadElement" && isExportsObject(argument),
-          ))
+        isFactoryCallArguments(node.arguments)
         ? node
         : null;
     default:
@@ -482,8 +493,8 @@ const findFactoryCall = (
 /**
  * The factory body of a `(function (global, factory) { … })(this, function (exports, react) { … })`
  * UMD wrapper, binding each factory parameter to the argument the CommonJS path passes it
- * (`exports` to the exports object, `react` to `require("react")`). A parameterless factory
- * (`module.exports = factory()`) exports through its `return` instead.
+ * (`exports` to the exports object, `react` to `require("react")`). A factory not handed the
+ * exports object (`module.exports = factory(require("react"))`) exports through its `return`.
  */
 const getUmdFactoryBody = (
   statement: Statement,
@@ -501,17 +512,19 @@ const getUmdFactoryBody = (
   const factoryCall = findFactoryCall(wrapper.body, factoryParameter.name);
   if (!factoryCall || factoryCall.arguments.length !== factory.params.length) return null;
   const bound = new Map<string, Expression>();
+  let isHandedExports = false;
   for (const [index, parameter] of factory.params.entries()) {
     const argument = factoryCall.arguments[index];
     if (parameter.type !== "Identifier" || argument.type === "SpreadElement") return null;
     if (isExportsObject(argument)) {
       if (parameter.name !== "exports") return null;
+      isHandedExports = true;
       continue;
     }
     bound.set(parameter.name, argument);
   }
   for (const [name, argument] of bound) factoryArguments.set(name, argument);
-  if (factory.params.length === 0) {
+  if (!isHandedExports) {
     for (const inner of factory.body.body) {
       if (inner.type === "ReturnStatement") factoryReturns.add(inner);
     }
@@ -603,6 +616,7 @@ class CommonJsCollector {
   private readonly namespaceGetters = new Map<string, ObjectExpression>();
   isCommonJs = false;
   moduleExports: Expression | null = null;
+  readonly moduleExportsMembers: string[] = [];
 
   constructor(
     private readonly factoryReturns: ReadonlySet<Statement>,
@@ -688,6 +702,32 @@ class CommonJsCollector {
     }
   }
 
+  /**
+   * Export assignments and calls a minifier folded into one statement:
+   * `exports.a = 1, exports.b = 2` or `(exports.default = X).propTypes = {}`.
+   */
+  private collectExpression(expression: Expression): void {
+    switch (expression.type) {
+      case "SequenceExpression":
+        for (const item of expression.expressions) this.collectExpression(item);
+        return;
+      case "ParenthesizedExpression":
+        this.collectExpression(expression.expression);
+        return;
+      case "AssignmentExpression":
+        this.collectAssignment(expression, null);
+        if (expression.left.type === "MemberExpression") {
+          this.collectExpression(expression.left.object);
+        }
+        return;
+      case "MemberExpression":
+        this.collectExpression(expression.object);
+        return;
+      case "CallExpression":
+        this.collectCall(expression);
+    }
+  }
+
   /** Follows `exports.a = exports.b = value` chains; returns the innermost value. */
   collectAssignment(expression: Expression, localName: string | null): Expression {
     if (expression.type !== "AssignmentExpression" || expression.operator !== "=") {
@@ -703,6 +743,13 @@ class CommonJsCollector {
     }
     const exportedName = getExportedMemberName(expression.left);
     if (exportedName === null) return value;
+    if (
+      this.moduleExports !== null &&
+      expression.left.type === "MemberExpression" &&
+      expression.left.object.type === "MemberExpression"
+    ) {
+      this.moduleExportsMembers.push(exportedName);
+    }
     if (localName !== null) {
       this.setExport({ kind: "local", exportedName, localName });
     } else {
@@ -746,7 +793,7 @@ class CommonJsCollector {
       if (args.length === 2) this.collectExportStar(args[0], args[1]);
       return;
     }
-    if (callee.type === "Identifier" && /^_*__export$/.test(callee.name) && args.length === 2) {
+    if (callee.type === "Identifier" && /^_+export$/.test(callee.name) && args.length === 2) {
       const [target, members] = args;
       if (target.type !== "Identifier" || members.type !== "ObjectExpression") return;
       if (isExportsObject(target)) this.collectObjectGetters(members);
@@ -816,9 +863,7 @@ class CommonJsCollector {
       return;
     }
     if (statement.type === "ExpressionStatement") {
-      const { expression } = statement;
-      if (expression.type === "AssignmentExpression") this.collectAssignment(expression, null);
-      else if (expression.type === "CallExpression") this.collectCall(expression);
+      this.collectExpression(statement.expression);
       return;
     }
     if (statement.type !== "VariableDeclaration") return;
@@ -857,11 +902,14 @@ const collectCommonJsExports = (
   );
   for (const statement of statements) collector.collectStatement(statement);
   if (!collector.isCommonJs) return null;
+  const carriesMembers = (expression: Expression): boolean =>
+    expression === collector.moduleExports && collector.moduleExportsMembers.length > 0;
   for (const entry of collector.exports.values()) {
     if (
       entry.kind === "expression" &&
       entry.expression.type === "Identifier" &&
-      bindings.has(entry.expression.name)
+      bindings.has(entry.expression.name) &&
+      !carriesMembers(entry.expression)
     ) {
       exports.push({
         kind: "local",
@@ -940,5 +988,6 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
     outParameterBindings: collectOutParameterBindings(bindings),
     isCommonJs: commonJs !== null,
     moduleExports: commonJs?.moduleExports ?? null,
+    moduleExportsMembers: commonJs?.moduleExportsMembers ?? [],
   };
 };
