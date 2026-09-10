@@ -42,7 +42,9 @@ export interface LegacyReactInternals {
  * React constructs carry the same work tags, naming and reconciliation rules as
  * the app's runtime. `createRoot` mounts a concurrent root when the app's
  * `react-dom` has a `client` entry and a legacy `ReactDOM.render` root
- * otherwise (React 16/17); an app without its own React uses the harness's copy.
+ * otherwise (React 16/17). An app without its own React, or whose React predates
+ * hooks (< 16.8, unable to host the materializer's proxy components), is
+ * rendered with the harness's copy.
  */
 export interface ReactRuntime {
   react: ReactModule;
@@ -209,6 +211,26 @@ const loadRootFactory = async (
   return legacyRootFactory(dom);
 };
 
+interface ReactModules {
+  react: ReactModule;
+  dom: ReactDomModule;
+}
+
+const loadReactModules = async (
+  appResolver: ModuleResolver | null,
+  rootDirectory: string | null,
+): Promise<ReactModules> => {
+  const [react, dom] = await Promise.all([
+    importResolved(appResolver, "react", rootDirectory),
+    importResolved(appResolver, "react-dom", rootDirectory),
+  ]);
+  if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
+  if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
+  return { react, dom };
+};
+
+const hasHooks = (react: ReactModule): boolean => typeof react.useState === "function";
+
 const load = async (
   resolver: ModuleResolver | null,
   rootDirectory: string | null,
@@ -216,13 +238,12 @@ const load = async (
   ensureDomGlobals();
   getRDTHook();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const appResolver = hasOwnReact(resolver, rootDirectory) ? resolver : null;
-  const [react, dom] = await Promise.all([
-    importResolved(appResolver, "react", rootDirectory),
-    importResolved(appResolver, "react-dom", rootDirectory),
-  ]);
-  if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
-  if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
+  const ownResolver = hasOwnReact(resolver, rootDirectory) ? resolver : null;
+  const ownModules =
+    ownResolver === null ? null : await loadReactModules(ownResolver, rootDirectory);
+  const hostedModules = ownModules !== null && hasHooks(ownModules.react) ? ownModules : null;
+  const appResolver = hostedModules === null ? null : ownResolver;
+  const { react, dom } = hostedModules ?? (await loadReactModules(null, null));
   return {
     react,
     dom,
