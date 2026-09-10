@@ -5562,8 +5562,11 @@ const MIRRORED_COMPARISONS: Record<CompareOperator, CompareOperator> = {
   ">=": "<=",
 };
 
+/** Guards round-trip through JSON, which has no NaN or infinities. */
 const isGuardLiteral = (value: StaticPrimitive): value is GuardLiteral =>
-  typeof value !== "bigint" && value !== undefined && !Number.isNaN(value);
+  typeof value !== "bigint" &&
+  value !== undefined &&
+  (typeof value !== "number" || Number.isFinite(value));
 
 /** Records an undecided comparison of a dynamic operand against a literal as a guard over that operand. */
 const deriveComparison = (
@@ -5587,7 +5590,7 @@ const deriveComparison = (
     });
   }
   const compareOperator = COMPARE_OPERATORS[operator];
-  if (compareOperator === undefined || typeof literal !== "number" || Number.isNaN(literal)) {
+  if (compareOperator === undefined || typeof literal !== "number" || !Number.isFinite(literal)) {
     return result;
   }
   return recordDerivation(result, {
