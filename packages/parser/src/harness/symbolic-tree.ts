@@ -356,33 +356,73 @@ export const negateGuard = (guard: Guard): Guard => {
   return { kind: "not", operand: guard };
 };
 
-export const andGuard = (operands: Guard[]): Guard => {
+const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   const flattened = operands.flatMap((operand) =>
-    operand.kind === "and" ? operand.operands : [operand],
+    operand.kind === kind ? operand.operands : [operand],
   );
-  if (flattened.some((operand) => operand.kind === "constant" && !operand.value))
-    return constantGuard(false);
-  const remaining = flattened.filter((operand) => operand.kind !== "constant");
-  if (remaining.length === 0) return constantGuard(true);
-  return remaining.length === 1 ? remaining[0] : { kind: "and", operands: remaining };
+  if (flattened.some((operand) => operand.kind === "constant" && operand.value === absorbing))
+    return constantGuard(absorbing);
+  const remaining: Guard[] = [];
+  for (const operand of flattened) {
+    if (operand.kind === "constant") continue;
+    if (remaining.some((kept) => isSameGuard(kept, operand))) continue;
+    const complement = negateGuard(operand);
+    if (remaining.some((kept) => isSameGuard(kept, complement))) return constantGuard(absorbing);
+    remaining.push(operand);
+  }
+  if (remaining.length === 0) return constantGuard(!absorbing);
+  return remaining.length === 1 ? remaining[0] : { kind, operands: remaining };
 };
 
-export const orGuard = (operands: Guard[]): Guard => {
-  const flattened = operands.flatMap((operand) =>
-    operand.kind === "or" ? operand.operands : [operand],
-  );
-  if (flattened.some((operand) => operand.kind === "constant" && operand.value))
-    return constantGuard(true);
-  const remaining = flattened.filter((operand) => operand.kind !== "constant");
-  if (remaining.length === 0) return constantGuard(false);
-  return remaining.length === 1 ? remaining[0] : { kind: "or", operands: remaining };
-};
+export const andGuard = (operands: Guard[]): Guard => combineGuards("and", operands, false);
+
+export const orGuard = (operands: Guard[]): Guard => combineGuards("or", operands, true);
 
 export const isSameVariable = (left: SymbolicVariable, right: SymbolicVariable): boolean =>
   left.input === right.input &&
   left.measure === right.measure &&
   left.path.length === right.path.length &&
   left.path.every((segment, index) => segment === right.path[index]);
+
+const isSameLiteralList = (left: GuardLiteral[], right: GuardLiteral[]): boolean =>
+  left.length === right.length && left.every((value, index) => value === right[index]);
+
+export const isSameGuard = (left: Guard, right: Guard): boolean => {
+  switch (left.kind) {
+    case "constant":
+      return right.kind === "constant" && left.value === right.value;
+    case "truthy":
+      return right.kind === "truthy" && isSameVariable(left.variable, right.variable);
+    case "eq":
+      return (
+        right.kind === "eq" &&
+        isSameVariable(left.variable, right.variable) &&
+        left.value === right.value
+      );
+    case "compare":
+      return (
+        right.kind === "compare" &&
+        isSameVariable(left.variable, right.variable) &&
+        left.operator === right.operator &&
+        left.value === right.value
+      );
+    case "in-set":
+      return (
+        right.kind === "in-set" &&
+        isSameVariable(left.variable, right.variable) &&
+        isSameLiteralList(left.values, right.values)
+      );
+    case "not":
+      return right.kind === "not" && isSameGuard(left.operand, right.operand);
+    case "and":
+    case "or":
+      return (
+        right.kind === left.kind &&
+        left.operands.length === right.operands.length &&
+        left.operands.every((operand, index) => isSameGuard(operand, right.operands[index]))
+      );
+  }
+};
 
 export const collectGuardVariables = (
   guard: Guard,

@@ -1,5 +1,6 @@
 // This module must load before React so renderers can inject into the hook.
 
+import { callListener } from "./call-listener.js";
 import type { FiberRoot, ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index.js";
 
 export interface Unsubscribe extends Disposable {
@@ -117,7 +118,7 @@ export const removeActiveListener = (
 
 const notifyActiveListeners = (target: ReactDevToolsTarget): void => {
   for (const listener of _onActiveListeners) {
-    if (activeListenerTargets.get(listener)?.has(target)) listener();
+    if (activeListenerTargets.get(listener)?.has(target)) callListener(listener, undefined);
   }
 };
 
@@ -126,7 +127,7 @@ const notifyRendererInjectListeners = (
   renderer: ReactRenderer,
 ): void => {
   for (const subscription of rendererInjectSubscriptions) {
-    if (subscription.target === target) subscription.listener(renderer);
+    if (subscription.target === target) callListener(subscription.listener, subscription, renderer);
   }
 };
 
@@ -135,7 +136,7 @@ const notifyRDTHookReplaceListeners = (
   target: ReactDevToolsTarget,
 ): void => {
   for (const listener of rdtHookReplaceListeners) {
-    listener(rdtHook, target);
+    callListener(listener, undefined, rdtHook, target);
   }
 };
 
@@ -326,7 +327,7 @@ export const patchRDTHook = (
     };
   }
   if (!didNotifyActiveListeners && (renderers.size || rdtHook._instrumentationIsActive)) {
-    onActive?.();
+    if (onActive) callListener(onActive, undefined);
   }
 };
 
