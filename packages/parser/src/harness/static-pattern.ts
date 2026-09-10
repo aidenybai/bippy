@@ -468,6 +468,7 @@ const countVariables = (nodes: PatternNode[], counts: Map<string, number>): void
 export class SelfContainedFiberIndex {
   private readonly totals = new Map<string, number>();
   private readonly selfContained = new Map<PatternFiber, boolean>();
+  private readonly selfContainedDecisions = new WeakMap<PatternBranch | PatternNode[], boolean>();
 
   index(nodes: PatternNode[]): void {
     countVariables(nodes, this.totals);
@@ -476,6 +477,19 @@ export class SelfContainedFiberIndex {
 
   has(node: PatternFiber): boolean {
     return this.selfContained.get(node) ?? false;
+  }
+
+  /** Whether every decision inside is decided nowhere else, so what follows cannot depend on how it went. */
+  isSelfContained(decisions: PatternBranch | PatternNode[]): boolean {
+    const known = this.selfContainedDecisions.get(decisions);
+    if (known !== undefined) return known;
+    const inside = new Map<string, number>();
+    countVariables(Array.isArray(decisions) ? decisions : [decisions], inside);
+    const isSelfContained = [...inside].every(
+      ([variable, count]) => this.totals.get(variable) === count,
+    );
+    this.selfContainedDecisions.set(decisions, isSelfContained);
+    return isSelfContained;
   }
 
   private mark(nodes: PatternNode[]): Map<string, number> {
