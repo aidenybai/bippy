@@ -61,7 +61,7 @@ const htmlTransformResultSchema = z.union([
 ]);
 
 /** Vite's `HtmlTagDescriptor`: a tag a `transformIndexHtml` hook asks to inject. */
-export interface HtmlTagDescriptor {
+interface HtmlTagDescriptor {
   tag: string;
   attrs?: Record<string, string | boolean>;
   children?: string | HtmlTagDescriptor[];
@@ -69,7 +69,7 @@ export interface HtmlTagDescriptor {
 }
 
 /** Vite's `IndexHtmlTransformContext` for a dev page request; the server exposes the resolved config hooks read (`@vitejs/plugin-react` takes `base` from `server.config`). */
-export interface HtmlTransformContext {
+interface HtmlTransformContext {
   path: string;
   filename: string;
   server: { config: object };

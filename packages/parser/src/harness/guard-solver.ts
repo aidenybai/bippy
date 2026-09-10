@@ -476,7 +476,7 @@ export const solveGuards = (guards: Guard[]): VariableWitness[] | null => {
 };
 
 /** Witness values by symbolic variable (`formatVariable`), the form the planner evaluates guards against. */
-export type WitnessModel = ReadonlyMap<string, WitnessValue>;
+type WitnessModel = ReadonlyMap<string, WitnessValue>;
 
 export const toWitnessModel = (witnesses: VariableWitness[]): WitnessModel =>
   new Map(witnesses.map((witness) => [formatVariable(witness.variable), witness.value]));
@@ -543,10 +543,6 @@ export const areGuardsSatisfiable = (guards: Guard[]): boolean => solveGuards(gu
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
 export class GuardSolver {
   private readonly stack: Guard[] = [];
-
-  get guards(): readonly Guard[] {
-    return this.stack;
-  }
 
   push(guard: Guard): boolean {
     if (!areGuardsSatisfiable([...this.stack, guard])) return false;

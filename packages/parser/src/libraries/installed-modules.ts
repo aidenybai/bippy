@@ -52,16 +52,6 @@ export class InstalledModules {
     );
   }
 
-  /** The file `specifier` resolves to from the project root; `null` when it is not installed. */
-  resolve(specifier: string): string | null {
-    try {
-      return this.requireFromRoot.resolve(specifier);
-    } catch (error) {
-      if (isResolutionError(error)) return null;
-      throw error;
-    }
-  }
-
   /** `specifier` as the module at `filePath` resolves it: the copy an analyzed dependency actually imports. */
   loadBeside(specifier: string, filePath: string): object | null {
     return this.loadWith(specifier, filePath, () => createRequire(filePath));
