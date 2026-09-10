@@ -1369,7 +1369,7 @@ const callGlobal = (
         typeof first.value !== "symbol" &&
         (second === undefined || second.kind === "primitive")
       ) {
-        return primitiveValue(Number.parseInt(String(first.value), Number(second?.value ?? 10)));
+        return primitiveValue(Number.parseInt(String(first.value), Number(second?.value)));
       }
       return unknownPrimitiveValue("number", name);
     case "parseFloat":

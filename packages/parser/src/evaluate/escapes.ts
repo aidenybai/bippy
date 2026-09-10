@@ -81,6 +81,7 @@ interface ClosureShape {
  * parameter name.
  */
 export interface EscapeFrame {
+  isDirect: boolean;
   arguments: (StaticValue | null)[];
   parameters: Map<string, StaticValue>;
 }
@@ -560,16 +561,14 @@ export const resolveAccessPath = (
   return values;
 };
 
-const bindArguments = (
-  callee: StaticFunctionValue,
-  argumentValues: EscapeArguments,
-): EscapeFrame => {
+const bindArguments = (callee: StaticFunctionValue, argumentValues: EscapeTuple): EscapeFrame => {
+  const invocationArguments = [...(callee.boundArgs ?? []), ...(argumentValues ?? [])];
   const parameters = new Map<string, StaticValue>();
   getClosureShape(callee.node).parameterNames.forEach((name, index) => {
-    const value = argumentValues[index];
+    const value = invocationArguments[index];
     if (name !== null && value) parameters.set(name, value);
   });
-  return { arguments: [...argumentValues], parameters };
+  return { isDirect: argumentValues === null, arguments: invocationArguments, parameters };
 };
 
 /**
@@ -654,7 +653,9 @@ const invokeOnce = (
   if (!walk.memo.follow(closure, argumentValues)) return;
   forEachInvokedCallable(
     closure,
-    argumentValues === null ? null : bindArguments(closure, argumentValues),
+    argumentValues === null && !closure.boundArgs?.length
+      ? null
+      : bindArguments(closure, argumentValues),
     walk,
     visits,
   );
@@ -733,7 +734,11 @@ const forEachInvokedCallable = (
     for (const callee of callees) {
       switch (callee.kind) {
         case "native-function":
-          walk.visit(callee, { arguments: argumentValues, parameters: new Map() });
+          walk.visit(callee, {
+            isDirect: false,
+            arguments: argumentValues,
+            parameters: new Map(),
+          });
           break;
         case "function":
           invokeOnce(callee, argumentValues, walk, visits);
