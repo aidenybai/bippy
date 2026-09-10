@@ -27945,8 +27945,8 @@
       "id": "geeky-nextjs",
       "revision": "dc59a2bd646b6e1fed01e5a37d779879964a6428",
       "framework": "next-pages",
-      "capturedAt": "2026-09-10T10:02:42.996Z",
-      "durationMs": 18322,
+      "capturedAt": "2026-09-10T10:45:28.077Z",
+      "durationMs": 1000,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -27961,656 +27961,74 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 531,
-          "textCount": 4,
-          "branchCount": 6,
-          "repeatCount": 5,
+          "fiberCount": 812,
+          "textCount": 25,
+          "branchCount": 0,
+          "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 14,
-          "modulesLoaded": 41
+          "unknownCount": 0,
+          "modulesLoaded": 89
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 4
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "status": "partial",
         "matchedFibers": 729,
-        "matchedText": 9,
+        "matchedText": 25,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 16,
-        "wildcards": [
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <aside> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <aside> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <aside> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"04 Apr 2022\""
-            ]
-          },
-          {
-            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
-            "reason": "value from date-fns-tz (formatInTimeZone())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"01 Apr 2022\""
-            ]
-          }
-        ],
-        "branchesResolved": 23,
-        "repeatIterations": 25,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
         "transparentFibers": 69,
+        "status": "exact",
         "runtimeFibers": 754,
-        "staticFibers": 454,
+        "staticFibers": 754,
         "coverage": 1,
-        "strictCoverage": 0.9787798408488063,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 930,
+        "stepsUsed": 754,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 256,
-        "stateCount": 92316,
-        "clusters": 4,
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
         "tree": {
-          "nodes": 479,
-          "inputs": 4,
-          "guards": 17,
-          "branches": 6,
-          "repeats": 5,
+          "nodes": 754,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
           "opaque": 0,
-          "wildcards": 14
+          "wildcards": 0
         },
         "matchedState": {
-          "index": null,
-          "conditions": [
-            {
-              "kind": "repeat",
-              "variable": "len(#4)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
-              "count": 3
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4[].frontmatter.image)@len(#4)[2]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4[].frontmatter.image)@len(#4)[1]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4[].frontmatter.image)@len(#4)[0]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
-              "count": 6
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)@len(#3)[5]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[5]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 1
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)@len(#3)[5]",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)@len(#3)[4]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[4]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 1
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)@len(#3)[4]",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)@len(#3)[3]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[3]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 1
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)@len(#3)[3]",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)@len(#3)[2]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[2]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)@len(#3)[2]",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)@len(#3)[1]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[1]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)@len(#3)[1]",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)@len(#3)[0]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[0]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)@len(#3)[0]",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#2)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
-              "count": 6
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)@len(#2)[5]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)@len(#2)[4]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)@len(#2)[3]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)@len(#2)[2]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)@len(#2)[1]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)@len(#2)[0]",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#1.0.frontmatter.image)",
-              "reason": "&& on unknown(sort whose item order is not statically decidable (function <anonymous>))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#1.0.frontmatter.categories)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "count": 1
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#1.0.frontmatter.author)",
-              "reason": "conditional on unknown(sort whose item order is not statically decidable (function <anonymous>))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            }
-          ]
+          "index": 0,
+          "conditions": []
         },
         "closestState": null,
-        "omitted": {
-          "total": 92066,
-          "omissions": [
-            {
-              "kind": "repeat",
-              "variable": "len(#1.0.frontmatter.categories)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#2)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[0]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)@len(#3)[1]",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#4)",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            }
-          ]
-        },
+        "omitted": null,
         "coverage": {
-          "sides": [
-            {
-              "kind": "branch",
-              "variable": "truthy(#1.0.frontmatter.image)",
-              "reason": "&& on unknown(sort whose item order is not statically decidable (function <anonymous>))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "side": 0,
-              "guard": "truthy(#1.0.frontmatter.image)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#1.0.frontmatter.image)",
-              "reason": "&& on unknown(sort whose item order is not statically decidable (function <anonymous>))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "side": 1,
-              "guard": "not(truthy(#1.0.frontmatter.image))",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#1.0.frontmatter.categories)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "side": 0,
-              "guard": "eq(len(#1.0.frontmatter.categories), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#1.0.frontmatter.categories)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "side": 1,
-              "guard": "len(#1.0.frontmatter.categories) > 0",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#1.0.frontmatter.author)",
-              "reason": "conditional on unknown(sort whose item order is not statically decidable (function <anonymous>))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "side": 0,
-              "guard": "truthy(#1.0.frontmatter.author)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#1.0.frontmatter.author)",
-              "reason": "conditional on unknown(sort whose item order is not statically decidable (function <anonymous>))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "side": 1,
-              "guard": "not(truthy(#1.0.frontmatter.author))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#2)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
-              "side": 0,
-              "guard": "eq(len(#2), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#2)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
-              "side": 1,
-              "guard": "len(#2) > 0",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "side": 0,
-              "guard": "truthy(#2[].frontmatter.image)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2[].frontmatter.image)",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
-              "side": 1,
-              "guard": "not(truthy(#2[].frontmatter.image))",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
-              "side": 0,
-              "guard": "eq(len(#3), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
-              "side": 1,
-              "guard": "len(#3) > 0",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "side": 0,
-              "guard": "truthy(#3[].frontmatter.image)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.image)",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
-              "side": 1,
-              "guard": "not(truthy(#3[].frontmatter.image))",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "side": 0,
-              "guard": "eq(len(#3[].frontmatter.categories), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#3[].frontmatter.categories)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
-              "side": 1,
-              "guard": "len(#3[].frontmatter.categories) > 0",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "side": 0,
-              "guard": "truthy(#3[].frontmatter.author)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3[].frontmatter.author)",
-              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
-              "side": 1,
-              "guard": "not(truthy(#3[].frontmatter.author))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#4)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
-              "side": 0,
-              "guard": "eq(len(#4), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#4)",
-              "reason": "repeated list",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
-              "side": 1,
-              "guard": "len(#4) > 0",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4[].frontmatter.image)",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
-              "side": 0,
-              "guard": "truthy(#4[].frontmatter.image)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4[].frontmatter.image)",
-              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
-              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
-              "side": 1,
-              "guard": "not(truthy(#4[].frontmatter.image))",
-              "status": "possible"
-            }
-          ],
-          "witnessed": 11,
-          "possible": 11,
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "states": 256,
-        "assignments": 256,
-        "replayed": 16,
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
         "maxReplayed": 16,
         "mismatched": []
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-10T10:02:59.071Z",
       "failure": null
     },
     {
@@ -58607,6 +58025,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 140,
         "matchedText": 6,
         "opaqueSubtrees": 0,
@@ -58620,7 +58039,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 30,
-        "status": "exact",
         "runtimeFibers": 146,
         "staticFibers": 146,
         "coverage": 1,

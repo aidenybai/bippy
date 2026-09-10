@@ -5598,7 +5598,10 @@
           "react-gtm-module",
           "react-lite-youtube-embed",
           "react-mailchimp-subscribe",
-          "disqus-react"
+          "disqus-react",
+          "date-fns",
+          "date-fns/*",
+          "date-fns-tz"
         ]
       }
     }

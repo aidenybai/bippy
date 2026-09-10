@@ -6,7 +6,7 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { nativeFunction } from "./stubs.js";
-import { isCompilerHelperPackage } from "../graph/helper-packages.js";
+import { isBabelRuntimePackage, isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { isFunctionLikeExpression } from "../parse/ast-walk.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
@@ -447,5 +447,22 @@ export const getCompilerHelper = (
   const name = getHelperName(packageName, specifier, importedName);
   const implementation = HELPERS[name];
   if (!implementation) return null;
-  return { kind: "native-function", name, call: implementation };
+  const helper: StaticNativeFunctionValue = { kind: "native-function", name, call: implementation };
+  if (isBabelRuntimePackage(packageName) && importedName !== "default") {
+    helper.getOwnProperty = (key) => getBabelHelperModuleProperty(helper, key);
+  }
+  return helper;
+};
+
+/**
+ * `@babel/runtime`'s CommonJS helper modules end in `module.exports = helper,
+ * module.exports.__esModule = true, module.exports["default"] = module.exports`,
+ * so `require(helper).default` is the helper itself.
+ */
+const getBabelHelperModuleProperty = (
+  helper: StaticNativeFunctionValue,
+  key: string,
+): StaticValue | undefined => {
+  if (key === "default") return helper;
+  return key === "__esModule" ? TRUE_VALUE : undefined;
 };
