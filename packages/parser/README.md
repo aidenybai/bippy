@@ -212,7 +212,7 @@ compiled memo caches), `documenso`, `sentry`, `posthog`, `graphiql`, `invoify`, 
 templates. 55 are `partial`: `formbricks`, `karakeep`, `socialecho` and `taxonomy` at 100%
 strict coverage behind opaque nodes and the rest short of full coverage through dynamic data or
 opaque third-party providers; 5 are `mismatch`, 3 `truncated` (budget-omitted alternatives),
-4 `unresolved` and 6 failed to capture. Provider packages
+4 `unresolved` and 6 render statically only (no dev server here). Provider packages
 become exact by listing them in an entry's `externalPackageAllowList` (their source is interpreted like application code, as `react-redux`
 and `@tanstack/react-query` are) or through a library model (`src/libraries`, as Redux Toolkit's
 `configureStore`/`createApi` are, reading the recorded store state).
