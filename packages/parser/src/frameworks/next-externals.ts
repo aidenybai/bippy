@@ -347,6 +347,15 @@ const IMAGE_ELEMENT_STUB: StubComponent = {
   },
 };
 
+const headPreloadLink = (head: StubComponent, src: StaticValue): StaticValue =>
+  stubElement(head, {
+    children: hostElement("link", {
+      rel: primitiveValue("preload"),
+      href: src,
+      as: primitiveValue("image"),
+    }),
+  });
+
 /**
  * `ImagePreload` (next/dist/client/image-component.js) for a `preload` or
  * `priority` image: `ReactDOM.preload` and null in the App Router, a
@@ -355,27 +364,31 @@ const IMAGE_ELEMENT_STUB: StubComponent = {
 const imagePreloadStub = (kind: NextRouterKind, head: StubComponent): StubComponent => ({
   displayName: "ImagePreload",
   render: (props) =>
-    kind === "next-app"
-      ? NULL_VALUE
-      : stubElement(head, {
-          children: hostElement("link", {
-            rel: primitiveValue("preload"),
-            href: getObjectProperty(props, "src"),
-            as: primitiveValue("image"),
-          }),
-        }),
+    kind === "next-app" ? NULL_VALUE : headPreloadLink(head, getObjectProperty(props, "src")),
 });
 
-const imageStub = (kind: NextRouterKind, head: StubComponent): StubComponent => {
+interface ImageStubOptions {
+  kind: NextRouterKind;
+  head: StubComponent;
+  /** Before 13.4.11 a `priority` image rendered the `next/head` preload link inline in both routers. */
+  hasImagePreload: boolean;
+}
+
+const imageStub = ({ kind, head, hasImagePreload }: ImageStubOptions): StubComponent => {
   const preloadStub = imagePreloadStub(kind, head);
   return {
     displayName: null,
     tag: ForwardRefTag,
     render: (props) => {
       const imageProps = Object.fromEntries(propEntries(props));
-      const isPreload = getTruthiness(getObjectProperty(props, "preload"));
+      const src = getObjectProperty(props, "src");
+      const isPreload = hasImagePreload
+        ? getTruthiness(getObjectProperty(props, "preload"))
+        : false;
       const isPriority = getTruthiness(getObjectProperty(props, "priority"));
-      const preloadElement = stubElement(preloadStub, { src: getObjectProperty(props, "src") });
+      const preloadElement = hasImagePreload
+        ? stubElement(preloadStub, { src })
+        : headPreloadLink(head, src);
       const preload =
         isPreload === true || isPriority === true
           ? preloadElement
@@ -416,7 +429,14 @@ const imageStubs = (options: NextModelOptions, head: StubComponent): NextImageSt
     image:
       options.version !== null && !isVersionAtLeast(options.version, "13.0.0")
         ? legacyImage
-        : stubValue(imageStub(options.kind, head)),
+        : stubValue(
+            imageStub({
+              kind: options.kind,
+              head,
+              hasImagePreload:
+                options.version === null || isVersionAtLeast(options.version, "13.4.11"),
+            }),
+          ),
     legacyImage,
   };
 };
@@ -468,7 +488,23 @@ const scriptStub = (kind: NextRouterKind): StubComponent => ({
 
 const BAILOUT_TO_CSR_STUB = passthroughStub("BailoutToCSR");
 
+const NO_SSR_STUB = passthroughStub("NoSSR");
+
 const PRELOAD_CHUNKS_STUB = emptyStub("PreloadChunks");
+
+/** The App Router `LoadableComponent`: `NoSSR` became `BailoutToCSR` in 14.1; 15.0 made the Suspense boundary conditional and added `PreloadChunks`. */
+interface AppLoadableShape {
+  clientOnlyWrapper: StubComponent;
+  isSuspenseConditional: boolean;
+}
+
+const appLoadableShape = (options: NextModelOptions): AppLoadableShape => ({
+  clientOnlyWrapper:
+    options.version === null || isVersionAtLeast(options.version, "14.1.0")
+      ? BAILOUT_TO_CSR_STUB
+      : NO_SSR_STUB,
+  isSuspenseConditional: options.version === null || isVersionAtLeast(options.version, "15.0.0"),
+});
 
 /**
  * `next/dynamic` at the time the page is captured: the chunk has loaded, so the
@@ -479,22 +515,24 @@ const PRELOAD_CHUNKS_STUB = emptyStub("PreloadChunks");
  * directly.
  */
 const dynamicComponent = (
-  kind: NextRouterKind,
+  options: NextModelOptions,
   [first, second]: StaticValue[],
   tools: StubRenderTools,
 ): StaticValue => {
-  const options = [first, second].filter((option) => option?.kind === "object");
+  const dynamicOptions = [first, second].filter((option) => option?.kind === "object");
   const readOption = (name: string): StaticValue =>
-    options.reduce<StaticValue>((current, option) => {
+    dynamicOptions.reduce<StaticValue>((current, option) => {
       const value = getObjectProperty(option, name);
       return value.kind === "primitive" && value.value === undefined ? current : value;
     }, UNDEFINED_VALUE);
   const loader = first === undefined || first.kind === "object" ? readOption("loader") : first;
-  return mapValue(loader, (alternative) => loadableComponent(kind, alternative, readOption, tools));
+  return mapValue(loader, (alternative) =>
+    loadableComponent(options, alternative, readOption, tools),
+  );
 };
 
 const loadableComponent = (
-  kind: NextRouterKind,
+  options: NextModelOptions,
   loader: StaticValue,
   readOption: (name: string) => StaticValue,
   tools: StubRenderTools,
@@ -504,7 +542,7 @@ const loadableComponent = (
     return unknownValue("next/dynamic loader is not a statically known module");
   }
   const lazyType: StaticElementType = lazy.type;
-  if (kind === "next-pages") {
+  if (options.kind === "next-pages") {
     return stubValue({
       displayName: "LoadableComponent",
       tag: ForwardRefTag,
@@ -529,13 +567,14 @@ const loadableComponent = (
     loadableGenerated.kind === "object"
       ? getObjectProperty(loadableGenerated, "modules")
       : UNDEFINED_VALUE;
+  const { clientOnlyWrapper, isSuspenseConditional } = appLoadableShape(options);
   return stubValue({
     displayName: "LoadableComponent",
     isServerComponent: true,
     render: (props, renderTools) => {
       const lazyElement = element(lazyType, props);
       const preloadChunks =
-        renderTools.environment === "server"
+        isSuspenseConditional && renderTools.environment === "server"
           ? stubElement(PRELOAD_CHUNKS_STUB, { moduleIds })
           : NULL_VALUE;
       const children = isSsr
@@ -543,11 +582,11 @@ const loadableComponent = (
             { kind: "fragment" },
             objectFromRecord({ children: listValue([preloadChunks, lazyElement]) }),
           )
-        : stubElement(BAILOUT_TO_CSR_STUB, {
+        : stubElement(clientOnlyWrapper, {
             reason: primitiveValue("next/dynamic"),
             children: lazyElement,
           });
-      if (!isSsr || hasLoading) {
+      if (!isSuspenseConditional || !isSsr || hasLoading) {
         const fallback = hasLoading
           ? element(
               toElementType(loading, null),
@@ -718,7 +757,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
         return importedName === "default" ? stubValue(scriptStub(options.kind)) : null;
       case "next/dynamic":
         return importedName === "default"
-          ? nativeFunction("dynamic", (args, tools) => dynamicComponent(options.kind, args, tools))
+          ? nativeFunction("dynamic", (args, tools) => dynamicComponent(options, args, tools))
           : null;
       case "next/font/google":
       case "next/font/local":

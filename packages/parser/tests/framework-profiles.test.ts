@@ -111,4 +111,30 @@ describe("next app runtime profile", () => {
       "      aside",
     ]);
   });
+
+  it("drops the anonymous metadata/viewport boundaries Turbopack leaves unnamed, recognized by their `Next.*` Suspense", () => {
+    const suspense = (name: string, children: RuntimeFiberSnapshot[] = []) =>
+      fiber("Suspense", children, { name }, "SuspenseComponent");
+    const flattened = flattenTransparentFibers(
+      snapshotOf([
+        fiber("StaticGenerationSearchParamsBailoutProvider", [
+          fiber("Page", [fiber("main", [], {}, "HostComponent")]),
+          fiber(null, [suspense("Next.Metadata", [fiber("title", [], {}, "HostComponent")])]),
+          fiber(null, [suspense("Next.Viewport")]),
+          fiber(null, [suspense("Fallback", [fiber("Spinner")])]),
+          fiber(null, [fiber("Widget")]),
+        ]),
+      ]),
+      NEXT_APP_PROFILE,
+    );
+    expect(describeTree(flattened.roots[0].children)).toEqual([
+      "Page",
+      "  main",
+      "FunctionComponent",
+      "  Suspense",
+      "    Spinner",
+      "FunctionComponent",
+      "  Widget",
+    ]);
+  });
 });
