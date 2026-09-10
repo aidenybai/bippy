@@ -86,7 +86,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
   const servedDirectory = options.servedDirectory ?? viteConfig.root;
   const publicDirectory = options.publicDirectory ?? viteConfig.publicDir;
   const queries = new Map(observations.queries.map((query) => [query.queryHash, query]));
-  const { mutations, stores } = observations;
+  const { mutations, stores, swr } = observations;
   const assets = createServedAssets({
     rootDirectory,
     servedDirectory,
@@ -121,5 +121,6 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
     linguiCatalog: observations.lingui ?? null,
     routerState: observations.router ?? null,
     storeStates: stores ?? null,
+    swrCache: swr ? new Map(swr.map((entry) => [entry.key, entry])) : null,
   };
 };

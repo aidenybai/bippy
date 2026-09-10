@@ -1533,6 +1533,9 @@ const iterableOrArrayLike = (
 ): StaticValue | null => {
   const iterated = interpreter.resolveIterable(value, context, location);
   if (iterated !== value) return iterated;
+  if (value.kind === "primitive" && typeof value.value === "string") {
+    return listValue(spreadListItems(value, location));
+  }
   if (value.kind === "object") return arrayLikeToList(value);
   return value.kind === "native-object" ? null : value;
 };

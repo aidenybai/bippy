@@ -76,6 +76,7 @@ describe("synthetic fixtures: static fiber tree vs react-dom", () => {
       if (replayed?.lingui) expect(run.observed.lingui, detail).toEqual(replayed.lingui);
       if (replayed?.router) expect(run.observed.router, detail).toEqual(replayed.router);
       if (replayed?.stores) expect(run.observed.stores, detail).toMatchObject(replayed.stores);
+      if (replayed?.swr) expect(run.observed.swr, detail).toEqual(replayed.swr);
     });
   }
 });

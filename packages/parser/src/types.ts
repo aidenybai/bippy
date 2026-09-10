@@ -469,6 +469,8 @@ export interface ProjectContext {
   routerState: CapturedRouterState | null;
   /** The state of each Redux store the page created; `null` when no store was recorded. */
   storeStates: readonly CapturedValue[] | null;
+  /** The SWR cache the page's hooks read, by serialized key; `null` when no cache was recorded. */
+  swrCache: ReadonlyMap<string, CapturedSwrEntry> | null;
 }
 
 export interface LibraryValueProvider {
@@ -535,6 +537,15 @@ export interface CapturedMutation {
   submittedAt: number;
 }
 
+/** One SWR cache entry as `cache.get(key)` holds it, under the key `useSWR` serializes its argument to. */
+export interface CapturedSwrEntry {
+  key: string;
+  data?: CapturedValue;
+  error?: CapturedValue;
+  isValidating?: boolean;
+  isLoading?: boolean;
+}
+
 /** Both TanStack caches of every mounted `QueryClient`. */
 export interface CapturedQueryCaches {
   queries: CapturedQuery[];
@@ -588,6 +599,8 @@ export interface RootObservations extends CapturedQueryCaches {
   router?: CapturedRouterState;
   /** `getState()` of every Redux store the page created (react-redux providers, kea's store), once settled. */
   stores?: CapturedValue[];
+  /** The caches the mounted SWR hooks read, once settled. */
+  swr?: CapturedSwrEntry[];
 }
 
 /** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
@@ -632,6 +645,8 @@ export interface RuntimeObservations {
   lingui?: CapturedLinguiCatalog;
   router?: CapturedRouterState;
   stores?: CapturedValue[];
+  /** Absent in captures that predate SWR recording, where a hook then shows its first render. */
+  swr?: CapturedSwrEntry[];
   /** Absent in captures that predate page-state recording, which then assume a fresh profile. */
   page?: CapturedPageState;
   /** Absent in captures that predate request recording, which then leave request headers uncertain. */
@@ -859,6 +874,8 @@ export interface StaticReactApiValue {
 export interface StaticExternalValue {
   kind: "external";
   packageName: string;
+  /** The import specifier a `binding` came from when it names a subpath (`next/script`). */
+  specifier?: string;
   importedName: string;
   /**
    * `binding` is the import itself, `instance` a `new` of one (an object, so

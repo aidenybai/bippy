@@ -4078,7 +4078,14 @@
           "next-view-transitions",
           "nextjs-toploader",
           "sonner",
-          "@vercel/analytics"
+          "@vercel/analytics",
+          "posthog-js",
+          "@next/third-parties",
+          "react-tweet",
+          "react-icons",
+          "react-icons/*",
+          "vaul",
+          "framer-motion"
         ]
       }
     },

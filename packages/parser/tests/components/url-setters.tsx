@@ -41,7 +41,9 @@ const invalidHref = (): string => {
 export default function UrlSetters() {
   return (
     <ul>
-      <li>{normalize("//user:pw@www.notion.so//image/a%2Fb/?utm_source=x&id=1&table=block#:~:text=a")}</li>
+      <li>
+        {normalize("//user:pw@www.notion.so//image/a%2Fb/?utm_source=x&id=1&table=block#:~:text=a")}
+      </li>
       <li>{normalize("https://www.example.com/path/")}</li>
       <li>
         {stripped.href}|{stripped.searchParams.size}|{stripped.origin}

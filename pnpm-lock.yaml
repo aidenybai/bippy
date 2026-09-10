@@ -1388,6 +1388,9 @@ importers:
       styled-components:
         specifier: 6.5.3
         version: 6.5.3(css-to-react-native@3.2.0)(react-dom@19.2.8(react@19.2.8))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
+      swr:
+        specifier: 2.5.1
+        version: 2.5.1(react@19.2.8)
       tsx:
         specifier: ^4.21.0
         version: 4.23.12

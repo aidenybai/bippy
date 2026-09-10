@@ -1,9 +1,5 @@
 export * from "./snapshot.js";
-export {
-  createRuntimeSnapshot,
-  getRootContainer,
-  snapshotFiberTree,
-} from "./runtime-snapshot.js";
+export { createRuntimeSnapshot, getRootContainer, snapshotFiberTree } from "./runtime-snapshot.js";
 export {
   createCommitRecorder,
   type CommitRecorder,

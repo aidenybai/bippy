@@ -63,7 +63,8 @@ export const getCanonicalLanguageGlobal = (value: object): StaticValue | null =>
 
 /** The language global that is the `constructor` of a native prototype (`Array` for `Array.prototype`); null when the prototype is not an intrinsic's. */
 export const getPrototypeConstructorGlobal = (prototype: object | null): StaticValue | null => {
-  const constructor: unknown = prototype === null ? undefined : Reflect.get(prototype, "constructor");
+  const constructor: unknown =
+    prototype === null ? undefined : Reflect.get(prototype, "constructor");
   return isObjectLike(constructor) ? getCanonicalLanguageGlobal(constructor) : null;
 };
 

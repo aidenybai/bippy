@@ -453,6 +453,7 @@ export const UNKNOWN_PROJECT: ProjectContext = {
   linguiCatalog: null,
   routerState: null,
   storeStates: null,
+  swrCache: null,
 };
 
 /** The per-file names Node gives a module (CommonJS wrapper and `import.meta`); Vite's config loader injects the same. */
@@ -1292,6 +1293,7 @@ export class Interpreter {
         return {
           kind: "external",
           packageName: symbol.packageName,
+          ...(symbol.specifier === symbol.packageName ? {} : { specifier: symbol.specifier }),
           importedName,
           origin: "binding",
         };
@@ -3116,7 +3118,8 @@ export class Interpreter {
         if (member) return member;
         return unknownValue(`React.${object.api}.${key}`, location);
       }
-      case "external":
+      case "external": {
+        const specifier = object.specifier ?? object.packageName;
         if (object.importedName === "*" && object.origin === "binding") {
           if (key === "__esModule") return TRUE_VALUE;
           return this.resolvedSymbolToValue(
@@ -3124,7 +3127,7 @@ export class Interpreter {
               kind: "external",
               packageName: object.packageName,
               imported: key === "default" ? { kind: "default" } : { kind: "named", name: key },
-              specifier: object.packageName,
+              specifier,
               filePath: null,
             },
             null,
@@ -3134,7 +3137,7 @@ export class Interpreter {
         if (object.origin !== "binding" && isModeledOpaqueMethodName(key))
           return { kind: "method", receiver: object, name: key };
         if (object.importedName === "default" && object.origin === "binding") {
-          const modeled = this.getModeledExternal(object.packageName, key);
+          const modeled = this.getModeledExternal(specifier, key);
           if (modeled) return modeled;
         }
         if (object.importedName === "*" || object.importedName === "default") {
@@ -3145,6 +3148,7 @@ export class Interpreter {
         return member.kind === "react-api"
           ? reactApiValue(member.api, context.environment)
           : member;
+      }
       case "native-object":
         return getNativeObjectMember(object, key);
       case "namespace":
@@ -5320,10 +5324,7 @@ const isObjectTypeof = (value: StaticValue, realm: HostRealm | null): boolean =>
 };
 
 /** `"" == Date`, `Object("a") == "a"`: what loosely comparing a primitive to a language object yields in this process, which implements the same language. */
-const compareLanguageObjectLoosely = (
-  left: StaticValue,
-  right: StaticValue,
-): boolean | null => {
+const compareLanguageObjectLoosely = (left: StaticValue, right: StaticValue): boolean | null => {
   if (right.kind !== "primitive") return null;
   const object: unknown =
     left.kind === "global"
@@ -5375,7 +5376,8 @@ const compareEquality = (
     compareGlobalToNullish(left, right, realm) ??
     compareGlobalToNullish(right, left, realm);
   if (isEqual === false && !isStrict && !isLooseEqualityIdentity(left, right, realm)) {
-    isEqual = compareLanguageObjectLoosely(left, right) ?? compareLanguageObjectLoosely(right, left);
+    isEqual =
+      compareLanguageObjectLoosely(left, right) ?? compareLanguageObjectLoosely(right, left);
   }
   if (isEqual === null) {
     const isSentinel = (value: StaticValue): boolean =>

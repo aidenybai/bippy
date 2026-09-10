@@ -2064,7 +2064,9 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
 
 const getAssignedStubDisplayName = (stub: StubComponent): string | null => {
   const assigned = stub.properties?.get("displayName");
-  return assigned?.kind === "primitive" && typeof assigned.value === "string" ? assigned.value : null;
+  return assigned?.kind === "primitive" && typeof assigned.value === "string"
+    ? assigned.value
+    : null;
 };
 
 /** The name React reports for a stub: a `displayName` the app assigned wins over the library's. */

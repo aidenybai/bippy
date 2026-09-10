@@ -82,6 +82,7 @@
     "redux-persist": "6.0.0",
     "string.prototype.trim": "1.2.11",
     "styled-components": "6.5.3",
+    "swr": "2.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "use-sync-external-store": "1.6.0",
