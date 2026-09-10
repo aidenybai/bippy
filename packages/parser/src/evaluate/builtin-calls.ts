@@ -1775,6 +1775,13 @@ const toGuardLiteral = (value: StaticValue): GuardLiteral | undefined =>
 const isGuardLiteral = (literal: GuardLiteral | undefined): literal is GuardLiteral =>
   literal !== undefined;
 
+/** An item of an iterable the analysis cannot enumerate: opaque, with any count. */
+const getOpaqueItem = (receiver: StaticValue): StaticValue =>
+  recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
+    kind: "element",
+    list: receiver,
+  });
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -1847,14 +1854,7 @@ const mapList = (
       item: callUncertainCallback(
         interpreter,
         callback,
-        [
-          recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
-            kind: "element",
-            list: receiver,
-          }),
-          unknownPrimitiveValue("number", "index"),
-          receiver,
-        ],
+        [getOpaqueItem(receiver), unknownPrimitiveValue("number", "index"), receiver],
         context,
         true,
       ),
@@ -2374,11 +2374,15 @@ export const evaluateBuiltinCall = (
           );
         } else callCallback(interpreter, first, [item, primitiveValue(index), receiver], context);
       });
-    } else if (receiver.kind === "repeat") {
+    } else {
       callUncertainCallback(
         interpreter,
         first,
-        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        [
+          receiver.kind === "repeat" ? receiver.item : getOpaqueItem(receiver),
+          unknownPrimitiveValue("number", "index"),
+          receiver,
+        ],
         context,
         true,
       );
