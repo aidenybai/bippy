@@ -656,15 +656,6 @@ export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | nul
   return keys.map((key) => ({ kind: "property", key, value: getObjectProperty(holder, key) }));
 };
 
-/** `assign({}, ...sources)`: every closed source copied per key, any other kept behind a spread. */
-export const assignedObject = (sources: StaticValue[]): StaticObjectValue =>
-  objectValue(
-    sources.flatMap(
-      (source): StaticObjectEntry[] =>
-        getSpreadEntries(source) ?? [{ kind: "spread", value: source }],
-    ),
-  );
-
 /**
  * Joins the entry lists paths left on one object. Paths that only assigned
  * properties join per key (a path that skipped a key keeps the entry value);

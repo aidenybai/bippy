@@ -393,7 +393,7 @@ interface ClassInstanceRecord {
 }
 
 /** A rendered class component and the unmasked legacy context its children see. */
-export interface ClassRender {
+interface ClassRender {
   rendered: StaticValue;
   childLegacyContext: StaticValue | null;
 }

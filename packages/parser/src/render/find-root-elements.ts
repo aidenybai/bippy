@@ -9,10 +9,10 @@ import type {
 import { forEachChildNode, unwrapExpression } from "../parse/ast-walk.js";
 import type { ModuleRecord } from "../types.js";
 
-export type EnclosingFunction = Function | ArrowFunctionExpression;
+type EnclosingFunction = Function | ArrowFunctionExpression;
 
 /** A block the root render call is nested in: the statements that run before the call and the one containing it. */
-export interface EnclosingBlock {
+interface EnclosingBlock {
   statementsBefore: Statement[];
   statement: Statement;
 }
