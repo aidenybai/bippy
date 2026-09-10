@@ -27942,6 +27942,678 @@
       "failure": null
     },
     {
+      "id": "geeky-nextjs",
+      "revision": "dc59a2bd646b6e1fed01e5a37d779879964a6428",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T10:02:42.996Z",
+      "durationMs": 18322,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 829,
+        "commits": 5,
+        "pageErrors": [
+          "Warning: Failed %s type: %s%s prop The prop `url` is marked as required in `MailchimpSubscribe`, but its value is `undefined`. \n    at MailchimpSubscribe (webpack-internal:///./node_modules/react-mailchimp-subscribe/es/index.js:33:5)\n    at Sidebar (webpack-internal:///./layouts/partials/Sidebar.js:37:11)\n    at div\n    at div\n    at section\n    at main\n    at Base (webpack-internal:///./layouts/Baseof.js:21:11)\n    at Home (webpack-internal:///./pages/index.js:33:11)\n    at f (webpack-internal:///./node_modules/next-themes/dist/index.module.js:8:597)\n    at $ (webpack-internal:///./node_modules/next-themes/dist/index.module.js:8:348)\n    at JsonContext (webpack-internal:///./context/state.js:17:11)\n    at App (webpack-internal:///./pages/_app.js:27:11)\n    at PathnameContextProviderAdapter (webpack-internal:///./node_modules/next/dist/shared/lib/router/adapters.js:62:11)\n    at ErrorBoundary (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:301:63)\n    at ReactDevOverlay (webpack-internal:///./node_modules/next/dist/compiled/@next/react-dev-overlay/dist/client.js:850:919)\n    at Container (webpack-internal:///./node_modules/next/dist/client/index.js:61:1)\n    at AppContainer (webpack-internal:///./node_modules/next/dist/client/index.js:171:11)\n    at Root (webpack-internal:///./node_modules/next/dist/client/index.js:346:11)"
+        ],
+        "title": "Geeky Nextjs"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 531,
+          "textCount": 4,
+          "branchCount": 6,
+          "repeatCount": 5,
+          "opaqueCount": 0,
+          "unknownCount": 14,
+          "modulesLoaded": 41
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 4
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 729,
+        "matchedText": 9,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 16,
+        "wildcards": [
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <aside> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <aside> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Sidebar> [FunctionComponent] > <aside> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Post> [FunctionComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"04 Apr 2022\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <JsonContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <$> [FunctionComponent] > <f> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Home> [FunctionComponent] > <Base> [FunctionComponent] > <main> [HostComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "value from date-fns-tz (formatInTimeZone())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"01 Apr 2022\""
+            ]
+          }
+        ],
+        "branchesResolved": 23,
+        "repeatIterations": 25,
+        "transparentFibers": 69,
+        "status": "partial",
+        "runtimeFibers": 754,
+        "staticFibers": 454,
+        "coverage": 1,
+        "strictCoverage": 0.9787798408488063,
+        "divergence": null,
+        "stepsUsed": 930,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 92316,
+        "clusters": 4,
+        "tree": {
+          "nodes": 479,
+          "inputs": 4,
+          "guards": 17,
+          "branches": 6,
+          "repeats": 5,
+          "opaque": 0,
+          "wildcards": 14
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
+              "count": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4[].frontmatter.image)@len(#4)[2]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4[].frontmatter.image)@len(#4)[1]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4[].frontmatter.image)@len(#4)[0]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
+              "count": 6
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)@len(#3)[5]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[5]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 1
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)@len(#3)[5]",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)@len(#3)[4]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[4]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 1
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)@len(#3)[4]",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)@len(#3)[3]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[3]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 1
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)@len(#3)[3]",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)@len(#3)[2]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[2]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)@len(#3)[2]",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)@len(#3)[1]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[1]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)@len(#3)[1]",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)@len(#3)[0]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[0]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)@len(#3)[0]",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
+              "count": 6
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)@len(#2)[5]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)@len(#2)[4]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)@len(#2)[3]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)@len(#2)[2]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)@len(#2)[1]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)@len(#2)[0]",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.0.frontmatter.image)",
+              "reason": "&& on unknown(sort whose item order is not statically decidable (function <anonymous>))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.0.frontmatter.categories)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "count": 1
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.0.frontmatter.author)",
+              "reason": "conditional on unknown(sort whose item order is not statically decidable (function <anonymous>))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 92066,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1.0.frontmatter.categories)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[0]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)@len(#3)[1]",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.0.frontmatter.image)",
+              "reason": "&& on unknown(sort whose item order is not statically decidable (function <anonymous>))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "side": 0,
+              "guard": "truthy(#1.0.frontmatter.image)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.0.frontmatter.image)",
+              "reason": "&& on unknown(sort whose item order is not statically decidable (function <anonymous>))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "side": 1,
+              "guard": "not(truthy(#1.0.frontmatter.image))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.0.frontmatter.categories)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "side": 0,
+              "guard": "eq(len(#1.0.frontmatter.categories), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.0.frontmatter.categories)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "side": 1,
+              "guard": "len(#1.0.frontmatter.categories) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.0.frontmatter.author)",
+              "reason": "conditional on unknown(sort whose item order is not statically decidable (function <anonymous>))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "side": 0,
+              "guard": "truthy(#1.0.frontmatter.author)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1.0.frontmatter.author)",
+              "reason": "conditional on unknown(sort whose item order is not statically decidable (function <anonymous>))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "side": 1,
+              "guard": "not(truthy(#1.0.frontmatter.author))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
+              "side": 0,
+              "guard": "eq(len(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:93:26",
+              "side": 1,
+              "guard": "len(#2) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "side": 0,
+              "guard": "truthy(#2[].frontmatter.image)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2[].frontmatter.image)",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:103:32",
+              "side": 1,
+              "guard": "not(truthy(#2[].frontmatter.image))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
+              "side": 0,
+              "guard": "eq(len(#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/pages/index.js:153:24",
+              "side": 1,
+              "guard": "len(#3) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "side": 0,
+              "guard": "truthy(#3[].frontmatter.image)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.image)",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:14:10",
+              "side": 1,
+              "guard": "not(truthy(#3[].frontmatter.image))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "side": 0,
+              "guard": "eq(len(#3[].frontmatter.categories), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3[].frontmatter.categories)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:24:12",
+              "side": 1,
+              "guard": "len(#3[].frontmatter.categories) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "side": 0,
+              "guard": "truthy(#3[].frontmatter.author)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3[].frontmatter.author)",
+              "reason": "conditional on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Post.js:10:18",
+              "side": 1,
+              "guard": "not(truthy(#3[].frontmatter.author))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
+              "side": 0,
+              "guard": "eq(len(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:111:15",
+              "side": 1,
+              "guard": "len(#4) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4[].frontmatter.image)",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
+              "side": 0,
+              "guard": "truthy(#4[].frontmatter.image)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4[].frontmatter.image)",
+              "reason": "&& on unknown(item of unknown(call of sort whose item order is not statically decidable (function <anonymous>)))",
+              "location": "/home/ubuntu/bippy-corpus/geeky-nextjs/layouts/partials/Sidebar.js:121:22",
+              "side": 1,
+              "guard": "not(truthy(#4[].frontmatter.image))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 11,
+          "possible": 11,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 256,
+        "assignments": 256,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": null,
+      "failure": null
+    },
+    {
       "id": "giscus",
       "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
       "framework": "next-pages",
@@ -55435,6 +56107,37 @@
       "failure": null
     },
     {
+      "id": "morethan-log",
+      "revision": "272cd3e73d6fbc650c5d95c6da0846776d39e67a",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T09:52:18.901Z",
+      "durationMs": 600736,
+      "runtime": null,
+      "static": {
+        "stats": {
+          "fiberCount": 225,
+          "textCount": 22,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 91
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": null,
+      "stateSpace": null,
+      "stateReplay": null,
+      "anchor": null,
+      "note": null,
+      "failure": "http://localhost:3022/ did not answer within 600000ms; see /home/ubuntu/bippy-corpus/.logs/morethan-log.log"
+    },
+    {
       "id": "mui-admin-dashboard",
       "revision": "adc9e57f76b5e722bd9109a09d85035dae09d15f",
       "framework": "react-router",
@@ -57041,6 +57744,101 @@
       "failure": null
     },
     {
+      "id": "nextjs-mdx-blog",
+      "revision": "ecdb127d1d450b96fd20d759f16be53fa210b37a",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T09:51:23.729Z",
+      "durationMs": 13141,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-1a001dac6-20230812",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 155,
+        "commits": 4,
+        "pageErrors": [
+          "Warning: Extra attributes from the server: %s%s class,style \n    at html\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:73:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:81:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:54:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:62:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/dev-root-not-found-boundary.js:32:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/internal/ReactDevOverlay.js:66:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:326:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:147:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:82:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:110:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:417:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:123:11)\n    at RSCComponent\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:139:11)"
+        ],
+        "title": "Hunter Chang - Website"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 95,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1299
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 86,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 17,
+        "runtimeFibers": 91,
+        "staticFibers": 91,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 91,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 91,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": null,
+      "failure": null
+    },
+    {
       "id": "nextjs-postgres-auth-starter",
       "revision": "fde8ecf1da9337223081f70cf88b420060039d6e",
       "framework": "next-app",
@@ -57453,6 +58251,388 @@
       "failure": null
     },
     {
+      "id": "nextjs-velite-blog-template",
+      "revision": "fd8820501be4a36fd47c1abd04bca42760408111",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T09:51:36.947Z",
+      "durationMs": 18591,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-60a927d04-20240113",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 352,
+        "commits": 5,
+        "pageErrors": [
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s className \"scroll-pt-[3.5rem] light\" \"scroll-pt-[3.5rem]\" \n    at html\n    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/redirect-boundary.js:73:9)\n    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/redirect-boundary.js:81:11)\n    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/not-found-boundary.js:76:9)\n    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/not-found-boundary.js:84:11)\n    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)\n    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/react-dev-overlay/internal/ReactDevOverlay.js:84:9)\n    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:307:11)\n    at Router (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/app-router.js:182:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/error-boundary.js:114:9)\n    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/error-boundary.js:161:11)\n    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/components/app-router.js:538:13)\n    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/app-index.js:129:11)\n    at RSCComponent\n    at Root (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@14.1.2_react-dom@18.2.0_react@18.2.0/node_modules/next/dist/client/app-index.js:145:11)"
+        ],
+        "title": "JollyBlog"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 282,
+          "textCount": 22,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1495
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 250,
+        "matchedText": 22,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 23,
+        "runtimeFibers": 272,
+        "staticFibers": 272,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 272,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 272,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": null,
+      "failure": null
+    },
+    {
+      "id": "nextly-template",
+      "revision": "97b3fe2b2bf0a40cf3ca2350752f9aec42748867",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T09:50:59.091Z",
+      "durationMs": 13832,
+      "runtime": {
+        "reactVersion": "18.3.0-canary-14898b6a9-20240318",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 488,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Create Next App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 440,
+          "textCount": 24,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 478
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 399,
+        "matchedText": 23,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 27,
+        "runtimeFibers": 422,
+        "staticFibers": 422,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 423,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "stateCount": 5,
+        "clusters": 2,
+        "tree": {
+          "nodes": 1256,
+          "inputs": 2,
+          "guards": 7,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 3,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/nextly-template/node_modules/@headlessui/react/dist/utils/render.js:1:514",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/nextly-template/node_modules/@headlessui/react/dist/utils/render.js:1:514",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "if (branch(true | false))",
+              "location": "/home/ubuntu/bippy-corpus/nextly-template/node_modules/@headlessui/react/dist/utils/render.js:1:514",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 5,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": null,
+      "failure": null
+    },
+    {
+      "id": "nextsimplestarter",
+      "revision": "338a8e4bb85181613fa9f344721307a4b693bb71",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T10:02:19.725Z",
+      "durationMs": 23155,
+      "runtime": {
+        "reactVersion": "19.2.0-canary-0bdb9206-20250818",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 298,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Todo App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 163,
+          "textCount": 6,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 1,
+          "modulesLoaded": 775
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 137,
+        "matchedText": 6,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 6,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 27,
+        "status": "partial",
+        "runtimeFibers": 149,
+        "staticFibers": 146,
+        "coverage": 1,
+        "strictCoverage": 0.959731543624161,
+        "divergence": null,
+        "stepsUsed": 147,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 2,
+        "tree": {
+          "nodes": 281,
+          "inputs": 2,
+          "guards": 6,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(<boolean> | undefined | 0)",
+              "location": "/home/ubuntu/bippy-corpus/nextsimplestarter/node_modules/@mui/material/Badge/useBadge.js:33:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(<boolean> | undefined | 0)",
+              "location": "/home/ubuntu/bippy-corpus/nextsimplestarter/node_modules/@mui/material/Badge/useBadge.js:33:24",
+              "side": 0,
+              "guard": "eq(choice(branch#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#1)",
+              "reason": "conditional on branch(<boolean> | undefined | 0)",
+              "location": "/home/ubuntu/bippy-corpus/nextsimplestarter/node_modules/@mui/material/Badge/useBadge.js:33:24",
+              "side": 1,
+              "guard": "eq(choice(branch#1), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 4,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": null,
+      "failure": null
+    },
+    {
       "id": "noteworthy",
       "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
       "framework": "spa",
@@ -57826,6 +59006,94 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-09T13:05:28.896Z",
+      "failure": null
+    },
+    {
+      "id": "notion-blog",
+      "revision": "362af9e5457cdc8c11fa4d0adac6e81dcb902975",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-10T09:52:05.039Z",
+      "durationMs": 13752,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 141,
+        "commits": 5,
+        "pageErrors": [],
+        "title": "Home | My Notion Blog"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 129,
+          "textCount": 20,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 15
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 108,
+        "matchedText": 20,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 7,
+        "status": "exact",
+        "runtimeFibers": 128,
+        "staticFibers": 128,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 128,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 128,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": null,
       "failure": null
     },
     {
@@ -139442,6 +140710,94 @@
       "stateReplay": null,
       "anchor": null,
       "note": "runtime replayed from 2026-09-08T11:36:02.368Z",
+      "failure": null
+    },
+    {
+      "id": "typescript-nextjs-starter",
+      "revision": "059eaaadc746d48bc54015f904ff52e117aad77f",
+      "framework": "next-app",
+      "capturedAt": "2026-09-10T09:51:13.024Z",
+      "durationMs": 10542,
+      "runtime": {
+        "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
+        "rendererName": "react-dom",
+        "buildType": "production",
+        "roots": 2,
+        "fibers": 146,
+        "commits": 13,
+        "pageErrors": [],
+        "title": "TypeScript starter for Next.js by João Pedro Schmitz"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 14,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 12,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 26,
+        "runtimeFibers": 12,
+        "staticFibers": 12,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 12,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 12,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": null,
       "failure": null
     },
     {
