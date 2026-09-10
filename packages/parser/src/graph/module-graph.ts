@@ -155,10 +155,6 @@ export class ModuleGraph {
     return this.resolveImportedName(specifier, imported, fromModule, new Set());
   }
 
-  resolveLocalName(module: ModuleRecord, localName: string): ResolvedSymbol {
-    return this.resolveLocalNameWithVisited(module, localName, new Set());
-  }
-
   resolveExport(module: ModuleRecord, exportedName: string): ResolvedSymbol {
     return this.resolveExportWithVisited(module, exportedName, new Set());
   }
