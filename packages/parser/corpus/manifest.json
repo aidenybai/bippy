@@ -3655,6 +3655,9 @@
       "workingDirectory": ".",
       "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn install --frozen-lockfile",
       "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 20 yarn dev",
+      "env": {
+        "NODE_OPTIONS": "--openssl-legacy-provider"
+      },
       "url": "http://localhost:3000/",
       "readyTimeoutMs": 600000,
       "settleMs": 8000,
@@ -3667,7 +3670,7 @@
       "id": "github-profile-readme-generator",
       "repository": "https://github.com/rahuldkjain/github-profile-readme-generator",
       "revision": "5ae90bfcbd7ab2f69809b094601f7975c32ae077",
-      "description": "GitHub Profile README Generator home page (Next 15 app router with Turbopack, React 19, next-themes, npm)",
+      "description": "GitHub Profile README Generator home page (Next 15 app router with Turbopack, React 19, zustand persist, framer-motion, npm)",
       "framework": "next-app",
       "workingDirectory": ".",
       "install": "npm ci --no-audit --no-fund",
@@ -3677,7 +3680,8 @@
       "settleMs": 8000,
       "static": {
         "rootDirectory": ".",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": ["framer-motion", "lucide-react"]
       }
     },
     {
@@ -3696,7 +3700,8 @@
         "rootDirectory": ".",
         "entry": "src/stories/Spreadsheet.stories.tsx",
         "rootComponent": "Controlled",
-        "anchor": "Spreadsheet"
+        "anchor": "Spreadsheet",
+        "externalPackageAllowList": ["use-context-selector"]
       },
       "notes": "The repository is a component library; its Storybook preview iframe is the only runnable React root. Both trees are anchored on the library's Spreadsheet component so Storybook's decorators stay outside the comparison."
     },

@@ -47,6 +47,7 @@ import {
   reduxValue,
 } from "./redux-toolkit.js";
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
+import { SCHEDULER_PACKAGES, schedulerValue } from "./scheduler.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
 import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
@@ -118,6 +119,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   },
   { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
+  { packages: SCHEDULER_PACKAGES, getValue: schedulerValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
   { packages: STYLEX_PACKAGES, getValue: stylexValue },

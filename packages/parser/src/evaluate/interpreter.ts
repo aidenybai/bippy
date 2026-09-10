@@ -1471,13 +1471,13 @@ export class Interpreter {
         return target;
       }
       case "context":
-        if (
-          propertyName === "displayName" &&
-          value.kind === "primitive" &&
-          typeof value.value === "string"
-        ) {
-          target.context.displayName = value.value;
+        if (propertyName === "displayName") {
+          if (value.kind === "primitive" && typeof value.value === "string")
+            target.context.displayName = value.value;
+          return target;
         }
+        this.mutations.record(0);
+        (target.context.properties ??= new Map()).set(propertyName, value);
         return target;
       case "component-reference": {
         const type = target.type;
@@ -3060,7 +3060,9 @@ export class Interpreter {
           key,
         );
       }
-      case "context":
+      case "context": {
+        const assigned = object.context.properties?.get(key);
+        if (assigned) return assigned;
         if (key === "Provider") {
           return componentReference({
             kind: "context-provider",
@@ -3082,6 +3084,7 @@ export class Interpreter {
         }
         if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
         return prototypeMember(object, Object.prototype, key);
+      }
       case "react-api": {
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         if (key === "prototype" && isReactComponentBase(object))

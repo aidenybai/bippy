@@ -266,6 +266,8 @@ export interface ContextDefinition {
   displayName: string | null;
   defaultValue: StaticValue;
   location: SourceLocation | null;
+  /** Properties source assigned on the context object (`context.Provider = Wrapper`), shadowing React's. */
+  properties?: Map<string, StaticValue>;
 }
 
 export type StaticElementType =
