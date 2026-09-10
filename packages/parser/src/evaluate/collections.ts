@@ -109,7 +109,7 @@ export const getKeyIdentity = (key: StaticValue): KeyIdentity => {
 };
 
 /** Values with a stable identity (or value equality) across the analysis, so a key lookup is exact. */
-const isDefiniteKey = (key: StaticValue): boolean =>
+export const isDefiniteKey = (key: StaticValue): boolean =>
   key.kind === "primitive" ||
   key.kind === "symbol" ||
   key.kind === "object" ||

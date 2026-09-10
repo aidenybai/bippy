@@ -336,6 +336,8 @@ export interface StubComponent {
   displayName: string | null;
   /** Work tag of the real component (e.g. `ForwardRef` for `Link`); defaults to a function component. */
   tag?: WorkTag;
+  /** The fiber name comes from a wrapped render function's `name`, so the component object itself has no `displayName` or `name`. */
+  isRenderNamed?: boolean;
   /** Statics the library hangs on the component (`Styled.withComponent`); the app's own assignments (`Component.displayName = ...`) land here too. */
   properties?: Map<string, StaticValue>;
   /** Under RSC, renders on the server (no fiber) when created outside a client boundary, like a component whose module lacks `"use client"`. */
@@ -489,6 +491,8 @@ export interface ProjectContext {
   storeStates: readonly CapturedValue[] | null;
   /** The import a build-time transform (unplugin-auto-import) injects for a free identifier in a file; `null` when it injects none. */
   findAutoImport: (filePath: string, name: string) => AutoImport | null;
+  /** The SWR cache the page's hooks read, by serialized key; `null` when no cache was recorded. */
+  swrCache: ReadonlyMap<string, CapturedSwrEntry> | null;
 }
 
 /** An import a bundler plugin adds to a module for an identifier its source leaves unbound. */
@@ -566,6 +570,15 @@ export interface CapturedMutation {
   submittedAt: number;
 }
 
+/** One SWR cache entry as `cache.get(key)` holds it, under the key `useSWR` serializes its argument to. */
+export interface CapturedSwrEntry {
+  key: string;
+  data?: CapturedValue;
+  error?: CapturedValue;
+  isValidating?: boolean;
+  isLoading?: boolean;
+}
+
 /** Both TanStack caches of every mounted `QueryClient`. */
 export interface CapturedQueryCaches {
   queries: CapturedQuery[];
@@ -619,6 +632,8 @@ export interface RootObservations extends CapturedQueryCaches {
   router?: CapturedRouterState;
   /** `getState()` of every Redux store the page created (react-redux providers, kea's store), once settled. */
   stores?: CapturedValue[];
+  /** The caches the mounted SWR hooks read, once settled. */
+  swr?: CapturedSwrEntry[];
 }
 
 /** The origin's persisted state: `document.cookie` as the settled page held it, Web Storage as its first script found it. */
@@ -663,6 +678,8 @@ export interface RuntimeObservations {
   lingui?: CapturedLinguiCatalog;
   router?: CapturedRouterState;
   stores?: CapturedValue[];
+  /** Absent in captures that predate SWR recording, where a hook then shows its first render. */
+  swr?: CapturedSwrEntry[];
   /** Absent in captures that predate page-state recording, which then assume a fresh profile. */
   page?: CapturedPageState;
   /** Absent in captures that predate request recording, which then leave request headers uncertain. */

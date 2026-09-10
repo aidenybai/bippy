@@ -5559,6 +5559,264 @@
           "@vercel/analytics/*"
         ]
       }
+    },
+    {
+      "id": "fragments",
+      "repository": "https://github.com/e2b-dev/fragments",
+      "revision": "b5e627dc89b96ca0d9580bcd5ce3d7afba5f3290",
+      "description": "E2B Fragments chat page (Next 14 app router + Turbopack, shadcn/ui + Radix, next-themes, Vercel AI SDK useObject, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "usehooks-ts",
+          "@vercel/analytics",
+          "@ai-sdk/react",
+          "ai",
+          "swr",
+          "react-textarea-autosize"
+        ]
+      }
+    },
+    {
+      "id": "morphic",
+      "repository": "https://github.com/miurla/morphic",
+      "revision": "be62d2a85c0397c4b3cb3315cd3a5c56a44f6425",
+      "description": "Morphic answer-engine home page (Next 16 app router, shadcn/ui + Radix, Drizzle over a local PostgreSQL container, guest mode without Supabase, bun)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": [
+        "printf 'DATABASE_URL=postgresql://postgres:postgres@localhost:5453/morphic\\n' > .env.local",
+        "bun run migrate"
+      ],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-morphic-pg 5453 morphic"],
+      "dev": "bun run dev",
+      "env": {
+        "OPENAI_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "GOOGLE_GENERATIVE_AI_API_KEY": "",
+        "OPENAI_COMPATIBLE_API_KEY": "",
+        "AI_GATEWAY_API_KEY": "",
+        "OLLAMA_BASE_URL": ""
+      },
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "notes": "Provider keys are pinned empty so the model selector does not depend on host credentials or live provider model lists.",
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [".env.local"],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "@vercel/analytics",
+          "@ai-sdk/react",
+          "ai",
+          "throttleit",
+          "react-textarea-autosize",
+          "react-remove-scroll"
+        ]
+      }
+    },
+    {
+      "id": "langchain-nextjs-template",
+      "repository": "https://github.com/langchain-ai/langchain-nextjs-template",
+      "revision": "1565feeb96e3c38a0f9332a64920ce6a11d84a70",
+      "description": "LangChain + Next.js template chat page (Next 15 app router, shadcn/ui + Radix, nuqs, Vercel AI SDK useChat, yarn)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "yarn install",
+      "dev": "yarn dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "nuqs",
+          "sonner",
+          "next-themes",
+          "use-stick-to-bottom",
+          "@ai-sdk/react",
+          "ai"
+        ]
+      }
+    },
+    {
+      "id": "rustpad",
+      "repository": "https://github.com/ekzhang/rustpad",
+      "revision": "54e4a9383c84d7317af42a7ddb177ce8bcba058d",
+      "description": "Rustpad collaborative editor (Vite SPA, Chakra UI, Monaco, wasm-bindgen client, Rust websocket server, npm)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/rustpad-setup.sh\"",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/rustpad-server.sh\""],
+      "dev": "npm run dev -- --port 5173 --strictPort",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "framer-motion",
+          "use-local-storage-state",
+          "react-icons",
+          "@monaco-editor/*"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-notion-starter-kit",
+      "repository": "https://github.com/transitive-bullshit/nextjs-notion-starter-kit",
+      "revision": "379c735bc3b4c1d9f36f74311a503b41e78cd2cb",
+      "description": "Next.js Notion Starter Kit home page (Next 16 pages router, react-notion-x over the public Notion API via getStaticProps, pnpm)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "npx -y pnpm@10.29.3 install --frozen-lockfile",
+      "setup": [
+        "grep -q user-agent lib/notion-api.ts || perl -0pi -e \"s/apiBaseUrl: process.env.NOTION_API_BASE_URL\\n/apiBaseUrl: process.env.NOTION_API_BASE_URL,\\n  ofetchOptions: { headers: { 'user-agent': 'Mozilla\\\/5.0' } }\\n/\" lib/notion-api.ts"
+      ],
+      "dev": "npx -y pnpm@10.29.3 dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 10000,
+      "capturedGlobals": ["__NEXT_DATA__"],
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "react-notion-x",
+          "notion-utils",
+          "normalize-url",
+          "memoize",
+          "is-url-superb",
+          "@fisch0920/use-dark-mode",
+          "use-persisted-state",
+          "react-use",
+          "react-body-classname",
+          "react-side-effect"
+        ]
+      }
+    },
+    {
+      "id": "form-builder",
+      "repository": "https://github.com/hasanharman/form-builder",
+      "revision": "cc595f5fe74b353a9eaa9e0ad8d8ea4a0d45e50e",
+      "description": "Shadcn Form Builder landing page (Next 16 app router with webpack, shadcn/ui + Radix, next-themes, next-view-transitions, framer-motion, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/form-builder-setup.sh\""],
+      "env": {
+        "NEXT_PUBLIC_POSTHOG_KEY": "phc_bippy_corpus_placeholder",
+        "NEXT_PUBLIC_POSTHOG_HOST": "http://127.0.0.1:9"
+      },
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "envFiles": [],
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "next-view-transitions",
+          "nextjs-toploader",
+          "sonner",
+          "@vercel/analytics",
+          "posthog-js",
+          "@next/third-parties",
+          "react-tweet",
+          "react-icons",
+          "react-icons/*",
+          "vaul",
+          "framer-motion"
+        ]
+      }
+    },
+    {
+      "id": "shadcn-ui-sidebar",
+      "repository": "https://github.com/salimi-my/shadcn-ui-sidebar",
+      "revision": "25a8c1295514fe1fc923997b9c4dac9a84453559",
+      "description": "shadcn/ui sidebar dashboard demo (Next 14 app router, shadcn/ui + Radix, zustand persisted sidebar store, next-themes, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/dashboard",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/dashboard",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "zustand"
+        ]
+      }
+    },
+    {
+      "id": "pagescms",
+      "repository": "https://github.com/pagescms/pagescms",
+      "revision": "69d0215298e4055fd05ccbb428c9bcc881fab448",
+      "description": "Pages CMS sign-in page (Next 16 app router, shadcn/ui + Base UI, better-auth, Drizzle over a local PostgreSQL container, npm)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/pagescms-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-pagescms-pg 5454 pagescms"],
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/sign-in",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/sign-in",
+        "envFiles": [".env.local"],
+        "externalPackageAllowList": [
+          "@base-ui/*",
+          "radix-ui",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "swr"
+        ]
+      }
     }
   ]
 }

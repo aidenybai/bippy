@@ -31,10 +31,6 @@ export interface CommitRecorderOptions {
 
 const DEFAULT_COMMIT_TIMEOUT_MS = 5_000;
 
-/** The host container a root renders into (`containerInfo` is not part of bippy's public FiberRoot shape). */
-export const getRootContainer = (root: FiberRoot): unknown =>
-  "containerInfo" in root ? root.containerInfo : null;
-
 // Observes every React commit through bippy's DevTools hook and turns the
 // live roots into serializable snapshots. Works in Node (happy-dom) and in
 // the browser injection bundle alike.
