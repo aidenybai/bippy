@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
 import { loadViteConfig, type ViteConfig } from "../src/graph/vite-config.js";
+import { applyHtmlTransformHooks, vitePluginsSchema } from "../src/graph/vite-plugins.js";
 
 const SMALL = Buffer.from("<svg/>");
 const LARGE = Buffer.alloc(5000, "a");
@@ -201,6 +202,36 @@ describe("build.assetsInlineLimit", () => {
       "import { defineConfig, mergeConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nconst base = { plugins: [react()], build: { sourcemap: true } };\nexport default defineConfig(({ command }) => mergeConfig(base, { build: { assetsInlineLimit: command === 'serve' ? 0 : 4096 } }));\n",
     );
     expect(decide(project.load(), SMALL)).toBe(false);
+  });
+});
+
+describe("transformIndexHtml hooks", () => {
+  const HTML_TRANSFORM_CONTEXT = {
+    path: "/",
+    filename: "index.html",
+    server: { config: {} },
+    originalUrl: "/",
+  };
+
+  it("orders Vite 2 `enforce`/`transform` hooks as Vite does", async () => {
+    const plugins = vitePluginsSchema.parse([
+      { name: "plain", transformIndexHtml: (html: string) => `${html}plain;` },
+      {
+        name: "legacy-post",
+        transformIndexHtml: { enforce: "post", transform: (html: string) => `${html}post;` },
+      },
+      {
+        name: "legacy-pre",
+        transformIndexHtml: { enforce: "pre", transform: (html: string) => `${html}pre;` },
+      },
+      {
+        name: "ordered",
+        transformIndexHtml: { order: "post", handler: (html: string) => `${html}ordered;` },
+      },
+    ]);
+    expect(await applyHtmlTransformHooks(plugins, "", HTML_TRANSFORM_CONTEXT)).toBe(
+      "pre;plain;post;ordered;",
+    );
   });
 });
 
