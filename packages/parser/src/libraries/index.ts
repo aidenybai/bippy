@@ -57,10 +57,7 @@ import {
   tanstackQueryValue,
 } from "./tanstack-query.js";
 import { TANSTACK_STORE_PACKAGES, tanstackStoreValue } from "./tanstack-store.js";
-import {
-  UNPLUGIN_AUTO_IMPORT_PACKAGES,
-  unpluginAutoImportValue,
-} from "./unplugin-auto-import.js";
+import { UNPLUGIN_AUTO_IMPORT_PACKAGES, unpluginAutoImportValue } from "./unplugin-auto-import.js";
 import {
   USE_SYNC_EXTERNAL_STORE_PACKAGES,
   useSyncExternalStoreValue,

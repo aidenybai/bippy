@@ -89,7 +89,8 @@ export default function Badge({ count }: { count: number }) {
   return count === 2 ? <b>{count}</b> : <i>{count}</i>;
 }
 `,
-  "src/components/status-pill.tsx": "export default (count: number) => (count > 1 ? 'many' : 'one');\n",
+  "src/components/status-pill.tsx":
+    "export default (count: number) => (count > 1 ? 'many' : 'one');\n",
   "src/app.tsx": `
 export default function App() {
   const [count] = useCounter();
@@ -129,14 +130,9 @@ const renderSource = (source: string): Promise<string> =>
 describe("library models", () => {
   it("binds the free identifiers unplugin-auto-import injects imports for", async () => {
     expect(await renderProject(AUTO_IMPORT_PROJECT, "src/app.tsx")).toBe(
-      [
-        "<HostRoot>",
-        "  <App>",
-        "    <section>",
-        "      <Badge>",
-        "        <b>",
-        "      <p>",
-      ].join("\n"),
+      ["<HostRoot>", "  <App>", "    <section>", "      <Badge>", "        <b>", "      <p>"].join(
+        "\n",
+      ),
     );
   });
 

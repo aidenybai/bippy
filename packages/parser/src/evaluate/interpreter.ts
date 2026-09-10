@@ -1058,8 +1058,10 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key, environment);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
-  materializeNamespace(module: ModuleRecord, environment: RenderEnvironment | null): StaticValue {
+  /** A module namespace as the object of its exports (`{ ...m }`, `const { a, ...rest } = m`); other values unchanged. */
+  materializeNamespace(value: StaticValue, environment: RenderEnvironment | null): StaticValue {
+    if (value.kind !== "namespace") return value;
+    const { module } = value;
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
@@ -2158,10 +2160,7 @@ export class Interpreter {
         }
         entries.push({
           kind: "spread",
-          value:
-            spread.kind === "namespace"
-              ? this.materializeNamespace(spread.module, context.environment)
-              : spread,
+          value: this.materializeNamespace(spread, context.environment),
         });
         continue;
       }
@@ -3466,6 +3465,7 @@ export class Interpreter {
           queueMicrotask: (task) => this.timers.queueMicrotask(task),
           isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+          materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
           project: this.project,
           recordStateMutation: (state) => this.recordStateMutation(state),
           realm: this.getRealm(context.environment),
@@ -4134,11 +4134,10 @@ export class Interpreter {
         const usedKeys = new Set<string>();
         for (const property of pattern.properties) {
           if (property.type === "RestElement") {
-            const source =
-              value.kind === "namespace"
-                ? this.materializeNamespace(value.module, context.environment)
-                : value;
-            destructure(property.argument, omitRestKeys(source, usedKeys));
+            destructure(
+              property.argument,
+              omitRestKeys(this.materializeNamespace(value, context.environment), usedKeys),
+            );
             continue;
           }
           const key = this.evaluatePropertyKey(

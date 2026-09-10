@@ -4,7 +4,7 @@ const checks = Object.keys(flags).sort();
 
 const describeMask = (mask: number): string[] => {
   const matched: string[] = [];
-  for (let index = -1; ++index < checks.length; ) {
+  for (let index = -1; ++index < checks.length;) {
     const check = checks[index];
     const flag = flags[check as keyof typeof flags];
     if (typeof flag === "number" && (mask & flag) === flag) matched.push(check);

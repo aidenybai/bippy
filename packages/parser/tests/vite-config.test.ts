@@ -231,7 +231,10 @@ describe("unplugin-auto-import", () => {
       "export const useCounter = () => useState(1);\nexport const useIgnored = () => 0;\n",
     );
     project.write("src/components/Badge/index.tsx", "export default () => <b />;\n");
-    project.write("src/components/status-pill.tsx", "export default (count: number) => `${count}`;\n");
+    project.write(
+      "src/components/status-pill.tsx",
+      "export default (count: number) => `${count}`;\n",
+    );
     project.write("src/components/theme.css", ".theme {}\n");
     project.write("src/format.ts", "export const format = (count: number) => `#${count}`;\n");
   };

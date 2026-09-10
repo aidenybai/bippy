@@ -17,7 +17,13 @@ const reduceSheet = (state: SheetState, action: SheetAction): SheetState => {
   }
 };
 
-const INITIAL_STATE: SheetState = { rows: [["a", "b"], ["c", "d"]], active: null };
+const INITIAL_STATE: SheetState = {
+  rows: [
+    ["a", "b"],
+    ["c", "d"],
+  ],
+  active: null,
+};
 
 const sheetContext = createSelectorContext<[SheetState, (action: SheetAction) => void]>([
   INITIAL_STATE,
@@ -34,7 +40,10 @@ const Cell = ({ row, column }: { row: number; column: number }) => {
   const isActive = useSheet((state) => state.active === row);
   const dispatch = useDispatch();
   return (
-    <td className={isActive ? "active" : undefined} onClick={() => dispatch({ type: "activate", row })}>
+    <td
+      className={isActive ? "active" : undefined}
+      onClick={() => dispatch({ type: "activate", row })}
+    >
       {value}
     </td>
   );

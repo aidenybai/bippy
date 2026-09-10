@@ -381,6 +381,8 @@ export interface StubRenderTools {
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
   setProperty: (object: StaticObjectValue, key: string, value: StaticValue) => void;
+  /** A module namespace as the object of its exports, as `Object.keys` and spread see it; other values unchanged. */
+  materializeNamespace: (value: StaticValue) => StaticValue;
   project: ProjectContext;
   /** Journals hidden state before a mutation, undone on the other paths of an enclosing fork like any heap write. */
   recordStateMutation: (state: JournaledState<unknown>) => void;

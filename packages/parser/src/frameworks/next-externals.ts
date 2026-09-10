@@ -218,12 +218,24 @@ const createLinkStub = (options: NextModelOptions): StubComponent => {
 
 /**
  * `next/head` renders its children into `<head>` through a `SideEffect` that
- * returns null; before Next 12.2 it was an anonymous class React names `_class`.
+ * returns null; before Next 12.2 it was an anonymous class React names `_class`
+ * (`class _default` in the CommonJS output before 11.1).
  */
 const HEAD_STUB: StubComponent = {
   displayName: "Head",
   render: () => stubElement(emptyStub("SideEffect"), {}),
 };
+
+const classHeadStub = (className: string): StubComponent => ({
+  displayName: "Head",
+  render: () =>
+    stubElement({ displayName: className, tag: ClassComponentTag, render: () => NULL_VALUE }, {}),
+});
+
+const createHeadStub = ({ version }: NextModelOptions): StubComponent =>
+  version === null || isVersionAtLeast(version, "12.2.0")
+    ? HEAD_STUB
+    : classHeadStub(isVersionAtLeast(version, "11.1.0") ? "_class" : "_default");
 
 const IMAGE_ELEMENT_STUB: StubComponent = {
   displayName: null,
@@ -338,15 +350,6 @@ const FORWARD_REF_FORM_STUB: StubComponent = {
   tag: ForwardRefTag,
   render: formElement,
 };
-
-const CLASS_HEAD_STUB: StubComponent = {
-  displayName: "Head",
-  render: () =>
-    stubElement({ displayName: "_class", tag: ClassComponentTag, render: () => NULL_VALUE }, {}),
-};
-
-const hasClassSideEffect = (options: NextModelOptions): boolean =>
-  options.version !== null && !isVersionAtLeast(options.version, "12.2.0");
 
 /**
  * `next/script` commits a `<script>` only for `beforeInteractive` in the App
@@ -589,7 +592,7 @@ export const createNextModel = (options: NextModelOptions): NextModel => {
     navigation: (importedName) => appNavigationValue(importedName, url, params),
     version: options.nextIntlVersion,
   });
-  const head = hasClassSideEffect(options) ? CLASS_HEAD_STUB : HEAD_STUB;
+  const head = createHeadStub(options);
   const images = imageStubs(options, head);
   const externalValues: ExternalValueProvider = (packageName, importedName) => {
     switch (packageName) {

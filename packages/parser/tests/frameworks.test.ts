@@ -622,6 +622,13 @@ describe("next pages router", () => {
     expect(findFiberTags(pattern, "_class")).toEqual(["ClassComponent", "ClassComponent"]);
   });
 
+  it("follows the installed next version: before 11.1 the head side effect is `class _default`", async () => {
+    const { pattern, tree } = await renderPagesWithNext("10.2.3", "/media");
+    expect(tree).toMatch(/<Head>\n\s+<_default>\n\s+<Image>/);
+    expect(tree).not.toContain("<_class>");
+    expect(findFiberTags(pattern, "_default")).toEqual(["ClassComponent", "ClassComponent"]);
+  });
+
   it("splices out the client bootstrap around _app: StrictMode, the head commit hook and the route announcer portal", () => {
     const fiber = (
       name: string,

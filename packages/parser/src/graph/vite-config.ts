@@ -260,7 +260,6 @@ export const loadViteConfig = ({
     mode,
     shouldInlineAsset: (filePath, content) => decideFromLimit(assetsInlineLimit, filePath, content),
     findAutoImport:
-      (autoImportPlugin && createAutoImportResolver(autoImportPlugin, root, graph)) ??
-      (() => null),
+      (autoImportPlugin && createAutoImportResolver(autoImportPlugin, root, graph)) ?? (() => null),
   };
 };

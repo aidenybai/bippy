@@ -261,13 +261,16 @@ const resolveDirGlob = (root: string, glob: string): string =>
 
 const scanDirExports = (dirs: string[], root: string, graph: ModuleGraph): NamedAutoImport[] => {
   const files = dirs.flatMap((dir) =>
-    globSync([dir, path.join(dir, DIR_FILE_PATTERN)].map((glob) => resolveDirGlob(root, glob)), {
-      cwd: root,
-      absolute: true,
-      onlyFiles: true,
-      followSymbolicLinks: true,
-      expandDirectories: false,
-    }).sort(),
+    globSync(
+      [dir, path.join(dir, DIR_FILE_PATTERN)].map((glob) => resolveDirGlob(root, glob)),
+      {
+        cwd: root,
+        absolute: true,
+        onlyFiles: true,
+        followSymbolicLinks: true,
+        expandDirectories: false,
+      },
+    ).sort(),
   );
   const scanned: NamedAutoImport[] = [];
   for (const filePath of new Set(files)) {
