@@ -3286,6 +3286,327 @@
           "dayjs"
         ]
       }
+    },
+    {
+      "id": "planka",
+      "repository": "https://github.com/plankanban/planka",
+      "revision": "26b512193a6a726e4de46dcdbf21ddb1c34c365b",
+      "description": "PLANKA client login page (React 18 SPA on react-redux + redux-saga + react-router v7 + semantic-ui-react, Vite dev server proxying to the Sails server over a local PostgreSQL container)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --prefix client --no-audit --no-fund && npm install --prefix server --no-audit --no-fund",
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-corpus-planka 54331 planka"],
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/planka-setup.sh\""],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/planka-dev.sh\"",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "client",
+        "entry": "src/index.js",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "react-redux",
+          "use-sync-external-store",
+          "use-sync-external-store/*",
+          "@gravity-ui/uikit",
+          "semantic-ui-react",
+          "@fluentui/react-component-ref",
+          "react-is",
+          "react-i18next",
+          "i18next",
+          "i18next-browser-languagedetector",
+          "html-parse-stringify",
+          "void-elements"
+        ]
+      }
+    },
+    {
+      "id": "navidrome",
+      "repository": "https://github.com/navidrome/navidrome",
+      "revision": "bea9715001abc956c712f76bf87cd93fd41bd6f1",
+      "description": "Navidrome UI login page (React 17 SPA on react-admin 3 + Material-UI 4 + react-final-form + redux-saga, hash history, Vite dev server without the Go backend)",
+      "framework": "spa",
+      "workingDirectory": "ui",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm start",
+      "url": "http://localhost:4533/#/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "ui",
+        "entry": "src/index.jsx",
+        "route": "/login",
+        "defines": {
+          "process.env": {}
+        },
+        "externalPackageAllowList": [
+          "react-admin",
+          "ra-core",
+          "ra-ui-materialui",
+          "ra-i18n-polyglot",
+          "@material-ui/*",
+          "react-final-form",
+          "final-form",
+          "react-redux",
+          "react-hotkeys",
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "connected-react-router",
+          "history",
+          "react-router-dom",
+          "react-router",
+          "navidrome-music-player",
+          "react-transition-group",
+          "node-polyglot",
+          "warning",
+          "object-assign",
+          "hasown",
+          "has-symbols",
+          "deepmerge",
+          "react-is",
+          "hoist-non-react-statics",
+          "prop-types",
+          "clsx",
+          "@babel/runtime/*",
+          "lodash",
+          "lodash/*",
+          "inflection",
+          "query-string",
+          "react-error-boundary"
+        ]
+      },
+      "notes": "`index.html` is a Go `html/template`; the Vite dev server serves it verbatim, so the inline `window.__APP_CONFIG__ = {{ .AppConfig }}` script is a syntax error and `src/config.js` falls back to its development defaults (`firstTime: false`), exactly as `make dev` behaves before the Go server answers. The Go backend (Go 1.27, cgo/taglib) is not started: the login page issues no request until the form is submitted; `/auth` and `/api` proxy targets are simply unreachable."
+    },
+    {
+      "id": "answer",
+      "repository": "https://github.com/apache/answer",
+      "revision": "3b9f1370612e690a0b7f230f05e688930db4c6d3",
+      "description": "Apache Answer login page (React 18 CRA/react-app-rewired SPA on react-router v7 createBrowserRouter + react-bootstrap + zustand + react-i18next, dev server proxying to the Go backend from the apache/answer image built at this revision with an auto-installed SQLite site)",
+      "framework": "react-router",
+      "workingDirectory": "ui",
+      "install": "cd ui && pnpm install --frozen-lockfile",
+      "services": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/answer-backend.sh\" bippy-corpus-answer 9080 apache/answer:latest"
+      ],
+      "dev": "pnpm start",
+      "env": {
+        "PORT": "3010",
+        "BROWSER": "none",
+        "CI": "true",
+        "REACT_APP_API_URL": "http://localhost:9080"
+      },
+      "url": "http://localhost:3010/users/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "ui",
+        "entry": "src/index.tsx",
+        "route": "/users/login",
+        "aliases": {
+          "@": "src",
+          "@i18n": "../i18n",
+          "buffer": "buffer"
+        },
+        "envFiles": [".env.development"],
+        "externalPackageAllowList": [
+          "react-bootstrap",
+          "@restart/*",
+          "zustand",
+          "react-i18next",
+          "i18next",
+          "react-helmet-async",
+          "swr",
+          "classnames",
+          "@react-aria/ssr",
+          "uncontrollable",
+          "dom-helpers",
+          "prop-types-extra",
+          "warning",
+          "invariant",
+          "react-transition-group",
+          "html-parse-stringify",
+          "void-elements"
+        ]
+      },
+      "notes": "The `apache/answer:latest` image is built from revision 3b9f137 (v2.0.2), so the Go backend behind the CRA proxy is the exact same commit as the UI; `AUTO_INSTALL` provisions the SQLite site (name `Bippy Corpus`) so `/users/login` renders the real Layout + login form. CRA inlines shell variables over `.env.development`, hence `REACT_APP_API_URL` in `env`."
+    },
+    {
+      "id": "giscus",
+      "repository": "https://github.com/giscus/giscus",
+      "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
+      "description": "giscus.app landing page (Next 12 pages router built with next-plugin-preact: `react`/`react-dom` are `npm:@preact/compat`, next-translate, swr)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "dev": "yarn next dev -p 3011",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://localhost:3011/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "externalPackageAllowList": ["next-translate", "swr", "@primer/octicons-react"]
+      },
+      "notes": "Static-only: the app renders with Preact (`react` and `react-dom` resolve to `@preact/compat`), which commits no React fibers, so neither a browser capture nor the static materialization through the app's own `react-dom` can produce a fiber tree. `getStaticProps` also needs a GitHub App private key (`services/github/getAppAccessToken`) to render the README through the GitHub Markdown API."
+    },
+    {
+      "id": "panwriter",
+      "repository": "https://github.com/mb21/panwriter",
+      "revision": "3bc3d60b700e83781369a789bd0078625e2756c6",
+      "description": "PanWriter renderer in website mode (CRA 5 / react-scripts, React 18 legacy `ReactDOM.render`, CodeMirror 6 editor + pandoc preview iframe; the Electron `ipcApi` preload is absent in a browser so the app shows its website.md)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --legacy-peer-deps",
+      "dev": "npm start",
+      "env": {
+        "ELECTRON_SKIP_BINARY_DOWNLOAD": "1",
+        "PORT": "3012",
+        "BROWSER": "none",
+        "CI": "true"
+      },
+      "url": "http://localhost:3012/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "route": "/",
+        "externalPackageAllowList": ["react-codemirror2"]
+      }
+    },
+    {
+      "id": "homarr",
+      "repository": "https://github.com/ajnart/homarr",
+      "revision": "c5873c6e481144cd18a70139ef23ac04ca8ab158",
+      "description": "Homarr onboarding page of a fresh install (Next 13 pages router, Yarn 3, Mantine 6 + emotion, tRPC/react-query, next-i18next, drizzle over a local SQLite file; the middleware sends every page to /onboard while the user table is empty)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile",
+      "setup": ["cp -n .env.example .env || true", "yarn db:migrate"],
+      "dev": "yarn dev -p 3007",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "NEXTAUTH_URL": "http://localhost:3007",
+        "NEXTAUTH_URL_INTERNAL": "http://localhost:3007"
+      },
+      "url": "http://localhost:3007/onboard",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/onboard",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@mantine/*",
+          "@emotion/*",
+          "next-i18next",
+          "react-i18next",
+          "@tanstack/react-query",
+          "@trpc/*",
+          "next-auth",
+          "@tabler/icons-react",
+          "react-remove-scroll",
+          "react-remove-scroll-bar",
+          "react-style-singleton",
+          "use-sidecar",
+          "use-callback-ref",
+          "aria-hidden",
+          "react-transition-group",
+          "@tanstack/react-query-devtools"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "`.env.example` already points `DATABASE_URL` at `./database/db.sqlite`, so setup copies it and applies the drizzle migrations (`yarn db:migrate`). `/` redirects to `/board`, whose middleware redirects to `/onboard` until a user exists; `getServerSideProps` there counts users and probes the SQLite file for writability, so `databaseNotWriteable` is unknown to the static side. `NEXTAUTH_URL_INTERNAL` is what `_app.getInitialProps` uses for its server-side `getSession` fetch (next.config.js defaults it to :3000)."
+    },
+    {
+      "id": "museeks",
+      "repository": "https://github.com/martpie/museeks",
+      "revision": "7163f6019a3184043c06352caeec0ed1bf6ccff5",
+      "description": "Museeks music player renderer library view in a plain browser (Tauri 2 + Vite+ SPA, React 19 with React Compiler, TanStack Router file routes with a hash history, TanStack Query, Lingui macros, StyleX, Base UI, zustand)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/museeks-browser-setup.sh\""],
+      "dev": "pnpm dev",
+      "env": {
+        "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+      },
+      "url": "http://localhost:1420/#/library",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "capturedGlobals": [
+        "__MUSEEKS_INITIAL_CONFIG",
+        "__MUSEEKS_INITIAL_QUEUE",
+        "__MUSEEKS_PLATFORM"
+      ],
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "@tanstack/react-virtual",
+          "@tanstack/virtual-core",
+          "@lingui/react",
+          "@lingui/core",
+          "@base-ui/*",
+          "@floating-ui/*",
+          "@dnd-kit/*",
+          "zustand",
+          "zustand/*",
+          "react-keybinding-component",
+          "eventemitter3",
+          "lodash-es",
+          "nanoid",
+          "semver"
+        ]
+      },
+      "notes": "The desktop shell (Tauri) is not a browser target: the setup stubs the Tauri globals and points the IPC bridges at the repository's own E2E mocks (src/__tests__/e2e-helpers.tsx), which is how the project tests its renderer in Chromium. Not exact: the runtime capture is a real browser render (211 fibers, 12 commits), but the static side exhausts the fixed step budget inside TanStack Router's `loadMatches`/`Transitioner` while evaluating the `/library` route loader through the mocked bridges, so the root `CatchBoundary` commits TanStack's default `ErrorComponent` instead of the library view in the preferred state, and the state space stays incomplete (256 of 9705 states enumerated). The library view itself also depends on a passive-effect store write (`useGlobalTrackListStatus` -> `LibraryAPI.setTracksStatus`) that only commits after that loader resolves."
+    },
+    {
+      "id": "letterpad",
+      "repository": "https://github.com/letterpad/letterpad",
+      "revision": "91d3e2516987ea00b1f068bda20dcd8fd14eb90d",
+      "description": "Letterpad admin login page (Next 14 app router, Bun + turbo workspace, workspace `ui` package consumed from its tsup dist, next-auth, urql, Prisma over a local SQLite file)",
+      "framework": "next-app",
+      "workingDirectory": "apps/admin",
+      "install": "bun install --ignore-scripts",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/letterpad-setup.sh\""],
+      "dev": "bun run dev",
+      "url": "http://localhost:3000/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "apps/admin",
+        "appDirectory": "src/app",
+        "route": "/login",
+        "externalPackageAllowList": [
+          "@react-icons/all-files",
+          "ui",
+          "letterpad-graphql",
+          "letterpad-sdk",
+          "next-auth",
+          "next-nprogress-bar",
+          "urql",
+          "@urql/*",
+          "@radix-ui/*",
+          "@floating-ui/*",
+          "@tanstack/react-table",
+          "swr",
+          "classnames"
+        ],
+        "maxFiberCount": 20000
+      },
+      "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
     }
   ]
 }

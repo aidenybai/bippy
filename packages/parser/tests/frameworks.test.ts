@@ -18,6 +18,7 @@ import {
 import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
 import { enumerateStateSpace } from "../src/harness/state-space.js";
 import { readInstalledVersion } from "../src/libraries/installed-version.js";
+import type { RuntimeObservations } from "../src/types.js";
 import { ForwardRefTag } from "../src/work-tags.js";
 
 // Next.js cannot mount inside happy-dom, so its adapters are checked
@@ -30,12 +31,14 @@ const render = async (
   fixture: string,
   target: FrameworkRenderTarget,
   externalPackageAllowList: string[] = [],
+  observations?: RuntimeObservations,
 ) => {
   const rootDirectory = join(FIXTURES, fixture);
   const result = await renderFrameworkTarget(target, {
     rootDirectory,
     tsconfigPath: join(rootDirectory, "tsconfig.json"),
     externalPackageAllowList,
+    observations,
   });
   return {
     result,
@@ -151,6 +154,14 @@ describe("next app router", () => {
     );
     expect(tree).toMatch(
       /<ClientSocial>\n\s+<SocialLinks>\n\s+<ul>\n\s+<li> key="Website"\n\s+<GlobeIcon>\n\s+<svg>/,
+    );
+  });
+
+  it("instantiates a shared module separately for the server graph, where client-only React APIs are undefined", async () => {
+    const { tree, errors } = await render("next-app", { framework: "next-app", route: "/social" });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<ClientSocial>[\s\S]*?<GlobeIcon>\n\s+<svg>\n\s+<ContextIcon>\n\s+<ContextConsumer>\n\s+<svg>\n\s+<path>\n\s+<svg>\n\s+<path>$/,
     );
   });
 
@@ -474,6 +485,40 @@ describe("next pages router", () => {
     expect(tree).not.toContain("?unknown");
   });
 
+  it("leaves pageProps of a data-fetching page unknown without a capture", async () => {
+    const { tree, errors } = await render("next-pages", {
+      framework: "next-pages",
+      route: "/greeting",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toContain("pageProps come from data fetching at request time");
+    expect(tree).toMatch(/<h1>\n\s+"Hello, "\n\s+\?unknown/);
+    expect(tree).toMatch(/\?branch\(conditional on unknown\([\s\S]*?<p>\n\s+\|1\n\s+<aside>/);
+  });
+
+  it("renders the App with the captured __NEXT_DATA__.props like next/client does", async () => {
+    const { tree, errors } = await render(
+      "next-pages",
+      { framework: "next-pages", route: "/greeting" },
+      [],
+      {
+        globals: {
+          __NEXT_DATA__: {
+            props: { pageProps: { name: "Ada", isReturning: true }, __N_SSP: true },
+            page: "/greeting",
+            query: {},
+            buildId: "development",
+          },
+        },
+        queries: [],
+      },
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<h1>\n\s+"Hello, "\n\s+"Ada"\n\s+<p>\n\s+<Script>/);
+    expect(tree).not.toContain("<aside>");
+    expect(tree).not.toContain("?");
+  });
+
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
@@ -758,6 +803,20 @@ describe("react router framework mode with branchy route descriptors", () => {
       /<Breadcrumbs>\n\s+<nav>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0\n\s+<span> key="Home"\n\s+\|1 \(preferred\)\n\s+<span> key="Retina home"/,
     );
     expect(tree).not.toContain("?unknown");
+  });
+
+  it("derives useMatches() from the statically matched chain without a capture", async () => {
+    const { tree, errors } = await render("react-router-branchy-links", {
+      framework: "react-router",
+      route: "/",
+      entry: "app/routes.ts",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<Breadcrumbs>\n\s+<nav>\n\s+\?branch\(conditional on[^\n]*\n\s+\|0\n\s+<span> key="Home"\n\s+\|1 \(preferred\)\n\s+<span> key="Retina home"/,
+    );
+    expect(tree).not.toContain("?unknown");
+    expect(tree).not.toContain("*repeat");
   });
 });
 

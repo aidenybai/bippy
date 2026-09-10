@@ -1,6 +1,7 @@
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
 import {
+  getComponentProperty,
   isErrorBoundaryClass,
   renderClassComponent,
   unmountClassInstance,
@@ -63,6 +64,7 @@ import {
   AlternativeMarker,
   BranchMarker,
   createSuspendedMarker,
+  KEY_PLACEHOLDER,
   MARKER_NAMES,
   OpaqueMarker,
   RepeatMarker,
@@ -352,25 +354,35 @@ const textContentToNull = (value: StaticValue): StaticValue => {
 };
 
 const getComponentDisplayName = (component: ComponentDefinition): string | null => {
-  const displayName = component.properties.get("displayName");
+  const displayName = getComponentProperty(component, "displayName");
   if (displayName?.kind === "primitive" && typeof displayName.value === "string")
     return displayName.value;
   return component.name;
 };
 
 const hasDefaultProps = (component: ComponentDefinition): boolean => {
-  const defaults = component.properties.get("defaultProps");
-  return defaults !== undefined && isNonNullish(defaults);
+  const defaults = getComponentProperty(component, "defaultProps");
+  return defaults !== null && isNonNullish(defaults);
 };
 
-const applyDefaultProps = (
-  owner: ComponentDefinition | WrapperElementType,
+const withDefaultProps = (
+  defaults: StaticValue | null,
   props: StaticObjectValue,
 ): StaticObjectValue => {
-  const defaults = owner.properties.get("defaultProps");
   if (!defaults || !isNonNullish(defaults)) return props;
   return { kind: "object", entries: [{ kind: "spread", value: defaults }, ...props.entries] };
 };
+
+const applyDefaultProps = (
+  component: ComponentDefinition,
+  props: StaticObjectValue,
+): StaticObjectValue => withDefaultProps(getComponentProperty(component, "defaultProps"), props);
+
+/** `createElement` fills in `type.defaultProps` of a `memo`/`forwardRef` object like any other type's. */
+const applyWrapperDefaultProps = (
+  type: WrapperElementType,
+  props: StaticObjectValue,
+): StaticObjectValue => withDefaultProps(type.properties.get("defaultProps") ?? null, props);
 
 const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue => {
   const node = component.node;
@@ -687,10 +699,7 @@ export class Materializer {
 
   /** Flight serializes a key-less server `<>...</>` as its children, so the client never sees the fragment. */
   private isFlightUnwrappedFragment(element: StaticElementValue): boolean {
-    return (
-      element.type.kind === "fragment" &&
-      this.keyToString(element.key, element.location) === undefined
-    );
+    return element.type.kind === "fragment" && isKeyless(element.key);
   }
 
   /**
@@ -771,7 +780,11 @@ export class Materializer {
           return this.unknownElementNode(`memo of ${type.inner.kind} element type`, context);
         return createElement(memoType, {
           key: reactKey,
-          input: { ...input, props: applyDefaultProps(type, props), isMemoized: !type.hasCompare },
+          input: {
+            ...input,
+            props: applyWrapperDefaultProps(type, props),
+            isMemoized: !type.hasCompare,
+          },
         });
       }
       case "forward-ref": {
@@ -781,7 +794,10 @@ export class Materializer {
           key: reactKey,
           input: {
             ...input,
-            props: applyDefaultProps(type, renderProps.kind === "object" ? renderProps : props),
+            props: applyWrapperDefaultProps(
+              type,
+              renderProps.kind === "object" ? renderProps : props,
+            ),
             ref: ref.kind === "primitive" && ref.value === undefined ? NULL_VALUE : ref,
           },
         });
@@ -801,7 +817,7 @@ export class Materializer {
       case "fragment":
         return createElement(
           this.runtime.react.Fragment,
-          { key: reactKey },
+          { key: isKeyless(key) ? undefined : (reactKey ?? KEY_PLACEHOLDER) },
           this.toNode(children, context, true),
         );
       case "strict-mode":
@@ -1024,11 +1040,8 @@ export class Materializer {
     key: StaticValue | null,
     location: SourceLocation | null,
   ): string | undefined {
-    if (!key) return undefined;
-    if (key.kind === "primitive") {
-      if (key.value === null || key.value === undefined) return undefined;
-      return String(key.value);
-    }
+    if (!key || isKeyless(key)) return undefined;
+    if (key.kind === "primitive") return String(key.value);
     this.interpreter.report("dynamic-key", `key is dynamic (${describeValue(key)})`, location);
     return undefined;
   }
@@ -1275,12 +1288,14 @@ export class Materializer {
       byVariant = new Map();
       this.memoTypes.set(inner, byVariant);
     }
-    const cacheKey = `${type.hasCompare ? "compare" : ""}\u0000${type.displayName ?? ""}`;
+    const hasWrapperDefaults = isNonNullish(type.properties.get("defaultProps") ?? NULL_VALUE);
+    const cacheKey = `${type.hasCompare ? "compare" : ""}\u0000${hasWrapperDefaults ? "defaults" : ""}\u0000${type.displayName ?? ""}`;
     let memoType = byVariant.get(cacheKey);
     if (!memoType) {
       const memoized = this.runtime.react.memo(inner, type.hasCompare ? () => false : undefined);
       if (type.displayName) memoized.displayName = type.displayName;
-      memoType = memoized;
+      // React 18 only takes the SimpleMemoComponent fast path when the memo object itself has no defaultProps.
+      memoType = hasWrapperDefaults ? Object.assign(memoized, { defaultProps: {} }) : memoized;
       byVariant.set(cacheKey, memoType);
     }
     return memoType;

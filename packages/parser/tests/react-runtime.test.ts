@@ -2,6 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
+import { version as harnessReactVersion } from "react";
+import { ReactRuntimeError } from "../src/errors.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
 import { loadReactRuntime } from "../src/materialize/react-runtime.js";
 
@@ -68,7 +70,7 @@ const createRootDirectory = (): string =>
 
 describe("loadReactRuntime", () => {
   it("mounts a legacy ReactDOM.render root when the app's react-dom has no client entry", async () => {
-    const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-legacy-react-"));
+    const rootDirectory = createRootDirectory();
     writeReactPair(rootDirectory, false);
     const resolver = new ModuleResolver({ rootDirectory });
     expect(resolver.resolve("react", join(rootDirectory, "index.js"))).toMatchObject({
@@ -84,6 +86,15 @@ describe("loadReactRuntime", () => {
     root.unmount();
     expect(container.textContent).toBe("");
     expect(runtime.readContext(runtime.react.createContext("provided"))).toBe("provided");
+  });
+
+  it("throws when react-dom has neither a client entry nor a legacy render", async () => {
+    const rootDirectory = createRootDirectory();
+    writePackage(rootDirectory, "react", REACT_STUB);
+    writePackage(rootDirectory, "react-dom", REACT_DOM_STUB);
+    await expect(
+      loadReactRuntime({ resolver: new ModuleResolver({ rootDirectory }), rootDirectory }),
+    ).rejects.toThrow(ReactRuntimeError);
   });
 
   it("materializes with the app's React when react, react-dom and react-dom/client all resolve from it", async () => {
@@ -112,5 +123,14 @@ describe("loadReactRuntime", () => {
     const container = document.createElement("div");
     runtime.createRoot(container, rootCallbacks).render("tree");
     expect(container.textContent).toBe("legacy:tree");
+  });
+
+  it("uses the harness's React when the app resolves none", async () => {
+    const rootDirectory = createRootDirectory();
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+    });
+    expect(runtime.version).toBe(harnessReactVersion);
   });
 });

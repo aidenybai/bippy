@@ -74,6 +74,24 @@ export const opaqueReducer = (
   return reducer;
 };
 
+/**
+ * The keys of a root reducer's state: registered by `combineReducers`, or
+ * otherwise what the reducer returns for the `INIT` dispatch `createStore`
+ * probes it with, which sees through wrappers around a combined reducer.
+ */
+const getStoreStateKeys = (
+  reducer: StaticValue,
+  tools: StubRenderTools,
+): readonly string[] | null => {
+  const registered = getReducerKeys(reducer);
+  if (registered || !isCallable(reducer)) return registered;
+  const initialState = tools.call(reducer, [
+    UNDEFINED_VALUE,
+    objectFromRecord({ type: primitiveValue("@@redux/INIT") }),
+  ]);
+  return initialState.kind === "object" ? getKnownObjectKeys(initialState) : null;
+};
+
 const haveSameKeys = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((key) => right.includes(key));
 
@@ -88,13 +106,20 @@ const findStoreState = (
   return matches.length === 1 ? matches[0] : undefined;
 };
 
-const combineReducers = nativeFunction("combineReducers", ([reducers]) =>
-  opaqueReducer(
-    "combination",
-    reducers === undefined ? null : getReducerKeys(reducers),
-    "state produced by a combined reducer",
-  ),
-);
+const combineReducers = nativeFunction("combineReducers", ([reducers]) => {
+  const keys = reducers === undefined ? null : getReducerKeys(reducers);
+  const combined = nativeFunction("combination", () =>
+    keys
+      ? objectFromRecord(
+          Object.fromEntries(
+            keys.map((key) => [key, unknownValue(`state produced by the ${key} slice reducer`)]),
+          ),
+        )
+      : unknownValue("state produced by a combined reducer"),
+  );
+  if (keys) reducerKeysByReducer.set(combined, keys);
+  return combined;
+});
 
 const actionCreator = (type: string, prepare: StaticValue | null): StaticValue =>
   nativeFunction(type, (args, tools) => {
@@ -191,8 +216,12 @@ const bindActionCreators = nativeFunction("bindActionCreators", ([creators, disp
 });
 
 /** A store whose state is the one the page recorded for exactly these reducer keys; the store is otherwise opaque. */
-const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue => {
-  const reducerKeys = getReducerKeys(reducer);
+const storeValue = (
+  project: ProjectContext,
+  reducer: StaticValue,
+  tools: StubRenderTools,
+): StaticValue => {
+  const reducerKeys = getStoreStateKeys(reducer, tools);
   const state =
     reducerKeys && project.storeStates
       ? findStoreState(project.storeStates, reducerKeys)
@@ -212,12 +241,12 @@ const storeValue = (project: ProjectContext, reducer: StaticValue): StaticValue 
 };
 
 const configureStore = (project: ProjectContext): StaticValue =>
-  nativeFunction("configureStore", ([options]) =>
-    storeValue(project, getOptionalProperty(options, "reducer")),
+  nativeFunction("configureStore", ([options], tools) =>
+    storeValue(project, getOptionalProperty(options, "reducer"), tools),
   );
 
 const createStore = (project: ProjectContext, name: string): StaticValue =>
-  nativeFunction(name, ([reducer = UNDEFINED_VALUE]) => storeValue(project, reducer));
+  nativeFunction(name, ([reducer = UNDEFINED_VALUE], tools) => storeValue(project, reducer, tools));
 
 const baseQueryFactory = (name: string): StaticValue =>
   nativeFunction(name, () =>

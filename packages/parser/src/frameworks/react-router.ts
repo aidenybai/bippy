@@ -124,6 +124,8 @@ interface FrameworkState extends FrameworkDocument {
   isClassicCompiler: boolean;
   /** A matched route's `handle`: the route module's `handle` export in framework mode. */
   readRouteHandle: ((routeId: string) => StaticValue) | null;
+  /** `useMatches()` from the statically matched chain in framework mode. */
+  readMatches: (() => StaticValue) | null;
 }
 
 interface DiscoveredTargets {
@@ -623,6 +625,15 @@ const renderedRoute = (
 /** The URL prefix a match consumed, which descendant `<Routes>` match relative to. */
 const getPathnameBase = (pathname: string, match: RouteMatch): string =>
   `/${splitPathname(pathname).slice(0, match.consumedSegments).join("/")}`;
+
+/** `match.pathname`: the base plus the splat's remainder when this route's own path ends in `*`. */
+const getMatchPathname = (pathname: string, match: RouteMatch): string => {
+  const base = getPathnameBase(pathname, match);
+  const splat = match.params["*"];
+  return splat !== undefined && match.route.path?.endsWith("*")
+    ? `${base === "/" ? "" : base}/${splat}`
+    : base;
+};
 
 /**
  * Builds the element for a matched chain exactly like `_renderMatches`: each
@@ -1207,6 +1218,9 @@ const runtimeOnlyHook = (importedName: string): StaticValue =>
     unknownValue(`react-router ${importedName}() is only known at runtime`),
   );
 
+const runtimeOnlyMatches = (): StaticValue =>
+  unknownValue("react-router useMatches() is only known at runtime");
+
 /** Hooks over data-router state, answered from the capture of this URL. */
 const observedHookValue = (
   importedName: string,
@@ -1235,8 +1249,6 @@ const observedHookValue = (
           ? unknownValue("react-router useRouteLoaderData() with a dynamic route id")
           : observed.loaderData(routeId);
       });
-    case "useMatches":
-      return nativeFunction(importedName, () => observed.matches(readRouteHandle));
     case "unstable_useRoute":
       return nativeFunction(importedName, (args, tools) => {
         const routeId = args[0] ? readString(args[0]) : readString(readRouteContext(tools, "id"));
@@ -1319,6 +1331,7 @@ const createRouterHookValues = (
   search: string,
   observed: ObservedRouterState | null,
   readRouteHandle: (routeId: string) => StaticValue,
+  readMatches: () => StaticValue,
   fetcherForm: StubComponent,
 ): ((importedName: string) => StaticValue | null) => {
   const navigate = nativeFunction("navigate", () => UNDEFINED_VALUE);
@@ -1378,6 +1391,8 @@ const createRouterHookValues = (
             fetcherForm,
           ),
         );
+      case "useMatches":
+        return nativeFunction(importedName, readMatches);
       default:
         if (!RUNTIME_ONLY_HOOKS.has(importedName)) return null;
         return (
@@ -1511,9 +1526,12 @@ export const createReactRouterModel = (
     hasInlinedCriticalCss: false,
     isClassicCompiler: false,
     readRouteHandle: null,
+    readMatches: null,
   };
   const readRouteHandle = (routeId: string): StaticValue =>
     framework.readRouteHandle?.(routeId) ?? unknownValue(`handle of route ${routeId}`);
+  const readMatches = (): StaticValue =>
+    observed?.matches(readRouteHandle) ?? framework.readMatches?.() ?? runtimeOnlyMatches();
   const linkStubs = createLinkStubs(
     {
       register: (target) => {
@@ -1528,6 +1546,7 @@ export const createReactRouterModel = (
     observed?.search ?? routeLocation.search,
     observed,
     readRouteHandle,
+    readMatches,
     linkStubs.fetcherForm,
   );
   // `RouterProvider$1` from `react-router/dom` wraps the core `RouterProvider`;
@@ -2074,9 +2093,30 @@ const renderFrameworkRoutes = (
         null,
         `loaderData(${routeId})`,
       );
-    const matchesValue = (): StaticValue =>
-      observed?.matches(readRouteHandle) ??
-      unknownValue("route matches are only known at request time");
+    const matchValue = (routeId: string, pathname: string, params: RouteParams): StaticValue =>
+      objectFromRecord({
+        id: primitiveValue(routeId),
+        pathname: primitiveValue(pathname),
+        params: paramsValue(params),
+        data: loaderDataFor(routeId),
+        loaderData: loaderDataFor(routeId),
+        handle: readRouteHandle(routeId),
+      });
+    const staticMatches = (): StaticValue => {
+      const matches: StaticValue[] = rootModule ? [matchValue(ROOT_ROUTE_ID, "/", {})] : [];
+      for (const match of chain) {
+        const routeId = match.route.id;
+        if (routeId === null || match.route.uncertainty) {
+          return unknownValue(
+            `react-router: ${match.route.uncertainty ?? "a matched route without an id"}`,
+          );
+        }
+        matches.push(matchValue(routeId, getMatchPathname(model.pathname, match), match.params));
+      }
+      return listValue(matches);
+    };
+    model.framework.readMatches = staticMatches;
+    const matchesValue = (): StaticValue => observed?.matches(readRouteHandle) ?? staticMatches();
     const routeProps = (params: RouteParams, routeId: string | null): StaticObjectValue =>
       objectFromRecord({
         loaderData: routeId === null ? unknownValue("route without an id") : loaderDataFor(routeId),

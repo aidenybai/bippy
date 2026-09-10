@@ -1392,8 +1392,12 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
-  const [first] = alternatives;
-  if (first && alternatives.every((alternative) => alternative === first)) return first;
+  const [firstAlternative] = alternatives;
+  if (
+    firstAlternative !== undefined &&
+    alternatives.every((alternative) => isInterchangeable(alternative, firstAlternative))
+  )
+    return firstAlternative;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1402,23 +1406,21 @@ export const branchValue = (
     flattened.push(value);
     return flattened.length - 1;
   };
-  alternatives.forEach((alternative, index) => {
-    if (alternative.kind === "branch") {
-      alternative.alternatives.forEach((inner, innerIndex) => {
-        const position = add(inner);
-        if (index === preferredIndex && innerIndex === alternative.preferredIndex) {
-          resolvedPreferred = position;
-        }
-      });
-    } else {
-      const position = add(alternative);
-      if (index === preferredIndex) resolvedPreferred = position;
+  for (const [index, alternative] of alternatives.entries()) {
+    const inner = alternative.kind === "branch" ? alternative.alternatives : [alternative];
+    const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
+    for (const [innerIndex, value] of inner.entries()) {
+      const position = add(value);
+      if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
+      if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
+        return unknownValue(
+          `${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`,
+          location,
+        );
+      }
     }
-  });
-  if (flattened.length === 1) return flattened[0];
-  if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
-    return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
+  if (flattened.length === 1) return flattened[0];
   const isPositional =
     flattened.length === alternatives.length &&
     alternatives.every((alternative) => alternative.kind !== "branch");
@@ -1966,23 +1968,29 @@ export const getListItem = (
 ): StaticValue => {
   const candidates: StaticValue[] = [];
   const pick = (remaining: StaticValue[], offset: number): boolean => {
-    if (candidates.length > MAX_OPTIONAL_CANDIDATES) return false;
-    const [head, ...rest] = remaining;
-    if (head === undefined) {
-      candidates.push(UNDEFINED_VALUE);
-      return true;
+    let position = 0;
+    let remainingOffset = offset;
+    while (candidates.length <= MAX_OPTIONAL_CANDIDATES) {
+      const head = remaining[position];
+      if (head === undefined) {
+        candidates.push(UNDEFINED_VALUE);
+        return true;
+      }
+      if (head.kind === "repeat") return false;
+      if (head.kind === "optional") {
+        const rest = remaining.slice(position + 1);
+        return head.isAbsentPreferred
+          ? pick(rest, remainingOffset) && pick([head.value, ...rest], remainingOffset)
+          : pick([head.value, ...rest], remainingOffset) && pick(rest, remainingOffset);
+      }
+      if (remainingOffset === 0) {
+        candidates.push(head);
+        return true;
+      }
+      position += 1;
+      remainingOffset -= 1;
     }
-    if (head.kind === "repeat") return false;
-    if (head.kind === "optional") {
-      return head.isAbsentPreferred
-        ? pick(rest, offset) && pick([head.value, ...rest], offset)
-        : pick([head.value, ...rest], offset) && pick(rest, offset);
-    }
-    if (offset === 0) {
-      candidates.push(head);
-      return true;
-    }
-    return pick(rest, offset - 1);
+    return false;
   };
   if (!pick(items, index)) {
     return unknownValue(`index ${index} of a partially known list`, location);

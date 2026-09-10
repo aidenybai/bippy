@@ -46,9 +46,15 @@ export interface TransformedSource {
   lang: SourceLanguage;
 }
 
-/** A bundler loader the app applies to a non-JavaScript file extension, producing the module the bundler links in its place. */
+/**
+ * A bundler loader the app applies to a non-JavaScript file extension,
+ * producing the module the bundler links in its place. With `query` it only
+ * applies to imports carrying that Vite query (`icon.svg?react`); a plain
+ * import of the file stays the asset it is.
+ */
 export interface SourceTransform {
   extension: string;
+  query?: string;
   transform: (filePath: string, sourceText: string) => TransformedSource | null;
 }
 
@@ -582,9 +588,12 @@ export interface CapturedPageState {
   historyState?: CapturedValue;
   /** Every name `in window` before the page's first script ran (feature detection); absent in older captures. */
   windowKeys?: string[];
-  /** `navigator.userAgent`, `navigator.language` and `navigator.maxTouchPoints`; absent in older captures. */
+  /** Every name `in navigator` (vendor members such as `userLanguage`); absent in older captures. */
+  navigatorKeys?: string[];
+  /** `navigator.userAgent`, `navigator.language(s)` and `navigator.maxTouchPoints`; absent in older captures. */
   userAgent?: string;
   language?: string;
+  languages?: string[];
   maxTouchPoints?: number;
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;

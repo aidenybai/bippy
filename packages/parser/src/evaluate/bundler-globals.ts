@@ -1,3 +1,5 @@
+import type { Expression } from "oxc-parser";
+import { getMemberChain, isStringLiteralNode } from "../parse/ast-walk.js";
 import type {
   ModuleBundler,
   ProcessEnvironment,
@@ -36,6 +38,13 @@ const VITE_UNDECLARED_NAMES = new Set([...POLYFILLED_NODE_OBJECTS, "global", "de
 
 export const isBundlerUndeclaredName = (bundler: ModuleBundler, name: string): boolean =>
   bundler === "vite" && VITE_UNDECLARED_NAMES.has(name);
+
+/** Packages that bundle the client with webpack, whose `node.global` polyfill makes the bare `global` the page's window. */
+const WEBPACK_BUNDLER_PACKAGES = ["webpack", "react-scripts", "next", "@rspack/core"];
+
+export const isWebpackBundled = (
+  hasDeclaredDependency: (packageName: string) => boolean,
+): boolean => WEBPACK_BUNDLER_PACKAGES.some(hasDeclaredDependency);
 
 const DEFAULT_BASE_URL = "/";
 
@@ -106,6 +115,27 @@ const NODE_ENV_DEFINES = new Set([
 
 export const getInlinedNodeEnv = (name: string): StaticValue | null =>
   NODE_ENV_DEFINES.has(name) ? primitiveValue(DEV_SERVER_MODE) : null;
+
+const getComparedNodeEnvLiteral = (member: Expression, literal: Expression): string | null => {
+  const chain = getMemberChain(member);
+  if (chain === null || !NODE_ENV_DEFINES.has(chain.join("."))) return null;
+  return isStringLiteralNode(literal) ? literal.value : null;
+};
+
+/**
+ * The outcome of `process.env.NODE_ENV === "production"`-style tests once the
+ * bundler has inlined `NODE_ENV`, which decides `if (…) module.exports = require(…)` wrappers.
+ */
+export const decideInlinedNodeEnvTest = (test: Expression): boolean | null => {
+  if (test.type !== "BinaryExpression") return null;
+  const isEquality = test.operator === "===" || test.operator === "==";
+  if (!isEquality && test.operator !== "!==" && test.operator !== "!=") return null;
+  const compared =
+    getComparedNodeEnvLiteral(test.left, test.right) ??
+    getComparedNodeEnvLiteral(test.right, test.left);
+  if (compared === null) return null;
+  return isEquality ? compared === DEV_SERVER_MODE : compared !== DEV_SERVER_MODE;
+};
 
 const HOT_MODULE_OBJECTS = new Set(["module.hot", "import.meta.hot"]);
 

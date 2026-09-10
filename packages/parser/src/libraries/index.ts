@@ -1,6 +1,7 @@
 import { objectValue, UNDEFINED_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, ModeledExports } from "../types.js";
+import { AXIOS_PACKAGES, axiosValue } from "./axios.js";
 import { DEEPMERGE_PACKAGES, deepmergeValue } from "./deepmerge.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
@@ -48,6 +49,7 @@ import {
 import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
+import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
 import {
   TANSTACK_QUERY_MODELED_EXPORTS,
   TANSTACK_QUERY_PACKAGES,
@@ -73,6 +75,7 @@ interface LibraryModel {
 }
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
+  { packages: AXIOS_PACKAGES, getValue: axiosValue },
   { packages: DEEPMERGE_PACKAGES, getValue: deepmergeValue },
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
@@ -113,6 +116,7 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: REFLUX_PACKAGES, getValue: refluxValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
+  { packages: STYLEX_PACKAGES, getValue: stylexValue },
   {
     packages: TANSTACK_QUERY_PACKAGES,
     getValue: tanstackQueryValue,

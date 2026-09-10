@@ -12,6 +12,7 @@ import type {
   Statement,
   VariableDeclaration,
 } from "oxc-parser";
+import { decideInlinedNodeEnvTest } from "../evaluate/bundler-globals.js";
 import {
   getTypeScriptDeclarationName,
   type TypeScriptDeclaration,
@@ -418,16 +419,17 @@ const getBlockFunction = (node: Expression): BlockFunction | null => {
   return body?.type === "BlockStatement" ? { params, body } : null;
 };
 
-const getWrapperCall = (statement: Statement): CallExpression | null => {
-  if (statement.type !== "ExpressionStatement") return null;
-  let expression = unwrapParentheses(statement.expression);
+const getCallExpression = (node: Expression): CallExpression | null => {
+  let expression = unwrapParentheses(node);
   while (expression.type === "UnaryExpression") expression = unwrapParentheses(expression.argument);
   return expression.type === "CallExpression" ? expression : null;
 };
 
+const getWrapperCall = (statement: Statement): CallExpression | null =>
+  statement.type === "ExpressionStatement" ? getCallExpression(statement.expression) : null;
+
 /** The body of a parameterless IIFE such as `(function () { ... })()` or `!function () { ... }()`. */
-const getModuleWrapperBody = (statement: Statement): Statement[] | null => {
-  const call = getWrapperCall(statement);
+const getIifeBody = (call: CallExpression | null): Statement[] | null => {
   if (!call || call.arguments.length !== 0) return null;
   const callee = getBlockFunction(call.callee);
   return callee && callee.params.length === 0 ? callee.body.body : null;
@@ -446,6 +448,9 @@ const isFactoryCallArguments = (callArguments: CallExpression["arguments"]): boo
       (isExportsObject(argument) || getRequiredSpecifier(argument) !== null),
   ) ||
   callArguments.some((argument) => argument.type !== "SpreadElement" && isExportsObject(argument));
+
+const getModuleWrapperBody = (statement: Statement): Statement[] | null =>
+  getIifeBody(getWrapperCall(statement));
 
 /** The `factory(exports, require("x"), …)` call on the CommonJS path of a UMD wrapper body. */
 const findFactoryCall = (
@@ -585,7 +590,28 @@ const getReturningFactoryBody = (
   return body;
 };
 
-/** Module-level statements, with UMD/IIFE wrappers flattened so their declarations become module bindings. */
+/**
+ * The branch a `process.env.NODE_ENV` guard takes once the bundler has inlined
+ * the mode: React's development builds wrap their body in
+ * `if (…) { (function () { … })(); }` or `"production" !== … && (function () { … })()`.
+ */
+const getInlinedNodeEnvBranch = (statement: Statement): Statement[] | null => {
+  if (statement.type === "IfStatement") {
+    const isTaken = decideInlinedNodeEnvTest(statement.test);
+    if (isTaken === null) return null;
+    if (isTaken) return getBranchBody(statement.consequent);
+    return statement.alternate ? getBranchBody(statement.alternate) : [];
+  }
+  if (statement.type !== "ExpressionStatement") return null;
+  const expression = unwrapParentheses(statement.expression);
+  if (expression.type !== "LogicalExpression" || expression.operator === "??") return null;
+  const isTaken = decideInlinedNodeEnvTest(expression.left);
+  if (isTaken === null) return null;
+  if (isTaken !== (expression.operator === "&&")) return [];
+  return getIifeBody(getCallExpression(expression.right));
+};
+
+/** Module-level statements, with UMD/IIFE wrappers and decided build guards flattened so their declarations become module bindings. */
 const getModuleStatements = (
   statements: Statement[],
   factoryArguments: Map<string, Expression>,
@@ -594,6 +620,7 @@ const getModuleStatements = (
   statements.flatMap((statement) => {
     const body =
       getModuleWrapperBody(statement) ??
+      getInlinedNodeEnvBranch(statement) ??
       getUmdFactoryBody(statement, factoryArguments, factoryReturns) ??
       getReturningFactoryBody(statement, factoryReturns);
     return body ? getModuleStatements(body, factoryArguments, factoryReturns) : [statement];
