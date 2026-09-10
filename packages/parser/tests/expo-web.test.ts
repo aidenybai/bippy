@@ -55,11 +55,11 @@ describe("expo metro web", () => {
     });
   });
 
-  it("renders through Metro's web resolution and dev prelude", async () => {
+  it("renders through Metro's web resolution, dev prelude and the installed Reanimated Babel plugin", async () => {
     const renderer = await createStaticRenderer({
       rootDirectory: APP,
       tsconfigPath: path.join(APP, "tsconfig.json"),
-      externalPackageAllowList: ["react-native-web", "platform-badge"],
+      externalPackageAllowList: ["react-native-web", "platform-badge", "react-native-reanimated"],
     });
     const result = await renderer.renderEntry(path.join(APP, "src/main.tsx"));
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
@@ -77,6 +77,11 @@ describe("expo metro web", () => {
         "        <b>",
         "        <Text>",
         "          <span>",
+        "        <Fade>",
+        "          <Text>",
+        "            <span>",
+        '              "captures "',
+        '              "opacity"',
       ].join("\n"),
     );
   });

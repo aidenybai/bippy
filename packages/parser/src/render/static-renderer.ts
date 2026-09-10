@@ -16,6 +16,7 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createReanimatedWorkletTransform } from "../graph/reanimated-babel-plugin.js";
 import { createTanStackRouterTransform } from "../graph/tanstack-router-plugin.js";
 import {
   createViteAssetTransform,
@@ -514,9 +515,10 @@ export const createStaticRenderer = async (
   options: StaticRendererOptions,
 ): Promise<StaticRenderer> => {
   const rootDirectory = realpathSync(options.rootDirectory);
+  const devDirectory = resolveOptionalPath(rootDirectory, options.devDirectory);
   const viteConfig = locateViteConfig({
     rootDirectory,
-    devDirectory: resolveOptionalPath(rootDirectory, options.devDirectory),
+    devDirectory,
     devCommand: options.devCommand,
   });
   const viteUserPlugins =
@@ -524,6 +526,10 @@ export const createStaticRenderer = async (
   const transforms = [
     viteConfig && (await createTanStackRouterTransform(viteConfig)),
     viteUserPlugins && createViteAssetTransform(viteUserPlugins),
+    await createReanimatedWorkletTransform(
+      rootDirectory,
+      detectModuleBundler(rootDirectory, devDirectory),
+    ),
   ].filter((transform) => transform !== null);
   const renderer = new StaticRenderer(options, { bundlerTransforms: transforms });
   if (viteUserPlugins) {

@@ -6439,8 +6439,8 @@
       "id": "bulletproof-react",
       "revision": "9506629ed003a561c6627735480cce4994244bb4",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:11:52.934Z",
-      "durationMs": 1754,
+      "capturedAt": "2026-09-10T12:33:06.407Z",
+      "durationMs": 1324,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -6464,6 +6464,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 46,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -6477,7 +6478,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 10,
-        "status": "exact",
         "runtimeFibers": 46,
         "staticFibers": 46,
         "coverage": 1,
@@ -6520,22 +6520,22 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:26:21.498Z",
+      "note": "runtime replayed from 2026-09-10T12:03:29.534Z",
       "failure": null
     },
     {
       "id": "cal-diy",
       "revision": "abffde336e744e15cf69626c10e436d6172bc406",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T09:11:54.819Z",
-      "durationMs": 3393,
+      "capturedAt": "2026-09-10T12:33:22.426Z",
+      "durationMs": 2718,
       "runtime": {
         "reactVersion": "19.3.0-canary-3f0b9e61-20260317",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
         "fibers": 1194,
-        "commits": 16,
+        "commits": 22,
         "pageErrors": [],
         "title": "Login | Cal.diy"
       },
@@ -6552,6 +6552,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 938,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -6565,7 +6566,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 109,
-        "status": "exact",
         "runtimeFibers": 938,
         "staticFibers": 938,
         "coverage": 1,
@@ -6668,7 +6668,7 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-07T11:40:39.987Z",
+      "note": "runtime replayed from 2026-09-10T12:04:57.052Z",
       "failure": null
     },
     {
@@ -22304,8 +22304,8 @@
       "id": "documenso",
       "revision": "2cac63a000e22422bdea449f68b8025e709aa73a",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:14:19.113Z",
-      "durationMs": 4283,
+      "capturedAt": "2026-09-10T12:33:17.591Z",
+      "durationMs": 3487,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -22334,6 +22334,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 195,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -22347,7 +22348,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 15,
-        "status": "exact",
         "runtimeFibers": 203,
         "staticFibers": 203,
         "coverage": 1,
@@ -22415,7 +22415,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:32:29.922Z",
+      "note": "runtime replayed from 2026-09-10T12:04:30.090Z",
       "failure": null
     },
     {
@@ -25966,8 +25966,8 @@
       "id": "fashion-cube",
       "revision": "9b1f46b24e6469343e595d304f56638f9c0ecc33",
       "framework": "spa",
-      "capturedAt": "2026-09-10T11:39:06.991Z",
-      "durationMs": 16996,
+      "capturedAt": "2026-09-10T12:31:44.157Z",
+      "durationMs": 20806,
       "runtime": {
         "reactVersion": "16.14.0",
         "rendererName": "react-dom",
@@ -31803,8 +31803,8 @@
       "id": "graphiql",
       "revision": "fd32cea3e191eb6eb41b785e157403308d787b12",
       "framework": "spa",
-      "capturedAt": "2026-09-10T09:12:00.920Z",
-      "durationMs": 18031,
+      "capturedAt": "2026-09-10T12:32:10.559Z",
+      "durationMs": 3342,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -31827,16 +31827,13 @@
         },
         "diagnostics": [
           {
-            "code": "dynamic-key",
-            "count": 1
-          },
-          {
             "code": "timers-unsettled",
             "count": 1
           }
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 376,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -31850,7 +31847,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 378,
         "staticFibers": 405,
         "coverage": 1,
@@ -31953,7 +31949,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:26:55.121Z",
+      "note": "runtime replayed from 2026-09-10T12:02:10.222Z",
       "failure": null
     },
     {
@@ -54970,8 +54966,8 @@
       "id": "multimart-react-ecommerce",
       "revision": "4bb42e5a59afa971cb97209f151324a2442430dd",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T11:41:38.385Z",
-      "durationMs": 233154,
+      "capturedAt": "2026-09-10T12:26:52.774Z",
+      "durationMs": 285431,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -55036,7 +55032,7 @@
         "clusters": 1,
         "tree": {
           "nodes": 1947,
-          "inputs": 55,
+          "inputs": 56,
           "guards": 105,
           "branches": 43,
           "repeats": 16,
@@ -55099,7 +55095,7 @@
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#11)",
+              "variable": "len(repeat#12)",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "countsAbove": 2,
               "max": null,
@@ -55107,7 +55103,7 @@
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#13)",
+              "variable": "len(repeat#14)",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "countsAbove": 2,
               "max": null,
@@ -55166,7 +55162,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55174,7 +55170,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55182,7 +55178,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55190,7 +55186,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55204,27 +55200,27 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#11)",
+                  "variable": "len(repeat#12)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 0
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#13)",
+                  "variable": "len(repeat#14)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "choice(branch#14)@len(repeat#13)[0]",
+                  "variable": "choice(branch#15)@len(repeat#14)[0]",
                   "reason": "if (branch(true | <boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
-                  "kind": "branch",
-                  "variable": "choice(branch#15)@len(repeat#13)[0]",
+                  "kind": "state-update",
+                  "variable": "or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))@len(repeat#14)[0]",
                   "reason": "if (branch(<boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
                   "alternativeIndex": 1,
@@ -55232,7 +55228,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "choice(branch#14)@len(repeat#13)[1]",
+                  "variable": "choice(branch#15)@len(repeat#14)[1]",
                   "reason": "if (branch(true | <boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
                   "alternativeIndex": 1,
@@ -55262,7 +55258,7 @@
                 },
                 {
                   "kind": "state-update",
-                  "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))@len(repeat#16)[1]",
+                  "variable": "or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))@len(repeat#16)[1]",
                   "reason": "if (branch(<boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
                   "alternativeIndex": 1,
@@ -55327,7 +55323,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55335,7 +55331,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55343,7 +55339,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55351,7 +55347,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55365,27 +55361,27 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#11)",
+                  "variable": "len(repeat#12)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 0
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#13)",
+                  "variable": "len(repeat#14)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "choice(branch#14)@len(repeat#13)[0]",
+                  "variable": "choice(branch#15)@len(repeat#14)[0]",
                   "reason": "if (branch(true | <boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
-                  "kind": "branch",
-                  "variable": "choice(branch#15)@len(repeat#13)[0]",
+                  "kind": "state-update",
+                  "variable": "or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))@len(repeat#14)[0]",
                   "reason": "if (branch(<boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
                   "alternativeIndex": 1,
@@ -55393,7 +55389,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "choice(branch#14)@len(repeat#13)[1]",
+                  "variable": "choice(branch#15)@len(repeat#14)[1]",
                   "reason": "if (branch(true | <boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
                   "alternativeIndex": 1,
@@ -55423,7 +55419,7 @@
                 },
                 {
                   "kind": "state-update",
-                  "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))@len(repeat#16)[1]",
+                  "variable": "or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))@len(repeat#16)[1]",
                   "reason": "if (branch(<boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
                   "alternativeIndex": 1,
@@ -55480,7 +55476,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55488,7 +55484,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55496,7 +55492,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55504,7 +55500,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55518,27 +55514,27 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#11)",
+                  "variable": "len(repeat#12)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 0
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#13)",
+                  "variable": "len(repeat#14)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 2
                 },
                 {
                   "kind": "branch",
-                  "variable": "choice(branch#14)@len(repeat#13)[0]",
+                  "variable": "choice(branch#15)@len(repeat#14)[0]",
                   "reason": "if (branch(true | <boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
                   "alternativeIndex": 0,
                   "alternativeCount": 2
                 },
                 {
-                  "kind": "branch",
-                  "variable": "choice(branch#15)@len(repeat#13)[0]",
+                  "kind": "state-update",
+                  "variable": "or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))@len(repeat#14)[0]",
                   "reason": "if (branch(<boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
                   "alternativeIndex": 1,
@@ -55546,7 +55542,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "choice(branch#14)@len(repeat#13)[1]",
+                  "variable": "choice(branch#15)@len(repeat#14)[1]",
                   "reason": "if (branch(true | <boolean> | false))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
                   "alternativeIndex": 1,
@@ -55570,7 +55566,7 @@
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#14)@len(repeat#13)[0]",
+              "variable": "choice(branch#15)@len(repeat#14)[0]",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "alternativeIndex": 1,
@@ -55617,7 +55613,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55625,7 +55621,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55633,7 +55629,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55641,7 +55637,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55655,13 +55651,13 @@
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#11)",
+                  "variable": "len(repeat#12)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 0
                 },
                 {
                   "kind": "repeat",
-                  "variable": "len(repeat#13)",
+                  "variable": "len(repeat#14)",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
                   "count": 2
                 }
@@ -55669,7 +55665,7 @@
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#11)",
+              "variable": "len(repeat#12)",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "countsAbove": 0,
               "max": null,
@@ -55716,7 +55712,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55724,7 +55720,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55732,7 +55728,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55740,7 +55736,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55803,7 +55799,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55811,7 +55807,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55819,7 +55815,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55827,7 +55823,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55837,7 +55833,7 @@
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "alternativeIndex": 1,
@@ -55884,7 +55880,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55892,7 +55888,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55900,7 +55896,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55910,7 +55906,7 @@
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "alternativeIndex": 1,
@@ -55957,7 +55953,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55965,7 +55961,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -55975,7 +55971,7 @@
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "alternativeIndex": 1,
@@ -56022,7 +56018,7 @@
                 },
                 {
                   "kind": "branch",
-                  "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+                  "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
                   "reason": "if (branch(true | <boolean> | false | undefined))",
                   "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
                   "alternativeIndex": 0,
@@ -56032,7 +56028,7 @@
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "alternativeIndex": 1,
@@ -56327,20 +56323,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#6), 0)), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 0,
-              "guard": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))))",
+              "guard": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#6), 0)), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#6), 0)), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 1,
-              "guard": "not(or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad)))))))))",
+              "guard": "not(or(and(eq(choice(#3), 0), #4 > 7), and(not(and(eq(choice(#3), 0), #4 > 7)), or(and(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#6), 0)), and(not(or(eq(choice(#5), 0), and(eq(choice(#5), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad)))))))))",
               "status": "possible"
             },
             {
@@ -56381,20 +56377,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#8), 0), #4 > 6), and(not(and(eq(choice(#8), 0), #4 > 6)), eq(choice(#9), 0)))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 0,
-              "guard": "or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))))",
+              "guard": "or(and(eq(choice(#8), 0), #4 > 6), and(not(and(eq(choice(#8), 0), #4 > 6)), eq(choice(#9), 0)))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#8), 0), #4 > 6), and(not(and(eq(choice(#8), 0), #4 > 6)), eq(choice(#9), 0)))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 1,
-              "guard": "not(or(and(eq(choice(#12), 0), #4 > 6), and(not(and(eq(choice(#12), 0), #4 > 6)), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad)))))))))",
+              "guard": "not(or(and(eq(choice(#8), 0), #4 > 6), and(not(and(eq(choice(#8), 0), #4 > 6)), eq(choice(#9), 0))))",
               "status": "possible"
             },
             {
@@ -56435,20 +56431,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#10), 0), #4 > 5), and(not(and(eq(choice(#10), 0), #4 > 5)), or(and(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 0,
-              "guard": "or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))))))",
+              "guard": "or(and(eq(choice(#10), 0), #4 > 5), and(not(and(eq(choice(#10), 0), #4 > 5)), or(and(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#10), 0), #4 > 5), and(not(and(eq(choice(#10), 0), #4 > 5)), or(and(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 1,
-              "guard": "not(or(and(eq(choice(#14), 0), #4 > 5), and(not(and(eq(choice(#14), 0), #4 > 5)), or(and(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4)))), eq(choice(#16), 0)), and(not(or(eq(choice(#15), 0), and(eq(choice(#15), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad)))))))))",
+              "guard": "not(or(and(eq(choice(#10), 0), #4 > 5), and(not(and(eq(choice(#10), 0), #4 > 5)), or(and(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad)))))))))",
               "status": "possible"
             },
             {
@@ -56489,20 +56485,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#17), 0), #4 > 4), and(not(and(eq(choice(#17), 0), #4 > 4)), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 0,
-              "guard": "or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))))",
+              "guard": "or(and(eq(choice(#17), 0), #4 > 4), and(not(and(eq(choice(#17), 0), #4 > 4)), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))))",
+              "variable": "or(and(eq(choice(#17), 0), #4 > 4), and(not(and(eq(choice(#17), 0), #4 > 4)), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:206:9",
               "side": 1,
-              "guard": "not(or(and(eq(choice(#18), 0), #4 > 4), and(not(and(eq(choice(#18), 0), #4 > 4)), or(and(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4)))), or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad)))))))))",
+              "guard": "not(or(and(eq(choice(#17), 0), #4 > 4), and(not(and(eq(choice(#17), 0), #4 > 4)), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad)))))))))",
               "status": "possible"
             },
             {
@@ -56516,74 +56512,74 @@
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 0,
-              "guard": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "guard": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 1,
-              "guard": "not(or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad)))))",
+              "guard": "not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(truthy(#2.lazyLoad)))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 0,
-              "guard": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "guard": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 1,
-              "guard": "not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad)))))",
+              "guard": "not(or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad)))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 0,
-              "guard": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "guard": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 1,
-              "guard": "not(or(eq(choice(#17), 0), and(eq(choice(#17), 1), not(truthy(#2.lazyLoad)))))",
+              "guard": "not(or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad)))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 0,
-              "guard": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "guard": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))",
+              "variable": "or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))",
               "reason": "if (branch(true | <boolean> | false | undefined))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:141:5",
               "side": 1,
-              "guard": "not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad)))))",
+              "guard": "not(or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad)))))",
               "status": "possible"
             },
             {
@@ -56615,20 +56611,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))",
+              "variable": "choice(branch#11)",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 0,
-              "guard": "or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))",
-              "status": "witnessed"
+              "guard": "eq(choice(branch#11), 0)",
+              "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad))))))",
+              "variable": "choice(branch#11)",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 1,
-              "guard": "not(or(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1), and(not(and(or(and(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false))), or(and(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4)))), or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), eq(choice(#10), 0)))), and(not(or(eq(choice(#7), 0), and(eq(choice(#7), 1), not(eq(#2.slidesToShow, 4))))), eq(choice(#8), 0)))), and(not(or(eq(choice(#6), 0), and(eq(choice(#6), 1), eq(#2.fade, false)))), eq(choice(#8), 0))), #9 <= -1)), or(eq(choice(#11), 0), and(eq(choice(#11), 1), not(truthy(#2.lazyLoad)))))))",
+              "guard": "eq(choice(branch#11), 1)",
               "status": "possible"
             },
             {
@@ -56642,110 +56638,110 @@
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#11)",
+              "variable": "len(repeat#12)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 0,
-              "guard": "eq(len(repeat#11), 0)",
+              "guard": "eq(len(repeat#12), 0)",
               "status": "possible"
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#11)",
+              "variable": "len(repeat#12)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 1,
-              "guard": "len(repeat#11) > 0",
+              "guard": "len(repeat#12) > 0",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#12)",
+              "variable": "choice(branch#13)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 0,
-              "guard": "eq(choice(branch#12), 0)",
+              "guard": "eq(choice(branch#13), 0)",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))",
+              "variable": "or(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2), and(not(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2)), or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 0,
-              "guard": "or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))",
+              "guard": "or(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2), and(not(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2)), or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad))))))",
+              "variable": "or(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2), and(not(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2)), or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 1,
-              "guard": "not(or(and(eq(choice(#8), 0), #9 <= -2), and(not(and(eq(choice(#8), 0), #9 <= -2)), or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(truthy(#2.lazyLoad)))))))",
+              "guard": "not(or(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2), and(not(and(or(and(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false))), eq(choice(#21), 0)), and(not(or(eq(choice(#20), 0), and(eq(choice(#20), 1), eq(#2.fade, false)))), or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))))), #14 <= -2)), or(eq(choice(#19), 0), and(eq(choice(#19), 1), not(truthy(#2.lazyLoad)))))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#12)",
+              "variable": "choice(branch#13)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 1,
-              "guard": "eq(choice(branch#12), 1)",
+              "guard": "eq(choice(branch#13), 1)",
               "status": "possible"
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#13)",
+              "variable": "len(repeat#14)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 0,
-              "guard": "eq(len(repeat#13), 0)",
+              "guard": "eq(len(repeat#14), 0)",
               "status": "possible"
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#13)",
+              "variable": "len(repeat#14)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 1,
-              "guard": "len(repeat#13) > 0",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#14)",
-              "reason": "if (branch(true | <boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
-              "side": 0,
-              "guard": "eq(choice(branch#14), 0)",
+              "guard": "len(repeat#14) > 0",
               "status": "possible"
             },
             {
               "kind": "branch",
               "variable": "choice(branch#15)",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 0,
               "guard": "eq(choice(branch#15), 0)",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#15)",
+              "variable": "or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
-              "side": 1,
-              "guard": "eq(choice(branch#15), 1)",
+              "side": 0,
+              "guard": "or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#14)",
+              "variable": "or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad))))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "not(or(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3), and(not(and(or(and(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false))), or(and(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4)))), or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), eq(choice(#15), 0)))), and(not(or(eq(choice(#13), 0), and(eq(choice(#13), 1), not(eq(#2.slidesToShow, 4))))), not(eq(choice(#1), 0))))), and(not(or(eq(choice(#12), 0), and(eq(choice(#12), 1), eq(#2.fade, false)))), not(eq(choice(#1), 0)))), #14 <= -3)), or(eq(choice(#16), 0), and(eq(choice(#16), 1), not(truthy(#2.lazyLoad)))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#15)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 1,
-              "guard": "eq(choice(branch#14), 1)",
+              "guard": "eq(choice(branch#15), 1)",
               "status": "possible"
             },
             {
@@ -56777,20 +56773,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))",
+              "variable": "or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 0,
-              "guard": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))",
+              "guard": "or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad))))))",
+              "variable": "or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad))))))",
               "reason": "if (branch(<boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 1,
-              "guard": "not(or(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4), and(not(and(or(and(eq(choice(#1), 0), not(eq(choice(#1), 0)), truthy(#2.centerMode)), not(eq(choice(#1), 0))), #9 <= -4)), or(eq(choice(#20), 0), and(eq(choice(#20), 1), not(truthy(#2.lazyLoad)))))))",
+              "guard": "not(or(and(not(eq(choice(#1), 0)), #14 <= -4), and(not(and(not(eq(choice(#1), 0)), #14 <= -4)), or(eq(choice(#18), 0), and(eq(choice(#18), 1), not(truthy(#2.lazyLoad)))))))",
               "status": "possible"
             },
             {
@@ -56876,24 +56872,6 @@
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#22)",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
-              "side": 0,
-              "guard": "eq(choice(branch#22), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(branch#22)",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
-              "side": 1,
-              "guard": "eq(choice(branch#22), 1)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
               "variable": "choice(branch#21)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
@@ -56903,63 +56881,72 @@
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#23)",
+              "variable": "len(repeat#22)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 0,
-              "guard": "eq(len(repeat#23), 0)",
+              "guard": "eq(len(repeat#22), 0)",
               "status": "witnessed"
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#23)",
+              "variable": "len(repeat#22)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 1,
-              "guard": "len(repeat#23) > 0",
+              "guard": "len(repeat#22) > 0",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#24)",
+              "variable": "choice(branch#23)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 0,
-              "guard": "eq(choice(branch#24), 0)",
+              "guard": "eq(choice(branch#23), 0)",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "choice(branch#24)",
+              "variable": "choice(branch#23)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 1,
-              "guard": "eq(choice(branch#24), 1)",
+              "guard": "eq(choice(branch#23), 1)",
               "status": "possible"
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#25)",
+              "variable": "len(repeat#24)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 0,
-              "guard": "eq(len(repeat#25), 0)",
+              "guard": "eq(len(repeat#24), 0)",
               "status": "possible"
             },
             {
               "kind": "repeat",
-              "variable": "len(repeat#25)",
+              "variable": "len(repeat#24)",
               "reason": "repeated list",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:173:5",
               "side": 1,
-              "guard": "len(repeat#25) > 0",
+              "guard": "len(repeat#24) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#25)",
+              "reason": "if (branch(true | <boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "side": 0,
+              "guard": "eq(choice(branch#25), 0)",
               "status": "witnessed"
             },
             {
               "kind": "branch",
               "variable": "choice(branch#26)",
-              "reason": "if (branch(true | <boolean> | false))",
-              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
               "side": 0,
               "guard": "eq(choice(branch#26), 0)",
               "status": "witnessed"
@@ -56967,10 +56954,19 @@
             {
               "kind": "branch",
               "variable": "choice(branch#26)",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:179:9",
+              "side": 1,
+              "guard": "eq(choice(branch#26), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(branch#25)",
               "reason": "if (branch(true | <boolean> | false))",
               "location": "/home/ubuntu/bippy-corpus/multimart-react-ecommerce/node_modules/react-slick/lib/track.js:176:7",
               "side": 1,
-              "guard": "eq(choice(branch#26), 1)",
+              "guard": "eq(choice(branch#25), 1)",
               "status": "possible"
             },
             {
@@ -58018,8 +58014,8 @@
       "id": "netflix-ui",
       "revision": "f0bc3631b2e1679f12169c3d0b16c557afd76fdc",
       "framework": "spa",
-      "capturedAt": "2026-09-10T11:45:32.805Z",
-      "durationMs": 233857,
+      "capturedAt": "2026-09-10T12:44:44.407Z",
+      "durationMs": 169730,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -58102,7 +58098,7 @@
               "kind": "branch",
               "variable": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
               "reason": "if (branch(false | <boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -58164,20 +58160,20 @@
             },
             {
               "kind": "branch",
-              "variable": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet))))",
+              "variable": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet))))",
               "reason": "if (branch(<boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "side": 0,
-              "guard": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet))))",
+              "guard": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet))))",
+              "variable": "or(and(truthy(#1), truthy(#2), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet))))",
               "reason": "if (branch(<boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "side": 1,
-              "guard": "not(or(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet), truthy(#1.sheet)))))",
+              "guard": "not(or(and(truthy(#1), truthy(#2), truthy(#1.sheet), not(#3 > 0)), not(and(truthy(#1), truthy(#2), truthy(#1.sheet)))))",
               "status": "possible"
             },
             {
@@ -58193,7 +58189,7 @@
               "kind": "branch",
               "variable": "or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
               "reason": "if (branch(false | <boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "side": 0,
               "guard": "or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
               "status": "possible"
@@ -58202,7 +58198,7 @@
               "kind": "branch",
               "variable": "or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1))))",
               "reason": "if (branch(false | <boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "side": 1,
               "guard": "not(or(and(eq(choice(#1), 1), not(#2 > 0)), and(not(eq(choice(#1), 0)), not(eq(choice(#1), 1)))))",
               "status": "possible"
@@ -58292,7 +58288,7 @@
               "kind": "branch",
               "variable": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
               "reason": "if (branch(false | <boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "side": 0,
               "guard": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
               "status": "possible"
@@ -58301,7 +58297,7 @@
               "kind": "branch",
               "variable": "or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1))))",
               "reason": "if (branch(false | <boolean> | true))",
-              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:13",
+              "location": "/home/ubuntu/bippy-corpus/netflix-ui/node_modules/@expo/vector-icons/build/createIconSet.js:43:7",
               "side": 1,
               "guard": "not(or(and(eq(choice(#9), 1), not(#10 > 0)), and(not(eq(choice(#9), 0)), not(eq(choice(#9), 1)))))",
               "status": "witnessed"
@@ -58327,8 +58323,8 @@
       "id": "next-ecommerce-shopco",
       "revision": "f360acb62dbccdeb421d0c261652deedc74829fd",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T11:39:33.532Z",
-      "durationMs": 123576,
+      "capturedAt": "2026-09-10T12:26:15.694Z",
+      "durationMs": 14885,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -58349,12 +58345,7 @@
           "unknownCount": 1,
           "modulesLoaded": 416
         },
-        "diagnostics": [
-          {
-            "code": "timers-unsettled",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
         "status": "exact",
@@ -69058,8 +69049,8 @@
       "id": "posthog",
       "revision": "09c5fbd37b2714276d4206debd3aeb253ce0e43a",
       "framework": "spa",
-      "capturedAt": "2026-09-10T09:17:17.228Z",
-      "durationMs": 365386,
+      "capturedAt": "2026-09-10T12:33:26.543Z",
+      "durationMs": 217429,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -69068,6 +69059,14 @@
         "fibers": 192,
         "commits": 54,
         "pageErrors": [
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)",
+          "Failed to load resource: the server responded with a status of 404 ()",
           "Failed to load resource: the server responded with a status of 404 ()",
           "Failed to load resource: the server responded with a status of 404 ()"
         ],
@@ -69081,7 +69080,7 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 5132
+          "modulesLoaded": 5131
         },
         "diagnostics": [
           {
@@ -69090,7 +69089,7 @@
           },
           {
             "code": "budget-exhausted",
-            "count": 76
+            "count": 70
           },
           {
             "code": "dynamic-props",
@@ -69099,6 +69098,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 184,
         "matchedText": 7,
         "opaqueSubtrees": 0,
@@ -69112,7 +69112,6 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 191,
         "staticFibers": 191,
         "coverage": 1,
@@ -69215,7 +69214,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:46:34.870Z",
+      "note": "runtime replayed from 2026-09-10T12:05:31.406Z",
       "failure": null
     },
     {
@@ -84366,8 +84365,8 @@
       "id": "react-admin",
       "revision": "fa7ede4a25d36917b41f9b9e9936e9e7ab8fa8ab",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:13:09.297Z",
-      "durationMs": 65852,
+      "capturedAt": "2026-09-10T12:32:15.396Z",
+      "durationMs": 49659,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -84396,6 +84395,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 5501,
         "matchedText": 66,
         "opaqueSubtrees": 0,
@@ -84409,7 +84409,6 @@
         "branchesResolved": 2,
         "repeatIterations": 0,
         "transparentFibers": 13,
-        "status": "exact",
         "runtimeFibers": 5567,
         "staticFibers": 5577,
         "coverage": 1,
@@ -84449,7 +84448,7 @@
             },
             {
               "kind": "branch",
-              "variable": "and(#1 > 0, #1 > 0)",
+              "variable": "#1 > 0",
               "reason": "&& on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-ui-materialui/src/layout/LoadingIndicator.tsx:33:14",
               "alternativeIndex": 1,
@@ -84544,20 +84543,20 @@
             },
             {
               "kind": "branch",
-              "variable": "and(#1 > 0, #1 > 0)",
+              "variable": "#1 > 0",
               "reason": "&& on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-ui-materialui/src/layout/LoadingIndicator.tsx:33:14",
               "side": 0,
-              "guard": "and(#1 > 0, #1 > 0)",
+              "guard": "#1 > 0",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "and(#1 > 0, #1 > 0)",
+              "variable": "#1 > 0",
               "reason": "&& on branch(<boolean> | false)",
               "location": "/home/ubuntu/bippy-corpus/react-admin/packages/ra-ui-materialui/src/layout/LoadingIndicator.tsx:33:14",
               "side": 1,
-              "guard": "not(and(#1 > 0, #1 > 0))",
+              "guard": "not(#1 > 0)",
               "status": "witnessed"
             },
             {
@@ -84610,7 +84609,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:29:48.982Z",
+      "note": "runtime replayed from 2026-09-10T12:02:36.088Z",
       "failure": null
     },
     {
@@ -86345,8 +86344,8 @@
       "id": "react-ecommerce-lydia",
       "revision": "10710c7750c3c02d8310e29361b6bd4c71d7b7d7",
       "framework": "spa",
-      "capturedAt": "2026-09-10T11:39:29.360Z",
-      "durationMs": 383,
+      "capturedAt": "2026-09-10T12:31:42.356Z",
+      "durationMs": 474,
       "runtime": null,
       "static": {
         "stats": {
@@ -86377,8 +86376,8 @@
       "id": "react-ecommerce-store",
       "revision": "ae46562743b2e350cfd52deab3f831008a9fcedf",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T11:39:27.084Z",
-      "durationMs": 1056,
+      "capturedAt": "2026-09-10T12:31:39.648Z",
+      "durationMs": 1379,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -87536,8 +87535,8 @@
       "id": "react-movies",
       "revision": "d4790df5a4017c56ba368c4d4dd3307cdc29feea",
       "framework": "spa",
-      "capturedAt": "2026-09-10T11:39:31.099Z",
-      "durationMs": 1202,
+      "capturedAt": "2026-09-10T12:26:50.261Z",
+      "durationMs": 1270,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -88128,8 +88127,8 @@
       "id": "react-router-templates",
       "revision": "b68be71489a22315c7a734a86a18347745b393d2",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:14:15.309Z",
-      "durationMs": 898,
+      "capturedAt": "2026-09-10T12:32:08.071Z",
+      "durationMs": 1143,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -88153,6 +88152,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 48,
         "matchedText": 2,
         "opaqueSubtrees": 0,
@@ -88166,7 +88166,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 14,
-        "status": "exact",
         "runtimeFibers": 50,
         "staticFibers": 50,
         "coverage": 1,
@@ -88234,15 +88233,15 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:30:49.141Z",
+      "note": "runtime replayed from 2026-09-10T12:01:49.356Z",
       "failure": null
     },
     {
       "id": "react-shopping-cart",
       "revision": "9fa56244d0f0c0d363cab744a3305c50eabc08cb",
       "framework": "spa",
-      "capturedAt": "2026-09-10T11:39:25.301Z",
-      "durationMs": 561,
+      "capturedAt": "2026-09-10T12:26:31.893Z",
+      "durationMs": 593,
       "runtime": {
         "reactVersion": "18.0.0-fc46dba67-20220329",
         "rendererName": "react-dom",
@@ -135077,8 +135076,8 @@
       "id": "sentry",
       "revision": "a7b4a8a2a78a666418e527d812e81528147789da",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T09:14:23.503Z",
-      "durationMs": 173618,
+      "capturedAt": "2026-09-10T12:37:05.416Z",
+      "durationMs": 126435,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -135092,16 +135091,7 @@
           "Error tracking analytics event TypeError: Cannot read properties of null (reading 'dateJoined')\n    at getUserAge (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22306:86)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22384:29)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155933:140)\n    at https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155959:13\n    at t10 (https://localhost:7999/_assets/chunks/app_views_authV2_authLogin_index_tsx.d8f9372505bf4158.js:4318:72)\n    at Object.react_stack_bottom_frame (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:57788:22)\n    at runWithFiberInDEV (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:44823:74)\n    at commitHookEffectListMount (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:50965:167)\n    at commitHookPassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51000:60)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51989:33)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52037:428)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52029:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)",
           "Failed to load resource: the server responded with a status of 403 ()",
           "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "An unknown error occurred when fetching the script.",
-          "Failed to load resource: the server responded with a status of 403 ()",
-          "Error tracking analytics event TypeError: Cannot read properties of null (reading 'dateJoined')\n    at getUserAge (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22306:86)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_events_autofix_v3_utils_ts-gsApp_registerOverrides_tsx.02556c416c188019.js:22384:29)\n    at rawTrackAnalyticsEvent (https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155933:140)\n    at https://localhost:7999/_assets/chunks/app_components_core_form_index_ts-app_components_emptyMessage_tsx-app_components_sentryDocume-e4d45b.77ef74e3cde899bc.js:155959:13\n    at t10 (https://localhost:7999/_assets/chunks/app_views_authV2_authLogin_index_tsx.d8f9372505bf4158.js:4318:72)\n    at Object.react_stack_bottom_frame (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:57788:22)\n    at runWithFiberInDEV (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:44823:74)\n    at commitHookEffectListMount (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:50965:167)\n    at commitHookPassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51000:60)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51989:33)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52037:428)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52029:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51993:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:52045:17)\n    at recursivelyTraversePassiveMountEffects (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51977:13)\n    at commitPassiveMountOnFiber (https://localhost:7999/_assets/chunks/vendors-node_modules_pnpm_react-select_4_3_1__types_react_19_2_1_react-dom_19_2_3_react_19_2_-8c8997.9efcfcc3a3279729.js:51988:17)"
+          "Failed to load resource: the server responded with a status of 403 ()"
         ],
         "title": "Sentry"
       },
@@ -135118,7 +135108,7 @@
         "diagnostics": [
           {
             "code": "budget-exhausted",
-            "count": 7
+            "count": 8
           },
           {
             "code": "dynamic-key",
@@ -135127,6 +135117,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 558,
         "matchedText": 8,
         "opaqueSubtrees": 0,
@@ -135140,7 +135131,6 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 9,
-        "status": "exact",
         "runtimeFibers": 566,
         "staticFibers": 566,
         "coverage": 1,
@@ -135963,7 +135953,7 @@
         ]
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:43:42.537Z",
+      "note": "runtime replayed from 2026-09-10T12:09:32.429Z",
       "failure": null
     },
     {
@@ -170055,8 +170045,8 @@
       "id": "sonner",
       "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
       "framework": "next-app",
-      "capturedAt": "2026-09-10T09:14:16.698Z",
-      "durationMs": 154,
+      "capturedAt": "2026-09-10T12:32:06.353Z",
+      "durationMs": 330,
       "runtime": {
         "reactVersion": "18.3.0-canary-14898b6a9-20240318",
         "rendererName": "react-dom",
@@ -170080,6 +170070,7 @@
         "diagnostics": []
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 44,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -170093,7 +170084,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 15,
-        "status": "exact",
         "runtimeFibers": 44,
         "staticFibers": 44,
         "coverage": 1,
@@ -170136,7 +170126,7 @@
         "mismatched": []
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-10T05:31:10.424Z",
+      "note": "runtime replayed from 2026-09-10T12:01:40.994Z",
       "failure": null
     },
     {
@@ -171079,8 +171069,8 @@
       "id": "tanstack-table",
       "revision": "05f3ed11f36b83bcd0991e25e3d4e78c143e6df4",
       "framework": "spa",
-      "capturedAt": "2026-09-10T09:23:22.736Z",
-      "durationMs": 15130,
+      "capturedAt": "2026-09-10T12:33:09.122Z",
+      "durationMs": 7135,
       "runtime": {
         "reactVersion": "19.2.6",
         "rendererName": "react-dom",
@@ -171109,6 +171099,7 @@
         ]
       },
       "report": {
+        "status": "exact",
         "matchedFibers": 1286,
         "matchedText": 80,
         "opaqueSubtrees": 0,
@@ -171122,7 +171113,6 @@
         "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "exact",
         "runtimeFibers": 1366,
         "staticFibers": 1366,
         "coverage": 1,
@@ -171323,7 +171313,7 @@
         "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-10T05:36:25.334Z",
+      "note": "runtime replayed from 2026-09-10T12:03:37.396Z",
       "failure": null
     },
     {

@@ -5,7 +5,7 @@ import { isEngineGlobal } from "../evaluate/host-globals.js";
 import { loadHostRealm } from "../host/host-realm.js";
 import type { SourceLanguage, TransformedSource } from "../types.js";
 
-const functionSchema = z.custom<(...args: unknown[]) => unknown>(
+export const functionSchema = z.custom<(...args: unknown[]) => unknown>(
   (value) => typeof value === "function",
 );
 const patternSchema = z.union([z.string(), z.instanceof(RegExp)]);
