@@ -51,7 +51,7 @@ export interface ViteConfig {
   findAutoImport: ProjectContext["findAutoImport"];
 }
 
-export interface ViteConfigOptions {
+interface ViteConfigOptions {
   /** The app's directory: the served root when no config is found. */
   rootDirectory: string;
   /** Where the dev command runs; the config is looked up there before `rootDirectory` (a workspace script may delegate to the app's own). */

@@ -127,7 +127,7 @@ export interface MaterializerOptions {
  * scope; the prefix names the proxy whose render claimed them, so a re-render
  * of the proxy and a replay along the chosen path number them the same way.
  */
-export interface DecisionScope {
+interface DecisionScope {
   pins: PinnedDecisions | null;
   ordinals: Map<string, number>;
   prefix: string;

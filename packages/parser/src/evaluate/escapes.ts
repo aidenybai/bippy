@@ -21,11 +21,11 @@ import { findOwningScope } from "./scope.js";
 import { getObjectProperty, primitiveValue } from "./values.js";
 
 /** `context[key]`: a member read whose key is the string another path names. */
-export interface ComputedAccess {
+interface ComputedAccess {
   keyPath: AccessPath;
 }
 
-export type AccessStep = string | ComputedAccess;
+type AccessStep = string | ComputedAccess;
 
 /** `this`, `editor`, `callbackRef.current`, `this.update`, `system[key]`: a value named from inside a closure body. */
 export type AccessPath = [root: string, ...members: AccessStep[]];

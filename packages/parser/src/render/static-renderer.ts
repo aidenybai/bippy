@@ -57,7 +57,7 @@ export interface RenderComponentOptions {
   isolated?: boolean;
 }
 
-export interface RenderWithOptions {
+interface RenderWithOptions {
   /**
    * Produces the document the framework serves the page in (a Next `_document`);
    * its server-rendered markup is the DOM the page's code then mounts into and
@@ -125,7 +125,7 @@ interface RendererSetup {
 }
 
 /** Options a derived renderer may change without re-parsing the project. */
-export interface RenderTimeOptions {
+interface RenderTimeOptions {
   decisions?: PinnedDecisions;
   externalValues?: ExternalValueProvider;
   serverComponents?: boolean;

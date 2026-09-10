@@ -156,8 +156,4 @@ export class SourceFileCache {
     this.entries.set(filePath, { mtimeMs: -1, size: -1, file });
     return file;
   }
-
-  get size(): number {
-    return this.entries.size;
-  }
 }
