@@ -14,6 +14,13 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createTanStackRouterTransform } from "../graph/tanstack-router-plugin.js";
+import {
+  createViteAssetTransform,
+  loadViteUserPlugins,
+  transformViteDocumentShell,
+} from "../graph/vite-asset-transform.js";
+import { locateViteConfig } from "../graph/vite-config.js";
 import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
@@ -32,6 +39,7 @@ import type {
   ModuleRecord,
   PinnedDecisions,
   ProjectContext,
+  SourceTransform,
   StaticObjectValue,
   StaticRenderResult,
   StaticRendererOptions,
@@ -59,6 +67,12 @@ interface BootstrapCall {
   exportName: string;
   globalNames: string[];
 }
+
+const resolveOptionalPath = (
+  rootDirectory: string,
+  filePath: string | undefined,
+): string | undefined =>
+  filePath === undefined ? undefined : path.resolve(rootDirectory, filePath);
 
 const BOOTSTRAP_PATTERN = /^(.+)#([^#()]+?)(?:\(([^()]*)\))?$/;
 
@@ -89,6 +103,12 @@ interface RendererProject {
   graph: ModuleGraph;
 }
 
+/** Either the parsed project to share, or the app's own bundler plugins (prepared by `createStaticRenderer`) to parse a new one with. */
+interface RendererSetup {
+  shared?: RendererProject;
+  bundlerTransforms?: SourceTransform[];
+}
+
 /** Options a derived renderer may change without re-parsing the project. */
 export interface RenderTimeOptions {
   decisions?: PinnedDecisions;
@@ -102,14 +122,14 @@ export class StaticRenderer {
   private readonly resolver: ModuleResolver;
   private readonly reactVersion: string | null;
   private readonly project: ProjectContext;
-  private readonly documentShell: string | null;
+  private documentShell: string | null;
   private reactPackages: ReactPackageSpecifiers | undefined;
 
-  constructor(options: StaticRendererOptions, shared?: RendererProject) {
+  constructor(options: StaticRendererOptions, setup: RendererSetup = {}) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
     const { resolver, reactVersion, project, documentShell, graph } =
-      shared ?? this.createProject();
+      setup.shared ?? this.createProject(setup.bundlerTransforms ?? []);
     this.resolver = resolver;
     this.reactVersion = reactVersion;
     this.project = project;
@@ -117,7 +137,7 @@ export class StaticRenderer {
     this.graph = graph;
   }
 
-  private createProject(): RendererProject {
+  private createProject(bundlerTransforms: SourceTransform[]): RendererProject {
     const { options } = this;
     const { rootDirectory } = options;
     const resolver = new ModuleResolver({
@@ -131,13 +151,13 @@ export class StaticRenderer {
       conditionNames: options.conditionNames,
       rootDirectory,
     });
-    const devDirectory = this.resolveOptionalPath(options.devDirectory);
+    const devDirectory = resolveOptionalPath(rootDirectory, options.devDirectory);
     const bundler = detectModuleBundler(rootDirectory, devDirectory);
     const project = createProjectContext({
       rootDirectory,
       resolver,
-      servedDirectory: this.resolveOptionalPath(options.servedDirectory),
-      publicDirectory: this.resolveOptionalPath(options.publicDirectory),
+      servedDirectory: resolveOptionalPath(rootDirectory, options.servedDirectory),
+      publicDirectory: resolveOptionalPath(rootDirectory, options.publicDirectory),
       environment: options.environment,
       devCommand: options.devCommand,
       devDirectory,
@@ -162,6 +182,7 @@ export class StaticRenderer {
         sourceFileCache: new SourceFileCache([
           ...(svgrTransform ? [svgrTransform] : []),
           ...createYamlSourceTransforms(rootDirectory),
+          ...bundlerTransforms,
         ]),
         resolveExternalPackages: options.resolveExternalPackages,
         externalPackageAllowList: options.externalPackageAllowList,
@@ -174,11 +195,13 @@ export class StaticRenderer {
     return new StaticRenderer(
       { ...this.options, ...overrides },
       {
-        resolver: this.resolver,
-        reactVersion: this.reactVersion,
-        project: this.project,
-        documentShell: this.documentShell,
-        graph: this.graph,
+        shared: {
+          resolver: this.resolver,
+          reactVersion: this.reactVersion,
+          project: this.project,
+          documentShell: this.documentShell,
+          graph: this.graph,
+        },
       },
     );
   }
@@ -189,8 +212,15 @@ export class StaticRenderer {
       : path.resolve(this.options.rootDirectory, filePath);
   }
 
-  private resolveOptionalPath(filePath: string | undefined): string | undefined {
-    return filePath === undefined ? undefined : this.resolvePath(filePath);
+  /** Reshapes the page the way the dev server does before serving it, when the app has one. */
+  async transformDocumentShell(
+    transform: (html: string, servedDirectory: string) => Promise<string>,
+  ): Promise<void> {
+    if (this.documentShell === null) return;
+    this.documentShell = await transform(
+      this.documentShell,
+      this.project.servedDirectory ?? this.options.rootDirectory,
+    );
   }
 
   loadModule(filePath: string): ModuleRecord | null {
@@ -416,5 +446,31 @@ export class StaticRenderer {
   }
 }
 
-export const createStaticRenderer = (options: StaticRendererOptions): StaticRenderer =>
-  new StaticRenderer(options);
+/**
+ * A renderer with the app's own Vite plugins loaded: their `transform` hooks
+ * produce the modules non-JavaScript imports link and their `transformIndexHtml`
+ * hooks shape the page the dev server serves.
+ */
+export const createStaticRenderer = async (
+  options: StaticRendererOptions,
+): Promise<StaticRenderer> => {
+  const rootDirectory = realpathSync(options.rootDirectory);
+  const viteConfig = locateViteConfig({
+    rootDirectory,
+    devDirectory: resolveOptionalPath(rootDirectory, options.devDirectory),
+    devCommand: options.devCommand,
+  });
+  const viteUserPlugins =
+    viteConfig && (await loadViteUserPlugins(viteConfig, options.modeledVitePlugins));
+  const transforms = [
+    viteConfig && (await createTanStackRouterTransform(viteConfig)),
+    viteUserPlugins && createViteAssetTransform(viteUserPlugins),
+  ].filter((transform) => transform !== null);
+  const renderer = new StaticRenderer(options, { bundlerTransforms: transforms });
+  if (viteUserPlugins) {
+    await renderer.transformDocumentShell((html, servedDirectory) =>
+      transformViteDocumentShell(viteUserPlugins, html, servedDirectory, options.route ?? "/"),
+    );
+  }
+  return renderer;
+};

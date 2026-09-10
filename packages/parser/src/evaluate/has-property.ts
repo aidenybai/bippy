@@ -5,6 +5,7 @@ import {
   REACT_ELEMENT_OWN_KEYS,
   WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
+import { isReactLikePackage, resolveReactApi } from "../react/react-api.js";
 import type {
   StaticClassValue,
   StaticElementType,
@@ -37,7 +38,7 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
-const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
+export const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
   const languageKey = toLanguagePropertyKey(name);
   return languageKey !== null && languageKey in intrinsic;
 };
@@ -125,6 +126,12 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       return hasIntrinsicMember(Function.prototype, name) || target.getOwnProperty?.(name)
         ? TRUE_VALUE
         : FALSE_VALUE;
+    case "external":
+      return isReactLikePackage(target.packageName) &&
+        (target.importedName === "*" || target.importedName === "default") &&
+        resolveReactApi(target.packageName, name) !== null
+        ? TRUE_VALUE
+        : null;
     case "global": {
       const witness = getPrototypeWitness(target);
       if (witness === null) return null;

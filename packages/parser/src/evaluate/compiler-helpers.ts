@@ -5,20 +5,35 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
+import { nativeFunction } from "./stubs.js";
 import { isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
+import { getCollectionItems } from "./collections.js";
 import {
+  chainPromise,
+  createPromiseValue,
+  getModeledPromise,
+  isPossiblyUnsettled,
+} from "./promises.js";
+import { regeneratorRuntime } from "./regenerator.js";
+import { getThrowCertainty } from "./thrown.js";
+import {
+  createSymbolValue,
   describeValue,
+  FALSE_VALUE,
   getObjectProperty,
+  getSymbolPropertyKey,
   getTruthiness,
   isKnownList,
   isNullish,
   listValue,
   mapValue,
+  objectFromRecord,
   objectValue,
   omitRestKeys,
   primitiveValue,
+  thrownValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownValue,
@@ -166,7 +181,114 @@ const inherits: HelperImplementation = ([subClass, superClass]) => {
   return UNDEFINED_VALUE;
 };
 
+/**
+ * One `asyncGeneratorStep`: resumes the generator with the settled value, then
+ * resolves the async result on `done` or waits on the yielded promise, as
+ * `Promise.resolve(value).then(_next, _throw)` does.
+ */
+const stepAsyncGenerator = (
+  generator: StaticValue,
+  settle: { resolve: StaticValue; reject: StaticValue },
+  key: "next" | "throw",
+  arg: StaticValue,
+  tools: StubRenderTools,
+): StaticValue => {
+  const resolveWith = (value: StaticValue): StaticValue => tools.call(settle.resolve, [value]);
+  if (generator.kind !== "object") {
+    return resolveWith(unknownValue(`async body over ${describeValue(generator)}`));
+  }
+  const result = tools.call(getObjectProperty(generator, key), [arg], generator);
+  const certainty = getThrowCertainty(result);
+  if (certainty === "always") {
+    return tools.call(settle.reject, [
+      result.kind === "unknown" && result.thrown ? result.thrown : result,
+    ]);
+  }
+  if (certainty === "maybe") return resolveWith(unknownValue("async step that may throw"));
+  if (result.kind !== "object") {
+    return resolveWith(unknownValue(`async step yielding ${describeValue(result)}`));
+  }
+  const value = getObjectProperty(result, "value");
+  const isDone = getTruthiness(getObjectProperty(result, "done"));
+  if (isDone === null) return resolveWith(unknownValue("async step whose completion is uncertain"));
+  if (isDone) return resolveWith(value);
+  const next = nativeFunction("_next", ([settled], nextTools) =>
+    stepAsyncGenerator(generator, settle, "next", settled ?? UNDEFINED_VALUE, nextTools),
+  );
+  const rethrow = nativeFunction("_throw", ([reason], throwTools) =>
+    stepAsyncGenerator(generator, settle, "throw", reason ?? UNDEFINED_VALUE, throwTools),
+  );
+  const awaited = getModeledPromise(value);
+  if (awaited) {
+    chainPromise(awaited, { onFulfilled: next, onRejected: rethrow, onFinally: null }, tools, null);
+  } else if (isPossiblyUnsettled(value)) {
+    tools.callDeferred(next, [value]);
+  } else {
+    tools.queueMicrotask(() => tools.call(next, [value]));
+  }
+  return UNDEFINED_VALUE;
+};
+
+/** `_asyncToGenerator(fn)`: an async function whose body is the generator `fn` returns. */
+const asyncToGenerator: HelperImplementation = ([generatorFunction]) =>
+  generatorFunction
+    ? {
+        kind: "native-function",
+        name: "_asyncToGenerator",
+        call: (args, tools) =>
+          createPromiseValue(
+            nativeFunction("executor", ([resolve, reject], executorTools) =>
+              stepAsyncGenerator(
+                executorTools.call(generatorFunction, args),
+                { resolve: resolve ?? UNDEFINED_VALUE, reject: reject ?? UNDEFINED_VALUE },
+                "next",
+                UNDEFINED_VALUE,
+                executorTools,
+              ),
+            ),
+            tools,
+            null,
+          ),
+      }
+    : UNDEFINED_VALUE;
+
+const ITERATOR_POSITION_KEY = getSymbolPropertyKey(createSymbolValue("position"));
+
+/** `_createForOfIteratorHelper(iterable)`: the `{ s, n, e, f }` stepper a lowered `for..of` drives. */
+const createForOfIteratorHelper: HelperImplementation = ([iterable]) => {
+  if (!iterable) return unknownValue("for..of over nothing");
+  const items =
+    iterable.kind === "primitive" && typeof iterable.value === "string"
+      ? listValue([...iterable.value].map(primitiveValue))
+      : (getCollectionItems(iterable) ?? iterable);
+  if (!isKnownList(items)) return unknownValue(`for..of over ${describeValue(iterable)}`);
+  const noop = nativeFunction("noop", () => UNDEFINED_VALUE);
+  const iterator = objectFromRecord({
+    [ITERATOR_POSITION_KEY]: primitiveValue(0),
+    s: noop,
+    n: nativeFunction("n", (_args, tools) => {
+      const position = getObjectProperty(iterator, ITERATOR_POSITION_KEY);
+      if (position.kind !== "primitive" || typeof position.value !== "number") {
+        return unknownValue("for..of step at an uncertain position");
+      }
+      if (position.value >= items.items.length) return objectFromRecord({ done: TRUE_VALUE });
+      tools.setProperty(iterator, ITERATOR_POSITION_KEY, primitiveValue(position.value + 1));
+      return objectFromRecord({ done: FALSE_VALUE, value: items.items[position.value] });
+    }),
+    e: nativeFunction("e", ([error]) =>
+      thrownValue("for..of body throws", error ?? UNDEFINED_VALUE),
+    ),
+    f: noop,
+  });
+  return iterator;
+};
+
 const HELPERS: Record<string, HelperImplementation> = {
+  regeneratorRuntime: () => regeneratorRuntime(),
+  asyncToGenerator,
+  _async_to_generator: asyncToGenerator,
+  createForOfIteratorHelper,
+  _create_for_of_iterator_helper: createForOfIteratorHelper,
   typeof: typeOf,
   _type_of: typeOf,
   interopRequireDefault,
@@ -287,8 +409,9 @@ export const getCompilerHelper = (
   packageName: string,
   specifier: string,
   importedName: string,
-): StaticNativeFunctionValue | null => {
+): StaticValue | null => {
   if (!isCompilerHelperPackage(packageName)) return null;
+  if (specifier === `${packageName}/regenerator`) return regeneratorRuntime();
   const name = getHelperName(packageName, specifier, importedName);
   const implementation = HELPERS[name];
   if (!implementation) return null;

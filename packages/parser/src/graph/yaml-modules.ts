@@ -32,5 +32,10 @@ export const createYamlSourceTransforms = (rootDirectory: string): SourceTransfo
       return null;
     }
   };
-  return YAML_EXTENSIONS.map((extension) => ({ extension, transform }));
+  return [
+    {
+      appliesTo: (extension, _lang, query) => YAML_EXTENSIONS.includes(extension) && query === null,
+      transform,
+    },
+  ];
 };

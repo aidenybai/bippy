@@ -7,7 +7,7 @@ const APP = join(import.meta.dirname, "fixtures/webpack-require-context");
 
 describe("webpack require.context", () => {
   it("enumerates the directory at build time and loads each request's module", async () => {
-    const renderer = createStaticRenderer({
+    const renderer = await createStaticRenderer({
       rootDirectory: APP,
       tsconfigPath: join(APP, "tsconfig.json"),
     });

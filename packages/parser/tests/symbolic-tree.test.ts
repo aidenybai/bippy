@@ -80,7 +80,7 @@ const itemsRepeat = (
 });
 
 const renderFixture = async (name: string) => {
-  const renderer = createStaticRenderer({
+  const renderer = await createStaticRenderer({
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
   });

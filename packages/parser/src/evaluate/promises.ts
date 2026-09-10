@@ -102,7 +102,7 @@ export const isAwaitDeferred = (operand: StaticValue, awaited: StaticValue): boo
   !getModeledPromise(operand)?.settled && isPossiblyUnsettled(awaited);
 
 /** A value the analysis cannot see settle: it may be a promise pending outside the analysis. */
-const isPossiblyUnsettled = (value: StaticValue): boolean =>
+export const isPossiblyUnsettled = (value: StaticValue): boolean =>
   (value.kind === "unknown" && !isThrownOutcome(value)) ||
   value.kind === "external" ||
   (value.kind === "branch" && value.alternatives.some(isPossiblyUnsettled));

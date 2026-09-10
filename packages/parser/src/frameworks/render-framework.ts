@@ -8,6 +8,7 @@ import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
 import {
   createReactRouterModel,
+  REACT_ROUTER_VITE_PLUGINS,
   renderReactRouterRoute,
   type ReactRouterModel,
 } from "./react-router.js";
@@ -48,14 +49,18 @@ export interface FrameworkRenderer {
  * `app/`. Framework models are built per render, so nothing they hold survives
  * from one render into the next.
  */
-export const createFrameworkRenderer = (
+export const createFrameworkRenderer = async (
   target: FrameworkRenderTarget,
   rendererOptions: StaticRendererOptions,
-): FrameworkRenderer => {
-  const renderer = createStaticRenderer({
+): Promise<FrameworkRenderer> => {
+  const renderer = await createStaticRenderer({
     ...rendererOptions,
     route: target.route,
     serverComponents: target.framework === "next-app" ? true : rendererOptions.serverComponents,
+    modeledVitePlugins:
+      target.framework === "react-router"
+        ? REACT_ROUTER_VITE_PLUGINS
+        : rendererOptions.modeledVitePlugins,
   });
   return {
     render: (decisions) => {
@@ -67,10 +72,10 @@ export const createFrameworkRenderer = (
   };
 };
 
-export const renderFrameworkTarget = (
+export const renderFrameworkTarget = async (
   target: FrameworkRenderTarget,
   rendererOptions: StaticRendererOptions,
-): Promise<StaticRenderResult> => createFrameworkRenderer(target, rendererOptions).render();
+): Promise<StaticRenderResult> => (await createFrameworkRenderer(target, rendererOptions)).render();
 
 interface RoutedRenderer {
   renderer: StaticRenderer;
@@ -141,7 +146,7 @@ const renderTarget = (
   }
 };
 
-const renderRootComponent = (
+const renderRootComponent = async (
   target: FrameworkRenderTarget,
   renderer: StaticRenderer,
 ): Promise<StaticRenderResult> => {

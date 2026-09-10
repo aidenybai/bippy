@@ -174,7 +174,7 @@ describe("replayEnumeratedStates", () => {
 
   it("cannot correct a replay that leaves decisions open", async () => {
     const fixture = fixtureNamed("ref-interference.tsx");
-    const renderer = createComponentRenderer();
+    const renderer = await createComponentRenderer();
     const run = await runComponentFixture(fixture);
     const derived = compareStaticToRuntime(enumerateStaticStates(run.staticResult), run.runtime);
     expect(derived.report.status).toBe("mismatch");
@@ -193,7 +193,7 @@ describe("replayEnumeratedStates", () => {
   it("marks a matched result unsound when its replay leaves decisions open", async () => {
     const fixture = fixtureNamed("optional-chains.tsx");
     const run = await runComponentFixture(fixture);
-    const renderer = createComponentRenderer();
+    const renderer = await createComponentRenderer();
     const derived = compareStaticToRuntime(enumerateStaticStates(run.staticResult), run.runtime);
     expect(derived.report.status).toBe("exact");
     const replayed = await replayEnumeratedStates(
@@ -214,7 +214,7 @@ describe("replayEnumeratedStates", () => {
   it("bounds the replay and still replays the matched assignment", async () => {
     const fixture = fixtureNamed("optional-chains.tsx");
     const run = await runComponentFixture(fixture);
-    const renderer = createComponentRenderer();
+    const renderer = await createComponentRenderer();
     const derived = compareStaticToRuntime(enumerateStaticStates(run.staticResult), run.runtime);
     const pinnedRenders: number[] = [];
     const replayed = await replayEnumeratedStates(

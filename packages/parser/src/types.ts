@@ -47,15 +47,19 @@ export interface TransformedSource {
 }
 
 /**
- * A bundler loader the app applies to a non-JavaScript file extension,
- * producing the module the bundler links in its place. With `query` it only
- * applies to imports carrying that Vite query (`icon.svg?react`); a plain
- * import of the file stays the asset it is.
+ * A bundler plugin the app configures, producing the module the bundler links
+ * for a file (or for a `?query` import of it) in place of its text. `appliesTo`
+ * picks the imports it sees by extension, by the language the parser reads the
+ * file as (`null` for assets it cannot read itself) and by the import's query
+ * (`react` for `icon.svg?react`, `null` for a plain import).
  */
 export interface SourceTransform {
-  extension: string;
-  query?: string;
-  transform: (filePath: string, sourceText: string) => TransformedSource | null;
+  appliesTo: (extension: string, lang: SourceLanguage | null, query: string | null) => boolean;
+  transform: (
+    filePath: string,
+    sourceText: string,
+    query: string | null,
+  ) => TransformedSource | null;
 }
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
@@ -1101,6 +1105,8 @@ export interface StaticRendererOptions {
   origin?: string;
   /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
   transpiler?: ModuleTranspiler;
+  /** Vite plugins (by name, with their `name:` and `name-` companions) a framework model stands in for; the app's config is resolved without them. */
+  modeledVitePlugins?: readonly string[];
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;

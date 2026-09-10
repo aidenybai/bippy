@@ -1,0 +1,11 @@
+{
+  "name": "fixture-tanstack-router-split",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tanstack/react-router": "1.170.18"
+  },
+  "devDependencies": {
+    "@tanstack/router-plugin": "1.168.23"
+  }
+}

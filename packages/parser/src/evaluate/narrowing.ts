@@ -58,6 +58,26 @@ const getNarrowingTarget = (node: Expression): NarrowingTarget | null => {
   return null;
 };
 
+/**
+ * The targets a `switch` discriminant reads, so each case path sees only the
+ * alternatives its label can match: `x`, `ctx.next`, or both sides of
+ * `ctx.prev = ctx.next`, which compiled generators use to dispatch resumptions.
+ */
+export const getDiscriminantTargets = (node: Expression): NarrowingTarget[] => {
+  if (node.type === "ParenthesizedExpression") return getDiscriminantTargets(node.expression);
+  if (node.type === "AssignmentExpression" && node.operator === "=") {
+    const left =
+      node.left.type === "Identifier" || node.left.type === "MemberExpression"
+        ? getNarrowingTarget(node.left)
+        : null;
+    return [left, getNarrowingTarget(node.right)].filter(
+      (target): target is NarrowingTarget => target !== null,
+    );
+  }
+  const target = getNarrowingTarget(node);
+  return target ? [target] : [];
+};
+
 const describeTarget = (target: NarrowingTarget): string =>
   target.key === null ? target.name : `${target.name}.${target.key}`;
 

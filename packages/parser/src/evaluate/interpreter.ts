@@ -84,6 +84,7 @@ import {
 } from "../react/element-type.js";
 import {
   getExternalMember,
+  getReactApiTypeof,
   isClientOnlyReactApi,
   isReactLikePackage,
   REACT_MEMO_CACHE_SENTINEL_KEY,
@@ -154,7 +155,7 @@ import {
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { createGeneratorValue } from "./generators.js";
-import { getPageLocationMember } from "./page-location.js";
+import { getDocumentBaseUri, getPageLocationMember } from "./page-location.js";
 import { hasExportedName, isClientModule } from "../graph/module-record.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
@@ -174,7 +175,7 @@ import {
   isUnsettableDefineName,
   isWebpackRequireName,
 } from "./bundler-globals.js";
-import { hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
+import { hasIntrinsicMember, hasProperty, OBJECT_PROTOTYPE_METHODS } from "./has-property.js";
 import { getBuiltinWitness, isInstanceOf } from "./instance-of.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
@@ -260,6 +261,7 @@ import { applyClockOperator, TimerQueue } from "./timers.js";
 import { evaluateLoop } from "./loops.js";
 import {
   applyNarrowing,
+  getDiscriminantTargets,
   lookupNarrowingTarget,
   type NarrowingTarget,
   narrowTest,
@@ -515,6 +517,12 @@ const isFunctionOwnOrInheritedKey = (key: string): boolean =>
     ? key === FUNCTION_HAS_INSTANCE_KEY
     : FUNCTION_INSTANCE_KEYS.has(key) || key in Function.prototype;
 
+/** React's own functions are plain functions: only the intrinsic names exist until source defines more. */
+const isReactApiFunctionKey = (key: string): boolean =>
+  isSymbolPropertyKey(key)
+    ? hasIntrinsicMember(Function.prototype, key)
+    : isFunctionOwnOrInheritedKey(key);
+
 /** Methods every callable inherits from `Function.prototype` and `Object.prototype`. */
 const isCallableProtocolKey = (key: string): boolean =>
   key === "call" || key === "apply" || key === "bind" || OBJECT_PROTOTYPE_METHODS.has(key);
@@ -585,6 +593,14 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
 
 interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
+}
+
+/** A fork whose returning paths still await the state the surviving paths end in. */
+interface PendingReturnJoin {
+  journal: HeapJournal;
+  reason: string;
+  location: SourceLocation;
+  preferredPath: number;
 }
 
 const completeBlock: StatementContinuation = () => COMPLETES;
@@ -808,6 +824,10 @@ export class Interpreter {
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
   private readonly windowGlobals = new Map<string, StaticValue>();
+  /** Properties the analyzed code defined on React's own functions (`React.createContext[key] = ...`). */
+  private readonly reactApiProperties = new Map<ReactApi, Map<string, StaticValue>>();
+  /** Properties the analyzed code defined on builtin globals other than the global object (`Array[key] = ...`). */
+  private readonly globalExpandos = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly pageState: CapturedPageState | null;
@@ -821,6 +841,7 @@ export class Interpreter {
   readonly rootRender = new RootRenderState();
   readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
+  private readonly pendingReturnJoins: PendingReturnJoin[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
   private readonly generatorYields: StaticValue[][] = [];
@@ -1074,14 +1095,19 @@ export class Interpreter {
       : this.evaluateModuleExport(module, key, environment);
   }
 
-  /** The exports of a module as an object, for `{ ...m }` / `const { a, ...rest } = m` over a namespace. */
+  /**
+   * The exports of a module as an object, for `{ ...m }` / `Object.keys(m)`
+   * over a namespace. An ESM namespace lists its exports in code-unit order;
+   * a CommonJS `exports` object keeps assignment order.
+   */
   materializeNamespace(module: ModuleRecord, environment: RenderEnvironment | null): StaticValue {
     const { names, complete } = this.graph.collectExportNames(module);
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
+    const orderedNames = module.isCommonJs ? names : [...names].sort();
     return objectValue(
-      names.map((name) => ({
+      orderedNames.map((name) => ({
         kind: "property",
         key: name,
         value: this.evaluateModuleExport(module, name, environment),
@@ -1210,7 +1236,7 @@ export class Interpreter {
     let pendingStatements: Statement[] = [];
     const flushPendingStatements = (): void => {
       if (pendingStatements.length === 0) return;
-      this.evaluateBlock(pendingStatements, context, false);
+      this.evaluateFunctionBlock(pendingStatements, context);
       pendingStatements = [];
     };
     for (const statement of sideEffectStatements) {
@@ -1461,20 +1487,13 @@ export class Interpreter {
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
         target.properties.set(propertyName, value);
         return target;
+      case "react-api":
+        this.setReactApiProperty(target.api, propertyName, value, context);
+        return target;
       case "global": {
-        if (this.getRealm(context.environment).isGlobalAlias(target.name)) {
-          this.windowGlobals.set(
-            propertyName,
-            this.withUncertainAssignment(
-              this.windowGlobals.get(propertyName),
-              value,
-              `window.${propertyName}`,
-              context,
-            ),
-          );
-        }
         const hostDocument = this.getHostDocument(target, context.environment);
         if (hostDocument !== null) setHostDocumentMember(hostDocument, propertyName, value);
+        else this.setGlobalMember(target, propertyName, value, context);
         return target;
       }
       case "regexp":
@@ -1836,8 +1855,13 @@ export class Interpreter {
     const pageLocationMember = realm.hasGlobal("location")
       ? getPageLocationMember(this.origin, this.history.route, hostName)
       : null;
+    const documentBaseUri =
+      hostName === "document.baseURI" && renderEnvironment !== "server"
+        ? getDocumentBaseUri(this.origin, this.history.route, this.hostDocument)
+        : null;
     return (
       pageLocationMember ??
+      documentBaseUri ??
       getBuiltinGlobal(hostName, realm, renderEnvironment === "server" ? null : this.hostDocument, {
         declared: this.processEnvironment,
         renderEnvironment,
@@ -2820,6 +2844,38 @@ export class Interpreter {
     }
   }
 
+  setReactApiProperty(
+    api: ReactApi,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const properties = this.reactApiProperties.get(api) ?? new Map<string, StaticValue>();
+    this.reactApiProperties.set(api, properties);
+    this.mutations.record(0);
+    properties.set(
+      key,
+      this.withUncertainAssignment(properties.get(key), value, `React.${api}.${key}`, context),
+    );
+  }
+
+  setGlobalMember(
+    target: StaticGlobalValue,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ): void {
+    const isGlobalObject = this.getRealm(context.environment).isGlobalAlias(target.name);
+    const properties = isGlobalObject ? this.windowGlobals : this.globalExpandos;
+    const name = isGlobalObject ? `window.${key}` : `${target.name}.${key}`;
+    const propertyKey = isGlobalObject ? key : name;
+    this.mutations.record(0);
+    properties.set(
+      propertyKey,
+      this.withUncertainAssignment(properties.get(propertyKey), value, name, context),
+    );
+  }
+
   assignOwnProperty(target: StaticObjectValue, key: string, value: StaticValue): void {
     if (target.isFrozen) return;
     this.recordHeapMutation(target);
@@ -3139,11 +3195,15 @@ export class Interpreter {
         if (CONTEXT_OWN_KEYS.has(key)) return unknownValue(`context.${key}`, location);
         return prototypeMember(object, Object.prototype, key);
       case "react-api": {
+        const defined = this.reactApiProperties.get(object.api)?.get(key);
+        if (defined) return defined;
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         if (key === "prototype" && isReactComponentBase(object))
           return getReactBasePrototype(object.api);
         const member = resolveReactApiMember(object.api, key);
         if (member) return member;
+        if (getReactApiTypeof(object.api) === "function" && !isReactApiFunctionKey(key))
+          return UNDEFINED_VALUE;
         return unknownValue(`React.${object.api}.${key}`, location);
       }
       case "external":
@@ -3227,7 +3287,10 @@ export class Interpreter {
           this.getModulePathName(memberName, context) ??
           this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
+        const expando = this.globalExpandos.get(memberName);
+        if (expando) return expando;
         if (this.isAbsentHostMember(object.name, key, context.environment)) return UNDEFINED_VALUE;
+        if (intrinsic !== null && !hasIntrinsicMember(intrinsic, key)) return UNDEFINED_VALUE;
         const isOpenMember =
           !isCallableProtocolKey(key) &&
           this.getRealm(context.environment).hasGlobal(object.name) &&
@@ -3741,9 +3804,26 @@ export class Interpreter {
             location,
           );
     }
-    return returned.kind === "object" || returned.kind === "function" || returned.kind === "list"
-      ? returned
-      : instance;
+    return this.getConstructorResult(returned, instance, this.getRealm(context.environment));
+  }
+
+  /** `new` yields the constructor's return value only when it is an object or function. */
+  private getConstructorResult(
+    returned: StaticValue,
+    instance: StaticObjectValue,
+    realm: HostRealm,
+  ): StaticValue {
+    if (returned.kind === "branch") {
+      return mapValue(returned, (alternative) =>
+        this.getConstructorResult(alternative, instance, realm),
+      );
+    }
+    const typeofValue = getTypeofValue(returned, realm);
+    const isObjectLike =
+      typeofValue.kind === "primitive" &&
+      (typeofValue.value === "function" ||
+        (typeofValue.value === "object" && returned.kind !== "primitive"));
+    return isObjectLike ? returned : instance;
   }
 
   /**
@@ -4024,7 +4104,7 @@ export class Interpreter {
     for (const name of getHoistedVarNames(body.body)) {
       if (!scope.bindings.has(name)) declareInScope(scope, name, UNDEFINED_VALUE);
     }
-    const outcome = this.evaluateBlock(body.body, callContext, false);
+    const outcome = this.evaluateFunctionBlock(body.body, callContext);
     return outcomeToReturnValue(outcome, location);
   }
 
@@ -4054,7 +4134,7 @@ export class Interpreter {
       compiled.name,
     );
     declareInScope(scope, compiled.name, classValue);
-    this.evaluateBlock(compiled.setup, wrapperContext, false);
+    this.evaluateFunctionBlock(compiled.setup, wrapperContext);
     return classValue;
   }
 
@@ -4543,7 +4623,7 @@ export class Interpreter {
       journal.endPath();
       restoreScopes(entrySnapshot);
       journal.endPath();
-      this.heapJournals.pop();
+      this.removeHeapJournal(journal);
       const preferredPath = isLikelyRun ? 0 : 1;
       const predicate = createPathPredicate(reason, location);
       journal.join(reason, location, preferredPath, predicate, isRepeated);
@@ -4561,16 +4641,74 @@ export class Interpreter {
   widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
+    const pendingDepth = this.pendingReturnJoins.length;
     this.heapJournals.push(journal);
     try {
       run();
     } finally {
       const ranSnapshot = snapshotScopes(scope);
+      for (const pending of this.pendingReturnJoins.splice(pendingDepth)) {
+        this.removeHeapJournal(pending.journal);
+      }
       journal.endPath();
-      this.heapJournals.pop();
+      this.removeHeapJournal(journal);
       restoreScopes(entrySnapshot);
       widenMovedBindings(entrySnapshot, ranSnapshot, location);
     }
+  }
+
+  private removeHeapJournal(journal: HeapJournal): void {
+    const index = this.heapJournals.lastIndexOf(journal);
+    if (index !== -1) this.heapJournals.splice(index, 1);
+  }
+
+  /**
+   * When some paths return and the others `break` or `continue`, the loop goes
+   * on from the jumping paths alone; the returning paths keep their heap state
+   * aside until the function they left settles.
+   */
+  private deferReturningPaths(
+    journal: HeapJournal,
+    outcomes: StatementOutcome[],
+    preferredOutcome: number,
+    reason: string,
+    location: SourceLocation,
+  ): boolean {
+    const jumpingPaths = outcomes.flatMap((outcome, index) =>
+      outcome.jump === null ? [] : [index],
+    );
+    const returningPaths = outcomes.flatMap((outcome, index) =>
+      outcome.jump === null ? [index] : [],
+    );
+    if (jumpingPaths.length === 0 || returningPaths.length === 0) return false;
+    const preferredJumping = Math.max(jumpingPaths.indexOf(preferredOutcome), 0);
+    journal.continueFrom(jumpingPaths, reason, location, preferredJumping, null);
+    const preferredReturning = returningPaths.indexOf(preferredOutcome);
+    this.pendingReturnJoins.push({
+      journal,
+      reason,
+      location,
+      preferredPath: preferredReturning === -1 ? returningPaths.length : preferredReturning,
+    });
+    return true;
+  }
+
+  private settlePendingReturns(depth: number): void {
+    for (const pending of this.pendingReturnJoins.splice(depth).reverse()) {
+      this.removeHeapJournal(pending.journal);
+      pending.journal.endPath();
+      pending.journal.join(pending.reason, pending.location, pending.preferredPath, null);
+    }
+  }
+
+  private evaluateFunctionBlock(
+    statements: Statement[],
+    context: EvaluationContext,
+  ): StatementOutcome {
+    const pendingDepth = this.pendingReturnJoins.length;
+    const outcome = this.evaluateBlock(statements, context, false);
+    this.settlePendingReturns(pendingDepth);
+    return outcome;
   }
 
   /**
@@ -4638,8 +4776,8 @@ export class Interpreter {
     if (isMixed) {
       const preferredCompleting = Math.max(completingPaths.indexOf(preferredOutcome), 0);
       journal.continueFrom(completingPaths, reason, location, preferredCompleting, null);
-    } else {
-      this.heapJournals.pop();
+    } else if (!this.deferReturningPaths(journal, outcomes, preferredOutcome, reason, location)) {
+      this.removeHeapJournal(journal);
       journal.join(reason, location, preferredOutcome, predicate);
     }
     if (joinedSnapshots.length > 0) {
@@ -4662,15 +4800,31 @@ export class Interpreter {
     if (context.hooks) context.hooks.cursor = completedHookCursor;
     const rest = proceed(context);
     if (isMixed) {
-      this.heapJournals.pop();
       journal.endPath();
       const preferredJumping = jumpingPaths.indexOf(preferredOutcome);
-      journal.join(
-        reason,
-        location,
-        preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
-        null,
-      );
+      if (isPureReturn(rest)) {
+        journal.continueFrom(
+          jumpingPaths.map((_, index) => index),
+          reason,
+          location,
+          Math.max(preferredJumping, 0),
+          null,
+        );
+        this.pendingReturnJoins.push({
+          journal,
+          reason,
+          location,
+          preferredPath: preferredJumping === -1 ? 0 : 1,
+        });
+      } else {
+        this.removeHeapJournal(journal);
+        journal.join(
+          reason,
+          location,
+          preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
+          null,
+        );
+      }
     }
     const completingPath = completingPaths.length === 1 ? completingPaths[0] : -1;
     const isRestPositional =
@@ -4722,38 +4876,63 @@ export class Interpreter {
         location,
       );
     };
-    let matchIndex = -1;
-    let isDecided = true;
-    for (const [caseIndex, caseValue] of caseValues.entries()) {
-      if (caseValue === null) continue;
-      const verdict = getTruthiness(
-        applyBinaryOperator("===", discriminant, caseValue, this.getRealm(context.environment)),
-      );
-      if (verdict === true) {
-        matchIndex = caseIndex;
-        break;
+    const defaultIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
+    const realm = this.getRealm(context.environment);
+    const getMatchIndex = (value: StaticValue): number | null => {
+      for (const [caseIndex, caseValue] of caseValues.entries()) {
+        if (caseValue === null) continue;
+        const verdict = getTruthiness(applyBinaryOperator("===", value, caseValue, realm));
+        if (verdict === true) return caseIndex;
+        if (verdict === null) return null;
       }
-      if (verdict === null) {
-        isDecided = false;
-        break;
-      }
-    }
-    if (isDecided) {
-      if (matchIndex === -1)
-        matchIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
+      return defaultIndex;
+    };
+    const reason = `switch (${describeValue(discriminant)})`;
+    const matchIndex = getMatchIndex(discriminant);
+    if (matchIndex !== null) {
       return matchIndex === -1 ? proceed(context) : runThenProceed(matchIndex);
     }
-    const hasDefault = statement.cases.some((switchCase) => switchCase.test === null);
-    const branches: StatementContinuation[] = statement.cases.map(
-      (_, caseIndex) => (pathContext) => runFrom(caseIndex, pathContext),
+    const runStart = (startCase: number): StatementContinuation =>
+      startCase === -1 ? () => COMPLETES : (pathContext) => runFrom(startCase, pathContext);
+    const alternativeMatches =
+      discriminant.kind === "branch"
+        ? discriminant.alternatives.map((alternative) => getMatchIndex(alternative))
+        : [];
+    const decidedMatches = alternativeMatches.filter((match): match is number => match !== null);
+    if (discriminant.kind !== "branch" || decidedMatches.length !== alternativeMatches.length) {
+      const branches = statement.cases.map((_, caseIndex) => runStart(caseIndex));
+      if (defaultIndex === -1) branches.push(runStart(-1));
+      return this.forkPaths(branches, context, proceed, reason, location);
+    }
+    const startCases = [...new Set(decidedMatches)];
+    const targets = getDiscriminantTargets(statement.discriminant).filter(
+      (target) => lookupNarrowingTarget(context.scope, target, getObjectProperty) === discriminant,
     );
-    if (!hasDefault) branches.push(() => COMPLETES);
+    const branches = startCases.map((startCase): StatementContinuation => {
+      const matching = discriminant.alternatives.filter(
+        (_, index) => decidedMatches[index] === startCase,
+      );
+      return (pathContext) => {
+        const narrowed = branchValue(matching, discriminant.reason, discriminant.location);
+        for (const target of targets) {
+          applyNarrowing(context.scope, target, narrowed, (object) =>
+            this.journalHeapValue(object),
+          );
+        }
+        return runStart(startCase)(pathContext);
+      };
+    });
+    const isPositional = startCases.length === decidedMatches.length;
     return this.forkPaths(
       branches,
       context,
       proceed,
-      `switch (${describeValue(discriminant)})`,
+      reason,
       location,
+      startCases.indexOf(decidedMatches[discriminant.preferredIndex]),
+      isPositional && discriminant.predicate
+        ? discriminant.predicate
+        : createPathPredicate(reason, location),
     );
   }
 

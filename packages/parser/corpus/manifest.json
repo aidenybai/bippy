@@ -4636,6 +4636,329 @@
           "lodash/*"
         ]
       }
+    },
+    {
+      "id": "fastapi-template",
+      "repository": "https://github.com/fastapi/full-stack-fastapi-template",
+      "revision": "cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+      "description": "Full Stack FastAPI Template frontend login page (React 19 SPA on TanStack Router file routes + TanStack Query + shadcn/ui + react-hook-form, Vite dev server without the FastAPI backend)",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "bun install",
+      "dev": "bun run dev --port 5180",
+      "env": {
+        "VITE_API_URL": "http://localhost:8000"
+      },
+      "url": "http://localhost:5180/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/main.tsx",
+        "aliases": {
+          "@": "src"
+        },
+        "externalPackageAllowList": [
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-router-devtools",
+          "@tanstack/react-query",
+          "@tanstack/react-query-devtools",
+          "radix-ui",
+          "@radix-ui/*",
+          "lucide-react",
+          "next-themes",
+          "sonner",
+          "react-icons"
+        ]
+      }
+    },
+    {
+      "id": "ant-design-pro",
+      "repository": "https://github.com/ant-design/ant-design-pro",
+      "revision": "adfd44085738ca953573a13322c1ba84aca8b9e3",
+      "description": "Ant Design Pro login page (React 19 on Umi Max 4 conventional routing + antd 6 + ProComponents, umi dev server with the repo's mock API)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "setup": ["npx max setup"],
+      "dev": "npx cross-env UMI_ENV=dev PORT=8020 max dev",
+      "url": "http://localhost:8020/user/login",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/.umi/umi.ts",
+        "aliases": {
+          "@": "src",
+          "@@": "src/.umi",
+          "@root": ".",
+          "umi": "src/.umi/exports",
+          "@umijs/max": "src/.umi/exports"
+        },
+        "externalPackageAllowList": [
+          "umi",
+          "@umijs/*",
+          "antd",
+          "@ant-design/*",
+          "antd-style",
+          "rc-*",
+          "@rc-component/*",
+          "react-intl",
+          "@formatjs/*",
+          "intl-messageformat",
+          "react-helmet-async",
+          "react-router",
+          "react-router-dom",
+          "@remix-run/router",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "clsx",
+          "dayjs",
+          "ahooks",
+          "history"
+        ]
+      }
+    },
+    {
+      "id": "hyper",
+      "repository": "https://github.com/vercel/hyper",
+      "revision": "30ec0a2a91de17eeb32dd71998fe8a8ec59f98eb",
+      "description": "Hyper terminal renderer (Electron BrowserWindow, React 18 + react-redux, webpack bundle loaded from app/index.html)",
+      "notes": "Not a web app: lib/index.tsx imports `electron` (webFrame) and drives the UI through an ipcRenderer rpc bridge to node-pty sessions in the main process; the bundle only loads inside the Electron BrowserWindow (app/index.html), there is no browser target to serve. Recorded static-only; `pnpm install --ignore-scripts` skips the Electron download, v8 snapshot and native rebuilds the postinstall needs.",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --ignore-scripts",
+      "dev": "pnpm run dev",
+      "url": "http://localhost:3000/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "lib/index.tsx",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "redux-thunk",
+          "reselect",
+          "seamless-immutable",
+          "clsx",
+          "color",
+          "ms",
+          "uuid",
+          "lodash",
+          "react-use",
+          "styled-jsx",
+          "stylis",
+          "mousetrap",
+          "php-escape-shell",
+          "xterm",
+          "xterm-addon-*",
+          "@react-icons/*"
+        ]
+      },
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000
+    },
+    {
+      "id": "api-platform-admin",
+      "repository": "https://github.com/api-platform/admin",
+      "revision": "ab9239cc0b750ad9339de0bc856031b0da47dc38",
+      "description": "@api-platform/admin library root (react-admin 5 HydraAdmin/OpenApiAdmin, MUI 5); src/index.ts is the package entry",
+      "notes": "Not a runnable app: the repository root is the `@api-platform/admin` library (`src/index.ts` only re-exports components, nothing mounts a root). Its Storybook stories (src/stories) render `<HydraAdmin entrypoint={process.env.ENTRYPOINT}>` against an API Platform backend that has to be built from `api/` with compose.yaml (FrankenPHP + PostgreSQL + Mercure) and the admin only shows resources after fetching the Hydra API documentation from that server. Recorded static-only from the library entry.",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "yarn install --frozen-lockfile --ignore-scripts",
+      "dev": "yarn storybook",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.ts",
+        "externalPackageAllowList": [
+          "react-admin",
+          "ra-*",
+          "@mui/*",
+          "@emotion/*",
+          "react-router",
+          "react-router-dom",
+          "@api-platform/*",
+          "history",
+          "jsonld",
+          "lodash.*",
+          "inflection",
+          "@tanstack/*"
+        ]
+      }
+    },
+    {
+      "id": "whodb",
+      "repository": "https://github.com/clidey/whodb",
+      "revision": "0699737c37b86a700571a7eacdebcb7d89ecdf78",
+      "description": "WhoDB frontend login page (Vite 8 SPA, react-router-dom 7 BrowserRouter, Apollo Client 4, Redux Toolkit + redux-persist, @clidey/ux) proxying /api to the repo's Go backend",
+      "framework": "spa",
+      "workingDirectory": "frontend",
+      "install": "cd frontend && pnpm install --frozen-lockfile && cd ../core && bash \"$BIPPY_CORPUS_SCRIPTS/with-go.sh\" 1.27.0 go build -o ../whodb-server ./cmd/whodb",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/whodb-dev.sh\" 3011",
+      "url": "http://localhost:3011/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/index.tsx",
+        "route": "/login",
+        "defines": {
+          "process.env.NODE_ENV": "development",
+          "__APP_VERSION__": "development",
+          "__WHODB_EDITION__": "ce"
+        },
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "@apollo/client",
+          "@apollo/client/*",
+          "react-redux",
+          "@reduxjs/toolkit",
+          "redux-persist",
+          "redux-persist/*",
+          "@clidey/ux",
+          "@clidey/connparse",
+          "@radix-ui/*",
+          "sonner",
+          "cmdk",
+          "next-themes",
+          "class-variance-authority",
+          "clsx",
+          "classnames",
+          "tailwind-merge",
+          "lucide-react",
+          "@heroicons/react/*",
+          "framer-motion",
+          "posthog-js",
+          "uuid",
+          "lodash"
+        ]
+      }
+    },
+    {
+      "id": "insforge",
+      "repository": "https://github.com/InsForge/InsForge",
+      "revision": "ccb1703242bd1b5ffbc250f0acb866cd36e56ce1",
+      "description": "InsForge self-hosting dashboard login page (Vite 8 SPA host app over the shared @insforge/dashboard package: react-router-dom BrowserRouter, TanStack Query, react-hook-form + zod, i18next, PostHog; /api proxied to a stand-in for the Express backend)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/insforge-dev.sh\" 7141 7140",
+      "url": "http://localhost:7141/dashboard/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "frontend",
+        "entry": "src/main.tsx",
+        "route": "/dashboard/login",
+        "aliases": {
+          "@insforge/dashboard": "../packages/dashboard/src",
+          "#app": "../packages/dashboard/src/app",
+          "#assets": "../packages/dashboard/src/assets",
+          "#components": "../packages/dashboard/src/components",
+          "#features": "../packages/dashboard/src/features",
+          "#layout": "../packages/dashboard/src/layout",
+          "#lib": "../packages/dashboard/src/lib",
+          "#navigation": "../packages/dashboard/src/navigation",
+          "#router": "../packages/dashboard/src/router",
+          "#types": "../packages/dashboard/src/types",
+          "@insforge/shared-schemas": "../packages/shared-schemas/src",
+          "@insforge/ui": "../packages/ui/src"
+        },
+        "externalPackageAllowList": [
+          "@insforge/*",
+          "react-router-dom",
+          "react-router",
+          "@tanstack/react-query",
+          "@tanstack/query-core",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "zod",
+          "i18next",
+          "react-i18next",
+          "lucide-react",
+          "@radix-ui/*",
+          "radix-ui",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+          "posthog-js",
+          "sonner",
+          "next-themes"
+        ]
+      },
+      "notes": "The Express backend needs the ghcr.io/insforge/postgres image plus PostgREST; `corpus/scripts/insforge-api-server.ts` stands in for it on an anonymous visit, answering `/api/auth/admin/sessions/current` and `/api/auth/admin/refresh` with the backend's 401 bodies so `RequireAuth` redirects to `/dashboard/login`, which is captured directly."
+    },
+    {
+      "id": "blinko",
+      "repository": "https://github.com/blinkospace/blinko",
+      "revision": "b2586d03fddb796252f050a96922879bf4a41fad",
+      "description": "Blinko sign-in page (Vite 6 SPA served by the Express + vite-express backend on :1111: react-router-dom BrowserRouter with lazy routes, MobX stores, HeroUI, next-themes, i18next; Prisma over a local PostgreSQL container)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bun install",
+      "setup": ["bash \"$BIPPY_CORPUS_SCRIPTS/blinko-setup.sh\""],
+      "services": ["bash \"$BIPPY_CORPUS_SCRIPTS/postgres.sh\" bippy-blinko-pg 5452 blinko"],
+      "dev": "cd server && bun --env-file ../.env index.ts",
+      "url": "http://localhost:1111/signin",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "app",
+        "entry": "src/main.tsx",
+        "route": "/signin",
+        "aliases": {
+          "@": "./src",
+          "@shared": "../shared"
+        },
+        "externalPackageAllowList": [
+          "react-router-dom",
+          "react-router",
+          "next-themes",
+          "mobx",
+          "mobx-react-lite",
+          "i18next",
+          "react-i18next",
+          "i18next-http-backend",
+          "i18next-browser-languagedetector",
+          "@heroui/*",
+          "@react-aria/*",
+          "@react-stately/*",
+          "@react-types/*"
+        ]
+      },
+      "notes": "Partial. The page mounts two React roots: react-dom for the sign-in form and a @react-three/fiber root for the shader gradient background (ShaderGradientCanvas, three.js WebGL that happy-dom cannot host), so the R3F root is opaque. `AppProvider` (an `observer`) maps `rootStore.providers`, which `initStore` pushes `ToastPlugin` into from a `useEffect`; the MobX model treats observability as transparent, so it never replays that reaction and the static side misses the `<provider key=\"ToastPlugin\">` subtree. `Layout` calls `useTranslation` before its `/signin` early return; `fetch` now serves `public/locales/<lng>/translation.json`, so i18next-http-backend loads real resources and i18next replays its load -> `loaded` -> `changeLanguage` callback cascade across the forks of the detected language (about 18k `hasLanguageSomeTranslations` calls), which exhausts the step budget inside the render and leaves `Layout` unknown. HeroUI's Input/Checkbox/Button/Image run through @react-aria hooks and tailwind-variants slot functions whose props are runtime state (`useInput` focus/hover/filled, `tv()` reducers). framer-motion's `MotionConfig` and react-dev-inspector's `Inspector` are opaque pass-throughs. The `packageManager` field pins bun@1.2.8 but `bun install` resolves the lockfile with the ambient bun."
+    },
+    {
+      "id": "fiora-app",
+      "repository": "https://github.com/yinxin630/fiora",
+      "revision": "d741c006c5a0a5b904dec742ac09dbc51bd7860d",
+      "description": "Fiora mobile client packages/app (Expo SDK 42 / React Native 0.63, react-native-router-flux, native-base, react-redux; App.tsx wraps src/App in the redux Provider)",
+      "notes": "Not a web app: packages/app is Expo/React Native only. Its scripts are `expo start`, `expo build:android`, `expo build:ios`; app.json declares ios/android targets only; the dependencies have react-native and react-native-router-flux but no react-dom or react-native-web, and src/App.tsx renders react-native `View`s and native-base `Root` through react-native-router-flux scenes, so nothing here can be served to a browser. The repository's browser client is the separate packages/web (webpack), outside the requested root. Recorded static-only from App.tsx (`yarn install --ignore-scripts` skips the expo/jest-expo postinstall downloads).",
+      "framework": "spa",
+      "workingDirectory": "packages/app",
+      "install": "cd packages/app && yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "yarn dev:app",
+      "url": "http://localhost:19006/",
+      "static": {
+        "rootDirectory": "packages/app",
+        "entry": "App.tsx",
+        "tsconfig": "tsconfig.json",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux",
+          "react-native-router-flux",
+          "native-base"
+        ]
+      }
     }
   ]
 }

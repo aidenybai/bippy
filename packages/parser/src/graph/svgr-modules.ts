@@ -134,8 +134,11 @@ const createTransform = (rootDirectory: string, rule: SvgrLoaderRule): SourceTra
   }
   if (!loadConfig || !transform) return null;
   return {
-    extension: SVG_EXTENSION,
-    query: rule.query,
+    appliesTo: (extension, _lang, query) =>
+      extension === SVG_EXTENSION &&
+      (rule.query === undefined
+        ? query === null
+        : query !== null && new URLSearchParams(query).has(rule.query)),
     transform: (filePath, sourceText) =>
       transformSvg(
         loadConfig,

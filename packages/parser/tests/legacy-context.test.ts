@@ -7,7 +7,7 @@ const APP = join(import.meta.dirname, "fixtures/legacy-context");
 
 describe("legacy context under React 16", () => {
   it("threads childContextTypes/getChildContext through the tree and masks by contextTypes", async () => {
-    const renderer = createStaticRenderer({
+    const renderer = await createStaticRenderer({
       rootDirectory: APP,
       tsconfigPath: join(APP, "tsconfig.json"),
     });

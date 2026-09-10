@@ -383,7 +383,7 @@ export const runCorpusEntry = async (
     runtime: BrowserCaptureResult | null,
   ): Promise<StaticRun> => {
     log("static render");
-    const renderer = createCorpusEntryRenderer(entry, directory, runtime?.observations);
+    const renderer = await createCorpusEntryRenderer(entry, directory, runtime?.observations);
     staticResult = await renderer.render();
     result.static = {
       stats: staticResult.stats,

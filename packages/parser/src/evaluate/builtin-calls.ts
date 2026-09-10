@@ -134,6 +134,7 @@ import {
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
+  getPropertyName,
   getPreferredTruthiness,
   getSymbolPropertyKey,
   getTruthiness,
@@ -528,6 +529,12 @@ const defineOwnProperty = (
         return;
       }
       target.properties.set(key, value);
+      return;
+    case "react-api":
+      interpreter.setReactApiProperty(target.api, key, value, context);
+      return;
+    case "global":
+      interpreter.setGlobalMember(target, key, value, context);
       return;
     case "list": {
       if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
@@ -1115,7 +1122,10 @@ const callGlobal = (
         if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
-      const target = first ?? UNDEFINED_VALUE;
+      const target =
+        first?.kind === "namespace"
+          ? interpreter.materializeNamespace(first.module, context.environment)
+          : (first ?? UNDEFINED_VALUE);
       return getOwnEnumerableEntries(target)
         ? inspect(target)
         : mapValue(distributeObjectBranches(target), inspect);
@@ -1278,10 +1288,11 @@ const callGlobal = (
     }
     case "Object.defineProperty": {
       const descriptor = args[2];
-      if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
+      const key = second ? getPropertyName(second) : null;
+      if (!first || key === null || descriptor?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
+      defineOwnProperty(interpreter, first, key, descriptor, context, location);
       return first;
     }
     case "Object.getOwnPropertyDescriptors":
@@ -1472,8 +1483,9 @@ const MAX_ARRAY_LIKE_LENGTH = 1_000;
 const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
     return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
-  if (length.kind === "unknown" || length.kind === "branch")
-    return unknownValue("Array() with a dynamic length", location);
+  if (length.kind === "branch")
+    return mapValue(length, (alternative) => arrayOfLength(alternative, location));
+  if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
   if (length.kind !== "primitive" || typeof length.value !== "number") return listValue([length]);
   if (!Number.isInteger(length.value) || length.value < 0) {
     return thrownValue(
@@ -2384,8 +2396,17 @@ export const evaluateBuiltinCall = (
     switch (name) {
       case "filter":
         return isCallable(first) ? filterList(interpreter, receiver, first, context) : receiver;
-      case "slice":
-        return sliceList(receiver, first, second, location);
+      case "slice": {
+        const sliceBetween = (
+          startBound: StaticValue | undefined,
+          endBound: StaticValue | undefined,
+        ): StaticValue => sliceList(receiver, startBound, endBound, location);
+        if (first && isPrimitiveBranch(first))
+          return mapValue(first, (startBound) => sliceBetween(startBound, second));
+        if (second && isPrimitiveBranch(second))
+          return mapValue(second, (endBound) => sliceBetween(first, endBound));
+        return sliceBetween(first, second);
+      }
       case "concat": {
         return listValue([
           ...receiver.items,

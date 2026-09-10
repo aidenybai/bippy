@@ -99,6 +99,89 @@ export const loopInvariantStaysExact = () => {
 };
 `;
 
+const CONTROL_FLOW_SOURCE = `
+declare const isWide: boolean;
+
+export const switchOnBranch = () => {
+  const step = isWide ? 8 : 4;
+  switch (step) {
+    case 0:
+      return "zero";
+    case 4:
+      return "four";
+    case 8:
+      return "eight";
+    case 10:
+      return "ten";
+  }
+  return "none";
+};
+
+export const switchWithSharedCase = () => {
+  const step = isWide ? 8 : 4;
+  switch (step) {
+    case 4:
+    case 8:
+      return "either";
+    default:
+      return "neither";
+  }
+};
+
+const machine = { prev: 0, next: 0 };
+
+export const returnOrBreakInSwitchLoop = () => {
+  machine.next = 0;
+  let spinCount = 0;
+  while (1) {
+    spinCount += 1;
+    if (spinCount > 20) return "spun out";
+    switch ((machine.prev = machine.next)) {
+      case 0:
+        if (!isWide) {
+          machine.next = 8;
+          break;
+        }
+        machine.next = 4;
+        return "beacon";
+      case 4:
+        return "unreachable";
+      case 8:
+        machine.next = 10;
+        return "fetch";
+      case 10:
+        return "done";
+    }
+  }
+  return "fell out";
+};
+
+export const machineStateAfterLoop = () => {
+  returnOrBreakInSwitchLoop();
+  return machine.next;
+};
+
+export const returnOrContinueInLoop = () => {
+  const state = { next: 0 };
+  let spinCount = 0;
+  while (1) {
+    spinCount += 1;
+    if (spinCount > 20) return "spun out";
+    if (state.next === 0) {
+      if (!isWide) {
+        state.next = 8;
+        continue;
+      }
+      state.next = 4;
+      return "beacon";
+    }
+    if (state.next === 8) return "fetch";
+    return "unreachable " + state.next;
+  }
+  return "fell out";
+};
+`;
+
 const COLLECTION_SOURCE = `
 declare const salt: string;
 
@@ -119,6 +202,17 @@ export const largeDynamicMapKeepsDecidedMembership = () => {
 };
 `;
 
+const EXTERNAL_SOURCE = `
+import { cache } from "opaque-store";
+declare const isWide: boolean;
+
+export const sameMemberOfEitherLookup = () =>
+  isWide ? cache.get("a").error : cache.get("b").error;
+
+export const differentMembersOfEitherLookup = () =>
+  isWide ? cache.get("a").error : cache.get("b").result;
+`;
+
 const evaluateExports = async (
   source: string,
   exportNames: string[],
@@ -127,7 +221,7 @@ const evaluateExports = async (
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-evaluate-"));
   const entryFile = join(rootDirectory, "module.ts");
   writeFileSync(entryFile, source);
-  const renderer = createStaticRenderer({ rootDirectory, maxSteps });
+  const renderer = await createStaticRenderer({ rootDirectory, maxSteps });
   const described: Record<string, string> = {};
   await renderer.renderWith((interpreter) => {
     const module = renderer.loadModule(entryFile);
@@ -221,6 +315,46 @@ describe("external namespaces", () => {
     expect(results.knownExport).toBe("true");
     expect(results.interopMarker).toBe("true");
     expect(results.unknownExport).toMatch(/^<boolean: /);
+  });
+});
+
+describe("switch dispatch and mixed loop exits", () => {
+  it("runs only the cases a branched discriminant can reach", async () => {
+    const results = await evaluateExports(CONTROL_FLOW_SOURCE, [
+      "switchOnBranch",
+      "switchWithSharedCase",
+    ]);
+    expect(results).toEqual({
+      switchOnBranch: 'branch("eight" | "four")',
+      switchWithSharedCase: '"either"',
+    });
+  });
+
+  it("keeps returning paths apart from the paths that go on looping", async () => {
+    const results = await evaluateExports(CONTROL_FLOW_SOURCE, [
+      "returnOrBreakInSwitchLoop",
+      "machineStateAfterLoop",
+      "returnOrContinueInLoop",
+    ]);
+    expect(results).toEqual({
+      returnOrBreakInSwitchLoop: 'branch("beacon" | "fetch")',
+      machineStateAfterLoop: "branch(4 | 10)",
+      returnOrContinueInLoop: 'branch("beacon" | "fetch")',
+    });
+  });
+});
+
+describe("values derived from external packages", () => {
+  it("keeps one alternative for derivations analysis cannot tell apart", async () => {
+    const results = await evaluateExports(EXTERNAL_SOURCE, [
+      "sameMemberOfEitherLookup",
+      "differentMembersOfEitherLookup",
+    ]);
+    expect(results).toEqual({
+      sameMemberOfEitherLookup: "opaque-store#cache.get().error",
+      differentMembersOfEitherLookup:
+        "branch(opaque-store#cache.get().error | opaque-store#cache.get().result)",
+    });
   });
 });
 

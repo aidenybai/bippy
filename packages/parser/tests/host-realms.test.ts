@@ -26,7 +26,7 @@ const evaluateExports = async (
   writeFileSync(path.join(rootDirectory, "package.json"), '{"name":"host-realms","type":"module"}');
   const entryPath = path.join(rootDirectory, "src/probe.ts");
   writeFileSync(entryPath, source);
-  const renderer = createStaticRenderer({ rootDirectory, hostPlatform });
+  const renderer = await createStaticRenderer({ rootDirectory, hostPlatform });
   const described: EvaluatedExports = {};
   await renderer.renderWith((interpreter) => {
     const module = renderer.loadModule(entryPath);

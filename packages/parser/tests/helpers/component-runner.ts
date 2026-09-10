@@ -119,7 +119,7 @@ export const runComponentFixture = async (
   if (!isComponentModule(loaded)) {
     throw new Error(`${fixture.name} has no default export component`);
   }
-  const renderer = createComponentRenderer();
+  const renderer = await createComponentRenderer();
   const staticResult = await renderer.renderComponent(fixture.filePath);
   const runtime = await runFromProjectRoot(() => mountComponent(loaded.default));
   const comparison = await replayEnumeratedStates(

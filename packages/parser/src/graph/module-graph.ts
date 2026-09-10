@@ -124,9 +124,8 @@ export class ModuleGraph {
   private getAssetModule(filePath: string, specifier: string): ModuleRecord | null {
     const queryIndex = specifier.indexOf("?");
     if (queryIndex === -1) return null;
-    for (const [query] of new URLSearchParams(specifier.slice(queryIndex + 1))) {
-      const file = this.sourceFileCache.readQueried(filePath, query);
-      if (!file) continue;
+    const file = this.sourceFileCache.readQueried(filePath, specifier.slice(queryIndex + 1));
+    if (file) {
       const cached = this.modules.get(file.filePath);
       if (cached) return cached;
       const record = createModuleRecord(file);

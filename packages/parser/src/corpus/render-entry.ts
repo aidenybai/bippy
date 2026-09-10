@@ -42,7 +42,7 @@ export const createCorpusEntryRenderer = (
   entry: CorpusEntry,
   cloneDirectory: string,
   observations?: RuntimeObservations,
-): FrameworkRenderer =>
+): Promise<FrameworkRenderer> =>
   createFrameworkRenderer(
     {
       framework: entry.framework,
@@ -54,9 +54,9 @@ export const createCorpusEntryRenderer = (
     rendererOptionsForEntry(entry, cloneDirectory, observations),
   );
 
-export const renderCorpusEntry = (
+export const renderCorpusEntry = async (
   entry: CorpusEntry,
   cloneDirectory: string,
   observations?: RuntimeObservations,
 ): Promise<StaticRenderResult> =>
-  createCorpusEntryRenderer(entry, cloneDirectory, observations).render();
+  (await createCorpusEntryRenderer(entry, cloneDirectory, observations)).render();

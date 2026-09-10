@@ -187,6 +187,9 @@ const VITE_CONFIG_MODULE_NAMES = [
 const VITE_PACKAGE = "vite";
 const REMIX_DEV_PACKAGE = "@remix-run/dev";
 const REMIX_VITE_PLUGIN_NAME = "remix";
+const REACT_ROUTER_VITE_PLUGIN_NAME = "react-router";
+/** The `@remix-run/dev` and `@react-router/dev` plugin sets, which this model stands in for. */
+export const REACT_ROUTER_VITE_PLUGINS = [REMIX_VITE_PLUGIN_NAME, REACT_ROUTER_VITE_PLUGIN_NAME];
 const MDX_ROUTE_MODULE = /\.mdx?$/;
 const REMIX_CONFIG_PREFIX = "remix.config.";
 

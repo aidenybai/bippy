@@ -2,8 +2,10 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { transformAsync } from "@babel/core";
 import { transform as transformSvgr } from "@svgr/core";
-import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { defineConfig, type Plugin, type PluginOption, transformWithOxc } from "vite-plus";
 import { z } from "zod";
+import { flatYamlPlugin } from "./tests/fixtures/vite-yaml-plugin/yaml-plugin.js";
 
 const parserDirectory = import.meta.dirname;
 const bippyDirectory = resolve(parserDirectory, "../bippy");
@@ -163,6 +165,17 @@ const fixtureJsxInJsPlugin = (): Plugin => ({
   },
 });
 
+const fixtureTanStackRouterPlugin = (): PluginOption => {
+  const fixtureDirectory = join(fixturesDirectory, "tanstack-router-split");
+  return tanstackRouter({
+    target: "react",
+    autoCodeSplitting: true,
+    codeSplittingOptions: { addHmr: false },
+    routesDirectory: join(fixtureDirectory, "src/routes"),
+    generatedRouteTree: join(fixtureDirectory, "src/routeTree.gen.ts"),
+  });
+};
+
 export default defineConfig({
   root: parserDirectory,
   plugins: [
@@ -171,6 +184,8 @@ export default defineConfig({
     fixtureViteSvgrPlugin(),
     fixtureStylexPlugin(),
     fixtureJsxInJsPlugin(),
+    fixtureTanStackRouterPlugin(),
+    flatYamlPlugin(),
   ],
   resolve: {
     alias: [{ find: /^bippy$/, replacement: resolve(bippyDirectory, "src/index.ts") }],
