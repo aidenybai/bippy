@@ -136,18 +136,20 @@ const emptyTreeStats: SymbolicTreeStats = {
   wildcards: 0,
 };
 
-const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z.object({
-  states: z.number(),
-  stateCount: z.number().default(0),
-  clusters: z.number().default(0),
-  tree: symbolicTreeStatsSchema.default(emptyTreeStats),
-  matchedState: z
-    .object({ index: z.number().nullable(), conditions: z.array(stateConditionSchema) })
-    .nullable(),
-  closestState: z.object({ index: z.number(), divergence: divergenceSchema }).nullable(),
-  omitted: z.object({ total: z.number(), omissions: z.array(stateOmissionSchema) }).nullable(),
-  coverage: guardCoverageSchema.default(emptyCoverage),
-});
+const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z
+  .object({
+    states: z.number(),
+    stateCount: z.number().optional(),
+    clusters: z.number().default(0),
+    tree: symbolicTreeStatsSchema.default(emptyTreeStats),
+    matchedState: z
+      .object({ index: z.number().nullable(), conditions: z.array(stateConditionSchema) })
+      .nullable(),
+    closestState: z.object({ index: z.number(), divergence: divergenceSchema }).nullable(),
+    omitted: z.object({ total: z.number(), omissions: z.array(stateOmissionSchema) }).nullable(),
+    coverage: guardCoverageSchema.default(emptyCoverage),
+  })
+  .transform((summary) => ({ ...summary, stateCount: summary.stateCount ?? summary.states }));
 
 const stateReplaySummarySchema: z.ZodType<StateReplaySummary> = z.object({
   states: z.number(),

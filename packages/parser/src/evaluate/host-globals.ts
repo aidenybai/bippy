@@ -85,6 +85,9 @@ export const getLanguageCounterpart = (shared: object): object | null => {
   return languageObjects.get(shared) ?? null;
 };
 
+/** Whether the engine itself provides a global of this name; `WebAssembly` is one TypeScript declares only for hosts. */
+export const isEngineGlobal = (name: string): boolean => Object.hasOwn(LANGUAGE_GLOBAL, name);
+
 const isLanguageGlobal = (name: string, value: unknown): boolean =>
   loadHostRealm("ecmascript").hasGlobal(name) && Reflect.get(LANGUAGE_GLOBAL, name) === value;
 

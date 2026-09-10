@@ -1,6 +1,8 @@
 import path from "node:path";
 import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
+import { isEngineGlobal } from "../evaluate/host-globals.js";
+import { loadHostRealm } from "../host/host-realm.js";
 import type { SourceLanguage, TransformedSource } from "../types.js";
 
 const functionSchema = z.custom<(...args: unknown[]) => unknown>(
@@ -295,18 +297,30 @@ export const loadFromDirectory = async <Loaded>(
   }
 };
 
-// HACK: bundled build tooling picks its Node or browser module shims by whether
-// `document` exists, and a DOM is installed here for materialization; the
-// tooling is a Node program, so it loads without one.
+// HACK: bundled build tooling picks its Node or browser module shims from
+// `window`/`document`, and a DOM is installed here for materialization; the
+// tooling is a Node program, so every global Node lacks is absent while it loads.
 export const loadWithoutDom = async <Loaded>(
   load: () => Loaded | Promise<Loaded>,
 ): Promise<Loaded> => {
-  const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
-  if (!documentDescriptor?.configurable) return load();
-  Reflect.deleteProperty(globalThis, "document");
+  const nodeRealm = loadHostRealm("node");
+  const removedGlobals = new Map<string, PropertyDescriptor>();
+  for (const name of Object.getOwnPropertyNames(globalThis)) {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
+    if (
+      descriptor?.configurable !== true ||
+      isEngineGlobal(name) ||
+      !nodeRealm.isForeignGlobal(name)
+    )
+      continue;
+    removedGlobals.set(name, descriptor);
+    Reflect.deleteProperty(globalThis, name);
+  }
   try {
     return await load();
   } finally {
-    Object.defineProperty(globalThis, "document", documentDescriptor);
+    for (const [name, descriptor] of removedGlobals) {
+      Object.defineProperty(globalThis, name, descriptor);
+    }
   }
 };
