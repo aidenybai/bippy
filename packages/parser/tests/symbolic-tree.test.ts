@@ -316,6 +316,18 @@ const nested = (): PatternNode[] => [
 ];
 
 describe("guard solver", () => {
+  it("rejects contradictory truthiness even when bigint is an admitted type", () => {
+    const guard = truthyGuard(variable("value"));
+    expect(solveGuards([guard, negateGuard(guard)])).toBeNull();
+    expect(
+      solveGuards([
+        equalsGuard({ ...variable("value"), measure: "typeof" }, "bigint"),
+        guard,
+        negateGuard(guard),
+      ]),
+    ).toBeNull();
+  });
+
   const notGuard = (operand: Guard): Guard => ({ kind: "not", operand });
   const sectionGuard = (section: string): Guard =>
     orGuard([

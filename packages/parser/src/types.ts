@@ -10,6 +10,7 @@ import type {
 } from "oxc-parser";
 import type { TypeScriptDeclaration } from "./evaluate/typescript-declarations.js";
 import type { RuntimeSnapshot } from "./harness/snapshot.js";
+import type { GuardContext } from "./harness/symbolic-tree.js";
 import type { HostDocument } from "./host/host-document.js";
 import type { HostPlatform, HostRealm } from "./host/host-realm.js";
 import type { WorkTag } from "./work-tags.js";
@@ -1104,6 +1105,7 @@ export interface StaticRenderResult {
   snapshot: RuntimeSnapshot;
   /** Every tree committed while effects, state updates and timers settled, in commit order. */
   commits: RuntimeSnapshot[];
+  commitCauses?: GuardContext[];
   diagnostics: Diagnostic[];
   stats: StaticRenderStats;
 }

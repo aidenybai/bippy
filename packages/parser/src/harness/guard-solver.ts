@@ -288,6 +288,7 @@ const groupByProjection = (literals: Literal[]): Map<string, ProjectionLiterals>
 };
 
 const pickValue = (group: ProjectionLiterals): VariableWitness | null => {
+  if (wantsFalsy(group.value) && wantsTruthy(group.value)) return null;
   const types = admittedTypes(group.typeof);
   if (types === null) return null;
   const variable: SymbolicVariable = { ...group.variable, measure: "value" };

@@ -12,7 +12,19 @@ import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
-import { normalizePredicate, parseSymbolicPredicate } from "../harness/symbolic-tree.js";
+import {
+  andGuard,
+  combineGuardContexts,
+  compareGuard,
+  constantGuard,
+  type GuardContext,
+  normalizePredicate,
+  parseSymbolicCardinality,
+  parseSymbolicPredicate,
+  predicateGuards,
+  serializeSymbolicPredicate,
+} from "../harness/symbolic-tree.js";
+import { CommitCauses } from "./commit-causes.js";
 import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
@@ -163,6 +175,8 @@ interface MaterializeContext {
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
   isStrictMode: boolean;
   decisions: DecisionScope;
+  decisionPath: string;
+  cause: GuardContext;
   /** The unmasked legacy context (`contextStackCursor`) at this position; null once React dropped legacy context. */
   legacyContext: StaticValue | null;
 }
@@ -268,6 +282,7 @@ interface MaterializedElement {
 
 /** The callback React sees for one static ref; its identity is what decides whether React re-attaches. */
 interface HostRefBinding {
+  cause: GuardContext;
   owner: EvaluationContext;
   location: SourceLocation | null;
   callback: (node: Element | null) => void;
@@ -548,6 +563,7 @@ export class Materializer {
   private readonly serverComponents: boolean;
   private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
+  readonly commitCauses = new CommitCauses();
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
   private isPassivePhasePending = false;
   /** A state update was raised in the layout phase, so React renders it synchronously. */
@@ -577,7 +593,7 @@ export class Materializer {
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private readonly suspendedMarker: ComponentType;
   private portalContainer: Element | null = null;
-  private readonly hostRefs = new WeakMap<StaticValue, HostRefBinding>();
+  private readonly hostRefs = new WeakMap<StaticValue, Map<string, HostRefBinding>>();
   private readonly materializedElements = new WeakMap<StaticElementValue, MaterializedElement[]>();
   private readonly serverRenders = new WeakMap<StaticElementValue, StaticValue>();
   private readonly pinnedDecisions: PinnedDecisions | null;
@@ -589,6 +605,7 @@ export class Materializer {
     options: MaterializerOptions = {},
   ) {
     this.interpreter = interpreter;
+    interpreter.timers.bindTask = (task) => this.commitCauses.bindTask(task);
     this.runtime = runtime;
     this.host = host;
     this.pinnedDecisions = options.decisions ?? null;
@@ -616,6 +633,8 @@ export class Materializer {
       owner: null,
       isStrictMode: false,
       decisions: createDecisionScope(this.pinnedDecisions),
+      decisionPath: "",
+      cause: { guard: constantGuard(true), inputs: [] },
       legacyContext: this.interpreter.hasLegacyContext ? objectFromRecord({}) : null,
     };
   }
@@ -742,16 +761,33 @@ export class Materializer {
     const iterationScopes = pinned
       ? pinned.iterations.map((pins) => createDecisionScope(pins))
       : [createDecisionScope(null)];
+    const cardinality = getRepeatCardinality(value);
+    const parsed = cardinality === null ? null : parseSymbolicCardinality(cardinality);
+    const cause = parsed
+      ? combineGuardContexts(
+          [context.cause, { guard: compareGuard(parsed.variable, ">", 0), inputs: parsed.inputs }],
+          andGuard,
+        )
+      : context.cause;
     return this.runtime.react.createElement(RepeatMarker, {
       location,
       decision,
       sharesScope: false,
-      cardinality: getRepeatCardinality(value),
+      cardinality,
       countMin: value.count?.min ?? 0,
       countMax: value.count?.max ?? null,
       pinnedCount: pinned ? pinned.iterations.length : null,
-      children: iterationScopes.map((decisions) =>
-        this.toNode(value.item, { ...context, decisions }, false),
+      children: iterationScopes.map((decisions, iteration) =>
+        this.toNode(
+          value.item,
+          {
+            ...context,
+            decisions,
+            decisionPath: toDecisionId(`${context.decisionPath}/${decision}@${iteration}`),
+            cause,
+          },
+          false,
+        ),
       ),
     });
   }
@@ -775,14 +811,36 @@ export class Materializer {
     const { createElement } = this.runtime.react;
     const formattedLocation = location && formatSourceLocation(location);
     const decision = this.claimDecision(context, formattedLocation ?? reason);
+    const inputId = `decision:${toDecisionId(`${context.decisionPath}/${decision}`)}`;
+    predicate ??= serializeSymbolicPredicate({
+      formula: null,
+      choice: { input: inputId, path: [], measure: "choice" },
+      inputs: [{ id: inputId, label: reason, source: "unknown", location: formattedLocation }],
+    });
+    const parsed = parseSymbolicPredicate(predicate);
+    const guards = predicateGuards(parsed, alternatives.length);
     const pinned = context.decisions.pins?.branches.get(decision) ?? null;
     const pinnedIndex = pinned && selectPinnedAlternative(pinned, predicate, alternatives.length);
-    const alternativeContext = (pins: PinnedDecisions | null): MaterializeContext =>
-      sharesScope ? context : { ...context, decisions: createDecisionScope(pins) };
+    const alternativeContext = (
+      pins: PinnedDecisions | null,
+      index: number,
+    ): MaterializeContext => ({
+      ...context,
+      decisions: sharesScope ? context.decisions : createDecisionScope(pins),
+      decisionPath: toDecisionId(`${context.decisionPath}/${decision}|${index}`),
+      cause: combineGuardContexts(
+        [context.cause, { guard: guards[index], inputs: parsed.inputs }],
+        andGuard,
+      ),
+    });
+    const renderAlternative = (index: number, pins: PinnedDecisions | null): ReactNode => {
+      const inside = alternativeContext(pins, index);
+      return this.commitCauses.run(inside.cause, () => alternatives[index](inside));
+    };
     const rendered =
       pinned === null || pinnedIndex === null
-        ? alternatives.map((alternative) => alternative(alternativeContext(null)))
-        : [alternatives[pinnedIndex](alternativeContext(pinned.inside))];
+        ? alternatives.map((_, index) => renderAlternative(index, null))
+        : [renderAlternative(pinnedIndex, pinned.inside)];
     return createElement(BranchMarker, {
       reason,
       location: formattedLocation,
@@ -1282,25 +1340,31 @@ export class Materializer {
   ): ((node: Element | null) => void) | undefined {
     const owner = context.owner;
     if (!owner || !isNonNullish(ref)) return undefined;
-    const existing = this.hostRefs.get(ref);
+    const bindings = this.hostRefs.get(ref) ?? new Map<string, HostRefBinding>();
+    const existing = bindings.get(context.decisionPath);
     if (existing) {
+      existing.cause = context.cause;
       existing.owner = owner;
       existing.location = location;
       return existing.callback;
     }
     const binding: HostRefBinding = {
+      cause: context.cause,
       owner,
       location,
       callback: (node) => {
-        this.interpreter.assignRef(
-          ref,
-          this.hostInstanceValue(node),
-          binding.owner,
-          binding.location,
+        this.commitCauses.run(binding.cause, () =>
+          this.interpreter.assignRef(
+            ref,
+            this.hostInstanceValue(node),
+            binding.owner,
+            binding.location,
+          ),
         );
       },
     };
-    this.hostRefs.set(ref, binding);
+    bindings.set(context.decisionPath, binding);
+    this.hostRefs.set(ref, bindings);
     return binding.callback;
   }
 
@@ -1330,7 +1394,7 @@ export class Materializer {
     if (!proxy) {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
-          this.renderInsideComponent(() =>
+          this.renderInsideComponent(input.context, () =>
             this.renderFunctionProxy(input, component, (props) => {
               const legacyContext = input.context.legacyContext;
               const contextArgument =
@@ -1366,7 +1430,7 @@ export class Materializer {
         caught: StaticThrowError | null,
         host: ClassProxyHost,
       ): ReactNode =>
-        this.renderInsideComponent(() =>
+        this.renderInsideComponent(input.context, () =>
           this.renderClassProxy(input, component, classValue, caught, host),
         );
       class ClassProxy extends this.runtime.react.Component<ProxyProps, ErrorBoundaryState> {
@@ -1458,7 +1522,7 @@ export class Materializer {
         setFunctionName(
           // React warns unless a forwardRef render function declares (props, ref).
           ({ input }: ProxyProps, _forwardedRef: unknown): ReactNode =>
-            this.renderInsideComponent(() =>
+            this.renderInsideComponent(input.context, () =>
               this.renderFunctionProxy(input, component, (props) => {
                 const ref = input.ref ?? NULL_VALUE;
                 return type.renderArguments
@@ -1544,7 +1608,7 @@ export class Materializer {
     if (!proxy) {
       const render = setFunctionName(
         ({ input }: ProxyProps): ReactNode =>
-          this.renderInsideComponent(() => this.renderStub(input, stub)),
+          this.renderInsideComponent(input.context, () => this.renderStub(input, stub)),
         getStubDisplayName(stub),
       );
       proxy = this.stubProxyForTag(stub.tag, render);
@@ -1573,10 +1637,11 @@ export class Materializer {
     }
   }
 
-  private renderInsideComponent<T>(render: () => T): T {
+  private renderInsideComponent<T>(context: MaterializeContext, render: () => T): T {
+    this.commitCauses.beginRender(context.cause);
     this.isInsideComponentRender = true;
     try {
-      return render();
+      return this.commitCauses.run(context.cause, render);
     } finally {
       this.isInsideComponentRender = false;
     }
@@ -1589,9 +1654,22 @@ export class Materializer {
     const rendered = stub.render(
       props,
       this.stubTools(context, location, {
-        useState: (initial) => useState(initial),
+        useState: (initial) => {
+          const [current, setCurrent] = useState(initial);
+          const committed = useRef(current);
+          committed.current = current;
+          const setter = useRef((next: StaticValue) => {
+            if (next !== committed.current) this.commitCauses.schedule();
+            setCurrent(next);
+          });
+          return [current, setter.current];
+        },
         useRef: (initial) => useRef(initial),
-        useEffect: (effect, dependencies) => useEffect(effect, dependencies),
+        useEffect: (effect, dependencies) =>
+          useEffect(() => {
+            const cleanup = this.commitCauses.run(context.cause, effect);
+            return cleanup ? () => this.commitCauses.run(context.cause, cleanup) : undefined;
+          }, dependencies),
       }),
     );
     return this.finishRender(rendered, { ...context, depth: context.depth + 1 }, input);
@@ -1778,11 +1856,15 @@ export class Materializer {
     // raised it: synchronous from the layout phase, default otherwise. Like
     // `nestedUpdateCount`, only chains of such updates count toward the limit,
     // so a timer task starts a new one.
+    frame.recordUpdateCause = () => {
+      if (!frame.isFrozen) this.commitCauses.schedule();
+    };
     frame.requestRender = () => {
       if (frame.isFrozen) return;
       this.interpreter.mutations.record(0);
       if (this.interpreter.timers.isFlushing) instance.passCount = 0;
       if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
+      this.commitCauses.schedule();
       rerender();
     };
     const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
@@ -1812,7 +1894,9 @@ export class Materializer {
     const withEffectCall = (run: (call: EffectCall) => void): void => {
       const { componentContext } = rendered;
       if (!componentContext) return;
-      run((callback) => this.interpreter.callValue(callback, [], componentContext, location));
+      this.commitCauses.run(rendered.context.cause, () =>
+        run((callback) => this.interpreter.callValue(callback, [], componentContext, location)),
+      );
     };
     const mount = (isLayout: boolean): void => {
       instance.committed = rendered;

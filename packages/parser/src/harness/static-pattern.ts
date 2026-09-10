@@ -3,10 +3,12 @@ import { KEY_PLACEHOLDER, MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import {
   collectGuardVariables,
+  constantGuard,
   ELEMENT_SEGMENT,
   formatPredicate,
   formatVariable,
   type Guard,
+  type GuardContext,
   type InputVariable,
   mapGuardVariables,
   normalizePredicate,
@@ -221,6 +223,13 @@ class PatternReader {
     return fibers.flatMap((fiber) => this.toPatternNode(fiber));
   }
 
+  readCause(cause: GuardContext): GuardContext {
+    return {
+      guard: mapGuardVariables(cause.guard, (variable) => this.renameVariable(variable)),
+      inputs: this.renameInputs(cause.inputs),
+    };
+  }
+
   /** Inputs are numbered by first use in document order, so equal trees read to equal patterns whatever the evaluator numbered them. */
   private renameInput(id: string): string {
     let renamed = this.inputIds.get(id);
@@ -361,11 +370,29 @@ class PatternReader {
  * Decision variables come from the markers, so equal trees read to equal
  * patterns.
  */
-export const snapshotToPattern = (fibers: RuntimeFiberSnapshot[]): PatternNode[] => {
-  const nodes = new PatternReader().read(fibers);
+const scopePatternInputs = (nodes: PatternNode[]): PatternNode[] => {
   const totals = new Map<string, number>();
   countInputUses(nodes, totals);
   return scopeRepeatInputs(nodes, totals);
+};
+
+export const snapshotToPattern = (fibers: RuntimeFiberSnapshot[]): PatternNode[] =>
+  scopePatternInputs(new PatternReader().read(fibers));
+
+export interface GuardedPatternCommit {
+  tree: PatternNode[];
+  cause: GuardContext;
+}
+
+export const getRenderCommits = (result: StaticRenderResult): GuardedPatternCommit[] => {
+  const reader = new PatternReader();
+  const snapshots = result.commits.length > 0 ? result.commits : [result.snapshot];
+  return snapshots.map((snapshot, index) => ({
+    tree: scopePatternInputs(reader.read(snapshot.roots.flatMap((root) => root.children))),
+    cause: reader.readCause(
+      result.commitCauses?.[index] ?? { guard: constantGuard(true), inputs: [] },
+    ),
+  }));
 };
 
 export const getRenderPattern = (result: StaticRenderResult): PatternNode[] =>

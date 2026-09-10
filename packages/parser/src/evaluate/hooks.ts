@@ -52,6 +52,7 @@ export interface HookFrame {
   isFrozen: boolean;
   doublesHookFactories: boolean;
   requestRender: (() => void) | null;
+  recordUpdateCause: (() => void) | null;
   recordUpdate: ((cell: StateCell) => void) | null;
 }
 
@@ -70,6 +71,7 @@ export const createHookFrame = (
   isFrozen: false,
   doublesHookFactories,
   requestRender: null,
+  recordUpdateCause: null,
   recordUpdate,
 });
 
@@ -186,7 +188,12 @@ export const queueStateUpdate = (
     if (cell.deferred.some((deferred) => isSameHookValue(deferred, value))) return;
     cell.deferred.push(value);
   } else {
-    if (isSameHookValue(value, cell.next ?? cell.current)) return;
+    if (isSameHookValue(value, cell.next ?? cell.current)) {
+      if (cell.next !== null && !frame.isRendering && !isSameHookValue(value, cell.current)) {
+        frame.recordUpdateCause?.();
+      }
+      return;
+    }
     frame.recordUpdate?.(cell);
     cell.next = value;
   }

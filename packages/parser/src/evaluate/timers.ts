@@ -41,6 +41,7 @@ export class TimerQueue {
   private deferredDepth = 0;
   isClockSettled = false;
   isFlushing = false;
+  bindTask = (task: () => void): (() => void) => task;
 
   constructor(
     private readonly settleMs = DEFAULT_SETTLE_MS,
@@ -78,7 +79,7 @@ export class TimerQueue {
 
   schedule(handle: StaticValue, task: () => void, delayMs = 0): void {
     const scheduledBy = this.clockTask;
-    this.tasks.push(() => {
+    this.enqueue(() => {
       if (this.clearedHandles.has(handle)) return;
       this.clockTask = { scheduledBy, delayMs };
       task();
@@ -87,7 +88,7 @@ export class TimerQueue {
 
   /** Queues `task` for the next round, like a short timer that cannot be cleared. */
   enqueue(task: () => void): void {
-    this.tasks.push(task);
+    this.tasks.push(this.bindTask(task));
   }
 
   clear(handle: StaticValue | undefined): void {
@@ -99,7 +100,7 @@ export class TimerQueue {
   }
 
   queueMicrotask(task: () => void): void {
-    this.microtasks.push(task);
+    this.microtasks.push(this.bindTask(task));
   }
 
   hasMicrotasks(): boolean {

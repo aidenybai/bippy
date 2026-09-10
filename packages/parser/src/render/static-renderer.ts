@@ -315,9 +315,11 @@ export class StaticRenderer {
     const materializer = this.createMaterializer(interpreter, runtime, host);
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
-    const mounted = await mountNode(runtime, host, rootNode, interpreter.timers, () =>
-      materializer.resetElementBudget(),
-    );
+    const commitCauses: NonNullable<StaticRenderResult["commitCauses"]> = [];
+    const mounted = await mountNode(runtime, host, rootNode, interpreter.timers, () => {
+      materializer.resetElementBudget();
+      commitCauses.push(materializer.commitCauses.commit());
+    });
     if (interpreter.timers.hasTasks()) {
       interpreter.report(
         "timers-unsettled",
@@ -337,6 +339,7 @@ export class StaticRenderer {
     return {
       snapshot: mounted.snapshot,
       commits: mounted.commits,
+      commitCauses: commitCauses.slice(0, mounted.commits.length),
       diagnostics: [...interpreter.diagnostics],
       stats: computeRenderStats(mounted.snapshot, this.graph.loadedModuleCount),
     };

@@ -18,6 +18,7 @@ import {
 import {
   flattenPatternFibers,
   getSnapshotRootChildren,
+  getRenderCommits,
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
@@ -148,16 +149,16 @@ export const enumerateStaticStates = (
       "React failed to render the materialized tree",
     );
   }
-  const commits = (staticResult.commits.length > 0 ? staticResult.commits : [staticResult.snapshot])
-    .map((commit) => flattenPatternFibers(getSnapshotRootChildren(commit), transparent))
-    .filter((pattern) => pattern.length > 0);
+  const commits = getRenderCommits(staticResult)
+    .map((commit) => ({ ...commit, tree: flattenPatternFibers(commit.tree, transparent) }))
+    .filter((commit) => commit.tree.length > 0);
   const anchor = options.anchor ?? null;
   const anchoredCommits =
     anchor === null
       ? commits
-      : commits.flatMap((pattern) => {
-          const staticAnchor = findPatternFiber(pattern, (fiber) => fiber.name === anchor);
-          return staticAnchor ? [[staticAnchor]] : [];
+      : commits.flatMap((commit) => {
+          const staticAnchor = findPatternFiber(commit.tree, (fiber) => fiber.name === anchor);
+          return staticAnchor ? [{ ...commit, tree: [staticAnchor] }] : [];
         });
   if (anchoredCommits.length === 0) {
     return unresolvedStateSpace(
@@ -168,11 +169,18 @@ export const enumerateStaticStates = (
         : `anchor <${anchor}> not found in static tree`,
     );
   }
-  return Object.assign(enumerateStateSpace(anchoredCommits, budget), {
-    staticPattern: anchoredCommits[anchoredCommits.length - 1],
-    anchor,
-    unresolved: null,
-  });
+  return Object.assign(
+    enumerateStateSpace(
+      anchoredCommits.map((commit) => commit.tree),
+      budget,
+      anchoredCommits.map((commit) => commit.cause),
+    ),
+    {
+      staticPattern: anchoredCommits[anchoredCommits.length - 1].tree,
+      anchor,
+      unresolved: null,
+    },
+  );
 };
 
 const skipped = (

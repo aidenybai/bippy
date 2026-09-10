@@ -21,12 +21,17 @@ import {
   type CommitStateSpace,
   type GuardCluster,
 } from "./enumerate-states.js";
-import { GuardSolver } from "./guard-solver.js";
+import { areGuardsSatisfiable, GuardSolver } from "./guard-solver.js";
 import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
 import type { GuardCoverage } from "./guard-coverage.js";
 import {
   buildSymbolicTree,
+  combineGuardContexts,
+  constantGuard,
   decisionGuard,
+  type Guard,
+  type GuardContext,
+  orGuard,
   type SymbolicTree,
   type SymbolicTreeStats,
 } from "./symbolic-tree.js";
@@ -145,14 +150,23 @@ export const DEFAULT_STATE_SPACE_BUDGET: StateSpaceBudget = { maxStates: 256, ma
 /** Omissions kept verbatim in a summary; the rest are only counted in `total`. */
 const MAX_SUMMARIZED_OMISSIONS = 32;
 
-const dedupeCommits = (commits: PatternNode[][]): PatternNode[][] => {
-  const seen = new Set<string>();
-  return commits.filter((pattern) => {
+const dedupeCommits = (commits: PatternNode[][], causes: GuardContext[]): SymbolicTree => {
+  const indices = new Map<string, number>();
+  const patterns: PatternNode[][] = [];
+  const mergedCauses: GuardContext[] = [];
+  commits.forEach((pattern, index) => {
     const key = JSON.stringify(pattern);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+    const existing = indices.get(key);
+    const cause = causes[index] ?? { guard: constantGuard(true), inputs: [] };
+    if (existing !== undefined) {
+      mergedCauses[existing] = combineGuardContexts([mergedCauses[existing], cause], orGuard);
+      return;
+    }
+    indices.set(key, patterns.length);
+    patterns.push(pattern);
+    mergedCauses.push(cause);
   });
+  return buildSymbolicTree(patterns, mergedCauses);
 };
 
 class DerivedStateSpace implements StaticStateSpace {
@@ -198,8 +212,8 @@ class DerivedStateSpace implements StaticStateSpace {
 export const enumerateStateSpace = (
   commitPatterns: PatternNode[][],
   budget: StateSpaceBudget = DEFAULT_STATE_SPACE_BUDGET,
-): StaticStateSpace =>
-  new DerivedStateSpace(buildSymbolicTree(dedupeCommits(commitPatterns)), budget);
+  causes: GuardContext[] = [],
+): StaticStateSpace => new DerivedStateSpace(dedupeCommits(commitPatterns, causes), budget);
 
 export interface MatchedState {
   /** Index into `states`; null when the state lies beyond the budget or in the omitted part of the space. */
@@ -422,10 +436,11 @@ const classifyMatch = (
 };
 
 /** Lets the comparer take only decisions whose guards are jointly satisfiable. */
-const guardedDecisions = (): DecisionConstraint => {
+const guardedDecisions = (guard: Guard): DecisionConstraint => {
   const solver = new GuardSolver();
+  const isReachable = solver.push(guard);
   return {
-    decide: (node, choice) => solver.push(decisionGuard(node, choice)),
+    decide: (node, choice) => isReachable && solver.push(decisionGuard(node, choice)),
     release: () => solver.pop(),
   };
 };
@@ -452,8 +467,25 @@ export const matchStateSpace = (
   for (let commit = stateSpace.commits.length - 1; commit >= 0; commit--) {
     const match = matchPatternToRuntime(stateSpace.commits[commit], runtime, {
       ...options,
-      constraint: guardedDecisions(),
+      constraint: guardedDecisions(stateSpace.tree.commits[commit].guard),
     });
+    if (!areGuardsSatisfiable([stateSpace.tree.commits[commit].guard])) {
+      match.report = {
+        ...match.report,
+        status: "mismatch",
+        matchedFibers: 0,
+        matchedText: 0,
+        coverage: 0,
+        strictCoverage: 0,
+        divergence: {
+          path: `commit ${commit + 1}`,
+          expected: "satisfiable commit guard",
+          actual: "unreachable commit",
+        },
+      };
+      match.decisions = [];
+      match.failure = null;
+    }
     if (match.report.status !== "mismatch") {
       const transition = stateSpace.commitStates[commit].transition;
       const decided = match.decisions.map(toCondition);
