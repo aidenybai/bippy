@@ -37,7 +37,7 @@ const namedPluginSchema = z.object({ name: z.string() });
 type ViteResolvedConfig = z.infer<typeof resolvedConfigSchema>;
 
 /** The plugins an app's own Vite config file contributes, resolved as `vite dev` resolves them. */
-export interface ViteUserPlugins {
+interface ViteUserPlugins {
   readonly rootDirectory: string;
   readonly config: ViteResolvedConfig;
   readonly plugins: VitePlugin[];

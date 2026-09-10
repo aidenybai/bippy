@@ -157,7 +157,7 @@ const isClassifiedMember = (
  * Members whose runtime value depends on layout, which the static document
  * never performs: every box is zero-sized here, so reading one is a guess.
  */
-export const LAYOUT_MEMBERS = classifyMembers([
+const LAYOUT_MEMBERS = classifyMembers([
   "Element.getBoundingClientRect",
   "Element.getClientRects",
   "Element.checkVisibility",
@@ -183,7 +183,7 @@ export const LAYOUT_MEMBERS = classifyMembers([
 ]);
 
 /** Canvas members whose value comes from rasterizing, which the static document only answers with placeholders. */
-export const RASTER_MEMBERS = classifyMembers([
+const RASTER_MEMBERS = classifyMembers([
   "HTMLCanvasElement.getContext",
   "HTMLCanvasElement.toDataURL",
   "HTMLCanvasElement.toBlob",
@@ -752,7 +752,7 @@ export const constructNativeObject = (
  * roots and node factories, parser facts, and the focus and selection nothing
  * has touched. Page state (`cookie`, `title`, `readyState`) stays modeled.
  */
-export const DOCUMENT_SERVED_MEMBERS = new Set([
+const DOCUMENT_SERVED_MEMBERS = new Set([
   "body",
   "documentElement",
   "head",
@@ -780,7 +780,7 @@ export const DOCUMENT_SERVED_MEMBERS = new Set([
 ]);
 
 /** `Window` members the host window answers for a freshly loaded page at the configured viewport. */
-export const WINDOW_SERVED_MEMBERS = new Set([
+const WINDOW_SERVED_MEMBERS = new Set([
   "getSelection",
   "innerWidth",
   "innerHeight",
