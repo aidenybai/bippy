@@ -208,6 +208,21 @@ describe("loadReactRuntime", () => {
     expect(typeof runtime.react.useState).toBe("function");
   });
 
+  it("uses the harness's React when the app's React predates async act", async () => {
+    const rootDirectory = createRootDirectory();
+    writePackage(rootDirectory, "react", REACT_STUB.replace(STUB_REACT_VERSION, "16.8.6"));
+    writePackage(rootDirectory, "react-dom", LEGACY_REACT_DOM_STUB);
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+    });
+    expect(runtime.version).toBe(harnessReactVersion);
+    const container = document.createElement("div");
+    const root = runtime.createRoot(container, rootCallbacks);
+    await runtime.act(() => root.render("tree"));
+    expect(container.textContent).toBe("tree");
+  });
+
   it("uses the harness's React when the app resolves none", async () => {
     const rootDirectory = createRootDirectory();
     const runtime = await loadReactRuntime({

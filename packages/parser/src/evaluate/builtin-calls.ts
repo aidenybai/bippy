@@ -122,6 +122,7 @@ import type { Interpreter } from "./interpreter.js";
 import {
   accessorEntry,
   branchValue,
+  countAlternatives,
   createSymbolValue,
   describeValue,
   distributeObjectBranches,
@@ -711,7 +712,11 @@ const hasOwnProperty = (
       const isClassMember =
         receiver.kind === "class" &&
         receiver.body.members.some(
-          (member) => member.isStatic && member.kind !== "field" && member.key === propertyName,
+          (member) =>
+            member.isStatic &&
+            member.kind !== "field" &&
+            member.kind !== "static-block" &&
+            member.key === propertyName,
         );
       return primitiveValue(name === "hasOwnProperty" || !isClassMember);
     }
@@ -1632,6 +1637,7 @@ const filterIndefiniteItem = (
       predicate,
       [inner, unknownPrimitiveValue("number", "index"), list],
       context,
+      item.kind === "repeat",
     ),
   );
   if (verdict === false) return null;
@@ -1710,12 +1716,16 @@ const joinListItems = (
   );
 };
 
-/** A callback run for an item that may occur zero or many times: its side effects are uncertain. */
+/**
+ * A callback run for an item that may be absent (`mayRepeat` false) or occur
+ * any number of times (`mayRepeat` true): its side effects are uncertain.
+ */
 export const callUncertainCallback = (
   interpreter: Interpreter,
   callback: CallableValue,
   args: StaticValue[],
   context: EvaluationContext,
+  mayRepeat: boolean,
 ): StaticValue =>
   interpreter.runMaybe(
     callback.kind === "function" ? callback.scope : context.scope,
@@ -1723,7 +1733,7 @@ export const callUncertainCallback = (
     "callback for an item that may not occur",
     null,
     true,
-    true,
+    mayRepeat,
   );
 
 const sortListItems = (
@@ -1763,6 +1773,13 @@ const toGuardLiteral = (value: StaticValue): GuardLiteral | undefined =>
 const isGuardLiteral = (literal: GuardLiteral | undefined): literal is GuardLiteral =>
   literal !== undefined;
 
+/** An item of an iterable the analysis cannot enumerate: opaque, with any count. */
+const getOpaqueItem = (receiver: StaticValue): StaticValue =>
+  recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
+    kind: "element",
+    list: receiver,
+  });
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -1782,6 +1799,7 @@ const mapList = (
                 callback,
                 [item.item, unknownPrimitiveValue("number", "index"), receiver],
                 context,
+                true,
               ),
               location: item.location,
               count: item.count,
@@ -1796,6 +1814,7 @@ const mapList = (
               callback,
               [item.value, unknownPrimitiveValue("number", "index"), receiver],
               context,
+              false,
             ),
             item.reason,
             item.location,
@@ -1819,6 +1838,7 @@ const mapList = (
           callback,
           [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
           context,
+          true,
         ),
         location: receiver.location,
         count: receiver.count,
@@ -1832,15 +1852,9 @@ const mapList = (
       item: callUncertainCallback(
         interpreter,
         callback,
-        [
-          recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
-            kind: "element",
-            list: receiver,
-          }),
-          unknownPrimitiveValue("number", "index"),
-          receiver,
-        ],
+        [getOpaqueItem(receiver), unknownPrimitiveValue("number", "index"), receiver],
         context,
+        true,
       ),
       location,
     },
@@ -2362,15 +2376,21 @@ export const evaluateBuiltinCall = (
               receiver,
             ],
             context,
+            item.kind === "repeat",
           );
         } else callCallback(interpreter, first, [item, primitiveValue(index), receiver], context);
       });
-    } else if (receiver.kind === "repeat") {
+    } else {
       callUncertainCallback(
         interpreter,
         first,
-        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        [
+          receiver.kind === "repeat" ? receiver.item : getOpaqueItem(receiver),
+          unknownPrimitiveValue("number", "index"),
+          receiver,
+        ],
         context,
+        true,
       );
     }
     return UNDEFINED_VALUE;
@@ -2573,21 +2593,53 @@ export const evaluateBuiltinCall = (
       }
       case "reduce":
       case "reduceRight": {
-        if (!isCallable(first) || !hasDefiniteItems(receiver)) {
+        if (
+          !isCallable(first) ||
+          receiver.kind !== "list" ||
+          receiver.items.some((item) => item.kind === "repeat")
+        ) {
           return unknownValue(`${name}()`, location);
         }
         const items = name === "reduce" ? receiver.items : [...receiver.items].reverse();
         let accumulator = args.length > 1 ? second : items[0];
         if (!accumulator) return unknownValue(`${name}() of an empty list`, location);
+        if (accumulator.kind === "optional") {
+          return unknownValue(`${name}() of a list whose first item may be absent`, location);
+        }
         const startIndex = args.length > 1 ? 0 : 1;
+        let isIndexKnown = true;
         for (let index = startIndex; index < items.length; index++) {
+          const item = items[index];
           const sourceIndex = name === "reduce" ? index : items.length - 1 - index;
-          accumulator = callCallback(
+          const indexValue = isIndexKnown
+            ? primitiveValue(sourceIndex)
+            : unknownPrimitiveValue("number", "index");
+          if (item.kind !== "optional") {
+            accumulator = callCallback(
+              interpreter,
+              first,
+              [accumulator, item, indexValue, receiver],
+              context,
+            );
+            continue;
+          }
+          isIndexKnown = false;
+          const reduced = callUncertainCallback(
             interpreter,
             first,
-            [accumulator, items[index], primitiveValue(sourceIndex), receiver],
+            [accumulator, item.value, indexValue, receiver],
             context,
+            false,
           );
+          accumulator = branchValue(
+            [reduced, accumulator],
+            item.reason,
+            item.location,
+            item.isAbsentPreferred ? 1 : 0,
+          );
+          if (countAlternatives(accumulator) > MAX_DISTRIBUTED_ALTERNATIVES) {
+            return unknownValue(`${name}() over many items that may be absent`, location);
+          }
         }
         return accumulator;
       }

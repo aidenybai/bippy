@@ -4959,6 +4959,237 @@
           "native-base"
         ]
       }
+    },
+    {
+      "id": "texlyre",
+      "repository": "https://github.com/TeXlyre/texlyre",
+      "revision": "421c1fdcab56bd4c939675d22b60ce76e70337f3",
+      "description": "TeXlyre local-first LaTeX/Typst editor (Vite SPA under the /texlyre/ base path, React 19 StrictMode, IndexedDB auth, Yjs)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx pnpm@10.20.0 install --frozen-lockfile",
+      "setup": [
+        "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx pnpm@10.20.0 run generate:plugins"
+      ],
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 24 npx pnpm@10.20.0 dev",
+      "url": "http://localhost:5173/texlyre/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "defines": {
+          "__BASE_PATH__": "/texlyre",
+          "__APP_VERSION__": "0.12.1",
+          "process.env.npm_package_version": "0.12.1"
+        }
+      },
+      "notes": "package.json requires Node >= 24 and pnpm 10.20; `src/plugins/index.ts` is generated from `extras/` by `generate:plugins` (only the build scripts run it), so setup runs it before the dev server; `predev` (scripts/setup-assets.cjs) copies pdf.js/mathlive/typst assets into public/ and downloads the busytex, grammar and font bundles from GitHub releases, so the first dev start needs network. vite.config.ts defines `__BASE_PATH__` and `__APP_VERSION__` from the package version."
+    },
+    {
+      "id": "unforget",
+      "repository": "https://github.com/computing-den/unforget",
+      "revision": "9b5e84dfb17e796d76f741665c29a13cb217129b",
+      "description": "Unforget login page (React 18 SPA with a hand-rolled history router, esbuild client bundle served by the app's own Express server through barefront)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "setup": [
+        "printf 'PORT=3007\\nNODE_ENV=development\\nDISABLE_CACHE=1\\nLOG_TO_CONSOLE=1\\nFORWARD_LOGS_TO_SERVER=0\\nFORWARD_ERRORS_TO_SERVER=0\\n' > .env",
+        "mkdir -p private"
+      ],
+      "dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" npx barefront dev",
+      "url": "http://localhost:3007/login",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/client/index.tsx",
+        "envFiles": [".env"],
+        "envPrefix": ""
+      },
+      "notes": "The server refuses to start without the six environment variables validateEnvVars.ts lists, so the setup step writes the `.env` that both the Express server and the esbuild `define` map read. esbuild.config.mjs inlines every `process.env` variable of the dev process (hence the empty `envPrefix`), and rejects values that are not JS literals, so the dev server runs with a clean environment. The SQLite database is created on first start; `/login` renders without a user."
+    },
+    {
+      "id": "noteworthy",
+      "repository": "https://github.com/guyariely/noteworthy",
+      "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
+      "description": "Noteworthy notes app (react-scripts 3 SPA, React 16.8 hooks, draft-js editor, react-modal)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 12 npm install --no-audit --no-fund",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 12 npm start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3008",
+        "SKIP_PREFLIGHT_CHECK": "true"
+      },
+      "url": "http://localhost:3008/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "react-modal",
+          "@fortawesome/react-fontawesome",
+          "@fortawesome/fontawesome-svg-core",
+          "@fortawesome/free-solid-svg-icons",
+          "draft-js"
+        ]
+      },
+      "notes": "Pinned to node-sass 4.12.0, whose newest prebuilt binding targets Node 12, so install and dev run under Node 12."
+    },
+    {
+      "id": "dazzle",
+      "repository": "https://github.com/Raathigesh/dazzle",
+      "revision": "c4a46f62401a0a1b34efa3a45134a6a34a121770",
+      "description": "react-dazzle sample dashboard (webpack 4 dev server, React 16 class components, react-dnd v2 DragDropContext, react-modal)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npm install --no-audit --no-fund",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 16 npx cross-env NODE_ENV=development webpack-dev-server --mode development --port 8093",
+      "url": "http://localhost:8093/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "sample/index.js",
+        "defines": {
+          "__DEV__": true,
+          "__PRODUCTION__": false
+        },
+        "externalPackageAllowList": [
+          "react-dnd",
+          "react-dnd-html5-backend",
+          "dnd-core",
+          "redux",
+          "symbol-observable",
+          "invariant",
+          "disposables",
+          "react-modal",
+          "exenv"
+        ]
+      },
+      "notes": "webpack.config.js defines `__DEV__`/`__PRODUCTION__` from NODE_ENV; the sample page mounts `sample/components/app.jsx` around the library in `lib/`."
+    },
+    {
+      "id": "mdsilo-web",
+      "repository": "https://github.com/danloh/mdSilo-web",
+      "revision": "ad05af63072cace38cd09f2082ab5e4443f3b7be",
+      "description": "mdSilo web app view (Next 12 pages router, React 17, zustand store with a local demo workspace)",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 18 npx -y yarn@1.22.22 install --frozen-lockfile",
+      "dev": "bash \"$BIPPY_CORPUS_SCRIPTS/with-node.sh\" 18 npx -y yarn@1.22.22 next dev -p 3009",
+      "url": "http://localhost:3009/app/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/app/",
+        "externalPackageAllowList": [
+          "zustand",
+          "zustand/*",
+          "@headlessui/react",
+          "@react-spring/web",
+          "@react-spring/core",
+          "@react-spring/shared",
+          "@react-spring/animated",
+          "@tabler/icons",
+          "@tippyjs/react",
+          "react-toastify",
+          "react-virtualized",
+          "mdsmirror",
+          "react-portal"
+        ]
+      }
+    },
+    {
+      "id": "mathberet",
+      "repository": "https://github.com/yonatanmgr/mathberet",
+      "revision": "818c54c51df9ba9ecf177d495d016422d1598dee",
+      "description": "Mathberet Electron renderer (electron-forge webpack plugin, React 18 with a custom WindowFrame chrome, react-grid-layout pages, Slate and MathLive blocks)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --ignore-scripts",
+      "dev": "npm start",
+      "url": "http://localhost:3000/app_window",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/renderer/appRenderer.tsx",
+        "tsconfig": "tsconfig.json"
+      },
+      "notes": "Static-only: an Electron-only desktop app with no web target. `npm start` runs `electron-forge start`, whose webpack dev server only serves the renderer to the Electron BrowserWindow, and the renderer depends on the preload bridge (`window.api.getOS()`, `getNotebooks()`, `receive()` from src/renderer/appPreload.tsx over ipcRenderer) inside its mount effects, so a plain browser page throws on mount and commits nothing comparable. Install skips lifecycle scripts to avoid downloading the Electron binary the static analysis never runs."
+    },
+    {
+      "id": "uxie",
+      "repository": "https://github.com/zeus-12/uxie",
+      "revision": "29e4586e48a5c5fd060b5db3e2740aa8bcfe58db",
+      "description": "Uxie local demo workspace (Next 14 pages router, React 18 StrictMode, client-only reader seeded from apps/web/src/lib/demo with react-pdf-highlighter)",
+      "framework": "next-pages",
+      "workingDirectory": "apps/web",
+      "install": "npx -y pnpm@9.14.2 install --frozen-lockfile --filter @uxie/web...",
+      "setup": [
+        "printf 'DATABASE_URL=postgresql://uxie:uxie@localhost:5432/uxie\\nNEXTAUTH_URL=http://localhost:3010\\nNEXTAUTH_SECRET=bippy-corpus\\nGOOGLE_CLIENT_ID=placeholder\\nGOOGLE_CLIENT_SECRET=placeholder\\nUPLOADTHING_TOKEN=placeholder\\nGOOGLE_GENERATIVE_AI_API_KEY=placeholder\\nPINECONE_ENVIRONMENT=placeholder\\nPINECONE_API_KEY=placeholder\\nHUGGINGFACE_API_KEY=placeholder\\nSUPABASE_SERVICE_KEY=placeholder\\nPUBLIC_SUPABASE_URL=placeholder\\nNEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY=pk_placeholder\\nNEXT_PUBLIC_ENV=development\\nMOCK_AI=1\\n' > .env"
+      ],
+      "dev": "npx -y pnpm@9.14.2 exec next dev -p 3010",
+      "url": "http://localhost:3010/demo",
+      "readyTimeoutMs": 900000,
+      "settleMs": 10000,
+      "static": {
+        "rootDirectory": "apps/web",
+        "route": "/demo",
+        "envFiles": [".env"],
+        "externalPackageAllowList": [
+          "@uxie/*",
+          "@trpc/*",
+          "@tanstack/react-query",
+          "next-auth",
+          "next-seo",
+          "lucide-react",
+          "@radix-ui/*",
+          "react-resizable-panels",
+          "zustand",
+          "usehooks-ts",
+          "sonner",
+          "framer-motion",
+          "motion-dom",
+          "motion-utils",
+          "react-virtuoso",
+          "react-pdf-highlighter",
+          "@blocknote/*"
+        ]
+      },
+      "notes": "The web app's `src/env.mjs` (t3-env) refuses to boot without every server variable, so the setup step writes placeholder values; `/demo` is the repository's fully client-side reader (components/demo + lib/demo) and never calls the tRPC, Prisma, NextAuth, Liveblocks or AI backends those variables configure. The root package.json pins pnpm 9.14.2 (patchedDependencies for react-pdf-highlighter); the install filters to the web app and the shared workspace package so the Electron desktop app is not built."
+    },
+    {
+      "id": "sokuji",
+      "repository": "https://github.com/kizuna-ai-lab/sokuji",
+      "revision": "874c87612535b9777ed4f824ccfc117804dcbe73",
+      "description": "Sokuji live-translation app rendered in its plain-browser `web` environment (Vite 8 dev server serving shared/index.tsx, React 19, Zustand stores; the same React tree the Electron renderer and browser extension load)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --ignore-scripts",
+      "setup": [
+        "bash scripts/copy-ort-wasm.sh",
+        "mkdir -p .bippy-electron-stub && printf '#!/bin/sh\\nexec sleep infinity\\n' > .bippy-electron-stub/electron && chmod +x .bippy-electron-stub/electron"
+      ],
+      "dev": "npx vite --port 5175 --strictPort",
+      "env": {
+        "ELECTRON_OVERRIDE_DIST_PATH": ".bippy-electron-stub"
+      },
+      "url": "http://localhost:5175/",
+      "readyTimeoutMs": 900000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "shared/index.tsx",
+        "externalPackageAllowList": ["react-router-dom", "react-router"]
+      },
+      "notes": "src/utils/environment.ts resolves to the `web` platform when neither the Electron preload nor chrome.runtime is present, which is what the Vite dev server gives a plain browser (CLAUDE.md: `npm run dev` runs the React app only). `npm ci --ignore-scripts` skips the postinstall (`electron-rebuild` + copy-ort-wasm) so the Electron binary and native modules are never downloaded or built; setup re-runs only the WASM copy the renderer needs. vite-plugin-electron's `onstart` spawns `electron .` and exits the dev server when that child exits, so the setup writes a sleeping stand-in executable and ELECTRON_OVERRIDE_DIST_PATH points the `electron` package at it; nothing of the app's source is patched."
     }
   ]
 }

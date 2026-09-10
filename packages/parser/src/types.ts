@@ -245,7 +245,14 @@ export interface ClassFieldMember extends ClassMemberBase {
   value: Expression | null;
 }
 
-export type ClassMember = ClassFunctionMember | ClassFieldMember;
+/** A `static { ... }` block: it runs with `this` bound to the class, in source order with the static fields. */
+export interface ClassStaticBlockMember {
+  kind: "static-block";
+  isStatic: true;
+  body: Statement[];
+}
+
+export type ClassMember = ClassFunctionMember | ClassFieldMember | ClassStaticBlockMember;
 
 /**
  * What a class declares, independent of whether it was written with class

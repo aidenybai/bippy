@@ -202,6 +202,7 @@ export class HeapJournal {
     this.paths.push(path);
   }
 
+  /** `mayRepeat`: the ran path stands for any number of runs (a loop body), not at most one. */
   join(
     reason: string,
     location: SourceLocation | null,

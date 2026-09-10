@@ -1,4 +1,4 @@
-import { objectValue } from "../evaluate/values.js";
+import { objectValue, TRUE_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, ModeledExports, StaticValue } from "../types.js";
 import { AXIOS_PACKAGES, axiosValue } from "./axios.js";
@@ -167,6 +167,9 @@ export const getLibraryValue: LibraryValueProvider = (specifier, importedName, r
     defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
       ? defaultExport
       : objectValue(),
-    (key) => getLibraryValue(specifier, key, run) ?? unmodeledExport(key),
+    (key) =>
+      key === "__esModule" && defaultExport
+        ? TRUE_VALUE
+        : (getLibraryValue(specifier, key, run) ?? unmodeledExport(key)),
   );
 };

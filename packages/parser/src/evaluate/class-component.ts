@@ -1,6 +1,7 @@
 import type { Class, ClassElement, ParamPattern, PropertyKey } from "oxc-parser";
 import type {
   ClassBody,
+  ClassFieldMember,
   ClassFunctionMember,
   ClassMember,
   ComponentDefinition,
@@ -68,6 +69,10 @@ export const collectClassMembers = (
 ): ClassMember[] => {
   const members: ClassMember[] = [];
   for (const element of node.body.body) {
+    if (element.type === "StaticBlock") {
+      members.push({ kind: "static-block", isStatic: true, body: element.body });
+      continue;
+    }
     const key = getElementName(element, resolveComputedKey);
     if (key === null) continue;
     if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
@@ -92,8 +97,9 @@ export const isErrorBoundaryClass = (classValue: StaticClassValue): boolean =>
     ({ body, properties }) =>
       body.members.some(
         (member) =>
-          (member.key === "getDerivedStateFromError" && member.isStatic) ||
-          (member.key === "componentDidCatch" && !member.isStatic),
+          member.kind !== "static-block" &&
+          ((member.key === "getDerivedStateFromError" && member.isStatic) ||
+            (member.key === "componentDidCatch" && !member.isStatic)),
       ) ||
       properties.has("getDerivedStateFromError") ||
       (body.prototype !== undefined && hasPresentProperty(body.prototype, "componentDidCatch")),
@@ -118,7 +124,7 @@ interface InstanceGetter {
 
 interface InstanceMembers {
   constructor: StaticFunctionValue | null;
-  fields: ClassMember[];
+  fields: ClassFieldMember[];
   getters: InstanceGetter[];
 }
 
@@ -635,6 +641,7 @@ export const renderClassComponent = (
   if (record) {
     const { stateCell } = record;
     nextStateCell(frame, stateCell.name, () => stateCell.initial);
+    setObjectProperty(record.instance, "context", instanceContext);
   } else {
     record = mountClassInstance(interpreter, classValue, props, instanceContext, context, frame);
     classInstances.set(frame, record);
@@ -741,10 +748,9 @@ const initializeFields = (
       ...layer.methodContext,
       scope: createScope(layer.current.scope),
     };
-    const value =
-      field.kind === "field" && field.value
-        ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
-        : UNDEFINED_VALUE;
+    const value = field.value
+      ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+      : UNDEFINED_VALUE;
     instance.entries.push({ kind: "property", key: field.key, value });
   }
 };

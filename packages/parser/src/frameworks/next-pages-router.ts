@@ -72,6 +72,13 @@ const withReactStrictMode = (tree: StaticValue, isStrictMode: StaticValue): Stat
   });
 };
 
+/** Next's `removePagePathTail`: the page file relative to `pages/`, without extension, `/index` folded into its directory. */
+const getPagePathname = (pagesDirectory: string, file: string): string => {
+  const relativePath = path.relative(pagesDirectory, file).split(path.sep).join("/");
+  const withoutExtension = relativePath.slice(0, -path.extname(relativePath).length);
+  return `/${withoutExtension}`.replace(/\/index$/, "") || "/";
+};
+
 interface NextPageMatch {
   file: string;
   params: Record<string, string>;
@@ -210,6 +217,7 @@ export const renderNextPagesRoute = (
       return unknownValue(`no page for ${options.route}`);
     }
     Object.assign(model.params, match.params);
+    model.page.pathname = getPagePathname(pagesDirectory, match.file);
     const pagePath = match.file;
     const pageModule = renderer.loadModule(pagePath);
     if (!pageModule) {

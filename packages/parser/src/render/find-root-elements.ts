@@ -11,23 +11,28 @@ import type { ModuleRecord } from "../types.js";
 
 export type EnclosingFunction = Function | ArrowFunctionExpression;
 
+/** A block the root render call is nested in: the statements that run before the call and the one containing it. */
+export interface EnclosingBlock {
+  statementsBefore: Statement[];
+  statement: Statement;
+}
+
 export interface RootRenderCall {
   element: Expression;
   api: "createRoot" | "hydrateRoot" | "render" | "hydrate";
   call: CallExpression;
   /**
-   * For calls nested in blocks (a `DOMContentLoaded` handler, an `if`), the
-   * statements of each enclosing block that run before the call, outermost
-   * first; module-level statements are excluded because module bindings are
-   * resolved lazily.
+   * For calls nested in blocks (a `DOMContentLoaded` handler, an `if`, an async
+   * `main`), each enclosing block outermost first; module-level statements are
+   * excluded because module bindings are resolved lazily.
    */
-  enclosingStatements: Statement[][];
+  enclosingBlocks: EnclosingBlock[];
   /** The innermost function the call sits in: a callback that runs after the module body has. */
   enclosingFunction: EnclosingFunction | null;
 }
 
 interface RootCallSite {
-  enclosingStatements: Statement[][];
+  enclosingBlocks: EnclosingBlock[];
   enclosingFunction: EnclosingFunction | null;
 }
 
@@ -93,8 +98,10 @@ const isEnclosingFunction = (node: Node): node is EnclosingFunction =>
   node.type === "FunctionExpression" ||
   node.type === "ArrowFunctionExpression";
 
-const statementsBefore = (node: Node, key: string, index: number): Statement[] | null =>
-  key === "body" && node.type === "BlockStatement" ? node.body.slice(0, index) : null;
+const getEnclosingBlock = (node: Node, key: string, index: number): EnclosingBlock | null =>
+  key === "body" && node.type === "BlockStatement"
+    ? { statementsBefore: node.body.slice(0, index), statement: node.body[index] }
+    : null;
 
 const walk = (
   node: Node,
@@ -104,13 +111,11 @@ const walk = (
   visit(node, site);
   const enclosingFunction = isEnclosingFunction(node) ? node : site.enclosingFunction;
   forEachChildNode(node, (child, key, index) => {
-    const preceding = statementsBefore(node, key, index);
+    const block = getEnclosingBlock(node, key, index);
     walk(
       child,
       {
-        enclosingStatements: preceding
-          ? [...site.enclosingStatements, preceding]
-          : site.enclosingStatements,
+        enclosingBlocks: block ? [...site.enclosingBlocks, block] : site.enclosingBlocks,
         enclosingFunction,
       },
       visit,
@@ -126,7 +131,7 @@ const walk = (
  */
 export const findRootRenderCalls = (module: ModuleRecord): RootRenderCall[] => {
   const calls: RootRenderCall[] = [];
-  walk(module.file.program, { enclosingStatements: [], enclosingFunction: null }, (node, site) => {
+  walk(module.file.program, { enclosingBlocks: [], enclosingFunction: null }, (node, site) => {
     if (node.type === "CallExpression") collectCall(node, site, calls);
   });
   return [

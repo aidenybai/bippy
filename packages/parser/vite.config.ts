@@ -3,7 +3,7 @@ import { basename, join, relative, resolve, sep } from "node:path";
 import { transformAsync } from "@babel/core";
 import { transform as transformSvgr } from "@svgr/core";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import { defineConfig, type Plugin, type PluginOption, transformWithOxc } from "vite-plus";
+import { defineConfig, type Plugin, transformWithOxc } from "vite-plus";
 import { z } from "zod";
 import { flatYamlPlugin } from "./tests/fixtures/vite-yaml-plugin/yaml-plugin.js";
 
@@ -165,15 +165,26 @@ const fixtureJsxInJsPlugin = (): Plugin => ({
   },
 });
 
-const fixtureTanStackRouterPlugin = (): PluginOption => {
+interface NamedPlugin {
+  name: string;
+}
+
+// HACK: @tanstack/router-plugin types its plugins against its own vite copy; comparing them
+// structurally with vite-plus's Plugin overflows the checker, so only the plugin shape is checked.
+const toHostPlugins = (plugins: NamedPlugin | NamedPlugin[]): Plugin[] =>
+  Array.isArray(plugins) ? plugins : [plugins];
+
+const fixtureTanStackRouterPlugin = (): Plugin[] => {
   const fixtureDirectory = join(fixturesDirectory, "tanstack-router-split");
-  return tanstackRouter({
-    target: "react",
-    autoCodeSplitting: true,
-    codeSplittingOptions: { addHmr: false },
-    routesDirectory: join(fixtureDirectory, "src/routes"),
-    generatedRouteTree: join(fixtureDirectory, "src/routeTree.gen.ts"),
-  });
+  return toHostPlugins(
+    tanstackRouter({
+      target: "react",
+      autoCodeSplitting: true,
+      codeSplittingOptions: { addHmr: false },
+      routesDirectory: join(fixtureDirectory, "src/routes"),
+      generatedRouteTree: join(fixtureDirectory, "src/routeTree.gen.ts"),
+    }),
+  );
 };
 
 export default defineConfig({

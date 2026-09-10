@@ -8,6 +8,7 @@ import type {
 import { nativeFunction } from "./stubs.js";
 import { isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
+import { isFunctionLikeExpression } from "../parse/ast-walk.js";
 import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
 import { getCollectionItems } from "./collections.js";
 import {
@@ -47,26 +48,40 @@ interface HelperImplementation {
   (args: StaticValue[], tools: StubRenderTools): StaticValue;
 }
 
+const readEsModuleFlag = (value: StaticValue, tools: StubRenderTools | null): StaticValue => {
+  switch (value.kind) {
+    case "object":
+      return getObjectProperty(value, "__esModule");
+    case "proxy": {
+      const trap = getObjectProperty(value.handler, "get");
+      if (isNullish(trap) === true) return readEsModuleFlag(value.target, tools);
+      return tools
+        ? tools.call(trap, [value.target, primitiveValue("__esModule"), value])
+        : UNDEFINED_VALUE;
+    }
+    default:
+      return UNDEFINED_VALUE;
+  }
+};
+
 /** Whether a module namespace behaves as an ES module to interop helpers. */
-export const isEsModuleLike = (value: StaticValue): boolean => {
+export const isEsModuleLike = (value: StaticValue, tools: StubRenderTools | null): boolean => {
   if (value.kind === "namespace") {
     return !value.module.isCommonJs || hasExportedName(value.module, "__esModule");
   }
   if (value.kind === "external") return true;
-  if (value.kind === "object")
-    return getTruthiness(getObjectProperty(value, "__esModule")) === true;
-  return false;
+  return getTruthiness(readEsModuleFlag(value, tools)) === true;
 };
 
-const interopRequireDefault: HelperImplementation = ([moduleValue]) => {
+const interopRequireDefault: HelperImplementation = ([moduleValue], tools) => {
   if (!moduleValue) return UNDEFINED_VALUE;
-  if (isEsModuleLike(moduleValue)) return moduleValue;
+  if (isEsModuleLike(moduleValue, tools)) return moduleValue;
   return objectValue([{ kind: "property", key: "default", value: moduleValue }]);
 };
 
-const interopRequireWildcard: HelperImplementation = ([moduleValue]) => {
+const interopRequireWildcard: HelperImplementation = ([moduleValue], tools) => {
   if (!moduleValue) return UNDEFINED_VALUE;
-  if (isEsModuleLike(moduleValue)) return moduleValue;
+  if (isEsModuleLike(moduleValue, tools)) return moduleValue;
   return objectValue([
     { kind: "spread", value: moduleValue },
     { kind: "property", key: "default", value: moduleValue },
@@ -402,6 +417,23 @@ export const getInlineCompilerHelper = (
   return implementation
     ? { kind: "native-function", name: functionName, call: implementation }
     : null;
+};
+
+/**
+ * The helper function in a `var __rest = (this && this.__rest) || function (s, e) {...}`
+ * initializer, as tsc emits without `importHelpers`.
+ */
+export const getInlineHelperFunction = (init: Expression): FunctionLikeNode | null => {
+  if (isFunctionLikeExpression(init)) return init;
+  if (init.type !== "LogicalExpression" || init.operator !== "||") return null;
+  return isFunctionLikeExpression(init.right) && readsThisMember(init.left) ? init.right : null;
+};
+
+const readsThisMember = (node: Expression): boolean => {
+  if (node.type === "LogicalExpression" && node.operator === "&&") {
+    return node.left.type === "ThisExpression" && readsThisMember(node.right);
+  }
+  return node.type === "MemberExpression" && node.object.type === "ThisExpression";
 };
 
 /** The modeled compiler helper an import resolves to, if it is one. */

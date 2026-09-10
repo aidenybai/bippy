@@ -5,6 +5,7 @@ import type { Context, ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
 import type { ModuleResolver } from "../graph/module-resolver.js";
 import { createCommitRecorder, getRootContainer } from "../harness/commit-recorder.js";
+import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
 
@@ -57,8 +58,8 @@ export interface LegacyReactInternals {
  * same work tags, naming and reconciliation rules as the app's runtime.
  * `createRoot` mounts a concurrent root when the app's
  * `react-dom` has a `client` entry and a legacy `ReactDOM.render` root
- * otherwise (React 16/17); an app without its own React, or whose React
- * predates hooks, uses the harness's copy.
+ * otherwise (React 16/17). An app without its own React, or whose React predates
+ * async `act` (< 16.9), is rendered with the harness's copy.
  */
 export interface ReactRuntime {
   react: ReactModule;
@@ -237,8 +238,15 @@ const loadRootFactory = async (
   return legacyRootFactory(dom);
 };
 
-/** The materializer's proxies are hook components: a React that predates hooks (< 16.8) cannot mount them. */
-const hasHooks = (react: ReactModule): boolean => typeof react.useState === "function";
+/**
+ * The materializer's proxies are hook components and the harness awaits `act`:
+ * a React older than 16.9 (hooks but a synchronous `act` whose thenable never
+ * settles) cannot host them.
+ */
+const FIRST_REACT_WITH_ASYNC_ACT = "16.9.0";
+
+const supportsAsyncAct = (react: ReactModule): boolean =>
+  isVersionAtLeast(react.version, FIRST_REACT_WITH_ASYNC_ACT);
 
 const loadPackages = async (
   appResolver: ModuleResolver | null,
@@ -251,7 +259,7 @@ const loadPackages = async (
   ]);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
-  if (appResolver !== null && !hasHooks(react)) {
+  if (appResolver !== null && !supportsAsyncAct(react)) {
     return loadPackages(null, rootDirectory, DEFAULT_REACT_PACKAGES);
   }
   return {

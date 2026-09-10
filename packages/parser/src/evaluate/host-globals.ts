@@ -1,3 +1,4 @@
+import { createContext, runInContext } from "node:vm";
 import type { StaticValue, UnknownPrimitiveType } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
@@ -39,8 +40,53 @@ const getPrimitiveInterfaceName = (primitiveType: string): string | undefined =>
   return witness === undefined ? undefined : getNativeInterfaceName(Object(witness));
 };
 
+/**
+ * The global object of a realm only the language has touched. This process
+ * implements the same language, but the scripts it runs (the harness's own
+ * React, a fixture mounted for its runtime tree) add members to its intrinsics
+ * that the analyzed program never sees; a fresh realm's intrinsics are the
+ * specification's alone.
+ */
+const LANGUAGE_GLOBAL: object = runInContext("globalThis", createContext());
+
+const MAX_LANGUAGE_OBJECT_DEPTH = 4;
+
+const collectLanguageObjects = (
+  shared: unknown,
+  language: unknown,
+  objects: Map<object, object>,
+  depth: number,
+): void => {
+  if (!isObjectLike(shared) || !isObjectLike(language) || objects.has(shared) || depth === 0)
+    return;
+  objects.set(shared, language);
+  for (const key of Reflect.ownKeys(language)) {
+    const languageMember = Object.getOwnPropertyDescriptor(language, key)?.value;
+    const sharedMember = Object.getOwnPropertyDescriptor(shared, key)?.value;
+    collectLanguageObjects(sharedMember, languageMember, objects, depth - 1);
+  }
+};
+
+let languageObjects: Map<object, object> | null = null;
+
+/** The language realm's counterpart of one of this process's intrinsics (`Symbol`, `Array.prototype`); null for any other object. */
+export const getLanguageCounterpart = (shared: object): object | null => {
+  if (languageObjects === null) {
+    languageObjects = new Map();
+    for (const name of loadHostRealm("ecmascript").getGlobalNames()) {
+      collectLanguageObjects(
+        Reflect.get(globalThis, name),
+        Reflect.get(LANGUAGE_GLOBAL, name),
+        languageObjects,
+        MAX_LANGUAGE_OBJECT_DEPTH,
+      );
+    }
+  }
+  return languageObjects.get(shared) ?? null;
+};
+
 const isLanguageGlobal = (name: string, value: unknown): boolean =>
-  loadHostRealm("ecmascript").hasGlobal(name) && Reflect.get(globalThis, name) === value;
+  loadHostRealm("ecmascript").hasGlobal(name) && Reflect.get(LANGUAGE_GLOBAL, name) === value;
 
 /**
  * The canonical global path of a language object reached by another path, so
@@ -65,11 +111,11 @@ interface LanguagePathReading {
   readonly value: unknown;
 }
 
-/** What a dotted path starting at a language global holds in this process, which implements the same language; null when the path starts elsewhere or breaks off. */
+/** What a dotted path starting at a language global holds in the language realm; null when the path starts elsewhere or breaks off. */
 const readLanguagePath = (name: string): LanguagePathReading | null => {
   const [root, ...keys] = name.split(".");
   if (root === undefined || !loadHostRealm("ecmascript").hasGlobal(root)) return null;
-  let value: unknown = Reflect.get(globalThis, root);
+  let value: unknown = Reflect.get(LANGUAGE_GLOBAL, root);
   for (const key of keys) {
     if (!isObjectLike(value)) return null;
     value = Reflect.get(value, key);
@@ -92,7 +138,7 @@ export const toLanguagePropertyKey = (key: string): string | symbol | null => {
 
 /**
  * A language value (`Math.PI`, `Symbol.iterator`, `Object.prototype.constructor`)
- * read from this process: constants become primitives and objects resolve to
+ * read from the language realm: constants become primitives and objects resolve to
  * their canonical global. Null when the path starts outside the language or
  * names an object without a canonical path.
  */

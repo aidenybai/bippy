@@ -198,6 +198,25 @@ interface Continuation {
   (runtime: RuntimeFiberSnapshot[], runtimeIndex: number): MatchTally | null;
 }
 
+// Alternatives of one decision keep re-entering the same continuation at the
+// same runtime position; when nothing past the decision depends on how it
+// went, that continuation has one answer per position.
+const memoizeContinuation = (continuation: Continuation): Continuation => {
+  const results = new Map<RuntimeFiberSnapshot[], Map<number, MatchTally | null>>();
+  return (runtime, runtimeIndex) => {
+    let byIndex = results.get(runtime);
+    if (!byIndex) {
+      byIndex = new Map();
+      results.set(runtime, byIndex);
+    }
+    const known = byIndex.get(runtimeIndex);
+    if (known !== undefined) return known;
+    const result = continuation(runtime, runtimeIndex);
+    byIndex.set(runtimeIndex, result);
+    return result;
+  };
+};
+
 /** Where matching got furthest before failing, with the decisions in force there. */
 export interface FurthestFailure {
   position: number;
@@ -536,6 +555,9 @@ class Matcher {
         }
         const resolve = (result: MatchTally, choice: number): MatchTally =>
           addTally(result, { branchesResolved: 1, decisions: [{ node: pattern, choice }] });
+        const rest = this.selfContainedFibers.isSelfContained(pattern)
+          ? memoizeContinuation(continuation)
+          : continuation;
         // Alternatives are tried in preference order, but one that explains the
         // runtime without leaning on wildcards beats an earlier one that does.
         let best: RankedAlternative | null = null;
@@ -550,7 +572,7 @@ class Matcher {
               runtime,
               runtimeIndex,
               path,
-              continuation,
+              rest,
             );
           } finally {
             this.assignment.delete(pattern.variable);
@@ -573,17 +595,21 @@ class Matcher {
           iteration: number,
         ): MatchTally | null => {
           const canIterate = pattern.count.max === null || iteration < pattern.count.max;
+          const children = this.iterationChildren(pattern, iteration);
+          const next: Continuation = (nextRuntime, nextIndex) =>
+            nextRuntime === iterationRuntime && nextIndex === start
+              ? null
+              : iterate(nextRuntime, nextIndex, iteration + 1);
           const more = canIterate
             ? this.matchList(
-                this.iterationChildren(pattern, iteration),
+                children,
                 0,
                 iterationRuntime,
                 start,
                 path,
-                (nextRuntime, nextIndex) =>
-                  nextRuntime === iterationRuntime && nextIndex === start
-                    ? null
-                    : iterate(nextRuntime, nextIndex, iteration + 1),
+                this.selfContainedFibers.isSelfContained(children)
+                  ? memoizeContinuation(next)
+                  : next,
               )
             : null;
           if (more) return more;

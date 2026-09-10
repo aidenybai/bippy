@@ -302,7 +302,11 @@ export const accessorEntry = (
   accessor,
 });
 
-type LookupMemo = Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
+interface LookupMemo {
+  properties: Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
+  ownKeys: Map<StaticObjectValue, Map<string, boolean | null>>;
+  spreadKeys: Map<StaticObjectValue, string[] | null>;
+}
 
 /**
  * Results of the lookup in progress. Objects spread through many branches
@@ -311,15 +315,18 @@ type LookupMemo = Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
  */
 let lookupMemo: LookupMemo | null = null;
 
-export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue => {
-  if (lookupMemo) return getMemoizedObjectProperty(lookupMemo, object, key, object.entries.length);
-  lookupMemo = new Map();
+const withLookupMemo = <Result>(lookup: (memo: LookupMemo) => Result): Result => {
+  if (lookupMemo) return lookup(lookupMemo);
+  lookupMemo = { properties: new Map(), ownKeys: new Map(), spreadKeys: new Map() };
   try {
-    return getMemoizedObjectProperty(lookupMemo, object, key, object.entries.length);
+    return lookup(lookupMemo);
   } finally {
     lookupMemo = null;
   }
 };
+
+export const getObjectProperty = (object: StaticObjectValue, key: string): StaticValue =>
+  withLookupMemo((memo) => getMemoizedObjectProperty(memo, object, key, object.entries.length));
 
 /** `key` as seen through the first `entryCount` entries of `object` (and its prototype). */
 const getMemoizedObjectProperty = (
@@ -328,14 +335,14 @@ const getMemoizedObjectProperty = (
   key: string,
   entryCount: number,
 ): StaticValue => {
-  let prefixes = memo.get(object);
+  let prefixes = memo.properties.get(object);
   let properties = prefixes?.get(entryCount);
   const memoized = properties?.get(key);
   if (memoized) return memoized;
   const value = lookupObjectProperty(memo, object, key, entryCount);
   if (!prefixes) {
     prefixes = new Map();
-    memo.set(object, prefixes);
+    memo.properties.set(object, prefixes);
   }
   if (!properties) {
     properties = new Map();
@@ -485,19 +492,20 @@ export const getPropertyName = (key: StaticValue): string | null => {
 const getKnownOwnKeys = (
   object: StaticObjectValue,
   isIncluded: (key: string) => boolean,
-): Map<string, boolean> | null => {
-  const keys = new Map<string, boolean>();
-  for (const entry of object.entries) {
-    if (entry.kind === "property") {
-      if (isIncluded(entry.key)) keys.set(entry.key, entry.isEnumerable !== false);
-      continue;
+): Map<string, boolean> | null =>
+  withLookupMemo((memo) => {
+    const keys = new Map<string, boolean>();
+    for (const entry of object.entries) {
+      if (entry.kind === "property") {
+        if (isIncluded(entry.key)) keys.set(entry.key, entry.isEnumerable !== false);
+        continue;
+      }
+      const spreadKeys = getKnownSpreadKeys(memo, entry.value);
+      if (!spreadKeys) return null;
+      for (const key of spreadKeys) if (isIncluded(key)) keys.set(key, true);
     }
-    const spreadKeys = getKnownSpreadKeys(entry.value);
-    if (!spreadKeys) return null;
-    for (const key of spreadKeys) if (isIncluded(key)) keys.set(key, true);
-  }
-  return keys;
-};
+    return keys;
+  });
 
 const getEnumerableKeys = (keys: Map<string, boolean> | null): string[] | null =>
   keys && [...keys].filter(([, isEnumerable]) => isEnumerable).map(([key]) => key);
@@ -512,10 +520,7 @@ export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | nu
   return keys && [...keys.keys()];
 };
 
-/** Verdicts for objects already visited while answering one `hasOwnKey` query, so shared spreads are walked once. */
-interface OwnKeyMemo extends Map<StaticObjectValue, boolean | null> {}
-
-const spreadHasOwnKey = (memo: OwnKeyMemo, spread: StaticValue, key: string): boolean | null => {
+const spreadHasOwnKey = (memo: LookupMemo, spread: StaticValue, key: string): boolean | null => {
   switch (spread.kind) {
     case "object":
       return getMemoizedOwnKey(memo, spread, key);
@@ -534,11 +539,12 @@ const spreadHasOwnKey = (memo: OwnKeyMemo, spread: StaticValue, key: string): bo
 };
 
 const getMemoizedOwnKey = (
-  memo: OwnKeyMemo,
+  memo: LookupMemo,
   object: StaticObjectValue,
   key: string,
 ): boolean | null => {
-  const memoized = memo.get(object);
+  let verdicts = memo.ownKeys.get(object);
+  const memoized = verdicts?.get(key);
   if (memoized !== undefined) return memoized;
   let verdict: boolean | null = false;
   for (const entry of object.entries) {
@@ -550,13 +556,17 @@ const getMemoizedOwnKey = (
     }
     if (entryVerdict === null) verdict = null;
   }
-  memo.set(object, verdict);
+  if (!verdicts) {
+    verdicts = new Map();
+    memo.ownKeys.set(object, verdicts);
+  }
+  verdicts.set(key, verdict);
   return verdict;
 };
 
 /** Whether `key` is an own property; null when a spread may or may not carry it. */
 export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null =>
-  getMemoizedOwnKey(new Map(), object, key);
+  withLookupMemo((memo) => getMemoizedOwnKey(memo, object, key));
 
 /** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
 export const getOwnPropertyDescriptor = (
@@ -601,16 +611,21 @@ export const getKnownEnumerableOwnKeys = (object: StaticObjectValue): string[] |
   getEnumerableKeys(getKnownOwnKeys(object, () => true));
 
 /** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
-const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
+const getKnownSpreadKeys = (memo: LookupMemo, spread: StaticValue): string[] | null => {
   switch (spread.kind) {
-    case "object":
-      return getKnownEnumerableOwnKeys(spread);
+    case "object": {
+      const memoized = memo.spreadKeys.get(spread);
+      if (memoized !== undefined) return memoized;
+      const keys = getKnownEnumerableOwnKeys(spread);
+      memo.spreadKeys.set(spread, keys);
+      return keys;
+    }
     case "primitive":
       return [];
     case "branch": {
       const keys: string[] = [];
       for (const alternative of spread.alternatives) {
-        const alternativeKeys = getKnownSpreadKeys(alternative);
+        const alternativeKeys = getKnownSpreadKeys(memo, alternative);
         if (!alternativeKeys) return null;
         for (const key of alternativeKeys) if (!keys.includes(key)) keys.push(key);
       }
@@ -629,11 +644,20 @@ const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
  */
 export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | null => {
   if (spread.kind !== "object" && spread.kind !== "branch") return null;
-  const keys = getKnownSpreadKeys(spread);
+  const keys = withLookupMemo((memo) => getKnownSpreadKeys(memo, spread));
   if (!keys) return null;
   const holder = objectValue([{ kind: "spread", value: spread }]);
   return keys.map((key) => ({ kind: "property", key, value: getObjectProperty(holder, key) }));
 };
+
+/** `assign({}, ...sources)`: every closed source copied per key, any other kept behind a spread. */
+export const assignedObject = (sources: StaticValue[]): StaticObjectValue =>
+  objectValue(
+    sources.flatMap(
+      (source): StaticObjectEntry[] =>
+        getSpreadEntries(source) ?? [{ kind: "spread", value: source }],
+    ),
+  );
 
 /**
  * Joins the entry lists paths left on one object. Paths that only assigned

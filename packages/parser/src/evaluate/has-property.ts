@@ -14,7 +14,7 @@ import type {
 } from "../types.js";
 import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
-import { toLanguagePropertyKey } from "./host-globals.js";
+import { getLanguageCounterpart, toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
 import { hasNativeObjectMember } from "./native-values.js";
 import { toPropertyKey } from "./primitive-shapes.js";
@@ -38,9 +38,20 @@ export const OBJECT_PROTOTYPE_METHODS = new Set([
   "valueOf",
 ]);
 
+/** Whether a native witness has the member, reading intrinsics on its chain from the language realm so members scripts added to this process's own do not count. */
 export const hasIntrinsicMember = (intrinsic: object, name: string): boolean => {
   const languageKey = toLanguagePropertyKey(name);
-  return languageKey !== null && languageKey in intrinsic;
+  if (languageKey === null) return false;
+  for (
+    let holder: object | null = intrinsic;
+    holder !== null;
+    holder = Object.getPrototypeOf(holder)
+  ) {
+    const languageObject = getLanguageCounterpart(holder);
+    if (languageObject !== null) return languageKey in languageObject;
+    if (Object.hasOwn(holder, languageKey)) return true;
+  }
+  return false;
 };
 
 /** Own keys every function object has without source assigning them; arrows have no `prototype`. */
@@ -77,7 +88,7 @@ const hasComponentProperty = (type: StaticElementType, name: string): StaticValu
     case "context-consumer":
       if (name === "displayName") return primitiveValue(type.displayName !== null);
       if (CONTEXT_OWN_KEYS.has(name)) return null;
-      return primitiveValue(name in Object.prototype);
+      return primitiveValue(hasIntrinsicMember(Object.prototype, name));
     default:
       return null;
   }
