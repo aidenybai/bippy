@@ -55,7 +55,10 @@ const parseEscape = (cursor: PatternCursor): Set<string> | null => {
   cursor.index += 2;
   if (escaped === undefined) return null;
   if (/[dDwWsSbB1-9]/.test(escaped)) return new Set();
-  if (escaped === "k" || ((escaped === "p" || escaped === "P") && cursor.pattern[cursor.index] === "{")) {
+  if (
+    escaped === "k" ||
+    ((escaped === "p" || escaped === "P") && cursor.pattern[cursor.index] === "{")
+  ) {
     const end = cursor.pattern.indexOf(escaped === "k" ? ">" : "}", cursor.index);
     if (end === -1) return null;
     cursor.index = end + 1;
@@ -140,7 +143,10 @@ const parseSequence = (cursor: PatternCursor): Set<string> | null => {
     else if (character === "\\") atom = parseEscape(cursor);
     else {
       cursor.index++;
-      atom = character === "." || character === "^" || character === "$" ? new Set() : new Set([character]);
+      atom =
+        character === "." || character === "^" || character === "$"
+          ? new Set()
+          : new Set([character]);
     }
     if (atom === null) return null;
     if (!parseQuantifier(cursor)) required = union(required, atom);

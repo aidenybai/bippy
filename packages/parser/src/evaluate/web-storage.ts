@@ -31,9 +31,7 @@ export const getStorageAreaName = (globalName: string): StorageAreaName | null =
 };
 
 const createStorageArea = (entries: Record<string, string> = {}): StorageArea => ({
-  entries: new Map(
-    Object.entries(entries).map(([key, stored]) => [key, primitiveValue(stored)]),
-  ),
+  entries: new Map(Object.entries(entries).map(([key, stored]) => [key, primitiveValue(stored)])),
   hasDynamicKeyWrites: false,
 });
 

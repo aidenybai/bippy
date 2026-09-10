@@ -99,36 +99,23 @@ export const loopInvariantStaysExact = () => {
 };
 `;
 
-const NESTED_FORK_SOURCE = `
-declare const flags: string;
+const COLLECTION_SOURCE = `
+declare const salt: string;
 
-let cursor: Set<string> | undefined;
-
-const countUsingCursor = () => {
-  try {
-    cursor = new Set(["a", "b"]);
-    return cursor.size;
-  } finally {
-    cursor = undefined;
-  }
+const fill = (size: number) => {
+  const cache = new Map<string, number>();
+  for (let index = 0; index < size; index++) cache.set(salt + index, index);
+  return cache;
 };
 
-export const assignedInDeepFork = () => {
-  let total = 0;
-  if (flags.includes("1")) {
-    if (flags.includes("2")) {
-      if (flags.includes("3")) {
-        if (flags.includes("4")) {
-          if (flags.includes("5")) {
-            if (flags.includes("6")) {
-              for (let index = 0; index < 3; index++) total += countUsingCursor();
-            }
-          }
-        }
-      }
-    }
-  }
-  return [total, cursor];
+export const smallDynamicMapEnumerates = () => fill(2).get(salt);
+
+export const largeDynamicMapIsUnknown = () => fill(9).get(salt);
+
+export const largeDynamicMapKeepsDecidedMembership = () => {
+  const cache = fill(9);
+  cache.set("pinned", 1);
+  return cache.has("pinned");
 };
 `;
 
@@ -214,11 +201,17 @@ describe("list mutation and uncertain loops", () => {
   });
 });
 
-describe("nested forks", () => {
-  it("keeps assignments definite however deeply the fork is nested", async () => {
-    const results = await evaluateExports(NESTED_FORK_SOURCE, ["assignedInDeepFork"]);
+describe("collections written under dynamic keys", () => {
+  it("enumerates a few stored values and gives up on many", async () => {
+    const results = await evaluateExports(COLLECTION_SOURCE, [
+      "smallDynamicMapEnumerates",
+      "largeDynamicMapIsUnknown",
+      "largeDynamicMapKeepsDecidedMembership",
+    ]);
     expect(results).toEqual({
-      assignedInDeepFork: "[branch(6 | 0), undefined]",
+      smallDynamicMapEnumerates: "branch(0 | 1 | undefined)",
+      largeDynamicMapIsUnknown: "unknown(Map.get() with a dynamic key)",
+      largeDynamicMapKeepsDecidedMembership: "true",
     });
   });
 });

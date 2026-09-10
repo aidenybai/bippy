@@ -1,47 +1,49 @@
-/** Assigning `this.#field` inside methods writes the private slot the same way a field initializer does. */
-class QueryCache {
+interface RegistryConfig {
+  entries?: Map<string, number>;
+  label?: string;
+}
+
+class Registry {
   #entries;
-  #mountCount;
-  #stats;
+  #label;
+  #settings = { limit: 2 };
 
-  constructor() {
-    this.#entries = new Map<string, string>();
-    this.#mountCount = 0;
-    this.#stats = { hits: 0 };
+  constructor(config: RegistryConfig = {}) {
+    this.#entries = config.entries || new Map<string, number>();
+    this.#label = config.label ?? "default";
+    this.#settings.limit = 3;
   }
 
-  mount() {
-    this.#mountCount++;
-    this.#stats.hits += 2;
-    return this.#mountCount;
-  }
-
-  set(key: string, value: string) {
+  register(key: string, value: number) {
     this.#entries.set(key, value);
+    return this;
   }
 
-  size() {
-    return this.#entries.size;
+  get label() {
+    return this.#label;
   }
 
-  hits() {
-    return this.#stats.hits;
+  getEntries() {
+    return this.#entries;
+  }
+
+  getLimit() {
+    return this.#settings.limit;
   }
 }
 
-const cache = new QueryCache();
-cache.set("todos", "3 items");
-cache.mount();
-const mounts = cache.mount();
-
-export const isExact = true;
+const registry = new Registry().register("alpha", 1).register("beta", 2);
+const named = new Registry({ label: "named" });
 
 export default function PrivateFieldAssignment() {
   return (
-    <section data-mounts={mounts}>
-      <strong>{cache.size()} cached</strong>
-      <em>{cache.hits()} hits</em>
-      {mounts === 2 ? <p>mounted twice</p> : <p>mount count unknown</p>}
-    </section>
+    <ul data-label={registry.label} data-named={named.label}>
+      {[...registry.getEntries().entries()].map(([key, value]) => (
+        <li key={key}>
+          {key}={value}
+        </li>
+      ))}
+      <li>limit={registry.getLimit()}</li>
+    </ul>
   );
 }

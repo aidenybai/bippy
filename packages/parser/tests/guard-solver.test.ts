@@ -56,9 +56,7 @@ describe("guard solver", () => {
     const model = solveGuards([...guards, truthyGuard(inputs[0])]);
     expect(model).not.toBeNull();
     expect(evaluateGuardAll(guards, toWitnessModel(model ?? []))).toBe(true);
-    expect(
-      solveGuards([...guards, ...inputs.map((input) => truthyGuard(input))]),
-    ).toBeNull();
+    expect(solveGuards([...guards, ...inputs.map((input) => truthyGuard(input))])).toBeNull();
     expect(performance.now() - startedAt).toBeLessThan(1000);
   });
 

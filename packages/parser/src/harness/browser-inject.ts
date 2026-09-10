@@ -51,16 +51,15 @@ const initialHistoryState = toCapturedValue(history.state) ?? null;
 const initialLocalStorage = readStorageArea(localStorage);
 const initialSessionStorage = readStorageArea(sessionStorage);
 
-/** Every name `in target`: own and inherited, as feature detection sees them. */
-const readPropertyKeys = (target: object): string[] => {
+const readKeysInChain = (root: object): string[] => {
   const names = new Set<string>();
-  for (let object: unknown = target; object; object = Object.getPrototypeOf(object)) {
+  for (let object: unknown = root; object; object = Object.getPrototypeOf(object)) {
     for (const name of Object.getOwnPropertyNames(object)) names.add(name);
   }
   return [...names];
 };
-const initialWindowKeys = readPropertyKeys(globalThis);
-const initialNavigatorKeys = readPropertyKeys(navigator);
+const initialWindowKeys = readKeysInChain(globalThis);
+const initialNavigatorKeys = readKeysInChain(navigator);
 
 const cssSupportsAnswers: Record<string, boolean> = {};
 const mediaQueryAnswers: Record<string, boolean> = {};
@@ -90,11 +89,11 @@ const readPageState = (): CapturedPageState => ({
   name: window.name,
   historyState: initialHistoryState,
   windowKeys: initialWindowKeys,
+  navigatorKeys: initialNavigatorKeys,
   userAgent: navigator.userAgent,
   language: navigator.language,
   languages: [...navigator.languages],
   maxTouchPoints: navigator.maxTouchPoints,
-  navigatorKeys: initialNavigatorKeys,
   cssSupports: cssSupportsAnswers,
   mediaQueries: mediaQueryAnswers,
   clock: { start: initialClockTime, end: readClockTime(new Date()) },

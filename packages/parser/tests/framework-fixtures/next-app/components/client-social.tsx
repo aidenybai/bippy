@@ -1,6 +1,12 @@
 "use client";
 
+import { ContextIcon } from "@/lib/context-icon";
 import { SOCIAL_LINKS } from "@/lib/social";
 import { SocialLinks } from "./social-links";
 
-export const ClientSocial = () => <SocialLinks links={SOCIAL_LINKS} />;
+export const ClientSocial = () => (
+  <>
+    <SocialLinks links={SOCIAL_LINKS} />
+    <ContextIcon />
+  </>
+);

@@ -63,6 +63,40 @@ const REACT_DOM_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "hydrate",
 ]);
 
+/**
+ * What `react`'s `react-server` export condition (ReactServer.js) leaves out:
+ * server code reading these gets `undefined`, which is how feature detection
+ * such as `React.createContext && React.createContext(...)` takes its other path.
+ */
+const CLIENT_ONLY_API_NAMES: ReadonlySet<ReactApi> = new Set<ReactApi>([
+  "createContext",
+  "SuspenseList",
+  "Component",
+  "PureComponent",
+  "useState",
+  "useReducer",
+  "useRef",
+  "useContext",
+  "useEffect",
+  "useLayoutEffect",
+  "useInsertionEffect",
+  "useImperativeHandle",
+  "useTransition",
+  "useDeferredValue",
+  "useSyncExternalStore",
+  "useOptimistic",
+  "useActionState",
+  "createPortal",
+  "flushSync",
+  "batchedUpdates",
+  "createRoot",
+  "hydrateRoot",
+  "render",
+  "hydrate",
+]);
+
+export const isClientOnlyReactApi = (api: ReactApi): boolean => CLIENT_ONLY_API_NAMES.has(api);
+
 const CHILDREN_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
   "Children.map",
   "Children.forEach",

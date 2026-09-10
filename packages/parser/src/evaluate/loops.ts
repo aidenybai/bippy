@@ -106,7 +106,9 @@ const iterationValues = (
     return null;
   }
   const enumerated = getEnumerationTarget(
-    right.kind === "namespace" ? interpreter.materializeNamespace(right.module) : right,
+    right.kind === "namespace"
+      ? interpreter.materializeNamespace(right.module, context.environment)
+      : right,
   );
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);

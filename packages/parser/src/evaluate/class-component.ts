@@ -3,11 +3,14 @@ import type {
   ClassBody,
   ClassFunctionMember,
   ClassMember,
+  ComponentDefinition,
   FunctionLikeNode,
+  ReactApi,
   SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
   StaticNativeFunctionValue,
+  StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
   SuperBinding,
@@ -24,6 +27,7 @@ import {
   type StateCell,
 } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
+import { providedContextValue } from "./react-calls.js";
 import { createScope } from "./scope.js";
 import {
   accessorEntry,
@@ -36,6 +40,7 @@ import {
   objectFromRecord,
   objectValue,
   setObjectProperty,
+  TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
@@ -63,8 +68,8 @@ export const collectClassMembers = (node: Class): ClassMember[] => {
       const kind = element.kind === "get" ? "getter" : element.kind;
       members.push({ key, isStatic: element.static, kind, functionNode: element.value });
     } else if (
-      element.type === "PropertyDefinition" ||
-      element.type === "TSAbstractPropertyDefinition"
+      (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
+      !element.declare
     ) {
       members.push({ key, isStatic: element.static, kind: "field", value: element.value });
     }
@@ -124,6 +129,13 @@ const bindMethods = (
   seen: Set<string>,
 ): InstanceMembers => {
   const members: InstanceMembers = { constructor: null, fields: [], getters: [] };
+  for (const entry of getPrototypeAssignments(classValue)) {
+    if (entry.kind === "property") {
+      if (seen.has(entry.key)) continue;
+      seen.add(entry.key);
+    }
+    target.entries.push(entry);
+  }
   const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
     const functionValue = interpreter.createFunctionValue(member.functionNode, methodContext, name);
     return functionValue.kind === "function"
@@ -186,8 +198,18 @@ export const getSuperObject = (
   return prototype;
 };
 
-const classPrototypes = new WeakMap<StaticClassValue, StaticObjectValue>();
+/** Keyed by the evaluated class body, which a class value and the component definition derived from it share. */
+const classPrototypes = new WeakMap<ClassBody, StaticObjectValue>();
 const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
+/** How many entries each `Class.prototype` held once its own members were bound; later ones were assigned onto it. */
+const prototypeMemberCounts = new WeakMap<StaticObjectValue, number>();
+
+/** Members written onto `Class.prototype` after the class was defined (`Class.prototype.render = …`), which instances inherit like its own. */
+const getPrototypeAssignments = (classValue: StaticClassValue): StaticObjectEntry[] => {
+  const prototype = classPrototypes.get(classValue.body);
+  const memberCount = prototype && prototypeMemberCounts.get(prototype);
+  return prototype && memberCount !== undefined ? prototype.entries.slice(memberCount) : [];
+};
 
 /** The class whose `.prototype` this object is, or null for any other object. */
 export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
@@ -208,12 +230,12 @@ export const getClassPrototypeObject = (
   classValue: StaticClassValue,
   context: EvaluationContext,
 ): StaticObjectValue => {
-  const cached = classPrototypes.get(classValue);
+  const cached = classPrototypes.get(classValue.body);
   if (cached) return cached;
   const superValue = classValue.body.superValue;
   const prototype = objectFromRecord({ constructor: classValue });
   if (superValue?.kind === "class") prototype.constructedBy = superValue;
-  classPrototypes.set(classValue, prototype);
+  classPrototypes.set(classValue.body, prototype);
   prototypeOwners.set(prototype, classValue);
   const seen = new Set<string>();
   for (const current of collectClassChain(classValue)) {
@@ -225,6 +247,7 @@ export const getClassPrototypeObject = (
       );
     }
   }
+  prototypeMemberCounts.set(prototype, prototype.entries.length);
   return prototype;
 };
 
@@ -264,9 +287,46 @@ export const getStaticProperty = (
   return null;
 };
 
-/** Whether every class up the `extends` chain is known, so a missing static is `undefined`. */
-export const hasKnownStaticChain = (classValue: StaticClassValue): boolean =>
-  collectClassChain(classValue).at(-1)?.body.superValue === null;
+/**
+ * `Component.key` as React reads statics such as `defaultProps`: the component's
+ * own property, or for a class one inherited through the constructor chain.
+ */
+export const getComponentProperty = (
+  component: ComponentDefinition,
+  key: string,
+): StaticValue | null => {
+  const own = component.properties.get(key);
+  if (own) return own;
+  const superValue = component.classBody?.superValue;
+  return superValue?.kind === "class" ? getStaticProperty(superValue, key) : null;
+};
+
+export const isReactComponentBase = (value: StaticValue | null): boolean =>
+  value?.kind === "react-api" && (value.api === "Component" || value.api === "PureComponent");
+
+const reactBasePrototypes = new Map<ReactApi, StaticObjectValue>();
+
+/** `Component.prototype` / `PureComponent.prototype` as `ReactBaseClasses.js` builds them: the `isReactComponent` marker, the updater methods, and `isPureReactComponent` on the pure variant. */
+export const getReactBasePrototype = (api: ReactApi): StaticObjectValue => {
+  const cached = reactBasePrototypes.get(api);
+  if (cached) return cached;
+  const constructor: StaticValue = { kind: "react-api", api };
+  const prototype = objectFromRecord({
+    constructor,
+    isReactComponent: objectValue(),
+    setState: unknownValue(`${api}.prototype.setState`),
+    forceUpdate: unknownValue(`${api}.prototype.forceUpdate`),
+    ...(api === "PureComponent" ? { isPureReactComponent: TRUE_VALUE } : {}),
+  });
+  reactBasePrototypes.set(api, prototype);
+  return prototype;
+};
+
+/** Whether every class up the `extends` chain is known (ending in nothing or `React.Component`, which has no statics), so a missing static is `undefined`. */
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {
+  const baseValue = collectClassChain(classValue).at(-1)?.body.superValue ?? null;
+  return baseValue === null || isReactComponentBase(baseValue);
+};
 
 const caughtErrorValue = (): StaticValue =>
   objectFromRecord({
@@ -300,6 +360,34 @@ const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue 
         { kind: "spread", value: partialState },
       ]);
 
+/**
+ * The `context` a class instance is constructed and rendered with: `readContext`
+ * of a `static contextType`, else the legacy masked context (`emptyContextObject`
+ * for a class without `contextTypes`).
+ */
+const readClassContext = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+): StaticValue => {
+  const contextType = getStaticProperty(classValue, "contextType");
+  if (contextType?.kind === "context") {
+    return providedContextValue(
+      interpreter,
+      contextType.context,
+      context.readContext(contextType.context),
+      null,
+    );
+  }
+  if (contextType && !isNullish(contextType)) {
+    return unknownValue(`contextType ${describeValue(contextType)}`);
+  }
+  if (!hasKnownStaticChain(classValue) || getStaticProperty(classValue, "contextTypes")) {
+    return unknownValue("legacy class context");
+  }
+  return objectFromRecord({});
+};
+
 interface ClassInstanceRecord {
   instance: StaticObjectValue;
   stateCell: StateCell;
@@ -327,13 +415,14 @@ const mountClassInstance = (
   context: EvaluationContext,
   frame: HookFrame,
 ): ClassInstanceRecord => {
+  const instanceContext = readClassContext(interpreter, classValue, context);
   const instance = objectFromRecord({
     props,
     state: UNDEFINED_VALUE,
-    context: unknownValue("legacy class context"),
+    context: instanceContext,
     refs: objectFromRecord({}),
   });
-  initializeInstance(interpreter, classValue, instance, [props], context);
+  initializeInstance(interpreter, classValue, instance, [props, instanceContext], context);
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
@@ -515,6 +604,9 @@ export const renderClassComponent = (
     record.rendered !== null &&
     !shouldClassUpdate(interpreter, instance, props, state, context);
   setObjectProperty(instance, "props", props);
+  if (record.isMounted) {
+    setObjectProperty(instance, "context", readClassContext(interpreter, classValue, context));
+  }
   stateCell.current = state;
   setObjectProperty(instance, "state", state);
   frame.effects.push({

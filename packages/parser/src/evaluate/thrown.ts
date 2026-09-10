@@ -1,4 +1,4 @@
-import type { SourceLocation, StaticUnknownValue, StaticValue } from "../types.js";
+import type { SourceLocation, StaticListValue, StaticUnknownValue, StaticValue } from "../types.js";
 import { branchValue, getObjectProperty, unknownValue } from "./values.js";
 
 type ThrowCertainty = "never" | "maybe" | "always";
@@ -10,23 +10,40 @@ const combineSiblings = (left: ThrowCertainty, right: ThrowCertainty): ThrowCert
       ? "maybe"
       : "never";
 
+interface ListCertainty {
+  items: readonly StaticValue[];
+  certainty: ThrowCertainty;
+}
+
 /**
  * Branches, optionals and repeats are immutable, so their certainty is computed
- * once; lists mutate in place and are re-walked. A list written through an
- * unknown key can hold itself, so the walk tracks the values it is inside:
- * reaching one again adds no throw of its own and counts as "never", and
- * nothing computed on such a walk is cached, since the list may still change.
+ * once; a list's entry is dropped when it mutates (`forgetThrowCertainty`) or
+ * its items are swapped. A list written through an unknown key can hold
+ * itself, so the walk tracks the values it is inside: reaching one again adds
+ * no throw of its own and counts as "never", and nothing computed on such a
+ * walk is cached, since the list may still change.
  */
 const certaintyCache = new WeakMap<StaticValue, ThrowCertainty>();
 const walking = new Set<StaticValue>();
 let isWalkCyclic = false;
+const listCertaintyCache = new WeakMap<StaticListValue, ListCertainty>();
+
+export const forgetThrowCertainty = (list: StaticListValue): void => {
+  listCertaintyCache.delete(list);
+};
 
 const computeThrowCertainty = (value: StaticValue): ThrowCertainty => {
   switch (value.kind) {
     case "unknown":
       return value.thrown ? "always" : "never";
-    case "list":
-      return value.items.map(getThrowCertainty).reduce(combineSiblings, "never");
+    case "list": {
+      let certainty: ThrowCertainty = "never";
+      for (const item of value.items) {
+        certainty = combineSiblings(certainty, getThrowCertainty(item));
+        if (certainty === "always") break;
+      }
+      return certainty;
+    }
     case "branch": {
       const outcomes = value.alternatives.map(getThrowCertainty);
       if (outcomes.every((outcome) => outcome === "always")) return "always";
@@ -55,19 +72,41 @@ const walkThrowCertainty = (value: StaticValue): ThrowCertainty => {
   }
 };
 
-/** Whether the paths `value` stands for throw; elements throw from their own proxies. */
-export const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
-  if (value.kind !== "branch" && value.kind !== "optional" && value.kind !== "repeat") {
-    return value.kind === "list" ? walkThrowCertainty(value) : computeThrowCertainty(value);
-  }
-  const cached = certaintyCache.get(value);
-  if (cached) return cached;
+const walkAcyclic = (
+  value: StaticValue,
+  cache: (certainty: ThrowCertainty) => void,
+): ThrowCertainty => {
   const wasWalkCyclic = isWalkCyclic;
   isWalkCyclic = false;
   const certainty = walkThrowCertainty(value);
-  if (!isWalkCyclic) certaintyCache.set(value, certainty);
+  if (!isWalkCyclic) cache(certainty);
   isWalkCyclic = wasWalkCyclic || isWalkCyclic;
   return certainty;
+};
+
+const getListThrowCertainty = (list: StaticListValue): ThrowCertainty => {
+  const cached = listCertaintyCache.get(list);
+  if (cached && cached.items === list.items) return cached.certainty;
+  return walkAcyclic(list, (certainty) =>
+    listCertaintyCache.set(list, { items: list.items, certainty }),
+  );
+};
+
+/** Whether the paths `value` stands for throw; elements throw from their own proxies. */
+export const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
+  switch (value.kind) {
+    case "branch":
+    case "optional":
+    case "repeat":
+      break;
+    case "list":
+      return getListThrowCertainty(value);
+    default:
+      return computeThrowCertainty(value);
+  }
+  const cached = certaintyCache.get(value);
+  if (cached) return cached;
+  return walkAcyclic(value, (certainty) => certaintyCache.set(value, certainty));
 };
 
 /** The operand whose evaluation certainly threw, so the operation never runs; null when every operand may produce a value. */

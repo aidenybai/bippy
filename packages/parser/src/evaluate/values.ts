@@ -27,6 +27,7 @@ import type {
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticRegExpValue,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
@@ -579,11 +580,15 @@ export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolVa
     : null;
 };
 
+/** Own enumerable string and symbol keys, as `Object.keys` followed by the enumerable `Object.getOwnPropertySymbols`; null when the shape is not fully known. */
+export const getKnownEnumerableOwnKeys = (object: StaticObjectValue): string[] | null =>
+  getEnumerableKeys(getKnownOwnKeys(object, () => true));
+
 /** Keys `{ ...spread }` copies: the source's own enumerable string and symbol keys. */
 const getKnownSpreadKeys = (spread: StaticValue): string[] | null => {
   switch (spread.kind) {
     case "object":
-      return getEnumerableKeys(getKnownOwnKeys(spread, () => true));
+      return getKnownEnumerableOwnKeys(spread);
     case "primitive":
       return [];
     case "branch": {
@@ -711,6 +716,26 @@ const getJoinedPropertyKeys = (
 export const omitObjectKeys = (object: StaticObjectValue, omitted: Set<string>): StaticValue => {
   const rest = omitObjectKeysShared(object, omitted, new Map());
   return rest === object ? objectValue([...object.entries]) : rest;
+};
+
+/**
+ * The rest of destructuring `source`: its own enumerable keys minus `omitted`.
+ * A primitive has none but a string's indices, so its rest is a fresh object.
+ */
+export const omitRestKeys = (source: StaticValue, omitted: Set<string>): StaticValue => {
+  if (source.kind === "object") return omitObjectKeys(source, omitted);
+  if (source.kind !== "primitive" || source.value === null || source.value === undefined) {
+    return unknownValue(`rest of ${describeValue(source)}`);
+  }
+  return typeof source.value === "string"
+    ? objectValue(
+        [...source.value].flatMap((character, index) =>
+          omitted.has(String(index))
+            ? []
+            : [{ kind: "property", key: String(index), value: primitiveValue(character) }],
+        ),
+      )
+    : objectValue();
 };
 
 const omitObjectKeysShared = (
@@ -967,7 +992,10 @@ const compareGlobalToPrimitive = (global: StaticValue, other: StaticValue): bool
 /** Whether a string of `value`'s shape or composition can read exactly `text`. */
 const mayStringShapeRead = (value: StaticUnknownPrimitiveValue, text: string): boolean => {
   const shape = value.stringShape;
-  if (shape && (!text.startsWith(shape.prefix) || (shape.length !== null && text.length !== shape.length))) {
+  if (
+    shape &&
+    (!text.startsWith(shape.prefix) || (shape.length !== null && text.length !== shape.length))
+  ) {
     return false;
   }
   const composition = value.composition;
@@ -990,7 +1018,9 @@ const compareTypedUnknownToOther = (typed: StaticValue, other: StaticValue): boo
   if (typed.kind !== "unknown-primitive" || typed.primitiveType === "any") return null;
   if (other.kind === "primitive") {
     if (typeof other.value !== typed.primitiveType) return false;
-    return typeof other.value === "string" && !mayStringShapeRead(typed, other.value) ? false : null;
+    return typeof other.value === "string" && !mayStringShapeRead(typed, other.value)
+      ? false
+      : null;
   }
   if (other.kind === "unknown-primitive") {
     return other.primitiveType === "any" || other.primitiveType === typed.primitiveType
@@ -1025,6 +1055,32 @@ export const isSameComposition = (
   left.source === right.source &&
   left.prefix === right.prefix &&
   left.suffix === right.suffix;
+
+export const matchesComposition = (name: string, composition: StringComposition): boolean =>
+  name.length >= composition.prefix.length + composition.suffix.length &&
+  name.startsWith(composition.prefix) &&
+  name.endsWith(composition.suffix);
+
+const isEitherPrefix = (left: string, right: string): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isEitherSuffix = (left: string, right: string): boolean =>
+  left.endsWith(right) || right.endsWith(left);
+
+/** Whether some string could read as both compositions, so a write under one may be read under the other. */
+export const mayOverlapCompositions = (
+  left: StringComposition,
+  right: StringComposition,
+): boolean =>
+  isEitherPrefix(left.prefix, right.prefix) && isEitherSuffix(left.suffix, right.suffix);
+
+/** Whether the dynamic string `value` may read as `text`, given the prefix, length or composition it is known to have. */
+export const mayReadAsText = (value: StaticUnknownPrimitiveValue, text: string): boolean => {
+  if (value.composition && !matchesComposition(text, value.composition)) return false;
+  const shape = value.stringShape;
+  if (!shape) return true;
+  return text.startsWith(shape.prefix) && (shape.length === null || text.length === shape.length);
+};
 
 /**
  * `===` between two values, or null when analysis cannot decide. Import
@@ -1377,8 +1433,12 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
-  const [first, ...rest] = alternatives;
-  if (first && rest.every((alternative) => isInterchangeable(alternative, first))) return first;
+  const [firstAlternative] = alternatives;
+  if (
+    firstAlternative !== undefined &&
+    alternatives.every((alternative) => isInterchangeable(alternative, firstAlternative))
+  )
+    return firstAlternative;
   const flattened: StaticValue[] = [];
   let resolvedPreferred = 0;
   const add = (value: StaticValue): number => {
@@ -1387,23 +1447,21 @@ export const branchValue = (
     flattened.push(value);
     return flattened.length - 1;
   };
-  alternatives.forEach((alternative, index) => {
-    if (alternative.kind === "branch") {
-      alternative.alternatives.forEach((inner, innerIndex) => {
-        const position = add(inner);
-        if (index === preferredIndex && innerIndex === alternative.preferredIndex) {
-          resolvedPreferred = position;
-        }
-      });
-    } else {
-      const position = add(alternative);
-      if (index === preferredIndex) resolvedPreferred = position;
+  for (const [index, alternative] of alternatives.entries()) {
+    const inner = alternative.kind === "branch" ? alternative.alternatives : [alternative];
+    const innerPreferred = alternative.kind === "branch" ? alternative.preferredIndex : 0;
+    for (const [innerIndex, value] of inner.entries()) {
+      const position = add(value);
+      if (index === preferredIndex && innerIndex === innerPreferred) resolvedPreferred = position;
+      if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
+        return unknownValue(
+          `${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`,
+          location,
+        );
+      }
     }
-  });
-  if (flattened.length === 1) return flattened[0];
-  if (flattened.length > MAX_BRANCH_ALTERNATIVES) {
-    return unknownValue(`${reason}: more than ${MAX_BRANCH_ALTERNATIVES} alternatives`, location);
   }
+  if (flattened.length === 1) return flattened[0];
   const isPositional =
     flattened.length === alternatives.length &&
     alternatives.every((alternative) => alternative.kind !== "branch");
@@ -1521,6 +1579,10 @@ export type CallableValue = Extract<
 
 export const isCallable = (value: StaticValue | undefined): value is CallableValue =>
   value?.kind === "function" || value?.kind === "native-function" || value?.kind === "global";
+
+/** `RegExp.prototype.toString`, the string a RegExp coerces to. */
+export const regExpToString = (value: StaticRegExpValue): string =>
+  `/${value.pattern}/${value.flags}`;
 
 export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "primitive") return value.value === null || value.value === undefined;
@@ -1778,11 +1840,6 @@ export const distributeObjectBranches = (
 export const isIndefiniteItem = (item: StaticValue): boolean =>
   item.kind === "repeat" || item.kind === "optional";
 
-export const toIndexKey = (key: string): number | null => {
-  const index = Number(key);
-  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
-};
-
 /** The element a list slot holds once its count/presence uncertainty is peeled away. */
 export const getIndefiniteItemValue = (item: StaticValue): StaticValue =>
   item.kind === "repeat"
@@ -1791,25 +1848,30 @@ export const getIndefiniteItemValue = (item: StaticValue): StaticValue =>
       ? getIndefiniteItemValue(item.value)
       : item;
 
-/** Bounds on how many array slots the items occupy: a repeat spans its count, an optional zero or one. */
-const getItemCountRange = (items: StaticValue[]): NumberRange =>
-  items.reduce<NumberRange>(
-    (range, item) =>
-      item.kind === "repeat"
-        ? { min: range.min + (item.count?.min ?? 0), max: range.max + (item.count?.max ?? Infinity) }
-        : { min: range.min + (item.kind === "optional" ? 0 : 1), max: range.max + 1 },
-    { min: 0, max: 0 },
-  );
+const getItemCountRange = (item: StaticValue): NumberRange => {
+  if (item.kind === "repeat") return item.count ?? { min: 0, max: Number.POSITIVE_INFINITY };
+  return item.kind === "optional" ? { min: 0, max: 1 } : { min: 1, max: 1 };
+};
 
-export const getListLength = (list: StaticListValue): StaticValue =>
-  list.items.some(isIndefiniteItem)
-    ? {
-        ...unknownPrimitiveValue("number", "length of a partially known list"),
-        numberRange: getItemCountRange(list.items),
-      }
-    : primitiveValue(list.items.length);
+export const getListLength = (list: StaticListValue): StaticValue => {
+  if (!list.items.some(isIndefiniteItem)) return primitiveValue(list.items.length);
+  const ranges = list.items.map(getItemCountRange);
+  return {
+    ...unknownPrimitiveValue("number", "length of a partially known list"),
+    numberRange: {
+      min: ranges.reduce((total, range) => total + range.min, 0),
+      max: ranges.reduce((total, range) => total + range.max, 0),
+    },
+  };
+};
 
 const MAX_LIST_GROWTH = 1_000;
+
+/** The array index a property key names, as `"3"` does and `"03"` or `"-1"` do not. */
+export const toIndexKey = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
+};
 
 /**
  * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
@@ -1994,27 +2056,34 @@ export const getListItem = (
 ): StaticValue => {
   const candidates: StaticValue[] = [];
   const pick = (remaining: StaticValue[], offset: number): boolean => {
-    if (candidates.length > MAX_OPTIONAL_CANDIDATES) return false;
-    const [head, ...rest] = remaining;
-    if (head === undefined) {
-      candidates.push(UNDEFINED_VALUE);
-      return true;
+    let position = 0;
+    let remainingOffset = offset;
+    while (candidates.length <= MAX_OPTIONAL_CANDIDATES) {
+      const head = remaining[position];
+      if (head === undefined) {
+        candidates.push(UNDEFINED_VALUE);
+        return true;
+      }
+      if (head.kind === "repeat") return false;
+      if (head.kind === "optional") {
+        const rest = remaining.slice(position + 1);
+        return head.isAbsentPreferred
+          ? pick(rest, remainingOffset) && pick([head.value, ...rest], remainingOffset)
+          : pick([head.value, ...rest], remainingOffset) && pick(rest, remainingOffset);
+      }
+      if (remainingOffset === 0) {
+        candidates.push(head);
+        return true;
+      }
+      position += 1;
+      remainingOffset -= 1;
     }
-    if (head.kind === "repeat") return false;
-    if (head.kind === "optional") {
-      return head.isAbsentPreferred
-        ? pick(rest, offset) && pick([head.value, ...rest], offset)
-        : pick([head.value, ...rest], offset) && pick(rest, offset);
-    }
-    if (offset === 0) {
-      candidates.push(head);
-      return true;
-    }
-    return pick(rest, offset - 1);
+    return false;
   };
   if (!pick(items, index)) {
     return unknownValue(`index ${index} of a partially known list`, location);
   }
+  if (candidates.length === 1) return candidates[0];
   return branchValue(candidates, `item ${index} of a filtered list`, location);
 };
 

@@ -34,7 +34,7 @@ export interface FrameworkProfile {
   isInjectedRuntimeFiber: (fiber: RuntimeFiberSnapshot) => boolean;
   /** Fiber name both trees are aligned on when the corpus entry does not name one. */
   defaultAnchor: string | null;
-  /** `window` properties the framework's client bootstraps the initial render from, recorded from the settled page. */
+  /** `window` properties the framework's client reads at hydration, recorded with every capture. */
   capturedGlobals: readonly string[];
 }
 

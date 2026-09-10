@@ -251,8 +251,18 @@ const toCondition = (decision: MatchDecision): StateCondition =>
 const conditionKey = (condition: StateCondition): string =>
   condition.kind === "transition" ? "transition" : condition.variable;
 
-const conditionValues = (conditions: StateCondition[]): Map<string, number> =>
-  new Map(conditions.map((condition) => [conditionKey(condition), conditionValue(condition)]));
+/** One value per decision variable; null when decisions sharing a variable disagree. */
+const conditionValues = (conditions: StateCondition[]): Map<string, number> | null => {
+  const values = new Map<string, number>();
+  for (const condition of conditions) {
+    const key = conditionKey(condition);
+    const value = conditionValue(condition);
+    const existing = values.get(key);
+    if (existing !== undefined && existing !== value) return null;
+    values.set(key, value);
+  }
+  return values;
+};
 
 const isSubsetOf = (state: StateCondition[], values: ReadonlyMap<string, number>): boolean =>
   state.every((condition) => values.get(conditionKey(condition)) === conditionValue(condition));
@@ -283,6 +293,7 @@ const findState = (
 ): StatePosition => {
   const commitStates = stateSpace.commitStates[commit];
   const values = conditionValues(conditions);
+  if (!values) return { isMember: false, index: null };
   const indices: number[] = [];
   let covered = 0;
   for (const cluster of commitStates.clusters) {
@@ -291,7 +302,7 @@ const findState = (
     indices.push(index);
     covered += cluster.states[index].length;
   }
-  if (covered !== conditions.length) return { isMember: false, index: null };
+  if (covered !== values.size) return { isMember: false, index: null };
   const index = commitOffset(stateSpace, commit) + stateIndexOf(commitStates, indices);
   return { isMember: true, index: index < stateSpace.budget.maxStates ? index : null };
 };

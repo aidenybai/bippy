@@ -15,14 +15,50 @@
         "start": {
           "time": 1577836800000,
           "timezoneOffset": 0,
-          "local": { "year": 2020, "month": 0, "date": 1, "day": 3, "hours": 0, "minutes": 0, "seconds": 0, "milliseconds": 0 },
-          "utc": { "year": 2020, "month": 0, "date": 1, "day": 3, "hours": 0, "minutes": 0, "seconds": 0, "milliseconds": 0 }
+          "local": {
+            "year": 2020,
+            "month": 0,
+            "date": 1,
+            "day": 3,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0,
+            "milliseconds": 0
+          },
+          "utc": {
+            "year": 2020,
+            "month": 0,
+            "date": 1,
+            "day": 3,
+            "hours": 0,
+            "minutes": 0,
+            "seconds": 0,
+            "milliseconds": 0
+          }
         },
         "end": {
           "time": 4133980799000,
           "timezoneOffset": 0,
-          "local": { "year": 2100, "month": 11, "date": 31, "day": 5, "hours": 23, "minutes": 59, "seconds": 59, "milliseconds": 0 },
-          "utc": { "year": 2100, "month": 11, "date": 31, "day": 5, "hours": 23, "minutes": 59, "seconds": 59, "milliseconds": 0 }
+          "local": {
+            "year": 2100,
+            "month": 11,
+            "date": 31,
+            "day": 5,
+            "hours": 23,
+            "minutes": 59,
+            "seconds": 59,
+            "milliseconds": 0
+          },
+          "utc": {
+            "year": 2100,
+            "month": 11,
+            "date": 31,
+            "day": 5,
+            "hours": 23,
+            "minutes": 59,
+            "seconds": 59,
+            "milliseconds": 0
+          }
         }
       }
     }

@@ -49,8 +49,9 @@ const MENU_NAME = "Menu";
 const [createMenuContext, createMenuScope] = createContextScope(MENU_NAME);
 const [MenuProvider, useMenuContext] = createMenuContext<{ open: boolean }>(MENU_NAME);
 const [MenuRootProvider, useMenuRootContext] = createMenuContext<{ modal: boolean }>(MENU_NAME);
-const [MenuContentProvider, useMenuContentContext] =
-  createMenuContext<{ label: string }>("MenuContent");
+const [MenuContentProvider, useMenuContentContext] = createMenuContext<{ label: string }>(
+  "MenuContent",
+);
 
 interface ScopedProps {
   __scopeMenu?: Scope;
