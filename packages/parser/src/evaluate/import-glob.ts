@@ -103,7 +103,7 @@ const globAbsolute = (absolutePattern: string): string[] => {
   });
 };
 
-const withRelativePrefix = (relativePath: string): string =>
+export const withRelativePrefix = (relativePath: string): string =>
   RELATIVE_PREFIX.test(relativePath) ? relativePath : `./${relativePath}`;
 
 const listImportGlobFiles = (

@@ -11,4 +11,9 @@ export {
   NEXT_PAGES_PROFILE,
   REACT_ROUTER_PROFILE,
 } from "./profiles.js";
-export { renderFrameworkTarget, type FrameworkRenderTarget } from "./render-framework.js";
+export {
+  createFrameworkRenderer,
+  renderFrameworkTarget,
+  type FrameworkRenderer,
+  type FrameworkRenderTarget,
+} from "./render-framework.js";

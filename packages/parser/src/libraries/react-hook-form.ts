@@ -31,7 +31,7 @@ import type {
   ContextDefinition,
   ExternalValueProvider,
   LibraryValueProvider,
-  ProjectContext,
+  LibraryRun,
   ReactApi,
   StaticObjectEntry,
   StaticObjectValue,
@@ -2074,16 +2074,16 @@ const createHookFormLibrary = (contexts: HookFormContexts): ExternalValueProvide
   return (_specifier, importedName) => exports.get(importedName) ?? null;
 };
 
-const libraries = new WeakMap<ProjectContext, ExternalValueProvider>();
+const libraries = new WeakMap<LibraryRun, ExternalValueProvider>();
 
-export const reactHookFormValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const reactHookFormValue: LibraryValueProvider = (specifier, importedName, run) => {
   if (!REACT_HOOK_FORM_PACKAGES.includes(specifier)) return null;
-  let library = libraries.get(project);
+  let library = libraries.get(run);
   if (!library) {
     library = createHookFormLibrary(
-      createHookFormContexts(project.readPackageVersion("react-hook-form")),
+      createHookFormContexts(run.project.readPackageVersion("react-hook-form")),
     );
-    libraries.set(project, library);
+    libraries.set(run, library);
   }
   return library(specifier, importedName);
 };

@@ -1,3 +1,4 @@
+import { MarkerDecisionError } from "../errors.js";
 import { KEY_PLACEHOLDER, MARKER_NAMES } from "../materialize/markers.js";
 import type { StaticRenderResult } from "../types.js";
 import {
@@ -8,6 +9,7 @@ import {
   type Guard,
   type InputVariable,
   mapGuardVariables,
+  normalizePredicate,
   parseSymbolicCardinality,
   parseSymbolicPredicate,
   predicateGuards,
@@ -44,6 +46,10 @@ export interface PatternText {
 export interface PatternBranch {
   kind: "branch";
   variable: string;
+  /** The materializer's id for this decision, which a replay pins it by. */
+  decision: string;
+  /** Decisions inside the alternatives were numbered in the enclosing scope (see `DecisionMarkerProps`). */
+  sharesScope: boolean;
   reason: string;
   /** Where the source branched (`file:line:column`); null for branches the materializer introduces. */
   location: string | null;
@@ -63,6 +69,8 @@ export interface RepeatBounds {
 export interface PatternRepeat {
   kind: "repeat";
   variable: string;
+  /** The materializer's id for this decision, which a replay pins it by. */
+  decision: string;
   location: string | null;
   /** The `length` the iteration count is equal to. */
   cardinality: SymbolicVariable;
@@ -122,15 +130,10 @@ const readNumber = (props: Record<string, SnapshotPropValue>, key: string): numb
 const readKey = (fiber: RuntimeFiberSnapshot): string | null =>
   fiber.key === KEY_PLACEHOLDER ? null : fiber.key;
 
-/** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
-const normalizePredicate = (
-  predicate: SymbolicPredicate,
-  alternativeCount: number,
-): { predicate: SymbolicPredicate; isSwapped: boolean } => {
-  if (predicate.formula?.kind !== "not" || alternativeCount !== 2) {
-    return { predicate, isSwapped: false };
-  }
-  return { predicate: { ...predicate, formula: predicate.formula.operand }, isSwapped: true };
+const readDecision = (fiber: RuntimeFiberSnapshot): string => {
+  const decision = readString(fiber.props, "decision");
+  if (decision === null) throw new MarkerDecisionError(fiber.name ?? fiber.tag);
+  return decision;
 };
 
 const anonymousInput = (id: string, label: string, location: string | null): InputVariable => ({
@@ -261,6 +264,8 @@ class PatternReader {
     return {
       kind: "branch",
       variable: formatPredicate(predicate),
+      decision: readDecision(fiber),
+      sharesScope: fiber.props.sharesScope === true,
       reason,
       location,
       preferredIndex: isSwapped && preferredIndex !== null ? 1 - preferredIndex : preferredIndex,
@@ -282,6 +287,7 @@ class PatternReader {
     return {
       kind: "repeat",
       variable: formatVariable(cardinality.variable),
+      decision: readDecision(fiber),
       location,
       cardinality: cardinality.variable,
       inputs: cardinality.inputs,
@@ -294,13 +300,18 @@ class PatternReader {
     };
   }
 
+  /** A pinned marker (a replay) rendered one alternative or count only; it reads as that content. */
   private toPatternNode(fiber: RuntimeFiberSnapshot): PatternNode[] {
     if (fiber.tag === "HostText") return [{ kind: "text", text: fiber.text }];
     switch (fiber.name) {
       case MARKER_NAMES.branch:
-        return [this.toBranch(fiber)];
+        return readNumber(fiber.props, "pinnedIndex") === null
+          ? [this.toBranch(fiber)]
+          : fiber.children.flatMap((alternative) => this.read(alternative.children));
       case MARKER_NAMES.repeat:
-        return [this.toRepeat(fiber)];
+        return readNumber(fiber.props, "pinnedCount") === null
+          ? [this.toRepeat(fiber)]
+          : this.read(fiber.children);
       case MARKER_NAMES.opaque:
         return [
           {
@@ -347,8 +358,8 @@ class PatternReader {
  * Reads the materialized fiber tree back into a pattern: marker components
  * become branches, repeats, opaque subtrees and wildcards; everything else is
  * a concrete fiber. A tree without markers is a fully concrete pattern.
- * Decision variables are numbered in document order, so equal trees read to
- * equal patterns.
+ * Decision variables come from the markers, so equal trees read to equal
+ * patterns.
  */
 export const snapshotToPattern = (fibers: RuntimeFiberSnapshot[]): PatternNode[] => {
   const nodes = new PatternReader().read(fibers);
@@ -468,6 +479,7 @@ const countVariables = (nodes: PatternNode[], counts: Map<string, number>): void
 export class SelfContainedFiberIndex {
   private readonly totals = new Map<string, number>();
   private readonly selfContained = new Map<PatternFiber, boolean>();
+  private readonly selfContainedDecisions = new WeakMap<PatternBranch | PatternNode[], boolean>();
 
   index(nodes: PatternNode[]): void {
     countVariables(nodes, this.totals);
@@ -476,6 +488,19 @@ export class SelfContainedFiberIndex {
 
   has(node: PatternFiber): boolean {
     return this.selfContained.get(node) ?? false;
+  }
+
+  /** Whether every decision inside is decided nowhere else, so what follows cannot depend on how it went. */
+  isSelfContained(decisions: PatternBranch | PatternNode[]): boolean {
+    const known = this.selfContainedDecisions.get(decisions);
+    if (known !== undefined) return known;
+    const inside = new Map<string, number>();
+    countVariables(Array.isArray(decisions) ? decisions : [decisions], inside);
+    const isSelfContained = [...inside].every(
+      ([variable, count]) => this.totals.get(variable) === count,
+    );
+    this.selfContainedDecisions.set(decisions, isSelfContained);
+    return isSelfContained;
   }
 
   private mark(nodes: PatternNode[]): Map<string, number> {

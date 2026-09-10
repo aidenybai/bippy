@@ -3,6 +3,7 @@ import { realpathSync } from "node:fs";
 import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
+import { MAX_TIMER_TASKS } from "../evaluate/timers.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
 import {
   detectModuleBundler,
@@ -13,18 +14,32 @@ import { ModuleGraph } from "../graph/module-graph.js";
 import { ModuleResolver } from "../graph/module-resolver.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
+import { createTanStackRouterTransform } from "../graph/tanstack-router-plugin.js";
+import {
+  createViteAssetTransform,
+  loadViteUserPlugins,
+  transformViteDocumentShell,
+} from "../graph/vite-asset-transform.js";
+import { locateViteConfig } from "../graph/vite-config.js";
 import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
-import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
+import {
+  loadReactRuntime,
+  type ReactPackageSpecifiers,
+  type ReactRuntime,
+} from "../materialize/react-runtime.js";
 import type { RendererHost } from "../materialize/renderer-host.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   Diagnostic,
+  ExternalValueProvider,
   ModuleRecord,
+  PinnedDecisions,
   ProjectContext,
+  SourceTransform,
   StaticObjectValue,
   StaticRenderResult,
   StaticRendererOptions,
@@ -53,6 +68,12 @@ interface BootstrapCall {
   globalNames: string[];
 }
 
+const resolveOptionalPath = (
+  rootDirectory: string,
+  filePath: string | undefined,
+): string | undefined =>
+  filePath === undefined ? undefined : path.resolve(rootDirectory, filePath);
+
 const BOOTSTRAP_PATTERN = /^(.+)#([^#()]+?)(?:\(([^()]*)\))?$/;
 
 const parseBootstrap = (bootstrap: string): BootstrapCall | null => {
@@ -69,61 +90,120 @@ const parseBootstrap = (bootstrap: string): BootstrapCall | null => {
   };
 };
 
+/**
+ * The parsed side of a renderer: resolution, the project and the module graph.
+ * Nothing here changes while rendering (evaluated module state lives in each
+ * `Interpreter`), so renderers over the same project share one.
+ */
+interface RendererProject {
+  resolver: ModuleResolver;
+  reactVersion: string | null;
+  project: ProjectContext;
+  documentShell: string | null;
+  graph: ModuleGraph;
+}
+
+/** Either the parsed project to share, or the app's own bundler plugins (prepared by `createStaticRenderer`) to parse a new one with. */
+interface RendererSetup {
+  shared?: RendererProject;
+  bundlerTransforms?: SourceTransform[];
+}
+
+/** Options a derived renderer may change without re-parsing the project. */
+export interface RenderTimeOptions {
+  decisions?: PinnedDecisions;
+  externalValues?: ExternalValueProvider;
+  serverComponents?: boolean;
+}
+
 export class StaticRenderer {
   readonly options: StaticRendererOptions;
   readonly graph: ModuleGraph;
   private readonly resolver: ModuleResolver;
   private readonly reactVersion: string | null;
   private readonly project: ProjectContext;
-  private readonly documentShell: string | null;
+  private documentShell: string | null;
+  private reactPackages: ReactPackageSpecifiers | undefined;
 
-  constructor(options: StaticRendererOptions) {
+  constructor(options: StaticRendererOptions, setup: RendererSetup = {}) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
-    this.resolver = new ModuleResolver({
+    const { resolver, reactVersion, project, documentShell, graph } =
+      setup.shared ?? this.createProject(setup.bundlerTransforms ?? []);
+    this.resolver = resolver;
+    this.reactVersion = reactVersion;
+    this.project = project;
+    this.documentShell = documentShell;
+    this.graph = graph;
+  }
+
+  private createProject(bundlerTransforms: SourceTransform[]): RendererProject {
+    const { options } = this;
+    const { rootDirectory } = options;
+    const resolver = new ModuleResolver({
       tsconfigPath: options.tsconfigPath,
       aliases: Object.fromEntries(
         Object.entries(options.aliases ?? {}).map(([specifier, target]) => [
           specifier,
-          path.resolve(this.options.rootDirectory, target),
+          path.resolve(rootDirectory, target),
         ]),
       ),
       conditionNames: options.conditionNames,
-      rootDirectory: this.options.rootDirectory,
+      rootDirectory,
     });
-    const { rootDirectory } = this.options;
-    const devDirectory = this.resolveOptionalPath(options.devDirectory);
+    const devDirectory = resolveOptionalPath(rootDirectory, options.devDirectory);
     const bundler = detectModuleBundler(rootDirectory, devDirectory);
-    this.project = createProjectContext({
+    const project = createProjectContext({
       rootDirectory,
-      resolver: this.resolver,
-      servedDirectory: this.resolveOptionalPath(options.servedDirectory),
-      publicDirectory: this.resolveOptionalPath(options.publicDirectory),
-      environment: this.options.environment,
-      devCommand: this.options.devCommand,
+      resolver,
+      servedDirectory: resolveOptionalPath(rootDirectory, options.servedDirectory),
+      publicDirectory: resolveOptionalPath(rootDirectory, options.publicDirectory),
+      environment: options.environment,
+      devCommand: options.devCommand,
       devDirectory,
-      observations: this.options.observations,
-      origin: this.options.origin ?? null,
-      transpiler: this.options.transpiler ?? detectModuleTranspiler(this.resolver, rootDirectory),
+      observations: options.observations,
+      origin: options.origin ?? null,
+      transpiler: options.transpiler ?? detectModuleTranspiler(resolver, rootDirectory),
       bundler,
     });
-    this.documentShell = readDocumentShell(
-      rootDirectory,
-      bundler,
-      options.environment ?? null,
-      this.project.servedDirectory ?? rootDirectory,
+    const svgrTransform = createSvgrSourceTransform(project, resolver, rootDirectory, options.svgr);
+    return {
+      resolver,
+      reactVersion: project.readPackageVersion("react"),
+      project,
+      documentShell: readDocumentShell(
+        rootDirectory,
+        bundler,
+        options.environment ?? null,
+        project.servedDirectory ?? rootDirectory,
+      ),
+      graph: new ModuleGraph({
+        resolver,
+        sourceFileCache: new SourceFileCache([
+          ...(svgrTransform ? [svgrTransform] : []),
+          ...createYamlSourceTransforms(rootDirectory),
+          ...bundlerTransforms,
+        ]),
+        resolveExternalPackages: options.resolveExternalPackages,
+        externalPackageAllowList: options.externalPackageAllowList,
+      }),
+    };
+  }
+
+  /** A renderer over the same parsed project with some options changed; every render still gets a fresh interpreter. */
+  derive(overrides: RenderTimeOptions): StaticRenderer {
+    return new StaticRenderer(
+      { ...this.options, ...overrides },
+      {
+        shared: {
+          resolver: this.resolver,
+          reactVersion: this.reactVersion,
+          project: this.project,
+          documentShell: this.documentShell,
+          graph: this.graph,
+        },
+      },
     );
-    this.reactVersion = this.project.readPackageVersion("react");
-    const svgrTransform = createSvgrSourceTransform(this.project, this.resolver, rootDirectory);
-    this.graph = new ModuleGraph({
-      resolver: this.resolver,
-      sourceFileCache: new SourceFileCache([
-        ...(svgrTransform ? [svgrTransform] : []),
-        ...createYamlSourceTransforms(rootDirectory),
-      ]),
-      resolveExternalPackages: options.resolveExternalPackages,
-      externalPackageAllowList: options.externalPackageAllowList,
-    });
   }
 
   resolvePath(filePath: string): string {
@@ -132,8 +212,15 @@ export class StaticRenderer {
       : path.resolve(this.options.rootDirectory, filePath);
   }
 
-  private resolveOptionalPath(filePath: string | undefined): string | undefined {
-    return filePath === undefined ? undefined : this.resolvePath(filePath);
+  /** Reshapes the page the way the dev server does before serving it, when the app has one. */
+  async transformDocumentShell(
+    transform: (html: string, servedDirectory: string) => Promise<string>,
+  ): Promise<void> {
+    if (this.documentShell === null) return;
+    this.documentShell = await transform(
+      this.documentShell,
+      this.project.servedDirectory ?? this.options.rootDirectory,
+    );
   }
 
   loadModule(filePath: string): ModuleRecord | null {
@@ -183,11 +270,17 @@ export class StaticRenderer {
     interpreter.callValue(callee, args, interpreter.createModuleContext(module), null);
   }
 
+  /** Materializes with the React build a framework serves in place of the app's own `react`/`react-dom`. */
+  setReactPackages(packages: ReactPackageSpecifiers): void {
+    this.reactPackages = packages;
+  }
+
   private loadRuntime(): Promise<ReactRuntime> {
     ensureDomGlobals();
     return loadReactRuntime({
       resolver: this.resolver,
       rootDirectory: this.options.rootDirectory,
+      packages: this.reactPackages,
     });
   }
 
@@ -206,6 +299,7 @@ export class StaticRenderer {
       maxFiberCount: this.options.maxFiberCount,
       maxRecursionPerComponent: this.options.maxRecursionPerComponent,
       serverComponents: this.options.serverComponents,
+      decisions: this.options.decisions,
     });
     const rootNode = materializer.toRootNode(rootValue);
     interpreter.timers.drainMicrotasks();
@@ -287,15 +381,27 @@ export class StaticRenderer {
   /**
    * Evaluates the element handed to the root render call of an entry module
    * (`createRoot().render(<App />)`, `hydrateRoot(document, <App />)`), together
-   * with the statements that lead up to it. An entry without such a call (it
-   * mounts through an imported function) runs whole, and the element the first
-   * evaluated root render received is used. Null (with a diagnostic) when no
-   * root render happens.
+   * with the statements that lead up to it; the last call to run wins, and a
+   * call inside a callback sees the callback's arguments as unknowns. An entry
+   * without such a call (it mounts through an imported function, possibly from
+   * a timer task or a promise reaction) runs whole, then its queued tasks run
+   * until one renders, and the element the first evaluated root render received
+   * is used. Null (with a diagnostic) when no root render happens.
    */
   evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.initializeModule(module);
+      const { timers } = interpreter;
+      for (
+        let round = 0;
+        interpreter.rootRender.element === null &&
+        round < MAX_TIMER_TASKS &&
+        (timers.hasTasks() || timers.hasMicrotasks());
+        round++
+      ) {
+        timers.runNextTask();
+      }
       if (interpreter.rootRender.element) return interpreter.rootRender.element;
       interpreter.report(
         "no-root-render",
@@ -308,22 +414,38 @@ export class StaticRenderer {
     if (rootCalls.length > 1) {
       interpreter.report(
         "multiple-root-renders",
-        `${rootCalls.length} root render calls found in ${module.filePath}; using the first`,
+        `${rootCalls.length} root render calls found in ${module.filePath}; using the last to run`,
         null,
         "warning",
       );
     }
-    const rootCall = rootCalls[0];
+    const rootCall = rootCalls[rootCalls.length - 1];
     interpreter.initializeModule(
       module,
       module.sideEffectStatements.filter((statement) => statement.end <= rootCall.call.start),
     );
     const moduleContext = interpreter.createModuleContext(module);
     const context = { ...moduleContext, scope: createScope(moduleContext.scope) };
-    for (const statements of rootCall.enclosingStatements) {
-      interpreter.evaluateBlock(statements, context, false);
+    if (rootCall.enclosingFunction) {
+      interpreter.bindUnknownParameters(
+        rootCall.enclosingFunction.params,
+        context.scope,
+        context,
+        "argument of the callback that renders the root",
+      );
     }
-    return interpreter.evaluateExpression(rootCall.element, context);
+    if (rootCall.enclosingBlocks.length === 0) {
+      return interpreter.evaluateExpression(rootCall.element, context);
+    }
+    const blocks = rootCall.enclosingBlocks.map((block, index) =>
+      index === rootCall.enclosingBlocks.length - 1
+        ? [...block.statementsBefore, block.statement]
+        : block.statementsBefore,
+    );
+    return (
+      interpreter.evaluateNestedRootRender(blocks, context) ??
+      interpreter.evaluateExpression(rootCall.element, context)
+    );
   }
 
   renderWith(produce: (interpreter: Interpreter) => StaticValue): Promise<StaticRenderResult> {
@@ -332,5 +454,31 @@ export class StaticRenderer {
   }
 }
 
-export const createStaticRenderer = (options: StaticRendererOptions): StaticRenderer =>
-  new StaticRenderer(options);
+/**
+ * A renderer with the app's own Vite plugins loaded: their `transform` hooks
+ * produce the modules non-JavaScript imports link and their `transformIndexHtml`
+ * hooks shape the page the dev server serves.
+ */
+export const createStaticRenderer = async (
+  options: StaticRendererOptions,
+): Promise<StaticRenderer> => {
+  const rootDirectory = realpathSync(options.rootDirectory);
+  const viteConfig = locateViteConfig({
+    rootDirectory,
+    devDirectory: resolveOptionalPath(rootDirectory, options.devDirectory),
+    devCommand: options.devCommand,
+  });
+  const viteUserPlugins =
+    viteConfig && (await loadViteUserPlugins(viteConfig, options.modeledVitePlugins));
+  const transforms = [
+    viteConfig && (await createTanStackRouterTransform(viteConfig)),
+    viteUserPlugins && createViteAssetTransform(viteUserPlugins),
+  ].filter((transform) => transform !== null);
+  const renderer = new StaticRenderer(options, { bundlerTransforms: transforms });
+  if (viteUserPlugins) {
+    await renderer.transformDocumentShell((html, servedDirectory) =>
+      transformViteDocumentShell(viteUserPlugins, html, servedDirectory, options.route ?? "/"),
+    );
+  }
+  return renderer;
+};

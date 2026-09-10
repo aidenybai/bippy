@@ -1,6 +1,7 @@
 import type { ComparisonDivergence, ComparisonReport, WildcardAbsorption } from "./compare.js";
 import { enumerateClusters, type GuardCluster } from "./enumerate-states.js";
 import { formatGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
+import type { StateReplaySummary } from "./state-replay.js";
 import {
   DEFAULT_STATE_SPACE_BUDGET,
   type StateCondition,
@@ -147,10 +148,26 @@ const formatStateSpaceSummary = (
   return lines;
 };
 
+export const formatStateReplay = (replay: StateReplaySummary): string[] => {
+  const sampled =
+    replay.replayed < replay.assignments ? ` (sampled, max ${replay.maxReplayed})` : "";
+  const lines = [
+    `replayed: ${replay.replayed} of ${replay.assignments} decision assignments${sampled}, ${replay.mismatched.length} mismatched`,
+  ];
+  for (const mismatch of replay.mismatched) {
+    lines.push(
+      `  ${formatStateConditions(mismatch.conditions)}: claimed ${mismatch.claimedCommits} commits, replay produced ${mismatch.replayedCommits}${mismatch.isCorrected ? " (corrected)" : " (decisions left open)"}`,
+    );
+    lines.push(`    diverged at ${formatDivergence(mismatch.divergence)}`);
+  }
+  return lines;
+};
+
 export const formatComparisonReport = (
   report: ComparisonReport,
   stateSpace: StateSpaceSummary | null = null,
   states: StaticState[] = [],
+  stateReplay: StateReplaySummary | null = null,
 ): string => {
   const lines = [
     `status: ${report.status}`,
@@ -159,6 +176,7 @@ export const formatComparisonReport = (
     `steps: ${report.stepsUsed}${report.budgetExhausted ? " (budget exhausted)" : ""}`,
   ];
   if (stateSpace) lines.push(...formatStateSpaceSummary(stateSpace, states));
+  if (stateReplay) lines.push(...formatStateReplay(stateReplay));
   if (report.divergence) lines.push(`divergence at ${formatDivergence(report.divergence)}`);
   if (report.wildcards.length > 0) {
     lines.push("largest wildcards:");

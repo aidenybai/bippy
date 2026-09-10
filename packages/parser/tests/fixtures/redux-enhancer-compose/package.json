@@ -1,0 +1,9 @@
+{
+  "name": "fixture-redux-enhancer-compose",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react-redux": "9.3.0",
+    "redux": "5.0.1"
+  }
+}

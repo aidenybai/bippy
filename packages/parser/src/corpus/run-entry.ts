@@ -9,7 +9,8 @@ import {
   describeError,
   parseWithSchema,
 } from "../errors.js";
-import { renderCorpusEntry } from "./render-entry.js";
+import type { FrameworkRenderer } from "../frameworks/render-framework.js";
+import { createCorpusEntryRenderer } from "./render-entry.js";
 import {
   dropInjectedFibers,
   unwrapTransparentRuntimeFiber,
@@ -20,9 +21,16 @@ import {
   compareStaticToRuntime,
   enumerateStaticStates,
   summarizeStateSpace,
+  type StaticStateSpaceOptions,
 } from "../harness/compare-render.js";
 import { rankWildcards } from "../harness/format-report.js";
-import { countSnapshotFibers, formatRuntimeSnapshot, readSnapshot } from "../harness/snapshot.js";
+import { replayEnumeratedStates, replayStateSpace } from "../harness/state-replay.js";
+import {
+  countSnapshotFibers,
+  formatRuntimeSnapshot,
+  readSnapshot,
+  type RuntimeFiberSnapshot,
+} from "../harness/snapshot.js";
 import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
 import { readObservationsJson } from "../observations.js";
 import type { Diagnostic, StaticRenderResult } from "../types.js";
@@ -238,31 +246,66 @@ const captureLive = async (
   }
 };
 
-const compareEntry = (
+interface StaticRun {
+  renderer: FrameworkRenderer;
+  staticResult: StaticRenderResult;
+}
+
+const enumerateOptions = (
   entry: CorpusEntry,
-  staticResult: StaticRenderResult,
-  capture: BrowserCaptureResult,
-  result: CorpusResult,
-): void => {
+  runtimeReactVersion: string | null = null,
+): StaticStateSpaceOptions => {
   const profile = getFrameworkProfile(entry.framework);
-  const stateSpace = enumerateStaticStates(staticResult, {
+  return {
     anchor: entry.static.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
-  });
-  const comparison = compareStaticToRuntime(
+    runtimeReactVersion,
+  };
+};
+
+const replayEntry = async (
+  entry: CorpusEntry,
+  { renderer, staticResult }: StaticRun,
+  result: CorpusResult,
+  log: (message: string) => void,
+): Promise<void> => {
+  const enumerate = enumerateOptions(entry);
+  const stateSpace = enumerateStaticStates(staticResult, enumerate);
+  log("replaying enumerated states");
+  const replay = await replayStateSpace(stateSpace, renderer.render, null, { enumerate });
+  result.stateReplay = replay.summary;
+  result.anchor = stateSpace.anchor;
+};
+
+const compareEntry = async (
+  entry: CorpusEntry,
+  { renderer, staticResult }: StaticRun,
+  capture: BrowserCaptureResult,
+  result: CorpusResult,
+  log: (message: string) => void,
+): Promise<void> => {
+  const profile = getFrameworkProfile(entry.framework);
+  const enumerate = enumerateOptions(entry, capture.snapshot.reactVersion);
+  const compare = {
+    ...entry.compare,
+    unwrapTransparentRuntimeFiber: (fiber: RuntimeFiberSnapshot) =>
+      unwrapTransparentRuntimeFiber(fiber, profile),
+  };
+  const stateSpace = enumerateStaticStates(staticResult, enumerate);
+  const derived = compareStaticToRuntime(
     stateSpace,
     dropInjectedFibers(capture.snapshot, profile),
-    {
-      ...entry.compare,
-      unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
-    },
+    compare,
   );
+  log("replaying enumerated states");
+  const comparison = await replayEnumeratedStates(derived, renderer.render, { enumerate, compare });
   result.runtime = summarizeRuntime(capture);
   result.report = {
     ...comparison.report,
     wildcards: rankWildcards(comparison.report.wildcards, MAX_RECORDED_WILDCARDS),
   };
   result.stateSpace = summarizeStateSpace(comparison);
+  result.stateReplay = comparison.stateReplay;
   result.anchor = stateSpace.anchor;
   result.note = comparison.note;
 };
@@ -322,6 +365,7 @@ export const runCorpusEntry = async (
     static: null,
     report: null,
     stateSpace: null,
+    stateReplay: null,
     anchor: null,
     note: null,
     failure: null,
@@ -337,26 +381,27 @@ export const runCorpusEntry = async (
   const renderStatic = async (
     directory: string,
     runtime: BrowserCaptureResult | null,
-  ): Promise<StaticRenderResult> => {
+  ): Promise<StaticRun> => {
     log("static render");
-    staticResult = await renderCorpusEntry(entry, directory, runtime?.observations);
+    const renderer = await createCorpusEntryRenderer(entry, directory, runtime?.observations);
+    staticResult = await renderer.render();
     result.static = {
       stats: staticResult.stats,
       diagnostics: summarizeDiagnostics(staticResult.diagnostics),
     };
-    return staticResult;
+    return { renderer, staticResult };
   };
   try {
     cloneDirectory = ensureClone(entry, options.corpusDirectory, log);
     if (options.staticOnly) {
       const saved = readSavedCapture(outputDirectory, entry);
       if (!saved) {
-        await renderStatic(cloneDirectory, null);
+        await replayEntry(entry, await renderStatic(cloneDirectory, null), result, log);
         result.note = "static only";
         return result;
       }
       log(`replaying capture from ${saved.snapshot.capturedAt}`);
-      compareEntry(entry, await renderStatic(cloneDirectory, saved), saved, result);
+      await compareEntry(entry, await renderStatic(cloneDirectory, saved), saved, result, log);
       result.note = [result.note, `runtime replayed from ${saved.snapshot.capturedAt}`]
         .filter((part) => part !== null)
         .join("; ");
@@ -374,7 +419,7 @@ export const runCorpusEntry = async (
       throw new NoCommitsError(entry.url, capture.title, capture.pageErrors);
     }
     writeCaptureArtifacts(outputDirectory, entry, capture);
-    compareEntry(entry, await renderStatic(cloneDirectory, capture), capture, result);
+    await compareEntry(entry, await renderStatic(cloneDirectory, capture), capture, result, log);
     return result;
   } catch (error) {
     result.failure = describeError(error);

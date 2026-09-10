@@ -134,7 +134,9 @@ try {
       log: (message) => console.log(`[${entry.id}] ${message}`),
     });
     fresh.push(result);
-    if (result.report) console.log(formatComparisonReport(result.report, result.stateSpace));
+    if (result.report) {
+      console.log(formatComparisonReport(result.report, result.stateSpace, [], result.stateReplay));
+    }
     writeResults(mergeCorpusResults(readResults(), fresh));
   }
 } finally {

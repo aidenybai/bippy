@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
+  JsonValue,
   RootObservations,
   RuntimeObservations,
   StaticRenderResult,
@@ -10,7 +11,7 @@ import {
   dropInjectedFibers,
   getFrameworkProfile,
   unwrapTransparentRuntimeFiber,
-  renderFrameworkTarget,
+  createFrameworkRenderer,
   type FrameworkKind,
 } from "../../src/frameworks/index.js";
 import {
@@ -22,6 +23,7 @@ import {
   formatRuntimeSnapshot,
   getRenderPattern,
   getRootContainer,
+  replayEnumeratedStates,
   type CommitRecorder,
   type CompareRenderResult,
   type ComparisonStatus,
@@ -31,6 +33,8 @@ import {
 } from "../../src/harness/index.js";
 import { NODE_TIMER_UNDERRUN_MS } from "../../src/evaluate/timers.js";
 import { installReduxStoreHook } from "../../src/harness/redux-store.js";
+import { loadFromDirectory, loadWithoutDom } from "../../src/graph/vite-plugins.js";
+import { resetDomGlobals } from "../../src/materialize/dom-environment.js";
 
 export interface FixtureManifest {
   entry: string;
@@ -43,6 +47,8 @@ export interface FixtureManifest {
   route?: string;
   anchor?: string;
   externalPackages?: string[];
+  /** The config the fixture's bundler hands `@svgr/core` for `.svg` imports; unset, `react-scripts` semantics apply. */
+  svgr?: Record<string, JsonValue>;
   /** Runtime state replayed into the static render, as a live capture would record it. */
   observations?: RuntimeObservations;
   /** Uncertainty the static tree must report exactly, e.g. `{ "branchCount": 1 }`. */
@@ -54,6 +60,8 @@ export interface FixtureManifest {
   expectedStates?: number;
   /** Whether the enumeration must (true) or must not (false) report omitted states. */
   expectOmitted?: boolean;
+  /** How many decision assignments the independent replay must correct; every other fixture replays cleanly. */
+  expectedReplayCorrections?: number;
   notes?: string;
 }
 
@@ -127,8 +135,37 @@ const settleCommits = async (recorder: CommitRecorder): Promise<void> => {
   }
 };
 
+const BLANK_DOCUMENT_MARKUP = "<!doctype html><html><head></head><body></body></html>";
+
+/** The page a `vite dev` started in the fixture directory would answer with: its `index.html` after the fixture's own plugins' `transformIndexHtml` hooks, else a blank page. */
+const readServedDocumentShell = async (fixture: FixtureCase): Promise<string> => {
+  const indexPath = join(fixture.directory, "index.html");
+  if (!existsSync(indexPath)) return BLANK_DOCUMENT_MARKUP;
+  return loadFromDirectory(fixture.directory, () =>
+    loadWithoutDom(async () => {
+      const { createServer } = await import("vite");
+      const server = await createServer({
+        root: fixture.directory,
+        logLevel: "silent",
+        appType: "custom",
+        server: { middlewareMode: true, watch: null },
+        optimizeDeps: { noDiscovery: true },
+      });
+      try {
+        return await server.transformIndexHtml(
+          fixture.manifest.route ?? "/",
+          readFileSync(indexPath, "utf8"),
+        );
+      } finally {
+        await server.close();
+      }
+    }),
+  );
+};
+
 const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
   if (fixture.manifest.route) window.history.replaceState(null, "", fixture.manifest.route);
+  resetDomGlobals(await readServedDocumentShell(fixture));
   document.body.innerHTML = "";
   const container = document.createElement("div");
   container.id = "root";
@@ -150,7 +187,7 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
 
 export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
   const profile = getFrameworkProfile(fixture.manifest.framework);
-  const staticResult = await renderFrameworkTarget(
+  const renderer = await createFrameworkRenderer(
     {
       framework: fixture.manifest.framework,
       entry: join(fixture.directory, fixture.manifest.entry),
@@ -158,13 +195,16 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     },
     {
       rootDirectory: fixture.directory,
+      origin: window.location.origin,
       tsconfigPath: join(fixture.directory, "tsconfig.json"),
       externalPackageAllowList: fixture.manifest.externalPackages,
+      svgr: fixture.manifest.svgr,
       observations: fixture.manifest.observations,
       settleMs: SETTLE_QUIET_MS,
       timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
     },
   );
+  const staticResult = await renderer.render();
   if (fixture.manifest.skipRuntime) {
     return {
       staticResult,
@@ -174,13 +214,24 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
     };
   }
   const { snapshot: runtime, observed } = await mountFixture(fixture);
-  const stateSpace = enumerateStaticStates(staticResult, {
+  const enumerate = {
     anchor: fixture.manifest.anchor ?? profile.defaultAnchor ?? undefined,
     transparentStaticFibers: profile.transparentStaticFibers,
+    runtimeReactVersion: runtime.reactVersion,
     budget: fixture.manifest.stateSpaceBudget,
-  });
-  const comparison = compareStaticToRuntime(stateSpace, dropInjectedFibers(runtime, profile), {
-    unwrapTransparentRuntimeFiber: (fiber) => unwrapTransparentRuntimeFiber(fiber, profile),
+  };
+  const compare = {
+    unwrapTransparentRuntimeFiber: (fiber: RuntimeFiberSnapshot) =>
+      unwrapTransparentRuntimeFiber(fiber, profile),
+  };
+  const derived = compareStaticToRuntime(
+    enumerateStaticStates(staticResult, enumerate),
+    dropInjectedFibers(runtime, profile),
+    compare,
+  );
+  const comparison = await replayEnumeratedStates(derived, renderer.render, {
+    enumerate,
+    compare,
   });
   return { staticResult, runtime, observed, comparison };
 };

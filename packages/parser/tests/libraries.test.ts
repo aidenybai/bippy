@@ -115,7 +115,7 @@ const renderProject = async (
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, source);
   }
-  const renderer = createStaticRenderer({ rootDirectory });
+  const renderer = await createStaticRenderer({ rootDirectory });
   const result = await renderer.renderComponent(join(rootDirectory, entryFileName), {
     exportName: "default",
   });

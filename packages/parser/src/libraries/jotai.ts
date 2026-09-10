@@ -15,7 +15,7 @@ import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
   ModeledExports,
-  ProjectContext,
+  LibraryRun,
   StaticObjectValue,
   StaticValue,
   StubRenderTools,
@@ -352,24 +352,24 @@ const createStore = (): StaticValue => {
   });
 };
 
-const defaultStores = new WeakMap<ProjectContext, StaticValue>();
+const defaultStores = new WeakMap<LibraryRun, StaticValue>();
 
-const getDefaultStore = (project: ProjectContext): StaticValue => {
-  let store = defaultStores.get(project);
+const getDefaultStore = (run: LibraryRun): StaticValue => {
+  let store = defaultStores.get(run);
   if (!store) {
     store = createStore();
-    defaultStores.set(project, store);
+    defaultStores.set(run, store);
   }
   return store;
 };
 
-export const jotaiValue: LibraryValueProvider = (specifier, importedName, project) => {
+export const jotaiValue: LibraryValueProvider = (specifier, importedName, run) => {
   if (!STORE_SPECIFIERS.includes(specifier)) return null;
   switch (importedName) {
     case "createStore":
       return nativeFunction(importedName, createStore);
     case "getDefaultStore":
-      return nativeFunction(importedName, () => getDefaultStore(project));
+      return nativeFunction(importedName, () => getDefaultStore(run));
     default:
       return null;
   }

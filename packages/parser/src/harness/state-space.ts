@@ -9,6 +9,7 @@ import {
   type MatchDecision,
   type PatternMatch,
 } from "./compare.js";
+import type { PinnedBranchDecision, PinnedDecisions, PinnedRepeatDecision } from "../types.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   branchCondition,
@@ -21,7 +22,7 @@ import {
   type GuardCluster,
 } from "./enumerate-states.js";
 import { GuardSolver } from "./guard-solver.js";
-import type { PatternNode } from "./static-pattern.js";
+import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
 import type { GuardCoverage } from "./guard-coverage.js";
 import {
   buildSymbolicTree,
@@ -60,7 +61,8 @@ export interface TransitionCondition {
   commitCount: number;
 }
 
-export type StateCondition = BranchCondition | RepeatCondition | TransitionCondition;
+export type DecisionCondition = BranchCondition | RepeatCondition;
+export type StateCondition = DecisionCondition | TransitionCondition;
 
 export interface StaticState {
   /** A concrete pattern: no branches or repeats remain, only fibers, text, opaque subtrees and wildcards. */
@@ -268,6 +270,90 @@ const findClusterState = (
 
 const commitOffset = (stateSpace: StaticStateSpace, commit: number): number =>
   stateSpace.commitStates.slice(0, commit).reduce((sum, earlier) => sum + earlier.stateCount, 0);
+
+interface DecisionPins {
+  branches: Map<string, PinnedBranchDecision>;
+  repeats: Map<string, PinnedRepeatDecision>;
+}
+
+const createDecisionPins = (from?: PinnedDecisions): DecisionPins => ({
+  branches: new Map(from?.branches),
+  repeats: new Map(from?.repeats),
+});
+
+/**
+ * Walks a committed pattern along the path `conditions` select and records
+ * every decision met by its materializer id, so a replay materializes only
+ * that path. A decision the conditions do not name is left unpinned and shows
+ * up in the replay as a decision the enumerated states did not account for.
+ * Decisions met in an earlier commit are kept, so a nested decision that only
+ * exists in one commit stays pinned.
+ */
+const collectDecisionPins = (
+  nodes: PatternNode[],
+  conditions: ReadonlyMap<string, DecisionCondition>,
+  pins: DecisionPins,
+): void => {
+  for (const node of nodes) {
+    if (!hasPatternDecisions(node)) continue;
+    switch (node.kind) {
+      case "fiber":
+        collectDecisionPins(node.children, conditions, pins);
+        break;
+      case "opaque":
+        collectDecisionPins(node.passedChildren, conditions, pins);
+        break;
+      case "branch": {
+        const decided = conditions.get(node.variable);
+        if (decided?.kind !== "branch" && decided?.kind !== "state-update") break;
+        const existing = pins.branches.get(node.decision);
+        const inside = node.sharesScope
+          ? pins
+          : createDecisionPins(
+              existing?.alternativeIndex === decided.alternativeIndex ? existing.inside : undefined,
+            );
+        pins.branches.set(node.decision, { alternativeIndex: decided.alternativeIndex, inside });
+        collectDecisionPins(node.alternatives[decided.alternativeIndex] ?? [], conditions, inside);
+        break;
+      }
+      case "repeat": {
+        const decided = conditions.get(node.variable);
+        if (decided?.kind !== "repeat") break;
+        const existing = pins.repeats.get(node.decision);
+        const iterations: DecisionPins[] = [];
+        for (let iteration = 0; iteration < decided.count; iteration++) {
+          const inside = createDecisionPins(
+            existing?.iterations.length === decided.count
+              ? existing.iterations[iteration]
+              : undefined,
+          );
+          iterations.push(inside);
+          collectDecisionPins(scopeRepeatIteration(node, iteration), conditions, inside);
+        }
+        pins.repeats.set(node.decision, { iterations });
+        break;
+      }
+      case "text":
+      case "wildcard":
+        break;
+    }
+  }
+};
+
+/** The materializer pins that make every commit follow its own `conditionsByCommit` entry; variables are named per commit. */
+export const pinDecisions = (
+  stateSpace: StaticStateSpace,
+  conditionsByCommit: DecisionCondition[][],
+): PinnedDecisions => {
+  const pins = createDecisionPins();
+  stateSpace.commits.forEach((commit, commitIndex) => {
+    const decided = new Map(
+      (conditionsByCommit[commitIndex] ?? []).map((condition) => [condition.variable, condition]),
+    );
+    collectDecisionPins(commit, decided, pins);
+  });
+  return pins;
+};
 
 interface StatePosition {
   /** Whether every cluster enumerated the decisions taken: the state exists, in `states` or beyond the budget. */

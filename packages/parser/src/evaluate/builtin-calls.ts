@@ -56,16 +56,12 @@ import {
 } from "./native-values.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
+import { callRequireContext } from "./require-context.js";
 import { createClockDateValue, isClockReading } from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey } from "./has-property.js";
-import {
-  getBuiltinFunctionSource,
-  getBuiltinPrototypeName,
-  getPrototypeWitness,
-  isPrototypeOf,
-} from "./instance-of.js";
+import { getBuiltinPrototypeName, getPrototypeWitness, isPrototypeOf } from "./instance-of.js";
 import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
 import {
   binaryFromItems,
@@ -97,8 +93,10 @@ import {
   applyMathToRanges,
   callShapedPrimitiveMethod,
   getCoercedText,
+  getFunctionSourceText,
   joinStrings,
   rangedNumberValue,
+  toPropertyKey,
   toStringValue,
 } from "./primitive-shapes.js";
 import { memoizeScalarOperation } from "./scalar-memo.js";
@@ -124,6 +122,7 @@ import type { Interpreter } from "./interpreter.js";
 import {
   accessorEntry,
   branchValue,
+  countAlternatives,
   createSymbolValue,
   describeValue,
   distributeObjectBranches,
@@ -136,8 +135,8 @@ import {
   getKnownObjectSymbols,
   getListLength,
   getObjectProperty,
-  getPreferredTruthiness,
   getPropertyName,
+  getPreferredTruthiness,
   getSymbolPropertyKey,
   getTruthiness,
   compareIdentity,
@@ -153,6 +152,7 @@ import {
   isNullish,
   isSymbolPropertyKey,
   mapValue,
+  nativeObjectValue,
   toBooleanValue,
   toJsonValue,
   NULL_VALUE,
@@ -531,6 +531,12 @@ const defineOwnProperty = (
       }
       target.properties.set(key, value);
       return;
+    case "react-api":
+      interpreter.setReactApiProperty(target.api, key, value, context);
+      return;
+    case "global":
+      interpreter.setGlobalMember(target, key, value, context);
+      return;
     case "list": {
       if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
       target.properties ??= new Map();
@@ -680,7 +686,7 @@ const hasOwnProperty = (
   key: StaticValue,
   name: string,
 ): StaticValue | null => {
-  const propertyName = getPropertyName(key);
+  const propertyName = toPropertyKey(key);
   if (propertyName === null) return null;
   if (receiver.kind === "object" || receiver.kind === "list") {
     if (receiver.kind === "list" && propertyName === "length")
@@ -706,7 +712,11 @@ const hasOwnProperty = (
       const isClassMember =
         receiver.kind === "class" &&
         receiver.body.members.some(
-          (member) => member.isStatic && member.kind !== "field" && member.key === propertyName,
+          (member) =>
+            member.isStatic &&
+            member.kind !== "field" &&
+            member.kind !== "static-block" &&
+            member.key === propertyName,
         );
       return primitiveValue(name === "hasOwnProperty" || !isClassMember);
     }
@@ -746,28 +756,6 @@ const getWitnessedPrototype = (
 };
 
 const FUNCTION_INVOCATION_METHODS = new Set(["call", "apply", "bind"]);
-
-/** `Function.prototype.toString`: the source text of program functions, V8's `[native code]` form for intrinsics. */
-const getFunctionSourceText = (receiver: StaticValue): string | null => {
-  switch (receiver.kind) {
-    case "function":
-      return receiver.boundArgs || receiver.boundThis
-        ? "function () { [native code] }"
-        : receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
-    case "class":
-      return receiver.module.file.sourceText.slice(receiver.node.start, receiver.node.end);
-    case "method":
-      return receiver.receiver.kind === "global"
-        ? getBuiltinFunctionSource(`${receiver.receiver.name}.${receiver.name}`)
-        : receiver.receiver.kind === "external" || receiver.receiver.kind === "unknown"
-          ? null
-          : `function ${receiver.name}() { [native code] }`;
-    case "global":
-      return getBuiltinFunctionSource(receiver.name);
-    default:
-      return null;
-  }
-};
 
 /** `Function.prototype.toString.call(value)`: a `TypeError` for non-callables, an unknown string when the text is not statically known. */
 const getInvokedFunctionSource = (
@@ -912,7 +900,7 @@ const toObjectValue = (value: StaticValue, location: SourceLocation | null): Sta
       case "primitive":
         return alternative.value === null || alternative.value === undefined
           ? objectValue([])
-          : unknownValue(`boxed ${typeof alternative.value}`, location);
+          : nativeObjectValue(Object(alternative.value), null);
       case "unknown-primitive":
       case "symbol":
         return unknownValue(`boxed ${describeValue(alternative)}`, location);
@@ -972,6 +960,7 @@ const callGlobal = (
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
   if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
+  if (name === "require.context") return callRequireContext(interpreter, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
@@ -1093,12 +1082,21 @@ const callGlobal = (
         : primitiveValue(verdict);
     }
     case "Array.from": {
-      const source = first && iterableOrArrayLike(interpreter, first, context, location);
-      if (source?.kind === "list" || source?.kind === "repeat") {
-        if (isCallable(second)) return mapList(interpreter, source, second, context, location);
-        return source;
-      }
-      return unknownValue("Array.from of dynamic iterable", location);
+      return mapValue(first ?? UNDEFINED_VALUE, (candidate) => {
+        const source = iterableOrArrayLike(interpreter, candidate, context, location);
+        if (!source || (source.kind === "primitive" && typeof source.value !== "string")) {
+          return unknownValue("Array.from of a non-iterable", location);
+        }
+        return mapValue(source, (iterable) => {
+          const items =
+            iterable.kind === "list" || iterable.kind === "repeat"
+              ? iterable
+              : listValue(spreadListItems(iterable, location));
+          return isCallable(second)
+            ? mapList(interpreter, items, second, context, location)
+            : items;
+        });
+      });
     }
     case "Int8Array.from":
     case "Uint8Array.from":
@@ -1218,7 +1216,7 @@ const callGlobal = (
         : unknownValue(`${name} on an object with dynamic spreads`, location);
     }
     case "Object.getOwnPropertyDescriptor": {
-      const key = second ? getPropertyName(second) : null;
+      const key = second ? toPropertyKey(second) : null;
       if (first?.kind === "element" && key === "ref")
         return getElementRefDescriptor(first, location);
       if (first?.kind === "function" && key !== null)
@@ -1295,10 +1293,11 @@ const callGlobal = (
     }
     case "Object.defineProperty": {
       const descriptor = args[2];
-      if (!first || second?.kind !== "primitive" || descriptor?.kind !== "object") {
+      const key = second ? getPropertyName(second) : null;
+      if (!first || key === null || descriptor?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      defineOwnProperty(interpreter, first, String(second.value), descriptor, context, location);
+      defineOwnProperty(interpreter, first, key, descriptor, context, location);
       return first;
     }
     case "Object.getOwnPropertyDescriptors":
@@ -1489,8 +1488,9 @@ const MAX_ARRAY_LIKE_LENGTH = 1_000;
 const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
     return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
-  if (length.kind === "unknown" || length.kind === "branch")
-    return unknownValue("Array() with a dynamic length", location);
+  if (length.kind === "branch")
+    return mapValue(length, (alternative) => arrayOfLength(alternative, location));
+  if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
   if (length.kind !== "primitive" || typeof length.value !== "number") return listValue([length]);
   if (!Number.isInteger(length.value) || length.value < 0) {
     return thrownValue(
@@ -1521,29 +1521,29 @@ const iterableOrArrayLike = (
   return value.kind === "native-object" ? null : value;
 };
 
-const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue => {
-  const length = getObjectProperty(value, "length");
-  if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
-    return {
-      kind: "repeat",
-      item: UNDEFINED_VALUE,
-      location: null,
-      count: length.numberRange && {
-        min: toLength(length.numberRange.min),
-        max: toLength(length.numberRange.max),
-      },
-    };
-  }
-  if (length.kind !== "primitive" || typeof length.value === "symbol") {
-    return unknownValue("Array.from of an array-like with dynamic length", null);
-  }
-  const itemCount = toLength(length.value);
-  if (itemCount > MAX_ARRAY_LIKE_LENGTH)
-    return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
-  return listValue(
-    Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
-  );
-};
+const arrayLikeToList = (value: Extract<StaticValue, { kind: "object" }>): StaticValue =>
+  mapValue(getObjectProperty(value, "length"), (length) => {
+    if (length.kind === "unknown-primitive" && length.primitiveType === "number") {
+      return {
+        kind: "repeat",
+        item: UNDEFINED_VALUE,
+        location: null,
+        count: length.numberRange && {
+          min: toLength(length.numberRange.min),
+          max: toLength(length.numberRange.max),
+        },
+      };
+    }
+    if (length.kind !== "primitive" || typeof length.value === "symbol") {
+      return unknownValue("Array.from of an array-like with dynamic length", null);
+    }
+    const itemCount = toLength(length.value);
+    if (itemCount > MAX_ARRAY_LIKE_LENGTH)
+      return { kind: "repeat", item: UNDEFINED_VALUE, location: null };
+    return listValue(
+      Array.from({ length: itemCount }, (_, index) => getObjectProperty(value, String(index))),
+    );
+  });
 
 /** A task queued from a continuation of unknown timing runs at an unknown time too. */
 const scheduledTask = (
@@ -1637,6 +1637,7 @@ const filterIndefiniteItem = (
       predicate,
       [inner, unknownPrimitiveValue("number", "index"), list],
       context,
+      item.kind === "repeat",
     ),
   );
   if (verdict === false) return null;
@@ -1715,18 +1716,24 @@ const joinListItems = (
   );
 };
 
-/** A callback run for an item that may occur zero or many times: its side effects are uncertain. */
+/**
+ * A callback run for an item that may be absent (`mayRepeat` false) or occur
+ * any number of times (`mayRepeat` true): its side effects are uncertain.
+ */
 export const callUncertainCallback = (
   interpreter: Interpreter,
   callback: CallableValue,
   args: StaticValue[],
   context: EvaluationContext,
+  mayRepeat: boolean,
 ): StaticValue =>
   interpreter.runMaybe(
     callback.kind === "function" ? callback.scope : context.scope,
     () => callCallback(interpreter, callback, args, context),
     "callback for an item that may not occur",
     null,
+    true,
+    mayRepeat,
   );
 
 const sortListItems = (
@@ -1766,6 +1773,13 @@ const toGuardLiteral = (value: StaticValue): GuardLiteral | undefined =>
 const isGuardLiteral = (literal: GuardLiteral | undefined): literal is GuardLiteral =>
   literal !== undefined;
 
+/** An item of an iterable the analysis cannot enumerate: opaque, with any count. */
+const getOpaqueItem = (receiver: StaticValue): StaticValue =>
+  recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
+    kind: "element",
+    list: receiver,
+  });
+
 const mapList = (
   interpreter: Interpreter,
   receiver: StaticValue,
@@ -1785,6 +1799,7 @@ const mapList = (
                 callback,
                 [item.item, unknownPrimitiveValue("number", "index"), receiver],
                 context,
+                true,
               ),
               location: item.location,
               count: item.count,
@@ -1799,6 +1814,7 @@ const mapList = (
               callback,
               [item.value, unknownPrimitiveValue("number", "index"), receiver],
               context,
+              false,
             ),
             item.reason,
             item.location,
@@ -1822,6 +1838,7 @@ const mapList = (
           callback,
           [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
           context,
+          true,
         ),
         location: receiver.location,
         count: receiver.count,
@@ -1835,15 +1852,9 @@ const mapList = (
       item: callUncertainCallback(
         interpreter,
         callback,
-        [
-          recordDerivation(unknownValue(`item of ${describeValue(receiver)}`), {
-            kind: "element",
-            list: receiver,
-          }),
-          unknownPrimitiveValue("number", "index"),
-          receiver,
-        ],
+        [getOpaqueItem(receiver), unknownPrimitiveValue("number", "index"), receiver],
         context,
+        true,
       ),
       location,
     },
@@ -1920,6 +1931,8 @@ const replaceWithCallback = (
   return isKnown ? primitiveValue(replaced) : null;
 };
 
+const UNICODE_NORMALIZATION_FORMS = new Set(["NFC", "NFD", "NFKC", "NFKD"]);
+
 const callStringMethod = (
   interpreter: Interpreter,
   receiver: string,
@@ -1991,6 +2004,12 @@ const callStringMethod = (
       return primitiveValue(receiver.trimStart());
     case "trimEnd":
       return primitiveValue(receiver.trimEnd());
+    case "normalize": {
+      const form = primitiveArgs[0] === undefined ? "NFC" : String(primitiveArgs[0]);
+      return UNICODE_NORMALIZATION_FORMS.has(form)
+        ? primitiveValue(receiver.normalize(form))
+        : null;
+    }
     case "slice":
     case "substring":
       return primitiveValue(
@@ -2357,15 +2376,21 @@ export const evaluateBuiltinCall = (
               receiver,
             ],
             context,
+            item.kind === "repeat",
           );
         } else callCallback(interpreter, first, [item, primitiveValue(index), receiver], context);
       });
-    } else if (receiver.kind === "repeat") {
+    } else {
       callUncertainCallback(
         interpreter,
         first,
-        [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+        [
+          receiver.kind === "repeat" ? receiver.item : getOpaqueItem(receiver),
+          unknownPrimitiveValue("number", "index"),
+          receiver,
+        ],
         context,
+        true,
       );
     }
     return UNDEFINED_VALUE;
@@ -2391,8 +2416,17 @@ export const evaluateBuiltinCall = (
     switch (name) {
       case "filter":
         return isCallable(first) ? filterList(interpreter, receiver, first, context) : receiver;
-      case "slice":
-        return sliceList(receiver, first, second, location);
+      case "slice": {
+        const sliceBetween = (
+          startBound: StaticValue | undefined,
+          endBound: StaticValue | undefined,
+        ): StaticValue => sliceList(receiver, startBound, endBound, location);
+        if (first && isPrimitiveBranch(first))
+          return mapValue(first, (startBound) => sliceBetween(startBound, second));
+        if (second && isPrimitiveBranch(second))
+          return mapValue(second, (endBound) => sliceBetween(first, endBound));
+        return sliceBetween(first, second);
+      }
       case "concat": {
         return listValue([
           ...receiver.items,
@@ -2559,21 +2593,53 @@ export const evaluateBuiltinCall = (
       }
       case "reduce":
       case "reduceRight": {
-        if (!isCallable(first) || !hasDefiniteItems(receiver)) {
+        if (
+          !isCallable(first) ||
+          receiver.kind !== "list" ||
+          receiver.items.some((item) => item.kind === "repeat")
+        ) {
           return unknownValue(`${name}()`, location);
         }
         const items = name === "reduce" ? receiver.items : [...receiver.items].reverse();
         let accumulator = args.length > 1 ? second : items[0];
         if (!accumulator) return unknownValue(`${name}() of an empty list`, location);
+        if (accumulator.kind === "optional") {
+          return unknownValue(`${name}() of a list whose first item may be absent`, location);
+        }
         const startIndex = args.length > 1 ? 0 : 1;
+        let isIndexKnown = true;
         for (let index = startIndex; index < items.length; index++) {
+          const item = items[index];
           const sourceIndex = name === "reduce" ? index : items.length - 1 - index;
-          accumulator = callCallback(
+          const indexValue = isIndexKnown
+            ? primitiveValue(sourceIndex)
+            : unknownPrimitiveValue("number", "index");
+          if (item.kind !== "optional") {
+            accumulator = callCallback(
+              interpreter,
+              first,
+              [accumulator, item, indexValue, receiver],
+              context,
+            );
+            continue;
+          }
+          isIndexKnown = false;
+          const reduced = callUncertainCallback(
             interpreter,
             first,
-            [accumulator, items[index], primitiveValue(sourceIndex), receiver],
+            [accumulator, item.value, indexValue, receiver],
             context,
+            false,
           );
+          accumulator = branchValue(
+            [reduced, accumulator],
+            item.reason,
+            item.location,
+            item.isAbsentPreferred ? 1 : 0,
+          );
+          if (countAlternatives(accumulator) > MAX_DISTRIBUTED_ALTERNATIVES) {
+            return unknownValue(`${name}() over many items that may be absent`, location);
+          }
         }
         return accumulator;
       }

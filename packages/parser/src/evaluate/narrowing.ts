@@ -1,6 +1,7 @@
 import type { BinaryExpression, CallExpression, Expression } from "oxc-parser";
 import type { Scope, StaticObjectEntry, StaticObjectValue, StaticValue } from "../types.js";
 import { hasNamedProperty } from "./has-property.js";
+import { recordRefinement } from "./predicates.js";
 import { findOwningScope, lookupScope } from "./scope.js";
 import { getThrowCertainty } from "./thrown.js";
 import { getTypePredicate } from "./type-predicates.js";
@@ -57,6 +58,26 @@ const getNarrowingTarget = (node: Expression): NarrowingTarget | null => {
   return null;
 };
 
+/**
+ * The targets a `switch` discriminant reads, so each case path sees only the
+ * alternatives its label can match: `x`, `ctx.next`, or both sides of
+ * `ctx.prev = ctx.next`, which compiled generators use to dispatch resumptions.
+ */
+export const getDiscriminantTargets = (node: Expression): NarrowingTarget[] => {
+  if (node.type === "ParenthesizedExpression") return getDiscriminantTargets(node.expression);
+  if (node.type === "AssignmentExpression" && node.operator === "=") {
+    const left =
+      node.left.type === "Identifier" || node.left.type === "MemberExpression"
+        ? getNarrowingTarget(node.left)
+        : null;
+    return [left, getNarrowingTarget(node.right)].filter(
+      (target): target is NarrowingTarget => target !== null,
+    );
+  }
+  const target = getNarrowingTarget(node);
+  return target ? [target] : [];
+};
+
 const describeTarget = (target: NarrowingTarget): string =>
   target.key === null ? target.name : `${target.name}.${target.key}`;
 
@@ -97,8 +118,12 @@ const partition = (
     else if (verdict) passing.push(alternative);
     if (verdict !== true) failing.push(alternative);
   }
-  const rebuild = (alternatives: StaticValue[]): StaticValue | null =>
-    alternatives.length === 0 ? null : branchValue(alternatives, reason);
+  const rebuild = (alternatives: StaticValue[]): StaticValue | null => {
+    if (alternatives.length === 0) return null;
+    const rebuilt = branchValue(alternatives, reason);
+    recordRefinement(rebuilt, value);
+    return rebuilt;
+  };
   return [rebuild(passing), rebuild(failing)];
 };
 
@@ -230,6 +255,7 @@ const narrowLogical = (
           `${describeTarget(primary.target)} narrowed by ${operator}`,
         )
       : sideOf(primary);
+  if (combined) recordRefinement(combined, original);
   return isOr
     ? { target: primary.target, whenTrue: original, whenFalse: combined }
     : { target: primary.target, whenTrue: combined, whenFalse: original };

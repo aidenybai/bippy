@@ -182,15 +182,35 @@ framework internals; application mismatches are never hidden this way.
   (contradicts the tree's own facts); `planWitnesses` (`witness-plan.ts`) returns typed input
   assignments covering every reachable side, the plan for future targeted runtime runs.
   `formatSymbolicTree` prints the tree with guards inline and a decision table per cluster.
+- `replayEnumeratedStates` re-witnesses the enumeration (`state-replay.ts`). The states are
+  derived from one render in which every alternative was materialized together, so module state,
+  refs and effects of one alternative can leak into another's subtree. For each assignment of the
+  decision variables (the enumerated states grouped by their branch and repeat conditions, joined
+  across commits) the static tree is materialized and rendered again through a fresh interpreter
+  and materializer with those alternatives and repeat counts pinned (`PinnedDecisions`, a typed
+  `StaticRenderOptions.decisions`; branch and repeat markers carry stable decision ids so a pin
+  finds its marker in the replay), captured with bippy, and the distinct trees it commits must
+  equal, node for node, the trees the enumeration claimed for that assignment. Replays are
+  bounded by `DEFAULT_MAX_REPLAYED_ASSIGNMENTS` (16), always include the runtime-matched
+  assignment, and the result records
+  `stateReplay: { states, assignments, replayed, maxReplayed, mismatched }` so a sampled replay is
+  visible as such. Each mismatch names the assignment, the
+  claimed and replayed commit counts and the first divergence. When the replay left no decision
+  open its commits replace the contradicted states and the runtime is matched against them again;
+  a replay that met a decision the enumeration never described cannot correct anything.
 
-Statuses: `exact` (the runtime is a member of the symbolic tree and the budget omitted nothing
-from it), `truncated` (the runtime matched but the budget omitted alternatives, repeat counts or
-subtrees, or it matches only inside that omitted region), `partial` (matched through opaque
-subtrees or wildcards), `mismatch` (no state matches), `unresolved` (the static side did not
-produce a component tree), `skipped` (no runtime root or anchor). Guard coverage is reported
-alongside, never folded into the status: an exact entry with `possible` sides is exact for the
-captures at hand and says which sides no capture reached. The harness chooses the runtime root by
-explicit index, then anchor search, then the largest root.
+Statuses: `exact` (the runtime is a member of the symbolic tree, the budget omitted nothing
+from it, and every replayed assignment reproduced its states or was corrected by its replay),
+`truncated` (the runtime matched but the budget omitted alternatives, repeat counts or subtrees,
+or it matches only inside that omitted region), `partial` (matched through opaque subtrees or
+wildcards), `unsound` (the runtime matched, but a replayed assignment could neither be reproduced
+nor corrected, so the enumeration is not trusted), `mismatch` (no state matches), `unresolved`
+(the static side did not produce a component tree), `skipped` (no runtime root or anchor). A
+state the independent replay contradicts never counts as `exact`: it is either replaced by what
+the replay witnessed or leaves the result `unsound`. Guard coverage is reported alongside, never
+folded into the status: an exact entry with `possible` sides is exact for the captures at hand
+and says which sides no capture reached. The harness chooses the runtime root by explicit index,
+then anchor search, then the largest root.
 
 ## Corpus
 

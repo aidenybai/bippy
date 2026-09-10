@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <title>Fixture logo</title>
+  <style>
+    .mark { fill: #333; }
+  </style>
+  <g class="mark">
+    <path d="M0 0h40v40H0z"/>
+    <circle cx="20" cy="20" r="8"/>
+  </g>
+</svg>

@@ -47,15 +47,19 @@ export interface TransformedSource {
 }
 
 /**
- * A bundler loader the app applies to a non-JavaScript file extension,
- * producing the module the bundler links in its place. With `query` it only
- * applies to imports carrying that Vite query (`icon.svg?react`); a plain
- * import of the file stays the asset it is.
+ * A bundler plugin the app configures, producing the module the bundler links
+ * for a file (or for a `?query` import of it) in place of its text. `appliesTo`
+ * picks the imports it sees by extension, by the language the parser reads the
+ * file as (`null` for assets it cannot read itself) and by the import's query
+ * (`react` for `icon.svg?react`, `null` for a plain import).
  */
 export interface SourceTransform {
-  extension: string;
-  query?: string;
-  transform: (filePath: string, sourceText: string) => TransformedSource | null;
+  appliesTo: (extension: string, lang: SourceLanguage | null, query: string | null) => boolean;
+  transform: (
+    filePath: string,
+    sourceText: string,
+    query: string | null,
+  ) => TransformedSource | null;
 }
 
 export type DiagnosticSeverity = "info" | "warning" | "error";
@@ -160,6 +164,8 @@ export interface ExternalModuleResolution {
   kind: "external";
   packageName: string;
   filePath: string | null;
+  /** The specifier by which the module is known (`next/script` for an import of `next/script.js`). */
+  specifier: string;
 }
 
 export interface BuiltinModuleResolution {
@@ -239,7 +245,14 @@ export interface ClassFieldMember extends ClassMemberBase {
   value: Expression | null;
 }
 
-export type ClassMember = ClassFunctionMember | ClassFieldMember;
+/** A `static { ... }` block: it runs with `this` bound to the class, in source order with the static fields. */
+export interface ClassStaticBlockMember {
+  kind: "static-block";
+  isStatic: true;
+  body: Statement[];
+}
+
+export type ClassMember = ClassFunctionMember | ClassFieldMember | ClassStaticBlockMember;
 
 /**
  * What a class declares, independent of whether it was written with class
@@ -249,6 +262,8 @@ export type ClassMember = ClassFunctionMember | ClassFieldMember;
 export interface ClassBody {
   members: ClassMember[];
   superValue: StaticValue | null;
+  /** For a constructor function whose `prototype.isReactComponent` React constructs: the object its instances inherit from. */
+  prototype?: StaticObjectValue;
 }
 
 /** What `super` refers to inside a class member. */
@@ -279,6 +294,8 @@ export type StaticElementType =
       kind: "forward-ref";
       component: ComponentDefinition;
       render: StaticFunctionValue;
+      /** For a library's `forwardRef((props, ref) => func(props, ...))` wrapper: the arguments `func` receives, given the render's `props` and `ref` (Emotion's `withEmotionCache` inserts the cache from context before the ref). Absent for `forwardRef` itself: `[props, ref]`. */
+      renderArguments?: ForwardRefRenderArguments;
     } & WrapperElementType)
   | ({ kind: "lazy"; inner: StaticElementType | null } & WrapperElementType)
   | { kind: "fragment" }
@@ -299,6 +316,14 @@ export type StaticElementType =
 export interface WrapperElementType {
   displayName: string | null;
   properties: Map<string, StaticValue>;
+}
+
+export interface ForwardRefRenderArguments {
+  (
+    props: StaticObjectValue,
+    ref: StaticValue,
+    readContext: (context: ContextDefinition) => StaticValue,
+  ): StaticValue[];
 }
 
 /**
@@ -472,8 +497,13 @@ export interface AutoImport {
   imported: ImportedName;
 }
 
+/** One evaluation of the program: what a library's module instance would hold (default clients, stores, `init` configuration) lives here, so two evaluations of one project never share it. */
+export interface LibraryRun {
+  project: ProjectContext;
+}
+
 export interface LibraryValueProvider {
-  (specifier: string, importedName: string, project: ProjectContext): StaticValue | null;
+  (specifier: string, importedName: string, run: LibraryRun): StaticValue | null;
 }
 
 /** Export names a library model covers, keyed by the import specifier they are imported from. */
@@ -860,6 +890,8 @@ export interface StaticReactApiValue {
 export interface StaticExternalValue {
   kind: "external";
   packageName: string;
+  /** The module specifier the binding was imported from (`next/script`), which may name a subpath of `packageName`. */
+  specifier: string;
   importedName: string;
   /**
    * `binding` is the import itself, `instance` a `new` of one (an object, so
@@ -1078,6 +1110,8 @@ export interface StaticRendererOptions {
   globals?: Record<string, JsonValue>;
   /** Expressions the bundler inlines at build time (`DefinePlugin`, Vite `define`), keyed by source text such as `process.env.FLAG`; an environment variable or bundler shim (`global`) given `null` is left unset. */
   defines?: Record<string, JsonValue>;
+  /** The config the bundler's svgr plugin hands `@svgr/core` (`plugins`, `svgo`, `dimensions`, ...); unset, the `@svgr/webpack`/`@svgr/rollup` loader defaults apply. */
+  svgr?: Record<string, JsonValue>;
   /** The server process's environment, whole; unlisted variables are unset. */
   environment?: ProcessEnvironment;
   /** The command line the dev server is started with; bundler flags such as Vite's `--config`/`--mode` apply to the static render. */
@@ -1090,7 +1124,34 @@ export interface StaticRendererOptions {
   origin?: string;
   /** Defaults to what the root's Vite config implies (Vite ≤ 7 without an swc/oxc React plugin transpiles with esbuild), else `name-preserving`. */
   transpiler?: ModuleTranspiler;
+  /** Vite plugins (by name, with their `name:` and `name-` companions) a framework model stands in for; the app's config is resolved without them. */
+  modeledVitePlugins?: readonly string[];
   /** What a running page was observed to hold; the render takes these as its runtime inputs. */
   observations?: RuntimeObservations;
   externalValues?: ExternalValueProvider;
+  /** Decisions the materializer selects instead of rendering every alternative; a replay of one enumerated state. */
+  decisions?: PinnedDecisions;
+}
+
+export interface PinnedBranchDecision {
+  /** Index into the alternatives as the pattern reader orders them (a negated predicate reads swapped). */
+  alternativeIndex: number;
+  /** Decisions inside the chosen alternative. */
+  inside: PinnedDecisions;
+}
+
+export interface PinnedRepeatDecision {
+  /** Decisions inside each iteration; the length is the pinned count. */
+  iterations: PinnedDecisions[];
+}
+
+/**
+ * The decisions of one enumerated state, keyed by the id the materializer
+ * stamps on its `$Branch` and `$Repeat` markers. Ids are numbered per
+ * decision scope (the root, one alternative, one iteration), so the nested
+ * maps follow the tree the way the materializer does.
+ */
+export interface PinnedDecisions {
+  branches: ReadonlyMap<string, PinnedBranchDecision>;
+  repeats: ReadonlyMap<string, PinnedRepeatDecision>;
 }
