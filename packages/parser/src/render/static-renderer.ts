@@ -18,7 +18,11 @@ import { createYamlSourceTransforms } from "../graph/yaml-modules.js";
 import { ensureDomGlobals, resetDomGlobals } from "../materialize/dom-environment.js";
 import { Materializer } from "../materialize/materializer.js";
 import { mountNode } from "../materialize/mount.js";
-import { loadReactRuntime, type ReactRuntime } from "../materialize/react-runtime.js";
+import {
+  loadReactRuntime,
+  type ReactPackageSpecifiers,
+  type ReactRuntime,
+} from "../materialize/react-runtime.js";
 import type { RendererHost } from "../materialize/renderer-host.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
 import { toElementType } from "../react/element-type.js";
@@ -99,6 +103,7 @@ export class StaticRenderer {
   private readonly reactVersion: string | null;
   private readonly project: ProjectContext;
   private readonly documentShell: string | null;
+  private reactPackages: ReactPackageSpecifiers | undefined;
 
   constructor(options: StaticRendererOptions, shared?: RendererProject) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
@@ -235,11 +240,17 @@ export class StaticRenderer {
     interpreter.callValue(callee, args, interpreter.createModuleContext(module), null);
   }
 
+  /** Materializes with the React build a framework serves in place of the app's own `react`/`react-dom`. */
+  setReactPackages(packages: ReactPackageSpecifiers): void {
+    this.reactPackages = packages;
+  }
+
   private loadRuntime(): Promise<ReactRuntime> {
     ensureDomGlobals();
     return loadReactRuntime({
       resolver: this.resolver,
       rootDirectory: this.options.rootDirectory,
+      packages: this.reactPackages,
     });
   }
 

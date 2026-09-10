@@ -47,6 +47,7 @@
     "@stylexjs/stylex": "0.18.3",
     "@svgr/core": "8.1.0",
     "@svgr/plugin-jsx": "8.1.0",
+    "@svgr/plugin-svgo": "8.1.0",
     "@svgr/webpack": "8.1.0",
     "@tanstack/react-query": "5.101.4",
     "@tanstack/react-store": "0.7.0",

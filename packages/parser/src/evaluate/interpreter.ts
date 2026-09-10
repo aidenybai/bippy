@@ -178,6 +178,7 @@ import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
 import { GLOBAL_OBJECT_VALUE, getPrimitiveWitness, toLanguagePropertyKey } from "./host-globals.js";
+import { toPropertyKey } from "./primitive-shapes.js";
 import {
   applyNumberRangeOperator,
   compareNumberRanges,
@@ -294,7 +295,6 @@ import {
   getObjectAccessor,
   getObjectProperty,
   getPreferredTruthiness,
-  getPropertyName,
   getStubDisplayName,
   getAllocationCount,
   getTruthiness,
@@ -380,6 +380,8 @@ interface ModuleRegistry {
   scopes: Map<string, Scope>;
   values: Map<string, ModuleValues>;
   initialized: Set<string>;
+  /** Modules whose top-level statements ran out of steps, leaving their state partially initialized. */
+  exhausted: Set<string>;
   exportExpressionValues: WeakMap<Expression, StaticValue | typeof IN_PROGRESS>;
   /** One evaluation per destructuring declarator, shared by every name it binds. */
   destructuredInitValues: WeakMap<Expression, StaticValue>;
@@ -389,6 +391,7 @@ const createModuleRegistry = (): ModuleRegistry => ({
   scopes: new Map(),
   values: new Map(),
   initialized: new Set(),
+  exhausted: new Set(),
   exportExpressionValues: new WeakMap(),
   destructuredInitValues: new WeakMap(),
 });
@@ -1096,7 +1099,19 @@ export class Interpreter {
     const binding = module.bindings.get(name);
     if (!binding) return null;
     this.initializeModule(module, module.sideEffectStatements, environment);
-    return this.evaluateDeclaredBinding(module, binding, environment);
+    return (
+      this.exhaustedModuleValue(module, environment) ??
+      this.evaluateDeclaredBinding(module, binding, environment)
+    );
+  }
+
+  private exhaustedModuleValue(
+    module: ModuleRecord,
+    environment: RenderEnvironment | null,
+  ): StaticValue | null {
+    return this.getModuleRegistry(module, environment).exhausted.has(module.filePath)
+      ? unknownValue(`module initialization of ${module.filePath} exhausted the step budget`)
+      : null;
   }
 
   /**
@@ -1170,7 +1185,7 @@ export class Interpreter {
     sideEffectStatements: Statement[] = module.sideEffectStatements,
     environment: RenderEnvironment | null = null,
   ): void {
-    const { initialized } = this.getModuleRegistry(module, environment);
+    const { initialized, exhausted } = this.getModuleRegistry(module, environment);
     if (initialized.has(module.filePath)) return;
     initialized.add(module.filePath);
     const instanceEnvironment = this.getModuleInstanceEnvironment(module, environment);
@@ -1196,6 +1211,15 @@ export class Interpreter {
     flushPendingStatements();
     for (const name of module.outParameterBindings) {
       this.evaluateModuleBinding(module, name, instanceEnvironment);
+    }
+    if (context.budget.remaining <= 0) {
+      exhausted.add(module.filePath);
+      this.report(
+        "budget-exhausted",
+        `module initialization of ${module.filePath} exhausted the step budget; its exports are unknown`,
+        null,
+        "warning",
+      );
     }
   }
 
@@ -1320,6 +1344,8 @@ export class Interpreter {
       );
     }
     if (cached) return cached;
+    const exhausted = this.exhaustedModuleValue(module, environment);
+    if (exhausted) return exhausted;
     exportExpressionValues.set(expression, IN_PROGRESS);
     const value = this.evaluateExpression(
       expression,
@@ -2133,7 +2159,7 @@ export class Interpreter {
       if (key.type === "PrivateIdentifier") return `#${key.name}`;
     }
     if (key.type === "PrivateIdentifier") return `#${key.name}`;
-    return getPropertyName(this.evaluateExpression(key, context));
+    return toPropertyKey(this.evaluateExpression(key, context));
   }
 
   private evaluateObjectExpression(
@@ -2532,7 +2558,7 @@ export class Interpreter {
   }
 
   private deleteProperty(target: StaticValue, key: StaticValue): void {
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     switch (target.kind) {
       case "native-object":
         if (name !== null) deleteNativeObjectMember(target, name);
@@ -2603,7 +2629,7 @@ export class Interpreter {
     environment: RenderEnvironment | null,
   ): StaticValue | null {
     if (target.kind !== "global") return null;
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     if (name === null) return null;
     const hostDocument = this.getHostDocument(target, environment);
     if (hostDocument !== null) return primitiveValue(hasHostDocumentMember(hostDocument, name));
@@ -2633,7 +2659,7 @@ export class Interpreter {
   ): StaticValue | null {
     if (target.kind !== "external" || target.importedName !== "*" || target.origin !== "binding")
       return null;
-    const name = getPropertyName(key);
+    const name = toPropertyKey(key);
     if (name === null) return null;
     const member = this.getProperty(target, name, context, null);
     return member.kind === "external" && member.origin === "binding" ? null : TRUE_VALUE;
@@ -2713,7 +2739,7 @@ export class Interpreter {
           this.assignMember(target.object, staticKey, value, context);
         } else if (target.computed) {
           const key = this.evaluateExpression(target.property, context);
-          const propertyName = getPropertyName(key);
+          const propertyName = toPropertyKey(key);
           if (propertyName !== null) {
             this.assignMember(target.object, propertyName, value, context);
           } else {
@@ -2875,7 +2901,7 @@ export class Interpreter {
       return this.getProperty(object, node.property.name, context, location, node.optional);
     }
     const key = this.evaluateExpression(node.property, context);
-    const propertyName = getPropertyName(key);
+    const propertyName = toPropertyKey(key);
     if (propertyName !== null) {
       return this.getProperty(object, propertyName, context, location, node.optional);
     }
@@ -3389,7 +3415,7 @@ export class Interpreter {
     const getCallee = (target: StaticValue): StaticValue => {
       if (target === CHAIN_SHORT_CIRCUIT) return target;
       if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
-      const name = getPropertyName(key);
+      const name = toPropertyKey(key);
       return name === null
         ? unknownValue("computed method call", location)
         : this.getProperty(target, name, context, location, member.optional);

@@ -3900,6 +3900,211 @@
         "maxFiberCount": 20000
       },
       "notes": "`bun install` runs the `sqlite3` native build in a postinstall, which fails under node-gyp 8 on Python 3.12 (`distutils`); nothing imports `sqlite3` (Prisma ships its own engine), so lifecycle scripts are skipped and the setup script builds the `graphql`, `sdk` and `ui` workspace packages that the admin app imports from `dist/`. The demo seed at this revision fails (`author.bio` is required by the SQLite schema but not supplied), so the database only carries the migrations; the login page does not read rows."
+    },
+    {
+      "id": "create-vite",
+      "repository": "https://github.com/vitejs/vite",
+      "revision": "e6f6b3e3119256daa837b2dc399058c8aa45b470",
+      "description": "create-vite `template-react` scaffold (Vite 8 SPA, React 19, StrictMode + useState counter)",
+      "framework": "spa",
+      "workingDirectory": "packages/create-vite/template-react",
+      "install": "cd packages/create-vite/template-react && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": "packages/create-vite/template-react",
+        "entry": "src/main.jsx"
+      }
+    },
+    {
+      "id": "create-t3-app",
+      "repository": "https://github.com/t3-oss/create-t3-app",
+      "revision": "4709861f7e67a15564c0460c13e7b4b6cfcae40d",
+      "description": "create-t3-app scaffold from `cli/template/base` + the app-router/tailwind extras (Next 15, Geist font, tailwind 4)",
+      "framework": "next-app",
+      "workingDirectory": "scaffold/t3-app",
+      "install": "pnpm install --filter ./cli && pnpm --filter ./cli build && node cli/dist/index.js scaffold/t3-app --CI --appRouter --tailwind --noGit --noInstall && cd scaffold/t3-app && npm install",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "scaffold/t3-app",
+        "route": "/"
+      },
+      "notes": "`cli/template/base` has no pages on its own: the CLI assembles a project from it plus `cli/template/extras`, so the install builds the CLI at the pinned revision and scaffolds the app-router + tailwind flavor into `scaffold/t3-app`."
+    },
+    {
+      "id": "zustand-demo",
+      "repository": "https://github.com/pmndrs/zustand",
+      "revision": "b57db4f86ef179285da216eeb291266da82c361c",
+      "description": "zustand examples/demo (Vite 4 SPA, React 18, zustand stores, prism-react-renderer, react-three-fiber canvas root)",
+      "framework": "spa",
+      "workingDirectory": "examples/demo",
+      "install": "cd examples/demo && npm install --legacy-peer-deps",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/demo",
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["zustand", "zustand/*", "prism-react-renderer"]
+      },
+      "notes": "`prism-react-renderer` bundles Prism with ~30 grammars; building them (21 `insertBefore` calls, each a DFS over every grammar) is one `var Prism = __toESM(require_prism())` declaration that needs ~3.2M interpreter steps, above the 2M default budget, so the code block's Prism-driven subtree stays unknown."
+    },
+    {
+      "id": "docusaurus-classic-ts",
+      "repository": "https://github.com/facebook/docusaurus",
+      "revision": "1434f56a07d83b6d52c6db2c7ef6403221747256",
+      "description": "Docusaurus examples/classic-typescript (Docusaurus 3.10 classic preset, React 19, theme-classic Layout + homepage features)",
+      "framework": "spa",
+      "workingDirectory": "examples/classic-typescript",
+      "install": "cd examples/classic-typescript && npm install",
+      "dev": "npm run start -- --port 3000 --no-open",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/classic-typescript",
+        "entry": "node_modules/@docusaurus/core/lib/client/clientEntry.js",
+        "aliases": {
+          "@generated": ".docusaurus",
+          "@site": ".",
+          "@docusaurus/BrowserOnly": "node_modules/@docusaurus/core/lib/client/exports/BrowserOnly.js",
+          "@docusaurus/ComponentCreator": "node_modules/@docusaurus/core/lib/client/exports/ComponentCreator.js",
+          "@docusaurus/ErrorBoundary": "node_modules/@docusaurus/core/lib/client/exports/ErrorBoundary.js",
+          "@docusaurus/ExecutionEnvironment": "node_modules/@docusaurus/core/lib/client/exports/ExecutionEnvironment.js",
+          "@docusaurus/Head": "node_modules/@docusaurus/core/lib/client/exports/Head.js",
+          "@docusaurus/Interpolate": "node_modules/@docusaurus/core/lib/client/exports/Interpolate.js",
+          "@docusaurus/Link": "node_modules/@docusaurus/core/lib/client/exports/Link.js",
+          "@docusaurus/Noop": "node_modules/@docusaurus/core/lib/client/exports/Noop.js",
+          "@docusaurus/Translate": "node_modules/@docusaurus/core/lib/client/exports/Translate.js",
+          "@docusaurus/constants": "node_modules/@docusaurus/core/lib/client/exports/constants.js",
+          "@docusaurus/isInternalUrl": "node_modules/@docusaurus/core/lib/client/exports/isInternalUrl.js",
+          "@docusaurus/renderRoutes": "node_modules/@docusaurus/core/lib/client/exports/renderRoutes.js",
+          "@docusaurus/router": "node_modules/@docusaurus/core/lib/client/exports/router.js",
+          "@docusaurus/useBaseUrl": "node_modules/@docusaurus/core/lib/client/exports/useBaseUrl.js",
+          "@docusaurus/useBrokenLinks": "node_modules/@docusaurus/core/lib/client/exports/useBrokenLinks.js",
+          "@docusaurus/useDocusaurusContext": "node_modules/@docusaurus/core/lib/client/exports/useDocusaurusContext.js",
+          "@docusaurus/useGlobalData": "node_modules/@docusaurus/core/lib/client/exports/useGlobalData.js",
+          "@docusaurus/useIsBrowser": "node_modules/@docusaurus/core/lib/client/exports/useIsBrowser.js",
+          "@docusaurus/useIsomorphicLayoutEffect": "node_modules/@docusaurus/core/lib/client/exports/useIsomorphicLayoutEffect.js",
+          "@docusaurus/useRouteContext": "node_modules/@docusaurus/core/lib/client/exports/useRouteContext.js",
+          "@theme/Root": "node_modules/@docusaurus/core/lib/client/theme-fallback/Root",
+          "@theme/Error": "node_modules/@docusaurus/core/lib/client/theme-fallback/Error",
+          "@theme/Loading": "node_modules/@docusaurus/core/lib/client/theme-fallback/Loading",
+          "@theme": "node_modules/@docusaurus/theme-classic/lib/theme"
+        },
+        "externalPackageAllowList": [
+          "@docusaurus/*",
+          "react-router",
+          "react-router-dom",
+          "react-router-config",
+          "react-helmet-async",
+          "react-loadable",
+          "history",
+          "prism-react-renderer",
+          "@mdx-js/react",
+          "clsx"
+        ]
+      }
+    },
+    {
+      "id": "react-hook-form",
+      "repository": "https://github.com/react-hook-form/react-hook-form",
+      "revision": "1c12bcd256f35efc5edc47d5a51340499014a151",
+      "description": "react-hook-form `app` e2e playground (Vite 6 SPA, React 19, react-router-dom 6 routes, `/` welcome index linking every form scenario)",
+      "framework": "react-router",
+      "workingDirectory": "app",
+      "install": "pnpm install --ignore-scripts && pnpm build && cd app && pnpm install",
+      "dev": "pnpm dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 300000,
+      "static": {
+        "rootDirectory": "app",
+        "entry": "src/main.tsx",
+        "route": "/"
+      },
+      "notes": "`app` depends on `react-hook-form: file:..`, so the library is built from the pinned revision first; root install skips husky/prepare scripts."
+    },
+    {
+      "id": "chakra-ui",
+      "repository": "https://github.com/chakra-ui/chakra-ui",
+      "revision": "c455101cfaa02527bbaf06b90de5cb26b18a2b7b",
+      "description": "Chakra UI v3 `sandbox/vite-ts` (Vite 8 SPA, React 19, `@chakra-ui/react` aliased to `packages/react/src`, next-themes, ClientOnly color-mode toggle)",
+      "framework": "spa",
+      "workingDirectory": "sandbox/vite-ts",
+      "install": "npx -y pnpm@11.10.0 install --ignore-scripts --filter ./sandbox/vite-ts --filter ./packages/react",
+      "dev": "npm run dev",
+      "url": "http://localhost:5173/",
+      "readyTimeoutMs": 300000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "sandbox/vite-ts",
+        "entry": "src/main.tsx",
+        "aliases": {
+          "@chakra-ui/react": "../../packages/react/src"
+        },
+        "externalPackageAllowList": [
+          "@chakra-ui/react",
+          "@ark-ui/*",
+          "@zag-js/*",
+          "@emotion/*",
+          "@pandacss/*",
+          "next-themes",
+          "react-icons",
+          "react-icons/*",
+          "@internationalized/*"
+        ]
+      },
+      "notes": "`apps/compositions` is a component registry (no dev script, no entry html; its examples are rendered by `apps/www`), so the runnable Chakra app in the repo is `sandbox/vite-ts`, whose vite config aliases `@chakra-ui/react` to the library source. Root install skips husky `prepare`; pnpm 11 is pinned by `packageManager`."
+    },
+    {
+      "id": "trpc-next-app-dir",
+      "repository": "https://github.com/trpc/trpc",
+      "revision": "66d054454a3339dd8421da9dcf0648f92816f704",
+      "description": "tRPC `examples/.experimental/next-app-dir` home page (Next 15 app router, React 19, next-auth v5 session gate, react-hot-toast Toaster)",
+      "framework": "next-app",
+      "workingDirectory": "examples/.experimental/next-app-dir",
+      "install": "npx -y pnpm@10.33.1 install --ignore-scripts",
+      "dev": "npm run dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": "examples/.experimental/next-app-dir",
+        "route": "/",
+        "externalPackageAllowList": ["next-auth", "react-hot-toast"]
+      },
+      "notes": "The home page is a server component gated on `auth()` (next-auth v5 with an unconfigured GitHub provider; the checked-in `.env` sets `NEXTAUTH_SECRET`), so the session is unknowable statically and the sign-in/sign-out link is an honest branch. The index page and layout only import next-auth, next/link and react-hot-toast, so the workspace `@trpc/*` packages need no build."
+    },
+    {
+      "id": "react-compiler-playground",
+      "repository": "https://github.com/facebook/react",
+      "revision": "78c2d377d79a7284339fc24b560dd503daf314cc",
+      "description": "React Compiler playground (Next 15 app router, React 19.2, notistack, next/dynamic Monaco editor, in-browser babel-plugin-react-compiler)",
+      "framework": "next-app",
+      "workingDirectory": "compiler/apps/playground",
+      "install": "cd compiler/apps/playground && yarn install --frozen-lockfile && yarn build:compiler",
+      "dev": "NODE_ENV=development npx next dev",
+      "url": "http://localhost:3000/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": "compiler/apps/playground",
+        "route": "/",
+        "externalPackageAllowList": [
+          "notistack",
+          "re-resizable",
+          "@heroicons/react",
+          "@use-gesture/react",
+          "lru-cache",
+          "@monaco-editor/react",
+          "@monaco-editor/loader",
+          "state-local"
+        ]
+      },
+      "notes": "`yarn install` in the playground runs the compiler workspace install (preinstall) and `yarn link`s `babel-plugin-react-compiler` + `react-compiler-runtime` (postinstall); `build:compiler` produces the `dist/` the playground imports. The dev server is started directly instead of the package's `dev` script, which wraps the same `next dev` in `concurrently` watch builds."
     }
   ]
 }

@@ -1,4 +1,5 @@
 import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -78,6 +79,69 @@ const renderPagesWithNext = async (version: string, route: string) => {
     tree: formatPattern(pattern),
     errors: result.diagnostics.filter((diagnostic) => diagnostic.severity === "error"),
   };
+};
+
+const harnessRequire = createRequire(import.meta.url);
+
+/** A CommonJS module re-exporting the harness's `specifier` as a React build of another `version`, without `Activity`. */
+const reactBuildStub = (specifier: string, version: string): string =>
+  `const { Activity, unstable_Activity, ...build } = require(${JSON.stringify(harnessRequire.resolve(specifier))});
+module.exports = { ...build, version: ${JSON.stringify(version)} };`;
+
+/**
+ * A copy of the `next-app` fixture with `next.config.js`, an `/activity` page and
+ * the React build Next bundles for `app/` at `next/dist/compiled/react<channel>`,
+ * reporting `version` and lacking `Activity`.
+ */
+const withNextVendoredReact = async (
+  nextConfig: string,
+  channel: "" | "-experimental",
+  version: string,
+): Promise<string> => {
+  const rootDirectory = await withInstalledPackage("next-app", "next", "15.5.9");
+  await writeFile(join(rootDirectory, "next.config.js"), nextConfig);
+  const pageDirectory = join(rootDirectory, "app", "activity");
+  await mkdir(pageDirectory);
+  await writeFile(
+    join(pageDirectory, "page.tsx"),
+    `"use client";
+import { Activity } from "react";
+export default function ActivityPage() {
+  return <Activity mode="visible"><p>shown</p></Activity>;
+}
+`,
+  );
+  const compiledDirectory = join(rootDirectory, "node_modules", "next", "dist", "compiled");
+  const writeBuild = async (name: string, files: Record<string, string>): Promise<void> => {
+    const buildDirectory = join(compiledDirectory, name);
+    await mkdir(buildDirectory, { recursive: true });
+    await writeFile(
+      join(buildDirectory, "package.json"),
+      JSON.stringify({ name, main: "index.cjs", type: "commonjs" }),
+    );
+    for (const [fileName, source] of Object.entries(files)) {
+      await writeFile(join(buildDirectory, fileName), source);
+    }
+  };
+  await writeBuild(`react${channel}`, { "index.cjs": reactBuildStub("react", version) });
+  await writeBuild(`react-dom${channel}`, {
+    "index.cjs": reactBuildStub("react-dom", version),
+    "client.js": reactBuildStub("react-dom/client", version),
+  });
+  return rootDirectory;
+};
+
+const renderActivityPage = async (
+  nextConfig: string,
+  channel: "" | "-experimental",
+  version: string,
+) => {
+  const rootDirectory = await withNextVendoredReact(nextConfig, channel, version);
+  const result = await renderFrameworkTarget(
+    { framework: "next-app", route: "/activity" },
+    { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+  );
+  return formatPattern(getRenderPattern(result));
 };
 
 const findFiberTags = (nodes: PatternNode[], name: string): SnapshotWorkTag[] =>
@@ -309,6 +373,38 @@ describe("next app router", () => {
     expect(tree).toMatch(
       /<figure>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ImagePreload>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+<ForwardRef>\n\s+<ForwardRef>\n\s+<img>\n\s+\?branch\(priority decides whether the image preloads\)\n\s+\|0 \(preferred\)\n\s+\|1\n\s+<ImagePreload>$/,
     );
+  });
+
+  it("materializes with the canary React build Next bundles for app/ instead of the app's own react", async () => {
+    const tree = await renderActivityPage("module.exports = {};", "", "19.2.0-canary-stub");
+    expect(tree).toContain("?unknown(activity is not available in React 19.2.0-canary-stub)");
+    expect(tree).not.toContain("<Activity>");
+  });
+
+  it("switches to Next's experimental React build when next.config enables viewTransition", async () => {
+    const tree = await renderActivityPage(
+      "module.exports = { experimental: { viewTransition: true } };",
+      "-experimental",
+      "19.2.0-experimental-stub",
+    );
+    expect(tree).toContain("?unknown(activity is not available in React 19.2.0-experimental-stub)");
+  });
+
+  it("keeps the app's own react when Next's bundled build is absent", async () => {
+    const rootDirectory = await withInstalledPackage("next-app", "next", "15.5.9");
+    await writeFile(
+      join(rootDirectory, "next.config.js"),
+      "module.exports = { experimental: { viewTransition: true } };",
+    );
+    const activityRoot = await withNextVendoredReact("module.exports = {};", "", "unused");
+    await cp(join(activityRoot, "app", "activity"), join(rootDirectory, "app", "activity"), {
+      recursive: true,
+    });
+    const result = await renderFrameworkTarget(
+      { framework: "next-app", route: "/activity" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    expect(lines(formatPattern(getRenderPattern(result)))).toContain("<Activity>");
   });
 
   it("reports a missing page instead of guessing", async () => {

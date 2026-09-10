@@ -122,11 +122,12 @@ export const largeDynamicMapKeepsDecidedMembership = () => {
 const evaluateExports = async (
   source: string,
   exportNames: string[],
+  maxSteps?: number,
 ): Promise<Record<string, string>> => {
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-parser-evaluate-"));
   const entryFile = join(rootDirectory, "module.ts");
   writeFileSync(entryFile, source);
-  const renderer = createStaticRenderer({ rootDirectory });
+  const renderer = createStaticRenderer({ rootDirectory, maxSteps });
   const described: Record<string, string> = {};
   await renderer.renderWith((interpreter) => {
     const module = renderer.loadModule(entryFile);
@@ -235,5 +236,28 @@ describe("collections written under dynamic keys", () => {
       largeDynamicMapIsUnknown: "unknown(Map.get() with a dynamic key)",
       largeDynamicMapKeepsDecidedMembership: "true",
     });
+  });
+});
+
+const REGISTRY_SOURCE = `
+const registry: Record<string, number> = {};
+registry.first = 1;
+for (let index = 0; index < 50; index++) registry[\`entry\${index}\`] = index;
+registry.last = 2;
+
+export const readLast = () => registry.last;
+export const readFirst = () => registry.first;
+`;
+
+describe("module initialization budget", () => {
+  it("reads a fully initialized module's state", async () => {
+    const results = await evaluateExports(REGISTRY_SOURCE, ["readFirst", "readLast"]);
+    expect(results).toEqual({ readFirst: "1", readLast: "2" });
+  });
+
+  it("makes every export unknown when a top-level statement runs out of steps", async () => {
+    const results = await evaluateExports(REGISTRY_SOURCE, ["readFirst", "readLast"], 100);
+    expect(results.readFirst).toMatch(/^unknown\(.*exhausted the step budget/);
+    expect(results.readLast).toMatch(/^unknown\(.*exhausted the step budget/);
   });
 });

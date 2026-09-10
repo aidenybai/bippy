@@ -11,13 +11,14 @@ import {
   mapValue,
   objectFromRecord,
   objectValue,
+  omitObjectKeys,
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
 import { hasProperty } from "../evaluate/has-property.js";
 import { element, emptyStub, nativeFunction, stubValue } from "../evaluate/stubs.js";
-import { toElementType } from "../react/element-type.js";
+import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,
   LibraryValueProvider,
@@ -97,7 +98,14 @@ const THEME_CONTEXT: ContextDefinition = {
 const CACHE_CONTEXT: ContextDefinition = {
   name: "EmotionCacheContext",
   displayName: "EmotionCacheContext",
-  defaultValue: unknownValue("emotion cache"),
+  defaultValue: objectFromRecord({
+    key: primitiveValue("css"),
+    nonce: UNDEFINED_VALUE,
+    sheet: unknownValue("emotion style sheet"),
+    registered: unknownValue("styles registered in the emotion cache"),
+    inserted: unknownValue("styles inserted by the emotion cache"),
+    insert: unknownValue("emotion cache insert"),
+  }),
   location: null,
 };
 
@@ -438,6 +446,51 @@ const jsxFactory = (api: ReactApi, runtime: EmotionRuntime): StaticValue =>
     }
   });
 
+const withEmotionCache = (runtime: EmotionRuntime): StaticValue =>
+  nativeFunction("withEmotionCache", ([func = UNDEFINED_VALUE]) => {
+    if (func.kind !== "function") {
+      return unknownValue(`withEmotionCache of ${describeTag(func)}`);
+    }
+    if (runtime.hasConsumerFibers) {
+      const stub: StubComponent = {
+        displayName: null,
+        tag: ForwardRefTag,
+        render: (props, tools) => {
+          const ref = getObjectProperty(props, "ref");
+          const renderProps = omitObjectKeys(props, new Set(["ref"]));
+          return element(
+            {
+              kind: "context-consumer",
+              context: CACHE_CONTEXT,
+              displayName: CACHE_CONTEXT.displayName,
+            },
+            objectFromRecord({
+              children: nativeFunction("children", ([cache = UNDEFINED_VALUE]) =>
+                tools.call(func, [
+                  renderProps.kind === "object" ? renderProps : props,
+                  cache,
+                  isNullish(ref) === true ? NULL_VALUE : ref,
+                ]),
+              ),
+            }),
+          );
+        },
+      };
+      return stubValue(stub);
+    }
+    return {
+      kind: "component-reference",
+      type: {
+        kind: "forward-ref",
+        component: createFunctionComponentDefinition(func),
+        render: func,
+        renderArguments: (props, ref, readContext) => [props, readContext(CACHE_CONTEXT), ref],
+        displayName: null,
+        properties: new Map(),
+      },
+    };
+  });
+
 const withTheme = (): StaticValue =>
   nativeFunction("withTheme", ([component = UNDEFINED_VALUE]) => {
     const inner = toElementType(component, null);
@@ -479,6 +532,8 @@ const reactValue = (importedName: string, runtime: EmotionRuntime): StaticValue 
       };
     case "__unsafe_useEmotionCache":
       return nativeFunction("useEmotionCache", (_args, tools) => tools.readContext(CACHE_CONTEXT));
+    case "withEmotionCache":
+      return withEmotionCache(runtime);
     case "Global":
       return stubValue(GLOBAL_STUB);
     case "ClassNames":
