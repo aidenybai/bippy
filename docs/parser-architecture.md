@@ -214,7 +214,9 @@ Task callbacks also journal their writes under the full execution condition. Thi
 
 A promise that adopts another promise enters a following state. Later resolver calls cannot replace that state. Adoption jobs and `finally` continuations run through the microtask queue. Self-resolution rejects with a `TypeError`.
 
-Promise support remains incomplete. Thenable behavior, custom promise constructors, escaped or widened outcomes, and render-local suspension still require verification.
+A modeled leading `await` resumes in a reaction microtask even when its operand is a primitive or a settled promise. It does not drain unrelated microtasks while evaluating the operand. An exception thrown before reaching the await remains synchronous; a rejected promise resumes the catch block through the reaction queue.
+
+Promise support remains incomplete. Thenable behavior, custom promise constructors, escaped or widened outcomes, non-leading await expressions, and render-local suspension still require verification.
 
 [Mounting](../packages/parser/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. Reaching the settlement limit does not prove that the application has no further updates.
 
