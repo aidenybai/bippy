@@ -32463,6 +32463,491 @@
       "failure": null
     },
     {
+      "id": "ignite-dt-money",
+      "revision": "9c7b7c76552636aae4442c29e0a55b2cb1b0768c",
+      "framework": "spa",
+      "capturedAt": "2026-09-11T20:47:05.043Z",
+      "durationMs": 1797,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 143,
+        "commits": 8,
+        "pageErrors": [],
+        "title": "DT Money"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 111,
+          "textCount": 4,
+          "branchCount": 2,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 3,
+          "modulesLoaded": 1093
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "truncated",
+        "matchedFibers": 131,
+        "matchedText": 11,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 7,
+        "repeatIterations": 6,
+        "transparentFibers": 0,
+        "runtimeFibers": 142,
+        "staticFibers": 99,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 171,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 9,
+        "stateCount": 9,
+        "clusters": 1,
+        "tree": {
+          "nodes": 195,
+          "inputs": 3,
+          "guards": 7,
+          "branches": 2,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 3
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "|| on <boolean: Object.is on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2.data)",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+              "count": 6
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[5]",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[4]",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[3]",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[2]",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[1]",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#2.data)",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "|| on <boolean: Object.is on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "|| on <boolean: Object.is on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2.data)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+              "side": 0,
+              "guard": "eq(len(#2.data), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2.data)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+              "side": 1,
+              "guard": "len(#2.data) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "side": 0,
+              "guard": "eq(#2.data[].type, \"outcome\")",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#2.data[].type, \"outcome\")",
+              "reason": "&& on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+              "side": 1,
+              "guard": "not(eq(#2.data[].type, \"outcome\"))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 5,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "|| on <boolean: Object.is on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.data)",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "|| on <boolean: Object.is on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.data)",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+                "count": 1
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              5
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "|| on <boolean: Object.is on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.data)",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+                "count": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[1]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              6
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "|| on <boolean: Object.is on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.data)",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+                "count": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[1]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              7
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "|| on <boolean: Object.is on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.data)",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+                "count": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[1]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              8
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "|| on <boolean: Object.is on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/node_modules/use-context-selector/dist/index.modern.js:1:1502",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.data)",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:29:14",
+                "count": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[0]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(#2.data[].type, \"outcome\")@len(#2.data)[1]",
+                "reason": "&& on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-next-expansion/ignite-reactjs-03-dt-money/src/pages/Transactions/index.tsx:35:24",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "states": 9,
+        "assignments": 8,
+        "replayed": 8,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T20:42:57.474Z",
+      "failure": null
+    },
+    {
       "id": "ignite-feed",
       "revision": "84a9309459d59c385424d2d2ca6cdb83964252af",
       "framework": "spa",
@@ -32553,6 +33038,96 @@
       "failure": null
     },
     {
+      "id": "ignite-lab-design-system",
+      "revision": "5dc13884ef58f74cebcf3e7e32d871dbbbebc68b",
+      "framework": "spa",
+      "capturedAt": "2026-09-11T20:47:08.218Z",
+      "durationMs": 969,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 79,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Lab Design System"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 79,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1073
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 78,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 78,
+        "staticFibers": 78,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 78,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 78,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T20:45:36.327Z",
+      "failure": null
+    },
+    {
       "id": "ignite-timer",
       "revision": "9fc8978a44712045db9ac80ff7f672062a8f0d62",
       "framework": "react-router",
@@ -32640,6 +33215,96 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-11T19:44:16.095Z",
+      "failure": null
+    },
+    {
+      "id": "ignite-todo",
+      "revision": "cf83cf99e9a5563ebd90c60b9593130f4ff2d688",
+      "framework": "spa",
+      "capturedAt": "2026-09-11T20:47:06.841Z",
+      "durationMs": 1375,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 34,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "01 - Todo"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 34,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3757
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 31,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 33,
+        "staticFibers": 33,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 33,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 33,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T20:43:05.439Z",
       "failure": null
     },
     {
@@ -64572,6 +65237,96 @@
       "failure": null
     },
     {
+      "id": "nlw-journey-react",
+      "revision": "39e24d348e741c7a814a9a626b442237aad74154",
+      "framework": "react-router",
+      "capturedAt": "2026-09-11T20:47:02.443Z",
+      "durationMs": 1253,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 57,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "plann.er"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 49,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2322
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 42,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 9,
+        "runtimeFibers": 47,
+        "staticFibers": 47,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 47,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 47,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T19:55:44.353Z",
+      "failure": null
+    },
+    {
       "id": "noteworthy",
       "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
       "framework": "spa",
@@ -91577,6 +92332,123 @@
       },
       "anchor": null,
       "note": null,
+      "failure": null
+    },
+    {
+      "id": "react-na-pratica",
+      "revision": "36636b84523d05c5c065fdafb65a2ba7961bab33",
+      "framework": "react-router",
+      "capturedAt": "2026-09-11T20:47:03.700Z",
+      "durationMs": 1335,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 497,
+        "commits": 9,
+        "pageErrors": [
+          "Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?%s%s \n\nCheck the render method of `SlotClone`. \n    at Button (http://127.0.0.1:54336/src/components/ui/button.tsx:34:26)\n    at http://127.0.0.1:54336/node_modules/.vite/deps/chunk-DCY42S36.js?v=1c89dc18:288:11\n    at http://127.0.0.1:54336/node_modules/.vite/deps/chunk-DCY42S36.js?v=1c89dc18:265:11\n    at http://127.0.0.1:54336/node_modules/.vite/deps/chunk-DCY42S36.js?v=1c89dc18:359:13\n    at http://127.0.0.1:54336/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=e81083dd:185:11\n    at Provider (http://127.0.0.1:54336/node_modules/.vite/deps/chunk-DCY42S36.js?v=1c89dc18:91:15)\n    at $5d3850c4d0b4e6c7$export$3ddf2d174ce01153 (http://127.0.0.1:54336/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=e81083dd:152:11)\n    at div\n    at main\n    at div\n    at App (http://127.0.0.1:54336/src/app.tsx:32:43)\n    at RenderedRoute (http://127.0.0.1:54336/node_modules/.vite/deps/react-router-dom.js?v=0fb4cd8c:3537:5)\n    at RenderErrorBoundary (http://127.0.0.1:54336/node_modules/.vite/deps/react-router-dom.js?v=0fb4cd8c:3497:5)\n    at DataRoutes (http://127.0.0.1:54336/node_modules/.vite/deps/react-router-dom.js?v=0fb4cd8c:4647:5)\n    at Router (http://127.0.0.1:54336/node_modules/.vite/deps/react-router-dom.js?v=0fb4cd8c:3915:15)\n    at RouterProvider (http://127.0.0.1:54336/node_modules/.vite/deps/react-router-dom.js?v=0fb4cd8c:4464:5)\n    at QueryClientProvider (http://127.0.0.1:54336/node_modules/.vite/deps/@tanstack_react-query.js?v=4337317f:2587:3)"
+        ],
+        "title": "React na prática"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 489,
+          "textCount": 35,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1494
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 452,
+        "matchedText": 35,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 9,
+        "runtimeFibers": 487,
+        "staticFibers": 487,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 487,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 928,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T19:55:55.004Z",
       "failure": null
     },
     {

@@ -6334,6 +6334,124 @@
         "entry": "src/main.tsx",
         "externalPackageAllowList": ["date-fns", "phosphor-react"]
       }
+    },
+    {
+      "id": "nlw-journey-react",
+      "repository": "https://github.com/rocketseat-education/nlw-journey-react",
+      "revision": "39e24d348e741c7a814a9a626b442237aad74154",
+      "description": "NLW Journey trip-planning landing page before submission: React 18, Vite 5, React Router, date-fns and a calendar dialog. The backend is not needed for this initial page.",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54335 --strictPort",
+      "url": "http://127.0.0.1:54335/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "lucide-react",
+          "date-fns",
+          "tailwind-variants",
+          "react-day-picker",
+          "react-day-picker/*"
+        ]
+      }
+    },
+    {
+      "id": "react-na-pratica",
+      "repository": "https://github.com/rocketseat-education/react-na-pratica",
+      "revision": "36636b84523d05c5c065fdafb65a2ba7961bab33",
+      "description": "React na Pratica tag manager using the repository's own json-server database: React 18, Vite 5, TanStack Query and Radix dialogs.",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@8.15.9 install --frozen-lockfile --ignore-scripts",
+      "dev": "node node_modules/json-server/lib/bin.js server.json --watch --port 3333 & server=$!; trap 'kill \"$server\" 2>/dev/null || true' EXIT; corepack pnpm@8.15.9 run dev --host 127.0.0.1 --port 54336 --strictPort",
+      "url": "http://127.0.0.1:54336/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@tanstack/react-query",
+          "@radix-ui/*",
+          "lucide-react",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "tailwind-merge",
+          "tailwind-variants",
+          "zod"
+        ]
+      }
+    },
+    {
+      "id": "ignite-dt-money",
+      "repository": "https://github.com/rocketseat-education/ignite-reactjs-03-dt-money",
+      "revision": "9c7b7c76552636aae4442c29e0a55b2cb1b0768c",
+      "description": "Vite finance dashboard using its own json-server transaction data, styled-components, Radix dialogs and use-context-selector",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev:server & server=$!; trap 'kill \"$server\" 2>/dev/null || true' EXIT; pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54337 --strictPort",
+      "url": "http://127.0.0.1:54337/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "styled-components",
+          "@radix-ui/*",
+          "phosphor-react",
+          "use-context-selector"
+        ]
+      }
+    },
+    {
+      "id": "ignite-todo",
+      "repository": "https://github.com/rocketseat-education/ignite-challenge-solution-reactjs-todo",
+      "revision": "cf83cf99e9a5563ebd90c60b9593130f4ff2d688",
+      "description": "Vite task-list application with local React state, CSS modules and Phosphor icons",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54338 --strictPort",
+      "url": "http://127.0.0.1:54338/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@phosphor-icons/react"]
+      }
+    },
+    {
+      "id": "ignite-lab-design-system",
+      "repository": "https://github.com/rocketseat-education/ignite-lab-design-system",
+      "revision": "5dc13884ef58f74cebcf3e7e32d871dbbbebc68b",
+      "description": "Vite design-system sign-in page with composable inputs, Radix Slot and Checkbox, Tailwind and Phosphor icons",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --legacy-peer-deps",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54339 --strictPort",
+      "url": "http://127.0.0.1:54339/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@radix-ui/*", "phosphor-react"]
+      }
     }
   ]
 }
