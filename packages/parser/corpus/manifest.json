@@ -6452,6 +6452,79 @@
         "entry": "src/main.tsx",
         "externalPackageAllowList": ["@radix-ui/*", "phosphor-react"]
       }
+    },
+    {
+      "id": "shadcn-admin",
+      "repository": "https://github.com/satnaing/shadcn-admin",
+      "revision": "e16c87f213a5ba5e45964e9b67c792105ec74d26",
+      "description": "Shadcn Admin dashboard with its bundled example data: React 19, Vite 8, TanStack Router file routes, Radix, Recharts and Zustand; no Clerk credentials are supplied.",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm install --frozen-lockfile --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54334 --strictPort",
+      "url": "http://127.0.0.1:54334/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "@tanstack/react-router",
+          "@tanstack/router-core",
+          "@tanstack/history",
+          "@tanstack/react-store",
+          "@tanstack/store",
+          "@tanstack/react-query",
+          "@tanstack/react-table",
+          "@tanstack/react-query-devtools",
+          "@tanstack/react-router-devtools",
+          "lucide-react",
+          "recharts",
+          "recharts/*",
+          "react-redux",
+          "reselect",
+          "react-top-loading-bar",
+          "sonner",
+          "cmdk",
+          "zustand",
+          "zustand/*",
+          "clsx",
+          "tailwind-merge",
+          "class-variance-authority",
+          "date-fns",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "zod",
+          "input-otp",
+          "react-day-picker"
+        ]
+      }
+    },
+    {
+      "id": "nlw-moveit",
+      "repository": "https://github.com/rocketseat-education/nlw-04-reactjs",
+      "revision": "44135ad88e3e287bf7a6879effb007007bbbf2b9",
+      "description": "Next 10 pages application with React 17, cookie-backed challenge context and an idle activity timer",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "corepack yarn@1.22.22 install --frozen-lockfile --non-interactive --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run dev --hostname 127.0.0.1 --port 54340",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54340/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["js-cookie"]
+      }
     }
   ]
 }
