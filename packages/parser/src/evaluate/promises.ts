@@ -157,14 +157,11 @@ export const isPossiblyUnsettled = (value: StaticValue): boolean =>
   value.kind === "external" ||
   (value.kind === "branch" && value.alternatives.some(isPossiblyUnsettled));
 
-export const getPendingPromise = (
-  value: StaticValue,
-  drainMicrotasks: () => void,
-): ModeledPromise | null => {
+export const getAwaitPromise = (value: StaticValue): ModeledPromise | null => {
   const promise = getModeledPromise(value);
-  if (!promise || promise.settled || promise.isEscaped) return null;
-  drainMicrotasks();
-  return promise.settled || promise.isEscaped ? null : promise;
+  if (promise) return promise.isEscaped ? null : promise;
+  if (isThrownOutcome(value) || isPossiblyUnsettled(value)) return null;
+  return resolvePromise(value);
 };
 
 export const suspendOnPromise = (

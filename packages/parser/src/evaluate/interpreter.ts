@@ -276,7 +276,7 @@ import {
   awaitedValue,
   escapedPromiseValue,
   getModeledPromise,
-  getPendingPromise,
+  getAwaitPromise,
   isAwaitDeferred,
   resolvedPromiseValue,
   suspendOnPromise,
@@ -4281,8 +4281,8 @@ export class Interpreter {
 
   /**
    * Evaluates the `await`s a statement reaches before anything it cannot replay.
-   * On a promise that is still pending the async body suspends: the statement
-   * is re-evaluated with the outcome once the promise settles, and the rest of
+   * A modeled await suspends even when its operand is already settled: the
+   * statement is re-evaluated by its reaction microtask, and the rest of
    * the list follows, its outcome passing through the enclosing `try`
    * statements before it settles the call's result. Settled outcomes are left
    * for the statement's own evaluation to pick up.
@@ -4305,11 +4305,11 @@ export class Interpreter {
       if (!node) return false;
       const location = this.locate(context.module, node);
       const value = this.evaluateExpression(node.argument, context);
-      const pending = getPendingPromise(value, drainMicrotasks);
-      if (pending) {
+      const promise = getAwaitPromise(value);
+      if (promise) {
         suspendOnPromise(
           suspension.call,
-          pending,
+          promise,
           (outcome, isEscaped) => {
             this.resolvedAwaits.set(node, outcome);
             let resumed = isEscaped
@@ -4334,8 +4334,8 @@ export class Interpreter {
 
   /**
    * Runs the blocks a root render call is nested in (an async `main`, a `load`
-   * handler) as their function does: an `await` of a pending promise suspends
-   * the rest, which resumes once the event loop settles it, so the element the
+   * handler) as their function does: a modeled `await` suspends the rest,
+   * which resumes in a reaction microtask, so the element the
    * render receives sees the state those awaits set up. Null when no render is
    * reached even after every queued task ran.
    */
@@ -4417,8 +4417,8 @@ export class Interpreter {
     const asyncCall: AsyncCall | null = functionValue.node.async ? { result: null } : null;
     const returned = this.evaluateFunctionBody(functionValue, args, context, options, asyncCall);
     const result = asyncCall?.result ? asyncCall.result.value : returned;
-    // An async body runs synchronously up to its first `await` of a pending
-    // promise; a modeled one resumes it when that settles, an unknown one
+    // An async body runs synchronously up to its first modeled `await`;
+    // a reaction microtask resumes it, while an unknown operand
     // defers whatever follows. Only a framework-awaited call (server components,
     // route `lazy`) lets what follows count as settled before the captured commit.
     if (options.awaited) return awaitedValue(result, location, () => this.timers.drainMicrotasks());

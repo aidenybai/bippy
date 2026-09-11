@@ -73,6 +73,7 @@ describe("conditional task scheduling", () => {
     "effect-cause-promise-registration.tsx",
     "effect-cause-pending-promise-registration.tsx",
     "effect-cause-promise-settlement.tsx",
+    "effect-cause-await-registration.tsx",
   ])("does not update paths that never registered the task in %s", async (fixture) => {
     const renderer = await createComponentRenderer();
     const rendered = await renderer.renderComponent(join(COMPONENTS_DIRECTORY, fixture));
