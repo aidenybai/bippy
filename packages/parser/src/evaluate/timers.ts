@@ -15,7 +15,7 @@ const getHandleIdentity = (handle: StaticValue): object =>
 class TimerCancellation implements JournaledState<StaticValue> {
   readonly allocation = 0;
 
-  constructor(public value: StaticValue = FALSE_VALUE) {}
+  constructor(public value: StaticValue) {}
 
   capture(): StaticValue {
     return this.value;
@@ -114,7 +114,7 @@ export class TimerQueue {
     };
   }
 
-  private activate(handle: StaticValue): void {
+  activate(handle: StaticValue): void {
     const identity = getHandleIdentity(handle);
     if (this.cancellations.has(identity)) return;
     const cancellation = new TimerCancellation(TRUE_VALUE);
@@ -140,13 +140,8 @@ export class TimerQueue {
 
   clear(handle: StaticValue | undefined): void {
     if (!handle) return;
-    const identity = getHandleIdentity(handle);
-    let cancellation = this.cancellations.get(identity);
-    if (!cancellation) {
-      cancellation = new TimerCancellation();
-      this.cancellations.set(identity, cancellation);
-    }
-    if (getTruthiness(cancellation.value) === true) return;
+    const cancellation = this.cancellations.get(getHandleIdentity(handle));
+    if (!cancellation || getTruthiness(cancellation.value) === true) return;
     this.recordMutation(cancellation);
     cancellation.value = TRUE_VALUE;
   }

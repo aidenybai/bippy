@@ -132,6 +132,7 @@ import type {
   StaticPrimitive,
   StaticUnknownPrimitiveValue,
   StaticValue,
+  TaskBinder,
   StyledComponentsTransformOptions,
   SuperBinding,
   TopLevelBinding,
@@ -140,6 +141,7 @@ import type {
 import {
   INTRINSIC_PROTOTYPE_NAMES,
   evaluateBuiltinCall,
+  promiseTools,
   getBuiltinGlobal,
   getGlobalTypeof,
   getTypeofValue,
@@ -2071,14 +2073,56 @@ export class Interpreter {
     return true;
   }
 
-  runTaskWithCause = (cause: GuardContext, task: () => void): void => {
+  runTaskWithCause = (
+    cause: GuardContext,
+    task: () => void,
+    context: EvaluationContext | null = null,
+    location: SourceLocation | null = null,
+  ): void => {
     const guard = andGuard([this.guard, cause.guard]);
-    if (this.isTaskPossible(guard)) this.runWithGuard(guard, task);
+    if (!this.isTaskPossible(guard)) return;
+    this.runWithGuard(guard, () => {
+      if (guard.kind === "constant" && guard.value) return task();
+      this.runMaybe(context?.scope ?? null, task, "conditional task", location, true, false, {
+        predicate: serializeSymbolicPredicate({
+          formula: guard,
+          choice: null,
+          guards: null,
+          inputs: cause.inputs,
+        }),
+      });
+    });
   };
+
+  bindContinuationWithCause: TaskBinder = (task) => {
+    const cause = { guard: this.guard, inputs: [] };
+    return (...args) => this.runTaskWithCause(cause, () => task(...args));
+  };
+
+  bindTask<Arguments extends unknown[]>(
+    task: (...args: Arguments) => void,
+    context: EvaluationContext | null,
+    location: SourceLocation | null,
+  ): (...args: Arguments) => void {
+    const handle = this.timers.createHandle("continuation");
+    this.timers.activate(handle);
+    return this.bindContinuationWithCause((...args: Arguments) =>
+      this.runTimerTask(handle, context, location, () => task(...args)),
+    );
+  }
+
+  queueMicrotask(
+    task: () => void,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): void {
+    const handle = this.timers.createHandle("queueMicrotask");
+    this.timers.queueMicrotask(() => this.runTimerTask(handle, context, location, task), handle);
+  }
 
   runTimerTask(
     handle: StaticValue,
-    context: EvaluationContext,
+    context: EvaluationContext | null,
     location: SourceLocation | null,
     task: () => void,
   ): void {
@@ -2088,16 +2132,19 @@ export class Interpreter {
     );
     const isCancelled = getTruthiness(cancellation);
     if (isCancelled === true) return;
-    if (isCancelled === false) return task();
+    if (isCancelled === false) {
+      return this.runTaskWithCause(
+        { guard: constantGuard(true), inputs: [] },
+        task,
+        context,
+        location,
+      );
+    }
     const predicate = parseSymbolicPredicate(getTruthinessPredicate(cancellation));
     if (predicate.formula === null)
       throw new Error("timer cancellation has no truthiness predicate");
     const cause = { guard: negateGuard(predicate.formula), inputs: predicate.inputs };
-    this.runTaskWithCause(cause, () =>
-      this.runMaybe(context.scope, task, "conditionally cancelled timer", location, true, false, {
-        predicate: serializeSymbolicPredicate({ ...predicate, formula: cause.guard }),
-      }),
-    );
+    this.runTaskWithCause(cause, task, context, location);
   }
 
   runWithGuard<Result>(guard: Guard, run: () => Result): Result {
@@ -3860,7 +3907,9 @@ export class Interpreter {
             this.callDeferred(callee, calleeArgs, context, location),
           captured: (captured, name) => this.captured(captured, name),
           markEscaped: (value) => this.markEscaped(value),
-          queueMicrotask: (task) => this.timers.queueMicrotask(task),
+          queueMicrotask: (task) => this.queueMicrotask(task, context, location),
+          bindTask: (task) => this.bindTask(task, context, location),
+          runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
           isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
           setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
           materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
@@ -4273,6 +4322,7 @@ export class Interpreter {
             return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
           },
           location,
+          promiseTools(this, context, location),
         );
         return true;
       }
@@ -4956,7 +5006,7 @@ export class Interpreter {
    * code that may also run more than once.
    */
   runMaybe<Result>(
-    scope: Scope,
+    scope: Scope | null,
     run: () => Result,
     reason: string,
     location: SourceLocation | null,
@@ -5682,7 +5732,7 @@ interface ScopeSnapshot {
   bindings: Map<string, StaticValue>;
 }
 
-const snapshotScopes = (scope: Scope): ScopeSnapshot[] => {
+const snapshotScopes = (scope: Scope | null): ScopeSnapshot[] => {
   const snapshots: ScopeSnapshot[] = [];
   let current: Scope | null = scope;
   while (current && current.parent) {

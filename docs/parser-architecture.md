@@ -196,7 +196,13 @@ A deferred callback can run after an unrelated commit. Using conditions from tha
 
 The [timer queue](../packages/parser/src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never schedule them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions. Cancellation through a conditional handle uses the selection condition for each handle.
 
-Direct `queueMicrotask` calls use the same activation checks without exposing a cancellation handle to application code. The queue records activation when it enqueues work, not when the interpreter allocates a handle. Promise reaction registration still requires a separate audit.
+Direct `queueMicrotask` calls use the same activation checks without exposing a cancellation handle to application code. The queue records activation when it enqueues work, not when the interpreter allocates a handle. Cancellation does not count as an update when the queue has no record of the handle.
+
+[Promise reactions](../packages/parser/src/evaluate/promises.ts) record activation when a handler subscribes, even if the promise is still pending. A reaction uses both its registration condition and its settlement condition. Journaled promise state keeps settlement on one path from changing another path. `Promise.all` records each input reaction's completion separately instead of sharing a counter across paths.
+
+Task callbacks also journal their writes under the full execution condition. This matters when a conditional component schedules a callback that later changes a shared store. Checking that the callback can run is not enough to restrict its writes.
+
+Promise support remains incomplete. Adoption of pending promises, `finally` ordering, thenable behavior, and render-local suspension still require verification.
 
 [Mounting](../packages/parser/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. Reaching the settlement limit does not prove that the application has no further updates.
 

@@ -616,7 +616,16 @@ export class Materializer {
   ) {
     this.interpreter = interpreter;
     interpreter.timers.bindTask = (task) => this.commitCauses.bindTask(task);
-    interpreter.runTaskWithCause = (cause, task) => this.commitCauses.runTask(cause, task);
+    interpreter.runTaskWithCause = (cause, task, context, location) =>
+      this.commitCauses.runTask(cause, () =>
+        this.runGuardedMutation(
+          context?.scope ?? null,
+          location ?? null,
+          task,
+          context?.hooks ?? null,
+        ),
+      );
+    interpreter.bindContinuationWithCause = (task) => this.commitCauses.bindContinuation(task);
     this.runtime = runtime;
     this.host = host;
     this.pinnedDecisions = options.decisions ?? null;
@@ -1742,6 +1751,9 @@ export class Materializer {
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
+      bindTask: (task) => this.interpreter.bindTask(task, context.owner, location),
+      runTask: (cause, task) =>
+        this.interpreter.runTaskWithCause(cause, task, context.owner, location),
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       materializeNamespace: (value) =>
@@ -1916,7 +1928,7 @@ export class Materializer {
   }
 
   private runGuardedMutation<Result>(
-    scope: Scope,
+    scope: Scope | null,
     location: SourceLocation | null,
     run: () => Result,
     frame: HookFrame | null,
@@ -2102,7 +2114,7 @@ export class Materializer {
         onPromiseSettled(
           promise,
           (isEscaped) => (isEscaped ? timers.enqueue(() => wake()) : wake()),
-          (task) => timers.queueMicrotask(task),
+          this.stubTools(context, null),
         );
       });
       this.wakeables.set(promise, wakeable);

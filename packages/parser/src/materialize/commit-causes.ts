@@ -61,6 +61,13 @@ export class CommitCauses {
     return () => this.runGuardedTask(cause, task);
   }
 
+  bindContinuation<Arguments extends unknown[]>(
+    task: (...args: Arguments) => void,
+  ): (...args: Arguments) => void {
+    const cause = this.getCause();
+    return (...args) => this.runTask(cause, () => task(...args));
+  }
+
   run<Result>(ancestry: GuardContext, run: () => Result): Result {
     return this.runWith(combineGuardContexts([this.current, ancestry], andGuard), run);
   }

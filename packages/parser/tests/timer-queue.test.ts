@@ -2,7 +2,12 @@ import { describe, expect, it } from "vite-plus/test";
 import { HeapJournal } from "../src/evaluate/heap-journal.js";
 import { TimerQueue } from "../src/evaluate/timers.js";
 import { getAlternativeGuards, createPathPredicate } from "../src/evaluate/predicates.js";
-import { areValuesEquivalent, branchValue, getTruthiness } from "../src/evaluate/values.js";
+import {
+  areValuesEquivalent,
+  branchValue,
+  getTruthiness,
+  primitiveValue,
+} from "../src/evaluate/values.js";
 
 describe("guarded timer cancellation", () => {
   it("preserves distinct handles with the same numeric range", () => {
@@ -43,6 +48,18 @@ describe("guarded timer cancellation", () => {
     expect(cancellation.alternatives.map(getTruthiness)).toEqual([true, false]);
     expect(getAlternativeGuards(cancellation)?.guards).toHaveLength(2);
     expect(queue.isCleared(handle)).toBe(false);
+  });
+
+  it("does not record cancellation of an absent timer as progress", () => {
+    let mutations = 0;
+    const queue = new TimerQueue(undefined, undefined, () => {
+      mutations++;
+    });
+    queue.clear(primitiveValue(0));
+    queue.clear(primitiveValue(undefined));
+    queue.clear(queue.createHandle("setTimeout"));
+    expect(mutations).toBe(0);
+    expect(queue.hasTasks()).toBe(false);
   });
 
   it("does not record an unscheduled handle as a queue mutation", () => {

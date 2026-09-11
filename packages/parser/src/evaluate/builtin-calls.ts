@@ -2312,7 +2312,7 @@ const imageLoadHost = (
   readServedAsset: (url) => interpreter.project.readServedAsset(url),
 });
 
-const promiseTools = (
+export const promiseTools = (
   interpreter: Interpreter,
   context: EvaluationContext,
   location: SourceLocation | null,
@@ -2320,7 +2320,10 @@ const promiseTools = (
   call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
   callDeferred: (callee, callArgs) => interpreter.callDeferred(callee, callArgs, context, location),
   markEscaped: (value) => interpreter.markEscaped(value),
-  queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
+  queueMicrotask: (task) => interpreter.queueMicrotask(task, context, location),
+  bindTask: (task) => interpreter.bindTask(task, context, location),
+  runTask: (cause, task) => interpreter.runTaskWithCause(cause, task, context, location),
+  recordStateMutation: (state) => interpreter.recordStateMutation(state),
 });
 
 /**
