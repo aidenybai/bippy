@@ -44,7 +44,6 @@ import {
   setObjectProperty,
   TRUE_VALUE,
   UNDEFINED_VALUE,
-  unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
 
@@ -348,13 +347,6 @@ export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {
   return baseValue === null || isReactComponentBase(baseValue);
 };
 
-const caughtErrorValue = (): StaticValue =>
-  objectFromRecord({
-    name: unknownPrimitiveValue("string", "caught error name"),
-    message: unknownPrimitiveValue("string", "caught error message"),
-    stack: unknownPrimitiveValue("string", "caught error stack"),
-  });
-
 const getStaticMethod = (
   classValue: StaticClassValue,
   name: string,
@@ -633,7 +625,7 @@ export const renderClassComponent = (
   props: StaticValue,
   legacyContext: StaticValue | null,
   context: EvaluationContext,
-  caughtError = false,
+  caughtError: StaticValue | null = null,
 ): ClassRender => {
   const frame = context.hooks ?? createHookFrame();
   const instanceContext = readClassContext(interpreter, classValue, legacyContext, context);
@@ -672,7 +664,7 @@ export const renderClassComponent = (
     if (!deriveStateFromError) return { rendered: NULL_VALUE, childLegacyContext: legacyContext };
     state = mergeState(
       state,
-      interpreter.callFunction(deriveStateFromError, [caughtErrorValue()], context, {
+      interpreter.callFunction(deriveStateFromError, [caughtError], context, {
         thisValue: classValue,
       }),
     );

@@ -45,7 +45,13 @@ import {
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { getModeledPromise, type ModeledPromise, onPromiseSettled } from "../evaluate/promises.js";
-import { describeThrow, findThrown, getThrowCertainty, withoutThrows } from "../evaluate/thrown.js";
+import {
+  describeThrow,
+  findThrown,
+  getCaughtValue,
+  getThrowCertainty,
+  withoutThrows,
+} from "../evaluate/thrown.js";
 import {
   areValuesEquivalent,
   compareIdentity,
@@ -316,11 +322,13 @@ const isSamePosition = (first: MaterializeContext, second: MaterializeContext): 
 /** Thrown by a proxy whose static render evaluates to a thrown value, so React's error boundaries take over. */
 class StaticThrowError extends Error {
   readonly isMaybe: boolean;
+  readonly value: StaticValue;
 
-  constructor(reason: string, isMaybe: boolean) {
+  constructor(reason: string, isMaybe: boolean, value: StaticValue = unknownValue("caught error")) {
     super(reason);
     this.name = "StaticThrowError";
     this.isMaybe = isMaybe;
+    this.value = value;
   }
 }
 
@@ -2024,7 +2032,7 @@ export class Materializer {
       ? { ...renderContext, errorBoundaryDepth: renderContext.errorBoundaryDepth + 1 }
       : renderContext;
     const renderBoundary = (
-      caughtError: boolean,
+      caughtError: StaticThrowError | null,
       boundaryContext: MaterializeContext,
     ): ReactNode => {
       const path: BoundaryRenderPath = caughtError
@@ -2053,7 +2061,7 @@ export class Materializer {
                 props,
                 boundaryContext.legacyContext,
                 componentContext,
-                caughtError,
+                caughtError?.value ?? null,
               );
               childContext.legacyContext = classRender.childLegacyContext;
               return classRender.rendered;
@@ -2068,15 +2076,15 @@ export class Materializer {
         context,
         [
           (alternativeContext) =>
-            renderBoundary(false, { ...alternativeContext, ignoresMaybeThrows: true }),
-          (alternativeContext) => renderBoundary(true, alternativeContext),
+            renderBoundary(null, { ...alternativeContext, ignoresMaybeThrows: true }),
+          (alternativeContext) => renderBoundary(caught, alternativeContext),
         ],
         "a child may throw into this error boundary",
         0,
         true,
       );
     }
-    return renderBoundary(caught !== null, context);
+    return renderBoundary(caught, context);
   }
 
   /** Places a component's rendered value, throwing to React when the static render throws. */
@@ -2089,12 +2097,20 @@ export class Materializer {
     if (certainty === "always") {
       throw (
         this.getWakeable(rendered, input.context) ??
-        new StaticThrowError(describeThrow(rendered), false)
+        new StaticThrowError(
+          describeThrow(rendered),
+          false,
+          getCaughtValue(rendered, input.location),
+        )
       );
     }
     if (certainty === "maybe") {
       if (input.context.errorBoundaryDepth > 0 && !input.context.ignoresMaybeThrows) {
-        throw new StaticThrowError(`component may throw: ${describeThrow(rendered)}`, true);
+        throw new StaticThrowError(
+          `component may throw: ${describeThrow(rendered)}`,
+          true,
+          getCaughtValue(rendered, input.location),
+        );
       }
       return this.toNode(withoutThrows(rendered), childContext, true);
     }
