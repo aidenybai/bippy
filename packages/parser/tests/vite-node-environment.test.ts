@@ -5,7 +5,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { runWithProcessEnvironment } from "../src/corpus/process-environment.js";
 import {
   createViteAssetTransform,
-  loadViteUserPlugins,
+  loadViteConfiguration,
 } from "../src/graph/vite-asset-transform.js";
 import { locateViteConfig } from "../src/graph/vite-config.js";
 
@@ -24,7 +24,7 @@ const getConfigurationOutput = async (
   const location = locateViteConfig({ rootDirectory: ROOT, devCommand: "vite --mode staging" });
   expect(location).not.toBeNull();
   if (!location) return;
-  const plugins = await loadViteUserPlugins(location);
+  const plugins = await loadViteConfiguration(location);
   expect(plugins === null).toBe(false);
   if (!plugins) return;
   return createViteAssetTransform(plugins).transform(

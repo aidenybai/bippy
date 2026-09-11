@@ -113,7 +113,7 @@ const getEnvironmentVariable = (
 };
 
 /** Vite and webpack replace these in the source text of every client module, whether or not `process` exists at runtime. */
-const NODE_ENV_DEFINES = new Set([
+export const NODE_ENV_DEFINES = new Set([
   "process.env.NODE_ENV",
   "global.process.env.NODE_ENV",
   "globalThis.process.env.NODE_ENV",
@@ -132,7 +132,10 @@ const getComparedNodeEnvLiteral = (member: Expression, literal: Expression): str
  * The outcome of `process.env.NODE_ENV === "production"`-style tests once the
  * bundler has inlined `NODE_ENV`, which decides `if (…) module.exports = require(…)` wrappers.
  */
-export const decideInlinedNodeEnvTest = (test: Expression): boolean | null => {
+export const decideInlinedNodeEnvTest = (
+  test: Expression,
+  nodeEnvironment = DEV_SERVER_MODE,
+): boolean | null => {
   if (test.type !== "BinaryExpression") return null;
   const isEquality = test.operator === "===" || test.operator === "==";
   if (!isEquality && test.operator !== "!==" && test.operator !== "!=") return null;
@@ -140,7 +143,7 @@ export const decideInlinedNodeEnvTest = (test: Expression): boolean | null => {
     getComparedNodeEnvLiteral(test.left, test.right) ??
     getComparedNodeEnvLiteral(test.right, test.left);
   if (compared === null) return null;
-  return isEquality ? compared === DEV_SERVER_MODE : compared !== DEV_SERVER_MODE;
+  return isEquality ? compared === nodeEnvironment : compared !== nodeEnvironment;
 };
 
 const HOT_MODULE_OBJECTS = new Set(["module.hot", "import.meta.hot"]);

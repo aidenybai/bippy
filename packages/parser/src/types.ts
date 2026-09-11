@@ -665,6 +665,17 @@ export interface CapturedPageState {
   sessionStorage: Record<string, string>;
 }
 
+export interface CompilerDefine {
+  value: JsonValue | undefined;
+  expression?: string;
+}
+
+export interface ViteClientEnvironment {
+  values: Record<string, JsonValue>;
+  defines: Record<string, CompilerDefine>;
+  nodeEnvironment: string;
+}
+
 /** Known server environment values; unlisted variables are unset unless the environment is partial. */
 export interface ProcessEnvironment {
   variables: Record<string, string>;

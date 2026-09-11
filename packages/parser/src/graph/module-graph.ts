@@ -23,6 +23,7 @@ interface ExportNameSet {
 }
 
 export interface ModuleGraphOptions {
+  nodeEnvironment?: string;
   resolver: ModuleResolver;
   sourceFileCache?: SourceFileCache;
   resolveExternalPackages?: boolean;
@@ -44,6 +45,7 @@ export class ModuleGraph {
   readonly resolver: ModuleResolver;
   readonly sourceFileCache: SourceFileCache;
   private readonly modules = new Map<string, ModuleRecord | null>();
+  private readonly nodeEnvironment: string | undefined;
   private readonly resolveExternalPackages: boolean;
   private readonly externalPackageAllowList: Set<string>;
   private readonly externalScopeAllowList: Set<string>;
@@ -52,6 +54,7 @@ export class ModuleGraph {
 
   constructor(options: ModuleGraphOptions) {
     this.resolver = options.resolver;
+    this.nodeEnvironment = options.nodeEnvironment;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
     const allowList = options.externalPackageAllowList ?? [];
@@ -74,7 +77,7 @@ export class ModuleGraph {
     const cached = this.modules.get(filePath);
     if (cached !== undefined) return cached;
     const file = this.sourceFileCache.read(filePath);
-    const record = file ? createModuleRecord(file) : null;
+    const record = file ? createModuleRecord(file, this.nodeEnvironment) : null;
     this.modules.set(filePath, record);
     return record;
   }
@@ -86,7 +89,7 @@ export class ModuleGraph {
     const lang = getSourceLanguage(filePath);
     if (!lang) return null;
     const file = this.sourceFileCache.readVirtual(filePath, sourceText, lang);
-    const record = file.errors.length === 0 ? createModuleRecord(file) : null;
+    const record = file.errors.length === 0 ? createModuleRecord(file, this.nodeEnvironment) : null;
     this.modules.set(filePath, record);
     return record;
   }
@@ -128,7 +131,7 @@ export class ModuleGraph {
     if (file) {
       const cached = this.modules.get(file.filePath);
       if (cached) return cached;
-      const record = createModuleRecord(file);
+      const record = createModuleRecord(file, this.nodeEnvironment);
       this.modules.set(file.filePath, record);
       return record;
     }
@@ -138,6 +141,7 @@ export class ModuleGraph {
     if (cached) return cached;
     const record = createModuleRecord(
       this.sourceFileCache.readVirtual(source.moduleKey, source.sourceText, "js"),
+      this.nodeEnvironment,
     );
     this.modules.set(source.moduleKey, record);
     return record;

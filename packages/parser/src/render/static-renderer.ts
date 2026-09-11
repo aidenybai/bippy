@@ -1,4 +1,4 @@
-import { describeError } from "../errors.js";
+import { ParserError, describeError } from "../errors.js";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { Interpreter } from "../evaluate/interpreter.js";
@@ -19,7 +19,7 @@ import { createBabelMacrosTransform } from "../graph/babel-macros.js";
 import { createTanStackRouterTransform } from "../graph/tanstack-router-plugin.js";
 import {
   createViteAssetTransform,
-  loadViteUserPlugins,
+  loadViteConfiguration,
   transformViteDocumentShell,
 } from "../graph/vite-asset-transform.js";
 import { locateViteConfig } from "../graph/vite-config.js";
@@ -46,6 +46,7 @@ import type {
   StaticRenderResult,
   StaticRendererOptions,
   StaticValue,
+  ViteClientEnvironment,
 } from "../types.js";
 import { createDomHost } from "./dom-host.js";
 import { findRootRenderCalls } from "./find-root-elements.js";
@@ -112,6 +113,7 @@ const parseBootstrap = (bootstrap: string): BootstrapCall | null => {
  * `Interpreter`), so renderers over the same project share one.
  */
 interface RendererProject {
+  viteEnvironment?: ViteClientEnvironment;
   resolver: ModuleResolver;
   reactVersion: string | null;
   project: ProjectContext;
@@ -121,6 +123,7 @@ interface RendererProject {
 
 /** Either the parsed project to share, or the app's own bundler plugins (prepared by `createStaticRenderer`) to parse a new one with. */
 interface RendererSetup {
+  viteEnvironment?: ViteClientEnvironment;
   shared?: RendererProject;
   bundlerTransforms?: SourceTransform[];
 }
@@ -140,10 +143,12 @@ export class StaticRenderer {
   private readonly project: ProjectContext;
   private documentShell: string | null;
   private reactPackages: ReactPackageSpecifiers | undefined;
+  private readonly viteEnvironment: ViteClientEnvironment | undefined;
 
   constructor(options: StaticRendererOptions, setup: RendererSetup = {}) {
     // oxc-resolver returns real paths, so a symlinked root must be compared as one.
     this.options = { ...options, rootDirectory: realpathSync(options.rootDirectory) };
+    this.viteEnvironment = setup.shared?.viteEnvironment ?? setup.viteEnvironment;
     const { resolver, reactVersion, project, documentShell, graph } =
       setup.shared ?? this.createProject(setup.bundlerTransforms ?? []);
     this.resolver = resolver;
@@ -156,6 +161,26 @@ export class StaticRenderer {
   private createProject(bundlerTransforms: SourceTransform[]): RendererProject {
     const { options } = this;
     const { rootDirectory } = options;
+    const definedEnvironment = options.defines?.["process.env"];
+    const declaredNodeEnvironment = options.defines?.["process.env.NODE_ENV"];
+    const definedNodeEnvironment =
+      declaredNodeEnvironment !== undefined
+        ? declaredNodeEnvironment
+        : definedEnvironment !== null &&
+            typeof definedEnvironment === "object" &&
+            !Array.isArray(definedEnvironment)
+          ? definedEnvironment.NODE_ENV
+          : undefined;
+    if (
+      this.viteEnvironment &&
+      definedNodeEnvironment !== undefined &&
+      typeof definedNodeEnvironment !== "string"
+    )
+      throw new ParserError("Vite process.env.NODE_ENV requires a known string define");
+    const nodeEnvironment =
+      typeof definedNodeEnvironment === "string"
+        ? definedNodeEnvironment
+        : this.viteEnvironment?.nodeEnvironment;
     const resolver = new ModuleResolver({
       tsconfigPath: options.tsconfigPath,
       aliases: Object.fromEntries(
@@ -184,6 +209,7 @@ export class StaticRenderer {
     });
     const svgrTransform = createSvgrSourceTransform(project, resolver, rootDirectory, options.svgr);
     return {
+      viteEnvironment: this.viteEnvironment,
       resolver,
       reactVersion: project.readPackageVersion("react"),
       project,
@@ -195,6 +221,7 @@ export class StaticRenderer {
       ),
       graph: new ModuleGraph({
         resolver,
+        nodeEnvironment,
         sourceFileCache: new SourceFileCache(
           [
             ...(svgrTransform ? [svgrTransform] : []),
@@ -215,6 +242,7 @@ export class StaticRenderer {
       { ...this.options, ...overrides },
       {
         shared: {
+          viteEnvironment: this.viteEnvironment,
           resolver: this.resolver,
           reactVersion: this.reactVersion,
           project: this.project,
@@ -255,6 +283,7 @@ export class StaticRenderer {
       externalValues: this.options.externalValues,
       globals: this.options.globals,
       defines: this.options.defines,
+      viteEnvironment: this.viteEnvironment,
       environment: this.options.environment,
       hostPlatform: this.options.hostPlatform,
       hostDocument: host.hostDocument,
@@ -517,21 +546,24 @@ export const createStaticRenderer = async (
     devDirectory,
     devCommand: options.devCommand,
   });
-  const viteUserPlugins =
-    viteConfig && (await loadViteUserPlugins(viteConfig, options.modeledVitePlugins));
+  const viteConfiguration =
+    viteConfig && (await loadViteConfiguration(viteConfig, options.modeledVitePlugins));
   const transforms = [
     viteConfig && (await createTanStackRouterTransform(viteConfig)),
-    viteUserPlugins && createViteAssetTransform(viteUserPlugins),
+    viteConfiguration && createViteAssetTransform(viteConfiguration),
     await createBabelMacrosTransform(
       devDirectory ?? rootDirectory,
       detectModuleBundler(rootDirectory, devDirectory),
       options.environment,
     ),
   ].filter((transform) => transform !== null);
-  const renderer = new StaticRenderer(options, { bundlerTransforms: transforms });
-  if (viteUserPlugins) {
+  const renderer = new StaticRenderer(options, {
+    bundlerTransforms: transforms,
+    viteEnvironment: viteConfiguration?.environment,
+  });
+  if (viteConfiguration) {
     await renderer.transformDocumentShell((html, servedDirectory) =>
-      transformViteDocumentShell(viteUserPlugins, html, servedDirectory, options.route ?? "/"),
+      transformViteDocumentShell(viteConfiguration, html, servedDirectory, options.route ?? "/"),
     );
   }
   return renderer;

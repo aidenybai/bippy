@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { loadViteUserPlugins } from "../src/graph/vite-asset-transform.js";
+import { loadViteConfiguration } from "../src/graph/vite-asset-transform.js";
 import { locateViteConfig } from "../src/graph/vite-config.js";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer } from "../src/render/static-renderer.js";
@@ -35,6 +35,6 @@ describe("native Vite modes", () => {
     const location = locateViteConfig({ rootDirectory: ROOT, devCommand: "vite --mode disabled" });
     expect(location).not.toBeNull();
     if (!location) return;
-    expect((await loadViteUserPlugins(location)) === null).toBe(true);
+    expect((await loadViteConfiguration(location))?.plugins).toEqual([]);
   });
 });
