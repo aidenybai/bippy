@@ -4161,6 +4161,7 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
     isDeferred: boolean,
+    callbackArguments: StaticValue[] = [],
   ): void {
     const wasSettled = this.timers.isClockSettled;
     this.timers.isClockSettled = true;
@@ -4168,8 +4169,8 @@ export class Interpreter {
       for (let tick = 0; tick < MAX_INTERVAL_TICKS; tick++) {
         const changesBefore = this.mutations.changeCount;
         this.runTimerTask(handle, context, location, () => {
-          if (isDeferred) this.callDeferred(callback, [], context, location);
-          else this.callValue(callback, [], context, location);
+          if (isDeferred) this.callDeferred(callback, callbackArguments, context, location);
+          else this.callValue(callback, callbackArguments, context, location);
         });
         if (this.timers.isCleared(handle) || this.mutations.changeCount === changesBefore) return;
       }
