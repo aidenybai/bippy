@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { ParserError } from "../errors.js";
 import { DEV_SERVER_MODE } from "../evaluate/bundler-globals.js";
@@ -114,7 +114,9 @@ export const locateViteConfig = ({
   "rootDirectory" | "devDirectory" | "devCommand"
 >): ViteConfigLocation | null => {
   const { configPath, mode } = parseViteCli(devCommand);
-  for (const cwd of new Set([devDirectory, rootDirectory])) {
+  for (const directory of new Set([devDirectory, rootDirectory])) {
+    if (!existsSync(directory)) continue;
+    const cwd = realpathSync(directory);
     const candidate = configPath === null ? findViteConfig(cwd) : path.resolve(cwd, configPath);
     if (candidate !== undefined && existsSync(candidate))
       return { configPath: candidate, cwd, cliMode: mode };
