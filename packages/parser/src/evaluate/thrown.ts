@@ -1,5 +1,5 @@
 import type { SourceLocation, StaticListValue, StaticUnknownValue, StaticValue } from "../types.js";
-import { branchValue, getObjectProperty, unknownValue } from "./values.js";
+import { branchValue, getObjectProperty, mapValue, unknownValue } from "./values.js";
 
 type ThrowCertainty = "never" | "maybe" | "always";
 
@@ -114,6 +114,9 @@ export const getCaughtValue = (
   value: StaticValue,
   location: SourceLocation | null,
 ): StaticValue => {
+  if (value.kind === "branch" && getThrowCertainty(value) === "always") {
+    return mapValue(value, (alternative) => getCaughtValue(alternative, location));
+  }
   const throws: StaticUnknownValue[] = [];
   collectThrows(value, throws);
   const caught = throws.flatMap((thrown) => thrown.thrown ?? []);

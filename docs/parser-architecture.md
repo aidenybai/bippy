@@ -198,6 +198,16 @@ React requires elements to render, so an unknown value cannot remain only an int
 
 React can render alternative branches together in one analysis run. Their simultaneous fibers represent alternatives, not a claim that the application displays all alternatives together. The heap journal and commit guards must account for this difference.
 
+### Preserve caught values
+
+An error boundary can choose its fallback from the value a child throws. A replacement object can change that choice, even when its message resembles the original error.
+
+The proxy therefore retains the interpreted thrown value while React locates the boundary. The [class renderer](../packages/parser/src/evaluate/class-component.ts) passes that value to `getDerivedStateFromError`, preserving primitive values and object identity.
+
+When every branch throws, [caught-value extraction](../packages/parser/src/evaluate/thrown.ts) maps the payloads without creating a new decision. Otherwise, the model could pair an error with the condition that selects a different error.
+
+The current class model does not invoke `componentDidCatch`. Mixed throwing and nonthrowing paths still need cause-preserving validation.
+
 ### Coordinate hooks with React commits
 
 Each stateful proxy has a `HookFrame`, which stores interpreted hook state. The proxy also uses real React hooks to request another render and schedule effect processing. This lets React control when the proxy renders while the interpreter controls the values that application hooks observe.
