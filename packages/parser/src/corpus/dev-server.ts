@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, type WriteStream } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
+import { createConnection } from "node:net";
 import { setTimeout as sleep } from "node:timers/promises";
 import { CommandFailedError, CommandTimeoutError, DevServerError } from "../errors.js";
 
@@ -24,11 +25,12 @@ const READY_POLL_INTERVAL_MS = 500;
 
 // Dev servers that only speak https (Sentry's rspack dev-ui) use a self-signed
 // certificate, which the global fetch rejects before getting a status code.
-const probeStatus = (url: string): Promise<number> =>
+const probeStatus = (url: string, timeoutMs: number): Promise<number> =>
   new Promise((resolve, reject) => {
+    const signal = AbortSignal.timeout(timeoutMs);
     const request = url.startsWith("https:")
-      ? httpsRequest(url, { rejectUnauthorized: false })
-      : httpRequest(url);
+      ? httpsRequest(url, { rejectUnauthorized: false, signal })
+      : httpRequest(url, { signal });
     request.once("response", (response) => {
       response.resume();
       resolve(response.statusCode ?? 0);
@@ -83,6 +85,28 @@ const spawnShell = (
 const getSystemErrorCode = (error: unknown): string | null =>
   error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : null;
 
+const hasListener = (url: string): Promise<boolean> =>
+  new Promise((resolve, reject) => {
+    const address = new URL(url);
+    const hostname = address.hostname.startsWith("[")
+      ? address.hostname.slice(1, -1)
+      : address.hostname;
+    const socket = createConnection({
+      host: hostname,
+      port: Number(address.port || (address.protocol === "https:" ? 443 : 80)),
+      signal: AbortSignal.timeout(READY_POLL_INTERVAL_MS),
+    });
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once("error", (error) => {
+      socket.destroy();
+      if (getSystemErrorCode(error) === "ECONNREFUSED") resolve(false);
+      else reject(error);
+    });
+  });
+
 // The group can exit between the liveness check and the signal.
 const isMissingProcessError = (error: unknown): boolean => getSystemErrorCode(error) === "ESRCH";
 
@@ -136,7 +160,13 @@ export class DevServer {
 
   constructor(private readonly options: DevServerOptions) {}
 
-  start(): void {
+  async start(url?: string): Promise<void> {
+    if (url !== undefined && (await hasListener(url))) {
+      throw new DevServerError(
+        `${url} already has a listener; refusing to start`,
+        this.options.logPath,
+      );
+    }
     this.log = createWriteStream(this.options.logPath, { flags: "a" });
     this.log.write(`\n$ ${this.options.command}\n`);
     this.child = spawnShell(this.options.command, this.options.cwd, this.options.env, this.log);
@@ -145,23 +175,29 @@ export class DevServer {
     });
   }
 
-  // Ready means the URL answers at all; dev servers commonly return 404 for the
-  // root until their first compile finishes, so any HTTP response counts.
+  private assertRunning(url: string): void {
+    if (this.exitCode !== null) {
+      throw new DevServerError(
+        `dev server exited with code ${this.exitCode} before ${url} answered`,
+        this.options.logPath,
+      );
+    }
+  }
+
   async waitUntilReady(url: string, timeoutMs: number): Promise<void> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      if (this.exitCode !== null) {
-        throw new DevServerError(
-          `dev server exited with code ${this.exitCode} before ${url} answered`,
-          this.options.logPath,
-        );
-      }
+      this.assertRunning(url);
       try {
-        if ((await probeStatus(url)) < 500) return;
+        const timeout = Math.max(1, deadline - Date.now());
+        const status = await probeStatus(url, timeout);
+        this.assertRunning(url);
+        if (status < 500) return;
       } catch (error) {
         if (getSystemErrorCode(error) === null) throw error;
       }
-      await sleep(READY_POLL_INTERVAL_MS);
+      const remaining = deadline - Date.now();
+      if (remaining > 0) await sleep(Math.min(READY_POLL_INTERVAL_MS, remaining));
     }
     throw new DevServerError(`${url} did not answer within ${timeoutMs}ms`, this.options.logPath);
   }
