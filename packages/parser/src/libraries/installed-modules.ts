@@ -43,13 +43,16 @@ export class InstalledModules {
     this.requireFromRoot = createRequire(path.join(rootDirectory, "package.json"));
   }
 
-  /** `specifier` as the project resolves it, or as `dependentSpecifier`'s installed copy resolves it when given. */
-  load(specifier: string, dependentSpecifier?: string): object | null {
-    return this.loadWith(specifier, dependentSpecifier ?? "", () =>
-      dependentSpecifier
-        ? createRequire(this.requireFromRoot.resolve(dependentSpecifier))
-        : this.requireFromRoot,
-    );
+  /** Loads a module from the project or through a chain of installed dependencies. */
+  load(specifier: string, dependencies: string | readonly string[] = []): object | null {
+    const dependencyChain = typeof dependencies === "string" ? [dependencies] : dependencies;
+    return this.loadWith(specifier, dependencyChain.join("\u0000"), () => {
+      let requireFromDependency = this.requireFromRoot;
+      for (const dependency of dependencyChain) {
+        requireFromDependency = createRequire(requireFromDependency.resolve(dependency));
+      }
+      return requireFromDependency;
+    });
   }
 
   /** `specifier` as the module at `filePath` resolves it: the copy an analyzed dependency actually imports. */

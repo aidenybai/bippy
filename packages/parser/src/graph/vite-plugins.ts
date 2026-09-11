@@ -5,7 +5,7 @@ import { isEngineGlobal } from "../evaluate/host-globals.js";
 import { loadHostRealm } from "../host/host-realm.js";
 import type { SourceLanguage, TransformedSource } from "../types.js";
 
-const functionSchema = z.custom<(...args: unknown[]) => unknown>(
+export const functionSchema = z.custom<(...args: unknown[]) => unknown>(
   (value) => typeof value === "function",
 );
 const patternSchema = z.union([z.string(), z.instanceof(RegExp)]);
@@ -315,9 +315,7 @@ export const loadFromDirectory = async <Loaded>(
 // HACK: bundled build tooling picks its Node or browser module shims from
 // `window`/`document`, and a DOM is installed here for materialization; the
 // tooling is a Node program, so every global Node lacks is absent while it loads.
-export const loadWithoutDom = async <Loaded>(
-  load: () => Loaded | Promise<Loaded>,
-): Promise<Loaded> => {
+const removeDomGlobals = (): (() => void) => {
   const nodeRealm = loadHostRealm("node");
   const removedGlobals = new Map<string, PropertyDescriptor>();
   for (const name of Object.getOwnPropertyNames(globalThis)) {
@@ -331,11 +329,29 @@ export const loadWithoutDom = async <Loaded>(
     removedGlobals.set(name, descriptor);
     Reflect.deleteProperty(globalThis, name);
   }
-  try {
-    return await load();
-  } finally {
+  return () => {
     for (const [name, descriptor] of removedGlobals) {
       Object.defineProperty(globalThis, name, descriptor);
     }
+  };
+};
+
+export const runWithoutDom = <Loaded>(run: () => Loaded): Loaded => {
+  const restore = removeDomGlobals();
+  try {
+    return run();
+  } finally {
+    restore();
+  }
+};
+
+export const loadWithoutDom = async <Loaded>(
+  load: () => Loaded | Promise<Loaded>,
+): Promise<Loaded> => {
+  const restore = removeDomGlobals();
+  try {
+    return await load();
+  } finally {
+    restore();
   }
 };

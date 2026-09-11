@@ -17,8 +17,12 @@ const findOwningManifest = (filePath: string, packageName: string): InstalledPac
   for (let directory = path.dirname(filePath); ; directory = path.dirname(directory)) {
     const manifestPath = path.join(directory, "package.json");
     if (existsSync(manifestPath)) {
-      const { name, version } = readPackageManifest(manifestPath);
-      if (name === packageName) return version !== undefined ? { name, version } : null;
+      const { name, version, bundledVersions } = readPackageManifest(manifestPath);
+      if (
+        name !== undefined &&
+        (name === packageName || bundledVersions?.[packageName] !== undefined)
+      )
+        return version !== undefined ? { name, version, bundledVersions } : null;
     }
     if (path.dirname(directory) === directory) return null;
   }
@@ -36,9 +40,18 @@ export const readInstalledPackage = (
     resolver.resolve(`${packageName}/package.json`, importer),
   );
   if (manifestPath !== null) {
-    const { name, version } = readPackageManifest(manifestPath);
-    return name !== undefined && version !== undefined ? { name, version } : null;
+    const { name, version, bundledVersions } = readPackageManifest(manifestPath);
+    return name !== undefined && version !== undefined ? { name, version, bundledVersions } : null;
   }
   const entryPath = resolvedFilePath(rootDirectory, resolver.resolve(packageName, importer));
   return entryPath === null ? null : findOwningManifest(entryPath, packageName);
+};
+
+export const readInstalledPackageVersion = (
+  resolver: ModuleResolver,
+  rootDirectory: string,
+  packageName: string,
+): string | null => {
+  const installed = readInstalledPackage(resolver, rootDirectory, packageName);
+  return installed?.bundledVersions?.[packageName] ?? installed?.version ?? null;
 };
