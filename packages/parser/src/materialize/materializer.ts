@@ -15,12 +15,15 @@ import { ComponentKindError } from "../errors.js";
 import { areGuardsSatisfiable } from "../harness/guard-solver.js";
 import {
   andGuard,
+  collectGuardVariables,
   combineGuardContexts,
   compareGuard,
   constantGuard,
+  ELEMENT_SEGMENT,
   type GuardContext,
   normalizePredicate,
   negateGuard,
+  orGuard,
   parseSymbolicCardinality,
   parseSymbolicPredicate,
   predicateGuards,
@@ -172,6 +175,7 @@ interface MaterializeContext {
   ignoresMaybeThrows: boolean;
   /** How many non-preferred branch alternatives enclose this node. */
   alternativeDepth: number;
+  isRepeatIteration: boolean;
   /** The component whose render produced this position; host refs are committed into it. */
   owner: EvaluationContext | null;
   /** Inside a `<StrictMode>` subtree, where development React double-invokes hook factories. */
@@ -565,8 +569,9 @@ export class Materializer {
   private readonly serverComponents: boolean;
   private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
-  readonly commitCauses = new CommitCauses((cause, run) =>
-    this.interpreter.runWithGuard(cause.guard, run),
+  readonly commitCauses = new CommitCauses(
+    (cause, run) => this.interpreter.runWithGuard(cause.guard, run),
+    (guard) => this.interpreter.isTaskPossible(guard),
   );
   private readonly frameCauses = new WeakMap<HookFrame, GuardContext>();
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
@@ -611,6 +616,7 @@ export class Materializer {
   ) {
     this.interpreter = interpreter;
     interpreter.timers.bindTask = (task) => this.commitCauses.bindTask(task);
+    interpreter.runTaskWithCause = (cause, task) => this.commitCauses.runTask(cause, task);
     this.runtime = runtime;
     this.host = host;
     this.pinnedDecisions = options.decisions ?? null;
@@ -635,6 +641,7 @@ export class Materializer {
       errorBoundaryDepth: 0,
       ignoresMaybeThrows: false,
       alternativeDepth: 0,
+      isRepeatIteration: false,
       owner: null,
       isStrictMode: false,
       decisions: createDecisionScope(this.pinnedDecisions),
@@ -790,6 +797,7 @@ export class Materializer {
             ...context,
             decisions,
             decisionPath: toDecisionId(`${context.decisionPath}/${decision}@${iteration}`),
+            isRepeatIteration: true,
             cause,
           },
           false,
@@ -828,6 +836,17 @@ export class Materializer {
     const guards = predicateGuards(parsed, alternatives.length);
     const pinned = context.decisions.pins?.branches.get(decision) ?? null;
     const pinnedIndex = pinned && selectPinnedAlternative(pinned, predicate, alternatives.length);
+    if (
+      pinnedIndex !== null &&
+      !context.isRepeatIteration &&
+      collectGuardVariables(guards[pinnedIndex]).every(
+        (variable) => variable.measure !== "choice" && !variable.path.includes(ELEMENT_SEGMENT),
+      )
+    ) {
+      this.interpreter.assumeTaskGuard(
+        orGuard([negateGuard(context.cause.guard), guards[pinnedIndex]]),
+      );
+    }
     const alternativeContext = (
       pins: PinnedDecisions | null,
       index: number,

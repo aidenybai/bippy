@@ -369,7 +369,12 @@ import {
   recordRefinement,
 } from "./predicates.js";
 import {
+  andGuard,
   constantGuard,
+  negateGuard,
+  parseSymbolicPredicate,
+  serializeSymbolicPredicate,
+  type GuardContext,
   type CompareOperator,
   type Guard,
   type GuardLiteral,
@@ -923,6 +928,7 @@ export class Interpreter {
   readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
   private guard: Guard = constantGuard(true);
+  private taskAssumptions: Guard = constantGuard(true);
   private readonly pendingReturnJoins: PendingReturnJoin[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
   private resolvedAwaits = new Map<AwaitExpression, StaticValue>();
@@ -946,7 +952,9 @@ export class Interpreter {
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
     this.graph = graph;
-    this.timers = new TimerQueue(options.settleMs, options.timerUnderrunMs);
+    this.timers = new TimerQueue(options.settleMs, options.timerUnderrunMs, (state) =>
+      this.recordStateMutation(state),
+    );
     this.maxCallDepth = options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH;
     this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
@@ -2063,6 +2071,35 @@ export class Interpreter {
     return true;
   }
 
+  runTaskWithCause = (cause: GuardContext, task: () => void): void => {
+    const guard = andGuard([this.guard, cause.guard]);
+    if (this.isTaskPossible(guard)) this.runWithGuard(guard, task);
+  };
+
+  runTimerTask(
+    handle: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    task: () => void,
+  ): void {
+    const cancellation = this.getGuardedValue(
+      this.timers.getCancellation(handle),
+      andGuard([this.guard, this.taskAssumptions]),
+    );
+    const isCancelled = getTruthiness(cancellation);
+    if (isCancelled === true) return;
+    if (isCancelled === false) return task();
+    const predicate = parseSymbolicPredicate(getTruthinessPredicate(cancellation));
+    if (predicate.formula === null)
+      throw new Error("timer cancellation has no truthiness predicate");
+    const cause = { guard: negateGuard(predicate.formula), inputs: predicate.inputs };
+    this.runTaskWithCause(cause, () =>
+      this.runMaybe(context.scope, task, "conditionally cancelled timer", location, true, false, {
+        predicate: serializeSymbolicPredicate({ ...predicate, formula: cause.guard }),
+      }),
+    );
+  }
+
   runWithGuard<Result>(guard: Guard, run: () => Result): Result {
     const previous = this.guard;
     this.guard = guard;
@@ -2073,13 +2110,21 @@ export class Interpreter {
     }
   }
 
-  private getGuardedValue(value: StaticValue): StaticValue {
-    if (value.kind !== "branch" || (this.guard.kind === "constant" && this.guard.value))
-      return value;
+  assumeTaskGuard(guard: Guard): void {
+    this.taskAssumptions = andGuard([this.taskAssumptions, guard]);
+  }
+
+  isTaskPossible(guard: Guard): boolean {
+    return areGuardsSatisfiable([this.taskAssumptions, guard]);
+  }
+
+  private getGuardedValue(value: StaticValue, activeGuard = this.guard): StaticValue {
+    if (value.kind !== "branch") return value;
+    if (activeGuard.kind === "constant" && activeGuard.value) return value;
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
     const indices = resolved.guards.flatMap((guard, index) =>
-      areGuardsSatisfiable([this.guard, guard]) ? [index] : [],
+      areGuardsSatisfiable([activeGuard, guard]) ? [index] : [],
     );
     if (indices.length === value.alternatives.length || indices.length === 0) return value;
     return branchValue(
@@ -4122,8 +4167,10 @@ export class Interpreter {
     try {
       for (let tick = 0; tick < MAX_INTERVAL_TICKS; tick++) {
         const changesBefore = this.mutations.changeCount;
-        if (isDeferred) this.callDeferred(callback, [], context, location);
-        else this.callValue(callback, [], context, location);
+        this.runTimerTask(handle, context, location, () => {
+          if (isDeferred) this.callDeferred(callback, [], context, location);
+          else this.callValue(callback, [], context, location);
+        });
         if (this.timers.isCleared(handle) || this.mutations.changeCount === changesBefore) return;
       }
     } finally {

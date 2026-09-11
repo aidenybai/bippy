@@ -18,11 +18,23 @@ Continue until the acceptance gates in this document are satisfied. Creating thi
 - A precise tree for recorded observations is conditional on those observations. It is not automatically a tree for every possible response, database, route, clock value, or user action.
 - Arbitrary JavaScript may have unbounded states or nontermination. Do not promise a terminating, exact enumeration for every program. The requirement is an honest, useful symbolic model with testable guarantees—not a misleading universal-completeness badge.
 
+### Architecture documentation plan
+
+The conceptual page at `docs/parser-architecture.md` explains the current parser implementation. It does not describe unfinished acceptance goals as supported behavior.
+
+- Goal. Explain how source analysis produces React trees and what the comparison results establish.
+- Audience. Contributors who know React and TypeScript but have not read the parser implementation.
+- Content plan. Follow the explanatory structure of the [esbuild architecture document](https://github.com/evanw/esbuild/blob/main/docs/architecture.md). Start with design constraints and analysis phases. Explain module ownership, conditional evaluation, React rendering, symbolic states, comparison, and replay through implementation details and short TypeScript examples. Explain the reason for each design choice and link it to source. Keep limits explicit.
+- Open questions. Corrected states do not update the original symbolic model. Task isolation, renderer coverage, event sequences, and whole-space completeness remain incomplete.
+- Writing review. Apply the updated user rubric and ASD-STE100 principles. Use short sentences, active voice, consistent technical terms, and literal descriptions. Do not claim formal STE certification without a full vocabulary review.
+- Validation. The page passes Markdown formatting and local link checks for 32 destinations and anchors. Both TSX examples compile and pass four React server renders plus two client effect checks. The related `correlated-guards` and `effect-cause-unmount` component regressions pass. `/tmp/bippy-check-parser-docs.ts` and `/tmp/bippy-parser-doc-example-tests.log` retain the checks. These are documentation checks, not a new whole-project acceptance run.
+- Publication review. Human review and any pull request disclosure remain publication tasks, not completed checks.
+
 ### Immediate continuation
 
-1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, and predicate caching at `ac3d6a8c`. Nothing pushed.
+1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint below adds registration, cancellation, and task-only replay constraints. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. Root validation passes **2,816 tests**, with two existing React-19 DevTools skips; this includes **770 parser tests / 42 files**. Root typecheck/build, realm checks, lint and formatting pass. PostHog is about 167 seconds versus 214 before caching and 104 at baseline. Continue P1/P2 and the unmet 500-repository gate.
+3. Root validation passes **2,827 tests**, with two existing React-19 DevTools skips; this includes **781 parser tests / 44 files**. Root typecheck/build, realm checks, lint and formatting pass. The latest serial corpus run takes 36.416 seconds for Sentry and 253.074 seconds for PostHog, slower than the prior replay-claim checkpoint. Performance remains open alongside P1/P2 and the unmet 500-repository gate.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
@@ -365,9 +377,9 @@ The fresh-results worker attached runtime captures for these entries. Recover th
 
 **Highest-priority known soundness defect.**
 
-### Problem
+### Original defect
 
-`SymbolicCommit.guard` currently identifies a commit but does not fully describe why that commit exists. If an effect under alternative A schedules an update, a combined materialization can claim the resulting commit under alternative B too. Sentry's 9 corrected sampled mismatches are the motivating real example: 3 claimed commits versus 2 replayed commits.
+`SymbolicCommit.guard` originally identified a commit without describing its scheduling cause. An effect under alternative A could schedule an update that the combined model also claimed under alternative B. Sentry's historical 9 corrected sampled mismatches motivated the work. The current identical-capture run has no Sentry contradiction; the broader lifecycle and task-isolation audit remains incomplete.
 
 The fix must make the symbolic claim correct. Replacing an impossible state after replay is useful diagnostic recovery, not a substitute for modeling the cause.
 
@@ -934,7 +946,28 @@ Checkpoint after final validation, optimize measured predicate-processing overhe
 - Root tests pass **2,816 / 2,818**, with the two existing pre/post DevTools tests explicitly skipped for React >=19. Parser contributes **770 passing tests / 42 files**. Structured evidence: `/tmp/bippy-replay-claim-root-results.json`; log: `/tmp/bippy-replay-claim-root-json.log`. Localhost:3000 connection warnings did not fail tests (exit 0).
 - `/tmp/bippy-parser-corpus/replay-claim-final-results.json`: Sentry **13.479 seconds**, `sample-passed`, **0/1** mismatches; PostHog **166.809 seconds**, `sample-incomplete`, **0/2** mismatches and **one incomplete replay**. Both remain exact capture members with 100% strict coverage. PostHog's inconclusive assignment selects `index.tsx:44`'s absent `#root` container; its replay is not concrete. Do not silently turn that fallback into a proven empty React tree.
 - Completed checkpoint corpus recheck: `/tmp/bippy-parser-corpus/replay-claim-checkpoint-results.json`, log `/tmp/bippy-parser-corpus-replay-claim-checkpoint.log`. Sentry **13.586 seconds**, `sample-passed`, 0 mismatches; PostHog **166.084 seconds**, `sample-incomplete`, 0 mismatches and one incomplete replay. Final legacy-report formatting/schema checks passed 30 focused tests (`/tmp/bippy-replay-final-focused.log`).
-- Next P1 audit target: `TimerQueue` stores cancellation in an unguarded `WeakSet` and tasks in plain queues. Conditional cancellation/scheduling needs a before-fix regression and guard/journal ownership review; this is not yet a verified repair.
+- Follow-up P1 audit confirmed the unguarded timer-cancellation defect; see the next entry. Conditional task creation, callback-local guards, and captured lexical-scope journaling remain separate audit targets.
+
+### Guarded timer cancellation (2026-09-11, continued)
+
+- Confirmed a real contradiction: a conditional child's layout effect cancelled a parent timer in every symbolic world. `/tmp/bippy-timer-cancellation-before.log` records the failure against independently pinned React replays.
+- Timer cancellation now uses lazily initialized journaled boolean state. Multiple sufficient cancellations retain their predicates. Timeout and interval callbacks run under the remaining activation guard, with callback writes journaled; interval ticks recheck cancellation in their active world.
+- Task conditions conjoin the captured task cause, not an unrelated intervening commit. Tasks with proven-impossible causes do not execute.
+- Added timeout (two independent cancellers), self-clearing interval, journal restoration, unconditional cancellation, and task-cause regressions. **776 tests / 43 parser files pass** (`/tmp/bippy-timer-final-full.log`); root typecheck and realm checks passed before the final impossible-task pruning, with parser typecheck and lint afterward.
+- Identical-capture timer run: `/tmp/bippy-parser-corpus/timer-cancellation-results.json`; both captures still match with 100% strict coverage and no contradictions. Sentry remains `sample-passed`; PostHog retains its one incomplete missing-container path. This run preceded the final impossible-task pruning; final checkpoint recheck remains due.
+- Still open: task creation/promise queues are not fully journaled; callback-internal branch causes and lexical variables captured from other scopes need independent regressions. Timer argument forwarding and callback-specific host arguments also need audit.
+
+### Guarded timer registration and task-only replay constraints (2026-09-11)
+
+- Reproduced a second defect in `effect-cause-timer-registration.tsx`: an effect registered a timer only when a canvas context existed, but the model also produced the timer's update without a context. `/tmp/bippy-task-registration-before.log` records the impossible `<aside>` plus `<strong>` state.
+- Handle creation now journals activation. A handle starts inactive outside its creation path, then becomes active on that path. This preserves registration and cancellation conditions through the same journaled state. Added direct state-space checks and queue tests for conditional creation and discarded paths.
+- The corrected model exposed a replay defect: the missing-context pin still allowed the conditional timer to run. Materialization now records applicable pinned input guards as task assumptions. Task checks use those assumptions when callbacks run. Synthetic choices and repeat-local inputs do not become global assumptions.
+- An intermediate attempt also narrowed ordinary render values. Bippy's commit records showed a branch marker disappearing and remounting `Trigger` in `effect-cause-guarded-store-read.tsx`. Restricted the assumptions to task checks; the marker structure and existing regression now pass unchanged. Diagnostic records: `/tmp/bippy-inspect-task-replay.log`, `/tmp/bippy-task-replay-*.json`, `/tmp/bippy-task-original.json`. The standalone probe must import Bippy's hook installer before React to capture renderer registration.
+- Full root validation: **2,827 passed, 2 existing skips**; **781 parser tests / 44 files**. Root typecheck/build, realm checks, changed-file lint/formatting and diff checks pass. Logs: `/tmp/bippy-task-registration-root-{tests,typecheck}.log`, `/tmp/bippy-task-registration-{build,realms}.log`. The earlier standalone parser run had 779 tests before the last two queue/task unit tests.
+- Identical-capture verification: Sentry remains exact with 100% strict coverage, 0/1 contradictions, `sample-passed`. PostHog remains exact with 100% strict coverage, 0/2 contradictions, one incomplete replay, `sample-incomplete`. Results: `/tmp/bippy-parser-corpus/task-registration-serial-results.json`; checked-in corpus results unchanged.
+- Performance is not resolved. The initial overlapping run took 37.862 seconds for Sentry and 664.402 seconds for PostHog. A serial recheck took **36.416 seconds and 253.074 seconds**, respectively, versus 13.586 and 166.084 at the earlier replay-claim checkpoint. A profiled PostHog probe took 83.3 seconds to render and 79.2 seconds for its selected replay. Its CPU sample still concentrates on predicate/guard processing. Timer initialization currently records an allocation-zero mutation; its effect on progress detection needs a separate test, not an assumed optimization.
+- Profiling artifacts: `/tmp/bippy-posthog-registration-profile.{log,json}`. Serial corpus log: `/tmp/bippy-parser-corpus-task-registration-serial.log`. The probe and validation jobs completed.
+- Next audit targets: conditional microtask/promise registration, cancellation through a branched handle, timer callback arguments, lexical-scope ownership, and repeat-scoped task constraints. None of those broader guarantees follows from these timer tests.
 
 ## 20. Complete checked-in corpus ledger
 

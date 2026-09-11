@@ -1450,9 +1450,10 @@ const callGlobal = (
         const delayMs = interpreter.timers.getSettledDelay(second);
         if (delayMs === null) interpreter.markEscaped(first);
         else {
+          const task = scheduledTask(interpreter, first, context, location);
           interpreter.timers.schedule(
             handle,
-            scheduledTask(interpreter, first, context, location),
+            () => interpreter.runTimerTask(handle, context, location, task),
             delayMs,
           );
         }
