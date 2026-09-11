@@ -1,9 +1,12 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer, type Server } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { describe, expect, it } from "vite-plus/test";
 import { DevServer, runCommand } from "../src/corpus/dev-server.js";
+import { DevServerError } from "../src/errors.js";
 import type { ChildEnvironment } from "./helpers/child-environment.js";
 
 interface EnvironmentCase {
@@ -48,6 +51,148 @@ const getCommand = (capturePath: string): string =>
 const readEnvironment = (capturePath: string): ChildEnvironment =>
   JSON.parse(readFileSync(capturePath, "utf8"));
 
+const listen = async (server: Server): Promise<string> => {
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (address === null || typeof address === "string") throw new Error("Missing server address");
+  return `http://127.0.0.1:${address.port}`;
+};
+
+const close = async (server: Server): Promise<void> => {
+  server.closeAllConnections();
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+};
+
+describe("corpus server startup", () => {
+  it.each([200, 503, null])(
+    "rejects an existing listener with status %s before starting",
+    async (status) => {
+      await withParentEnvironment(async (directory) => {
+        let requestCount = 0;
+        const existing = createServer((_request, response) => {
+          requestCount++;
+          if (status !== null) {
+            response.statusCode = status;
+            response.end("unrelated service");
+          }
+        });
+        const url = await listen(existing);
+        const capturePath = join(directory, "child.json");
+        const server = new DevServer({
+          command: `${getCommand(capturePath)} serve`,
+          cwd: directory,
+          logPath: join(directory, "server.log"),
+        });
+        try {
+          await expect(async () => {
+            await server.start(url);
+          }).rejects.toThrow("already has a listener");
+          expect(existsSync(capturePath)).toBe(false);
+          expect(requestCount).toBe(0);
+          expect(existing.listening).toBe(true);
+        } finally {
+          await server.stop();
+          await close(existing);
+        }
+      });
+    },
+  );
+
+  it("starts a child on an available address", async () => {
+    await withParentEnvironment(async (directory) => {
+      const reservation = createServer();
+      const url = await listen(reservation);
+      await close(reservation);
+      const capturePath = join(directory, "child.json");
+      const server = new DevServer({
+        command: `${getCommand(capturePath)} serve ${new URL(url).port}`,
+        cwd: directory,
+        logPath: join(directory, "server.log"),
+      });
+      try {
+        await server.start(url);
+        await server.waitUntilReady(url, 5000);
+        expect(readEnvironment(capturePath).port).toBe(Number(new URL(url).port));
+      } finally {
+        await server.stop();
+      }
+    });
+  });
+
+  it("rejects a response received after the child exits", async () => {
+    await withParentEnvironment(async (directory) => {
+      const server = new DevServer({
+        command: `${getCommand(join(directory, "child.json"))} serve`,
+        cwd: directory,
+        logPath: join(directory, "server.log"),
+      });
+      const responder = createServer(async (_request, response) => {
+        await server.stop();
+        response.end("too late");
+      });
+      const url = await listen(responder);
+      try {
+        await server.start();
+        await expect(server.waitUntilReady(url, 5000)).rejects.toThrow("dev server exited");
+      } finally {
+        await server.stop();
+        await close(responder);
+      }
+    });
+  });
+
+  it("accepts a healthy response slower than the polling interval", async () => {
+    await withParentEnvironment(async (directory) => {
+      const responder = createServer(async (_request, response) => {
+        await sleep(750);
+        response.end("ready");
+      });
+      const url = await listen(responder);
+      const server = new DevServer({
+        command: `${getCommand(join(directory, "child.json"))} serve`,
+        cwd: directory,
+        logPath: join(directory, "server.log"),
+      });
+      try {
+        await server.start();
+        await expect(server.waitUntilReady(url, 2500)).resolves.toBeUndefined();
+      } finally {
+        await server.stop();
+        await close(responder);
+      }
+    });
+  });
+
+  it("bounds a readiness probe that never sends headers", async () => {
+    await withParentEnvironment(async (directory) => {
+      const unresponsive = createServer(() => {});
+      const url = await listen(unresponsive);
+      const server = new DevServer({
+        command: `${getCommand(join(directory, "child.json"))} serve`,
+        cwd: directory,
+        logPath: join(directory, "server.log"),
+      });
+      try {
+        await server.start();
+        const result = await Promise.race([
+          server.waitUntilReady(url, 100).then(
+            () => "ready",
+            (error: unknown) => error,
+          ),
+          sleep(1000, "unbounded", { ref: false }),
+        ]);
+        expect(result).toBeInstanceOf(DevServerError);
+        expect(result).toMatchObject({
+          message: expect.stringContaining("did not answer within 100ms"),
+        });
+      } finally {
+        await server.stop();
+        await close(unresponsive);
+      }
+    });
+  });
+});
+
 describe("corpus child environments", () => {
   it.each(SERVER_CASES)(
     "$name",
@@ -61,7 +206,7 @@ describe("corpus child environments", () => {
           logPath: join(directory, "server.log"),
         });
         try {
-          server.start();
+          await server.start();
           await expect.poll(() => existsSync(capturePath), { timeout: 5000 }).toBe(true);
           const captured = readEnvironment(capturePath);
           await server.waitUntilReady(`http://127.0.0.1:${captured.port}`, 5000);

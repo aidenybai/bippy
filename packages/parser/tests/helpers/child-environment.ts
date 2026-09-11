@@ -21,7 +21,7 @@ const writeEnvironment = (port: number | null): void => {
 
 if (process.argv[3] === "serve") {
   const server = createServer((_request, response) => response.end("ready"));
-  server.listen(0, "127.0.0.1", () => {
+  server.listen(Number(process.argv[4] ?? 0), "127.0.0.1", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("Missing server address");
     writeEnvironment(address.port);

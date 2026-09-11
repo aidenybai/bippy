@@ -65,6 +65,8 @@ Evaluation and rendering are not separate passes over the entire application. Th
 
 The application capture follows a separate path. The application runs through its normal build and runtime while Bippy records its fibers. The model and application therefore use the same snapshot format but do not obtain their trees in the same way.
 
+Before starting that application, the [corpus runner](../packages/parser/src/corpus/run-entry.ts) rejects an address that already has a listener. The check sends no page request and does not stop the existing service. Readiness probes have deadlines and reject responses after a recorded child exit. Another process can still bind the address during startup, so this does not prove server ownership.
+
 ## Module resolution and run state
 
 The parsed project can outlive an individual analysis. Evaluated module values cannot, because a replay must not reuse mutations from an earlier run.
