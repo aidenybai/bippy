@@ -69,6 +69,16 @@ The application capture follows a separate path. The application runs through it
 
 The parsed project can outlive an individual analysis. Evaluated module values cannot, because a replay must not reuse mutations from an earlier run.
 
+### Resolve the application's build tools
+
+A macro is build-time code that rewrites application source. Its output can change imports and component names. Modeling a macro import as a library alias can therefore produce a different tree from the application.
+
+For Create React App projects, the [macro transform](../packages/parser/src/graph/babel-macros.ts) loads `babel-plugin-macros` from the installed `babel-preset-react-app` dependency. It uses the Babel compiler owned by `react-scripts`. The [installed-module loader](../packages/parser/src/libraries/installed-modules.ts) follows that dependency chain rather than assuming the project has one shared copy of each tool.
+
+The transform runs on the application's `src` files when the preset declares the macro plugin. Macro configuration and code execute as build infrastructure. The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
+
+[Package metadata](../packages/parser/src/graph/installed-package.ts) also distinguishes a wrapper's package version from its declared bundled engine version. Vite asset URLs and compiler selection use the engine version when the package supplies it. They must not treat Vite Plus version `0.3.1` as Vite version `0`.
+
 ### Resolve declarations without executing modules
 
 The [source parser](../packages/parser/src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.

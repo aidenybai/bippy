@@ -10,7 +10,7 @@ import type {
   RuntimeObservations,
 } from "../types.js";
 import { findInstallRoot } from "./install-root.js";
-import { readInstalledPackage } from "./installed-package.js";
+import { readInstalledPackageVersion } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 import { createServedAssets } from "./served-assets.js";
 import { defaultViteConfig, loadViteConfig } from "./vite-config.js";
@@ -70,7 +70,7 @@ export const createProjectContext = (options: ProjectContextOptions): ProjectCon
   }
   const hasDeclaredDependency = (packageName: string): boolean => declared.has(packageName);
   const readPackageVersion = (packageName: string): string | null =>
-    readInstalledPackage(resolver, rootDirectory, packageName)?.version ?? null;
+    readInstalledPackageVersion(resolver, rootDirectory, packageName);
   const viteConfig =
     bundler === "vite"
       ? loadViteConfig({

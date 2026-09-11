@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parseSync } from "oxc-parser";
 import type { ModuleBundler, ModuleTranspiler, ProcessEnvironment } from "../types.js";
-import { readInstalledPackage } from "./installed-package.js";
+import { readInstalledPackageVersion } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 import { readDeclaredDependencies } from "./project-context.js";
 import { REACT_SCRIPTS_PACKAGE, getReactScriptsClientEnvironment } from "./react-scripts.js";
@@ -68,8 +68,8 @@ export const detectModuleTranspiler = (
 ): ModuleTranspiler => {
   const configPath = findViteConfig(rootDirectory);
   if (configPath === undefined) return "name-preserving";
-  const vite = readInstalledPackage(resolver, rootDirectory, "vite");
-  if (vite === null || Number(vite.version.split(".")[0]) > LAST_ESBUILD_VITE_MAJOR) {
+  const viteVersion = readInstalledPackageVersion(resolver, rootDirectory, "vite");
+  if (viteVersion === null || Number(viteVersion.split(".")[0]) > LAST_ESBUILD_VITE_MAJOR) {
     return "name-preserving";
   }
   return importsReplacingPlugin(configPath) ? "name-preserving" : "esbuild";

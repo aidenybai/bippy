@@ -458,6 +458,7 @@ export interface StyledComponentsTransformOptions {
 export interface InstalledPackage {
   name: string;
   version: string;
+  bundledVersions?: Record<string, string>;
 }
 
 /** What transpiles the app's `.ts`/`.tsx`/`.jsx` modules for the browser: esbuild renumbers a declaration whose name is already bound in an enclosing scope (`Foo` → `Foo2`); the others keep source names. */
