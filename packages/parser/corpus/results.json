@@ -64212,6 +64212,96 @@
       "failure": null
     },
     {
+      "id": "nlw-expert-react",
+      "revision": "a610fdc6d2c4d1cdbf50557505ce706954ef11cf",
+      "framework": "spa",
+      "capturedAt": "2026-09-11T11:49:52.221Z",
+      "durationMs": 7851,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 25,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "expert notes"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 25,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1437
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 24,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 24,
+        "staticFibers": 24,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 24,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 24,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": null,
+      "failure": null
+    },
+    {
       "id": "noteworthy",
       "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
       "framework": "spa",

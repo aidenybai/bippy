@@ -221,12 +221,11 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 207 real repositories by revision with framework, install/setup/dev
-commands, URL, static target and notes; `corpus/results.json` holds the latest merged results.
-Clones and captures live under the ignored `.corpus/`. Every entry renders statically; runtime
-capture runs where a dev server can start in this environment (195 entries so far).
+`corpus/manifest.json` pins 212 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`. Five fresh application captures add four exact matches and one truncated result to the original 207-repository snapshot. They do not complete the 500-repository gate.
 
-Historical checked-in results report 111 `exact` capture matches, not whole-space verification.
+Manifest validation rejects unsupported options instead of silently discarding them. `static.servedDirectory` is relative to `static.rootDirectory`. Dev servers do not inherit the harness's `CI` flag; a manifest can declare it explicitly. Install and setup commands default to `CI=1` unless the entry overrides it. A changed live environment requires fresh capture provenance.
+
+The original 207-repository snapshot reported 111 `exact` capture matches, not whole-space verification.
 135 runtime-metadata rows have no replay summary, and some exact rows record replay contradictions.
 These historical matches include `react-admin` (5,581 runtime nodes inside 21 states
 over the list query's pending/settled, the loading counter and the effect commits, with

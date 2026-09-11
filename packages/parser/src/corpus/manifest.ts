@@ -127,8 +127,9 @@ export interface CorpusResult {
 
 const jsonRecordSchema = z.record(z.string(), z.json());
 
-const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
+const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.strictObject({
   rootDirectory: z.string(),
+  servedDirectory: z.string().optional(),
   tsconfig: z.string().optional(),
   aliases: z.record(z.string(), z.string()).optional(),
   entry: z.string().optional(),
@@ -149,14 +150,14 @@ const staticTargetSchema: z.ZodType<CorpusStaticTarget> = z.object({
   maxComponentDepth: z.number().optional(),
 });
 
-const comparisonOptionsSchema: z.ZodType<ComparisonOptions> = z.object({
+const comparisonOptionsSchema: z.ZodType<ComparisonOptions> = z.strictObject({
   compareKeys: z.boolean().optional(),
   compareTags: z.boolean().optional(),
   compareText: z.boolean().optional(),
   maxSteps: z.number().optional(),
 });
 
-const entrySchema: z.ZodType<CorpusEntry> = z.object({
+const entrySchema: z.ZodType<CorpusEntry> = z.strictObject({
   id: z.string(),
   repository: z.string(),
   revision: z.string(),
@@ -178,7 +179,7 @@ const entrySchema: z.ZodType<CorpusEntry> = z.object({
   notes: z.string().optional(),
 });
 
-const manifestSchema: z.ZodType<CorpusManifest> = z.object({ entries: z.array(entrySchema) });
+const manifestSchema: z.ZodType<CorpusManifest> = z.strictObject({ entries: z.array(entrySchema) });
 
 export const readCorpusManifest = (manifestPath: string): CorpusManifest =>
   parseWithSchema(manifestSchema, JSON.parse(readFileSync(manifestPath, "utf8")), manifestPath);

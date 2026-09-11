@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -17,9 +17,34 @@ const writeManifest = (entries: unknown[]): string => {
 
 describe("corpus manifest", () => {
   it("reads the checked-in manifest", () => {
-    const { entries } = readCorpusManifest(MANIFEST_PATH);
+    const parsed = readCorpusManifest(MANIFEST_PATH);
+    expect(parsed).toEqual(JSON.parse(readFileSync(MANIFEST_PATH, "utf8")));
+    const { entries } = parsed;
     expect(entries.length).toBeGreaterThan(0);
     expect(entries.every((entry) => entry.static.rootDirectory.length > 0)).toBe(true);
+  });
+
+  it("preserves the served directory supplied by the manifest", () => {
+    const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
+    const target = { ...entry.static, servedDirectory: "src" };
+    const parsed = readCorpusManifest(writeManifest([{ ...entry, static: target }]));
+    expect(parsed.entries[0].static).toEqual(target);
+  });
+
+  it.each(["entry", "static", "compare"])("rejects unsupported %s options", (level) => {
+    const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
+    const options = level === "static" ? entry.static : entry.compare;
+    const candidate =
+      level === "entry"
+        ? { ...entry, unknownOption: true }
+        : { ...entry, [level]: { ...options, unknownOption: true } };
+    expect(() => readCorpusManifest(writeManifest([candidate]))).toThrow(/unknownOption/);
+  });
+
+  it("rejects unsupported manifest options", () => {
+    const manifestPath = writeManifest([]);
+    writeFileSync(manifestPath, JSON.stringify({ entries: [], unknownOption: true }));
+    expect(() => readCorpusManifest(manifestPath)).toThrow(/unknownOption/);
   });
 
   it("names the offending field of a malformed entry", () => {
