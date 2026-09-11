@@ -30898,6 +30898,96 @@
       "failure": null
     },
     {
+      "id": "fullstack-forms",
+      "revision": "db3b301f6a991b94d4e7cd4bd2f309a4da82ea17",
+      "framework": "spa",
+      "capturedAt": "2026-09-11T23:53:37.346Z",
+      "durationMs": 590,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 17,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Formulário"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 17,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 16,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 16,
+        "staticFibers": 16,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 16,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 16,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T23:37:01.829Z",
+      "failure": null
+    },
+    {
       "id": "gcn-nasa-gov",
       "revision": "5dd03d9d919d080d051ad9e06f8d382913a7dbe7",
       "framework": "react-router",
@@ -32463,6 +32553,96 @@
       "failure": null
     },
     {
+      "id": "ignite-dashboard-chakra",
+      "revision": "ff4c2fff0df8628e850248be66bf89ca329529ef",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-11T23:53:36.890Z",
+      "durationMs": 454,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 164,
+        "commits": 5,
+        "pageErrors": [],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 138,
+          "textCount": 24,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 548
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 112,
+        "matchedText": 24,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 8,
+        "runtimeFibers": 136,
+        "staticFibers": 136,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 136,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 136,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T23:36:25.004Z",
+      "failure": null
+    },
+    {
       "id": "ignite-dt-money",
       "revision": "9c7b7c76552636aae4442c29e0a55b2cb1b0768c",
       "framework": "spa",
@@ -33125,6 +33305,129 @@
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-11T20:45:36.327Z",
+      "failure": null
+    },
+    {
+      "id": "ignite-performance-react",
+      "revision": "8247db0649a823b66e298c1e077ccff468a0f795",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-11T23:53:36.356Z",
+      "durationMs": 528,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 26,
+        "commits": 2,
+        "pageErrors": [],
+        "title": ""
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 31,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 74
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 13,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 7,
+        "runtimeFibers": 13,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 14,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 27,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T23:36:04.110Z",
       "failure": null
     },
     {

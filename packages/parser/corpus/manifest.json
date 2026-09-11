@@ -6525,6 +6525,92 @@
         "route": "/",
         "externalPackageAllowList": ["js-cookie"]
       }
+    },
+    {
+      "id": "ignite-performance-react",
+      "repository": "https://github.com/rocketseat-education/ignite-reactjs-performance-react",
+      "revision": "8247db0649a823b66e298c1e077ccff468a0f795",
+      "description": "React 17 / Next 10 product search with react-virtualized and the original json-server generator",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "corepack yarn@1.22.22 install --frozen-lockfile --non-interactive --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run server & backend_pid=$!; trap 'kill \"$backend_pid\" 2>/dev/null || true' EXIT INT TERM; pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run dev --hostname 127.0.0.1 --port 54342",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54342/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-virtualized",
+          "react-virtualized/*",
+          "lodash",
+          "lodash/*"
+        ]
+      }
+    },
+    {
+      "id": "ignite-dashboard-chakra",
+      "repository": "https://github.com/rocketseat-education/ignite-reactjs-dashboard-chakra",
+      "revision": "ff4c2fff0df8628e850248be66bf89ca329529ef",
+      "description": "React 17 / Next 10 Chakra sign-in page with React Query devtools and the application's Mirage setup",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "corepack yarn@1.22.22 install --frozen-lockfile --non-interactive --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run dev --hostname 127.0.0.1 --port 54343",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54343/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "@emotion/*",
+          "framer-motion",
+          "react-query",
+          "react-query/*",
+          "react-icons",
+          "react-icons/*",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "yup"
+        ]
+      }
+    },
+    {
+      "id": "fullstack-forms",
+      "repository": "https://github.com/rocketseat-education/fullstack-react-template-forms",
+      "revision": "db3b301f6a991b94d4e7cd4bd2f309a4da82ea17",
+      "description": "React 18 / Vite 6 event form with native input, select and textarea controls",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54346 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54346/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": []
+      }
     }
   ]
 }
