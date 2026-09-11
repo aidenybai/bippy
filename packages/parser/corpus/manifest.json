@@ -6241,6 +6241,23 @@
           "invariant"
         ]
       }
+    },
+    {
+      "id": "nlw-expert-react",
+      "repository": "https://github.com/rocketseat-education/nlw-expert-react",
+      "revision": "a610fdc6d2c4d1cdbf50557505ce706954ef11cf",
+      "description": "NLW Expert notes (Vite SPA, React 18, radix dialog, sonner toaster, localStorage-backed notes)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npm run dev",
+      "env": {},
+      "url": "http://localhost:5173/",
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@radix-ui/*", "lucide-react", "sonner"]
+      }
     }
   ]
 }
