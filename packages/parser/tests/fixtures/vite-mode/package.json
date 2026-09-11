@@ -1,0 +1,8 @@
+{
+  "name": "fixture-vite-mode",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite": "^8.0.0"
+  }
+}

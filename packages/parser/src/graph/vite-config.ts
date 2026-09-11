@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { ParserError } from "../errors.js";
 import { DEV_SERVER_MODE } from "../evaluate/bundler-globals.js";
 import { Interpreter, UNKNOWN_PROJECT } from "../evaluate/interpreter.js";
 import { bytesValue } from "../evaluate/typed-arrays.js";
@@ -84,6 +85,8 @@ const parseViteCli = (command: string | undefined): ViteCliOptions => {
     const [flag, inlineValue] = word.split("=", 2);
     const option = CLI_FLAGS[flag];
     const value = inlineValue ?? words[index + 1];
+    if (option === "mode" && (value === undefined || value === ""))
+      throw new ParserError("Vite mode requires a value");
     if (option !== undefined && value !== undefined) options[option] = value;
   });
   return options;
@@ -96,6 +99,7 @@ export const findViteConfig = (rootDirectory: string): string | undefined =>
 
 export interface ViteConfigLocation {
   configPath: string;
+  cliMode: string | null;
   /** The directory Vite runs in, which `root` and `--config` resolve against. */
   cwd: string;
 }
@@ -109,10 +113,11 @@ export const locateViteConfig = ({
   ViteConfigOptions,
   "rootDirectory" | "devDirectory" | "devCommand"
 >): ViteConfigLocation | null => {
-  const { configPath } = parseViteCli(devCommand);
+  const { configPath, mode } = parseViteCli(devCommand);
   for (const cwd of new Set([devDirectory, rootDirectory])) {
     const candidate = configPath === null ? findViteConfig(cwd) : path.resolve(cwd, configPath);
-    if (candidate !== undefined && existsSync(candidate)) return { configPath: candidate, cwd };
+    if (candidate !== undefined && existsSync(candidate))
+      return { configPath: candidate, cwd, cliMode: mode };
   }
   return null;
 };
@@ -188,7 +193,7 @@ export const loadViteConfig = ({
   devCommand,
 }: ViteConfigOptions): ViteConfig => {
   const cli = parseViteCli(devCommand);
-  const cliMode = cli.mode ?? DEV_SERVER_MODE;
+  const cliMode = cli.mode || DEV_SERVER_MODE;
   const location = locateViteConfig({ rootDirectory, devDirectory, devCommand });
   if (location === null) return defaultViteConfig(rootDirectory, cliMode);
   const { configPath, cwd } = location;
@@ -224,7 +229,7 @@ export const loadViteConfig = ({
       ? UNDEFINED_VALUE
       : interpreter.getProperty(object, key, context, null);
   const root = path.resolve(cwd, getStringLiteral(readField(config, "root")) ?? "");
-  const mode = cli.mode ?? getStringLiteral(readField(config, "mode")) ?? DEV_SERVER_MODE;
+  const mode = cli.mode || getStringLiteral(readField(config, "mode")) || DEV_SERVER_MODE;
   const assetsInlineLimit = readField(readField(config, "build"), "assetsInlineLimit");
   /** `mergeWithDefaults` fills only `undefined` with the 4096 default; `null` stays and `Number(null)` is `0`. */
   const decideFromLimit = (

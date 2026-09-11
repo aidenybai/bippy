@@ -70,7 +70,7 @@ const isViteNativeExtension = (extension: string): boolean =>
  * neither do the plugins a framework model stands in for.
  */
 export const loadViteUserPlugins = async (
-  { configPath, cwd: rootDirectory }: ViteConfigLocation,
+  { configPath, cwd: rootDirectory, cliMode }: ViteConfigLocation,
   modeledPlugins: readonly string[] = [],
 ): Promise<ViteUserPlugins | null> => {
   const resolver = new ResolverFactory({ conditionNames: ["node", "import", "default"] });
@@ -86,7 +86,7 @@ export const loadViteUserPlugins = async (
       const loaded = parseWithSchema(
         loadedConfigSchema,
         await vite.loadConfigFromFile(
-          { command: SERVE_COMMAND, mode: DEVELOPMENT_MODE },
+          { command: SERVE_COMMAND, mode: cliMode || DEVELOPMENT_MODE },
           configPath,
           rootDirectory,
         ),
@@ -106,6 +106,7 @@ export const loadViteUserPlugins = async (
         await vite.resolveConfig(
           {
             ...loaded.config,
+            ...(cliMode === null ? {} : { mode: cliMode }),
             plugins: [...userPlugins],
             configFile: false,
             logLevel: "silent",

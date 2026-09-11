@@ -109,6 +109,12 @@ describe("vite config discovery", () => {
     expect(decide(config, LARGE)).toBe(true);
   });
 
+  it("uses development when the configuration's mode is empty", () => {
+    const project = createProject();
+    project.write("vite.config.ts", 'export default { mode: "" };');
+    expect(project.load().mode).toBe("development");
+  });
+
   it("looks the config up where the dev command runs before the app root", () => {
     const project = createProject();
     project.write("app/index.html", "");

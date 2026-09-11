@@ -77,9 +77,11 @@ For Create React App projects, the [macro transform](../packages/parser/src/grap
 
 The transform runs on the application's `src` files when the preset declares the macro plugin. Macro configuration and code execute as build infrastructure. The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
 
-Build configuration can read variables that a client bundle does not expose. The [corpus renderer](../packages/parser/src/corpus/render-entry.ts) uses the entry’s child-process environment during native configuration loading and later renders. It serializes these operations because `process.env` is shared, then restores the harness environment even after failure. Inherited CI and package-manager variables follow the [dev-server rules](../packages/parser/src/corpus/dev-server.ts).
+Build configuration can read variables that a client bundle does not expose. The [corpus renderer](../packages/parser/src/corpus/render-entry.ts) uses the entry’s child-process environment during native configuration loading and later renders. It serializes these operations because `process.env` is shared, then restores the harness environment even after failure. Inherited `CI` and package-manager variables follow the [dev-server rules](../packages/parser/src/corpus/dev-server.ts).
 
 The [environment reader](../packages/parser/src/corpus/process-environment.ts) retains declared variables without requiring a dotenv file list. Without that list, it marks the environment as partial and preserves uncertainty about unlisted variables. Client exposure also remains unknown when neither the manifest nor a recognized tool establishes a prefix. Node configuration can read declared private variables regardless of the client prefix.
+
+The [Vite plugin loader](../packages/parser/src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
 
 These rules do not establish complete build-environment parity. Custom client prefixes require a manifest declaration. Remaining parity checks include:
 
