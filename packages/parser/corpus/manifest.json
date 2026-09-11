@@ -5788,7 +5788,7 @@
       "workingDirectory": ".",
       "install": "npx -y pnpm@10.29.3 install --frozen-lockfile",
       "setup": [
-        "grep -q user-agent lib/notion-api.ts || perl -0pi -e \"s/apiBaseUrl: process.env.NOTION_API_BASE_URL\\n/apiBaseUrl: process.env.NOTION_API_BASE_URL,\\n  ofetchOptions: { headers: { 'user-agent': 'Mozilla\\\/5.0' } }\\n/\" lib/notion-api.ts"
+        "grep -q user-agent lib/notion-api.ts || perl -0pi -e \"s/apiBaseUrl: process.env.NOTION_API_BASE_URL\\n/apiBaseUrl: process.env.NOTION_API_BASE_URL,\\n  ofetchOptions: { headers: { 'user-agent': 'Mozilla\\/5.0' } }\\n/\" lib/notion-api.ts"
       ],
       "dev": "npx -y pnpm@10.29.3 dev",
       "url": "http://localhost:3000/",
@@ -6109,6 +6109,136 @@
           "date-fns",
           "date-fns/*",
           "date-fns-tz"
+        ]
+      }
+    },
+    {
+      "id": "react-shopping-cart",
+      "repository": "https://github.com/jeffersonribeiro/react-shopping-cart",
+      "revision": "9fa56244d0f0c0d363cab744a3305c50eabc08cb",
+      "description": "Jefferson Ribeiro's React shopping cart (CRA 5 / React 18 StrictMode, styled-components 5 macro, context providers, products loaded from a bundled JSON in development)",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3023",
+        "CI": "1"
+      },
+      "url": "http://localhost:3023/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 6000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["styled-components"]
+      }
+    },
+    {
+      "id": "react-ecommerce-store",
+      "repository": "https://github.com/gianlucajahn/react-ecommerce-store",
+      "revision": "ae46562743b2e350cfd52deab3f831008a9fcedf",
+      "description": "Gianluca Jahn's game store home page under its /react-ecommerce-store/ base path (CRA 5 / React 18 StrictMode, react-router-dom 6 Routes, framer-motion 6 AnimatePresence, CSS modules)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3025",
+        "CI": "1"
+      },
+      "url": "http://localhost:3025/react-ecommerce-store/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/react-ecommerce-store/",
+        "externalPackageAllowList": ["framer-motion", "react-slideshow-image", "uuid"]
+      }
+    },
+    {
+      "id": "next-ecommerce-shopco",
+      "repository": "https://github.com/mohammadoftadeh/next-ecommerce-shopco",
+      "revision": "f360acb62dbccdeb421d0c261652deedc74829fd",
+      "description": "Shop.co e-commerce home page (Next 14.2 app router, React 18, Tailwind + shadcn/ui Radix primitives, Redux Toolkit + redux-persist, framer-motion, embla carousel, holy-loader)",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund",
+      "dev": "npx next dev -p 3022",
+      "env": {
+        "CI": "1"
+      },
+      "url": "http://localhost:3022/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "route": "/",
+        "appDirectory": "src/app",
+        "externalPackageAllowList": [
+          "react-redux",
+          "redux-persist",
+          "redux-persist/*",
+          "@radix-ui/*",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+          "lucide-react",
+          "react-icons",
+          "react-icons/*",
+          "framer-motion",
+          "embla-carousel-react",
+          "holy-loader",
+          "react-simple-star-rating",
+          "usehooks-ts",
+          "vaul"
+        ]
+      }
+    },
+    {
+      "id": "multimart-react-ecommerce",
+      "repository": "https://github.com/0mar-helal/multimart-react-ecommerce",
+      "revision": "4bb42e5a59afa971cb97209f151324a2442430dd",
+      "description": "Multimart storefront home page (CRA 5 / React 18 StrictMode, Redux Toolkit, react-router-dom 6 Routes with React.lazy pages, react-bootstrap 2, react-slick, react-toastify)",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm install --no-audit --no-fund --legacy-peer-deps",
+      "dev": "npx react-scripts start",
+      "env": {
+        "BROWSER": "none",
+        "PORT": "3024",
+        "CI": "1"
+      },
+      "url": "http://localhost:3024/",
+      "readyTimeoutMs": 600000,
+      "settleMs": 8000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "route": "/",
+        "externalPackageAllowList": [
+          "react-redux",
+          "react-bootstrap",
+          "react-bootstrap/*",
+          "@restart/*",
+          "react-toastify",
+          "react-slick",
+          "react-select",
+          "react-spinners",
+          "prop-types",
+          "classnames",
+          "clsx",
+          "uncontrollable",
+          "dom-helpers",
+          "dom-helpers/*",
+          "react-transition-group",
+          "react-transition-group/*",
+          "warning",
+          "invariant"
         ]
       }
     }
