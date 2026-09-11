@@ -105,18 +105,19 @@ export class TimerQueue {
   }
 
   createHandle(name: string): StaticValue {
-    const handle = rangedNumberValue(`${name} handle`, {
-      min: 1,
-      max: Number.POSITIVE_INFINITY,
-    });
+    return rangedNumberValue(`${name} handle`, { min: 1, max: Number.POSITIVE_INFINITY });
+  }
+
+  private activate(handle: StaticValue): void {
+    if (this.cancellations.has(handle)) return;
     const cancellation = new TimerCancellation(TRUE_VALUE);
     this.cancellations.set(handle, cancellation);
     this.recordMutation(cancellation);
     cancellation.value = FALSE_VALUE;
-    return handle;
   }
 
   schedule(handle: StaticValue, task: () => void, delayMs = 0): void {
+    this.activate(handle);
     const scheduledBy = this.clockTask;
     this.enqueue(() => {
       if (this.isCleared(handle)) return;
@@ -150,8 +151,17 @@ export class TimerQueue {
     return getTruthiness(this.getCancellation(handle)) === true;
   }
 
-  queueMicrotask(task: () => void): void {
-    this.microtasks.push(this.bindTask(task));
+  queueMicrotask(task: () => void, handle?: StaticValue): void {
+    if (handle) this.activate(handle);
+    this.microtasks.push(
+      this.bindTask(
+        handle
+          ? () => {
+              if (!this.isCleared(handle)) task();
+            }
+          : task,
+      ),
+    );
   }
 
   hasMicrotasks(): boolean {

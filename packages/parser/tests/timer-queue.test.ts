@@ -9,6 +9,7 @@ describe("guarded timer cancellation", () => {
     let journal: HeapJournal | null = null;
     const queue = new TimerQueue(undefined, undefined, (state) => journal?.recordState(state));
     const handle = queue.createHandle("setTimeout");
+    queue.schedule(handle, () => {});
     journal = new HeapJournal();
     queue.clear(handle);
     expect(queue.isCleared(handle)).toBe(true);
@@ -24,10 +25,20 @@ describe("guarded timer cancellation", () => {
     expect(queue.isCleared(handle)).toBe(false);
   });
 
-  it("keeps a timer inactive on paths that did not create its handle", () => {
+  it("does not record an unscheduled handle as a queue mutation", () => {
+    let mutations = 0;
+    const queue = new TimerQueue(undefined, undefined, () => {
+      mutations++;
+    });
+    queue.createHandle("setTimeout");
+    expect(mutations).toBe(0);
+  });
+
+  it("keeps a timer inactive on paths that did not schedule it", () => {
     const journal = new HeapJournal();
     const queue = new TimerQueue(undefined, undefined, (state) => journal.recordState(state));
     const handle = queue.createHandle("setTimeout");
+    queue.schedule(handle, () => {});
     expect(queue.isCleared(handle)).toBe(false);
     journal.endPath();
     expect(queue.isCleared(handle)).toBe(true);
@@ -40,14 +51,16 @@ describe("guarded timer cancellation", () => {
     expect(getAlternativeGuards(cancellation)?.guards).toHaveLength(2);
   });
 
-  it("does not execute a timer from a discarded path", () => {
+  it.each(["timer", "microtask"])("does not execute a %s from a discarded path", (kind) => {
     const journal = new HeapJournal();
     const queue = new TimerQueue(undefined, undefined, (state) => journal.recordState(state));
     const handle = queue.createHandle("setTimeout");
     let hasRun = false;
-    queue.schedule(handle, () => {
+    const task = () => {
       hasRun = true;
-    });
+    };
+    if (kind === "microtask") queue.queueMicrotask(task, handle);
+    else queue.schedule(handle, task);
     journal.endPath();
     queue.runNextTask();
     expect(hasRun).toBe(false);

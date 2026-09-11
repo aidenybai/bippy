@@ -32,9 +32,9 @@ The conceptual page at `docs/parser-architecture.md` explains the current parser
 
 ### Immediate continuation
 
-1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint below adds registration, cancellation, and task-only replay constraints. Nothing pushed.
+1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. Root validation passes **2,827 tests**, with two existing React-19 DevTools skips; this includes **781 parser tests / 44 files**. Root typecheck/build, realm checks, lint and formatting pass. The latest serial corpus run takes 36.416 seconds for Sentry and 253.074 seconds for PostHog, slower than the prior replay-claim checkpoint. Performance remains open alongside P1/P2 and the unmet 500-repository gate.
+3. Root validation passes **2,831 tests**, with two existing React-19 DevTools skips; this includes **785 parser tests / 44 files**. Root typecheck/build, realm checks, lint and formatting pass. The latest serial corpus run takes 38.282 seconds for Sentry and 256.770 seconds for PostHog, slower than the prior replay-claim checkpoint. Performance remains open alongside P1/P2 and the unmet 500-repository gate.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
@@ -968,6 +968,15 @@ Checkpoint after final validation, optimize measured predicate-processing overhe
 - Performance is not resolved. The initial overlapping run took 37.862 seconds for Sentry and 664.402 seconds for PostHog. A serial recheck took **36.416 seconds and 253.074 seconds**, respectively, versus 13.586 and 166.084 at the earlier replay-claim checkpoint. A profiled PostHog probe took 83.3 seconds to render and 79.2 seconds for its selected replay. Its CPU sample still concentrates on predicate/guard processing. Timer initialization currently records an allocation-zero mutation; its effect on progress detection needs a separate test, not an assumed optimization.
 - Profiling artifacts: `/tmp/bippy-posthog-registration-profile.{log,json}`. Serial corpus log: `/tmp/bippy-parser-corpus-task-registration-serial.log`. The probe and validation jobs completed.
 - Next audit targets: conditional microtask/promise registration, cancellation through a branched handle, timer callback arguments, lexical-scope ownership, and repeat-scoped task constraints. None of those broader guarantees follows from these timer tests.
+
+### Conditional microtasks and queue activation checkpoint
+
+- Reproduced the same impossible `<aside>` plus `<strong>` state through a conditional `queueMicrotask` call. `/tmp/bippy-microtask-registration-before.log` records the failure.
+- Direct `queueMicrotask` calls now use journaled activation and the existing conditional task runner. A shared scheduled-callback wrapper preserves deferred invocation semantics for both timers and direct microtasks. The new component fixture passes Bippy capture comparison and pinned replay without correction.
+- Moved activation to actual queue registration. Merely allocating a handle no longer records a queue mutation. This removes a spurious progress signal for unscheduled handles without disabling mutation tracking for queued work. `/tmp/bippy-unscheduled-handle-before.log` records the before-fix unit failure. Added discarded-path microtask coverage.
+- Full root tests pass **2,831 tests**, with two existing skips, including **785 parser tests / 44 files**. Root typecheck/build, realm checks, changed-file lint/formatting, and diff checks pass. Logs: `/tmp/bippy-microtask-activation-root-{tests,typecheck}.log`, `/tmp/bippy-microtask-activation-{build,realms}.log`.
+- The identical-capture corpus check ran after the root tests, not concurrently. `/tmp/bippy-parser-corpus/microtask-activation-results.json` and `/tmp/bippy-parser-corpus-microtask-activation.log` record the completed run. Sentry is exact, 100% strict, 0/1 contradictions, `sample-passed`, at **38.282 seconds**. PostHog is exact, 100% strict, 0/2 contradictions, one incomplete replay, `sample-incomplete`, at **256.770 seconds**. Queue activation cleanup did not remove the measured performance regression.
+- Promise reaction registration remains unguarded, including pending subscriptions and conditional settlement. `PromiseTools.queueMicrotask` does not use the new direct-call wrapper. Captured lexical-scope ownership and cancellation through branched handles remain open.
 
 ## 20. Complete checked-in corpus ledger
 

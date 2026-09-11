@@ -1438,7 +1438,11 @@ const callGlobal = (
       );
     case "queueMicrotask":
       if (first) {
-        interpreter.timers.queueMicrotask(scheduledTask(interpreter, first, context, location));
+        const handle = interpreter.timers.createHandle("queueMicrotask");
+        interpreter.timers.queueMicrotask(
+          scheduledTask(interpreter, first, context, location, handle),
+          handle,
+        );
       }
       return UNDEFINED_VALUE;
     case "setTimeout":
@@ -1450,10 +1454,9 @@ const callGlobal = (
         const delayMs = interpreter.timers.getSettledDelay(second);
         if (delayMs === null) interpreter.markEscaped(first);
         else {
-          const task = scheduledTask(interpreter, first, context, location);
           interpreter.timers.schedule(
             handle,
-            () => interpreter.runTimerTask(handle, context, location, task),
+            scheduledTask(interpreter, first, context, location, handle),
             delayMs,
           );
         }
@@ -1607,10 +1610,13 @@ const scheduledTask = (
   callback: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
-): (() => void) =>
-  interpreter.timers.isDeferred
+  handle: StaticValue,
+): (() => void) => {
+  const task = interpreter.timers.isDeferred
     ? () => interpreter.callDeferred(callback, [], context, location)
     : () => interpreter.callValue(callback, [], context, location);
+  return () => interpreter.runTimerTask(handle, context, location, task);
+};
 
 interface ItemVerdict {
   verdict: boolean | null;

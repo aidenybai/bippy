@@ -192,7 +192,9 @@ Effects and ref callbacks use conditional mutation evaluation, so their writes r
 
 A deferred callback can run after an unrelated commit. Using conditions from that commit would associate the callback with the wrong inputs. Modeled tasks instead retain the conditions that applied when analysis scheduled them.
 
-The [timer queue](../packages/parser/src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never create them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions.
+The [timer queue](../packages/parser/src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never schedule them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions.
+
+Direct `queueMicrotask` calls use the same activation checks without exposing a cancellation handle to application code. The queue records activation when it enqueues work, not when the interpreter allocates a handle. Promise reaction registration still requires a separate audit.
 
 [Mounting](../packages/parser/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. Reaching the settlement limit does not prove that the application has no further updates.
 
