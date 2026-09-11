@@ -108,6 +108,8 @@ These rules do not establish complete build-environment parity. Remaining parity
 
 [Package metadata](../packages/parser/src/graph/installed-package.ts) also distinguishes a wrapper's package version from its declared bundled engine version. Vite asset URLs and compiler selection use the engine version when the package supplies it. They must not treat Vite Plus version `0.3.1` as Vite version `0`.
 
+A library model needs the component structure of the installed version. The [Emotion model](../packages/parser/src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
+
 ### Resolve declarations without executing modules
 
 The [source parser](../packages/parser/src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.

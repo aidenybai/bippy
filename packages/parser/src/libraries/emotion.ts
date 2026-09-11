@@ -33,10 +33,11 @@ import type {
 } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 import { describeTag } from "./component-name.js";
+import { isVersionAtLeast } from "./installed-version.js";
 
 // Emotion's fiber-visible surface. A styled component is a `forwardRef`
-// (`withEmotionCache`) rendering a null-returning placeholder (the styles go to
-// a stylesheet) followed by its base tag with the props that survive
+// (`withEmotionCache`) rendering its base tag; Emotion 10 and 11.8+ prepend
+// a null-returning placeholder. The base receives the props that survive
 // `shouldForwardProp` (`@emotion/is-prop-valid` for host tags, everything but
 // `theme` for components). Styling a styled component composes the styles and
 // keeps the original base, so `styled(Flex)` renders Flex's `div`, not Flex.
@@ -65,16 +66,16 @@ const LABEL_PLUGIN_PACKAGES = [
 
 const MACRO_SUFFIX = "/macro";
 
-const FIRST_HOOKS_MAJOR = 11;
-
 const CSS_PROP_TYPE_KEY = "__EMOTION_TYPE_PLEASE_DO_NOT_USE__";
 
 interface EmotionRuntime {
-  placeholder: StubComponent;
+  placeholder: StubComponent | null;
   hasConsumerFibers: boolean;
 }
 
 const EMOTION_10: EmotionRuntime = { placeholder: emptyStub("Noop"), hasConsumerFibers: true };
+
+const EMOTION_EARLY_11: EmotionRuntime = { placeholder: null, hasConsumerFibers: false };
 
 const EMOTION_11: EmotionRuntime = {
   placeholder: emptyStub("Insertion"),
@@ -83,9 +84,8 @@ const EMOTION_11: EmotionRuntime = {
 
 const readRuntime = (project: ProjectContext, packageName: string): EmotionRuntime => {
   const version = project.readPackageVersion(packageName);
-  return version !== null && Number(version.split(".")[0]) < FIRST_HOOKS_MAJOR
-    ? EMOTION_10
-    : EMOTION_11;
+  if (version === null || isVersionAtLeast(version, "11.8.0")) return EMOTION_11;
+  return isVersionAtLeast(version, "11.0.0") ? EMOTION_EARLY_11 : EMOTION_10;
 };
 
 const THEME_CONTEXT: ContextDefinition = {
@@ -109,8 +109,18 @@ const CACHE_CONTEXT: ContextDefinition = {
   location: null,
 };
 
-const placeholderOf = (runtime: EmotionRuntime): StaticValue =>
-  element({ kind: "stub", stub: runtime.placeholder }, objectValue());
+const withPlaceholder = (runtime: EmotionRuntime, content: StaticValue): StaticValue =>
+  runtime.placeholder === null
+    ? content
+    : element(
+        { kind: "fragment" },
+        objectFromRecord({
+          children: listValue([
+            element({ kind: "stub", stub: runtime.placeholder }, objectValue()),
+            content,
+          ]),
+        }),
+      );
 
 const consumerOf = (context: ContextDefinition, render: () => StaticValue): StaticValue =>
   element(
@@ -141,9 +151,6 @@ const serializedStyles = (): StaticValue =>
   });
 
 const classNameValue = (): StaticValue => unknownPrimitiveValue("string", "emotion class name");
-
-const fragmentOf = (children: StaticValue[]): StaticValue =>
-  element({ kind: "fragment" }, objectFromRecord({ children: listValue(children) }));
 
 interface StyledComponent {
   /** `__emotion_base`: the host tag name or component the whole styled chain renders. */
@@ -250,7 +257,7 @@ const styledOutput = (
   entries: StaticObjectEntry[],
 ): StaticValue => {
   entries.push({ kind: "property", key: "className", value: classNameValue() });
-  return fragmentOf([placeholderOf(runtime), element(finalType, objectValue(entries))]);
+  return withPlaceholder(runtime, element(finalType, objectValue(entries)));
 };
 
 const createStyled = (
@@ -380,10 +387,7 @@ const classNamesStub = (runtime: EmotionRuntime): StubComponent => ({
         cx: nativeFunction("cx", classNameValue),
         theme: tools.readContext(THEME_CONTEXT),
       });
-      return fragmentOf([
-        placeholderOf(runtime),
-        tools.call(getObjectProperty(props, "children"), [content]),
-      ]);
+      return withPlaceholder(runtime, tools.call(getObjectProperty(props, "children"), [content]));
     }),
 });
 
