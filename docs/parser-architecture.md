@@ -174,6 +174,12 @@ Timer handles retain resource identity even when their numeric ranges match. The
 
 Component identity has the same requirement. Creating a wrapper component twice can create two component types, even when both wrappers use the same source body. The materializer uses source closure identity rather than component names alone to identify component proxies.
 
+Equal props do not establish a repeated render input. A nested provider can change the context while the component calls itself with unchanged props. The recursion check therefore compares the ancestor’s recorded context reads as well as its closure and props.
+
+Context comparisons preserve object identity rather than comparing object fields. Recursion probes do not become application context dependencies, because that could invalidate an unrelated memoized child.
+
+These checks still cannot prove that recursion never terminates. A cutoff produces an unknown subtree, and the configured depth limit still applies.
+
 ## Rendering with React
 
 The [materializer](../packages/parser/src/materialize/materializer.ts) converts interpreted values into real React elements. Each source component becomes a proxy component whose render calls the interpreter. The proxy never calls the application function itself.
