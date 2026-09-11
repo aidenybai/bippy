@@ -2,7 +2,8 @@ import path from "node:path";
 import { createFrameworkRenderer, type FrameworkRenderer } from "../frameworks/render-framework.js";
 import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
 import { getSettleMs, type CorpusEntry } from "./manifest.js";
-import { readProcessEnvironment } from "./process-environment.js";
+import { readProcessEnvironment, runWithProcessEnvironment } from "./process-environment.js";
+import { getDevServerEnvironment } from "./dev-server.js";
 
 const rendererOptionsForEntry = (
   entry: CorpusEntry,
@@ -43,15 +44,27 @@ export const createCorpusEntryRenderer = (
   cloneDirectory: string,
   observations?: RuntimeObservations,
 ): Promise<FrameworkRenderer> =>
-  createFrameworkRenderer(
-    {
-      framework: entry.framework,
-      entry: entry.static.entry,
-      route: entry.static.route ?? getPageRoute(entry.url),
-      appDirectory: entry.static.appDirectory,
-      rootComponent: entry.static.rootComponent,
+  runWithProcessEnvironment(
+    () => getDevServerEnvironment(entry.env),
+    async (environment) => {
+      const renderer = await createFrameworkRenderer(
+        {
+          framework: entry.framework,
+          entry: entry.static.entry,
+          route: entry.static.route ?? getPageRoute(entry.url),
+          appDirectory: entry.static.appDirectory,
+          rootComponent: entry.static.rootComponent,
+        },
+        rendererOptionsForEntry(entry, cloneDirectory, observations),
+      );
+      return {
+        render: (decisions) =>
+          runWithProcessEnvironment(
+            () => environment,
+            () => renderer.render(decisions),
+          ),
+      };
     },
-    rendererOptionsForEntry(entry, cloneDirectory, observations),
   );
 
 export const renderCorpusEntry = async (

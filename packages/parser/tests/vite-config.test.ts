@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
+import type { ProcessEnvironment } from "../src/types.js";
 import { loadViteConfig, type ViteConfig } from "../src/graph/vite-config.js";
 import { applyHtmlTransformHooks, vitePluginsSchema } from "../src/graph/vite-plugins.js";
 
@@ -13,7 +14,11 @@ const LFS_POINTER = Buffer.from("version https://git-lfs.github.com/spec/v1\noid
 interface FixtureProject {
   rootDirectory: string;
   write: (fileName: string, source: string) => void;
-  load: (options?: { devCommand?: string; devDirectory?: string }) => ViteConfig;
+  load: (options?: {
+    devCommand?: string;
+    devDirectory?: string;
+    environment?: ProcessEnvironment;
+  }) => ViteConfig;
 }
 
 const projects: string[] = [];
@@ -59,6 +64,23 @@ describe("vite config discovery", () => {
       expect(decide(project.load(), SMALL)).toBe(false);
     });
   }
+
+  it("reads private configuration variables in the Node realm", () => {
+    const project = createProject();
+    project.write(
+      "vite.config.ts",
+      'export default { base: `/${process.env.PRIVATE_BASE ?? "unset"}/` };',
+    );
+    expect(
+      project.load({
+        environment: {
+          variables: { PRIVATE_BASE: "configured" },
+          clientPrefix: "VITE_",
+          isPartial: true,
+        },
+      }).base,
+    ).toBe("/configured/");
+  });
 
   it("falls back to Vite's defaults without a config", () => {
     const project = createProject();

@@ -49,6 +49,7 @@ export const createBabelMacrosTransform = async (
       const previousEnvironment = process.env;
       process.chdir(rootDirectory);
       process.env = {
+        ...(environment?.isPartial ? previousEnvironment : undefined),
         ...(environment?.variables ?? previousEnvironment),
         NODE_ENV: "development",
         BABEL_ENV: "development",

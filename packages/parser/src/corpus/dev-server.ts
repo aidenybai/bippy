@@ -48,6 +48,13 @@ const inheritedEnv = (): Record<string, string | undefined> =>
     Object.entries(process.env).filter(([key]) => !isPackageManagerEnvKey(key) && key !== "CI"),
   );
 
+export const getDevServerEnvironment = (env?: Record<string, string>): NodeJS.ProcessEnv => ({
+  ...inheritedEnv(),
+  FORCE_COLOR: "0",
+  COREPACK_ENABLE_STRICT: "0",
+  ...env,
+});
+
 const NON_INTERACTIVE_ENV: Record<string, string> = { CI: "1" };
 
 // Race timers must not keep the process alive once the child has exited.
@@ -66,7 +73,7 @@ const spawnShell = (
     stdio: ["ignore", "pipe", "pipe"],
     // Clones live under bippy's tree, whose `packageManager` field would otherwise make
     // corepack refuse the yarn/npm commands the corpus repositories expect.
-    env: { ...inheritedEnv(), FORCE_COLOR: "0", COREPACK_ENABLE_STRICT: "0", ...env },
+    env: getDevServerEnvironment(env),
   });
   child.stdout?.pipe(log, { end: false });
   child.stderr?.pipe(log, { end: false });

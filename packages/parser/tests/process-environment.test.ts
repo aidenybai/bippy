@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import type { CorpusEntry } from "../src/corpus/manifest.js";
 import { parseDotenv, readProcessEnvironment } from "../src/corpus/process-environment.js";
+import { getBundlerGlobal } from "../src/evaluate/bundler-globals.js";
+import { primitiveValue, UNDEFINED_VALUE } from "../src/evaluate/values.js";
 
 const createEntry = (overrides: Partial<CorpusEntry["static"]>): CorpusEntry => ({
   id: "fixture",
@@ -20,16 +22,60 @@ const createEntry = (overrides: Partial<CorpusEntry["static"]>): CorpusEntry => 
 });
 
 describe("process environment", () => {
-  it("is absent until the manifest declares the dotenv files the server loads", () => {
-    const entry = createEntry({ envFiles: undefined });
+  it("is absent when neither variables nor dotenv files are declared", () => {
+    const entry = { ...createEntry({ envFiles: undefined }), env: undefined };
     expect(readProcessEnvironment(entry, tmpdir())).toBeUndefined();
   });
 
-  it("uses the framework's client prefix by default", () => {
-    expect(readProcessEnvironment(createEntry({}), tmpdir())).toEqual({
+  it("retains declared variables without assuming unlisted dotenv variables are unset", () => {
+    const entry = createEntry({ envFiles: undefined, envPrefix: "REACT_APP_" });
+    const declared = readProcessEnvironment(entry, tmpdir()) ?? null;
+    expect(declared).toEqual({
       variables: { REACT_APP_REVIEW_ID: "42" },
-      clientPrefix: "VITE_",
+      clientPrefix: "REACT_APP_",
+      isPartial: true,
     });
+    const environment = { declared, renderEnvironment: null };
+    expect(getBundlerGlobal("process.env.REACT_APP_REVIEW_ID", environment)).toEqual(
+      primitiveValue("42"),
+    );
+    expect(getBundlerGlobal("process.env.REACT_APP_UNLISTED", environment)?.kind).toBe("branch");
+    expect(getBundlerGlobal("process.env.PRIVATE_UNLISTED", environment)).toEqual(UNDEFINED_VALUE);
+  });
+
+  it("keeps unlisted variables unset when the file list is complete", () => {
+    const declared =
+      readProcessEnvironment(createEntry({ envPrefix: "REACT_APP_" }), tmpdir()) ?? null;
+    expect(
+      getBundlerGlobal("process.env.REACT_APP_UNLISTED", { declared, renderEnvironment: null }),
+    ).toEqual(UNDEFINED_VALUE);
+  });
+
+  it("does not assume an unspecified SPA uses Vite", () => {
+    const declared = readProcessEnvironment(createEntry({}), tmpdir()) ?? null;
+    expect(declared).toEqual({
+      variables: { REACT_APP_REVIEW_ID: "42" },
+      clientPrefix: undefined,
+    });
+    expect(
+      getBundlerGlobal("process.env.REACT_APP_REVIEW_ID", { declared, renderEnvironment: null })
+        ?.kind,
+    ).toBe("branch");
+    expect(
+      getBundlerGlobal("process.env.REACT_APP_REVIEW_ID", {
+        declared,
+        renderEnvironment: "server",
+      }),
+    ).toEqual(primitiveValue("42"));
+  });
+
+  it("uses Vite's prefix when the app declares Vite", () => {
+    const rootDirectory = mkdtempSync(path.join(tmpdir(), "bippy-parser-env-"));
+    writeFileSync(
+      path.join(rootDirectory, "package.json"),
+      JSON.stringify({ devDependencies: { vite: "8.0.0" } }),
+    );
+    expect(readProcessEnvironment(createEntry({}), rootDirectory)?.clientPrefix).toBe("VITE_");
   });
 
   it("takes the bundler's configured envPrefix over the framework default", () => {
@@ -51,7 +97,7 @@ describe("process environment", () => {
     );
     expect(readProcessEnvironment(createEntry({ envFiles: [".env"] }), rootDirectory)).toEqual({
       variables: { REACT_APP_REVIEW_ID: "42", REACT_APP_BRANCH: "main", PLAIN: "value" },
-      clientPrefix: "VITE_",
+      clientPrefix: undefined,
     });
   });
 
