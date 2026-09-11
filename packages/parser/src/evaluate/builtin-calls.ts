@@ -1456,7 +1456,14 @@ const callGlobal = (
         else {
           interpreter.timers.schedule(
             handle,
-            scheduledTask(interpreter, first, context, location, handle),
+            scheduledTask(
+              interpreter,
+              first,
+              context,
+              location,
+              handle,
+              name === "setTimeout" ? args.slice(2) : [],
+            ),
             delayMs,
           );
         }
@@ -1472,7 +1479,15 @@ const callGlobal = (
         else {
           interpreter.timers.schedule(
             handle,
-            () => interpreter.runIntervalTicks(first, handle, context, location, isDeferred),
+            () =>
+              interpreter.runIntervalTicks(
+                first,
+                handle,
+                context,
+                location,
+                isDeferred,
+                args.slice(2),
+              ),
             delayMs,
           );
         }
@@ -1611,10 +1626,11 @@ const scheduledTask = (
   context: EvaluationContext,
   location: SourceLocation | null,
   handle: StaticValue,
+  callbackArguments: StaticValue[] = [],
 ): (() => void) => {
   const task = interpreter.timers.isDeferred
-    ? () => interpreter.callDeferred(callback, [], context, location)
-    : () => interpreter.callValue(callback, [], context, location);
+    ? () => interpreter.callDeferred(callback, callbackArguments, context, location)
+    : () => interpreter.callValue(callback, callbackArguments, context, location);
   return () => interpreter.runTimerTask(handle, context, location, task);
 };
 

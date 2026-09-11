@@ -34,7 +34,7 @@ The conceptual page at `docs/parser-architecture.md` explains the current parser
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. Root validation passes **2,831 tests**, with two existing React-19 DevTools skips; this includes **785 parser tests / 44 files**. Root typecheck/build, realm checks, lint and formatting pass. The latest serial corpus run takes 38.282 seconds for Sentry and 256.770 seconds for PostHog, slower than the prior replay-claim checkpoint. Performance remains open alongside P1/P2 and the unmet 500-repository gate.
+3. Root validation passes **2,832 tests**, with two existing React-19 DevTools skips; this includes **786 parser tests / 44 files**. Root typecheck/build, realm checks, lint and formatting pass. The latest serial corpus run takes 35.091 seconds for Sentry and 988.848 seconds for PostHog. Performance is unresolved and requires a controlled comparison. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
@@ -977,6 +977,21 @@ Checkpoint after final validation, optimize measured predicate-processing overhe
 - Full root tests pass **2,831 tests**, with two existing skips, including **785 parser tests / 44 files**. Root typecheck/build, realm checks, changed-file lint/formatting, and diff checks pass. Logs: `/tmp/bippy-microtask-activation-root-{tests,typecheck}.log`, `/tmp/bippy-microtask-activation-{build,realms}.log`.
 - The identical-capture corpus check ran after the root tests, not concurrently. `/tmp/bippy-parser-corpus/microtask-activation-results.json` and `/tmp/bippy-parser-corpus-microtask-activation.log` record the completed run. Sentry is exact, 100% strict, 0/1 contradictions, `sample-passed`, at **38.282 seconds**. PostHog is exact, 100% strict, 0/2 contradictions, one incomplete replay, `sample-incomplete`, at **256.770 seconds**. Queue activation cleanup did not remove the measured performance regression.
 - Promise reaction registration remains unguarded, including pending subscriptions and conditional settlement. `PromiseTools.queueMicrotask` does not use the new direct-call wrapper. Captured lexical-scope ownership and cancellation through branched handles remain open.
+
+### Timer callback arguments checkpoint
+
+- Bippy's independent application capture exposed dropped callback arguments in `setTimeout` and `setInterval`. `/tmp/bippy-timer-callback-arguments-before.log` records a runtime text mismatch even though the internal replay sample passed. This is a direct example of a shared interpreter error that replay cannot detect.
+- Scheduled callbacks and interval ticks now receive the arguments after the delay. The fixture also checks that bound callback arguments precede timer-supplied arguments. Focused capture comparison and replay pass; parser typecheck, lint, formatting, and diff checks pass.
+- The full root suite passes **2,832 tests**, with two existing skips, including **786 parser tests / 44 files**. Root typecheck/build, realm checks, lint, formatting and diff checks pass. Logs: `/tmp/bippy-timer-callback-arguments-root-{tests,typecheck}.log`, `/tmp/bippy-timer-callback-arguments-{build,realms}.log`.
+- The completed serial capture check retains exact membership, 100% strict coverage, and zero replay contradictions for both apps. Sentry is `sample-passed`; PostHog retains one incomplete replay and is `sample-incomplete`. Results: `/tmp/bippy-parser-corpus/timer-callback-arguments-results.json`; log: `/tmp/bippy-parser-corpus-timer-callback-arguments.log`.
+- Timings remain a concern: Sentry took 35.091 seconds; PostHog took 988.848 seconds in this run. Diagnostic counts and reported state counts remain unchanged. The cause of this larger time has not been established, so do not attribute it to callback arguments or system load without a controlled comparison.
+- `setImmediate` argument offsets and animation/idle callback host arguments remain outside this repair.
+
+### Additional pending-worker review
+
+- `c0d5d649` adds finite-number checks to comparison guard derivation. The current interpreter already has equivalent checks, so no source integration is necessary. Its fixture is not currently present; no new corpus repair follows from this review.
+- `c8009af7` removes the implicit `CI=1` override from dev servers while keeping installs noninteractive. This change is not in the current checkout. It needs a deterministic child-environment regression before integration. Existing saved captures remain old-environment evidence; any changed live capture must retain its new provenance.
+- These are individual changes from the pending tips, not reviews or merges of either complete worker branch.
 
 ## 20. Complete checked-in corpus ledger
 
