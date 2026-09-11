@@ -1,7 +1,37 @@
-import type { ClockReading, ClockTask, StaticValue } from "../types.js";
+import type {
+  ClockReading,
+  ClockTask,
+  JournaledState,
+  SourceLocation,
+  StaticValue,
+} from "../types.js";
 import { recordInputSource } from "./predicates.js";
 import { rangedNumberValue } from "./primitive-shapes.js";
-import { primitiveValue } from "./values.js";
+import { branchValue, FALSE_VALUE, getTruthiness, primitiveValue, TRUE_VALUE } from "./values.js";
+
+class TimerCancellation implements JournaledState<StaticValue> {
+  readonly allocation = 0;
+
+  constructor(public value: StaticValue = FALSE_VALUE) {}
+
+  capture(): StaticValue {
+    return this.value;
+  }
+
+  restore(value: StaticValue): void {
+    this.value = value;
+  }
+
+  join(
+    values: StaticValue[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+    predicate?: string | null,
+  ): void {
+    this.value = branchValue(values, reason, location, preferredPath, predicate);
+  }
+}
 
 /** The quiet window (no React commit) after which the runtime snapshot is taken. */
 export const DEFAULT_SETTLE_MS = 1_500;
@@ -35,7 +65,7 @@ export const MAX_TIMER_TASKS = 512;
 export class TimerQueue {
   private tasks: (() => void)[] = [];
   private microtasks: (() => void)[] = [];
-  private readonly clearedHandles = new WeakSet<StaticValue>();
+  private readonly cancellations = new WeakMap<StaticValue, TimerCancellation>();
   private clockSequence = 0;
   private clockTask: ClockTask = { scheduledBy: null, delayMs: 0 };
   private deferredDepth = 0;
@@ -46,6 +76,7 @@ export class TimerQueue {
   constructor(
     private readonly settleMs = DEFAULT_SETTLE_MS,
     private readonly timerUnderrunMs = 0,
+    private readonly recordMutation: (state: JournaledState<StaticValue>) => void = () => {},
   ) {}
 
   /** The delay of a timer that has fired by the captured commit, in ms; null for longer or dynamic delays. */
@@ -74,13 +105,21 @@ export class TimerQueue {
   }
 
   createHandle(name: string): StaticValue {
-    return rangedNumberValue(`${name} handle`, { min: 1, max: Number.POSITIVE_INFINITY });
+    const handle = rangedNumberValue(`${name} handle`, {
+      min: 1,
+      max: Number.POSITIVE_INFINITY,
+    });
+    const cancellation = new TimerCancellation(TRUE_VALUE);
+    this.cancellations.set(handle, cancellation);
+    this.recordMutation(cancellation);
+    cancellation.value = FALSE_VALUE;
+    return handle;
   }
 
   schedule(handle: StaticValue, task: () => void, delayMs = 0): void {
     const scheduledBy = this.clockTask;
     this.enqueue(() => {
-      if (this.clearedHandles.has(handle)) return;
+      if (this.isCleared(handle)) return;
       this.clockTask = { scheduledBy, delayMs };
       task();
     });
@@ -92,11 +131,23 @@ export class TimerQueue {
   }
 
   clear(handle: StaticValue | undefined): void {
-    if (handle) this.clearedHandles.add(handle);
+    if (!handle) return;
+    let cancellation = this.cancellations.get(handle);
+    if (!cancellation) {
+      cancellation = new TimerCancellation();
+      this.cancellations.set(handle, cancellation);
+    }
+    if (getTruthiness(cancellation.value) === true) return;
+    this.recordMutation(cancellation);
+    cancellation.value = TRUE_VALUE;
+  }
+
+  getCancellation(handle: StaticValue): StaticValue {
+    return this.cancellations.get(handle)?.value ?? FALSE_VALUE;
   }
 
   isCleared(handle: StaticValue): boolean {
-    return this.clearedHandles.has(handle);
+    return getTruthiness(this.getCancellation(handle)) === true;
   }
 
   queueMicrotask(task: () => void): void {

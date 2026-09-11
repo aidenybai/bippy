@@ -6,10 +6,12 @@ import { areGuardsSatisfiable } from "../src/harness/guard-solver.js";
 import { joinDecisionAssignments } from "../src/harness/state-replay.js";
 import { enumerateStateSpace, matchStateSpace } from "../src/harness/state-space.js";
 import {
+  andGuard,
   constantGuard,
   negateGuard,
   orGuard,
   truthyGuard,
+  type Guard,
   type GuardContext,
 } from "../src/harness/symbolic-tree.js";
 import { CommitCauses } from "../src/materialize/commit-causes.js";
@@ -175,6 +177,65 @@ describe("commit causes", () => {
     causes.beginRender(firstCause);
     causes.beginRender({ guard: secondGuard, inputs: [secondInput] });
     expect(causes.commit().guard).toEqual(orGuard([firstGuard, secondGuard]));
+  });
+
+  it("checks task constraints when a captured task runs", () => {
+    let constraint: Guard = constantGuard(true);
+    const causes = new CommitCauses(
+      (_cause, run) => run(),
+      (guard) => areGuardsSatisfiable([constraint, guard]),
+    );
+    let calls = 0;
+    const task = causes.run(firstCause, () =>
+      causes.bindTask(() => {
+        calls++;
+      }),
+    );
+    constraint = negateGuard(firstGuard);
+    task();
+    expect(calls).toBe(0);
+    constraint = firstGuard;
+    task();
+    expect(calls).toBe(1);
+  });
+
+  it("does not execute tasks whose captured causes are impossible", () => {
+    const causes = new CommitCauses();
+    causes.beginRender();
+    let calls = 0;
+    const task = causes.run({ guard: constantGuard(false), inputs: [] }, () =>
+      causes.bindTask(() => {
+        calls++;
+      }),
+    );
+    causes.commit();
+    task();
+    expect(calls).toBe(0);
+    causes.run(firstCause, () =>
+      causes.runTask({ guard: negateGuard(firstGuard), inputs: [firstInput] }, () => {
+        calls++;
+      }),
+    );
+    expect(calls).toBe(0);
+  });
+
+  it("conjoins task conditions with their captured cause, not a later commit", () => {
+    const causes = new CommitCauses();
+    causes.beginRender();
+    const task = causes.run(firstCause, () =>
+      causes.bindTask(() =>
+        causes.runTask({ guard: negateGuard(secondGuard), inputs: [secondInput] }, () =>
+          causes.schedule(),
+        ),
+      ),
+    );
+    causes.commit();
+    causes.run({ guard: secondGuard, inputs: [secondInput] }, () => causes.schedule());
+    causes.beginRender();
+    causes.commit();
+    task();
+    causes.beginRender();
+    expect(causes.commit().guard).toEqual(andGuard([firstGuard, negateGuard(secondGuard)]));
   });
 
   it("does not attribute a delayed task to an unrelated intervening commit", () => {
