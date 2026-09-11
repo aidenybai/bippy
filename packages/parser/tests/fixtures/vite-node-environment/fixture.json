@@ -1,0 +1,4 @@
+{
+  "skipRuntime": true,
+  "notes": "Dedicated tests control the Node environment before native configuration loading and check the installed Vite loader against independent CLI captures."
+}
