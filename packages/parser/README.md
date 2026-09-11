@@ -14,6 +14,8 @@ component internals — is kept as explicit uncertainty: marker components (`$Br
 rather than being guessed. Exactness against runtime is only expected where the source fully
 determines the tree.
 
+Read [How the parser builds and checks React trees](../../docs/parser-architecture.md) for the architecture and current limits.
+
 ## Run
 
 ```sh
