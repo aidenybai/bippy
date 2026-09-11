@@ -109,6 +109,8 @@ import type {
   CapturedPageState,
   CapturedValue,
   JsonValue,
+  CompilerDefine,
+  ViteClientEnvironment,
   ModuleRecord,
   LibraryRun,
   ProjectContext,
@@ -180,6 +182,7 @@ import {
   isBundlerUndeclaredName,
   isWebpackBundled,
   getInlinedNodeEnv,
+  NODE_ENV_DEFINES,
   isEnvironmentObject,
   isUnsettableDefineName,
   isWebpackRequireName,
@@ -384,6 +387,7 @@ import {
 import { areGuardsSatisfiable } from "../harness/guard-solver.js";
 
 export interface InterpreterOptions {
+  viteEnvironment?: ViteClientEnvironment;
   maxCallDepth?: number;
   maxForkDepth?: number;
   maxSteps?: number;
@@ -918,6 +922,9 @@ export class Interpreter {
   private readonly globalExpandos = new Map<string, StaticValue>();
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
+  private readonly viteEnvironment: ViteClientEnvironment | undefined;
+  private readonly userDefines: Record<string, JsonValue>;
+  private readonly clientEnvironments = new WeakMap<ModuleRecord, StaticValue>();
   private readonly pageState: CapturedPageState | null;
   private readonly processEnvironment: ProcessEnvironment | null;
   private readonly clientRealm: HostRealm;
@@ -979,7 +986,13 @@ export class Interpreter {
     for (const [name, captured] of Object.entries(options.capturedGlobals ?? {})) {
       this.windowGlobals.set(name, this.captured(captured, `window.${name}`));
     }
-    const defines = options.defines ?? {};
+    this.viteEnvironment = options.viteEnvironment;
+    this.userDefines = options.defines ?? {};
+    if (this.viteEnvironment) {
+      for (const name of NODE_ENV_DEFINES)
+        this.defines.set(name, primitiveValue(this.viteEnvironment.nodeEnvironment));
+    }
+    const defines = this.userDefines;
     for (const [name, json] of Object.entries(defines)) {
       if (isEnvironmentObject(name) && isJsonRecord(json)) {
         this.definedEnvironmentObjects.add(name);
@@ -1327,6 +1340,7 @@ export class Interpreter {
     const instanceEnvironment = this.getModuleInstanceEnvironment(module, environment);
     this.initializeDependencies(module, instanceEnvironment);
     const context = this.createModuleContext(module, undefined, instanceEnvironment);
+    this.getViteEnvironment(context);
     for (const name of getHoistedVarNames(sideEffectStatements)) {
       if (!module.bindings.has(name) && !context.scope.bindings.has(name)) {
         declareInScope(context.scope, name, UNDEFINED_VALUE);
@@ -1990,6 +2004,45 @@ export class Interpreter {
     return this.getRealm(context.environment).platform === SERVER_HOST_PLATFORM
       ? getModulePathName(name, context.module.filePath)
       : null;
+  }
+
+  private getCompilerDefineValue(name: string, definition: CompilerDefine): StaticValue {
+    if (definition.expression !== undefined) return unknownValue(`Vite define ${name}`);
+    return definition.value === undefined ? UNDEFINED_VALUE : jsonValue(definition.value);
+  }
+
+  private getViteEnvironment(context: EvaluationContext): StaticValue | null {
+    const environment = this.viteEnvironment;
+    if (!environment || context.environment === "server") return null;
+    const cached = this.clientEnvironments.get(context.module);
+    if (cached) return cached;
+    const userEnvironment = this.userDefines["import.meta.env"];
+    let value: StaticValue;
+    if (userEnvironment !== undefined && !isJsonRecord(userEnvironment))
+      value = jsonValue(userEnvironment);
+    else {
+      const entries = Object.fromEntries(
+        Object.entries(userEnvironment ?? environment.values).map(([name, entry]) => [
+          name,
+          userEnvironment !== undefined && entry === null ? UNDEFINED_VALUE : jsonValue(entry),
+        ]),
+      );
+      if (userEnvironment === undefined) {
+        for (const [name, definition] of Object.entries(environment.defines)) {
+          if (name.startsWith("import.meta.env."))
+            entries[name.slice(16)] = this.getCompilerDefineValue(name, definition);
+        }
+      }
+      for (const [name, entry] of Object.entries(this.userDefines)) {
+        if (name.startsWith("import.meta.env."))
+          entries[name.slice(16)] = entry === null ? UNDEFINED_VALUE : jsonValue(entry);
+      }
+      const names = Object.keys(entries);
+      if (userEnvironment === undefined) names.sort();
+      value = objectFromRecord(Object.fromEntries(names.map((name) => [name, entries[name]])));
+    }
+    this.clientEnvironments.set(context.module, value);
+    return value;
   }
 
   private getGlobal(name: string, renderEnvironment: RenderEnvironment | null): StaticValue | null {
@@ -3556,6 +3609,10 @@ export class Interpreter {
       case "namespace":
         return this.getNamespaceMember(object.module, key, context.environment);
       case "global": {
+        if (object.name === "import.meta" && key === "env") {
+          const environment = this.getViteEnvironment(context);
+          if (environment) return environment;
+        }
         const storageAreaName = getStorageAreaName(object.name);
         if (storageAreaName !== null) {
           return key === "length"

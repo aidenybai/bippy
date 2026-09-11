@@ -12,7 +12,7 @@ import type {
   Statement,
   VariableDeclaration,
 } from "oxc-parser";
-import { decideInlinedNodeEnvTest } from "../evaluate/bundler-globals.js";
+import { decideInlinedNodeEnvTest, DEV_SERVER_MODE } from "../evaluate/bundler-globals.js";
 import {
   getTypeScriptDeclarationName,
   type TypeScriptDeclaration,
@@ -229,18 +229,21 @@ const DECLARATION_STATEMENT_TYPES = new Set<Statement["type"]>([
   "EmptyStatement",
 ]);
 
-const CALL_LIKE_EXPRESSION_TYPES = new Set<Expression["type"]>(["CallExpression", "NewExpression"]);
+const ORDERED_INITIALIZER_TYPES = new Set<Expression["type"]>([
+  "CallExpression",
+  "NewExpression",
+  "MemberExpression",
+]);
 
-/** `const [Provider, useX] = createContext()` runs when the module does: the call may mutate state its siblings close over. */
-const isCallInitializedDeclaration = (statement: Statement): boolean =>
+const isOrderedDeclaration = (statement: Statement): boolean =>
   getVariableDeclaration(statement)?.declarations.some(
     (declarator) =>
       declarator.init !== null &&
-      CALL_LIKE_EXPRESSION_TYPES.has(unwrapExpression(declarator.init).type),
+      ORDERED_INITIALIZER_TYPES.has(unwrapExpression(declarator.init).type),
   ) === true;
 
 const isSideEffectStatement = (statement: Statement): boolean =>
-  isCallInitializedDeclaration(statement) ||
+  isOrderedDeclaration(statement) ||
   (!DECLARATION_STATEMENT_TYPES.has(statement.type) && !isCommonJsExportStatement(statement));
 
 const isOutParameterCall = (
@@ -595,9 +598,12 @@ const getReturningFactoryBody = (
  * the mode: React's development builds wrap their body in
  * `if (…) { (function () { … })(); }` or `"production" !== … && (function () { … })()`.
  */
-const getInlinedNodeEnvBranch = (statement: Statement): Statement[] | null => {
+const getInlinedNodeEnvBranch = (
+  statement: Statement,
+  nodeEnvironment: string,
+): Statement[] | null => {
   if (statement.type === "IfStatement") {
-    const isTaken = decideInlinedNodeEnvTest(statement.test);
+    const isTaken = decideInlinedNodeEnvTest(statement.test, nodeEnvironment);
     if (isTaken === null) return null;
     if (isTaken) return getBranchBody(statement.consequent);
     return statement.alternate ? getBranchBody(statement.alternate) : [];
@@ -605,7 +611,7 @@ const getInlinedNodeEnvBranch = (statement: Statement): Statement[] | null => {
   if (statement.type !== "ExpressionStatement") return null;
   const expression = unwrapParentheses(statement.expression);
   if (expression.type !== "LogicalExpression" || expression.operator === "??") return null;
-  const isTaken = decideInlinedNodeEnvTest(expression.left);
+  const isTaken = decideInlinedNodeEnvTest(expression.left, nodeEnvironment);
   if (isTaken === null) return null;
   if (isTaken !== (expression.operator === "&&")) return [];
   return getIifeBody(getCallExpression(expression.right));
@@ -616,14 +622,17 @@ const getModuleStatements = (
   statements: Statement[],
   factoryArguments: Map<string, Expression>,
   factoryReturns: Set<Statement>,
+  nodeEnvironment: string,
 ): Statement[] =>
   statements.flatMap((statement) => {
     const body =
       getModuleWrapperBody(statement) ??
-      getInlinedNodeEnvBranch(statement) ??
+      getInlinedNodeEnvBranch(statement, nodeEnvironment) ??
       getUmdFactoryBody(statement, factoryArguments, factoryReturns) ??
       getReturningFactoryBody(statement, factoryReturns);
-    return body ? getModuleStatements(body, factoryArguments, factoryReturns) : [statement];
+    return body
+      ? getModuleStatements(body, factoryArguments, factoryReturns, nodeEnvironment)
+      : [statement];
   });
 
 /** Return expression of a `get() { return x; }` accessor or `() => x`. */
@@ -994,7 +1003,10 @@ export const isClientModule = (module: ModuleRecord): boolean =>
 export const hasExportedName = (module: ModuleRecord, exportedName: string): boolean =>
   module.exports.some((entry) => "exportedName" in entry && entry.exportedName === exportedName);
 
-export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
+export const createModuleRecord = (
+  file: ParsedSourceFile,
+  nodeEnvironment = DEV_SERVER_MODE,
+): ModuleRecord => {
   const imports: ImportBinding[] = [];
   const exports: ExportEntry[] = [];
   const bindings = new Map<string, TopLevelBinding>();
@@ -1003,7 +1015,12 @@ export const createModuleRecord = (file: ParsedSourceFile): ModuleRecord => {
   const directives: string[] = [];
   const factoryArguments = new Map<string, Expression>();
   const factoryReturns = new Set<Statement>();
-  const statements = getModuleStatements(file.program.body, factoryArguments, factoryReturns);
+  const statements = getModuleStatements(
+    file.program.body,
+    factoryArguments,
+    factoryReturns,
+    nodeEnvironment,
+  );
   for (const [name, argument] of factoryArguments) {
     bindings.set(name, {
       kind: "variable",

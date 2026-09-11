@@ -81,13 +81,21 @@ Build configuration can read variables that a client bundle does not expose. The
 
 The [environment reader](../packages/parser/src/corpus/process-environment.ts) retains declared variables without requiring a dotenv file list. Without that list, it marks the environment as partial and preserves uncertainty about unlisted variables. Client exposure also remains unknown when neither the manifest nor a recognized tool establishes a prefix. Node configuration can read declared private variables regardless of the client prefix.
 
-The [Vite plugin loader](../packages/parser/src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
+The [Vite configuration loader](../packages/parser/src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
 
 Vite reads `NODE_ENV` before loading configuration modules. The parser supplies the development default when this variable is absent or empty. It removes an unchanged temporary default before resolution, preserving Vite’s original presence check for dotenv handling. The parser does not replace explicit inherited values.
 
-These rules do not establish complete build-environment parity. Custom client prefixes require a manifest declaration. Remaining parity checks include:
+Native Vite resolution also establishes the client environment, even when no user plugins remain. The interpreter reads exposed dotenv values and custom prefix arrays from that resolved environment. It uses Vite’s resolved `DEV` and `PROD` flags rather than assuming a development build.
 
-- Environment changes from shell scripts or undeclared dotenv files
+The interpreter creates a mutable `import.meta.env` object for each client module and each analysis run. It allocates the object during module initialization, so conditional writes use the existing heap journal. Its initial properties follow Vite’s sorted serialization order. Literal define values override resolved fields, while unevaluated define expressions remain unknown.
+
+The [module recorder](../packages/parser/src/graph/module-record.ts) uses the same `NODE_ENV` string as the interpreter. Otherwise, CommonJS exports could select development code while expressions select production code. The native adapter rejects non-string or unevaluated `NODE_ENV` replacements because they cannot select these branches safely.
+
+These rules do not establish complete build-environment parity. Remaining parity checks include:
+
+- Vite projects without a discovered configuration file
+- Server-side Vite environments and compiler-defined globals outside client environment fields
+- Environment changes from shell scripts and build tools outside native Vite resolution
 - Build tools that read the native system environment instead of `process.env`
 - Cached configuration with environment-dependent side effects
 - Configuration branches that depend on unlisted variables
@@ -101,6 +109,8 @@ The [source parser](../packages/parser/src/parse/parse-source-file.ts) uses `oxc
 The [module graph](../packages/parser/src/graph/module-graph.ts) records declarations and module dependencies. Its resolver uses `oxc-resolver` with package conditions and project paths to locate dependencies. The graph follows exports across modules and reports missing or ambiguous exports.
 
 Resolving an export identifies its declaration. The interpreter evaluates that declaration when analysis needs its value. This separates the reusable source representation from values that can change during a render.
+
+During module initialization, property-read initializers run in statement order. Deferring those reads could capture a later mutation instead of the initial value.
 
 A dependency can remain external to source analysis. The interpreter can use an external-value model or preserve uncertainty about the dependency. Options control which external packages the parser analyzes from source.
 

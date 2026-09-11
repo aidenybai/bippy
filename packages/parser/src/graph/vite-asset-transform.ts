@@ -2,8 +2,8 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { ResolverFactory } from "oxc-resolver";
 import { z } from "zod";
-import { parseWithSchema } from "../errors.js";
-import type { SourceTransform } from "../types.js";
+import { ParserError, parseWithSchema } from "../errors.js";
+import type { CompilerDefine, SourceTransform, ViteClientEnvironment } from "../types.js";
 import { isAssetImport } from "./asset-module.js";
 import { isCssModulePath, isStylesheetPath } from "./css-module.js";
 import type { ViteConfigLocation } from "./vite-config.js";
@@ -47,17 +47,50 @@ const viteModuleSchema = z.object({
 const loadedConfigSchema = z
   .object({ config: z.object({ plugins: z.unknown().optional() }).passthrough() })
   .nullable();
-const resolvedConfigSchema = z.object({ plugins: z.array(z.unknown()) }).passthrough();
+const resolvedConfigSchema = z
+  .object({
+    plugins: z.array(z.unknown()),
+    env: z.record(z.string(), z.json()),
+    define: z.record(z.string(), z.unknown()).default({}),
+    mode: z.string(),
+  })
+  .passthrough();
 const namedPluginSchema = z.object({ name: z.string() });
 
 type ViteResolvedConfig = z.infer<typeof resolvedConfigSchema>;
 
-/** The plugins an app's own Vite config file contributes, resolved as `vite dev` resolves them. */
-interface ViteUserPlugins {
+interface ViteConfiguration {
   readonly rootDirectory: string;
   readonly config: ViteResolvedConfig;
   readonly plugins: VitePlugin[];
+  readonly environment: ViteClientEnvironment;
 }
+
+const getCompilerDefine = (value: unknown): CompilerDefine => {
+  if (value === undefined || value === "undefined") return { value: undefined };
+  if (typeof value !== "string") return { value: parseWithSchema(z.json(), value, "Vite define") };
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return { value: parseWithSchema(z.json(), parsed, "Vite define") };
+  } catch {
+    return { value: undefined, expression: value };
+  }
+};
+
+const getClientEnvironment = (config: ViteResolvedConfig): ViteClientEnvironment => {
+  const defines = Object.fromEntries(
+    Object.entries(config.define)
+      .filter(([name]) => name.startsWith("import.meta.env.") || name === "process.env.NODE_ENV")
+      .map(([name, value]) => [name, getCompilerDefine(value)]),
+  );
+  const nodeDefine = defines["process.env.NODE_ENV"];
+  if (nodeDefine && (nodeDefine.expression !== undefined || typeof nodeDefine.value !== "string")) {
+    throw new ParserError("Vite process.env.NODE_ENV requires a known string define");
+  }
+  const nodeEnvironment =
+    typeof nodeDefine?.value === "string" ? nodeDefine.value : process.env.NODE_ENV || config.mode;
+  return { values: { ...config.env, SSR: false }, defines, nodeEnvironment };
+};
 
 /** Vite's `PluginOption` tree: plugins, promises of them and nested arrays, with falsy entries skipped. */
 const flattenPlugins = async (option: unknown, into: Set<unknown>): Promise<void> => {
@@ -85,10 +118,10 @@ const isViteNativeExtension = (extension: string): boolean =>
  * assets itself, so Vite's built-in plugins must not run on them again, and
  * neither do the plugins a framework model stands in for.
  */
-export const loadViteUserPlugins = async (
+export const loadViteConfiguration = async (
   { configPath, cwd: rootDirectory, cliMode }: ViteConfigLocation,
   modeledPlugins: readonly string[] = [],
-): Promise<ViteUserPlugins | null> => {
+): Promise<ViteConfiguration | null> => {
   const resolver = new ResolverFactory({ conditionNames: ["node", "import", "default"] });
   const viteEntry = resolver.sync(rootDirectory, VITE_PACKAGE).path;
   if (viteEntry === undefined) return null;
@@ -137,7 +170,7 @@ export const loadViteUserPlugins = async (
       const plugins = config.plugins
         .filter((plugin) => userPlugins.has(plugin))
         .map((plugin) => parseWithSchema(vitePluginSchema, plugin, `vite config ${configPath}`));
-      return plugins.length === 0 ? null : { rootDirectory, config, plugins };
+      return { rootDirectory, config, plugins, environment: getClientEnvironment(config) };
     }),
   );
 };
@@ -149,7 +182,7 @@ export const loadViteUserPlugins = async (
 export const createViteAssetTransform = ({
   rootDirectory,
   plugins,
-}: ViteUserPlugins): SourceTransform => ({
+}: ViteConfiguration): SourceTransform => ({
   appliesTo: (extension, lang) => lang === null && !isViteNativeExtension(extension),
   transform: (filePath, sourceText, query) =>
     applyTransformHooks(plugins, rootDirectory, filePath, sourceText, query, "js"),
@@ -161,7 +194,7 @@ export const createViteAssetTransform = ({
  * fill in `<base>`, titles and injected scripts before the browser parses the page.
  */
 export const transformViteDocumentShell = (
-  { rootDirectory, config, plugins }: ViteUserPlugins,
+  { rootDirectory, config, plugins }: ViteConfiguration,
   html: string,
   servedDirectory: string,
   route: string,
