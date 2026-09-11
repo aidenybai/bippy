@@ -131,6 +131,8 @@ Conditional reads require the same guards as writes. The interpreter narrows a v
 
 Two equal-looking objects need not be the same object. Two references to the same function must retain that identity. The [value implementation](../packages/parser/src/evaluate/values.ts) therefore records allocation identity separately from symbolic conditions.
 
+Timer handles retain resource identity even when their numeric ranges match. The queue uses that identity for cancellation after the interpreter copies a value.
+
 Component identity has the same requirement. Creating a wrapper component twice can create two component types, even when both wrappers use the same source body. The materializer uses source closure identity rather than component names alone to identify component proxies.
 
 ## Rendering with React
@@ -192,7 +194,7 @@ Effects and ref callbacks use conditional mutation evaluation, so their writes r
 
 A deferred callback can run after an unrelated commit. Using conditions from that commit would associate the callback with the wrong inputs. Modeled tasks instead retain the conditions that applied when analysis scheduled them.
 
-The [timer queue](../packages/parser/src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never schedule them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions.
+The [timer queue](../packages/parser/src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never schedule them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions. Cancellation through a conditional handle uses the selection condition for each handle.
 
 Direct `queueMicrotask` calls use the same activation checks without exposing a cancellation handle to application code. The queue records activation when it enqueues work, not when the interpreter allocates a handle. Promise reaction registration still requires a separate audit.
 

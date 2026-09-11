@@ -1290,8 +1290,9 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
   if (left.kind !== right.kind) return false;
   if (depth >= MAX_EQUIVALENCE_DEPTH) return false;
   switch (left.kind) {
-    case "unknown":
     case "unknown-primitive":
+      return right.kind === "unknown-primitive" && left.identity === right.identity;
+    case "unknown":
     case "global":
       return true;
     case "object": {
@@ -1456,6 +1457,7 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
     left.kind === "unknown-primitive" &&
     right.kind === "unknown-primitive" &&
     left.primitiveType === right.primitiveType &&
+    left.identity === right.identity &&
     haveSameShape(left, right)
   );
 };
