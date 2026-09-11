@@ -202,7 +202,9 @@ Direct `queueMicrotask` calls use the same activation checks without exposing a 
 
 Task callbacks also journal their writes under the full execution condition. This matters when a conditional component schedules a callback that later changes a shared store. Checking that the callback can run is not enough to restrict its writes.
 
-Promise support remains incomplete. Adoption of pending promises, `finally` ordering, thenable behavior, and render-local suspension still require verification.
+A promise that adopts another promise enters a following state. Later resolver calls cannot replace that state. Adoption jobs and `finally` continuations run through the microtask queue. Self-resolution rejects with a `TypeError`.
+
+Promise support remains incomplete. Thenable behavior, custom promise constructors, escaped or widened outcomes, and render-local suspension still require verification.
 
 [Mounting](../packages/parser/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. Reaching the settlement limit does not prove that the application has no further updates.
 

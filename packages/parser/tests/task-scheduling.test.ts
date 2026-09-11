@@ -28,23 +28,24 @@ describe("conditional task scheduling", () => {
     expect(stateSpace.omitted).toBeNull();
   });
 
-  it("completes Promise.all independently on each settlement path", async () => {
-    const renderer = await createComponentRenderer();
-    const rendered = await renderer.renderComponent(
-      join(COMPONENTS_DIRECTORY, "effect-cause-promise-all.tsx"),
-    );
-    const stateSpace = enumerateStaticStates(rendered);
-    const states = stateSpace.states.map((state) => getHostNames(state.tree));
-    expect(states).toEqual(
-      expect.arrayContaining([
-        ["main", "canvas", "strong"],
-        ["main", "aside", "footer"],
-      ]),
-    );
-    expect(states).toHaveLength(4);
-    expect(states.some((names) => names.includes("header"))).toBe(false);
-    expect(stateSpace.omitted).toBeNull();
-  });
+  it.each(["effect-cause-promise-all.tsx", "effect-cause-promise-adoption.tsx"])(
+    "preserves completion values on each settlement path in %s",
+    async (fixture) => {
+      const renderer = await createComponentRenderer();
+      const rendered = await renderer.renderComponent(join(COMPONENTS_DIRECTORY, fixture));
+      const stateSpace = enumerateStaticStates(rendered);
+      const states = stateSpace.states.map((state) => getHostNames(state.tree));
+      expect(states).toEqual(
+        expect.arrayContaining([
+          ["main", "canvas", "strong"],
+          ["main", "aside", "footer"],
+        ]),
+      );
+      expect(states).toHaveLength(4);
+      expect(states.some((names) => names.includes("header"))).toBe(false);
+      expect(stateSpace.omitted).toBeNull();
+    },
+  );
 
   it("cancels the selected handle without allowing both timers to fire", async () => {
     const renderer = await createComponentRenderer();
