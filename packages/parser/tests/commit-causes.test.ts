@@ -179,6 +179,28 @@ describe("commit causes", () => {
     expect(causes.commit().guard).toEqual(orGuard([firstGuard, secondGuard]));
   });
 
+  it("conjoins continuation registration and execution causes", () => {
+    const causes = new CommitCauses();
+    const observed: GuardContext[] = [];
+    const values: string[] = [];
+    const continuation = causes.run(firstCause, () =>
+      causes.bindContinuation((value: string) => {
+        observed.push(causes.getCause());
+        values.push(value);
+      }),
+    );
+    causes.runTask({ guard: secondGuard, inputs: [secondInput] }, () => continuation("ready"));
+    expect(observed).toHaveLength(1);
+    expect(observed[0].inputs).toEqual(expect.arrayContaining([firstInput, secondInput]));
+    const expectedGuard = andGuard([firstGuard, secondGuard]);
+    expect(areGuardsSatisfiable([observed[0].guard, negateGuard(expectedGuard)])).toBe(false);
+    expect(areGuardsSatisfiable([expectedGuard, negateGuard(observed[0].guard)])).toBe(false);
+    causes.runTask({ guard: negateGuard(firstGuard), inputs: [firstInput] }, () =>
+      continuation("impossible"),
+    );
+    expect(values).toEqual(["ready"]);
+  });
+
   it("checks task constraints when a captured task runs", () => {
     let constraint: Guard = constantGuard(true);
     const causes = new CommitCauses(

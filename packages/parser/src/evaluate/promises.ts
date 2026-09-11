@@ -1,52 +1,95 @@
 import type {
   SourceLocation,
+  JournaledState,
   StaticObjectValue,
   StaticUnknownValue,
   StaticValue,
   StubRenderTools,
 } from "../types.js";
-import { listValue, objectValue, thrownValue, UNDEFINED_VALUE, unknownValue } from "./values.js";
+import { getAlternativeGuards } from "./predicates.js";
+import {
+  branchValue,
+  listValue,
+  mapValue,
+  objectValue,
+  thrownValue,
+  UNDEFINED_VALUE,
+  unknownValue,
+} from "./values.js";
 
-export type PromiseTools = Pick<
+export interface PromiseTools extends Pick<
   StubRenderTools,
-  "call" | "callDeferred" | "markEscaped" | "queueMicrotask"
->;
+  | "call"
+  | "callDeferred"
+  | "markEscaped"
+  | "queueMicrotask"
+  | "bindTask"
+  | "runTask"
+  | "recordStateMutation"
+> {}
 
 export interface PromiseReaction {
   run: (outcome: StaticValue, tools: PromiseTools) => void;
   escape: (tools: PromiseTools) => void;
 }
 
-/**
- * A promise the analysis saw created. Its outcome is a value, a rejection being
- * a thrown value; `then`/`await` read through to it once settled. Reactions run
- * as microtasks once the promise settles, or wait until `resolve`/`reject`
- * runs, and once either flows into code the analysis does not follow the
- * promise may settle at any time.
- */
-export interface ModeledPromise {
-  value: StaticObjectValue;
-  settled: StaticValue | null;
-  isEscaped: boolean;
-  reactions: PromiseReaction[];
+const PENDING_STATE: StaticObjectValue = { kind: "object", entries: [] };
+const ESCAPED_STATE: StaticObjectValue = { kind: "object", entries: [] };
+const outcomesByState = new WeakMap<StaticValue, StaticValue>();
+const promisesByValue = new WeakMap<StaticObjectValue, ModeledPromise>();
+
+const getSettledValue = (state: StaticValue): StaticValue | null => {
+  if (state.kind !== "branch") return outcomesByState.get(state) ?? null;
+  if (state.alternatives.some((alternative) => getSettledValue(alternative) === null)) return null;
+  return mapValue(state, (alternative) => getSettledValue(alternative) ?? UNDEFINED_VALUE);
+};
+
+const createSettledState = (outcome: StaticValue): StaticValue => {
+  const state = objectValue();
+  outcomesByState.set(state, outcome);
+  return state;
+};
+
+export class ModeledPromise implements JournaledState<StaticValue> {
+  readonly allocation = 0;
+  readonly value = objectValue();
+  readonly reactions: PromiseReaction[] = [];
+  state: StaticValue = PENDING_STATE;
+
+  get settled(): StaticValue | null {
+    return getSettledValue(this.state);
+  }
+
+  get isEscaped(): boolean {
+    return this.state === ESCAPED_STATE || this.state.kind === "unknown";
+  }
+
+  capture(): StaticValue {
+    return this.state;
+  }
+
+  restore(state: StaticValue): void {
+    this.state = state;
+  }
+
+  join(
+    states: StaticValue[],
+    reason: string,
+    location: SourceLocation | null,
+    preferredPath: number,
+    predicate?: string | null,
+  ): void {
+    this.state = branchValue(states, reason, location, preferredPath, predicate ?? null);
+  }
 }
 
-/** An async function activation; `result` is the promise it returned, created once its body suspends at an `await`. */
 export interface AsyncCall {
   result: ModeledPromise | null;
 }
 
-/**
- * The rest of an async body after an `await`, run with the awaited outcome once
- * the promise settles. `isEscaped` is set when it will settle outside the
- * analysis, so the outcome is unknown and the updates the rest makes are deferred.
- * Returns the body's eventual return value, or null when it suspended again.
- */
 interface AwaitResumption {
   (outcome: StaticValue, isEscaped: boolean): StaticValue | null;
 }
-
-const promisesByValue = new WeakMap<StaticObjectValue, ModeledPromise>();
 
 export const getModeledPromise = (value: StaticValue): ModeledPromise | null =>
   value.kind === "object" ? (promisesByValue.get(value) ?? null) : null;
@@ -57,30 +100,33 @@ export const isThrownOutcome = (
   value.kind === "unknown" && value.thrown !== undefined;
 
 const createPendingPromise = (): ModeledPromise => {
-  const promise: ModeledPromise = {
-    value: objectValue([]),
-    settled: null,
-    isEscaped: false,
-    reactions: [],
-  };
+  const promise = new ModeledPromise();
   promisesByValue.set(promise.value, promise);
   return promise;
 };
 
-/** `Promise.resolve(outcome)`, or an async function's return: a promise is returned as is. */
+const visitState = (
+  state: StaticValue,
+  tools: PromiseTools,
+  visit: (state: StaticValue) => void,
+): void => {
+  if (state.kind !== "branch") return visit(state);
+  const resolved = getAlternativeGuards(state);
+  if (!resolved) return visit(ESCAPED_STATE);
+  state.alternatives.forEach((alternative, index) => {
+    tools.runTask({ guard: resolved.guards[index], inputs: [...resolved.inputs] }, () =>
+      visitState(alternative, tools, visit),
+    );
+  });
+};
+
 export const resolvedPromiseValue = (outcome: StaticValue): StaticValue => {
   if (getModeledPromise(outcome)) return outcome;
   const promise = createPendingPromise();
-  promise.settled = outcome;
+  promise.state = createSettledState(outcome);
   return promise.value;
 };
 
-/**
- * `await value`: the outcome of a settled promise; unknown while it is pending.
- * The continuation of an `await` is itself a microtask, so a promise that only
- * awaits queued reactions (`await fetchThing().then(transform)`) settles once
- * the queue drains, which happens before the continuation would run.
- */
 export const awaitedValue = (
   value: StaticValue,
   location: SourceLocation | null,
@@ -89,29 +135,21 @@ export const awaitedValue = (
   const promise = getModeledPromise(value);
   if (!promise) return value;
   if (!promise.settled && !promise.isEscaped) drainMicrotasks();
-  return promise.settled ?? unknownValue("promise settled asynchronously", location);
+  return mapValue(
+    promise.state,
+    (state) =>
+      outcomesByState.get(state) ?? unknownValue("promise settled asynchronously", location),
+  );
 };
 
-/**
- * `await` of a value the analysis cannot see settle (an external promise, a
- * value it does not know): the continuation runs at an unknown time, so the
- * updates it makes are deferred. A promise the analysis saw settle, whatever
- * its outcome, resumes the continuation like any other.
- */
 export const isAwaitDeferred = (operand: StaticValue, awaited: StaticValue): boolean =>
   !getModeledPromise(operand)?.settled && isPossiblyUnsettled(awaited);
 
-/** A value the analysis cannot see settle: it may be a promise pending outside the analysis. */
 export const isPossiblyUnsettled = (value: StaticValue): boolean =>
   (value.kind === "unknown" && !isThrownOutcome(value)) ||
   value.kind === "external" ||
   (value.kind === "branch" && value.alternatives.some(isPossiblyUnsettled));
 
-/**
- * `await` on a promise that will not settle before the continuation would run:
- * pending, not escaped, even once the reactions queued so far have run (the
- * continuation is itself a microtask).
- */
 export const getPendingPromise = (
   value: StaticValue,
   drainMicrotasks: () => void,
@@ -122,37 +160,43 @@ export const getPendingPromise = (
   return promise.settled || promise.isEscaped ? null : promise;
 };
 
-/** Suspends the async `call` on the pending `promise`; the value `resume` returns settles the call's result. */
 export const suspendOnPromise = (
   call: AsyncCall,
   promise: ModeledPromise,
   resume: AwaitResumption,
   location: SourceLocation | null,
+  tools: PromiseTools,
 ): void => {
   const result = call.result ?? createPendingPromise();
   call.result = result;
-  promise.reactions.push({
-    run: (outcome, tools) => {
-      const returned = resume(outcome, false);
-      if (returned) settlePromise(result, returned, tools);
+  subscribe(
+    promise,
+    {
+      run: (outcome, runTools) => {
+        const returned = resume(outcome, false);
+        if (returned) settlePromise(result, returned, runTools);
+      },
+      escape: (escapeTools) => {
+        resume(unknownValue("promise settled outside the analysis", location), true);
+        escapePromise(result, escapeTools);
+      },
     },
-    escape: (tools) => {
-      resume(unknownValue("promise settled outside the analysis", location), true);
-      escapePromise(result, tools);
-    },
-  });
+    tools,
+  );
 };
 
 const escapePromise = (promise: ModeledPromise, tools: PromiseTools): void => {
-  if (promise.settled || promise.isEscaped) return;
-  promise.isEscaped = true;
-  for (const reaction of promise.reactions.splice(0)) reaction.escape(tools);
+  visitState(promise.state, tools, (state) => {
+    if (state !== PENDING_STATE) return;
+    tools.recordStateMutation(promise);
+    promise.state = ESCAPED_STATE;
+    for (const reaction of promise.reactions) reaction.escape(tools);
+  });
 };
 
-/** The result of an async function whose body awaited a promise the analysis cannot see settle: it settles at an unknown time too. */
 export const escapedPromiseValue = (): StaticValue => {
   const promise = createPendingPromise();
-  promise.isEscaped = true;
+  promise.state = ESCAPED_STATE;
   return promise.value;
 };
 
@@ -161,16 +205,19 @@ const settlePromise = (
   outcome: StaticValue,
   tools: PromiseTools,
 ): void => {
-  if (promise.settled || promise.isEscaped) return;
-  const adopted = getModeledPromise(outcome);
-  if (adopted) {
-    subscribe(adopted, forwardTo(promise), tools);
-    return;
-  }
-  promise.settled = outcome;
-  for (const reaction of promise.reactions.splice(0)) {
-    tools.queueMicrotask(() => reaction.run(outcome, tools));
-  }
+  visitState(promise.state, tools, (state) => {
+    if (state !== PENDING_STATE) return;
+    const adopted = getModeledPromise(outcome);
+    if (adopted) {
+      subscribe(adopted, forwardTo(promise), tools);
+      return;
+    }
+    tools.recordStateMutation(promise);
+    promise.state = createSettledState(outcome);
+    for (const reaction of promise.reactions) {
+      tools.queueMicrotask(() => reaction.run(outcome, tools));
+    }
+  });
 };
 
 const forwardTo = (target: ModeledPromise): PromiseReaction => ({
@@ -178,26 +225,41 @@ const forwardTo = (target: ModeledPromise): PromiseReaction => ({
   escape: (tools) => escapePromise(target, tools),
 });
 
-/** Runs `onSettled` once `promise` settles, or once it escapes, when it may settle at any time. */
 export const onPromiseSettled = (
   promise: ModeledPromise,
   onSettled: (isEscaped: boolean) => void,
-  queueMicrotask: PromiseTools["queueMicrotask"],
-): void => {
-  if (promise.settled) queueMicrotask(() => onSettled(false));
-  else if (promise.isEscaped) onSettled(true);
-  else promise.reactions.push({ run: () => onSettled(false), escape: () => onSettled(true) });
-};
+  tools: PromiseTools,
+): void =>
+  subscribe(
+    promise,
+    {
+      run: () => onSettled(false),
+      escape: () => onSettled(true),
+    },
+    tools,
+  );
 
 const subscribe = (
   promise: ModeledPromise,
   reaction: PromiseReaction,
   tools: PromiseTools,
 ): void => {
-  const settled = promise.settled;
-  if (settled) tools.queueMicrotask(() => reaction.run(settled, tools));
-  else if (promise.isEscaped) reaction.escape(tools);
-  else promise.reactions.push(reaction);
+  visitState(promise.state, tools, (state) => {
+    const run = tools.bindTask((outcome: StaticValue | null, runTools: PromiseTools) => {
+      if (outcome) reaction.run(outcome, runTools);
+      else reaction.escape(runTools);
+    });
+    const guardedReaction: PromiseReaction = {
+      run,
+      escape: (escapeTools) => run(null, escapeTools),
+    };
+    if (state === PENDING_STATE) promise.reactions.push(guardedReaction);
+    else {
+      const outcome = outcomesByState.get(state);
+      if (outcome) tools.queueMicrotask(() => guardedReaction.run(outcome, tools));
+      else guardedReaction.escape(tools);
+    }
+  });
 };
 
 const settlingFunction = (
@@ -215,7 +277,6 @@ const settlingFunction = (
   onEscape: () => escapePromise(promise, creationTools),
 });
 
-/** `new Promise(executor)`, settled when the executor settles it synchronously. */
 export const createPromiseValue = (
   executor: StaticValue | undefined,
   tools: PromiseTools,
@@ -253,11 +314,6 @@ const handlerOutcome = (
   return tools.call(handler, [isThrownOutcome(outcome) ? outcome.thrown : outcome]);
 };
 
-/**
- * `promise.then(...)`/`.catch(...)`/`.finally(...)`: the derived promise,
- * settled from the handlers' results. Once the promise escapes, the handlers
- * that run whatever the outcome are continuations landing at an unknown time.
- */
 export const chainPromise = (
   promise: ModeledPromise,
   handlers: PromiseHandlers,
@@ -286,39 +342,52 @@ export const chainPromise = (
   return derived.value;
 };
 
-const outcomeOf = (item: StaticValue): StaticValue => getModeledPromise(item)?.settled ?? item;
+const settleCombinedPromise = (
+  combined: ModeledPromise,
+  receipts: ModeledPromise[],
+  outcomes: StaticValue[],
+  tools: PromiseTools,
+): void => {
+  if (outcomes.length === receipts.length) {
+    settlePromise(combined, listValue(outcomes), tools);
+    return;
+  }
+  visitState(receipts[outcomes.length].state, tools, (state) => {
+    if (state === PENDING_STATE) return;
+    const outcome = outcomesByState.get(state);
+    if (!outcome) escapePromise(combined, tools);
+    else if (isThrownOutcome(outcome)) settlePromise(combined, outcome, tools);
+    else settleCombinedPromise(combined, receipts, [...outcomes, outcome], tools);
+  });
+};
 
-/** `Promise.all(items)`: the list of outcomes, pending while any item is. */
 export const combinePromises = (
   items: StaticValue[],
   tools: PromiseTools,
   location: SourceLocation | null,
 ): StaticValue => {
-  const pending = items.flatMap((item) => {
-    const promise = getModeledPromise(item);
-    return promise && !promise.settled ? [promise] : [];
-  });
-  if (pending.some((promise) => promise.isEscaped) || items.some(isPossiblyUnsettled)) {
+  if (items.some(isPossiblyUnsettled)) {
     return unknownValue("Promise.all of a promise settled outside the analysis", location);
   }
-  const rejection = items.map(outcomeOf).find(isThrownOutcome);
-  if (rejection) return resolvedPromiseValue(rejection);
-  if (pending.length === 0) return resolvedPromiseValue(listValue(items.map(outcomeOf)));
+  if (items.length === 0) return resolvedPromiseValue(listValue([]));
   const combined = createPendingPromise();
-  let remaining = pending.length;
-  for (const promise of pending) {
+  const receipts = items.map(() => createPendingPromise());
+  items.forEach((item, index) => {
+    const modeled = getModeledPromise(item);
+    const promise = modeled ?? createPendingPromise();
+    if (!modeled) promise.state = createSettledState(item);
     subscribe(
       promise,
       {
         run: (outcome, runTools) => {
+          settlePromise(receipts[index], outcome, runTools);
           if (isThrownOutcome(outcome)) settlePromise(combined, outcome, runTools);
-          else if (--remaining === 0)
-            settlePromise(combined, listValue(items.map(outcomeOf)), runTools);
+          else settleCombinedPromise(combined, receipts, [], runTools);
         },
         escape: (escapeTools) => escapePromise(combined, escapeTools),
       },
       tools,
     );
-  }
+  });
   return combined.value;
 };
