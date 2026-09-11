@@ -15,6 +15,26 @@ const getHostNames = (nodes: PatternNode[]): string[] =>
   );
 
 describe("conditional task scheduling", () => {
+  it("cancels the selected handle without allowing both timers to fire", async () => {
+    const renderer = await createComponentRenderer();
+    const rendered = await renderer.renderComponent(
+      join(COMPONENTS_DIRECTORY, "timer-handle-alternatives.tsx"),
+    );
+    const stateSpace = enumerateStaticStates(rendered);
+    const states = stateSpace.states.map((state) => getHostNames(state.tree));
+    expect(states).toEqual(
+      expect.arrayContaining([
+        ["main", "canvas", "section", "footer"],
+        ["main", "aside", "header", "nav"],
+      ]),
+    );
+    expect(states).toHaveLength(4);
+    expect(states.some((names) => names.includes("header") && names.includes("footer"))).toBe(
+      false,
+    );
+    expect(stateSpace.omitted).toBeNull();
+  });
+
   it.each(["effect-cause-timer-registration.tsx", "effect-cause-microtask-registration.tsx"])(
     "does not update paths that never registered the task in %s",
     async (fixture) => {

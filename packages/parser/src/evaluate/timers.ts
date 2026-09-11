@@ -9,6 +9,9 @@ import { recordInputSource } from "./predicates.js";
 import { rangedNumberValue } from "./primitive-shapes.js";
 import { branchValue, FALSE_VALUE, getTruthiness, primitiveValue, TRUE_VALUE } from "./values.js";
 
+const getHandleIdentity = (handle: StaticValue): object =>
+  handle.kind === "unknown-primitive" ? (handle.identity ?? handle) : handle;
+
 class TimerCancellation implements JournaledState<StaticValue> {
   readonly allocation = 0;
 
@@ -65,7 +68,7 @@ export const MAX_TIMER_TASKS = 512;
 export class TimerQueue {
   private tasks: (() => void)[] = [];
   private microtasks: (() => void)[] = [];
-  private readonly cancellations = new WeakMap<StaticValue, TimerCancellation>();
+  private readonly cancellations = new WeakMap<object, TimerCancellation>();
   private clockSequence = 0;
   private clockTask: ClockTask = { scheduledBy: null, delayMs: 0 };
   private deferredDepth = 0;
@@ -105,13 +108,17 @@ export class TimerQueue {
   }
 
   createHandle(name: string): StaticValue {
-    return rangedNumberValue(`${name} handle`, { min: 1, max: Number.POSITIVE_INFINITY });
+    return {
+      ...rangedNumberValue(`${name} handle`, { min: 1, max: Number.POSITIVE_INFINITY }),
+      identity: {},
+    };
   }
 
   private activate(handle: StaticValue): void {
-    if (this.cancellations.has(handle)) return;
+    const identity = getHandleIdentity(handle);
+    if (this.cancellations.has(identity)) return;
     const cancellation = new TimerCancellation(TRUE_VALUE);
-    this.cancellations.set(handle, cancellation);
+    this.cancellations.set(identity, cancellation);
     this.recordMutation(cancellation);
     cancellation.value = FALSE_VALUE;
   }
@@ -133,10 +140,11 @@ export class TimerQueue {
 
   clear(handle: StaticValue | undefined): void {
     if (!handle) return;
-    let cancellation = this.cancellations.get(handle);
+    const identity = getHandleIdentity(handle);
+    let cancellation = this.cancellations.get(identity);
     if (!cancellation) {
       cancellation = new TimerCancellation();
-      this.cancellations.set(handle, cancellation);
+      this.cancellations.set(identity, cancellation);
     }
     if (getTruthiness(cancellation.value) === true) return;
     this.recordMutation(cancellation);
@@ -144,7 +152,7 @@ export class TimerQueue {
   }
 
   getCancellation(handle: StaticValue): StaticValue {
-    return this.cancellations.get(handle)?.value ?? FALSE_VALUE;
+    return this.cancellations.get(getHandleIdentity(handle))?.value ?? FALSE_VALUE;
   }
 
   isCleared(handle: StaticValue): boolean {

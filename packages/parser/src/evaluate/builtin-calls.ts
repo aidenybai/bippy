@@ -1498,6 +1498,18 @@ const callGlobal = (
     case "clearInterval":
     case "cancelAnimationFrame":
     case "cancelIdleCallback":
+      if (first?.kind === "branch") {
+        return interpreter.callAlternatives(first, context, (alternative, alternativeContext) =>
+          callGlobal(
+            interpreter,
+            name,
+            [alternative, ...args.slice(1)],
+            alternativeContext,
+            location,
+            false,
+          ),
+        );
+      }
       interpreter.timers.clear(first);
       return UNDEFINED_VALUE;
     case "Date.now":

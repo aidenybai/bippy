@@ -2,9 +2,29 @@ import { describe, expect, it } from "vite-plus/test";
 import { HeapJournal } from "../src/evaluate/heap-journal.js";
 import { TimerQueue } from "../src/evaluate/timers.js";
 import { getAlternativeGuards, createPathPredicate } from "../src/evaluate/predicates.js";
-import { getTruthiness } from "../src/evaluate/values.js";
+import { areValuesEquivalent, branchValue, getTruthiness } from "../src/evaluate/values.js";
 
 describe("guarded timer cancellation", () => {
+  it("preserves distinct handles with the same numeric range", () => {
+    const queue = new TimerQueue();
+    const firstHandle = queue.createHandle("setTimeout");
+    const secondHandle = queue.createHandle("setTimeout");
+    expect(branchValue([firstHandle, secondHandle], "selected handle").kind).toBe("branch");
+    expect(areValuesEquivalent(firstHandle, secondHandle)).toBe(false);
+  });
+
+  it("cancels a handle through a copied abstract value", () => {
+    const queue = new TimerQueue();
+    const handle = queue.createHandle("setTimeout");
+    let hasRun = false;
+    queue.schedule(handle, () => {
+      hasRun = true;
+    });
+    queue.clear({ ...handle });
+    queue.runNextTask();
+    expect(hasRun).toBe(false);
+  });
+
   it("journals the first cancellation without making it unconditional", () => {
     let journal: HeapJournal | null = null;
     const queue = new TimerQueue(undefined, undefined, (state) => journal?.recordState(state));

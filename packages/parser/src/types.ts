@@ -817,6 +817,7 @@ export interface StaticUnknownPrimitiveValue {
   kind: "unknown-primitive";
   primitiveType: UnknownPrimitiveType;
   reason: string;
+  identity?: object;
   clock?: ClockReading;
   stringShape?: StringShape;
   composition?: StringComposition;

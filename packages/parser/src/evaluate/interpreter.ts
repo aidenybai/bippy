@@ -2748,7 +2748,7 @@ export class Interpreter {
    * into its siblings and a call that recurs from inside one is cut as
    * non-progressing recursion (`CallFrame.forkDepth`).
    */
-  private callAlternatives(
+  callAlternatives(
     branch: StaticBranchValue,
     context: EvaluationContext,
     call: (alternative: StaticValue, alternativeContext: EvaluationContext) => StaticValue,
