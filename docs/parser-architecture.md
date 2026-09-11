@@ -75,13 +75,17 @@ A macro is build-time code that rewrites application source. Its output can chan
 
 For Create React App projects, the [macro transform](../packages/parser/src/graph/babel-macros.ts) loads `babel-plugin-macros` from the installed `babel-preset-react-app` dependency. It uses the Babel compiler owned by `react-scripts`. The [installed-module loader](../packages/parser/src/libraries/installed-modules.ts) follows that dependency chain rather than assuming the project has one shared copy of each tool.
 
-The transform runs on the application's `src` files when the preset declares the macro plugin. Macro configuration and code execute as build infrastructure. The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
+The transform runs on the application's `src` files when the preset declares the macro plugin. Macro configuration and code execute as build infrastructure.
+
+The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
 
 Build configuration can read variables that a client bundle does not expose. The [corpus renderer](../packages/parser/src/corpus/render-entry.ts) uses the entry’s child-process environment during native configuration loading and later renders. It serializes these operations because `process.env` is shared, then restores the harness environment even after failure. Inherited `CI` and package-manager variables follow the [dev-server rules](../packages/parser/src/corpus/dev-server.ts).
 
 The [environment reader](../packages/parser/src/corpus/process-environment.ts) retains declared variables without requiring a dotenv file list. Without that list, it marks the environment as partial and preserves uncertainty about unlisted variables. Client exposure also remains unknown when neither the manifest nor a recognized tool establishes a prefix. Node configuration can read declared private variables regardless of the client prefix.
 
 The [Vite configuration loader](../packages/parser/src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
+
+Vite plugins can skip transforms when their project paths differ from the source resolver’s paths. For automatic TanStack Router splitting, a skipped transform omits the application’s `Lazy` component from the analyzed tree. [Configuration discovery](../packages/parser/src/graph/vite-config.ts) therefore resolves directory symlinks before loading Vite.
 
 Vite reads `NODE_ENV` before loading configuration modules. The parser supplies the development default when this variable is absent or empty. It removes an unchanged temporary default before resolution, preserving Vite’s original presence check for dotenv handling. The parser does not replace explicit inherited values.
 
