@@ -8,7 +8,7 @@ import {
   renderClassComponent,
   unmountClassInstance,
 } from "../evaluate/class-component.js";
-import type { ContextReader, EvaluationContext } from "../evaluate/context.js";
+import type { EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { ComponentKindError } from "../errors.js";
@@ -54,6 +54,7 @@ import {
   describeValue,
   getObjectProperty,
   getStubDisplayName,
+  isSameValue,
   mapValue,
   NULL_VALUE,
   objectFromRecord,
@@ -592,13 +593,17 @@ export class Materializer {
   >();
   private isInsideComponentRender = false;
   /** Context values flow through React itself, so a proxy reads them at its own fiber, as the real hook would. */
-  private readonly readContext: ContextReader = (definition) => {
+  private readonly readContext = (
+    definition: ContextDefinition,
+    shouldRecord = true,
+  ): StaticValue | null => {
     if (!this.isInsideComponentRender) return null;
     const value = this.runtime.readContext(this.getContext(definition));
-    this.contextReads?.push({ definition, value });
+    if (shouldRecord) this.contextReads?.push({ definition, value });
     return value;
   };
   private contextReads: ContextRead[] | null = null;
+  private readonly ownerContextReads = new WeakMap<ElementOwner, readonly ContextRead[]>();
   private readonly stubProxies = new WeakMap<StubComponent, ComponentType<ProxyProps>>();
   private readonly suspenseBoundaryProxy: ComponentType<ProxyProps>;
   private readonly suspendedMarker: ComponentType;
@@ -2133,6 +2138,7 @@ export class Materializer {
   ): CompositeEvaluation {
     const environment = this.componentEnvironment(component, context);
     const frame: ElementOwner = { node: component.node, scope: component.scope, props, owner };
+    if (this.contextReads) this.ownerContextReads.set(frame, this.contextReads);
     const childContext: MaterializeContext = {
       ...context,
       depth: context.depth + 1,
@@ -2154,15 +2160,23 @@ export class Materializer {
       };
     }
     const ancestors = ownerChain(owner).filter((ancestor) => ancestor.node === component.node);
-    const isNonTerminating = ancestors.some(
-      (ancestor) =>
-        ancestor.scope === component.scope && areValuesEquivalent(ancestor.props, props),
-    );
-    if (isNonTerminating || ancestors.length >= this.maxRecursionPerComponent) {
+    const isRepeatedInput = ancestors.some((ancestor) => {
+      if (ancestor.scope !== component.scope || !areValuesEquivalent(ancestor.props, props)) {
+        return false;
+      }
+      return this.ownerContextReads.get(ancestor)?.every((read) => {
+        const value = this.readContext(read.definition, false);
+        return (
+          value === read.value ||
+          (value !== null && read.value !== null && isSameValue(value, read.value))
+        );
+      });
+    });
+    if (isRepeatedInput || ancestors.length >= this.maxRecursionPerComponent) {
       this.interpreter.report(
         "max-recursion",
-        isNonTerminating
-          ? `recursive render of ${describeComponent(component)} with equivalent props truncated`
+        isRepeatedInput
+          ? `recursive render of ${describeComponent(component)} with equivalent props and contexts truncated`
           : `recursive render of ${describeComponent(component)} truncated after ${ancestors.length} levels`,
         location,
         "warning",
