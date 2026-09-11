@@ -83,6 +83,8 @@ The [environment reader](../packages/parser/src/corpus/process-environment.ts) r
 
 The [Vite plugin loader](../packages/parser/src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
 
+Vite reads `NODE_ENV` before loading configuration modules. The parser supplies the development default when this variable is absent or empty. It removes an unchanged temporary default before resolution, preserving Vite’s original presence check for dotenv handling. The parser does not replace explicit inherited values.
+
 These rules do not establish complete build-environment parity. Custom client prefixes require a manifest declaration. Remaining parity checks include:
 
 - Environment changes from shell scripts or undeclared dotenv files

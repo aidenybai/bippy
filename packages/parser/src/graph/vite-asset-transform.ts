@@ -21,6 +21,22 @@ const SERVE_COMMAND = "serve";
 const DEVELOPMENT_MODE = "development";
 const INDEX_HTML = "index.html";
 
+const loadWithDefaultNodeEnvironment = async <Loaded>(
+  load: () => Promise<Loaded>,
+): Promise<Loaded> => {
+  const previousEnvironment = process.env.NODE_ENV;
+  process.env.NODE_ENV ||= DEVELOPMENT_MODE;
+  try {
+    return await load();
+  } finally {
+    // HACK: Preserve Vite's original NODE_ENV-presence check across the separate configuration load.
+    if (!previousEnvironment && process.env.NODE_ENV === DEVELOPMENT_MODE) {
+      if (previousEnvironment === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = previousEnvironment;
+    }
+  }
+};
+
 const configFunctionSchema = z.custom<(...args: unknown[]) => Promise<unknown>>(
   (value) => typeof value === "function",
 );
@@ -85,10 +101,12 @@ export const loadViteUserPlugins = async (
       );
       const loaded = parseWithSchema(
         loadedConfigSchema,
-        await vite.loadConfigFromFile(
-          { command: SERVE_COMMAND, mode: cliMode || DEVELOPMENT_MODE },
-          configPath,
-          rootDirectory,
+        await loadWithDefaultNodeEnvironment(() =>
+          vite.loadConfigFromFile(
+            { command: SERVE_COMMAND, mode: cliMode || DEVELOPMENT_MODE },
+            configPath,
+            rootDirectory,
+          ),
         ),
         `vite config ${configPath}`,
       );
