@@ -225,6 +225,8 @@ then anchor search, then the largest root.
 
 Manifest validation rejects unsupported options instead of silently discarding them. `static.servedDirectory` is relative to `static.rootDirectory`. Dev servers do not inherit the harness's `CI` flag; a manifest can declare it explicitly. Install and setup commands default to `CI=1` unless the entry overrides it. A changed live environment requires fresh capture provenance.
 
+Native configuration and plugin transforms use the entry’s child-process environment. The corpus renderer serializes environment-sensitive operations and restores the harness environment afterward. Declared variables also reach the interpreter without an `envFiles` list; unlisted variables remain unknown until that list is complete. Declare custom client prefixes with `static.envPrefix`. An unspecified SPA no longer implies Vite’s prefix.
+
 The original 207-repository snapshot reported 111 `exact` capture matches, not whole-space verification.
 135 runtime-metadata rows have no replay summary, and some exact rows record replay contradictions.
 These historical matches include `react-admin` (5,581 runtime nodes inside 21 states

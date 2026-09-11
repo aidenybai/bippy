@@ -76,10 +76,12 @@ const getDeclaredVariable = (
   variable: string,
 ): StaticValue | null => {
   if (declared === null) return null;
+  if (renderEnvironment !== "server" && declared.clientPrefix === undefined) return null;
   const isInlined =
     renderEnvironment === "server" ||
-    (declared.clientPrefix !== null && variable.startsWith(declared.clientPrefix));
+    (typeof declared.clientPrefix === "string" && variable.startsWith(declared.clientPrefix));
   const value = isInlined ? declared.variables[variable] : undefined;
+  if (isInlined && value === undefined && declared.isPartial) return null;
   return value === undefined ? UNDEFINED_VALUE : primitiveValue(value);
 };
 

@@ -33,6 +33,30 @@ describe("CRA Babel macros", () => {
     expect(transform.transform(join(APP, "node_modules/dependency/index.js"), "", null)).toBeNull();
   });
 
+  it.each([true, false])("respects partial environment declarations: %s", async (isPartial) => {
+    const environmentBefore = process.env;
+    process.env = { ...environmentBefore, BIPPY_INHERITED: "inherited", BIPPY_DECLARED: "parent" };
+    try {
+      const transform = await createBabelMacrosTransform(APP, "react-scripts", {
+        variables: { BIPPY_DECLARED: "declared" },
+        clientPrefix: "REACT_APP_",
+        isPartial,
+      });
+      expect(transform).not.toBeNull();
+      const transformed = transform?.transform(
+        join(APP, "src/environment.ts"),
+        'import { environment } from "greeting.macro"; export default environment;',
+        null,
+      );
+      expect(transformed?.sourceText).toContain(
+        JSON.stringify(`${isPartial ? "inherited" : "unset"}:declared`),
+      );
+      expect(process.env.BIPPY_DECLARED).toBe("parent");
+    } finally {
+      process.env = environmentBefore;
+    }
+  });
+
   it("resolves macros from a symlinked dev directory", async () => {
     const directory = mkdtempSync(join(tmpdir(), "bippy-macros-"));
     const alias = join(directory, "app");

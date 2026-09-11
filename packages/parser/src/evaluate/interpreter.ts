@@ -2027,7 +2027,7 @@ export class Interpreter {
       documentBaseUri ??
       getBuiltinGlobal(hostName, realm, renderEnvironment === "server" ? null : this.hostDocument, {
         declared: this.processEnvironment,
-        renderEnvironment,
+        renderEnvironment: realm.platform === SERVER_HOST_PLATFORM ? "server" : renderEnvironment,
         definedObjects: this.definedEnvironmentObjects,
         baseUrl: this.project.baseUrl,
         mode: this.project.mode,

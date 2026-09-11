@@ -1,0 +1,4 @@
+{
+  "skipRuntime": true,
+  "notes": "The dedicated corpus environment tests supply distinct harness and entry environments. The installed Vite config and plugin execute normally; application bodies remain interpreted."
+}

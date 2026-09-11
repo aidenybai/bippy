@@ -7,18 +7,18 @@ import type { CorpusEntry } from "./manifest.js";
 
 const NEXT_CLIENT_PREFIX = "NEXT_PUBLIC_";
 
-/** The variables a client-only bundler inlines, by the bundler the app declares: CRA's `react-scripts`, otherwise Vite. */
-const SPA_CLIENT_PREFIXES: ReadonlyMap<string, string> = new Map([["react-scripts", "REACT_APP_"]]);
+const SPA_CLIENT_PREFIXES: ReadonlyMap<string, string> = new Map([
+  ["react-scripts", "REACT_APP_"],
+  ["vite", "VITE_"],
+]);
 
-const VITE_CLIENT_PREFIX = "VITE_";
-
-const readClientPrefix = (framework: FrameworkKind, rootDirectory: string): string => {
+const readClientPrefix = (framework: FrameworkKind, rootDirectory: string): string | undefined => {
   if (framework === "next-app" || framework === "next-pages") return NEXT_CLIENT_PREFIX;
   const declared = readDeclaredDependencies(path.join(rootDirectory, "package.json"));
   for (const [bundler, prefix] of SPA_CLIENT_PREFIXES) {
     if (declared.includes(bundler)) return prefix;
   }
-  return VITE_CLIENT_PREFIX;
+  return undefined;
 };
 
 /** `dotenv`'s `LINE`: `KEY=value` or `KEY: value`, quoted values spanning lines, a trailing `#` comment. */
@@ -48,14 +48,43 @@ export const readProcessEnvironment = (
   entry: CorpusEntry,
   rootDirectory: string,
 ): ProcessEnvironment | undefined => {
-  if (entry.static.envFiles === undefined) return undefined;
+  if (
+    entry.static.envFiles === undefined &&
+    entry.env === undefined &&
+    entry.static.envPrefix === undefined
+  )
+    return undefined;
   const variables: Record<string, string> = { ...entry.env };
-  for (const file of entry.static.envFiles) {
+  for (const file of entry.static.envFiles ?? []) {
     const parsed = parseDotenv(readFileSync(path.resolve(rootDirectory, file), "utf8"));
     for (const [name, value] of Object.entries(parsed)) variables[name] ??= value;
   }
   return {
     variables,
     clientPrefix: entry.static.envPrefix ?? readClientPrefix(entry.framework, rootDirectory),
+    ...(entry.static.envFiles === undefined ? { isPartial: true } : {}),
   };
+};
+
+let previousEnvironmentRun: Promise<void> = Promise.resolve();
+
+export const runWithProcessEnvironment = <Result>(
+  getEnvironment: () => NodeJS.ProcessEnv,
+  run: (environment: NodeJS.ProcessEnv) => Result | Promise<Result>,
+): Promise<Result> => {
+  const currentRun = previousEnvironmentRun.then(async () => {
+    const environment = getEnvironment();
+    const previous = process.env;
+    process.env = environment;
+    try {
+      return await run(environment);
+    } finally {
+      process.env = previous;
+    }
+  });
+  previousEnvironmentRun = currentRun.then(
+    () => undefined,
+    () => undefined,
+  );
+  return currentRun;
 };

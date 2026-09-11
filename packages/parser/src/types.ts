@@ -665,11 +665,12 @@ export interface CapturedPageState {
   sessionStorage: Record<string, string>;
 }
 
-/** The environment the server process ran with, whole: unlisted variables are unset. */
+/** Known server environment values; unlisted variables are unset unless the environment is partial. */
 export interface ProcessEnvironment {
   variables: Record<string, string>;
-  /** Prefix of the variables client bundles inline; the rest read `undefined` in the browser. */
-  clientPrefix: string | null;
+  isPartial?: boolean;
+  /** Prefix of inlined client variables; null exposes none, omission leaves exposure unknown. */
+  clientPrefix?: string | null;
 }
 
 /** The document request the server rendered for, as the browser sent it. */
