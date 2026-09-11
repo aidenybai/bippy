@@ -221,7 +221,7 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 212 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`. Five fresh application captures add four exact matches and one truncated result to the original 207-repository snapshot. They do not complete the 500-repository gate.
+`corpus/manifest.json` pins 215 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`. Eight fresh application captures add seven exact matches and one truncated result to the original 207-repository snapshot. These initial-page comparisons do not establish event coverage or complete the 500-repository gate.
 
 Manifest validation rejects unsupported options instead of silently discarding them. `static.servedDirectory` is relative to `static.rootDirectory`. Dev servers do not inherit the harness's `CI` flag; a manifest can declare it explicitly. Install and setup commands default to `CI=1` unless the entry overrides it. A changed live environment requires fresh capture provenance.
 
