@@ -6,12 +6,14 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
+import { createErrorValue } from "./errors.js";
 import { getAlternativeGuards } from "./predicates.js";
 import {
   branchValue,
   listValue,
   mapValue,
   objectValue,
+  primitiveValue,
   thrownValue,
   UNDEFINED_VALUE,
   unknownValue,
@@ -36,6 +38,7 @@ export interface PromiseReaction {
 const PENDING_STATE: StaticObjectValue = { kind: "object", entries: [] };
 const ESCAPED_STATE: StaticObjectValue = { kind: "object", entries: [] };
 const outcomesByState = new WeakMap<StaticValue, StaticValue>();
+const followingStates = new WeakSet<StaticValue>();
 const promisesByValue = new WeakMap<StaticObjectValue, ModeledPromise>();
 
 const getSettledValue = (state: StaticValue): StaticValue | null => {
@@ -120,12 +123,16 @@ const visitState = (
   });
 };
 
-export const resolvedPromiseValue = (outcome: StaticValue): StaticValue => {
-  if (getModeledPromise(outcome)) return outcome;
+const resolvePromise = (outcome: StaticValue): ModeledPromise => {
+  const modeled = getModeledPromise(outcome);
+  if (modeled) return modeled;
   const promise = createPendingPromise();
   promise.state = createSettledState(outcome);
-  return promise.value;
+  return promise;
 };
+
+export const resolvedPromiseValue = (outcome: StaticValue): StaticValue =>
+  resolvePromise(outcome).value;
 
 export const awaitedValue = (
   value: StaticValue,
@@ -185,9 +192,13 @@ export const suspendOnPromise = (
   );
 };
 
-const escapePromise = (promise: ModeledPromise, tools: PromiseTools): void => {
+const escapePromise = (
+  promise: ModeledPromise,
+  tools: PromiseTools,
+  pendingState: StaticValue = PENDING_STATE,
+): void => {
   visitState(promise.state, tools, (state) => {
-    if (state !== PENDING_STATE) return;
+    if (state !== pendingState) return;
     tools.recordStateMutation(promise);
     promise.state = ESCAPED_STATE;
     for (const reaction of promise.reactions) reaction.escape(tools);
@@ -204,25 +215,42 @@ const settlePromise = (
   promise: ModeledPromise,
   outcome: StaticValue,
   tools: PromiseTools,
+  pendingState: StaticValue = PENDING_STATE,
 ): void => {
   visitState(promise.state, tools, (state) => {
-    if (state !== PENDING_STATE) return;
+    if (state !== pendingState) return;
     const adopted = getModeledPromise(outcome);
-    if (adopted) {
-      subscribe(adopted, forwardTo(promise), tools);
+    if (adopted && adopted !== promise) {
+      const following = objectValue();
+      followingStates.add(following);
+      tools.recordStateMutation(promise);
+      promise.state = following;
+      tools.queueMicrotask(() => subscribe(adopted, forwardTo(promise, following), tools));
       return;
     }
+    const settled =
+      adopted === promise
+        ? thrownValue(
+            "promise resolved with itself",
+            createErrorValue(
+              "TypeError",
+              [primitiveValue("Chaining cycle detected for promise")],
+              null,
+            ),
+            null,
+          )
+        : outcome;
     tools.recordStateMutation(promise);
-    promise.state = createSettledState(outcome);
+    promise.state = createSettledState(settled);
     for (const reaction of promise.reactions) {
-      tools.queueMicrotask(() => reaction.run(outcome, tools));
+      tools.queueMicrotask(() => reaction.run(settled, tools));
     }
   });
 };
 
-const forwardTo = (target: ModeledPromise): PromiseReaction => ({
-  run: (outcome, tools) => settlePromise(target, outcome, tools),
-  escape: (tools) => escapePromise(target, tools),
+const forwardTo = (target: ModeledPromise, following: StaticValue): PromiseReaction => ({
+  run: (outcome, tools) => settlePromise(target, outcome, tools, following),
+  escape: (tools) => escapePromise(target, tools, following),
 });
 
 export const onPromiseSettled = (
@@ -253,7 +281,8 @@ const subscribe = (
       run,
       escape: (escapeTools) => run(null, escapeTools),
     };
-    if (state === PENDING_STATE) promise.reactions.push(guardedReaction);
+    if (state === PENDING_STATE || followingStates.has(state))
+      promise.reactions.push(guardedReaction);
     else {
       const outcome = outcomesByState.get(state);
       if (outcome) tools.queueMicrotask(() => guardedReaction.run(outcome, tools));
@@ -307,7 +336,17 @@ const handlerOutcome = (
 ): StaticValue => {
   if (handlers.onFinally) {
     const result = tools.call(handlers.onFinally, []);
-    return isThrownOutcome(result) ? result : outcome;
+    if (isThrownOutcome(result)) return result;
+    return chainPromise(
+      resolvePromise(result),
+      {
+        onFulfilled: { kind: "native-function", name: "finally fulfilled", call: () => outcome },
+        onRejected: null,
+        onFinally: null,
+      },
+      tools,
+      null,
+    );
   }
   const handler = isThrownOutcome(outcome) ? handlers.onRejected : handlers.onFulfilled;
   if (!handler) return outcome;
@@ -353,7 +392,7 @@ const settleCombinedPromise = (
     return;
   }
   visitState(receipts[outcomes.length].state, tools, (state) => {
-    if (state === PENDING_STATE) return;
+    if (state === PENDING_STATE || followingStates.has(state)) return;
     const outcome = outcomesByState.get(state);
     if (!outcome) escapePromise(combined, tools);
     else if (isThrownOutcome(outcome)) settlePromise(combined, outcome, tools);
@@ -373,9 +412,7 @@ export const combinePromises = (
   const combined = createPendingPromise();
   const receipts = items.map(() => createPendingPromise());
   items.forEach((item, index) => {
-    const modeled = getModeledPromise(item);
-    const promise = modeled ?? createPendingPromise();
-    if (!modeled) promise.state = createSettledState(item);
+    const promise = resolvePromise(item);
     subscribe(
       promise,
       {
