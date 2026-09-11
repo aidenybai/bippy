@@ -6258,6 +6258,82 @@
         "entry": "src/main.tsx",
         "externalPackageAllowList": ["@radix-ui/*", "lucide-react", "sonner"]
       }
+    },
+    {
+      "id": "ignite-timer",
+      "repository": "https://github.com/rocketseat-education/02-ignite-timer",
+      "revision": "9fc8978a44712045db9ac80ff7f672062a8f0d62",
+      "description": "Ignite Timer home page with an empty browser session: Vite 2, React 18, React Router, styled-components, react-hook-form, and a local-storage cycle reducer.",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54331 --strictPort",
+      "url": "http://127.0.0.1:54331/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "styled-components",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "date-fns",
+          "phosphor-react",
+          "immer",
+          "zod"
+        ]
+      }
+    },
+    {
+      "id": "coffee-delivery",
+      "repository": "https://github.com/rocketseat-education/ignite-challenge-solution-reactjs-coffee-delivery",
+      "revision": "5d9c4d6cbdcaa52ee2da6e702785b98b452bd746",
+      "description": "Coffee Delivery storefront with bundled product data and an empty cart: Vite 4, React 18, React Router data routes, styled-components 6, and Phosphor icons.",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --legacy-peer-deps",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54332 --strictPort",
+      "url": "http://127.0.0.1:54332/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "route": "/",
+        "externalPackageAllowList": [
+          "styled-components",
+          "@phosphor-icons/react",
+          "react-hook-form",
+          "@hookform/resolvers",
+          "@hookform/resolvers/*",
+          "immer",
+          "zod"
+        ]
+      }
+    },
+    {
+      "id": "ignite-feed",
+      "repository": "https://github.com/rocketseat-education/ignite-reactjs-01-fundamentos-react",
+      "revision": "84a9309459d59c385424d2d2ca6cdb83964252af",
+      "description": "Ignite social feed with bundled posts and local comment state: Vite 2, React 18 StrictMode, date-fns relative dates, CSS modules, and Phosphor icons.",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --no-audit --no-fund --legacy-peer-deps",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54333 --strictPort",
+      "url": "http://127.0.0.1:54333/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["date-fns", "phosphor-react"]
+      }
     }
   ]
 }
