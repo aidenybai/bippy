@@ -815,10 +815,9 @@ const withCorrectedStates = (
 });
 
 /**
- * Replays the enumerated states and folds what they witnessed into the
- * comparison: the runtime must match a state some replay re-witnessed. A
- * match the combined render claimed but no replay reproduced is `unsound`,
- * while a tree only the replays produced can still be matched.
+ * Replays the enumerated states and folds their evidence into the comparison.
+ * A contradiction against the matched assignment can invalidate membership;
+ * an incomplete replay cannot. Trees produced by concrete replays can also match.
  */
 export const replayEnumeratedStates = async (
   comparison: CompareRenderResult,
@@ -860,13 +859,14 @@ export const replayEnumeratedStates = async (
   const contradiction = summary.mismatched.find((mismatch) =>
     mismatch.stateIndices.includes(matchedIndex),
   );
+  if (!contradiction) return replayed;
   const closestIndex = matchedState?.index ?? null;
   return {
     ...replayed,
     report: { ...comparison.report, status: "unsound" },
     matchedState: null,
     closestState:
-      contradiction && closestIndex !== null
+      closestIndex !== null
         ? { index: closestIndex, divergence: contradiction.divergence }
         : replayed.closestState,
   };

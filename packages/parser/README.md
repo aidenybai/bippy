@@ -207,18 +207,14 @@ framework internals; application mismatches are never hidden this way.
 Replay `verification` is separate from runtime membership: `not-replayed`, `sample-passed`,
 `sample-incomplete`, or `contradicted`. A corrected contradiction remains `contradicted`.
 `sample-passed` covers only the reported sample of enumerated assignments, not the entire
-symbolic assignment space. Older saved summaries lack these verification/incomplete fields;
-absence means unrecorded evidence, not a passed check.
+symbolic assignment space. An incomplete replay without a contradiction preserves the original capture membership; it does not count as a replay pass. Older saved summaries lack these verification/incomplete fields; absence means unrecorded evidence, not a passed check.
 
 Membership statuses: `exact` (the capture matches an analyzed or replay-witnessed state without
 reported omissions or opaque/wildcard matching),
 `truncated` (the runtime matched but the budget omitted alternatives, repeat counts or subtrees,
 or it matches only inside that omitted region), `partial` (matched through opaque subtrees or
-wildcards), `unsound` (the runtime matched, but a replayed assignment could neither be reproduced
-nor corrected, so the enumeration is not trusted), `mismatch` (no state matches), `unresolved`
-(the static side did not produce a component tree), `skipped` (no runtime root or anchor). A
-state the independent replay contradicts never counts as `exact`: it is either replaced by what
-the replay witnessed or leaves the result `unsound`. Guard coverage is reported alongside, never
+wildcards), `unsound` (the matched assignment has a replay contradiction and no witnessed state matches), `mismatch` (no state matches), `unresolved`
+(the static side did not produce a component tree), `skipped` (no runtime root or anchor). A correction can supply a matching state, but verification still records the contradiction. Inconclusive replay evidence does not invalidate an existing capture match. Guard coverage is reported alongside, never
 folded into the status: an exact entry with `possible` sides is exact for the captures at hand
 and says which sides no capture reached. The harness chooses the runtime root by explicit index,
 then anchor search, then the largest root.
