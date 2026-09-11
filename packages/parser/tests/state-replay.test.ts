@@ -371,7 +371,7 @@ describe("replayEnumeratedStates", () => {
     expect(replayed.stateSpace.states, detail).toEqual(derived.stateSpace.states);
   });
 
-  it("marks a matched result unsound when its replay leaves decisions open", async () => {
+  it("preserves capture membership when replay leaves decisions open without a contradiction", async () => {
     const fixture = fixtureNamed("optional-chains.tsx");
     const run = await runComponentFixture(fixture);
     const renderer = await createComponentRenderer();
@@ -383,14 +383,29 @@ describe("replayEnumeratedStates", () => {
       { maxReplayed: 2 },
     );
     const detail = formatCompareRenderResult(replayed);
-    expect(replayed.report.status, detail).toBe("unsound");
+    expect(replayed.report, detail).toEqual(derived.report);
+    expect(replayed.stateReplay?.verification, detail).toBe("sample-incomplete");
     expect(replayed.stateReplay?.mismatched, detail).toEqual([]);
     expect(
       replayed.stateReplay?.incomplete?.map((entry) => entry.isReplayConcrete),
       detail,
     ).toEqual([false, false]);
-    expect(replayed.matchedState, detail).toBeNull();
+    expect(replayed.matchedState, detail).toEqual(derived.matchedState);
     expect(replayed.closestState, detail).toBeNull();
+  });
+
+  it("invalidates capture membership when its assignment has a known contradiction", async () => {
+    const run = await runComponentFixture(fixtureNamed("basic-host.tsx"));
+    const renderer = await createComponentRenderer();
+    const derived = compareStaticToRuntime(enumerateStaticStates(run.staticResult), run.runtime);
+    const replayed = await replayEnumeratedStates(derived, () =>
+      renderer.renderComponent(fixtureNamed("timer-callback-arguments.tsx").filePath),
+    );
+    expect(derived.report.status).toBe("exact");
+    expect(replayed.report.status).toBe("unsound");
+    expect(replayed.stateReplay?.verification).toBe("contradicted");
+    expect(replayed.stateReplay?.mismatched.length).toBeGreaterThan(0);
+    expect(replayed.matchedState).toBeNull();
   });
 
   it("preserves membership without claiming replay evidence when replay is disabled", async () => {

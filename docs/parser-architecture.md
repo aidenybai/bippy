@@ -269,7 +269,7 @@ Replay uses the same interpreter implementation. It is not an independent execut
 
 The replay claim describes what the symbolic model predicts under the selected decisions. The implementation derives this claim from all symbolic commits, not a truncated list of enumerated states. Otherwise, a state budget could remove a later commit from the claim and create a false contradiction.
 
-An undecided condition or unknown region can leave the claim incomplete. Complete comparisons check the claimed and replayed tree sequences. Incomplete comparisons check known regions without treating unknown regions as contradictions.
+An undecided condition or unknown region can leave the claim incomplete. Complete comparisons check the claimed and replayed tree sequences. Incomplete comparisons check known regions without treating unknown regions as contradictions. An incomplete replay without a contradiction preserves the original capture match. It does not count as a replay pass. A contradiction against the matched assignment can invalidate that match when no replay-witnessed state matches the capture.
 
 The replay summary uses these verification values:
 
