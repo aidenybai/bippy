@@ -323,6 +323,8 @@ Commit guards matter even when two commits have the same visible tree. Combining
 
 The [state-space implementation](../packages/parser/src/harness/state-space.ts) groups decisions that share inputs. A guard solver checks whether their conditions permit a common assignment of values. Independent groups do not require immediate enumeration of every combined state.
 
+A wide group can exhaust JavaScript’s call stack before it reaches the state budget. The [cluster enumerator](../packages/parser/src/harness/enumerate-states.ts) therefore schedules continuations on an explicit work stack. It schedules guard cleanup after each path, preserving depth-first choice and omission order. This removes sibling-count stack growth without raising enumeration or repetition budgets.
+
 For two independent Boolean inputs, each group has two local assignments. The full combination has four assignments. Grouping lets the model retain the local choices without constructing all four trees before a query needs them.
 
 The implementation constructs complete state patterns on demand, within a state budget. It records omitted alternatives and repeat counts instead of treating the enumerated list as exhaustive. A state with all branch decisions selected can still contain opaque nodes or wildcards.
@@ -334,6 +336,8 @@ Application comparison and replay check different properties of the model. Appli
 ### Match an application capture
 
 [`compareStaticToRuntime`](../packages/parser/src/harness/compare-render.ts) checks whether an application tree matches the symbolic model. This test is membership checking. It can search the symbolic tree without requiring the matching state in the initial enumerated list.
+
+The matcher still uses recursive continuations for some variable-width patterns. Enumeration success does not establish that comparison will complete.
 
 The comparison checks fiber structure. It also compares these recorded fields:
 

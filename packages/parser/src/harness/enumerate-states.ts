@@ -192,6 +192,7 @@ class ClusterEnumerator {
   readonly states: StateCondition[][] = [];
   isTruncated = false;
   private readonly solver = new GuardSolver();
+  private readonly tasks: Array<() => void> = [];
 
   constructor(
     private readonly cluster: ReadonlySet<string>,
@@ -210,6 +211,7 @@ class ClusterEnumerator {
       }
       this.states.push([...conditions.values()]);
     });
+    for (let task = this.tasks.pop(); task; task = this.tasks.pop()) task();
   }
 
   private owns(node: PatternBranch | PatternRepeat): boolean {
@@ -226,11 +228,13 @@ class ClusterEnumerator {
     let cursor = index;
     while (cursor < nodes.length && !hasPatternDecisions(nodes[cursor])) cursor++;
     if (cursor === nodes.length) {
-      emit(conditions);
+      this.tasks.push(() => emit(conditions));
       return;
     }
-    this.expandNode(nodes[cursor], conditions, (next) =>
-      this.expandList(nodes, cursor + 1, next, emit),
+    this.tasks.push(() =>
+      this.expandNode(nodes[cursor], conditions, (next) =>
+        this.expandList(nodes, cursor + 1, next, emit),
+      ),
     );
   }
 
@@ -267,11 +271,8 @@ class ClusterEnumerator {
     expand: (next: ConditionMap) => void,
   ): void {
     if (!this.solver.push(decisionGuard(node, choice))) return;
-    try {
-      expand(new Map(conditions).set(node.variable, condition));
-    } finally {
-      this.solver.pop();
-    }
+    this.tasks.push(() => this.solver.pop());
+    expand(new Map(conditions).set(node.variable, condition));
   }
 
   private expandBranch(node: PatternBranch, conditions: ConditionMap, emit: Emit): void {
@@ -280,27 +281,33 @@ class ClusterEnumerator {
       this.expandList(node.alternatives[decided.alternativeIndex] ?? [], 0, conditions, emit);
       return;
     }
-    node.alternatives.forEach((alternative, alternativeIndex) => {
-      if (this.isTruncated) {
-        const under = [...conditions.values()];
-        this.omit(`${node.variable}|${alternativeIndex}|${describeConditions(under)}`, {
-          kind: "branch",
-          variable: node.variable,
-          reason: node.reason,
-          location: node.location,
+    for (
+      let alternativeIndex = node.alternatives.length - 1;
+      alternativeIndex >= 0;
+      alternativeIndex--
+    ) {
+      this.tasks.push(() => {
+        if (this.isTruncated) {
+          const under = [...conditions.values()];
+          this.omit(`${node.variable}|${alternativeIndex}|${describeConditions(under)}`, {
+            kind: "branch",
+            variable: node.variable,
+            reason: node.reason,
+            location: node.location,
+            alternativeIndex,
+            conditions: under,
+          });
+          return;
+        }
+        this.decide(
+          node,
           alternativeIndex,
-          conditions: under,
-        });
-        return;
-      }
-      this.decide(
-        node,
-        alternativeIndex,
-        conditions,
-        branchCondition(node, alternativeIndex),
-        (next) => this.expandList(alternative, 0, next, emit),
-      );
-    });
+          conditions,
+          branchCondition(node, alternativeIndex),
+          (next) => this.expandList(node.alternatives[alternativeIndex], 0, next, emit),
+        );
+      });
+    }
   }
 
   private expandRepeat(node: PatternRepeat, conditions: ConditionMap, emit: Emit): void {
@@ -318,16 +325,19 @@ class ClusterEnumerator {
     if (max === null || max > enumeratedMax) {
       this.omit(node.variable, omittedCounts(enumeratedMax, []));
     }
-    for (let count = min; count <= enumeratedMax; count++) {
+    const expandCount = (count: number): void => {
+      if (count > enumeratedMax) return;
       if (this.isTruncated) {
         const under = [...conditions.values()];
         this.omit(`${node.variable}|${describeConditions(under)}`, omittedCounts(count - 1, under));
         return;
       }
+      this.tasks.push(() => expandCount(count + 1));
       this.decide(node, count, conditions, repeatCondition(node, count), (next) =>
         this.expandIterations(node, count, 0, next, emit),
       );
-    }
+    };
+    this.tasks.push(() => expandCount(min));
   }
 
   private expandIterations(
