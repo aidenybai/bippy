@@ -260246,8 +260246,8 @@
       "id": "lapian-notes",
       "revision": "d2860b6621dd2826392fda86fb337440b158faef",
       "framework": "spa",
-      "capturedAt": "2026-09-12T06:17:24.411Z",
-      "durationMs": 7215,
+      "capturedAt": "2026-09-12T12:34:01.719Z",
+      "durationMs": 2387,
       "runtime": {
         "reactVersion": "19.2.7",
         "rendererName": "react-dom",
@@ -260260,18 +260260,17 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 137,
-          "textCount": 9,
-          "branchCount": 3,
+          "fiberCount": 125,
+          "textCount": 11,
+          "branchCount": 1,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
-          "modulesLoaded": 46
+          "unknownCount": 0,
+          "modulesLoaded": 47
         },
         "diagnostics": []
       },
       "report": {
-        "status": "exact",
         "matchedFibers": 106,
         "matchedText": 9,
         "opaqueSubtrees": 0,
@@ -260282,32 +260281,33 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 3,
+        "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 115,
-        "staticFibers": 125,
+        "staticFibers": 120,
         "coverage": 1,
         "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 120,
+        "stepsUsed": 116,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 12,
-        "stateCount": 12,
-        "clusters": 5,
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
         "tree": {
-          "nodes": 254,
-          "inputs": 7,
-          "guards": 12,
-          "branches": 5,
+          "nodes": 236,
+          "inputs": 3,
+          "guards": 4,
+          "branches": 1,
           "repeats": 0,
           "opaque": 0,
-          "wildcards": 1
+          "wildcards": 0
         },
         "matchedState": {
-          "index": 11,
+          "index": 2,
           "conditions": [
             {
               "kind": "transition",
@@ -260316,25 +260316,9 @@
             },
             {
               "kind": "state-update",
-              "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.latestTag))",
               "reason": "conditional on branch(null | unknown)",
               "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#6)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -260354,42 +260338,6 @@
               "status": "possible"
             },
             {
-              "kind": "branch",
-              "variable": "truthy(#1)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-              "side": 0,
-              "guard": "truthy(#1)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#1)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-              "side": 1,
-              "guard": "not(truthy(#1))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-              "side": 0,
-              "guard": "truthy(#2)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-              "side": 1,
-              "guard": "not(truthy(#2))",
-              "status": "possible"
-            },
-            {
               "kind": "commit",
               "variable": "commit",
               "reason": "committed render",
@@ -260400,217 +260348,36 @@
             },
             {
               "kind": "branch",
-              "variable": "truthy(#3)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-              "side": 0,
-              "guard": "truthy(#3)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-              "side": 1,
-              "guard": "not(truthy(#3))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.latestTag))",
               "reason": "conditional on branch(null | unknown)",
               "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
               "side": 0,
-              "guard": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
+              "guard": "and(not(eq(choice(#1), 0)), truthy(#2.latestTag))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
+              "variable": "and(not(eq(choice(#1), 0)), truthy(#2.latestTag))",
               "reason": "conditional on branch(null | unknown)",
               "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
               "side": 1,
-              "guard": "not(and(not(eq(choice(#4), 0)), truthy(#5.latestTag)))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#6)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-              "side": 0,
-              "guard": "truthy(#6)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#6)",
-              "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-              "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-              "side": 1,
-              "guard": "not(truthy(#6))",
+              "guard": "not(and(not(eq(choice(#1), 0)), truthy(#2.latestTag)))",
               "status": "witnessed"
             }
           ],
-          "witnessed": 4,
-          "possible": 8,
+          "witnessed": 2,
+          "possible": 2,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "verification": "sample-incomplete",
-        "incomplete": [
-          {
-            "stateIndices": [
-              0,
-              4
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "truthy(#1)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "branch",
-                "variable": "truthy(#2)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
-                "reason": "conditional on branch(null | unknown)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              1,
-              5
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "truthy(#1)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "branch",
-                "variable": "truthy(#2)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
-                "reason": "conditional on branch(null | unknown)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              2,
-              8
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "truthy(#1)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "branch",
-                "variable": "truthy(#2)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
-                "reason": "conditional on branch(null | unknown)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              3,
-              9
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "truthy(#1)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/Toolbar.tsx:35:10",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "branch",
-                "variable": "truthy(#2)",
-                "reason": "conditional on unknown(`__ONLINE_DEMO__` is not defined)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/components/FrameTimeline.tsx:251:13",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#4), 0)), truthy(#5.latestTag))",
-                "reason": "conditional on branch(null | unknown)",
-                "location": "/private/tmp/bippy-parser-tool-expansion/lapian-notes/src/App.tsx:1486:8",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          }
-        ],
-        "states": 12,
-        "assignments": 8,
-        "replayed": 8,
+        "verification": "sample-passed",
+        "states": 3,
+        "assignments": 2,
+        "replayed": 2,
         "maxReplayed": 16,
-        "mismatched": []
+        "mismatched": [],
+        "incomplete": []
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T05:09:53.958Z",
