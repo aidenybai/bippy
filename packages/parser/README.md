@@ -140,6 +140,10 @@ builds one from a corpus entry):
   `react-router.config.ts` `ssr`), and `react-router-auto-routes` file conventions
   (`react-router-auto-routes.ts`).
 
+The browser-router model removes the basename before matching routes. Each mounted router retains its own location object while the normalized basename stays unchanged.
+
+An unknown basename does not justify an empty tree. `useHref` resolves static paths starting with one `/` and no `..` segment; other target forms remain unknown. Complete navigation across history types remains outside this contract.
+
 Each framework has a `FrameworkProfile` naming the runtime wrapper fibers that are transparent
 during comparison (router contexts, error boundaries, dev overlays) and the runtime-injected
 fibers to drop (Next outlet boundaries, announcers, `script-N` hoistables). Profiles only name
