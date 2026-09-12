@@ -340,7 +340,9 @@ Replay uses the same interpreter implementation. It is not an independent execut
 
 The replay claim describes what the symbolic model predicts under the selected decisions. The implementation derives this claim from all symbolic commits, not a truncated list of enumerated states. Otherwise, a state budget could remove a later commit from the claim and create a false contradiction.
 
-An undecided condition or unknown region can leave the claim incomplete. Complete comparisons check the claimed and replayed tree sequences. Incomplete comparisons check known regions without treating unknown regions as contradictions. An incomplete replay without a contradiction preserves the original capture match. It does not count as a replay pass. A contradiction against the matched assignment can invalidate that match when no replay-witnessed state matches the capture.
+An undecided condition or unknown region can leave the claim incomplete. Complete comparisons check the claimed and replayed tree sequences. Incomplete comparisons check known regions without treating unknown regions as contradictions.
+
+An incomplete replay without a contradiction preserves the original capture match but does not count as a replay pass. A replay without a tree remains incomplete, not evidence of an empty tree. Known differences in available trees still count as contradictions. A contradiction against the matched assignment can invalidate that match when no replay-witnessed state matches the capture.
 
 The replay summary uses these verification values:
 
@@ -353,9 +355,11 @@ The replay summary uses these verification values:
 
 A zero replay budget disables replay. A passing sample applies only to the assignments that the check ran. Older summaries can omit verification fields, which means the evidence is unrecorded.
 
+When a match lies outside enumeration, replay prioritizes its conditions within the existing replay budget. The `matchedOutsideEnumeration` field records that candidate’s verification separately. A compatible enumerated assignment can supply its pins without adding another candidate. Reuse also requires that the assignment permits the matched commit’s cause.
+
 ### Retain contradictions after correction
 
-A concrete replay can replace contradicted states before another membership check. That correction retains the `contradicted` verification result. A successful match after correction does not erase the original disagreement.
+A concrete replay can replace contradicted enumerated states before another membership check. That correction retains the `contradicted` verification result. A successful match after correction does not erase the original disagreement. Replay does not append witnesses outside enumeration or increase the state count to include them.
 
 Corrections currently change the state array without changing the original symbolic tree or decision groups. This is an unresolved inconsistency in the implementation. Replay corrections therefore supply evidence, not a repaired primary model.
 

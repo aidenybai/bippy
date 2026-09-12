@@ -232,7 +232,7 @@ These initial-page comparisons do not establish event coverage or complete the 5
 
 The word-guessing game contributes one independently captured selection, not independent coverage of all five modeled choices or gameplay.
 
-Podcastr’s exact match retains 768 omitted states. Its matched assignment lies outside the enumerated states and therefore outside the sixteen replay samples.
+The committed Podcastr result retains 768 omitted states and does not replay its matching assignment. Current replay selection can prioritize an outside match without raising the replay budget.
 
 Manifest validation rejects unsupported options instead of silently discarding them. `static.servedDirectory` is relative to `static.rootDirectory`. Dev servers do not inherit the harness's `CI` flag; a manifest can declare it explicitly. Install and setup commands default to `CI=1` unless the entry overrides it. A changed live environment requires fresh capture provenance.
 
