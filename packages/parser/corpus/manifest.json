@@ -6897,6 +6897,44 @@
         ]
       },
       "notes": "Original README metadata setup, pinned to backend revision 15e6f4af8c9c3231855f624340db1210ca75176e after byte equality with the documented main URL. Application source, npm lock and installed versions are unchanged. This fresh configured capture is exact with one passing model-backed replay and no omissions. Five native commits describe the final snapshot, not an independently retained history. The previous missing-metadata error capture remains a separate mismatch with thirteen replay contradictions; this changed setup is not a same-capture parser repair. Emoji selection, search, randomization, downloads, visuals and whole-space coverage remain unverified. GitHub repository ID 446242396 confirms a distinct non-fork repository."
+    },
+    {
+      "id": "mural",
+      "repository": "https://github.com/Imam-Abubakar/mural",
+      "revision": "e9d4a5bf80dfdb90e8831dfebdfbfdb57bf76ff0",
+      "description": "Mural FabricJS and Scenify design editor",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0",
+        "PORT": "54376",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none"
+      },
+      "url": "http://127.0.0.1:54376/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "baseui",
+          "baseui/*",
+          "styletron-react",
+          "react-redux",
+          "@reduxjs/toolkit",
+          "react-colorful",
+          "react-custom-scrollbars",
+          "react-uid",
+          "@nkyo/scenify-sdk"
+        ]
+      },
+      "notes": "Original FabricJS/Scenify design-editor initial page, using React 17.0.2 and React Router 5.3.4 under the pinned Node 22 recipe and original CRACO start command. Source and frozen Yarn lock are unchanged; 1,969 installed dependency locations match their locked requests. The native capture has 151 fibers, five commits and seven DNS resource errors. Interpreting original react-uid and Scenify SDK source exposes a known BrowserRouter FunctionComponent-versus-ClassComponent mismatch, despite two passing model replays. The earlier, more opaque policies reported partial membership; all policy variants and failures remain in provenance. Baseline and repeated stronger-policy comparisons use the same capture and agree. No parser repair, editing, canvas pixels, remote assets, upload, download, events, visual parity or whole-space coverage is claimed. GitHub repository ID 631179284 identifies a distinct non-fork repository."
     }
   ]
 }
