@@ -8304,6 +8304,60 @@
         "entry": "src/index.tsx"
       },
       "notes": "Keep the explicitly required Node22 major, Set.isSubsetOf usage, original CRA5/TypeScript5 pairing, CSP, ErrorNotice, class cell-registration callbacks and original window alert/prompt wrappers. Preserve the README-documented fork-ts-checker error if it occurs; do not downgrade TypeScript or patch that dependency. No puzzle, solver action or dialog input is supplied. Preserve original Yarn3.8.7, its checked-in release and node-modules linker; no PnP conversion or lock regeneration. Frozen success is insufficient: verify Yarn lock locators, installed locations/versions and actual runner precedence before capture. No CI/OpenSSL override, app repair, changed comparison budget or whole-space completeness claim. Original native React17.0.2 has 307 fibers and one commit. Exact initial membership and one replay pass repeat against the same capture. Preserve the page warning about the unrecognized image-src Content-Security-Policy directive; do not correct it to img-src. The original server also logs TypeError: Cannot set property mark of #<Object> which has only a getter from the CRA5/TypeScript5 checker pairing. Preserve that log and the README-documented pairing. Keep original Yarn3.8.7, Node22, Set.isSubsetOf usage, class cell-registration callbacks, ErrorNotice and alert/prompt wrappers. No puzzle, solver action, dialog input or whole-space claim. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 363813301 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "seehiong-swift-calc",
+      "repository": "https://github.com/seehiong/swift-calc",
+      "revision": "6a0cb06862440c64024b1da4edce094dfa64bfb7",
+      "description": "seehiong/swift-calc",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54571 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54571/swift-calc/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["lucide-react", "react-chartjs-2"]
+      },
+      "notes": "Preserve original npm prepare: npm run build:lib invokes the checked-in Vite library configuration and then tsc -p tsconfig.lib.json. Do not omit lifecycle scripts, remove prepare, invent dist, or replace the source-owning tsconfig. Keep the original /swift-calc/ base, StrictMode, initial standard calculator, source icons, lazy graphing mode, mathjs, Chart.js and histories. Node22.16.0 satisfies the original Vite7 engine requirement; retain the original v3 lock and overrides. No calculation, theme, mode, history input, generated state or whole-space claim. Original npm ci retains prepare, which runs the checked-in Vite library build and TypeScript declaration emit. All twenty generated dist files, compiler manifests, tracked source hashes and original build logs remain in build-games-artifact-provenance.json; no lifecycle is omitted or dist fabricated. Verify all 351 installed packages and the actual Node22.16.0/npm10.9.2/pnpm10.12.1 runner. Original React18.3.1 records 155 fibers, one commit and no page errors. Baseline/current/repeated comparisons remain exact with one passing replay. Preserve the initial standard calculator, original base, mathjs, source icons and lazy graphing workflow without entering calculations or selecting another mode. No arithmetic, chart, history, styling or whole-space claim. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1027128783 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "emanuelecaurio-react-card-memory-game",
+      "repository": "https://github.com/emanuelecaurio/react-card-memory-game",
+      "revision": "f08a45a55dd0665639a986d25112f8b57d26e85e",
+      "description": "emanuelecaurio/react-card-memory-game",
+      "framework": "spa",
+      "workingDirectory": "demo",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci && pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm run build && cd demo && pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1",
+        "HOST": "127.0.0.1",
+        "PORT": "54572"
+      },
+      "url": "http://127.0.0.1:54572/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": "demo",
+        "servedDirectory": "public",
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["reactjs-flip-card"]
+      },
+      "notes": "Follow the original two-package demo workflow: frozen root npm install, original npm build including prebuild/postbuild, then frozen demo install and original CRA5 start. Preserve both v2 locks and independently verify both installed scopes before capture. Root package version1.1.6 and lock-root metadata1.1.5 are original; do not normalize or rewrite them. The original build generates dist and demo/src/lib from the checked-in TypeScript/CSS. Do not run version, postversion, deploy, publish or git push. Keep the initial grid-selection page without choosing a size or unsuccessful-attempt setting. Generated artifacts require receipts and do not establish gameplay, flipping, arithmetic or whole-space coverage. The original root build runs prebuild/clean, TypeScript/CSS emission and postbuild copying. Both original npm v2 locks verify: 54 root packages and 1,400 demo packages. All thirteen dist files match all thirteen demo/src/lib copies byte for byte; compiler manifests, source hashes, original build logs and complete artifact copies remain in build-games-artifact-provenance.json. Root package1.1.6 versus lock-root1.1.5 is original metadata, not normalization. Preserve the first failed recipe's incorrect leading cd .. and its separate pre-capture correction; install commands use the repository root rather than workingDirectory. Original Node16.20.2/npm8.19.4/pnpm8.15.9 runs the CRA5 demo. Native React18.2.0 records eleven fibers, one commit and no page errors. Baseline/current/repeated comparisons remain exact with one passing replay, but only for the initial grid-selection page; no grid, difficulty or card choice is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 576318362 identifies a distinct non-fork repository."
     }
   ]
 }
