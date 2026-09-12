@@ -6963,10 +6963,25 @@
           "react-icons",
           "react-icons/*",
           "react-konva",
-          "react-colorful"
+          "react-colorful",
+          "react-bootstrap",
+          "react-bootstrap/*",
+          "uncontrollable",
+          "@restart/ui",
+          "@restart/ui/*",
+          "@restart/hooks",
+          "@restart/hooks/*",
+          "react-transition-group",
+          "react-transition-group/*",
+          "@react-aria/ssr",
+          "i18next",
+          "react-i18next",
+          "its-fine",
+          "react-bootstrap-range-slider",
+          "reselect"
         ]
       },
-      "notes": "Original React/Konva image-editor initial page, using React 18.3.1, the pinned Node 22 recipe, and the original Vite dev command. Source and npm lock are unchanged; 1,914 installed dependency versions match the lock. The independent capture has 1,488 fibers, ten commits and no page errors. Separate enumeration and matcher stack repairs let the same capture complete comparison, but membership remains partial at about 18% strict coverage. The model counts 2,048 combinations from bounded clusters, enumerates 256 states and retains 5,118 omissions. All sixteen sampled replays and the preferred outside-enumeration witness remain incomplete; the latter includes a repeat count of 31 without expanding the enumeration budget. Baseline stack failures, the failed large diagnostic export, streamed conditions/omissions and deeply equal repeated results remain in provenance. Opaque library regions remain unverified. No editing, canvas pixels, DOM attributes, remote image contents, upload, downloads, events, visuals or whole-space coverage is claimed. GitHub repository ID 512127525 identifies a distinct non-fork repository."
+      "notes": "Original React/Konva image-editor initial page, React 18.3.1 and the pinned Node 22 recipe. Source and npm lock are unchanged; 1,914 installed dependency versions were verified. The independent capture has two roots, 1,488 fibers, ten commits and no page errors. The expanded library-source policy includes React Bootstrap, uncontrolled props, Restart UI/hooks, transition groups, React Aria SSR, i18next, its-fine, range sliders and reselect. It now matches all normalized compared fibers without opaque nodes, but remains truncated with twelve bounded states and two omissions. Nine replays include five incomplete results; the preferred outside witness at repeat count 32 remains incomplete. Existing modeled exports still apply, so this is not full-source integration. The earlier sparse policy, 5,118 omissions, sixteen incomplete replays, bootstrap-only mismatch, every intermediate policy, both stack failures and failed diagnostic export remain in provenance. Same-capture repetitions agree. This is an analysis-policy expansion, not a parser repair, exhaustive cardinality, full renderer/context-bridge coverage, canvas-pixel, attribute, event or visual parity. GitHub repository ID 512127525 remains one repository."
     }
   ]
 }
