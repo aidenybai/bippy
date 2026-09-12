@@ -261240,6 +261240,558 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T12:38:01.899Z",
       "failure": null
+    },
+    {
+      "id": "mortgage",
+      "revision": "e0c643c65561bb0bd63841428fabf4a66924144b",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T15:49:59.442Z",
+      "durationMs": 1431,
+      "runtime": {
+        "reactVersion": "16.14.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 184,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Mortgage Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 184,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 5
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 182,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 183,
+        "staticFibers": 183,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 183,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 183,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T15:25:33.786Z",
+      "failure": null
+    },
+    {
+      "id": "bmi-calculator",
+      "revision": "7e4714d6542fe21cb70e5f37d6c55adfaeb538cc",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T15:50:00.880Z",
+      "durationMs": 797,
+      "runtime": {
+        "reactVersion": "16.11.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 27,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "BMI Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 27,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 25,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 26,
+        "staticFibers": 26,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 26,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 26,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T15:25:45.040Z",
+      "failure": null
+    },
+    {
+      "id": "madzadev-calculator",
+      "revision": "3fe48dc673e834341b7d3ffaaa027bcc9f118c7f",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T15:48:03.583Z",
+      "durationMs": 377,
+      "runtime": {
+        "reactVersion": "16.14.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 48,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 48,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 47,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 47,
+        "staticFibers": 47,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 47,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 47,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T15:46:38.910Z",
+      "failure": null
+    },
+    {
+      "id": "chamoda-calculator",
+      "revision": "938987feeb1c376a4b89768634e3446c4d250011",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T15:48:03.961Z",
+      "durationMs": 519,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 87,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 87,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 88
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 86,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 86,
+        "staticFibers": 86,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 86,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 86,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T15:46:46.190Z",
+      "failure": null
+    },
+    {
+      "id": "hdri-cubemap",
+      "revision": "0dbf927572dc9d4eb75e638b0c1c0d6bcf72c400",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T15:50:01.681Z",
+      "durationMs": 279,
+      "runtime": {
+        "reactVersion": "16.4.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 118,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "HDRI to CubeMap"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 2,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 28
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 117,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 117,
+        "staticFibers": 1,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 1,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 1,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 1,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T15:25:30.979Z",
+      "failure": null
+    },
+    {
+      "id": "income-tax",
+      "revision": "3337a2870a4376d0ea9d62cab1865044ee4d9abb",
+      "framework": "react-router",
+      "capturedAt": "2026-09-12T15:50:01.962Z",
+      "durationMs": 3555,
+      "runtime": {
+        "reactVersion": "16.9.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 524,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "2019个税计算器"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 10,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 4,
+          "unknownCount": 0,
+          "modulesLoaded": 5527
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 1,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 522,
+        "slotsMatched": 0,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <ThemeHelper> [FunctionComponent] > <MuiThemeProvider> (opaque)",
+            "reason": "ponyfillGlobal.__MUI_STYLES__.MuiThemeProvider from @material-ui/utils is not analyzed",
+            "head": "<MuiThemeProviderOld> [ClassComponent]",
+            "skippedFibers": 522,
+            "divergence": {
+              "path": "root > <ThemeHelper> [FunctionComponent] > <MuiThemeProvider> (opaque)[2]",
+              "expected": "<Provider> [ClassComponent]",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 523,
+        "staticFibers": 8,
+        "coverage": 1,
+        "strictCoverage": 0.0019120458891013384,
+        "divergence": null,
+        "stepsUsed": 907,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 8,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 4,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T15:25:50.514Z",
+      "failure": null
     }
   ]
 }
