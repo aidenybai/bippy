@@ -7358,6 +7358,352 @@
         }
       },
       "notes": "Original HTTPS webpack/hot-middleware server and checked-in localhost PFX certificate, pinned Node16.20/pnpm8.15/Yarn1.22. Only its declared PORT changes. The webpack aliases and literal DefinePlugin values are retained explicitly, including the original @hot-loader/react-dom alias. This is not full webpack-loader or service-worker integration. No file upload, PHAR conversion, offline behavior, downloads, interactions, visuals or whole-space completeness are claimed. The independent native capture has the original hot-loader React DOM16.11.0 renderer, 155 fibers, seven commits and no page errors; the installed React package is16.9.0. Interpreting allowlisted MobX React6.1.7 source exposes a mismatch formerly hidden by an opaque partial result: the model expects inject-with-settingsStore(Component), but native fibers contain inject-with-settingsStore(ThemeProvider). Both baseline and current model replays pass despite that mismatch. Current/repeated comparison fields agree. Existing observer helpers and core MobX remain modeled, so this is not full-source or observability/lifecycle completeness. All 747 installed packages verify. The original locked hot-loader tarball contains package version16.11.0+4.12.16 although Yarn records16.11.0; both locked hashes and all 40 installed artifact files verify. That specific published metadata difference is recorded, not a dependency substitution or general version normalization. The original HTTPS certificate, development server, webpack aliases and literal defines remain intact. No archive input, conversion output or offline behavior is claimed. Independent initial-page capture and repeated same-capture analysis do not establish visual, interaction or whole-space completeness. GitHub repository ID 141057421 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "guohub8080-mtkit",
+      "repository": "https://github.com/guohub8080/mtkit",
+      "revision": "15b5711e43ce4e279354cff349f6d85582a1e873",
+      "description": "guohub8080/mtkit",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54501 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54501/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "antd-mobile",
+          "antd-mobile-icons",
+          "@uidotdev/usehooks",
+          "ahooks",
+          "react-hot-toast",
+          "react-hotkeys-hook",
+          "react-select",
+          "react-draggable",
+          "react-swipeable"
+        ]
+      },
+      "notes": "Original music-theory browser application, not its Uniapp or GitHub Pages production modes. Preserve the original HTML transform, Emotion compiler plugin, SVGR and relative base. The lockfileVersion9 install uses pnpm10; the separately locked pnpm8 development dependency remains unchanged. No audio, MIDI, sampler, notation rasterization or mathematical completeness is claimed. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The model remains on AutoRedirect while the native effect navigates to MainLayout; the model replay nevertheless passes. Keep that counterexample, not a substituted post-redirect URL. The top-level runner is pnpm10.12.1 while the separately locked project pnpm8.15.9 shadows the child executable. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 909987025 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "natainditama-calcway",
+      "repository": "https://github.com/natainditama/calcway",
+      "revision": "8fc23bc48fe7ab3ccb7b86f0577b5aaed5ccf289",
+      "description": "natainditama/calcway",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54503 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54503/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["react-helmet", "react-side-effect"]
+      },
+      "notes": "Original Vite dev script, PWA plugin, multi-page setting, aliases and headers. The README's yarn start command is stale: the original package declares dev, build and preview, and this recipe runs dev. Empty browser storage, not an invented theme. No PWA, keyboard or calculation completeness. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. Explicitly interpret the installed side-effect/icon dependency source listed in this policy. Prior sparse-policy comparisons remain saved against the same capture. This changes analysis policy, not application source, dependency versions, native setup, comparison or budgets; existing model overrides still apply. Interpreting installed react-side-effect source changes sparse partial membership to exact on the same capture. The original UNSAFE_componentWillMount StrictMode warning for SideEffect(NullComponent2) remains. This is a source-policy expansion, not a parser repair or lifecycle/head-attribute proof. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 474764285 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "johnmwendwa-simple-calculator",
+      "repository": "https://github.com/JohnMwendwa/simple-calculator",
+      "revision": "12b1d0b6c9b9a0329a00678f7e9fea921a326249",
+      "description": "JohnMwendwa/simple-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54504 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54504/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": []
+      },
+      "notes": "Retain the original Vite script's port3000 argument; the appended explicit port selects this recipe's listener. No unrelated port3000 service is stopped. Default arithmetic inputs remain authored values. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original initial calculator has one native commit and one passing model replay. No arithmetic or keyboard input is supplied. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 664332639 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "codeofrelevancy-profit-margin-calculator",
+      "repository": "https://github.com/codeofrelevancy/profit-margin-calculator",
+      "revision": "18f66d70bacfdd1f32ce8413587735abc3e10c59",
+      "description": "codeofrelevancy/profit-margin-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54505 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54505/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["formik", "yup"]
+      },
+      "notes": "Original inline HTML theme/color initialization remains intact. No custom form inputs or financial correctness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. Exact initial membership retains three bounded states and two replay assignments, one incomplete. It is sample-incomplete, not sample-passed or whole-space complete. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 604238067 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "ministryofjay-ipsec-overhead-calculator",
+      "repository": "https://github.com/ministryofjay/ipsec-overhead-calculator",
+      "revision": "c431d99bef7c70b2fc3aed68d18d7a801d5195c2",
+      "description": "ministryofjay/ipsec-overhead-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54507 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54507/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@vkumov/react-cui-2.0",
+          "@vkumov/react-cui-2.0/*",
+          "react-select"
+        ]
+      },
+      "notes": "Original packet defaults, SVG chart and source library policy. No protocol calculation, layout or interaction completeness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original packet-default page has two native commits, two bounded states and one passing replay. SVG fiber parity does not prove protocol calculations or chart pixels. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 663607322 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "svendotdev-fm-tip-calculator",
+      "repository": "https://github.com/svendotdev/FM-TIP-Calculator",
+      "revision": "867d08a1b25ea539ec0ae50a12042aec6d46e797",
+      "description": "svendotdev/FM-TIP-Calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54508 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54508/FM-TIP-Calculator/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original Vite base path and aliases remain. The explicit host/port override only the original development listener defaults. The README names older tools; this recipe runs the checked-in Vite dev script. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original server retains its /src/features and /src/styles aliases. The analyzer does not ingest those Vite aliases and leaves GlobalStyles/MainCard opaque: about9% strict coverage, not complete UI integration. No guessed replacement aliases or application edits conceal the gap. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 833806044 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "dilaouid-memorio",
+      "repository": "https://github.com/dilaouid/memorio",
+      "revision": "3e307bd154e5124d56070e769abe0f06b588e3e1",
+      "description": "dilaouid/memorio",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile --ignore-scripts",
+      "setup": ["cp .env.example .env"],
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54509 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54509/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "xstate",
+          "@xstate/react",
+          "use-sound",
+          "react-icons",
+          "react-icons/*"
+        ]
+      },
+      "notes": "The README requires configuration; setup copies the exact checked-in .env.example before the independent capture. Its seven documented numeric settings are original application defaults, not fabricated game events. The README requests npm; the original start/deploy scripts also invoke pnpm. The selected installation and preserved failed npm attempt are described below. No gameplay, sound or whole-space completeness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The README-preferred npm ci attempt fails because its original npm lock omits vite-tsconfig-paths5.1.4, globrex0.1.2 and tsconfck3.1.6. This recipe instead selects the separately checked-in pnpm9-format lock, consistent with the original pnpm-based start/deploy scripts. Both original locks remain unchanged; the failed npm attempt is preserved. This is an explicitly different installation recipe before any native capture, not a parser repair or a regenerated lock. Explicitly interpret the installed side-effect/icon dependency source listed in this policy. Prior sparse-policy comparisons remain saved against the same capture. This changes analysis policy, not application source, dependency versions, native setup, comparison or budgets; existing model overrides still apply. Explicit react-icons source expansion changes sparse partial membership to exact against the original configured capture. The original npm lock failure, separately selected original pnpm lock and exact example environment are preserved. XState/model overrides still apply; no gameplay or actor completeness claim. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 761708668 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "luizomf-react-ts-memory-game-with-vitejs",
+      "repository": "https://github.com/luizomf/react-ts-memory-game-with-vitejs",
+      "revision": "b426cf7af18d0dfd8af0af3a0d1b25a259bd6731",
+      "description": "luizomf/react-ts-memory-game-with-vitejs",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54510 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54510/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original authored card data and template entry. No card flips, matches or gameplay outcomes are supplied. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. All compared nodes match, but the three-state bounded model retains one omission. Four replays include three incomplete assignments; the preferred outside-enumeration witness remains incomplete. Do not call that complete or fully verified. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 504831539 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "skipthedocs-memory-game",
+      "repository": "https://github.com/skipthedocs/memory-game",
+      "revision": "8b5dc40a6da6d0ef20ee5d5b4533979465a336f7",
+      "description": "skipthedocs/memory-game",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54511 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54511/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["motion", "motion/*", "react-use", "react-confetti"]
+      },
+      "notes": "Original VITE_BASE_URL fallback remains unset, and original reducer/card data remains intact. Ignore install-time Git-hook setup, not application logic. No replayed game moves or animation/pixel completeness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. All compared nodes match, but the three-state bounded model retains one omission. Four replays include three incomplete assignments; the preferred outside-enumeration witness remains incomplete. No moves, animations or whole-space completeness are claimed. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 899246251 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "lorenzo774-memory-card",
+      "repository": "https://github.com/lorenzo774/memory-card",
+      "revision": "ea5843d4bcbc17aa844e289aef44043256461f35",
+      "description": "lorenzo774/memory-card",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54512 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54512/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original local card images and shuffle behavior. No synthetic card choices or gameplay completeness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original initial page has two native commits and one passing replay. No card selection is supplied. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 582721764 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "mateoguidi-sudoku",
+      "repository": "https://github.com/mateoguidi/Sudoku",
+      "revision": "6a97eb037f88d909a8cd75f02801da9c6fc0a1ff",
+      "description": "mateoguidi/Sudoku",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54513 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54513/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["lucide-react"]
+      },
+      "notes": "Capture the original initial menu, not a fabricated generated puzzle or best-time record. No keyboard, timer, solver or game-completion claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. Explicitly interpret the installed side-effect/icon dependency source listed in this policy. Prior sparse-policy comparisons remain saved against the same capture. This changes analysis policy, not application source, dependency versions, native setup, comparison or budgets; existing model overrides still apply. Explicit installed lucide-react source expansion changes sparse partial membership to exact against the same menu capture. No puzzle, difficulty, keypress or best-time record is supplied. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 1155233837 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "themaxsandelin-sudoku-react",
+      "repository": "https://github.com/themaxsandelin/sudoku-react",
+      "revision": "29486b665122c5946dcb3b1bd5923df7351a072d",
+      "description": "themaxsandelin/sudoku-react",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54514 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54514/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@radix-ui/react-slot"]
+      },
+      "notes": "Original empty board and alias configuration. No numbers, selection or solved puzzle is supplied. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original empty board has one native commit and one passing replay; there is no supplied number, selected cell or solved puzzle. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 878894924 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "elonehoo-react-sudoku",
+      "repository": "https://github.com/elonehoo/react-sudoku",
+      "revision": "6cef960045b644a781da46a8852627b464739032",
+      "description": "elonehoo/react-sudoku",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54515 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54515/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original React17 legacy render entry and Sudoku context. No puzzle edits or gameplay completeness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original React17 legacy-render capture records240 commits and one passing model replay. This does not establish timer/lifecycle completeness, elapsed-time attributes or gameplay. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 457230931 identifies a distinct non-fork repository."
     }
   ]
 }

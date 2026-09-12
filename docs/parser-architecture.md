@@ -124,6 +124,10 @@ The [library registry](../packages/parser/src/libraries/index.ts) can model sele
 
 For an allowlisted `mobx-react` package, unmodeled `Provider` and `inject` exports resolve to installed source. Existing [observer models](../packages/parser/src/libraries/mobx.ts) still take precedence; core MobX remains modeled. This policy does not establish complete observability or lifecycle behavior.
 
+Expanding this source policy changes the analyzed model, not its saved native capture. Preserve both comparisons; higher coverage does not prove complete library semantics.
+
+Native Vite configuration does not yet connect `resolve.alias` to the [module resolver](../packages/parser/src/graph/module-resolver.ts). A configured alias can remain opaque even when the browser resolves it. Explicit parser aliases and TypeScript paths are separate.
+
 A library model needs the component structure of the installed version. The [Emotion model](../packages/parser/src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
 
 The [legacy Next image model](../packages/parser/src/frameworks/next-legacy-image.ts) also uses version-specific host structure. Next 10 and 11 use `div` wrappers; Next 12 uses `span` wrappers. Next 10.1 through 11.1.0 condition the `noscript` fallback on intersection visibility. The model retains both outputs when that visibility is unknown.
