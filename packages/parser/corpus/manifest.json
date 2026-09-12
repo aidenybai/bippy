@@ -7829,9 +7829,15 @@
         "servedDirectory": "public",
         "tsconfig": "tsconfig.json",
         "entry": "src/index.tsx",
-        "externalPackageAllowList": ["@mui/*", "tss-react", "tss-react/*", "react-transition-group"]
+        "externalPackageAllowList": [
+          "@mui/*",
+          "tss-react",
+          "tss-react/*",
+          "react-transition-group",
+          "react-is"
+        ]
       },
-      "notes": "Keep the authored dark-theme fallback and default intent/event data. No saved privileged intent values, Discord requests or clipboard events are supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Retain the native naming mismatch beneath SwitchBase: model Styled(Component), native Styled(ForwardRef(ButtonBase)). Internal replay passes despite this counterexample. No style/forwardRef metadata repair or higher comparison budget is implied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 316395160 identifies a distinct non-fork repository."
+      "notes": "Preserve the original CRA5, MUI/Emotion, tss-react and transition source policy, dark-theme fallback and intent/event defaults. Opt into installed react-is source so MUI getDisplayName can compare known forward-ref and memo symbols. The earlier native mismatch (Styled(Component) versus Styled(ForwardRef(ButtonBase))) and passing internal replay remain in twelve-cra-import-provenance.json. With the additional source policy, exact initial membership and sampled replay repeat against the same capture. This is not a parser repair: unknown assigned stub displayName values still fall back to prior names. The instrumented property-write trace is diagnostic, not independent comparison evidence. Original source, locks, 1289 installed versions and actual runner receipts remain unchanged. No Discord input, clipboard event, attributes/pixels, dynamic-name semantics or whole-space completeness is established."
     },
     {
       "id": "snelsi-cocomo-calculator",

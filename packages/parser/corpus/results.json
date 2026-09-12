@@ -275345,8 +275345,8 @@
       "id": "larkooo-discord-intents-calculator",
       "revision": "0138c4adf16e7cda9f44622ae65a158e9e65e653",
       "framework": "spa",
-      "capturedAt": "2026-09-12T19:22:41.344Z",
-      "durationMs": 1842,
+      "capturedAt": "2026-09-12T20:05:20.686Z",
+      "durationMs": 1713,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -275365,13 +275365,13 @@
           "repeatCount": 0,
           "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 11354
+          "modulesLoaded": 11356
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 0,
-        "matchedText": 0,
+        "matchedFibers": 1111,
+        "matchedText": 12,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
@@ -275383,17 +275383,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "mismatch",
+        "status": "exact",
         "runtimeFibers": 1123,
         "staticFibers": 1123,
-        "coverage": 0,
-        "strictCoverage": 0,
-        "divergence": {
-          "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeContext> [ContextProvider] > <InnerThemeProvider> [FunctionComponent] > <EmotionThemeContext> [ContextProvider] > <Container> [ForwardRef] > <MuiContainerRoot> [ForwardRef] > <div> [HostComponent] > <FormControlLabel> [ForwardRef] > <MuiFormControlLabelRoot> [ForwardRef] > <label> [HostComponent] > <Switch> [ForwardRef] > <MuiSwitchRoot> [ForwardRef] > <span> [HostComponent] > <MuiSwitchSwitchBase> [ForwardRef] > <SwitchBase> [ForwardRef][0]",
-          "expected": "<Styled(Component)> [ForwardRef]",
-          "actual": "<Styled(ForwardRef(ButtonBase))> [ForwardRef]"
-        },
-        "stepsUsed": 44,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1123,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -275409,15 +275405,17 @@
           "opaque": 0,
           "wildcards": 0
         },
-        "matchedState": null,
-        "closestState": {
+        "matchedState": {
           "index": 2,
-          "divergence": {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ThemeContext> [ContextProvider] > <InnerThemeProvider> [FunctionComponent] > <EmotionThemeContext> [ContextProvider] > <Container> [ForwardRef] > <MuiContainerRoot> [ForwardRef] > <div> [HostComponent] > <FormControlLabel> [ForwardRef] > <MuiFormControlLabelRoot> [ForwardRef] > <label> [HostComponent] > <Switch> [ForwardRef] > <MuiSwitchRoot> [ForwardRef] > <span> [HostComponent] > <MuiSwitchSwitchBase> [ForwardRef] > <SwitchBase> [ForwardRef][0]",
-            "expected": "<Styled(Component)> [ForwardRef]",
-            "actual": "<Styled(ForwardRef(ButtonBase))> [ForwardRef]"
-          }
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
         },
+        "closestState": null,
         "omitted": null,
         "coverage": {
           "sides": [
@@ -275446,11 +275444,11 @@
               "location": null,
               "side": 2,
               "guard": "eq(choice(commit), 2)",
-              "status": "possible"
+              "status": "witnessed"
             }
           ],
-          "witnessed": 0,
-          "possible": 3,
+          "witnessed": 1,
+          "possible": 2,
           "unreachable": 0
         }
       },
