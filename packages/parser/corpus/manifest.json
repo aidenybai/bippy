@@ -6635,6 +6635,30 @@
         "externalPackageAllowList": ["date-fns", "date-fns/*", "rc-slider", "rc-slider/*"]
       },
       "notes": "Pinned Yarn dependencies and verified Node 16.20.2/pnpm 8.15.9. Runs the original json-server script and unchanged episode data on port 3333. Initial-page evidence only; playback and navigation are not covered. The imported exact membership result retains 768 omitted states. Its matched assignment is outside the enumeration and is not among the sixteen replay samples."
+    },
+    {
+      "id": "ignite-tailwind-next",
+      "repository": "https://github.com/rocketseat-education/ignite-masterclass-tailwind-next",
+      "revision": "8cefd200f5fccf720631dbd850c2cc29a5a7ee58",
+      "description": "Next 13.2 app-router documentation interface with Tailwind and Lucide",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@7.33.7 install --frozen-lockfile --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54344",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54344/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["lucide-react"]
+      },
+      "notes": "Pinned pnpm 7.33.7 lockfile and unchanged application source. Runs the original Next 13.2.4 development script with framework React 18.3.0-next-3706edb81-20230308. Initial-page membership only, with one counted state and one replay. Original fill-rule and clip-rule warnings remain in the capture. Metadata comes from interpreted installed framework source. No navigation, visual or whole-space coverage is claimed."
     }
   ]
 }

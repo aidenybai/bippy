@@ -33431,6 +33431,99 @@
       "failure": null
     },
     {
+      "id": "ignite-tailwind-next",
+      "revision": "8cefd200f5fccf720631dbd850c2cc29a5a7ee58",
+      "framework": "next-app",
+      "capturedAt": "2026-09-12T04:35:28.446Z",
+      "durationMs": 266,
+      "runtime": {
+        "reactVersion": "18.3.0-next-3706edb81-20230308",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 125,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: Invalid DOM property `%s`. Did you mean `%s`?%s fill-rule fillRule \n    at path\n    at svg\n    at aside\n    at body\n    at html\n    at ReactDevOverlay (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/react-dev-overlay/internal/ReactDevOverlay.js:61:9)\n    at HotReload (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:20:11)\n    at Router (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/app-router.js:48:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/error-boundary.js:59:9)\n    at ErrorBoundary (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/error-boundary.js:72:11)\n    at AppRouter (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/app-router.js:24:13)\n    at ServerRoot (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/app-index.js:147:11)\n    at RSCComponent\n    at Root (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/app-index.js:164:11)",
+          "Warning: Invalid DOM property `%s`. Did you mean `%s`?%s clip-rule clipRule \n    at path\n    at svg\n    at aside\n    at body\n    at html\n    at ReactDevOverlay (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/react-dev-overlay/internal/ReactDevOverlay.js:61:9)\n    at HotReload (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/react-dev-overlay/hot-reloader-client.js:20:11)\n    at Router (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/app-router.js:48:11)\n    at ErrorBoundaryHandler (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/error-boundary.js:59:9)\n    at ErrorBoundary (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/error-boundary.js:72:11)\n    at AppRouter (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/components/app-router.js:24:13)\n    at ServerRoot (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/app-index.js:147:11)\n    at RSCComponent\n    at Root (webpack-internal:///(app-client)/./node_modules/.pnpm/next@13.2.4_biqbaboplfbrettd7655fr4n2y/node_modules/next/dist/client/app-index.js:164:11)"
+        ],
+        "title": "Create Next App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 89,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 938
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 78,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 20,
+        "runtimeFibers": 82,
+        "staticFibers": 82,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 82,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 82,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-11T23:36:41.994Z",
+      "failure": null
+    },
+    {
       "id": "ignite-timer",
       "revision": "9fc8978a44712045db9ac80ff7f672062a8f0d62",
       "framework": "react-router",
