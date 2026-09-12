@@ -49,6 +49,69 @@ const describeConditions = (conditions: StateCondition[]): string =>
     .join(" ");
 
 describe("enumerateStateSpace", () => {
+  it("enumerates wide correlated siblings without consuming the JavaScript stack", () => {
+    const children = Array.from({ length: 5000 }, () =>
+      branch("shared", [fiber("b")], [fiber("i")]),
+    );
+    const space = enumerateStateSpace([[fiber("main", children)]], { maxStates: 2, maxRepeat: 2 });
+    expect(space.states.map((state) => describeConditions(state.conditions))).toEqual([
+      "shared=0",
+      "shared=1",
+    ]);
+    expect(space.states[0].tree).toEqual([
+      fiber(
+        "main",
+        Array.from({ length: 5000 }, () => fiber("b")),
+      ),
+    ]);
+    expect(space.states[1].tree).toEqual([
+      fiber(
+        "main",
+        Array.from({ length: 5000 }, () => fiber("i")),
+      ),
+    ]);
+    expect(space.omitted).toBeNull();
+  });
+
+  it("preserves the budget and omitted conditions for wide correlated siblings", () => {
+    const getSpace = (width: number) =>
+      enumerateStateSpace(
+        [
+          [
+            fiber(
+              "main",
+              Array.from({ length: width }, () => branch("shared", [fiber("b")], [fiber("i")])),
+            ),
+          ],
+        ],
+        { maxStates: 1, maxRepeat: 2 },
+      );
+    const wide = getSpace(5000);
+    const small = getSpace(1);
+    expect(wide.states).toHaveLength(1);
+    expect(wide.states[0].conditions).toEqual(small.states[0].conditions);
+    expect(wide.stateCount).toBe(small.stateCount);
+    expect(wide.omitted).toEqual(small.omitted);
+    expect(wide.omitted).not.toBeNull();
+  });
+
+  it("enumerates a large known repeat without recursive continuations", () => {
+    const space = enumerateStateSpace(
+      [[fiber("main", [repeat("items", [fiber("b")], { min: 5000, max: 5000 })])]],
+      { maxStates: 2, maxRepeat: 2 },
+    );
+    expect(space.states.map((state) => describeConditions(state.conditions))).toEqual([
+      "items×5000",
+    ]);
+    expect(space.states[0].tree).toEqual([
+      fiber(
+        "main",
+        Array.from({ length: 5000 }, () => fiber("b")),
+      ),
+    ]);
+    expect(space.omitted).toBeNull();
+  });
+
   it("multiplies independent decisions and shares correlated ones", () => {
     const independent = enumerateStateSpace([
       [fiber("main", [branch("a", [fiber("x")], [fiber("y")]), branch("b", [fiber("p")], [])])],
