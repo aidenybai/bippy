@@ -7159,6 +7159,102 @@
         ]
       },
       "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 8.19.4 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Four native commits; 1,859 installed npm locations checked. Original ejected CRA configuration remains unchanged. Partial membership retains the opaque MuiThemeProviderOld region and unmatched provider slot. Passing sampled replay does not establish those omitted internals or tax calculations. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 171380631 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "mermaid-reactflow",
+      "repository": "https://github.com/relliv/mermaid-to-reactflow-converter",
+      "revision": "8e7ecec7bc5413bab8c782ee89ce594e34eba4f4",
+      "description": "Mermaid to ReactFlow converter playground",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@8.15.9 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@8.15.9 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54421 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54421",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54421/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["allotment", "reactflow", "react-markdown", "react-tooltip"]
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 22.16.0, pnpm 8.15.9 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. The initial pnpm10 recipe rejected the original lockfileVersion 6; pinning pnpm8 preserves it. The failure remains recorded. Original Vite application, React 18.3.1, pnpm8 and lockfileVersion6; 400 installed package locations checked. The initial pnpm10 installation failure remains saved. Native capture has 237 fibers and 84 commits, with three context-attribute errors and four repeated Onigasm initialization errors. Partial membership and three incomplete replays remain unresolved. No syntax conversion, Monaco editing, diagram layout, interactions or visual parity is claimed. Source and original lockfiles remain unchanged; platform-specific exceptions are recorded explicitly. Independent initial-page capture and repeated same-capture analysis agree; original native errors and warnings remain recorded. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 815047469 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "modifio",
+      "repository": "https://github.com/benlhachemi/modifio",
+      "revision": "c1534d9f866d05f2e198b36ba1f72c06b7f567f6",
+      "description": "Modifio browser file converter",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54422",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54422",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54422/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "lucide-react",
+          "next-themes",
+          "react-dropzone",
+          "react-icons",
+          "react-icons/*"
+        ]
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 22.16.0, pnpm 10.12.1 and Yarn 1.22.22 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. The original Yarn lock records Windows SWC but omits Darwin SWC and fsevents resolutions. Frozen Yarn added @next/swc-darwin-arm64 13.4.19 and fsevents 2.3.3 from the original optional dependency declarations without changing the lock. Their manifest and native-binary hashes are retained; they are not claimed to have canonical lock resolutions. Original Next13.4.19 application, package React18.2.0 and framework React18.3.0-canary-1a001dac6-20230812. Native capture has 155 fibers and six commits. The original extra server class/style attribute warning remains recorded; exact fibers do not repair hydration or attributes. One passing replay. All 410 installed locations are checked, including two explicitly recorded platform optional packages without canonical Yarn resolutions. No file selection, FFmpeg/WASM conversion, image/video output, download or whole-space parity is claimed. Source and original lockfiles remain unchanged; platform-specific exceptions are recorded explicitly. Independent initial-page capture and repeated same-capture analysis agree; original native errors and warnings remain recorded. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 686924476 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "clip",
+      "repository": "https://github.com/Nemo64/clip",
+      "revision": "c25a74eb52789d6f421db0c084c4fbbcb6fc13ba",
+      "description": "Clip browser video editor",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54423",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54423",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54423/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "externalPackageAllowList": [
+          "react-hook-form",
+          "react-hotkeys-hook",
+          "react-markdown",
+          "react-schemaorg",
+          "react-select",
+          "use-local-storage"
+        ]
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 22.16.0, pnpm 10.12.1 and npm 10.9.2 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Original Next pages application, React18.2.0; 825 installed npm locations checked. Native capture has 401 fibers and 129 commits, with no page errors. Original CSP, COEP/COOP headers, development configuration and FFmpeg URL are not replaced. The independent tree shows PlayIcon where the model requires PauseIcon. The result retains 524,288 combinations counted from bounded clusters, 256 enumerated states, 524,221 omissions, sixteen incomplete replays and one replay contradiction. These counts are not exhaustive cardinality. No video editing, playback timing, compression, pixel, interaction or whole-space parity is claimed. Source and original lockfiles remain unchanged; platform-specific exceptions are recorded explicitly. Independent initial-page capture and repeated same-capture analysis agree; original native errors and warnings remain recorded. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 443406432 identifies a distinct non-fork repository."
     }
   ]
 }
