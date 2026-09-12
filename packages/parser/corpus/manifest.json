@@ -6804,7 +6804,7 @@
         "tsconfig": "tsconfig.json",
         "entry": "src/main.tsx"
       },
-      "notes": "Fresh original initial-page membership is exact at 100% strict coverage. Four of eight sampled replays remain incomplete; the model retains unknown Vite __ONLINE_DEMO__ reads. Original local dev plugins and source are unchanged. No media files, AI credentials, replacement backend data or event inputs are supplied. File import, AI requests, transcoding, timelines, visuals and whole-space coverage remain unverified. GitHub repository ID 1293128596 confirms a distinct repository rather than an owner-rename alias."
+      "notes": "Original initial-page membership remains exact at 100% strict coverage against the same saved capture. Native Vite define initialization reduces the model to three states and two passing replays. The original twelve-state result, eight replays and four incomplete cases remain in the saved baseline and provenance receipts. Source, npm lock and local dev plugins are unchanged; 154 installed versions match the lock. No media files, AI credentials, replacement backend data or event inputs are supplied. File import, AI requests, transcoding, timelines, visuals and whole-space coverage remain unverified. GitHub repository ID 1293128596 identifies the same repository, not a new addition."
     },
     {
       "id": "shaquille-portfolio",
