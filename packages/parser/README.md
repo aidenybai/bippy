@@ -220,15 +220,17 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 227 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
+`corpus/manifest.json` pins 231 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
 
-The twenty fresh captures beyond the original 207-repository snapshot report:
+The twenty-four fresh captures beyond the original 207-repository snapshot report:
 
-- Seventeen exact matches
+- Twenty-one exact matches
 - Two truncated results
 - One partial result
 
 These initial-page comparisons do not establish event coverage or complete the 500-repository gate.
+
+The word-guessing game contributes one independently captured selection, not independent coverage of all five modeled choices or gameplay.
 
 Podcastr’s exact match retains 768 omitted states. Its matched assignment lies outside the enumerated states and therefore outside the sixteen replay samples.
 
