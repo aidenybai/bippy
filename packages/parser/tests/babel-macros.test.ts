@@ -1,10 +1,15 @@
 import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
+import { getInstalledModules } from "../src/libraries/installed-modules.js";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer } from "../src/render/static-renderer.js";
 import { createBabelMacrosTransform } from "../src/graph/babel-macros.js";
+
+interface BabelTransformOptions {
+  parserOpts: { plugins: string[] };
+}
 
 const APP = join(import.meta.dirname, "fixtures/cra-macros");
 
@@ -12,6 +17,42 @@ describe("CRA Babel macros", () => {
   it("does not enable CRA macros for another bundler", async () => {
     expect(await createBabelMacrosTransform(APP, "vite", undefined)).toBeNull();
   });
+
+  it.each(["js", "jsx", "ts", "tsx"])(
+    "explicitly enables class field parsing before macro expansion: %s",
+    async (extension) => {
+      const installed = getInstalledModules(APP);
+      const load = installed.load.bind(installed);
+      const spy = vi.spyOn(installed, "load").mockImplementation((specifier, dependencies) => {
+        const loaded = load(specifier, dependencies);
+        if (specifier !== "@babel/core") return loaded;
+        if (!loaded || !("transformSync" in loaded) || typeof loaded.transformSync !== "function") {
+          throw new Error("Missing Babel transform");
+        }
+        const transformSync = loaded.transformSync;
+        return {
+          ...loaded,
+          transformSync: (sourceText: string, options: BabelTransformOptions) => {
+            expect(options.parserOpts.plugins).toContain("classProperties");
+            return transformSync(sourceText, options);
+          },
+        };
+      });
+      try {
+        const transform = await createBabelMacrosTransform(APP, "react-scripts", undefined);
+        expect(transform).not.toBeNull();
+        const result = transform?.transform(
+          join(APP, `src/class-fields.${extension}`),
+          'import greeting from "greeting.macro"; export class Greeting { message = greeting; }',
+          null,
+        );
+        expect(result?.sourceText).toContain('"configured"');
+        expect(result?.sourceText).toContain("message =");
+      } finally {
+        spy.mockRestore();
+      }
+    },
+  );
 
   it("restores the process and DOM when a macro fails", async () => {
     const environmentBefore = process.env;

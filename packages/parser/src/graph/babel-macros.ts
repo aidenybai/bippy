@@ -65,12 +65,14 @@ export const createBabelMacrosTransform = async (
               plugins: [getDefaultExport(plugin)],
               parserOpts: {
                 sourceType: "unambiguous",
-                plugins:
-                  lang === "ts"
+                plugins: [
+                  "classProperties",
+                  ...(lang === "ts"
                     ? ["typescript"]
                     : lang === "tsx"
                       ? ["typescript", "jsx"]
-                      : ["flow", "jsx"],
+                      : ["flow", "jsx"]),
+                ],
               },
               retainLines: true,
               compact: false,
