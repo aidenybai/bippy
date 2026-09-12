@@ -154,6 +154,7 @@ export interface MaterializerOptions {
 interface DecisionScope {
   pins: PinnedDecisions | null;
   ordinals: Map<string, number>;
+  elementOccurrences: WeakMap<StaticElementValue, number>;
   prefix: string;
 }
 
@@ -288,6 +289,7 @@ interface CompositeEvaluation {
 }
 
 interface MaterializedElement {
+  occurrence: number;
   context: MaterializeContext;
   isTopLevel: boolean;
   node: ReactNode;
@@ -536,6 +538,7 @@ const noop = (): void => {};
 const createDecisionScope = (pins: PinnedDecisions | null, prefix = ""): DecisionScope => ({
   pins,
   ordinals: new Map(),
+  elementOccurrences: new WeakMap(),
   prefix,
 });
 
@@ -938,6 +941,8 @@ export class Materializer {
     context: MaterializeContext,
     isTopLevel: boolean,
   ): ReactNode {
+    const occurrence = context.decisions.elementOccurrences.get(element) ?? 0;
+    context.decisions.elementOccurrences.set(element, occurrence + 1);
     let materialized = this.materializedElements.get(element);
     if (!materialized) {
       materialized = [];
@@ -945,11 +950,13 @@ export class Materializer {
     }
     const previous = materialized.find(
       (candidate) =>
-        candidate.isTopLevel === isTopLevel && isSamePosition(candidate.context, context),
+        candidate.occurrence === occurrence &&
+        candidate.isTopLevel === isTopLevel &&
+        isSamePosition(candidate.context, context),
     );
     if (previous) return previous.node;
     const node = this.freshElementToNode(element, context, isTopLevel);
-    materialized.push({ context, isTopLevel, node });
+    materialized.push({ occurrence, context, isTopLevel, node });
     return node;
   }
 

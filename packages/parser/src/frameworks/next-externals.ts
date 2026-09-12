@@ -437,8 +437,7 @@ interface NextImageStubs {
 
 /** `next/image` before 13.0 is today's `next/legacy/image`; the inner `ImageElement` component arrived in 12.1.1. */
 const imageStubs = (options: NextModelOptions, head: StubComponent): NextImageStubs => {
-  const hasImageElement = options.version === null || isVersionAtLeast(options.version, "12.1.1");
-  const legacyImage = stubValue(legacyImageStub({ hasImageElement, head }));
+  const legacyImage = stubValue(legacyImageStub({ version: options.version, head }));
   return {
     image:
       options.version !== null && !isVersionAtLeast(options.version, "13.0.0")
