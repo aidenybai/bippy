@@ -1,5 +1,5 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { createServer, type Server } from "node:http";
+import { createServer, get, type Server } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -57,6 +57,19 @@ const listen = async (server: Server): Promise<string> => {
   if (address === null || typeof address === "string") throw new Error("Missing server address");
   return `http://127.0.0.1:${address.port}`;
 };
+
+const readResponse = (url: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    get(url, (response) => {
+      let body = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk: string) => {
+        body += chunk;
+      });
+      response.once("end", () => resolve(body));
+      response.once("error", reject);
+    }).once("error", reject);
+  });
 
 const close = async (server: Server): Promise<void> => {
   server.closeAllConnections();
@@ -116,6 +129,32 @@ describe("corpus server startup", () => {
       } finally {
         await server.stop();
       }
+    });
+  });
+
+  it("keeps server stdin open without setting CI and closes the owned server on stop", async () => {
+    await withParentEnvironment(async (directory) => {
+      const capturePath = join(directory, "child.json");
+      const server = new DevServer({
+        command: `${getCommand(capturePath)} serve-stdin`,
+        cwd: directory,
+        logPath: join(directory, "server.log"),
+      });
+      let url: string | null = null;
+      try {
+        await server.start();
+        await expect.poll(() => existsSync(capturePath), { timeout: 5000 }).toBe(true);
+        const captured = readEnvironment(capturePath);
+        expect(captured.ci).toBeNull();
+        url = `http://127.0.0.1:${captured.port}`;
+        await server.waitUntilReady(url, 5000);
+        expect(await readResponse(url)).toBe("ready");
+      } finally {
+        await server.stop();
+      }
+      expect(url).not.toBeNull();
+      if (url !== null)
+        await expect(readResponse(url)).rejects.toMatchObject({ code: "ECONNREFUSED" });
     });
   });
 
@@ -219,6 +258,19 @@ describe("corpus child environments", () => {
     },
     15000,
   );
+
+  it("still sends stdin EOF to noninteractive commands", async () => {
+    await withParentEnvironment(async (directory) => {
+      const capturePath = join(directory, "environment.json");
+      await runCommand({
+        command: `${getCommand(capturePath)} stdin-end`,
+        cwd: directory,
+        logPath: join(directory, "command.log"),
+        timeoutMs: 5000,
+      });
+      expect(readEnvironment(capturePath).ci).toBe("1");
+    });
+  });
 
   it.each(COMMAND_CASES)("$name", async ({ environment, expectedCI }) => {
     await withParentEnvironment(async (directory) => {

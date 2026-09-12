@@ -67,7 +67,7 @@ Evaluation and rendering are not separate passes over the entire application. Th
 
 The application capture follows a separate path. The application runs through its normal build and runtime while Bippy records its fibers. The model and application therefore use the same snapshot format but do not obtain their trees in the same way.
 
-Before starting that application, the [corpus runner](../packages/parser/src/corpus/run-entry.ts) rejects an address that already has a listener. The check sends no page request and does not stop the existing service. Readiness probes have deadlines and reject responses after a recorded child exit. Another process can still bind the address during startup, so this does not prove server ownership.
+Before starting that application, the [corpus runner](../packages/parser/src/corpus/run-entry.ts) rejects an address that already has a listener. The check sends no page request and does not stop the existing service. Readiness probes have deadlines and reject responses after a recorded child exit. The runner keeps server stdin open until shutdown so tools such as CRA 3 do not exit on EOF. Install and setup commands still receive EOF; the runner does not set CI to keep a server alive. Another process can still bind the address during startup, so this does not prove server ownership.
 
 ## Module resolution and run state
 
