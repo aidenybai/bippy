@@ -112,6 +112,8 @@ These rules do not establish complete build-environment parity. Remaining parity
 
 A library model needs the component structure of the installed version. The [Emotion model](../packages/parser/src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
 
+The [legacy Next image model](../packages/parser/src/frameworks/next-legacy-image.ts) also uses version-specific host structure. Next 10 and 11 use `div` wrappers; Next 12 uses `span` wrappers. Next 10.1 through 11.1.0 condition the `noscript` fallback on intersection visibility. The model retains both outputs when that visibility is unknown.
+
 ### Resolve declarations without executing modules
 
 The [source parser](../packages/parser/src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.
@@ -179,6 +181,8 @@ Two equal-looking objects need not be the same object. Two references to the sam
 Timer handles retain resource identity even when their numeric ranges match. The queue uses that identity for cancellation after the interpreter copies a value.
 
 Component identity has the same requirement. Creating a wrapper component twice can create two component types, even when both wrappers use the same source body. The materializer uses source closure identity rather than component names alone to identify component proxies.
+
+React can mount the same element object in two positions. Those positions have separate component instances. The materializer distinguishes repeated element occurrences within each decision scope when it caches their React elements.
 
 Equal props do not establish a repeated render input. A nested provider can change the context while the component calls itself with unchanged props. The recursion check therefore compares the ancestor’s recorded context reads as well as its closure and props.
 

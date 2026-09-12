@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import {
+  createFrameworkRenderer,
   flattenTransparentFibers,
   getFrameworkProfile,
   renderFrameworkTarget,
@@ -18,6 +19,7 @@ import {
 } from "../src/harness/index.js";
 import type { RuntimeFiberSnapshot, SnapshotWorkTag } from "../src/harness/snapshot.js";
 import { enumerateStateSpace } from "../src/harness/state-space.js";
+import { replayStateSpace } from "../src/harness/state-replay.js";
 import { readInstalledVersion } from "../src/libraries/installed-version.js";
 import type { RuntimeObservations } from "../src/types.js";
 import { ForwardRefTag } from "../src/work-tags.js";
@@ -69,17 +71,29 @@ const withInstalledPackage = async (
 
 const renderPagesWithNext = async (version: string, route: string) => {
   const rootDirectory = await withInstalledPackage("next-pages", "next", version);
-  const result = await renderFrameworkTarget(
+  const renderer = await createFrameworkRenderer(
     { framework: "next-pages", route },
     { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
   );
+  const result = await renderer.render();
   const pattern = getRenderPattern(result);
   return {
+    renderPinned: renderer.render,
+    rootChildren: getRenderRootChildren(result),
     pattern,
     tree: formatPattern(pattern),
     errors: result.diagnostics.filter((diagnostic) => diagnostic.severity === "error"),
   };
 };
+
+const getImageTrees = (nodes: PatternNode[]): string[] =>
+  nodes.flatMap((node) =>
+    node.kind !== "fiber"
+      ? []
+      : node.name === "Image"
+        ? [formatPattern(node.children)]
+        : getImageTrees(node.children),
+  );
 
 const harnessRequire = createRequire(import.meta.url);
 
@@ -818,6 +832,97 @@ describe("next pages router", () => {
     expect(errors).toEqual([]);
     expect(lines(tree)).toEqual(["<HostRoot>", "<StrictMode>", "<Home>", "<h1>"]);
   });
+
+  it.each(["10.1.0", "10.1.3", "10.2.0", "11.1.0"])(
+    "retains independent hidden-image fallbacks in Next %s",
+    async (version) => {
+      const { rootChildren, errors, renderPinned } = await renderPagesWithNext(
+        version,
+        "/legacy-images",
+      );
+      expect(errors).toEqual([]);
+      const space = enumerateStateSpace([rootChildren]);
+      expect(space.omitted).toBeNull();
+      expect(space.states).toHaveLength(8);
+      const combinations = new Set<string>();
+      for (const state of space.states) {
+        const images = getImageTrees(state.tree);
+        expect(images).toHaveLength(7);
+        const fallbacks = images.map((image) => image.includes("<noscript>"));
+        combinations.add([fallbacks[0], fallbacks[1], fallbacks[5]].map(Number).join(""));
+        for (const image of images) {
+          expect(image.trimStart().startsWith("<div>")).toBe(true);
+          expect(image).not.toContain("<span>");
+          if (image.includes("<noscript>"))
+            expect(image.indexOf("<noscript>")).toBeLessThan(image.lastIndexOf("<img>"));
+        }
+        expect([fallbacks[2], fallbacks[3], fallbacks[4], fallbacks[6]]).toEqual([
+          false,
+          false,
+          false,
+          false,
+        ]);
+      }
+      const replay = await replayStateSpace(space, renderPinned, null);
+      expect(replay.summary.mismatched).toEqual([]);
+      expect(replay.summary.incomplete).toEqual([]);
+      expect(replay.summary.replayed).toBe(8);
+      expect([...combinations].sort()).toEqual([
+        "000",
+        "001",
+        "010",
+        "011",
+        "100",
+        "101",
+        "110",
+        "111",
+      ]);
+    },
+  );
+
+  it.each([
+    { version: "10.0.0", images: 1, preload: false },
+    { version: "10.0.1", images: 2, preload: false },
+    { version: "10.0.4", images: 2, preload: false },
+    { version: "10.0.5", images: 2, preload: true },
+    { version: "10.0.9", images: 2, preload: true },
+  ])("retains the early Next $version image layout", async ({ version, images, preload }) => {
+    const { pattern, errors } = await renderPagesWithNext(version, "/legacy-images");
+    expect(errors).toEqual([]);
+    const trees = getImageTrees(pattern);
+    expect(trees).toHaveLength(7);
+    for (const tree of trees) {
+      expect(tree.match(/<div>/g)).toHaveLength(2);
+      expect(tree.match(/<img>/g)).toHaveLength(images);
+      expect(tree).not.toContain("<noscript>");
+    }
+    expect(trees[2].includes("<Head>")).toBe(preload);
+  });
+
+  it.each([
+    { version: "11.1.1", wrapper: "div", fallbackCount: 7, hasImageElement: false },
+    { version: "11.1.4", wrapper: "div", fallbackCount: 7, hasImageElement: false },
+    { version: "12.0.0", wrapper: "span", fallbackCount: 7, hasImageElement: false },
+    { version: "12.0.7", wrapper: "span", fallbackCount: 7, hasImageElement: false },
+    { version: "12.0.8", wrapper: "span", fallbackCount: 2, hasImageElement: false },
+    { version: "12.1.0", wrapper: "span", fallbackCount: 2, hasImageElement: false },
+    { version: "12.1.1", wrapper: "span", fallbackCount: 3, hasImageElement: true },
+  ])(
+    "uses the installed Next $version image structure",
+    async ({ version, wrapper, fallbackCount, hasImageElement }) => {
+      const { pattern, errors } = await renderPagesWithNext(version, "/legacy-images");
+      expect(errors).toEqual([]);
+      const images = getImageTrees(pattern);
+      expect(images).toHaveLength(7);
+      expect(images.filter((image) => image.includes("<noscript>"))).toHaveLength(fallbackCount);
+      for (const image of images) {
+        expect(image.trimStart().startsWith(`<${wrapper}>`)).toBe(true);
+        expect(image.includes("<ImageElement>")).toBe(hasImageElement);
+        if (image.includes("<noscript>"))
+          expect(image.indexOf("<noscript>")).toBeGreaterThan(image.lastIndexOf("<img>"));
+      }
+    },
+  );
 
   it("models next/head, next/image and next/legacy/image after the current next", async () => {
     const { tree, errors } = await renderPagesWithNext("15.5.0", "/media");
