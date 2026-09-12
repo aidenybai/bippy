@@ -8116,6 +8116,113 @@
         "externalPackageAllowList": ["antd", "antd/*", "@ant-design/*", "@rc-component/*", "rc-*"]
       },
       "notes": "Keep original react-app-rewired, output.globalObject=this and both worker-loader imports. The generator starts on mount; worker behavior must remain uncertain if not modeled, not replaced by fabricated output. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Original worker-loader generator runs natively on mount. Preserve truncated membership, 99 bounded states and nine reported omissions, despite sampled replay passing. No worker output, solved grid, cell values/attributes or whole-space behavior is fabricated or proven. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 198980875 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "ernestthepoet-ec-82-ms",
+      "repository": "https://github.com/ErnestThePoet/ec-82-ms",
+      "revision": "f4ae3f1bbd038a89babda39881b6108163599fdc",
+      "description": "ErnestThePoet/ec-82-ms",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54541",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54541/ec-82-ms/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/"
+      },
+      "notes": "Preserve Next12.2.4, original basePath/assetPrefix, custom document and MobX calculator initialization. Empty storage does not supply a saved expression, language or memory. Arithmetic and keyboard events are not driven. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. The JSX receiver repair be911f22 changes partial to exact against the same 350-fiber/two-commit native capture, without source changes. Preserve the previous eleven-fiber wildcard caused by this.ThisComponent, three bounded states and two incomplete replays among three assignments. Scientific calculations, keyboard handling, stored memory and whole-space behavior remain unverified. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 527482080 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "maxleiter-easyarty",
+      "repository": "https://github.com/MaxLeiter/easyarty",
+      "revision": "427df1469df401819ec4aa543b9adc72a3601866",
+      "description": "MaxLeiter/easyarty",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@8.15.9 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@8.15.9 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54542",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54542/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["@radix-ui/*", "lucide-react", "react-feather"]
+      },
+      "notes": "Select its original pnpm lockfileVersion6 with pnpm8; retain the secondary Yarn lock. Preserve the checked-in next-themes0.3.0 patch adding async to both emitted script variants, MDX wrapper, original experimental React compiler and locked React19 RC. Patch application requires a separate installed-file audit. The authored calculator result starts at764 without an input; no game calculation or input is supplied. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. Keep partial membership and the original four page errors: three React19 element.ref warnings and a HotReload/SlotClone render-phase update warning. Actual captured Next15 React is 19.0.0-rc-66855b96-20241106; the original installed package React remains 19.0.0-rc-935180c7e0-20240524. Both original next-themes patch postimages verify. Native Next changes only the next-env.d.ts documentation URL; maxleiter-easyarty-native-next-env.json verifies the exact patch and installed generator. SourceUnchanged is false for that declaration comment, not application bodies or compiler settings. The original React compiler, MDX, pnpm8/lockfileVersion6 and secondary Yarn lock remain unchanged. No attribute, focus, calculation, script-hoisting or library completeness claim. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 375528926 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "pyxel-dev-biorhythm",
+      "repository": "https://github.com/pyxel-dev/biorhythm",
+      "revision": "89162cbd05fe941efed30bac226f6b0253e98652",
+      "description": "pyxel-dev/biorhythm",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54543",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54543/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["react-redux", "react-chartjs-2"]
+      },
+      "notes": "Preserve Next10.2.3, Redux state, original ChartJS/plugin versions and original statistics script. No birthday/date input or chart output is fabricated; known fibers do not validate biorhythm calculations or charts. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. Exact initial membership retains both original statistics-script errors: myownstats.com/api/event fails CORS preflight and ERR_FAILED. Native React17.0.2 has two commits; one replay passes. No birthday/date input, chart result, analytics success or biorhythm correctness is established. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 324127865 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "dastasoft-memory-game",
+      "repository": "https://github.com/dastasoft/memory-game",
+      "revision": "b693da35b7123c4049d1607029da8b50d899aeed",
+      "description": "dastasoft/memory-game",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54545",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54545/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["next-seo", "framer-motion"]
+      },
+      "notes": "Preserve original prepare/husky workflow, Next12, Framer Motion6, Next SEO, source aliases and initial IntroScreen. Do not select a difficulty/deck or supply moves. Original animations and image resources remain unmodified. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. Interpret the installed Framer Motion6.2.9 AnimatePresence/PresenceChild source rather than keep that provider opaque. Existing modeled exports still apply. This source policy does not establish exit animations, layout, timing or gameplay. Explicit Framer Motion6.2.9 AnimatePresence/PresenceChild source changes partial to exact against the same capture. Preserve the original opaque-provider comparison. Native Next12 React is 18.0.0-fc46dba67-20220329; the installed package remains18.0.0. Original IntroScreen, prepare/husky, Next SEO, source aliases, animation code and resources remain unchanged. Initial membership does not prove transitions, animation/layout, selected decks or gameplay. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 484030537 identifies a distinct non-fork repository."
     }
   ]
 }
