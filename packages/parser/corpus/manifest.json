@@ -7283,6 +7283,81 @@
         "externalPackageAllowList": []
       },
       "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 6.14.18 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Original CRA2.1.1 application with React16.4.1, Babel core7.1.0/parser7.2.0, preset6.1.0 and macros2.4.2. The independent capture has 35 fibers, one commit and no page errors. Before the parser repair, macro expansion rejects the public onClick class field; enabling classProperties syntax produces exact membership and one passing replay against that identical capture. Current/repeated results agree, and seven other saved-capture controls remain unchanged. The native preset and class-field syntax are not replaced with guessed application stubs. Component source and the npm lock are unchanged; original CRA startup adds browserslist defaults to package.json before capture. That exact generated patch, package hash, original failure and all 1,784 installed-version checks remain in provenance. This is syntax support, not class-field lowering, keyboard/calculation, interaction or whole-space completeness. Component source and the canonical npm lock remain unchanged; the generated browserslist configuration is preserved explicitly. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 139321310 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "drawesome",
+      "repository": "https://github.com/benjitaylor/drawesome",
+      "revision": "8fb08e93433e2cda32e265280371a0551b3c13a7",
+      "description": "Drawesome drawing studio",
+      "framework": "spa",
+      "workingDirectory": "apps/studio",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54431 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none"
+      },
+      "url": "http://127.0.0.1:54431/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": "apps/studio",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original workspace source and pnpm9-format lock, installed with pinned Node22.16/pnpm10.12. The root dev script delegates to the studio package's Vite dev script; start that original script in apps/studio. The original Vite alias targets packages/draw/src rather than a substituted build. No custom inputs, drawing strokes, pixels, export, interactions, visuals or whole-space completeness are claimed. The independent native capture has React19.2.8, 1,014 fibers, four commits and no page errors. Baseline/current/repeated analysis agrees on exact initial-page membership, two bounded states and one passing replay. The original workspace alias loads packages/draw/src; all 83 installed versions and the original pnpm lock verify. This does not establish strokes, canvas pixels, export or event behavior. Independent initial-page capture and repeated same-capture analysis do not establish visual, interaction or whole-space completeness. GitHub repository ID 1314688648 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "phar-converter",
+      "repository": "https://github.com/ScerIO/phar.scer.io",
+      "revision": "269dbe6ac5afcd10573f0a55b452e2d14f4b904e",
+      "description": "PHAR archive converter",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54432",
+        "BROWSER": "none"
+      },
+      "url": "https://127.0.0.1:54432/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "aliases": {
+          "theme": "src/theme",
+          "components": "src/components",
+          "containers": "src/containers",
+          "i18n": "src/i18n",
+          "services": "src/services",
+          "utils": "src/utils",
+          "store": "src/store",
+          "react-dom": "node_modules/@hot-loader/react-dom"
+        },
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "@material-ui/core",
+          "@material-ui/core/*",
+          "@material-ui/icons",
+          "@material-ui/icons/*",
+          "@material-ui/lab",
+          "@material-ui/lab/*",
+          "@material-ui/styles",
+          "@material-ui/utils",
+          "mobx-react",
+          "react-dropzone",
+          "react-i18next",
+          "i18next",
+          "react-hot-loader"
+        ],
+        "defines": {
+          "appVersion": "3.4.0",
+          "homepageUrl": "https://github.com/pharjs/pharjs.github.io#readme"
+        }
+      },
+      "notes": "Original HTTPS webpack/hot-middleware server and checked-in localhost PFX certificate, pinned Node16.20/pnpm8.15/Yarn1.22. Only its declared PORT changes. The webpack aliases and literal DefinePlugin values are retained explicitly, including the original @hot-loader/react-dom alias. This is not full webpack-loader or service-worker integration. No file upload, PHAR conversion, offline behavior, downloads, interactions, visuals or whole-space completeness are claimed. The independent native capture has the original hot-loader React DOM16.11.0 renderer, 155 fibers, seven commits and no page errors; the installed React package is16.9.0. Interpreting allowlisted MobX React6.1.7 source exposes a mismatch formerly hidden by an opaque partial result: the model expects inject-with-settingsStore(Component), but native fibers contain inject-with-settingsStore(ThemeProvider). Both baseline and current model replays pass despite that mismatch. Current/repeated comparison fields agree. Existing observer helpers and core MobX remain modeled, so this is not full-source or observability/lifecycle completeness. All 747 installed packages verify. The original locked hot-loader tarball contains package version16.11.0+4.12.16 although Yarn records16.11.0; both locked hashes and all 40 installed artifact files verify. That specific published metadata difference is recorded, not a dependency substitution or general version normalization. The original HTTPS certificate, development server, webpack aliases and literal defines remain intact. No archive input, conversion output or offline behavior is claimed. Independent initial-page capture and repeated same-capture analysis do not establish visual, interaction or whole-space completeness. GitHub repository ID 141057421 identifies a distinct non-fork repository."
     }
   ]
 }
