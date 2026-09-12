@@ -7739,6 +7739,377 @@
         ]
       },
       "notes": "Original dev script, Vanilla Extract plugin, Mantine UI and /sudoku/ base remain. This is a development capture, not the README's production build/preview recipe. Empty storage receives no fabricated saved game, theme or clock. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. Explicitly interpret the installed dependency source listed in this policy. Prior sparse-policy comparisons remain saved against the same capture. This changes analysis policy, not application source, dependency versions, native setup, comparison or budgets; existing model overrides still apply. The unchanged native capture has React18.2.0, 414 fibers, four commits and no page errors. Expanded installed Mantine styles/utils, MUI utils and React Icons source raises strict coverage from about3% to about95%, but remains partial: 393 of413 normalized nodes match, two opaque regions skip13 fibers, and a wildcard absorbs7. The model counts463980 bounded combinations, enumerates256 and reports463756 omissions including dropped states; those counts are not exhaustive cardinality. All16 sampled replays and the preferred outside-enumeration witness remain incomplete. Preserve the older partial policy and every omission; this is a source-policy expansion, not a parser repair, performance claim, rendering/event proof or whole-space coverage. All337 installed versions, original source/npm lock and actual runner versions verify. GitHub repository ID 668255568 is distinct and non-fork."
+    },
+    {
+      "id": "pedrovsiqueira-react-calculator",
+      "repository": "https://github.com/pedrovsiqueira/react-calculator",
+      "revision": "bd9422face3bb560527bf10bcb12cc9e9f492d17",
+      "description": "pedrovsiqueira/react-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54521",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54521/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "react-helmet",
+          "react-side-effect",
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context"
+        ]
+      },
+      "notes": "Preserve its original AppContext, theme, Helmet, Router5 and MathJS expression workflow; no arithmetic input is supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Source-expanded Router5 and mini-create-react-context resolve the earlier partial result to exact. Keep its original native warning and earlier source policies; this is not a parser repair or navigation/lifecycle proof. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 324566305 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "tuanpham-dev-calculator-react-typescript",
+      "repository": "https://github.com/tuanpham-dev/calculator-react-typescript",
+      "revision": "428884af4d6a9d81b0cd5700c95461b734972446",
+      "description": "tuanpham-dev/calculator-react-typescript",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54522",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54522/calculator-react-typescript/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "Keep the original GitHub Pages public path and nested components/App/App entry. Keyboard shortcuts are not driven. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Exact initial calculator membership and one passing replay do not validate arithmetic or keyboard behavior. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 255199050 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "larkooo-discord-intents-calculator",
+      "repository": "https://github.com/Larkooo/discord-intents-calculator",
+      "revision": "0138c4adf16e7cda9f44622ae65a158e9e65e653",
+      "description": "Larkooo/discord-intents-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54523",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54523/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["@mui/*", "tss-react", "tss-react/*", "react-transition-group"]
+      },
+      "notes": "Keep the authored dark-theme fallback and default intent/event data. No saved privileged intent values, Discord requests or clipboard events are supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Retain the native naming mismatch beneath SwitchBase: model Styled(Component), native Styled(ForwardRef(ButtonBase)). Internal replay passes despite this counterexample. No style/forwardRef metadata repair or higher comparison budget is implied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 316395160 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "snelsi-cocomo-calculator",
+      "repository": "https://github.com/snelsi/COCOMO-calculator",
+      "revision": "e0400dfddd05a32808e4d644ab53de52e7bb0a8b",
+      "description": "snelsi/COCOMO-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54524",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54524/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "antd",
+          "antd/*",
+          "@ant-design/*",
+          "@rc-component/*",
+          "rc-*",
+          "react-use-media-query-hook",
+          "react-router-dom",
+          "react-router",
+          "history",
+          "omit.js",
+          "mini-create-react-context",
+          "mini-store",
+          "react-lifecycles-compat"
+        ]
+      },
+      "notes": "The original root route is About, not /calc. Preserve service-worker registration; a development capture does not establish offline behavior. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. The original root route remains About. Sparse analysis was unresolved with zero fibers and an incomplete replay. Installed Router5, mini-create-react-context, mini-store, lifecycle and omit helper source exposes partial membership against the same capture. Preserve both policies and incomplete evidence; no application repair or complete store/router model. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 242591616 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "balintmendli-react-calculator",
+      "repository": "https://github.com/BalintMendli/react-calculator",
+      "revision": "b67b9a0750bae8676f40dbc72b2fdab5510b69c0",
+      "description": "BalintMendli/react-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54525",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54525/react-calculator/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "Keep the original styled-components macro settings, baseUrl src and package homepage under the historical zenott owner. Deduplicate by repository ID rather than owner name. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Exact initial membership preserves original styled-components macros, class field/ref and focus-on-mount code. It does not prove focus behavior, arithmetic or input handling. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 145893428 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "douglasdemoura-calculadora-react",
+      "repository": "https://github.com/DouglasdeMoura/calculadora-react",
+      "revision": "a42563b2db0a9ea75a8b4bfe1c7d93c9fa32b55b",
+      "description": "DouglasdeMoura/calculadora-react",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54526",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54526/calculadora-react/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "Preserve the original tokenizer/evaluator and input history; no expression is supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Exact initial membership retains original tokenizer/evaluator source; no expression or history input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 334297629 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "luanedcosta-react-memory-game",
+      "repository": "https://github.com/LuanEdCosta/react-memory-game",
+      "revision": "6695007370565730db3828b1536e7a135f3cb72c",
+      "description": "LuanEdCosta/react-memory-game",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54528",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54528/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "@fortawesome/*",
+          "react-redux",
+          "react-router-dom",
+          "react-router",
+          "history",
+          "mini-create-react-context"
+        ]
+      },
+      "notes": "Keep the original Redux store and FontAwesome icon registration; no game difficulty, moves or theme is supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Source-expanded Redux7, Router5/History and mini-create-react-context resolve earlier opaque providers to exact initial membership. The original HashRouter remains, not a BrowserRouter substitution. No gameplay, hash navigation or store/lifecycle completeness claim. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 253341048 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "alphapentagon-memory-game",
+      "repository": "https://github.com/AlphaPentagon/memory_game",
+      "revision": "e6aadd6b5bcf60efaa7cf2054963f92d92bf4049",
+      "description": "AlphaPentagon/memory_game",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54530",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54530/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["react-router-dom", "react-router", "@remix-run/router"]
+      },
+      "notes": "Keep the authored non-StrictMode root, card data and audio behavior. No moves or audio input is supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Source-expanded Router6/@remix-run/router resolves earlier partial membership to exact on the same capture. Preserve the original non-StrictMode root. No gameplay or full navigation claim. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 539094282 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "ricargit-react-memory-game",
+      "repository": "https://github.com/RicarGit/React-Memory-Game",
+      "revision": "0e50d326dc72c192da1ace5527def781c615c98b",
+      "description": "RicarGit/React-Memory-Game",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54531",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54531/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "The original initial card-status ref is empty until Start. Do not invent shuffled cards, stored records or a theme. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Exact initial empty-card-grid membership does not mean a shuffled game was tested. Original Start, theme/record storage and shuffle logic remain unmodified. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 508244304 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "kobawan-sudoku",
+      "repository": "https://github.com/kobawan/sudoku",
+      "revision": "358a88f7709003bb338cc646df5881e3fe886de6",
+      "description": "kobawan/sudoku",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54534",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54534/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["react-redux"]
+      },
+      "notes": "Keep the original Redux/thunk/axios flow and homepage. Do not substitute API data, puzzles or stored state. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Interpret the explicitly opted-in installed router/store helper source rather than leave these providers opaque. Preserve source-version-specific class/function structure; existing modeled exports still take precedence. This is source policy against the same capture, not a parser repair, full navigation/store/lifecycle integration, changed native setup or raised budget. Source-expanded Redux7 changes partial to exact initial guest-lobby membership. Original findUser only requests localhost5000 when session storage contains a user ID; the empty context does not supply one or a saved game. The unrelated Control Center listener remains untouched. Login, registration, backend data and game saving are not established. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 80321926 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "hesbon-osoro-sudoku-solver",
+      "repository": "https://github.com/hesbon-osoro/sudoku-solver",
+      "revision": "7eff51766ac54adce44894409db48680982c2703",
+      "description": "hesbon-osoro/sudoku-solver",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54535",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54535/sudoku-solver/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "Keep the original React19/CRA5 pairing and empty 6x6 puzzle. No solve/reset input is supplied. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Exact initial empty6x6 board membership does not validate solving/backtracking, solve timing or input behavior. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1039734820 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "cenxky-sudoku-react",
+      "repository": "https://github.com/cenxky/sudoku-react",
+      "revision": "cfe91166b68b408f11755dca00b3830b8e4aea49",
+      "description": "cenxky/sudoku-react",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --ignore-scripts --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "HOST": "127.0.0.1",
+        "PORT": "54537",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54537/sudoku-react/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["antd", "antd/*", "@ant-design/*", "@rc-component/*", "rc-*"]
+      },
+      "notes": "Keep original react-app-rewired, output.globalObject=this and both worker-loader imports. The generator starts on mount; worker behavior must remain uncertain if not modeled, not replaced by fabricated output. Original source, HTML, scripts and frozen lock retained. Native startup-generated configuration, errors and omissions must be recorded separately. Pinned Node/package-manager versions and installed-tree fidelity require checks before capture. No CI override, OpenSSL flag, source repair or raised analysis budget. Initial fibers do not establish calculations, puzzle correctness, events, styles, pixels or whole-space coverage. Original worker-loader generator runs natively on mount. Preserve truncated membership, 99 bounded states and nine reported omissions, despite sampled replay passing. No worker output, solved grid, cell values/attributes or whole-space behavior is fabricated or proven. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 198980875 identifies a distinct non-fork repository."
     }
   ]
 }
