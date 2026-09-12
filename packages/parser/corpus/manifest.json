@@ -6659,6 +6659,101 @@
         "externalPackageAllowList": ["lucide-react"]
       },
       "notes": "Pinned pnpm 7.33.7 lockfile and unchanged application source. Runs the original Next 13.2.4 development script with framework React 18.3.0-next-3706edb81-20230308. Initial-page membership only, with one counted state and one replay. Original fill-rule and clip-rule warnings remain in the capture. Metadata comes from interpreted installed framework source. No navigation, visual or whole-space coverage is claimed."
+    },
+    {
+      "id": "fullstack-adivinhe",
+      "repository": "https://github.com/rocketseat-education/fullstack-adivinhe",
+      "revision": "081fccd3085d4b77f73df467b81f1ded1b2c89d2",
+      "description": "React word-guessing game with five original challenges and no backend",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54348 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54348/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Unchanged source and pinned npm dependencies. Original five-word game; no backend. One random word selection was independently captured. The model counts six initial-render states including loading and replays all five decision assignments. This is not independent evidence for all selections or any gameplay transition."
+    },
+    {
+      "id": "go-react-ama",
+      "repository": "https://github.com/rocketseat-education/semana-tech-01-go-react-web",
+      "revision": "eae465a4a2641b34b905811e9769caad3e7c1b64",
+      "description": "React 19 release-candidate AMA creation form before room submission",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci --legacy-peer-deps",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54349 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54349/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["lucide-react", "@tanstack/react-query", "sonner"]
+      },
+      "notes": "Original locked React 19 release candidate. Ordinary npm ci rejects React Query's React 18 peer range; npm ci --legacy-peer-deps preserves original versions and lockfile. Uses the existing React Router adapter consistently. Initial create-room page only; room submission and the original Go backend are not exercised."
+    },
+    {
+      "id": "masterclass-react-twitter",
+      "repository": "https://github.com/rocketseat-education/masterclass-react",
+      "revision": "f15565e063e1c7b979939181888642e42c5bdee8",
+      "description": "Local-state Twitter interface with the original three timeline posts",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54350 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54350/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["phosphor-react"]
+      },
+      "notes": "Unchanged source and pinned npm dependencies. Uses the existing React Router adapter consistently. Original three local timeline posts; no substituted API. Initial membership only, not posting, hotkey or navigation coverage."
+    },
+    {
+      "id": "ignite-next-auth-jwt",
+      "repository": "https://github.com/rocketseat-education/ignite-reactjs-next-auth-jwt",
+      "revision": "19452de7555e919267a4e40831007f04919e5e94",
+      "description": "Next 10 JWT application at its initial unauthenticated sign-in page",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "corepack yarn@1.22.22 install --frozen-lockfile --non-interactive --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run dev --hostname 127.0.0.1 --port 54351",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54351/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["nookies"]
+      },
+      "notes": "Unchanged source and frozen Yarn dependencies. Verified Node 16.20.2/pnpm 8.15.9 runs the original Next 10.2 development script. Initial sign-in page with the browser's default empty cookies. Authentication, cross-tab sign-out and the original backend are not exercised."
     }
   ]
 }
