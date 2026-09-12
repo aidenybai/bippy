@@ -260682,6 +260682,149 @@
       "anchor": null,
       "note": null,
       "failure": null
+    },
+    {
+      "id": "mural",
+      "revision": "e9d4a5bf80dfdb90e8831dfebdfbfdb57bf76ff0",
+      "framework": "react-router",
+      "capturedAt": "2026-09-12T13:25:24.496Z",
+      "durationMs": 1015,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 151,
+        "commits": 5,
+        "pageErrors": [
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+          "Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+        ],
+        "title": "Mural"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 42,
+          "textCount": 1,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 348
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "mismatch",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 150,
+        "staticFibers": 35,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <Providers> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <DevProvider> [ClassComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <EditorProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BaseProvider> [FunctionComponent] > <LayersManager> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <StyledAppContainer> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <UIDReset> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Container> [FunctionComponent] > <div> [HostComponent][0]",
+          "expected": "<BrowserRouter> [FunctionComponent]",
+          "actual": "<BrowserRouter> [ClassComponent]"
+        },
+        "stepsUsed": 28,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 2,
+        "tree": {
+          "nodes": 78,
+          "inputs": 2,
+          "guards": 6,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 1,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 2,
+          "divergence": {
+            "path": "root > <Providers> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <DevProvider> [ClassComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <EditorProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BaseProvider> [FunctionComponent] > <LayersManager> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <StyledAppContainer> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <UIDReset> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Container> [FunctionComponent] > <div> [HostComponent][0]",
+            "expected": "<BrowserRouter> [FunctionComponent]",
+            "actual": "<BrowserRouter> [ClassComponent]"
+          }
+        },
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "whether the persistor has bootstrapped",
+              "location": null,
+              "side": 0,
+              "guard": "or(and(eq(choice(commit), 0), eq(choice(#1), 0)), and(eq(choice(commit), 1), eq(choice(#1), 0)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "whether the persistor has bootstrapped",
+              "location": null,
+              "side": 1,
+              "guard": "and(eq(choice(commit), 0), not(eq(choice(#1), 0)))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "and(eq(choice(commit), 1), eq(choice(#1), 0))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 4,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 3,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T12:38:13.148Z",
+      "failure": null
     }
   ]
 }
