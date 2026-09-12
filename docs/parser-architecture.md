@@ -220,6 +220,8 @@ Evaluating both sides of a condition can change shared state. If the interpreter
 
 [`HeapJournal`](../packages/parser/src/evaluate/heap-journal.ts) records conditional changes to shared interpreted state. At the end of a path, it saves the changed values and restores the previous values. After evaluation of the alternatives, it combines their results under the branch conditions.
 
+For collections, the journal shares [read-only entry tables](../packages/parser/src/evaluate/collections.ts) across captures and restores. It copies a shared table before a write and reuses identical tables when joining paths. This sharing does not change application object identity. React still [compares application `getSnapshot()` values with `Object.is`](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-reconciler/src/ReactFiberHooks.js#L1681).
+
 The journal distinguishes preexisting objects from objects allocated within a path. An object allocated inside one alternative does not need restoration for another alternative that cannot reference it. Pending hook updates also require this distinction because an update must remain conditional on the path that schedules it.
 
 Conditional reads require the same guards as writes. The interpreter narrows a value when the active conditions identify a compatible subset of its alternatives. Journaling writes alone would still permit a callback to read a value from an incompatible path.
@@ -360,6 +362,8 @@ The [matcher](../packages/parser/src/harness/compare.ts) drives suspended calls 
 The work stack does not raise the matching step budget. Recursive tree indexing and guard-solver resource bounds remain separate limits. Enumeration success still does not establish that comparison will complete.
 
 Check `budgetExhausted` when a comparison reports `mismatch`. If true, the search found no witness within its budget. That does not prove the capture is absent from the model. The recorded divergence describes the search, not a proven parser defect.
+
+Check evaluation diagnostics even when the matcher’s `budgetExhausted` flag is false. Evaluation can replace a component body with a wildcard after a step or call-depth cutoff. A partial match through that wildcard does not validate the missing body.
 
 The comparison checks fiber structure. It also compares these recorded fields:
 
