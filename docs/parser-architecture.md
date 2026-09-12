@@ -81,6 +81,8 @@ For Create React App projects, the [macro transform](../packages/parser/src/grap
 
 The transform runs on the application's `src` files when the preset declares the macro plugin. It explicitly enables class-field syntax for older Babel compilers without running the preset's class-field lowering. Macro configuration and code execute as build infrastructure.
 
+For demos that import generated library files, preserve the original build lifecycles before capture. Verify generated files separately from the root and demo dependency trees. A frozen root install does not verify a nested demo’s dependencies. The [corpus runner](../packages/parser/src/corpus/run-entry.ts) runs installation commands at the repository root, regardless of `workingDirectory`.
+
 The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
 
 Build configuration can read variables that a client bundle does not expose. The [corpus renderer](../packages/parser/src/corpus/render-entry.ts) uses the entry’s child-process environment during native configuration loading and later renders. It serializes these operations because `process.env` is shared, then restores the harness environment even after failure. Inherited `CI` and package-manager variables follow the [dev-server rules](../packages/parser/src/corpus/dev-server.ts).
