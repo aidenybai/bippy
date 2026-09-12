@@ -224,16 +224,18 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 235 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
+`corpus/manifest.json` pins 236 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
 
-The twenty-eight repositories added beyond the original 207-repository snapshot report:
+The twenty-nine repositories added beyond the original 207-repository snapshot report:
 
-- Twenty-three exact matches
+- Twenty-four exact matches
 - Two truncated results
 - Two partial results
 - One mismatch
 
 These initial-page comparisons do not establish event coverage or complete the 500-repository gate.
+
+Emoji Kitchen’s configured capture uses the documented metadata download at a pinned backend revision. Its earlier missing-metadata error capture remains separate; the configured match is not a same-capture parser repair.
 
 The word-guessing game contributes one independently captured selection, not independent coverage of all five modeled choices or gameplay.
 

@@ -260795,6 +260795,126 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T05:09:34.764Z",
       "failure": null
+    },
+    {
+      "id": "emoji-kitchen",
+      "revision": "b50d80bbc9bf48d8f015b2d2208f2b44cacc2577",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T07:50:01.523Z",
+      "durationMs": 11851,
+      "runtime": {
+        "reactVersion": "19.2.8",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 7644,
+        "commits": 5,
+        "pageErrors": [],
+        "title": "Emoji Kitchen"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 7644,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 11949
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 7643,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 7643,
+        "staticFibers": 7643,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 7643,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 7736,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": null,
+      "failure": null
     }
   ]
 }
