@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { describeError } from "../errors.js";
 import { MAX_TIMER_TASKS, type TimerQueue } from "../evaluate/timers.js";
 import { createCommitRecorder } from "../harness/commit-recorder.js";
 import { getRootContainer } from "../harness/runtime-snapshot.js";
@@ -9,6 +10,14 @@ import type { RendererHost } from "./renderer-host.js";
 const SETTLE_ROUNDS = 8;
 
 const noop = (): void => {};
+
+const describeMountError = (error: unknown): string => {
+  try {
+    return describeError(error);
+  } catch {
+    return "error could not be described";
+  }
+};
 
 export interface MountResult {
   snapshot: RuntimeSnapshot;
@@ -71,12 +80,26 @@ export const mountNode = async (
       uncaughtErrors,
       caughtErrors,
     };
+  } catch (error) {
+    uncaughtErrors.push(error);
+    throw error;
   } finally {
-    await runtime.act(async () => root.unmount());
-    console.error = consoleError;
-    console.warn = consoleWarn;
-    recorder.dispose();
-    detachContainer();
+    try {
+      await runtime.act(async () => root.unmount());
+    } catch (error) {
+      if (uncaughtErrors.length > 0) {
+        throw new AggregateError(
+          [...uncaughtErrors, error],
+          `React mount failed: ${uncaughtErrors.map(describeMountError).join("; ")}; cleanup failed: ${describeMountError(error)}`,
+        );
+      }
+      throw error;
+    } finally {
+      console.error = consoleError;
+      console.warn = consoleWarn;
+      recorder.dispose();
+      detachContainer();
+    }
   }
 };
 

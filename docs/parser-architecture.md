@@ -305,7 +305,7 @@ A modeled leading `await` resumes in a reaction microtask even when its operand 
 
 Promise support remains incomplete. Thenable behavior, custom promise constructors, escaped or widened outcomes, non-leading await expressions, and render-local suspension still require verification.
 
-[Mounting](../packages/parser/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. Reaching the settlement limit does not prove that the application has no further updates.
+[Mounting](../packages/parser/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. If unmounting throws, it still restores console handlers and releases the recorder and container. When rendering and unmounting both fail, an aggregate retains both errors, including thrown `null` or `undefined`. A cleanup failure remains a failed analysis. Reaching the settlement limit does not prove that the application has no further updates.
 
 ## Symbolic states
 
