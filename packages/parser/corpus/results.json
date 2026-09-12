@@ -281512,6 +281512,489 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T19:15:59.349Z",
       "failure": null
+    },
+    {
+      "id": "ernestthepoet-ec-82-ms",
+      "revision": "f4ae3f1bbd038a89babda39881b6108163599fdc",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-12T20:35:51.845Z",
+      "durationMs": 219,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 350,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "EC-82MS Online Scientific Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 343,
+          "textCount": 14,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 35
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 320,
+        "matchedText": 14,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 10,
+        "status": "exact",
+        "runtimeFibers": 334,
+        "staticFibers": 334,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 335,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 337,
+          "inputs": 2,
+          "guards": 3,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | not(truthy(#1))",
+              "reason": "if (decimal.js#new default.abs().lt())",
+              "location": "/private/tmp/bippy-parser-game-expansion/ernestthepoet-ec-82-ms/modules/calc-core/objs/internal-number.ts:87:17",
+              "alternativeIndex": 0,
+              "alternativeCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | not(truthy(#1))",
+              "reason": "if (decimal.js#new default.abs().lt())",
+              "location": "/private/tmp/bippy-parser-game-expansion/ernestthepoet-ec-82-ms/modules/calc-core/objs/internal-number.ts:87:17",
+              "side": 0,
+              "guard": "and(truthy(#1), truthy(#2))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | not(truthy(#1))",
+              "reason": "if (decimal.js#new default.abs().lt())",
+              "location": "/private/tmp/bippy-parser-game-expansion/ernestthepoet-ec-82-ms/modules/calc-core/objs/internal-number.ts:87:17",
+              "side": 1,
+              "guard": "and(truthy(#1), not(truthy(#2)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | not(truthy(#1))",
+              "reason": "if (decimal.js#new default.abs().lt())",
+              "location": "/private/tmp/bippy-parser-game-expansion/ernestthepoet-ec-82-ms/modules/calc-core/objs/internal-number.ts:87:17",
+              "side": 2,
+              "guard": "not(truthy(#1))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 3,
+        "replayed": 3,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | not(truthy(#1))",
+                "reason": "if (decimal.js#new default.abs().lt())",
+                "location": "/private/tmp/bippy-parser-game-expansion/ernestthepoet-ec-82-ms/modules/calc-core/objs/internal-number.ts:87:17",
+                "alternativeIndex": 1,
+                "alternativeCount": 3
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | not(truthy(#1))",
+                "reason": "if (decimal.js#new default.abs().lt())",
+                "location": "/private/tmp/bippy-parser-game-expansion/ernestthepoet-ec-82-ms/modules/calc-core/objs/internal-number.ts:87:17",
+                "alternativeIndex": 2,
+                "alternativeCount": 3
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T20:09:25.918Z",
+      "failure": null
+    },
+    {
+      "id": "maxleiter-easyarty",
+      "revision": "427df1469df401819ec4aa543b9adc72a3601866",
+      "framework": "next-app",
+      "capturedAt": "2026-09-12T20:37:23.064Z",
+      "durationMs": 328,
+      "runtime": {
+        "reactVersion": "19.0.0-rc-66855b96-20241106",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 296,
+        "commits": 12,
+        "pageErrors": [
+          "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.",
+          "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.",
+          "Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://react.dev/link/setstate-in-render HotReload SlotClone SlotClone",
+          "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."
+        ],
+        "title": "EasyArty - the Hell Let Loose artillery calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 197,
+          "textCount": 11,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 2,
+          "unknownCount": 0,
+          "modulesLoaded": 329
+        },
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 158,
+        "matchedText": 11,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 6,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 26,
+        "status": "partial",
+        "runtimeFibers": 175,
+        "staticFibers": 171,
+        "coverage": 1,
+        "strictCoverage": 0.9657142857142857,
+        "divergence": null,
+        "stepsUsed": 174,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 0,
+        "tree": {
+          "nodes": 440,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 6,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 3,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": "body",
+      "note": "runtime replayed from 2026-09-12T20:09:35.333Z",
+      "failure": null
+    },
+    {
+      "id": "pyxel-dev-biorhythm",
+      "revision": "89162cbd05fe941efed30bac226f6b0253e98652",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-12T20:37:25.446Z",
+      "durationMs": 180,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 42,
+        "commits": 2,
+        "pageErrors": [
+          "Access to XMLHttpRequest at 'https://myownstats.com/api/event' from origin 'http://127.0.0.1:54543' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+          "Failed to load resource: net::ERR_FAILED"
+        ],
+        "title": "Biorhythm"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 30,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 39
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 28,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 7,
+        "status": "exact",
+        "runtimeFibers": 29,
+        "staticFibers": 29,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 29,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 29,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T20:09:34.962Z",
+      "failure": null
+    },
+    {
+      "id": "dastasoft-memory-game",
+      "revision": "b693da35b7123c4049d1607029da8b50d899aeed",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-12T20:40:51.863Z",
+      "durationMs": 197,
+      "runtime": {
+        "reactVersion": "18.0.0-fc46dba67-20220329",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 69,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Anime Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 56,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 205
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 49,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 12,
+        "status": "exact",
+        "runtimeFibers": 51,
+        "staticFibers": 51,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 51,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 51,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T20:09:42.109Z",
+      "failure": null
     }
   ]
 }
