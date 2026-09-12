@@ -64,6 +64,32 @@ describe("corpus manifest", () => {
 });
 
 describe("saved replay evidence", () => {
+  it.each(["not-replayed", "passed", "incomplete", "contradicted"])(
+    "preserves an outside match reported as %s",
+    (verification) => {
+      const example = readCorpusResults(path.resolve(import.meta.dirname, "../corpus/results.json"))
+        .results[0];
+      const resultsPath = path.join(
+        mkdtempSync(path.join(tmpdir(), "bippy-outside-replay-")),
+        "results.json",
+      );
+      const matchedOutsideEnumeration = { conditions: [], verification };
+      const stateReplay = {
+        states: 1,
+        assignments: 2,
+        replayed: 1,
+        maxReplayed: 1,
+        mismatched: [],
+        matchedOutsideEnumeration,
+      };
+      writeFileSync(resultsPath, JSON.stringify({ results: [{ ...example, stateReplay }] }));
+      const parsed = readCorpusResults(resultsPath);
+      expect(parsed.results[0].stateReplay?.matchedOutsideEnumeration).toEqual(
+        matchedOutsideEnumeration,
+      );
+      expect(formatCorpusTable(parsed.results)).toContain(`outside match ${verification}`);
+    },
+  );
   it("preserves incomplete evidence and distinguishes older summaries", () => {
     const example = readCorpusResults(
       path.resolve(import.meta.dirname, "../corpus/results.json"),

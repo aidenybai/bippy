@@ -55,11 +55,7 @@ export interface StateReplayMismatch {
   claimedCommits: number;
   replayedCommits: number;
   divergence: ComparisonDivergence;
-  /**
-   * The replay left no decision open, so its commits replace the claimed
-   * states. Otherwise the replay met a decision the enumeration never
-   * described and the assignment's states stay unaccounted for.
-   */
+  /** Concrete replay replacements are available for enumerated claims; the symbolic tree is not corrected. */
   isCorrected: boolean;
 }
 
@@ -70,21 +66,28 @@ export interface StateReplayIncomplete {
   isReplayConcrete: boolean;
 }
 
+export interface MatchedOutsideEnumerationReplay {
+  conditions: StateCondition[];
+  verification: "not-replayed" | "passed" | "incomplete" | "contradicted";
+}
+
 export interface StateReplaySummary {
   verification?: "not-replayed" | "sample-passed" | "sample-incomplete" | "contradicted";
   /** Enumerated states before the replay corrected any. */
   states: number;
-  /** Distinct assignments of the decision variables across the enumerated states. */
+  /** Candidate assignments from enumeration and any matched state outside it. */
   assignments: number;
   replayed: number;
   maxReplayed: number;
   /** Replayed assignments whose claimed trees the reconciler did not produce. */
   mismatched: StateReplayMismatch[];
   incomplete?: StateReplayIncomplete[];
+  matchedOutsideEnumeration?: MatchedOutsideEnumerationReplay;
 }
 
 export interface StateReplayOptions {
   maxReplayed?: number;
+  matchedConditions?: StateCondition[];
   /** The options the state space was enumerated with, so the replay is read the same way. */
   enumerate?: StaticStateSpaceOptions;
   compare?: ComparisonOptions;
@@ -484,6 +487,56 @@ export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionA
   });
 };
 
+const getAssignmentGuards = (
+  stateSpace: StaticStateSpace,
+  assignment: DecisionAssignment,
+): Guard[] =>
+  stateSpace.commits.flatMap((commit, commitIndex) =>
+    collectAssignedGuards(
+      commit,
+      new Map(
+        assignment.pinnedConditions[commitIndex].map((condition) => [
+          condition.variable,
+          condition,
+        ]),
+      ),
+    ),
+  );
+
+const includeMatchedAssignment = (
+  stateSpace: StaticStateSpace,
+  assignments: DecisionAssignment[],
+  conditions: StateCondition[],
+): number => {
+  const commit = conditions.find((condition) => condition.kind === "transition")?.commit ?? 0;
+  const matchedCommit = stateSpace.tree.commits[commit];
+  if (!matchedCommit) return -1;
+  const decisions = conditions.filter(isDecisionCondition);
+  const scoped = decisions.map((condition) => ({ commit, condition }));
+  const join = new AssignmentJoin(unifyDecisionVariables(stateSpace.commits));
+  const existing = assignments.findIndex((assignment) => {
+    const assigned = join.merge(
+      new Map(),
+      assignment.pinnedConditions.flatMap((conditions, commit) =>
+        conditions.map((condition) => ({ commit, condition })),
+      ),
+    );
+    return (
+      join.isSubAssignment(assigned, scoped) &&
+      areGuardsSatisfiable([...getAssignmentGuards(stateSpace, assignment), matchedCommit.guard])
+    );
+  });
+  if (existing !== -1) return existing;
+  assignments.push({
+    conditions: decisions,
+    pinnedConditions: stateSpace.commits.map((_pattern, commitIndex) =>
+      commitIndex === commit ? decisions : [],
+    ),
+    stateIndices: [],
+  });
+  return assignments.length - 1;
+};
+
 /**
  * Which assignments to replay: up to `maxReplayed` spread evenly over the
  * enumeration order, the slot nearest the runtime-matched assignment replaced
@@ -526,17 +579,7 @@ const getReplayClaim = (
   assignment: DecisionAssignment,
   pins: PinnedDecisions,
 ): ReplayClaim => {
-  const guards = stateSpace.commits.flatMap((commit, commitIndex) =>
-    collectAssignedGuards(
-      commit,
-      new Map(
-        assignment.pinnedConditions[commitIndex].map((condition) => [
-          condition.variable,
-          condition,
-        ]),
-      ),
-    ),
-  );
+  const guards = getAssignmentGuards(stateSpace, assignment);
   const commits: PatternNode[][] = [];
   const unresolvedCommits: number[] = [];
   stateSpace.tree.commits.forEach((commit, commitIndex) => {
@@ -557,10 +600,10 @@ const diffKnownClaims = (
   claimed: PatternNode[][],
   witnessed: PatternNode[][],
 ): ComparisonDivergence | null => {
-  const candidates = witnessed.length > 0 ? witnessed : [[]];
+  if (witnessed.length === 0) return null;
   for (const [commitIndex, tree] of claimed.entries()) {
     let divergence: ComparisonDivergence | null = null;
-    for (const candidate of candidates) {
+    for (const candidate of witnessed) {
       divergence = diffPatterns(tree, candidate, [`commit ${commitIndex + 1}`], true);
       if (divergence === null) break;
     }
@@ -604,6 +647,7 @@ const replayAssignment = (
     witnessed.some((tree) => isSameTree(states[stateIndex].tree, tree)),
   );
   if (divergence === null) return { mismatch: null, incomplete, reproduced, corrected: null };
+  const shouldCorrect = isConcrete && assignment.stateIndices.length > 0;
   return {
     incomplete,
     reproduced,
@@ -613,9 +657,9 @@ const replayAssignment = (
       claimedCommits: claimed.length,
       replayedCommits: witnessed.length,
       divergence,
-      isCorrected: isConcrete,
+      isCorrected: shouldCorrect,
     },
-    corrected: isConcrete
+    corrected: shouldCorrect
       ? witnessed.map((tree, commit) => ({
           tree,
           conditions: [...transitionConditions(commit, witnessed.length), ...assignment.conditions],
@@ -742,9 +786,15 @@ export const replayStateSpace = async (
 ): Promise<StateSpaceReplay> => {
   const maxReplayed = options.maxReplayed ?? DEFAULT_MAX_REPLAYED_ASSIGNMENTS;
   const assignments = joinDecisionAssignments(stateSpace);
-  const preferredAssignment = assignments.findIndex(
-    (assignment) => preferredState !== null && assignment.stateIndices.includes(preferredState),
-  );
+  const matchedOutsideEnumeration: MatchedOutsideEnumerationReplay | undefined =
+    preferredState === null && options.matchedConditions
+      ? { conditions: options.matchedConditions, verification: "not-replayed" }
+      : undefined;
+  const preferredAssignment = matchedOutsideEnumeration
+    ? includeMatchedAssignment(stateSpace, assignments, matchedOutsideEnumeration.conditions)
+    : assignments.findIndex(
+        (assignment) => preferredState !== null && assignment.stateIndices.includes(preferredState),
+      );
   const sample = chooseReplaySample(
     assignments.length,
     preferredAssignment === -1 ? null : preferredAssignment,
@@ -765,6 +815,13 @@ export const replayStateSpace = async (
       claim,
       enumerateStaticStates(rendered, options.enumerate),
     );
+    if (matchedOutsideEnumeration && assignmentIndex === preferredAssignment) {
+      matchedOutsideEnumeration.verification = outcome.mismatch
+        ? "contradicted"
+        : outcome.incomplete
+          ? "incomplete"
+          : "passed";
+    }
     if (outcome.incomplete) incomplete.push(outcome.incomplete);
     if (outcome.mismatch) mismatched.push(outcome.mismatch);
     else for (const stateIndex of outcome.reproduced) reproduced.add(stateIndex);
@@ -787,6 +844,7 @@ export const replayStateSpace = async (
       maxReplayed,
       mismatched,
       incomplete,
+      ...(matchedOutsideEnumeration ? { matchedOutsideEnumeration } : {}),
     },
     states,
     kept,
@@ -830,7 +888,11 @@ export const replayEnumeratedStates = async (
     stateSpace,
     render,
     matchedIndex,
-    options,
+    {
+      ...options,
+      matchedConditions:
+        comparison.matchedState?.index === null ? comparison.matchedState.conditions : undefined,
+    },
   );
   const matchedState = reindex(comparison.matchedState, kept);
   const replayed: CompareRenderResult = {
@@ -840,7 +902,9 @@ export const replayEnumeratedStates = async (
     closestState: reindex(comparison.closestState, kept),
     stateReplay: summary,
   };
-  if (summary.replayed === 0) return replayed;
+  if (summary.replayed === 0 || summary.matchedOutsideEnumeration?.verification === "passed") {
+    return replayed;
+  }
   if (matchedState !== null && matchedState.index !== null && reWitnessed.has(matchedState.index)) {
     return replayed;
   }
@@ -853,6 +917,13 @@ export const replayEnumeratedStates = async (
       report: { ...rematch.report, status },
       matchedState: { index: rematch.index, conditions: states[rematch.index].conditions },
       closestState: null,
+    };
+  }
+  if (summary.matchedOutsideEnumeration?.verification === "contradicted") {
+    return {
+      ...replayed,
+      report: { ...comparison.report, status: "unsound" },
+      matchedState: null,
     };
   }
   if (matchedIndex === null) return replayed;

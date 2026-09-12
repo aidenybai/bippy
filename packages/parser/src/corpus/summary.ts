@@ -152,6 +152,12 @@ const stateSpaceSummarySchema: z.ZodType<StateSpaceSummary> = z
   .transform((summary) => ({ ...summary, stateCount: summary.stateCount ?? summary.states }));
 
 const stateReplaySummarySchema: z.ZodType<StateReplaySummary> = z.object({
+  matchedOutsideEnumeration: z
+    .object({
+      conditions: z.array(stateConditionSchema),
+      verification: z.enum(["not-replayed", "passed", "incomplete", "contradicted"]),
+    })
+    .optional(),
   verification: z
     .enum(["not-replayed", "sample-passed", "sample-incomplete", "contradicted"])
     .optional(),
@@ -278,7 +284,10 @@ const describeStateReplay = (replay: StateReplaySummary): string => {
   const sampled = replay.replayed < replay.assignments ? " (sampled)" : "";
   const incomplete = replay.incomplete?.length ? `, ${replay.incomplete.length} incomplete` : "";
   const verification = ` (${replay.verification ?? "unrecorded"})`;
-  return `replayed ${replay.replayed}/${replay.assignments} assignments${sampled}, ${replay.mismatched.length} mismatched${incomplete}${verification}`;
+  const outside = replay.matchedOutsideEnumeration
+    ? `, outside match ${replay.matchedOutsideEnumeration.verification}`
+    : "";
+  return `replayed ${replay.replayed}/${replay.assignments} assignments${sampled}, ${replay.mismatched.length} mismatched${incomplete}${verification}${outside}`;
 };
 
 const describeStatic = (result: CorpusResult): string => {

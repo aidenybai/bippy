@@ -156,6 +156,12 @@ export const formatStateReplay = (replay: StateReplaySummary): string[] => {
     `replayed: ${replay.replayed} of ${replay.assignments} decision assignments${sampled}, ${replay.mismatched.length} mismatched${incomplete}`,
   ];
   lines.push(`verification: ${replay.verification ?? "unrecorded"}`);
+  if (replay.matchedOutsideEnumeration) {
+    const matched = replay.matchedOutsideEnumeration;
+    lines.push(
+      `matched outside enumeration: ${matched.verification}; ${formatStateConditions(matched.conditions)}`,
+    );
+  }
   for (const entry of replay.incomplete ?? []) {
     const reasons: string[] = [];
     if (entry.unresolvedClaimCommits.length > 0) {
