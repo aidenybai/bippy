@@ -126,6 +126,14 @@ The adapter leaves these inputs unknown:
 
 Other Next metadata APIs remain outside this contract. Successful initial renders do not prove streaming or error-recovery parity.
 
+### Scope router inputs to each provider
+
+A router’s basename is the URL prefix excluded from its route paths. The [React Router model](../packages/parser/src/frameworks/react-router.ts) removes that prefix before matching routes. A nonmatching known prefix renders no router children. The link models use the same local pathname and basename.
+
+For a fixed analyzed URL, the model stores one location object per mounted router instance. A change in the normalized basename replaces that object. Returning to an earlier prefix does not restore its old object. An unchanged basename preserves identity, so unrelated parent updates do not invalidate memoized location consumers.
+
+An unknown basename does not justify an empty tree. `useHref` resolves static paths that start with one `/` and contain no `..` segment. Other target forms stay unknown. These checks cover browser routing, not complete navigation or hash and memory histories.
+
 ### Resolve declarations without executing modules
 
 The [source parser](../packages/parser/src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.
