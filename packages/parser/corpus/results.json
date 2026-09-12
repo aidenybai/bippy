@@ -267254,6 +267254,243 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T15:26:14.137Z",
       "failure": null
+    },
+    {
+      "id": "drawesome",
+      "revision": "8fb08e93433e2cda32e265280371a0551b3c13a7",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T17:35:21.300Z",
+      "durationMs": 461,
+      "runtime": {
+        "reactVersion": "19.2.8",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1014,
+        "commits": 4,
+        "pageErrors": [],
+        "title": "Draw"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1014,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 22
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 1011,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 1013,
+        "staticFibers": 1013,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1013,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 2020,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T16:57:57.279Z",
+      "failure": null
+    },
+    {
+      "id": "phar-converter",
+      "revision": "269dbe6ac5afcd10573f0a55b452e2d14f4b904e",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T17:34:33.012Z",
+      "durationMs": 45341,
+      "runtime": {
+        "reactVersion": "16.11.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 155,
+        "commits": 7,
+        "pageErrors": [],
+        "title": "PHAR Converter - online service for pack and unpack"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 38,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 2,
+          "unknownCount": 0,
+          "modulesLoaded": 288
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 36
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 154,
+        "staticFibers": 37,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <MobXProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][0]",
+          "expected": "<inject-with-settingsStore(Component)> [ForwardRef]",
+          "actual": "<inject-with-settingsStore(ThemeProvider)> [ForwardRef]"
+        },
+        "stepsUsed": 3,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 63,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 1,
+          "divergence": {
+            "path": "root > <MobXProvider> [FunctionComponent] > <ContextProvider> [ContextProvider][0]",
+            "expected": "<inject-with-settingsStore(Component)> [ForwardRef]",
+            "actual": "<inject-with-settingsStore(ThemeProvider)> [ForwardRef]"
+          }
+        },
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T16:58:06.508Z",
+      "failure": null
     }
   ]
 }
