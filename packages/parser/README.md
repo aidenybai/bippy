@@ -224,11 +224,11 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 234 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
+`corpus/manifest.json` pins 235 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
 
-The twenty-seven repositories added beyond the original 207-repository snapshot report:
+The twenty-eight repositories added beyond the original 207-repository snapshot report:
 
-- Twenty-two exact matches
+- Twenty-three exact matches
 - Two truncated results
 - Two partial results
 - One mismatch
