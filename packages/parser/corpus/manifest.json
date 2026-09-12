@@ -6935,6 +6935,38 @@
         ]
       },
       "notes": "Original FabricJS/Scenify design-editor initial page, using React 17.0.2 and React Router 5.3.4 under the pinned Node 22 recipe and original CRACO start command. Source and frozen Yarn lock are unchanged; 1,969 installed dependency locations match their locked requests. The native capture has 151 fibers, five commits and seven DNS resource errors. Interpreting original react-uid and Scenify SDK source exposes a known BrowserRouter FunctionComponent-versus-ClassComponent mismatch, despite two passing model replays. The earlier, more opaque policies reported partial membership; all policy variants and failures remain in provenance. Baseline and repeated stronger-policy comparisons use the same capture and agree. No parser repair, editing, canvas pixels, remote assets, upload, download, events, visual parity or whole-space coverage is claimed. GitHub repository ID 631179284 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "swimmingkiim-image-editor",
+      "repository": "https://github.com/swimmingkiim/react-image-editor",
+      "revision": "fe539ef9f104a65b57fdb2d202ee6fedc7288c36",
+      "description": "Swimmingkiim React and Konva image editor",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54372 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54372/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "react-redux",
+          "@reduxjs/toolkit",
+          "react-icons",
+          "react-icons/*",
+          "react-konva",
+          "react-colorful"
+        ]
+      },
+      "notes": "Original React/Konva image-editor initial page, using React 18.3.1, the pinned Node 22 recipe, and the original Vite dev command. Source and npm lock are unchanged; 1,914 installed dependency versions match the lock. The independent capture has 1,488 fibers, ten commits and no page errors. Separate enumeration and matcher stack repairs let the same capture complete comparison, but membership remains partial at about 18% strict coverage. The model counts 2,048 combinations from bounded clusters, enumerates 256 states and retains 5,118 omissions. All sixteen sampled replays and the preferred outside-enumeration witness remain incomplete; the latter includes a repeat count of 31 without expanding the enumeration budget. Baseline stack failures, the failed large diagnostic export, streamed conditions/omissions and deeply equal repeated results remain in provenance. Opaque library regions remain unverified. No editing, canvas pixels, DOM attributes, remote image contents, upload, downloads, events, visuals or whole-space coverage is claimed. GitHub repository ID 512127525 identifies a distinct non-fork repository."
     }
   ]
 }
