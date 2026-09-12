@@ -5611,6 +5611,11 @@ export class Interpreter {
   ): StaticValue {
     switch (name.type) {
       case "JSXIdentifier":
+        if (name.name === "this")
+          return (
+            context.thisValue ??
+            this.evaluateUnboundThis(context, this.locate(context.module, name))
+          );
         // Only a bare lowercase tag is a host element; `<ctx.Provider>` looks
         // up `ctx` whatever its case.
         if (!isMemberObject && /^[a-z]/.test(name.name)) return primitiveValue(name.name);
