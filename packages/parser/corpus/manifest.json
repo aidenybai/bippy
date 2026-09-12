@@ -6634,7 +6634,7 @@
         "route": "/",
         "externalPackageAllowList": ["date-fns", "date-fns/*", "rc-slider", "rc-slider/*"]
       },
-      "notes": "Pinned Yarn dependencies and verified Node 16.20.2/pnpm 8.15.9. Runs the original json-server script and unchanged episode data on port 3333. Initial-page evidence only; playback and navigation are not covered. The imported exact membership result retains 768 omitted states. Its matched assignment is outside the enumeration and is not among the sixteen replay samples."
+      "notes": "Original Podcastr page, pinned Next 10.1.3/React 17.0.2 and Node 16.20.2/pnpm 8.15.9, frozen Yarn lock and original json-server episode data. The unchanged native capture remains exact at 100% strict coverage. All 768 omitted states remain. The matching assignment is outside enumeration but now passes within the same sixteen-replay budget, selected from 257 candidate assignments. This is model-backed replay, not independent coverage of all visibility combinations, player interactions, navigation, image layout or whole-space behavior. Original baseline and all sixteen raw replay witnesses remain separate."
     },
     {
       "id": "ignite-tailwind-next",
@@ -6754,6 +6754,90 @@
         "externalPackageAllowList": ["nookies"]
       },
       "notes": "Unchanged source and frozen Yarn dependencies. Verified Node 16.20.2/pnpm 8.15.9 runs the original Next 10.2 development script. Initial sign-in page with the browser's default empty cookies. Authentication, cross-tab sign-out and the original backend are not exercised."
+    },
+    {
+      "id": "heroicons-dev",
+      "repository": "https://github.com/zaydek/heroicons.dev",
+      "revision": "34a204c57aa0c57cd9b959e23e1fd27efa2e16a3",
+      "description": "Heroicons browser with original SVG icon sets and search",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54362 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54362/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["lodash", "lodash/*"]
+      },
+      "notes": "Fresh original initial-page capture under pinned dependencies. Static membership is a mismatch, not a pass; all omissions and incomplete replays remain. The original stroke-width/strokeWidth React warning remains in native evidence. Search, icon copying, sidebar controls, visuals and whole-space coverage are not verified. GitHub repository ID 242789911 confirms a distinct repository rather than an owner-rename alias."
+    },
+    {
+      "id": "lapian-notes",
+      "repository": "https://github.com/bkingfilm/lapian-notes",
+      "revision": "d2860b6621dd2826392fda86fb337440b158faef",
+      "description": "Lapian Notes media-analysis workspace",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54366 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54366/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Fresh original initial-page membership is exact at 100% strict coverage. Four of eight sampled replays remain incomplete; the model retains unknown Vite __ONLINE_DEMO__ reads. Original local dev plugins and source are unchanged. No media files, AI credentials, replacement backend data or event inputs are supplied. File import, AI requests, transcoding, timelines, visuals and whole-space coverage remain unverified. GitHub repository ID 1293128596 confirms a distinct repository rather than an owner-rename alias."
+    },
+    {
+      "id": "shaquille-portfolio",
+      "repository": "https://github.com/shaqdeff/Portfolio-Template",
+      "revision": "2a4c920125f1e177e887a854dcd37adf992a9b6b",
+      "description": "Portfolio template with original profile, projects and animations",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54365 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54365/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": [
+          "framer-motion",
+          "react-tilt",
+          "react-vertical-timeline-component",
+          "@react-three/fiber",
+          "@react-three/drei",
+          "maath",
+          "maath/*"
+        ]
+      },
+      "notes": "Fresh original initial-page capture: partial membership at about 78.18% strict coverage with nineteen opaque components. One model-backed replay passes but cannot validate the hidden animation subtrees. The native snapshot follows 158 commits, not a saved independent commit history. Contact submission, navigation, animation timing, visuals and whole-space coverage remain unverified. GitHub repository ID 640266294 confirms a distinct repository rather than an owner-rename alias."
     }
   ]
 }
