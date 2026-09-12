@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { comparePatternToRuntime } from "../src/harness/compare.js";
+import { comparePatternToRuntime, matchPatternToRuntime } from "../src/harness/compare.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import type {
   PatternBranch,
@@ -56,6 +56,128 @@ const patternWildcard: PatternWildcard = {
 };
 
 describe("comparePatternToRuntime", () => {
+  it("matches wide independent decisions without consuming the call stack", () => {
+    const patterns = Array.from({ length: 5_000 }, (_value, index) =>
+      branch(`wide-${index}`, [patternHost("b")], [patternHost("i")]),
+    );
+    const result = matchPatternToRuntime(
+      patterns,
+      patterns.map(() => host("b")),
+    );
+    expect(result.report.status).toBe("exact");
+    expect(result.report.matchedFibers).toBe(5_000);
+    expect(result.report.stepsUsed).toBe(10_000);
+    expect(result.decisions.map(({ node, choice }) => [node.variable, choice])).toEqual(
+      patterns.map((pattern) => [pattern.variable, 0]),
+    );
+  });
+
+  it("backtracks a wide correlated prefix when the last sibling rejects its first choice", () => {
+    const shared = branch("shared", [patternHost("b")], [patternHost("b")]);
+    const patterns = Array.from({ length: 5_000 }, () => shared);
+    patterns.push(branch("shared", [patternHost("c")], [patternHost("d")]));
+    const runtime = Array.from({ length: 5_000 }, () => host("b"));
+    runtime.push(host("d"));
+    const result = matchPatternToRuntime(patterns, runtime);
+    expect(result.report.status).toBe("exact");
+    expect(result.report.matchedFibers).toBe(5_001);
+    expect(result.report.stepsUsed).toBe(20_003);
+    expect(result.decisions.map(({ node, choice }) => [node.variable, choice])).toEqual([
+      ["shared", 1],
+    ]);
+  });
+
+  it("matches long known repeats without consuming the call stack", () => {
+    const repeat = anonymousRepeat("items", [patternHost("b")], { min: 5_000, max: 5_000 });
+    const report = comparePatternToRuntime(
+      [repeat],
+      Array.from({ length: 5_000 }, () => host("b")),
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(5_000);
+    expect(report.repeatIterations).toBe(5_000);
+    expect(report.stepsUsed).toBe(5_001);
+  });
+
+  it("locates wide guarded slots without consuming the call stack", () => {
+    const children = Array.from({ length: 5_000 }, (_value, index) =>
+      branch(`slot-${index}`, [patternHost("b")], [patternHost("i")]),
+    );
+    const report = comparePatternToRuntime(
+      [opaqueFiber("Vendor", children)],
+      [
+        runtimeFiber("Vendor", [
+          host(
+            "section",
+            children.map(() => host("b")),
+          ),
+        ]),
+      ],
+    );
+    expect(report.status).toBe("partial");
+    expect(report.matchedFibers).toBe(5_000);
+    expect(report.slotsMatched).toBe(1);
+    expect(report.slotsUnmatched).toBe(0);
+    expect(report.opaqueSkippedFibers).toBe(2);
+  });
+
+  it("unwinds active decisions when a wide match exhausts its unchanged step budget", () => {
+    let activeDecisions = 0;
+    const patterns = Array.from({ length: 5_000 }, (_value, index) =>
+      branch(`budget-${index}`, [patternHost("b")], [patternHost("i")]),
+    );
+    const result = matchPatternToRuntime(
+      patterns,
+      patterns.map(() => host("b")),
+      {
+        maxSteps: 25,
+        constraint: {
+          decide: () => {
+            activeDecisions++;
+            return true;
+          },
+          release: () => {
+            activeDecisions--;
+          },
+        },
+      },
+    );
+    expect(result.report.budgetExhausted).toBe(true);
+    expect(result.report.stepsUsed).toBe(26);
+    expect(result.decisions).toEqual([]);
+    expect(activeDecisions).toBe(0);
+  });
+
+  it("unwinds decisions without replacing an external comparison error", () => {
+    let activeDecisions = 0;
+    const failure = new Error("framework wrapper failure");
+    const patterns = Array.from({ length: 200 }, (_value, index) =>
+      branch(`error-${index}`, [patternHost("b")], [patternHost("i")]),
+    );
+    expect(() =>
+      comparePatternToRuntime(
+        patterns,
+        patterns.map(() => host("b")),
+        {
+          constraint: {
+            decide: () => {
+              activeDecisions++;
+              return true;
+            },
+            release: () => {
+              activeDecisions--;
+            },
+          },
+          unwrapTransparentRuntimeFiber: () => {
+            if (activeDecisions === 100) throw failure;
+            return null;
+          },
+        },
+      ),
+    ).toThrow(failure);
+    expect(activeDecisions).toBe(0);
+  });
+
   it("accepts a bundler-deconflicted `$N` suffix on the runtime name", () => {
     const report = comparePatternToRuntime(
       [patternFiber("Dialog", [patternFiber("Panel", [patternFiber("div", [], "HostComponent")])])],
