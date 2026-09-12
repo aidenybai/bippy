@@ -260705,6 +260705,96 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T05:09:47.654Z",
       "failure": null
+    },
+    {
+      "id": "primusread",
+      "revision": "3cbd8369d0bf33ef20ef7235d399345ad3b6918f",
+      "framework": "react-router",
+      "capturedAt": "2026-09-12T07:28:28.762Z",
+      "durationMs": 767,
+      "runtime": {
+        "reactVersion": "19.2.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 51,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "PrimusRead"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 43,
+          "textCount": 3,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 20
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 38,
+        "matchedText": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 9,
+        "runtimeFibers": 41,
+        "staticFibers": 41,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 41,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 41,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T05:09:34.764Z",
+      "failure": null
     }
   ]
 }

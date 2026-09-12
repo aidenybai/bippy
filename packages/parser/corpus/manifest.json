@@ -6838,6 +6838,31 @@
         ]
       },
       "notes": "Fresh original initial-page capture: partial membership at about 78.18% strict coverage with nineteen opaque components. One model-backed replay passes but cannot validate the hidden animation subtrees. The native snapshot follows 158 commits, not a saved independent commit history. Contact submission, navigation, animation timing, visuals and whole-space coverage remain unverified. GitHub repository ID 640266294 confirms a distinct repository rather than an owner-rename alias."
+    },
+    {
+      "id": "primusread",
+      "repository": "https://github.com/crisanlucid/primusread",
+      "revision": "3cbd8369d0bf33ef20ef7235d399345ad3b6918f",
+      "description": "Primusread bionic-reading application",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54363 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54363/primusread/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Original initial page at /primusread/, using pinned React Router 7.15.0, React 19.2.6 and the recorded Node 22 recipe. Application source and canonical npm lock are unchanged. The npm installation rewrote the secondary Yarn lock; its original, mutation patch and installed-version checks remain in provenance. The basename repair changes this same capture from partial at about 4.878% strict coverage to exact, with one passing replay. Text entry, document import, reading controls, visuals, events and whole-space coverage remain unverified. GitHub repository ID 494396910 confirms a distinct non-fork repository."
     }
   ]
 }
