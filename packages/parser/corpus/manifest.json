@@ -6982,6 +6982,183 @@
         ]
       },
       "notes": "Original React/Konva image-editor initial page, React 18.3.1 and the pinned Node 22 recipe. Source and npm lock are unchanged; 1,914 installed dependency versions were verified. The independent capture has two roots, 1,488 fibers, ten commits and no page errors. The expanded library-source policy includes React Bootstrap, uncontrolled props, Restart UI/hooks, transition groups, React Aria SSR, i18next, its-fine, range sliders and reselect. It now matches all normalized compared fibers without opaque nodes, but remains truncated with twelve bounded states and two omissions. Nine replays include five incomplete results; the preferred outside witness at repeat count 32 remains incomplete. Existing modeled exports still apply, so this is not full-source integration. The earlier sparse policy, 5,118 omissions, sixteen incomplete replays, bootstrap-only mismatch, every intermediate policy, both stack failures and failed diagnostic export remain in provenance. Same-capture repetitions agree. This is an analysis-policy expansion, not a parser repair, exhaustive cardinality, full renderer/context-bridge coverage, canvas-pixel, attribute, event or visual parity. GitHub repository ID 512127525 remains one repository."
+    },
+    {
+      "id": "mortgage",
+      "repository": "https://github.com/paulhoughton/mortgage",
+      "revision": "e0c643c65561bb0bd63841428fabf4a66924144b",
+      "description": "Mortgage calculator with D3 charts",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54411",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54411/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 6.14.18 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. One native commit; 2,040 installed npm locations checked. Chart pixels and financial calculations are not established by fiber equality. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 43629371 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "bmi-calculator",
+      "repository": "https://github.com/GermaVinsmoke/bmi-calculator",
+      "revision": "7e4714d6542fe21cb70e5f37d6c55adfaeb538cc",
+      "description": "BMI calculator and seven-day chart",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54413",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54413/bmi-calculator/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-chartjs-2"]
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 6.14.18 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Two native commits; 1,773 installed npm locations checked. Browser storage updates and chart pixels remain unverified. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 206385718 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "madzadev-calculator",
+      "repository": "https://github.com/madzadev/calculator",
+      "revision": "3fe48dc673e834341b7d3ffaaa027bcc9f118c7f",
+      "description": "Madzadev React calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54412",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54412/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 22.16.0, pnpm 10.12.1 and npm 10.9.2 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. One native commit; 1,657 installed npm locations checked. Original CRA3 initially exited on stdin EOF. The runner repair uses a fresh capture, not a CI override or application patch; the failed attempt remains saved. Baseline and current analyzers agree on this same new capture. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 278167981 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "chamoda-calculator",
+      "repository": "https://github.com/chamoda/react-calculator",
+      "revision": "938987feeb1c376a4b89768634e3446c4d250011",
+      "description": "Chamoda keyboard calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54414",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54414/react-calculator/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-hotkeys"]
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 6.14.18 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. One native commit; 1,712 installed npm locations checked. Original CRA3 initially exited on stdin EOF. The runner repair uses a fresh capture, not a CI override or application patch; the failed attempt remains saved. Baseline and current analyzers agree on this same new capture. Keyboard input remains unverified. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 184902247 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "hdri-cubemap",
+      "repository": "https://github.com/matheowis/HDRI-to-CubeMap",
+      "revision": "0dbf927572dc9d4eb75e638b0c1c0d6bcf72c400",
+      "description": "HDRI to CubeMap browser converter",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start --host 127.0.0.1 --port 54418",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54418",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54418/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "entry": "src/app.js",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 6.14.18 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Two native commits; 849 installed npm locations checked. The original webpack server and raw shader-loader configuration remain unchanged. Partial membership retains opaque library boundaries. WebGL pixels, HDR loading, conversion and export are not established by sampled replay. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 141999615 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "income-tax",
+      "repository": "https://github.com/YutHelloWorld/personal-income-tax-calculator",
+      "revision": "3337a2870a4376d0ea9d62cab1865044ee4d9abb",
+      "description": "Personal income tax calculator",
+      "framework": "react-router",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54420",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54420/personal-income-tax-calculator/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": [
+          "@material-ui/core",
+          "@material-ui/core/*",
+          "@material-ui/icons",
+          "@material-ui/icons/*",
+          "@material-ui/styles",
+          "react-redux",
+          "react-swipeable-views"
+        ]
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 8.19.4 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Four native commits; 1,859 installed npm locations checked. Original ejected CRA configuration remains unchanged. Partial membership retains the opaque MuiThemeProviderOld region and unmatched provider slot. Passing sampled replay does not establish those omitted internals or tax calculations. Source and canonical npm lock remain unchanged. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 171380631 identifies a distinct non-fork repository."
     }
   ]
 }
