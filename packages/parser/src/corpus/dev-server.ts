@@ -67,12 +67,13 @@ const spawnShell = (
   cwd: string,
   env: Record<string, string> | undefined,
   log: WriteStream,
+  stdin: "ignore" | "pipe" = "ignore",
 ): ChildProcess => {
   const child = spawn(command, {
     cwd,
     shell: true,
     detached: true,
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: [stdin, "pipe", "pipe"],
     // Clones live under bippy's tree, whose `packageManager` field would otherwise make
     // corepack refuse the yarn/npm commands the corpus repositories expect.
     env: getDevServerEnvironment(env),
@@ -169,7 +170,13 @@ export class DevServer {
     }
     this.log = createWriteStream(this.options.logPath, { flags: "a" });
     this.log.write(`\n$ ${this.options.command}\n`);
-    this.child = spawnShell(this.options.command, this.options.cwd, this.options.env, this.log);
+    this.child = spawnShell(
+      this.options.command,
+      this.options.cwd,
+      this.options.env,
+      this.log,
+      "pipe",
+    );
     this.child.once("exit", (code) => {
       this.exitCode = code ?? -1;
     });
@@ -204,6 +211,7 @@ export class DevServer {
 
   async stop(): Promise<void> {
     if (this.child) await killProcessGroup(this.child);
+    this.child?.stdin?.destroy();
     this.child = null;
     this.log?.end();
     this.log = null;

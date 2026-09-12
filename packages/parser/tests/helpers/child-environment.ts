@@ -19,13 +19,20 @@ const writeEnvironment = (port: number | null): void => {
   writeFileSync(capturePath, JSON.stringify(environment));
 };
 
-if (process.argv[3] === "serve") {
+if (process.argv[3] === "serve" || process.argv[3] === "serve-stdin") {
   const server = createServer((_request, response) => response.end("ready"));
+  if (process.argv[3] === "serve-stdin") {
+    process.stdin.once("end", () => server.close());
+    process.stdin.resume();
+  }
   server.listen(Number(process.argv[4] ?? 0), "127.0.0.1", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("Missing server address");
     writeEnvironment(address.port);
   });
+} else if (process.argv[3] === "stdin-end") {
+  process.stdin.once("end", () => writeEnvironment(null));
+  process.stdin.resume();
 } else {
   writeEnvironment(null);
 }
