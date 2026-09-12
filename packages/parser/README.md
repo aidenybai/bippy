@@ -220,19 +220,22 @@ then anchor search, then the largest root.
 
 ## Corpus
 
-`corpus/manifest.json` pins 231 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
+`corpus/manifest.json` pins 234 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
 
-The twenty-four fresh captures beyond the original 207-repository snapshot report:
+The twenty-seven repositories added beyond the original 207-repository snapshot report:
 
-- Twenty-one exact matches
+- Twenty-two exact matches
 - Two truncated results
-- One partial result
+- Two partial results
+- One mismatch
 
 These initial-page comparisons do not establish event coverage or complete the 500-repository gate.
 
 The word-guessing game contributes one independently captured selection, not independent coverage of all five modeled choices or gameplay.
 
-The committed Podcastr result retains 768 omitted states and does not replay its matching assignment. Current replay selection can prioritize an outside match without raising the replay budget.
+Podcastr retains 768 omitted states. Its matching candidate now passes within the existing sixteen-replay budget, without independent coverage of all image-visibility states.
+
+GitHub repository IDs distinguish owner renames from new repositories. Excalidraw Clone’s additional capture belongs to an existing repository and does not increase the count.
 
 Manifest validation rejects unsupported options instead of silently discarding them. `static.servedDirectory` is relative to `static.rootDirectory`. Dev servers do not inherit the harness's `CI` flag; a manifest can declare it explicitly. Install and setup commands default to `CI=1` unless the entry overrides it. A changed live environment requires fresh capture provenance.
 
