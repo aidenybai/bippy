@@ -176,6 +176,8 @@ A dependency can remain external to source analysis. The interpreter can use an 
 
 A [scope](../packages/parser/src/evaluate/scope.ts) maps names to interpreted values and refers to a parent scope. Looking up a name searches the current scope and then its parents. Function values retain their source body and scope, so the interpreter can evaluate closures.
 
+JSX `this` tags use the current receiver rather than a variable named `this`. For example, [`<this.Views.Leaf />`](../packages/parser/tests/components/jsx-this-members.tsx) reads the receiver, then its two properties. `<this />` uses the receiver directly. Arrow functions retain their lexical receiver; ordinary calls use their call receiver. Other bare lowercase tags still name host elements.
+
 A result can also depend on captured observations, such as configuration or store state. Those observations are inputs to the analysis. A tree that matches under those inputs does not establish a match for every possible response or store value.
 
 ## Conditional evaluation
