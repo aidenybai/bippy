@@ -7255,6 +7255,34 @@
         ]
       },
       "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 22.16.0, pnpm 10.12.1 and npm 10.9.2 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Original Next pages application, React18.2.0; 825 installed npm locations checked. Native capture has 401 fibers and 129 commits, with no page errors. Original CSP, COEP/COOP headers, development configuration and FFmpeg URL are not replaced. The independent tree shows PlayIcon where the model requires PauseIcon. The result retains 524,288 combinations counted from bounded clusters, 256 enumerated states, 524,221 omissions, sixteen incomplete replays and one replay contradiction. These counts are not exhaustive cardinality. No video editing, playback timing, compression, pixel, interaction or whole-space parity is claimed. Source and original lockfiles remain unchanged; platform-specific exceptions are recorded explicitly. Independent initial-page capture and repeated same-capture analysis agree; original native errors and warnings remain recorded. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 443406432 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "niinpatel-calculator",
+      "repository": "https://github.com/niinpatel/calculator-react",
+      "revision": "678cf33ef1a4f2cc8c71c9f79290895bd4932933",
+      "description": "Niinpatel React calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "PORT": "54417",
+        "HOST": "127.0.0.1",
+        "BROWSER": "none",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54417/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js",
+        "externalPackageAllowList": []
+      },
+      "notes": "Original source and lockfiles are pinned. Use original development scripts and data; preserve setup failures and native errors. Node 16.20.2, pnpm 8.15.9 and npm 6.14.18 are pinned. Initial React fibers only: calculations, conversion, images, canvas pixels, file transfer, audio/video, storage updates, events, visuals and whole-space coverage remain unverified. Original CRA2.1.1 application with React16.4.1, Babel core7.1.0/parser7.2.0, preset6.1.0 and macros2.4.2. The independent capture has 35 fibers, one commit and no page errors. Before the parser repair, macro expansion rejects the public onClick class field; enabling classProperties syntax produces exact membership and one passing replay against that identical capture. Current/repeated results agree, and seven other saved-capture controls remain unchanged. The native preset and class-field syntax are not replaced with guessed application stubs. Component source and the npm lock are unchanged; original CRA startup adds browserslist defaults to package.json before capture. That exact generated patch, package hash, original failure and all 1,784 installed-version checks remain in provenance. This is syntax support, not class-field lowering, keyboard/calculation, interaction or whole-space completeness. Component source and the canonical npm lock remain unchanged; the generated browserslist configuration is preserved explicitly. Independent initial-page capture and repeated same-capture analysis agree; no native page errors. Neither exact nor partial membership establishes event handling, visual parity or the whole reachable state space. GitHub repository ID 139321310 identifies a distinct non-fork repository."
     }
   ]
 }
