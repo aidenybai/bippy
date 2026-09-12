@@ -45,6 +45,7 @@ export class ModuleGraph {
   readonly resolver: ModuleResolver;
   readonly sourceFileCache: SourceFileCache;
   private readonly modules = new Map<string, ModuleRecord | null>();
+  private readonly analyzedModules = new Set<string>();
   private readonly nodeEnvironment: string | undefined;
   private readonly resolveExternalPackages: boolean;
   private readonly externalPackageAllowList: Set<string>;
@@ -82,6 +83,12 @@ export class ModuleGraph {
     return record;
   }
 
+  analyzeModule(filePath: string): ModuleRecord | null {
+    const module = this.getModule(filePath);
+    if (module) this.analyzedModules.add(filePath);
+    return module;
+  }
+
   /** A module from source text rather than disk; a path already added is returned as is. */
   addVirtualModule(filePath: string, sourceText: string): ModuleRecord | null {
     const cached = this.modules.get(filePath);
@@ -95,11 +102,20 @@ export class ModuleGraph {
   }
 
   resolveSpecifier(specifier: string, fromModule: ModuleRecord): ModuleResolution {
-    return this.resolver.resolve(
+    const resolution = this.resolver.resolve(
       specifier,
       fromModule.filePath,
       fromModule.isCommonJs ? "commonjs" : "esm",
     );
+    if (
+      this.analyzedModules.has(fromModule.filePath) &&
+      /^\.\.?\//.test(specifier) &&
+      (resolution.kind === "internal" || resolution.kind === "external") &&
+      resolution.filePath !== null
+    ) {
+      this.analyzedModules.add(resolution.filePath);
+    }
+    return resolution;
   }
 
   resolveImportedModule(
@@ -118,7 +134,11 @@ export class ModuleGraph {
     const assetModule = this.getAssetModule(resolution.filePath, specifier);
     if (assetModule) return assetModule;
     if (isUrlImport(specifier)) return resolution;
-    if (resolution.kind === "external" && !this.shouldAnalyzePackage(resolution.packageName)) {
+    if (
+      resolution.kind === "external" &&
+      !this.analyzedModules.has(resolution.filePath) &&
+      !this.shouldAnalyzePackage(resolution.packageName)
+    ) {
       return resolution;
     }
     return this.getModule(resolution.filePath) ?? resolution;
