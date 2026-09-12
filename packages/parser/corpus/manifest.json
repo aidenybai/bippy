@@ -6863,6 +6863,40 @@
         "entry": "src/main.tsx"
       },
       "notes": "Original initial page at /primusread/, using pinned React Router 7.15.0, React 19.2.6 and the recorded Node 22 recipe. Application source and canonical npm lock are unchanged. The npm installation rewrote the secondary Yarn lock; its original, mutation patch and installed-version checks remain in provenance. The basename repair changes this same capture from partial at about 4.878% strict coverage to exact, with one passing replay. Text entry, document import, reading controls, visuals, events and whole-space coverage remain unverified. GitHub repository ID 494396910 confirms a distinct non-fork repository."
+    },
+    {
+      "id": "emoji-kitchen",
+      "repository": "https://github.com/xsalazar/emoji-kitchen",
+      "revision": "b50d80bbc9bf48d8f015b2d2208f2b44cacc2577",
+      "description": "Emoji Kitchen emoji-combination explorer",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "npm ci --ignore-scripts",
+      "setup": [
+        "curl -fL --compressed https://raw.githubusercontent.com/xsalazar/emoji-kitchen-backend/15e6f4af8c9c3231855f624340db1210ca75176e/app/metadata.json -o public/metadata.json"
+      ],
+      "dev": "pnpm --config.verify-deps-before-run=false run start --host 127.0.0.1 --port 54361 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "CYPRESS_INSTALL_BINARY": "0"
+      },
+      "url": "http://127.0.0.1:54361/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "@mui/*",
+          "@emotion/*",
+          "@primer/octicons-react",
+          "@uidotdev/usehooks"
+        ]
+      },
+      "notes": "Original README metadata setup, pinned to backend revision 15e6f4af8c9c3231855f624340db1210ca75176e after byte equality with the documented main URL. Application source, npm lock and installed versions are unchanged. This fresh configured capture is exact with one passing model-backed replay and no omissions. Five native commits describe the final snapshot, not an independently retained history. The previous missing-metadata error capture remains a separate mismatch with thirteen replay contradictions; this changed setup is not a same-capture parser repair. Emoji selection, search, randomization, downloads, visuals and whole-space coverage remain unverified. GitHub repository ID 446242396 confirms a distinct non-fork repository."
     }
   ]
 }
