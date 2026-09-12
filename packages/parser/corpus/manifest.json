@@ -8223,6 +8223,33 @@
         "externalPackageAllowList": ["next-seo", "framer-motion"]
       },
       "notes": "Preserve original prepare/husky workflow, Next12, Framer Motion6, Next SEO, source aliases and initial IntroScreen. Do not select a difficulty/deck or supply moves. Original animations and image resources remain unmodified. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. Interpret the installed Framer Motion6.2.9 AnimatePresence/PresenceChild source rather than keep that provider opaque. Existing modeled exports still apply. This source policy does not establish exit animations, layout, timing or gameplay. Explicit Framer Motion6.2.9 AnimatePresence/PresenceChild source changes partial to exact against the same capture. Preserve the original opaque-provider comparison. Native Next12 React is 18.0.0-fc46dba67-20220329; the installed package remains18.0.0. Original IntroScreen, prepare/husky, Next SEO, source aliases, animation code and resources remain unchanged. Initial membership does not prove transitions, animation/layout, selected decks or gameplay. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 484030537 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "taxepfa-taxepfa-github-io",
+      "repository": "https://github.com/taxepfa/taxepfa.github.io",
+      "revision": "e7c9bfe4c610730fd0027595a87a2fc8e7777473",
+      "description": "taxepfa/taxepfa.github.io",
+      "framework": "next-app",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@20.19.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@20.19.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --hostname 127.0.0.1 --port 54546",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54546/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["@mantine/*", "@tabler/icons-react"]
+      },
+      "notes": "Use Node20, the major declared by the original publish workflow, with a frozen original Yarn install. Preserve the original next dev --turbo command, static-export configuration, APP_VERSION compiler environment, package import optimization, Mantine7, Valtio and React19 RC. Empty storage does not provide saved tax inputs. Tax correctness, storage migration and renderer attributes remain unverified. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. Retain the original mismatch report and both identical-capture repetitions, including budgetExhausted:true at 200001 steps. This is failure to find a witness within the matching budget, not proof that the capture is absent from the symbolic model. The last divergence expects another Mantine Text in SettingsInfoCard; do not treat that search diagnostic as an isolated parser defect. Keep 422161152 bounded combinations, 256 enumerated states, 422161031 reported omissions, and all sixteen incomplete replays with no replay contradiction. Native Next15 React19.0.0-rc-66855b96-20241106 differs from installed package React19.0.0-rc-7670501b-20241124; both remain unchanged. The original Node20.19.0 workflow, pnpm10.12.1/Yarn1.22.22, Next turbo/static-export configuration, Valtio state, stored-state synchronization, currency data and Mantine7 source policy remain intact. No fabricated state, calculation input, altered matcher budget or Valtio-source trial is part of this selected comparison. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 697816333 identifies a distinct non-fork repository."
     }
   ]
 }

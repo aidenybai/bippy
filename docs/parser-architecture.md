@@ -357,6 +357,8 @@ The [matcher](../packages/parser/src/harness/compare.ts) drives suspended calls 
 
 The work stack does not raise the matching step budget. Recursive tree indexing and guard-solver resource bounds remain separate limits. Enumeration success still does not establish that comparison will complete.
 
+Check `budgetExhausted` when a comparison reports `mismatch`. If true, the search found no witness within its budget. That does not prove the capture is absent from the model. The recorded divergence describes the search, not a proven parser defect.
+
 The comparison checks fiber structure. It also compares these recorded fields:
 
 - Component names

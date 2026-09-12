@@ -274,7 +274,7 @@ EC-82MS changes from partial to exact against its original 350-fiber capture. It
 
 Final validation passes 3,065 root tests with the same two skips, plus 1,019 parser tests across 63 files. Typecheck, build, realm checks, lint, formatting and diff checks pass. `/tmp/bippy-jsx-this-browser-evidence/provenance-final.json` verifies the three final fixture copies and immutable captures. `/tmp/bippy-parser-game-expansion/jsx-this-final-provenance.json` records five baseline/current/repeated real-app comparisons. Initial member-only receipts remain saved; the documentation check passes 60 links and both executable TSX examples. No repository is added by this repair.
 
-All five original Next captures now complete. Biorhythm is exact with its original statistics-endpoint CORS errors; EasyArty and Dastasoft are partial. Taxe PFA retains a native settings-card mismatch, 422,161,152 bounded combinations, 256 enumerated states and sixteen incomplete replays. Its counts are not whole-space cardinality. EasyArty’s only tracked native change updates the generated `next-env.d.ts` documentation URL; its explicit receipt verifies the complete patch and installed generator. Next imports and repetitions remain open.
+All five original Next captures now complete. Biorhythm is exact with its original statistics-endpoint CORS errors; EasyArty and Dastasoft are partial. Taxe PFA reports a budget-limited settings-card mismatch, 422,161,152 bounded combinations, 256 enumerated states and sixteen incomplete replays. Its counts are not whole-space cardinality. EasyArty’s only tracked native change updates the generated `next-env.d.ts` documentation URL; its explicit receipt verifies the complete patch and installed generator. Next imports and repetitions remain open.
 
 ### Four original Next imports
 
@@ -286,13 +286,35 @@ EasyArty’s 649 installed versions and both original next-themes patch postimag
 
 The import preserves all 276 prior raw rows and nested property orders. Frozen locks, installed locations, actual runners and saved-capture hashes verify for all four repositories. `four-next-games-import-provenance.json` records the import under `/tmp/bippy-parser-game-expansion`. Repeated comparison/runtime/state-space/replay fields agree. Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting, diff checks and 60 documentation links. Attributes, calculation results, animations, gameplay and whole-space coverage remain unverified.
 
-Taxe PFA’s first repetition retains its original mismatch and sixteen incomplete replays. Its second repetition remains running; it is not imported. Amendezm’s original frozen npm peer failure remains uncaptured and uncounted.
+Taxe PFA’s two repetitions retain its original mismatch and sixteen incomplete replays. All three raw reports also retain `budgetExhausted: true`; this is not a proven native contradiction. Amendezm’s original frozen npm peer failure remains uncaptured and uncounted.
+
+### Taxe PFA’s budget-limited comparison
+
+Taxe PFA brings the corpus to 281 distinct GitHub IDs, leaving 219. The seventy-four additions beyond the historical 207 contain fifty-three exact, six truncated, nine partial and six mismatch reports.
+
+The original comparison and both repetitions exhaust the matching budget at 200,001 recorded steps. Their last divergence expects another Mantine Text in SettingsInfoCard. That search diagnostic does not prove a parser defect or establish that the capture is absent from the symbolic model. The raw `mismatch` status and `budgetExhausted` flag both remain intact.
+
+The result retains 422,161,152 bounded combinations, 256 enumerated states and 422,161,031 reported omissions. All sixteen sampled replays remain incomplete, with no replay contradiction. These counts neither establish whole-space cardinality nor prove membership.
+
+The independent capture contains 1,079 fibers and nineteen commits, with no page errors. Next captures React19.0.0-rc-66855b96-20241106; the installed package remains React19.0.0-rc-7670501b-20241124. All 389 installed versions, original locks and tracked source verify. The original Node20.19.0 workflow and Next turbo/static-export setup remain unchanged.
+
+The import preserves all 280 prior raw rows and nested property orders. `tax-budget-import-provenance.json` records the source, identity, installation, runner, capture and repeated-field checks under `/tmp/bippy-parser-game-expansion`. No budget, input, application or comparison rule changes.
+
+Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker passes 60 links and both executable TSX examples. Parser implementation and the latest 3,065-test gate remain unchanged.
+
+A separate Valtio/proxy-compare source-policy trial remains uncompleted and is not the selected recipe. Its first analysis reaches replay. An owned-process sample and three-second inspector profile record collection snapshot/restore activity under `/tmp/bippy-parser-game-expansion/valtio-inspector-profile.json`. The diagnostic scripts did not stop a process, and concurrent work prevents performance attribution.
+
+Three original Yarn Berry recipes also pass frozen installation and tree checks. Elden Ring checks 414 installed locations, KaiHotz 583 and Icecream17 1,803. The original vendored Yarn3.8.7/4.8.1/4.12.0 releases and node-modules linkers remain unchanged. Node22.16.0 and pnpm10.12.1 probes verify before capture.
+
+The first probes incorrectly inherited strict Corepack selection instead of the existing dev-server environment; corrected probes preserve those failures. Yarn3’s bare dependency ranges require its default npm protocol when looking up explicit locked descriptors. The vendored resolver, actual configuration and repeated tree checks verify that correction without normalizing package versions.
+
+KaiHotz’s native comparison is partial because a lodash.map callback cannot run natively during analysis. Icecream17 is exact, retaining the original CSP directive warning and server-side TypeScript getter errors. Elden Ring reaches static analysis after native capture. These three repositories remain unimported pending same-capture repetitions and final checks.
 
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,065 tests**, with two existing React-19 DevTools skips; this includes **1,019 parser tests / 63 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **280 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,065 tests**, with two existing React-19 DevTools skips; this includes **1,019 parser tests / 63 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **281 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
