@@ -128,6 +128,8 @@ Expanding this source policy changes the analyzed model, not its saved native ca
 
 Record legacy-router source policies separately from [framework model selection](../packages/parser/src/frameworks/react-router.ts). An opaque provider can hide which route children the library mounts. Interpreting installed router and context helpers can expose those children without establishing complete navigation or lifecycle behavior.
 
+Assigned stub names are not yet fully symbolic. For unknown or branched `displayName` values, the [name reader](../packages/parser/src/evaluate/values.ts) falls back to the library name. Interpreting a missing naming helper can resolve the value without repairing that fallback. Preserve the earlier mismatch and replay evidence.
+
 Native Vite configuration does not yet connect `resolve.alias` to the [module resolver](../packages/parser/src/graph/module-resolver.ts). A configured alias can remain opaque even when the browser resolves it. Explicit parser aliases and TypeScript paths are separate.
 
 A library model needs the component structure of the installed version. The [Emotion model](../packages/parser/src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
