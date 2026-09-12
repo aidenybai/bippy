@@ -36,16 +36,16 @@ import {
  * the value.
  */
 interface CollectionEntry {
-  key: StaticValue;
-  value: StaticValue;
-  presence: StaticValue;
-  writeOrdinal: number;
+  readonly key: StaticValue;
+  readonly value: StaticValue;
+  readonly presence: StaticValue;
+  readonly writeOrdinal: number;
 }
 
 interface CollectionState {
-  entries: CollectionEntries;
-  writeCount: number;
-  isExternallyMutable: boolean;
+  readonly entries: CollectionEntries;
+  readonly writeCount: number;
+  readonly isExternallyMutable: boolean;
 }
 
 type CollectionKind = "Map" | "Set" | "WeakMap" | "WeakSet";
@@ -169,8 +169,9 @@ type CollectionEntries = ReadonlyMap<KeyIdentity, CollectionEntry>;
  * the same one, and is otherwise any value written under a key it may equal.
  * A read under a branch the collection never saw written reads each alternative.
  */
-class StaticCollection implements JournaledState<CollectionState> {
-  private entries = new Map<KeyIdentity, CollectionEntry>();
+export class StaticCollection implements JournaledState<CollectionState> {
+  private entries: CollectionEntries = new Map();
+  private writableEntries: Map<KeyIdentity, CollectionEntry> | null = null;
   private writeCount = 0;
   private isExternallyMutable = false;
 
@@ -181,15 +182,17 @@ class StaticCollection implements JournaledState<CollectionState> {
   ) {}
 
   capture(): CollectionState {
+    this.writableEntries = null;
     return {
-      entries: new Map(this.entries),
+      entries: this.entries,
       writeCount: this.writeCount,
       isExternallyMutable: this.isExternallyMutable,
     };
   }
 
   restore(snapshot: CollectionState): void {
-    this.entries = new Map(snapshot.entries);
+    this.entries = snapshot.entries;
+    this.writableEntries = null;
     this.writeCount = snapshot.writeCount;
     this.isExternallyMutable = snapshot.isExternallyMutable;
   }
@@ -203,6 +206,15 @@ class StaticCollection implements JournaledState<CollectionState> {
   ): void {
     this.writeCount = Math.max(...snapshots.map((snapshot) => snapshot.writeCount));
     this.isExternallyMutable = snapshots.some((snapshot) => snapshot.isExternallyMutable);
+    const firstSnapshot = snapshots[0];
+    if (
+      firstSnapshot &&
+      snapshots.every((snapshot) => snapshot.entries === firstSnapshot.entries)
+    ) {
+      this.entries = firstSnapshot.entries;
+      this.writableEntries = null;
+      return;
+    }
     const joined = new Map<KeyIdentity, CollectionEntry>();
     for (const snapshot of snapshots) {
       for (const [identity, entry] of snapshot.entries) {
@@ -236,6 +248,7 @@ class StaticCollection implements JournaledState<CollectionState> {
       }
     }
     this.entries = joined;
+    this.writableEntries = joined;
   }
 
   private find(key: StaticValue): CollectionEntry | null {
@@ -327,8 +340,16 @@ class StaticCollection implements JournaledState<CollectionState> {
     });
   }
 
+  private getWritableEntries(): Map<KeyIdentity, CollectionEntry> {
+    if (this.writableEntries) return this.writableEntries;
+    const entries = new Map(this.entries);
+    this.entries = entries;
+    this.writableEntries = entries;
+    return entries;
+  }
+
   private replace(entry: CollectionEntry): void {
-    this.entries.set(getKeyIdentity(entry.key), entry);
+    this.getWritableEntries().set(getKeyIdentity(entry.key), entry);
   }
 
   set(key: StaticValue, value: StaticValue): void {
@@ -352,7 +373,7 @@ class StaticCollection implements JournaledState<CollectionState> {
     const existing = this.find(key);
     const possiblyEqual = this.findPossiblyEqual(key);
     this.unsettle(possiblyEqual);
-    if (existing) this.entries.delete(getKeyIdentity(key));
+    if (existing) this.getWritableEntries().delete(getKeyIdentity(key));
     if (possiblyEqual.length > 0 || this.isOutsideWriteVisible(key)) {
       return unknownPrimitiveValue("boolean", this.describeUncertainty("delete"));
     }
@@ -361,7 +382,8 @@ class StaticCollection implements JournaledState<CollectionState> {
   }
 
   clear(): void {
-    this.entries = new Map();
+    this.writableEntries = new Map();
+    this.entries = this.writableEntries;
   }
 
   /** Entries in insertion order; code the analysis did not see may have appended more. */

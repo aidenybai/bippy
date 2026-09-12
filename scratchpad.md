@@ -326,13 +326,44 @@ Data validation passes root typecheck, fifteen manifest tests, schema/identity/r
 
 The separate Valtio-source trial reached replay but produced no completed result after more than an hour. SIGINT did not stop the owned analyzer. Command and start-time checks preceded SIGKILL; the process and its loopback inspector then exited. `valtio-source-stopped-provenance.json` records the interruption without inventing a verdict or performance comparison. The selected Taxe PFA capture and budget-limited results remain unchanged.
 
-Elden Ring has an original native capture and reaches replay, but remains unimported without a completed result and repetitions. Its checked-in regulation data remains unchanged; no rebuild using external game files runs.
+Elden Ring’s completed original analysis records:
+
+- React18.2.0, 8,956 native fibers, eleven commits and no page errors
+- A partial match with two known fibers and 8,953 wildcard-absorbed fibers
+- Five bounded states, an 18,266-node symbolic tree and one incomplete replay
+- Eighteen evaluation budget cutoffs and seven call-depth cutoffs, but only three matcher steps and `report.budgetExhausted:false`
+
+It remains unimported while same-capture comparisons run. Its checked-in regulation data remains unchanged; no rebuild using external game files runs. The wildcard’s reason is `step budget exhausted`, not evidence that the hidden application body matches.
+
+### Copy-on-write collection journal trial
+
+`StaticCollection` now shares read-only entry tables across captures and restores, copying before writes. Joins reuse identical tables after combining write counts and outside-mutation flags. Application values and their allocation identities remain unchanged; these tables are not React’s application-level external-store snapshots. The React checkout’s `mountSyncExternalStore` implementation and the journal’s capture/restore/join consumers informed this distinction.
+
+Thirty-six direct tests cover the four collection kinds. Sixteen table-reuse assertions fail on the baseline, while twenty isolation and mutation tests pass there. The tests cover restoration and joins with uncaptured writable tables, dynamic deletion, retained presence guards, insertion order and escape flags. These assertions check the internal representation, not a newly demonstrated native UI defect.
+
+The initial full candidate-worktree suite fails seven checks that also fail on the baseline worktree. Both worktrees resolve their linked dependencies outside their installation roots, which the parser deliberately rejects. `collection-snapshots-setup-provenance.json` preserves the matching failures, package locations and source hashes under `/tmp/bippy-parser-game-expansion`. Final validation runs in the main checkout with its owned dependencies; no install-root exemption changes.
+
+Main validation passes 3,101 root tests with two existing skips, including 1,055 parser tests across 64 files. Typecheck, build, realm checks, lint, formatting and diff checks pass. The worktree dependency failures do not recur in the owned main installation.
+
+Seven policies across six independent captures retain five comparison fields, including static diagnostics. These include both KaiHotz policies, Icecream17, EC-82MS, original Taxe PFA, SwiftCalc and the card-memory demo. `collection-snapshots-checkpoint-provenance.json` records the completed checks; Elden Ring’s comparison is still running. The commands preserve source files, captures, budgets and prior diagnostics; neither concurrent timing nor the interrupted Valtio profile establishes an end-to-end speed improvement.
+
+The documentation checker initially treats the new pinned React source URL as a local path and fails. It now fetches HTTPS targets and checks pinned GitHub line anchors against the actual source length. The original failed check remains saved; local path and heading checks remain strict.
+
+### Original library-build recipes
+
+SwiftCalc’s original frozen npm installation runs its `prepare` library build and succeeds. Its tree check verifies 351 installed packages and React18.3.1. The artifact receipt verifies twenty generated files and the original compiler manifests, with an unchanged second check. Native capture records 155 fibers, one commit, no page errors and an exact initial match with one passing replay.
+
+The first card-memory demo recipe incorrectly starts installation from the parent because it assumes `workingDirectory` also controls install commands. `ensureInstalled` actually runs installation at the clone root, so the initial pinned pnpm command fails before npm ci. A separate corrected manifest removes only that leading directory change and completes root installation, the original library build and demo installation. `build-games-install-cwd-correction.json` preserves this recipe error; it is not an original application dependency failure or an application repair.
+
+Both original npm locks remain selected for the root/demo workflow. An explicit nested-scope check verifies 54 root packages and 1,400 demo packages. The thirteen generated dist files and all thirteen demo copies match byte for byte. Original prebuild, build and postbuild logs, source hashes and artifact copies remain saved.
+
+Actual Node22.16.0/npm10.9.2/pnpm10.12.1 and Node16.20.2/npm8.19.4/pnpm8.15.9 runners verify for the two apps. The memory demo’s native capture records eleven React18.2.0 fibers, one commit, no page errors and an exact initial grid-selection page. Both native results agree with baseline/current/repeated checks in all five comparison fields. Import checks remain pending; neither build recipe changes the 283-repository count.
 
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,065 tests**, with two existing React-19 DevTools skips; this includes **1,019 parser tests / 63 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **283 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,101 tests**, with two existing React-19 DevTools skips; this includes **1,055 parser tests / 64 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **283 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
