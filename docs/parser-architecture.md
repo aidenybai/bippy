@@ -337,7 +337,9 @@ Application comparison and replay check different properties of the model. Appli
 
 [`compareStaticToRuntime`](../packages/parser/src/harness/compare-render.ts) checks whether an application tree matches the symbolic model. This test is membership checking. It can search the symbolic tree without requiring the matching state in the initial enumerated list.
 
-The matcher still uses recursive continuations for some variable-width patterns. Enumeration success does not establish that comparison will complete.
+The [matcher](../packages/parser/src/harness/compare.ts) drives suspended calls through an [explicit work stack](../packages/parser/src/harness/work-stack.ts). Generator frames keep decision constraints active while descendant calls run. The driver resumes a frame with its child’s result or throws its error into that frame. Its `finally` blocks release constraints during completion, backtracking, and errors. A wide sibling list or repeat therefore does not consume one JavaScript frame per step.
+
+The work stack does not raise the matching step budget. Recursive tree indexing and guard-solver resource bounds remain separate limits. Enumeration success still does not establish that comparison will complete.
 
 The comparison checks fiber structure. It also compares these recorded fields:
 
