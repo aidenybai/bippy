@@ -245,6 +245,8 @@ GitHub repository IDs distinguish owner renames from new repositories. Excalidra
 
 Manifest validation rejects unsupported options instead of silently discarding them. `static.servedDirectory` is relative to `static.rootDirectory`. Dev servers do not inherit the harness's `CI` flag; a manifest can declare it explicitly. Install and setup commands default to `CI=1` unless the entry overrides it. A changed live environment requires fresh capture provenance.
 
+Native Vite defines initialize mutable client globals, not only `import.meta.env` fields. Guarded assignments and deletions preserve each global’s value and presence. Client and server stores remain separate. Opaque expressions and reflective mutation APIs still limit coverage.
+
 Native configuration and plugin transforms use the entry’s child-process environment. The corpus renderer serializes environment-sensitive operations and restores the harness environment afterward. Declared variables also reach the interpreter without an `envFiles` list; unlisted variables remain unknown until that list is complete. Declare custom client prefixes with `static.envPrefix`. An unspecified SPA no longer implies Vite’s prefix.
 
 The original 207-repository snapshot reported 111 `exact` capture matches, not whole-space verification.

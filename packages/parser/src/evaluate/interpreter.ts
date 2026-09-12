@@ -42,6 +42,7 @@ import type {
 } from "oxc-parser";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { ParserError } from "../errors.js";
 import { getAssetModuleValue, isAssetImport } from "../graph/asset-module.js";
 import { getCssModuleValue, isCssModulePath } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
@@ -50,6 +51,7 @@ import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { getPackageNameFromSpecifier, isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "./stubs.js";
+import { GlobalProperties, type GlobalPropertyState } from "./global-properties.js";
 import { getLibraryValue } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
@@ -915,11 +917,25 @@ export class Interpreter {
   readonly origin: string | null;
   readonly history: SessionHistory;
   private readonly purePackages: PurePackages | null;
-  private readonly windowGlobals = new Map<string, StaticValue>();
+  private readonly windowGlobals = new GlobalProperties(
+    (cell) => this.recordHeapMutation(cell),
+    (name) => this.getInitialGlobalProperty(name, null),
+  );
+  private readonly serverGlobals = new GlobalProperties(
+    (cell) => this.recordHeapMutation(cell),
+    (name) => this.getInitialGlobalProperty(name, "server"),
+  );
   /** Properties the analyzed code defined on React's own functions (`React.createContext[key] = ...`). */
   private readonly reactApiProperties = new Map<ReactApi, Map<string, StaticValue>>();
   /** Properties the analyzed code defined on builtin globals other than the global object (`Array[key] = ...`). */
-  private readonly globalExpandos = new Map<string, StaticValue>();
+  private readonly globalExpandos = new GlobalProperties(
+    (cell) => this.recordHeapMutation(cell),
+    (name) => this.getInitialGlobalProperty(name, null),
+  );
+  private readonly serverGlobalExpandos = new GlobalProperties(
+    (cell) => this.recordHeapMutation(cell),
+    (name) => this.getInitialGlobalProperty(name, "server"),
+  );
   private readonly defines = new Map<string, StaticValue>();
   private readonly definedEnvironmentObjects = new Set<string>();
   private readonly viteEnvironment: ViteClientEnvironment | undefined;
@@ -1027,7 +1043,45 @@ export class Interpreter {
     )
       ? DEFAULT_STYLED_COMPONENTS_TRANSFORM
       : null;
+    this.initializeViteGlobals();
   }
+
+  private initializeViteGlobals = (): void => {
+    if (!this.viteEnvironment) return;
+    const module = this.graph.addVirtualModule("bippy:vite-globals.ts", "export {};");
+    if (!module) return;
+    const context = this.createModuleContext(module);
+    for (const name of Object.keys(this.viteEnvironment.defines).sort()) {
+      if (name.startsWith("import.meta.env.")) continue;
+      const segments = name.split(".");
+      let target: StaticValue = { kind: "global", name: "globalThis" };
+      for (const [index, segment] of segments.entries()) {
+        if (index === segments.length - 1) {
+          this.assignProperty(
+            target,
+            segment,
+            this.getCompilerDefineValue(name, this.viteEnvironment.defines[name]),
+            context,
+          );
+          break;
+        }
+        let member: StaticValue =
+          target.kind === "global" && this.clientRealm.isGlobalAlias(target.name)
+            ? (this.windowGlobals.get(segment) ?? this.getGlobal(segment, null) ?? UNDEFINED_VALUE)
+            : this.getProperty(target, segment, context, null);
+        if (getTruthiness(member) === false) {
+          member = objectValue();
+          this.assignProperty(target, segment, member, context);
+        }
+        if (
+          !["object", "global", "list", "function", "class", "native-object"].includes(member.kind)
+        ) {
+          throw new ParserError(`Vite define ${name} requires a known object target`);
+        }
+        target = member;
+      }
+    }
+  };
 
   /** A value recorded from the running page, with references to the project's own module exports evaluated. */
   captured(captured: CapturedValue, name: string): StaticValue {
@@ -1048,6 +1102,43 @@ export class Interpreter {
   getWindowGlobal(name: string): StaticValue {
     return this.windowGlobals.get(name) ?? unknownValue(`window.${name}`);
   }
+
+  private getInitialGlobalProperty = (
+    name: string,
+    environment: RenderEnvironment | null,
+  ): GlobalPropertyState => {
+    const realm = this.getRealm(environment);
+    const declared = realm.getGlobal(realm.normalizeGlobalName(name));
+    const separator = name.lastIndexOf(".");
+    const windowKeys = environment === "server" ? undefined : this.pageState?.windowKeys;
+    if (separator < 0 && windowKeys) {
+      const isPresent = windowKeys.includes(name);
+      return {
+        present: primitiveValue(isPresent),
+        value: isPresent
+          ? (this.getGlobal(name, environment) ?? unknownValue(`initial global ${name}`))
+          : UNDEFINED_VALUE,
+      };
+    }
+    if (!declared && separator > 0) {
+      const intrinsic = getBuiltinWitness(name.slice(0, separator));
+      if (intrinsic !== null && !hasIntrinsicMember(intrinsic, name.slice(separator + 1)))
+        return { present: FALSE_VALUE, value: UNDEFINED_VALUE };
+    }
+    return {
+      present:
+        declared !== null && !declared.type.isNullable
+          ? TRUE_VALUE
+          : unknownPrimitiveValue("boolean", `initial presence of global ${name}`),
+      value: this.getGlobal(name, environment) ?? unknownValue(`initial global ${name}`),
+    };
+  };
+
+  private getGlobalProperties = (environment: RenderEnvironment | null): GlobalProperties =>
+    environment === "server" ? this.serverGlobals : this.windowGlobals;
+
+  private getGlobalExpandos = (environment: RenderEnvironment | null): GlobalProperties =>
+    environment === "server" ? this.serverGlobalExpandos : this.globalExpandos;
 
   /** The host whose globals code in this rendering environment sees: server-rendered code runs in Node whatever the client host is. */
   getRealm(environment: RenderEnvironment | null): HostRealm {
@@ -1948,7 +2039,11 @@ export class Interpreter {
   }
 
   /** The binding, module export, or modeled global `name` denotes; null when nothing in scope defines it. */
-  private resolveIdentifier(name: string, context: EvaluationContext): StaticValue | null {
+  private resolveIdentifier(
+    name: string,
+    context: EvaluationContext,
+    isTypeof = false,
+  ): StaticValue | null {
     const scoped = lookupScope(context.scope, name);
     if (scoped) return scoped;
     const moduleValue = this.evaluateModuleBinding(context.module, name, context.environment);
@@ -1963,9 +2058,19 @@ export class Interpreter {
     }
     const modulePathName = this.getModulePathName(name, context);
     if (modulePathName) return modulePathName;
-    const global = this.getGlobal(name, context.environment);
-    if (global || context.environment === "server") return global;
-    return this.windowGlobals.get(name) ?? null;
+    const defined = this.defines.get(name);
+    if (defined) return defined;
+    const properties = this.getGlobalProperties(context.environment);
+    const present = properties.has(name);
+    if (!present) return this.getGlobal(name, context.environment);
+    if (getTruthiness(this.getGuardedValue(present)) === true) return properties.get(name) ?? null;
+    const missing = isTypeof
+      ? UNDEFINED_VALUE
+      : thrownValue(
+          `\`${name}\` is not defined`,
+          createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
+        );
+    return properties.get(name, missing) ?? null;
   }
 
   /**
@@ -1975,8 +2080,9 @@ export class Interpreter {
    * module (`global`, `define`) are decided by the bundler alone.
    */
   private isAbsentGlobal(name: string, environment: RenderEnvironment | null): boolean {
+    const present = this.getGlobalProperties(environment).has(name);
+    if (present) return getTruthiness(this.getGuardedValue(present)) === false;
     if (environment === "server") return this.serverRealm.isForeignGlobal(name);
-    if (this.windowGlobals.has(name)) return false;
     if (BUNDLER_INJECTED_NAMES.has(name))
       return isBundlerUndeclaredName(this.project.bundler, name);
     const windowKeys = this.pageState?.windowKeys;
@@ -2907,7 +3013,7 @@ export class Interpreter {
   private evaluateTypeof(argument: Expression, context: EvaluationContext): StaticValue {
     const target = unwrapExpression(argument);
     if (target.type === "Identifier") {
-      const resolved = this.resolveIdentifier(target.name, context);
+      const resolved = this.resolveIdentifier(target.name, context, true);
       if (resolved) return getTypeofValue(resolved, this.getRealm(context.environment));
       if (this.isAbsentGlobal(target.name, context.environment)) return primitiveValue("undefined");
     }
@@ -2929,14 +3035,27 @@ export class Interpreter {
     const thrown = getThrownOperand([object, key]);
     if (thrown) return thrown;
     for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
-      this.deleteProperty(alternative, key);
+      this.deleteProperty(alternative, key, context);
     }
     return TRUE_VALUE;
   }
 
-  private deleteProperty(target: StaticValue, key: StaticValue): void {
+  private deleteProperty(target: StaticValue, key: StaticValue, context: EvaluationContext): void {
+    const { environment } = context;
     const name = toPropertyKey(key);
     switch (target.kind) {
+      case "global":
+        if (name !== null) {
+          const isGlobalObject = this.getRealm(environment).isGlobalAlias(target.name);
+          const properties = isGlobalObject
+            ? this.getGlobalProperties(environment)
+            : this.getGlobalExpandos(environment);
+          properties.delete(
+            isGlobalObject ? name : `${target.name}.${name}`,
+            context.uncertainDepth > 0,
+          );
+        }
+        return;
       case "native-object":
         if (name !== null) deleteNativeObjectMember(target, name);
         else if (key.kind === "unknown-primitive") deleteNativeObjectComposedMember(target, key);
@@ -2977,7 +3096,7 @@ export class Interpreter {
     const right = this.evaluateExpression(node.right, context);
     if (node.operator === "in") {
       return (
-        this.hasGlobalExpando(left, right) ??
+        this.hasGlobalExpando(left, right, context.environment) ??
         hasProperty(left, right) ??
         this.hasGlobalObjectProperty(left, right, context.environment) ??
         this.hasExternalExport(left, right, context) ??
@@ -2988,12 +3107,16 @@ export class Interpreter {
   }
 
   /** `"observable" in Symbol` once the program added the member; open while the assignment itself was uncertain. */
-  private hasGlobalExpando(key: StaticValue, target: StaticValue): StaticValue | null {
+  private hasGlobalExpando(
+    key: StaticValue,
+    target: StaticValue,
+    environment: RenderEnvironment | null,
+  ): StaticValue | null {
     if (target.kind !== "global") return null;
     const name = toPropertyKey(key);
-    const expando = name === null ? undefined : this.globalExpandos.get(`${target.name}.${name}`);
-    if (expando === undefined) return null;
-    return expando.kind === "branch" ? null : TRUE_VALUE;
+    return name === null
+      ? null
+      : (this.getGlobalExpandos(environment).has(`${target.name}.${name}`) ?? null);
   }
 
   /** The host document when `value` is the `document` global rendered into on the client. */
@@ -3025,8 +3148,9 @@ export class Interpreter {
       const declared = realm.getGlobal(`${target.name}.${name}`);
       return declared !== null && !declared.type.isNullable ? TRUE_VALUE : null;
     }
+    const written = this.getGlobalProperties(environment).has(name);
+    if (written) return written;
     if (environment !== "server") {
-      if (this.windowGlobals.has(name)) return TRUE_VALUE;
       const windowKeys = this.pageState?.windowKeys;
       if (windowKeys) return primitiveValue(windowKeys.includes(name));
     }
@@ -3210,14 +3334,12 @@ export class Interpreter {
     context: EvaluationContext,
   ): void {
     const isGlobalObject = this.getRealm(context.environment).isGlobalAlias(target.name);
-    const properties = isGlobalObject ? this.windowGlobals : this.globalExpandos;
-    const name = isGlobalObject ? `window.${key}` : `${target.name}.${key}`;
-    const propertyKey = isGlobalObject ? key : name;
+    const properties = isGlobalObject
+      ? this.getGlobalProperties(context.environment)
+      : this.getGlobalExpandos(context.environment);
+    const propertyKey = isGlobalObject ? key : `${target.name}.${key}`;
     this.mutations.record(0);
-    properties.set(
-      propertyKey,
-      this.withUncertainAssignment(properties.get(propertyKey), value, name, context),
-    );
+    properties.set(propertyKey, value, context.uncertainDepth > 0);
   }
 
   assignOwnProperty(
@@ -3272,7 +3394,12 @@ export class Interpreter {
       return;
     }
     const bindingKind = context.module.bindings.get(name)?.kind;
-    if (bindingKind === undefined || bindingKind === "typescript") return;
+    if (bindingKind === undefined || bindingKind === "typescript") {
+      const properties = this.getGlobalProperties(context.environment);
+      if (properties.has(name))
+        this.setGlobalMember({ kind: "global", name: "globalThis" }, name, value, context);
+      return;
+    }
     const values = this.getModuleValues(context.module, context.environment);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name, context.environment);
     const previous = values.get(name);
@@ -3634,8 +3761,7 @@ export class Interpreter {
         }
         const memberName = `${object.name}.${key}`;
         if (this.getRealm(context.environment).isGlobalAlias(object.name)) {
-          const windowGlobal =
-            context.environment === "server" ? undefined : this.windowGlobals.get(key);
+          const windowGlobal = this.getGlobalProperties(context.environment).get(key);
           if (windowGlobal) return windowGlobal;
           if (isSymbolPropertyKey(key) || this.isAbsentGlobal(key, context.environment))
             return UNDEFINED_VALUE;
@@ -3643,6 +3769,8 @@ export class Interpreter {
             this.getGlobal(memberName, context.environment) ?? unknownValue(memberName, location)
           );
         }
+        const expando = this.getGlobalExpandos(context.environment).get(memberName);
+        if (expando) return expando;
         const intrinsic = getBuiltinWitness(object.name);
         if (typeof intrinsic === "function" && (key === "length" || key === "name"))
           return primitiveValue(intrinsic[key]);
@@ -3660,8 +3788,6 @@ export class Interpreter {
           this.getModulePathName(memberName, context) ??
           this.getGlobal(memberName, context.environment);
         if (declaredMember) return declaredMember;
-        const expando = this.globalExpandos.get(memberName);
-        if (expando) return expando;
         if (this.isAbsentHostMember(object.name, key, context.environment)) return UNDEFINED_VALUE;
         if (intrinsic !== null && !hasIntrinsicMember(intrinsic, key)) return UNDEFINED_VALUE;
         const isOpenMember =
