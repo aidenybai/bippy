@@ -10,6 +10,7 @@ import {
 import { lazyProperties, nativeFunction, noopFunction, stubValue } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
+  ModeledExports,
   StaticObjectValue,
   StaticReactApiValue,
   StaticValue,
@@ -23,7 +24,8 @@ import type {
 // itself (`useObserver` runs it inside a reaction); class components are
 // patched in place and keep their identity.
 
-export const MOBX_PACKAGES = ["mobx", "mobx-react", "mobx-react-lite"];
+export const MOBX_PACKAGES = ["mobx"];
+export const MOBX_REACT_PACKAGES = ["mobx-react", "mobx-react-lite"];
 
 const MEMO: StaticReactApiValue = { kind: "react-api", api: "memo" };
 const USE_STATE: StaticReactApiValue = { kind: "react-api", api: "useState" };
@@ -118,29 +120,22 @@ const getMobxExport = (importedName: string): StaticValue | null => {
   }
 };
 
-const getMobxReactExport = (importedName: string): StaticValue | null => {
-  switch (importedName) {
-    case "observer":
-      return observer();
-    case "Observer":
-      return stubValue({ displayName: "Observer", render: renderObserved });
-    case "useObserver":
-      return callFirst(importedName);
-    case "useLocalObservable":
-    case "useLocalStore":
-      return useLocalObservable(importedName);
-    case "useAsObservableSource":
-      return identity(importedName);
-    case "enableStaticRendering":
-    case "useStaticRendering":
-    case "observerBatching":
-      return noopFunction(importedName);
-    case "isUsingStaticRendering":
-      return nativeFunction(importedName, () => FALSE_VALUE);
-    default:
-      return null;
-  }
-};
+const MOBX_REACT_EXPORT_FACTORIES = new Map<string, (name: string) => StaticValue>([
+  ["observer", observer],
+  ["Observer", () => stubValue({ displayName: "Observer", render: renderObserved })],
+  ["useObserver", callFirst],
+  ["useLocalObservable", useLocalObservable],
+  ["useLocalStore", useLocalObservable],
+  ["useAsObservableSource", identity],
+  ["enableStaticRendering", noopFunction],
+  ["useStaticRendering", noopFunction],
+  ["observerBatching", noopFunction],
+  ["isUsingStaticRendering", (name) => nativeFunction(name, () => FALSE_VALUE)],
+]);
+
+export const MOBX_REACT_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
+  MOBX_REACT_PACKAGES.map((packageName) => [packageName, [...MOBX_REACT_EXPORT_FACTORIES.keys()]]),
+);
 
 export const mobxValue: ExternalValueProvider = (specifier, importedName) => {
   switch (specifier) {
@@ -148,7 +143,7 @@ export const mobxValue: ExternalValueProvider = (specifier, importedName) => {
       return getMobxExport(importedName);
     case "mobx-react":
     case "mobx-react-lite":
-      return getMobxReactExport(importedName);
+      return MOBX_REACT_EXPORT_FACTORIES.get(importedName)?.(importedName) ?? null;
     default:
       return null;
   }

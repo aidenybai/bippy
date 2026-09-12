@@ -120,6 +120,10 @@ These rules do not establish complete build-environment parity. Remaining parity
 
 [Package metadata](../packages/parser/src/graph/installed-package.ts) also distinguishes a wrapper's package version from its declared bundled engine version. Vite asset URLs and compiler selection use the engine version when the package supplies it. They must not treat Vite Plus version `0.3.1` as Vite version `0`.
 
+The [library registry](../packages/parser/src/libraries/index.ts) can model selected exports while the graph interprets other exports from opted-in packages. An analyzed namespace records its external specifier, so property reads apply the same overrides as named imports. Namespace materialization also uses those overrides.
+
+For an allowlisted `mobx-react` package, unmodeled `Provider` and `inject` exports resolve to installed source. Existing [observer models](../packages/parser/src/libraries/mobx.ts) still take precedence; core MobX remains modeled. This policy does not establish complete observability or lifecycle behavior.
+
 A library model needs the component structure of the installed version. The [Emotion model](../packages/parser/src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
 
 The [legacy Next image model](../packages/parser/src/frameworks/next-legacy-image.ts) also uses version-specific host structure. Next 10 and 11 use `div` wrappers; Next 12 uses `span` wrappers. Next 10.1 through 11.1.0 condition the `noscript` fallback on intersection visibility. The model retains both outputs when that visibility is unknown.

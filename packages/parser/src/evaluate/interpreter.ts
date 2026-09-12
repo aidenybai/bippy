@@ -52,7 +52,7 @@ import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { getPackageNameFromSpecifier, isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "./stubs.js";
 import { GlobalProperties, type GlobalPropertyState } from "./global-properties.js";
-import { getLibraryValue } from "../libraries/index.js";
+import { getLibraryValue, isModeledLibraryExport } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
   getDeclaredNames,
@@ -130,6 +130,7 @@ import type {
   StaticGlobalValue,
   StaticAccessor,
   StaticListValue,
+  StaticNamespaceValue,
   StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticObjectValue,
@@ -1277,10 +1278,15 @@ export class Interpreter {
    * holds the statically collected members.
    */
   private getNamespaceMember(
-    module: ModuleRecord,
+    namespace: StaticNamespaceValue,
     key: string,
     environment: RenderEnvironment | null,
   ): StaticValue {
+    const { module, externalSpecifier } = namespace;
+    if (externalSpecifier && isModeledLibraryExport(externalSpecifier, key)) {
+      const modeled = this.getModeledExternal(externalSpecifier, key, module.filePath);
+      if (modeled) return modeled;
+    }
     if (hasExportedName(module, key)) return this.evaluateModuleExport(module, key, environment);
     if (key === "__esModule") return module.isCommonJs ? UNDEFINED_VALUE : TRUE_VALUE;
     if (module.isCommonJs && module.moduleExports === null) {
@@ -1309,7 +1315,7 @@ export class Interpreter {
       orderedNames.map((name) => ({
         kind: "property",
         key: name,
-        value: this.evaluateModuleExport(module, name, environment),
+        value: this.getNamespaceMember(value, name, environment),
       })),
     );
   }
@@ -1503,7 +1509,7 @@ export class Interpreter {
         return symbol.isClientReference ? toClientReference(value) : value;
       }
       case "namespace":
-        return { kind: "namespace", module: symbol.module };
+        return symbol;
       case "module-exports": {
         const value = this.evaluateModuleExportsMember(
           symbol.module,
@@ -3734,7 +3740,7 @@ export class Interpreter {
       case "native-object":
         return getNativeObjectMember(object, key);
       case "namespace":
-        return this.getNamespaceMember(object.module, key, context.environment);
+        return this.getNamespaceMember(object, key, context.environment);
       case "global": {
         if (object.name === "import.meta" && key === "env") {
           const environment = this.getViteEnvironment(context);
@@ -3908,9 +3914,13 @@ export class Interpreter {
   ): StaticValue {
     const target = this.graph.resolveImportedModule(specifier, context.module);
     if (isModuleRecord(target)) {
-      return isRequire
+      const resolution = this.graph.resolveSpecifier(specifier, context.module);
+      const namespace: StaticValue = isRequire
         ? this.evaluateModuleExports(target, context.environment)
         : { kind: "namespace", module: target };
+      return namespace.kind === "namespace" && resolution.kind === "external"
+        ? { ...namespace, externalSpecifier: resolution.specifier }
+        : namespace;
     }
     if (target.kind === "internal" && isAssetImport(target.filePath, specifier)) {
       return getAssetModuleValue(target.filePath, specifier, { kind: "default" }, this.project);

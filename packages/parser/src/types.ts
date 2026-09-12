@@ -188,7 +188,7 @@ export type ResolvedSymbol =
       expression: Expression;
       isClientReference: boolean;
     }
-  | { kind: "namespace"; module: ModuleRecord }
+  | { kind: "namespace"; module: ModuleRecord; externalSpecifier?: string }
   /** A member of a CommonJS module's evaluated `module.exports`, read as bundlers do. */
   | {
       kind: "module-exports";
@@ -963,6 +963,7 @@ export type ExternalValueOrigin = "binding" | "instance" | "derived";
 export interface StaticNamespaceValue {
   kind: "namespace";
   module: ModuleRecord;
+  externalSpecifier?: string;
 }
 
 export interface StaticGlobalValue {

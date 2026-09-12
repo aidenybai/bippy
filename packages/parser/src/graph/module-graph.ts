@@ -240,7 +240,13 @@ export class ModuleGraph {
     }
     const target = this.getResolvedModule(resolution, specifier);
     if (isModuleRecord(target)) {
-      if (imported.kind === "namespace") return { kind: "namespace", module: target };
+      if (imported.kind === "namespace") {
+        return {
+          kind: "namespace",
+          module: target,
+          externalSpecifier: resolution.kind === "external" ? resolution.specifier : undefined,
+        };
+      }
       return this.resolveExportFrom(target, describeImportedName(imported), fromModule, visited);
     }
     if (

@@ -22,7 +22,12 @@ import { KEA_PACKAGES, keaValue } from "./kea.js";
 import { LINARIA_PACKAGES, linariaValue } from "./linaria.js";
 import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
 import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
-import { MOBX_PACKAGES, mobxValue } from "./mobx.js";
+import {
+  MOBX_PACKAGES,
+  MOBX_REACT_MODELED_EXPORTS,
+  MOBX_REACT_PACKAGES,
+  mobxValue,
+} from "./mobx.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
@@ -101,6 +106,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: LODASH_MODELED_EXPORTS,
   },
   { packages: MOBX_PACKAGES, getValue: mobxValue },
+  {
+    packages: MOBX_REACT_PACKAGES,
+    getValue: mobxValue,
+    modeledExports: MOBX_REACT_MODELED_EXPORTS,
+  },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
   { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
   {
