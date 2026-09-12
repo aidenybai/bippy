@@ -7704,6 +7704,41 @@
         "externalPackageAllowList": []
       },
       "notes": "Original React17 legacy render entry and Sudoku context. No puzzle edits or gameplay completeness claim. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. The original React17 legacy-render capture records240 commits and one passing model replay. This does not establish timer/lifecycle completeness, elapsed-time attributes or gameplay. Installed-tree and actual runner receipts verify. Initial native capture and same-capture repetitions do not establish visuals, interactions, arithmetic/puzzle correctness or whole-space completeness. GitHub repository ID 457230931 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "mattkolega-sudoku",
+      "repository": "https://github.com/mattkolega/sudoku",
+      "revision": "c541d2392e90840b08b6f0346465682beed12c99",
+      "description": "mattkolega/sudoku",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci --ignore-scripts --no-audit --no-fund",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54516 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54516/sudoku/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@mantine/core",
+          "@mantine/hooks",
+          "@mui/base",
+          "usehooks-ts",
+          "@mantine/styles",
+          "@mantine/utils",
+          "@mui/utils",
+          "react-icons",
+          "react-icons/*"
+        ]
+      },
+      "notes": "Original dev script, Vanilla Extract plugin, Mantine UI and /sudoku/ base remain. This is a development capture, not the README's production build/preview recipe. Empty storage receives no fabricated saved game, theme or clock. Original tracked source and all original locks must verify before import. The declared frozen installation uses pinned Node22.16/pnpm10.12 with npm10.9 or Yarn1.22 where selected. No repository count follows from installation or preparation. Explicitly interpret the installed dependency source listed in this policy. Prior sparse-policy comparisons remain saved against the same capture. This changes analysis policy, not application source, dependency versions, native setup, comparison or budgets; existing model overrides still apply. The unchanged native capture has React18.2.0, 414 fibers, four commits and no page errors. Expanded installed Mantine styles/utils, MUI utils and React Icons source raises strict coverage from about3% to about95%, but remains partial: 393 of413 normalized nodes match, two opaque regions skip13 fibers, and a wildcard absorbs7. The model counts463980 bounded combinations, enumerates256 and reports463756 omissions including dropped states; those counts are not exhaustive cardinality. All16 sampled replays and the preferred outside-enumeration witness remain incomplete. Preserve the older partial policy and every omission; this is a source-policy expansion, not a parser repair, performance claim, rendering/event proof or whole-space coverage. All337 installed versions, original source/npm lock and actual runner versions verify. GitHub repository ID 668255568 is distinct and non-fork."
     }
   ]
 }
