@@ -38,6 +38,8 @@ This restriction does not make analysis a security sandbox. React packages and a
 
 Reconciliation is the React process that computes component updates. Reimplementing that process would require the parser to reproduce React behavior across versions. Instead, the parser constructs React components that call the interpreter when React renders them.
 
+React and React DOM must share the dispatcher that selects hook implementations during rendering. Next’s bundled files expect aliases that plain Node module loading does not supply. The [scoped DOM loader](../packages/parser/src/materialize/react-dom-modules.ts) applies those aliases without changing Node’s shared cache or resolver. It loads framework React DOM code, not application component bodies.
+
 React creates the fibers, which are internal records for elements and components. Each fiber has a work tag that identifies its category. Bippy records the fiber tree after a commit, the stage when React applies an update to its rendering target. It stores the tree and capture metadata in a snapshot.
 
 ### Derive states from a symbolic model
@@ -342,6 +344,8 @@ Corrections currently change the state array without changing the original symbo
 ## Implementation limits
 
 The current renderer uses React DOM and the happy-dom implementation of the Document Object Model. The [runtime loader](../packages/parser/src/materialize/react-runtime.ts) resolves application React packages or framework-specific replacements. It can use the analysis package versions when application packages are unavailable or lack the required support.
+
+The runtime uses its React module’s `act` or `unstable_act` export when available. A Bippy-recorded hook probe checks runtime compatibility. Failed probes release their recorder and restore console output before fallback.
 
 A host model defines available platform names and modeled behavior. Host declarations for React Native do not establish native renderer support. Fiber-only comparison also misses scalar host text that React stores without a separate text fiber.
 

@@ -2,11 +2,12 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { version as harnessReactVersion } from "react";
 import { ReactRuntimeError } from "../src/errors.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
 import { loadReactRuntime } from "../src/materialize/react-runtime.js";
+import * as recorderModule from "../src/harness/commit-recorder.js";
 
 const STUB_REACT_VERSION = "17.0.2-stub";
 
@@ -158,6 +159,153 @@ describe("loadReactRuntime", () => {
       packages: VENDORED_PACKAGES,
     });
     expect(runtime.version).toBe(VENDORED_REACT_VERSION);
+  });
+
+  it("keeps framework React aliases local to its DOM modules", async () => {
+    const rootDirectory = createRootDirectory();
+    writeReactPair(rootDirectory, true);
+    writePackage(rootDirectory, VENDORED_PACKAGES.react, reexport("react", VENDORED_REACT_VERSION));
+    const appRequire = createRequire(join(rootDirectory, "package.json"));
+    const appReact = appRequire("react");
+    const requireVersion = `
+      const React = require("react");
+      if (React.version !== ${JSON.stringify(VENDORED_REACT_VERSION)}) throw new Error("wrong React dependency");
+    `;
+    writePackage(
+      rootDirectory,
+      VENDORED_PACKAGES.dom,
+      `
+      ${requireVersion}
+      module.exports = {
+        ...require(${JSON.stringify(harnessRequire.resolve("react-dom"))}),
+        createRoot: require(${JSON.stringify(harnessRequire.resolve("react-dom/client"))}).createRoot,
+      };
+    `,
+      {
+        "client.js": "module.exports = require('./client-entry');",
+        "client-entry.js": "module.exports = { createRoot: require('react-dom').createRoot };",
+        "server.js": `${requireVersion}\n${reexport("react-dom/server")}`,
+      },
+    );
+    const originalClient = appRequire(VENDORED_PACKAGES.domClient);
+    expect(originalClient.createRoot).toBeUndefined();
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+      packages: VENDORED_PACKAGES,
+    });
+    expect(runtime.version).toBe(VENDORED_REACT_VERSION);
+    const Component = () => {
+      const [value] = runtime.react.useState("coherent");
+      return runtime.react.createElement("span", null, value);
+    };
+    const container = document.createElement("div");
+    const root = runtime.createRoot(container, rootCallbacks);
+    try {
+      await runtime.act(() => root.render(runtime.react.createElement(Component)));
+      expect(container.textContent).toBe("coherent");
+      expect(runtime.domServer.renderToStaticMarkup(runtime.react.createElement(Component))).toBe(
+        "<span>coherent</span>",
+      );
+      expect(appRequire("react")).toBe(appReact);
+      expect(appReact.version).toBe(STUB_REACT_VERSION);
+      expect(appRequire(VENDORED_PACKAGES.domClient)).toBe(originalClient);
+      expect(originalClient.createRoot).toBeUndefined();
+    } finally {
+      await runtime.act(() => root.unmount());
+    }
+  });
+
+  it.each(["createRoot", "render", "unmount"])(
+    "cleans up a failed framework %s probe",
+    async (phase) => {
+      const rootDirectory = createRootDirectory();
+      writeReactPair(rootDirectory, true);
+      const failure = "throw new Error('incompatible renderer');";
+      writeVendoredReact(
+        rootDirectory,
+        `module.exports = {
+      createRoot: () => {
+        ${phase === "createRoot" ? failure : ""}
+        return {
+          render: () => { ${phase === "render" ? failure : ""} },
+          unmount: () => { ${phase === "unmount" ? failure : ""} },
+        };
+      },
+    };`,
+      );
+      const createRecorder = recorderModule.createCommitRecorder;
+      const cleanups: Array<() => void> = [];
+      let disposals = 0;
+      const spy = vi.spyOn(recorderModule, "createCommitRecorder").mockImplementation((options) => {
+        const recorder = createRecorder(options);
+        cleanups.push(recorder.dispose);
+        return {
+          ...recorder,
+          dispose: () => {
+            disposals++;
+            recorder.dispose();
+          },
+        };
+      });
+      const consoleError = console.error;
+      try {
+        const runtime = await loadReactRuntime({
+          resolver: new ModuleResolver({ rootDirectory }),
+          rootDirectory,
+          packages: VENDORED_PACKAGES,
+        });
+        expect(runtime.version).toBe(STUB_REACT_VERSION);
+        expect(disposals).toBe(1);
+        expect(console.error).toBe(consoleError);
+      } finally {
+        spy.mockRestore();
+        console.error = consoleError;
+        for (const cleanup of cleanups) cleanup();
+      }
+    },
+  );
+
+  it("rejects a framework that commits an errored hook probe", async () => {
+    const rootDirectory = createRootDirectory();
+    writeReactPair(rootDirectory, true);
+    writeVendoredReact(rootDirectory, reexport("react-dom/client"));
+    writePackage(
+      rootDirectory,
+      VENDORED_PACKAGES.react,
+      `module.exports = {
+      ...require(${JSON.stringify(harnessRequire.resolve("react"))}),
+      version: ${JSON.stringify(VENDORED_REACT_VERSION)},
+      useState: () => { throw new Error("incompatible dispatcher"); },
+    };`,
+    );
+    const consoleError = console.error;
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+      packages: VENDORED_PACKAGES,
+    });
+    expect(runtime.version).toBe(STUB_REACT_VERSION);
+    expect(console.error).toBe(consoleError);
+  });
+
+  it("uses React's own unstable_act before unrelated test utilities", async () => {
+    const rootDirectory = createRootDirectory();
+    writeReactPair(rootDirectory, true);
+    writePackage(rootDirectory, "react", REACT_STUB.replace("act:", "unstable_act:"));
+    writeFileSync(
+      join(rootDirectory, "node_modules/react-dom/test-utils.js"),
+      "throw new Error('unrelated test utilities');",
+    );
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+    });
+    let didRun = false;
+    await runtime.act(() => {
+      didRun = true;
+    });
+    expect(didRun).toBe(true);
   });
 
   it("falls back to the app's own react when the bundled build does not resolve", async () => {
