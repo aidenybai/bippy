@@ -310,11 +310,29 @@ The first probes incorrectly inherited strict Corepack selection instead of the 
 
 KaiHotz’s native comparison is partial because a lodash.map callback cannot run natively during analysis. Icecream17 is exact, retaining the original CSP directive warning and server-side TypeScript getter errors. Elden Ring reaches static analysis after native capture. These three repositories remain unimported pending same-capture repetitions and final checks.
 
+### Two original Yarn Berry imports
+
+KaiHotz and Icecream17 bring the corpus to 283 distinct GitHub IDs, leaving 217. The seventy-six additions beyond the historical 207 contain fifty-five exact, six truncated, nine partial and six mismatch reports.
+
+KaiHotz’s original partial comparison contains a ten-fiber wildcard because a native lodash.map call refuses its interpreted callback. Explicit installed lodash.map4.6.0 source makes the same 53-fiber capture exact, with one passing replay. Both policies repeat without changing application files, captures or budgets. This source policy does not weaken native-execution checks or repair parser semantics.
+
+Icecream17’s 307-fiber capture repeats as exact with one passing replay. Its original page warning identifies the unrecognized `image-src` Content Security Policy directive. The server also logs the documented TypeScript performance-mark getter errors. Neither the directive nor the CRA5/TypeScript5 pairing changes.
+
+After-native checks verify all 583 KaiHotz and 1,803 Icecream17 installed locations and their locked dependency versions. The receipts retain virtual peer identities, original patch locators, non-peer dependency-edge checks and vendored Yarn CLI hashes. Actual Node22.16.0/pnpm10.12.1 and Yarn4.12.0/3.8.7 probes match the dev-server environment. These checks do not prove all package bytes or peer compatibility.
+
+The import preserves all 281 prior raw rows and nested property orders. `/tmp/bippy-parser-game-expansion/two-berry-import-provenance.json` records both imports. The original and source-expanded comparison records, native server logs, failed Corepack probes and corrected Yarn3 descriptor checks remain saved. No calculator input, puzzle, solver action, dialog input or whole-space claim follows.
+
+Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker passes 60 links and both executable TSX examples. Parser implementation and the latest 3,065-test gate remain unchanged.
+
+The separate Valtio-source trial reached replay but produced no completed result after more than an hour. SIGINT did not stop the owned analyzer. Command and start-time checks preceded SIGKILL; the process and its loopback inspector then exited. `valtio-source-stopped-provenance.json` records the interruption without inventing a verdict or performance comparison. The selected Taxe PFA capture and budget-limited results remain unchanged.
+
+Elden Ring has an original native capture and reaches replay, but remains unimported without a completed result and repetitions. Its checked-in regulation data remains unchanged; no rebuild using external game files runs.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,065 tests**, with two existing React-19 DevTools skips; this includes **1,019 parser tests / 63 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **281 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,065 tests**, with two existing React-19 DevTools skips; this includes **1,019 parser tests / 63 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **283 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

@@ -126,6 +126,8 @@ For an allowlisted `mobx-react` package, unmodeled `Provider` and `inject` expor
 
 Expanding this source policy changes the analyzed model, not its saved native capture. Preserve both comparisons; higher coverage does not prove complete library semantics.
 
+Native library calls can refuse interpreted callbacks, as a `lodash.map` call does for an interpreted JSX callback. Interpreting the installed library source can resolve that case without weakening the native-execution boundary. Preserve the earlier refusal and its unknown region.
+
 Record legacy-router source policies separately from [framework model selection](../packages/parser/src/frameworks/react-router.ts). An opaque provider can hide which route children the library mounts. Interpreting installed router and context helpers can expose those children without establishing complete navigation or lifecycle behavior.
 
 Assigned stub names are not yet fully symbolic. For unknown or branched `displayName` values, the [name reader](../packages/parser/src/evaluate/values.ts) falls back to the library name. Interpreting a missing naming helper can resolve the value without repairing that fallback. Preserve the earlier mismatch and replay evidence.
