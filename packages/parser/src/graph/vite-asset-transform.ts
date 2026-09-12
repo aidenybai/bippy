@@ -79,9 +79,7 @@ const getCompilerDefine = (value: unknown): CompilerDefine => {
 
 const getClientEnvironment = (config: ViteResolvedConfig): ViteClientEnvironment => {
   const defines = Object.fromEntries(
-    Object.entries(config.define)
-      .filter(([name]) => name.startsWith("import.meta.env.") || name === "process.env.NODE_ENV")
-      .map(([name, value]) => [name, getCompilerDefine(value)]),
+    Object.entries(config.define).map(([name, value]) => [name, getCompilerDefine(value)]),
   );
   const nodeDefine = defines["process.env.NODE_ENV"];
   if (nodeDefine && (nodeDefine.expression !== undefined || typeof nodeDefine.value !== "string")) {

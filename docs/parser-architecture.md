@@ -97,12 +97,22 @@ Native Vite resolution also establishes the client environment, even when no use
 
 The interpreter creates a mutable `import.meta.env` object for each client module and each analysis run. It allocates the object during module initialization, so conditional writes use the existing heap journal. Its initial properties follow Vite’s sorted serialization order. Literal define values override resolved fields, while unevaluated define expressions remain unknown.
 
+Native Vite defines outside `import.meta.env.*` initialize mutable client globals, including dotted properties. The interpreter applies the serialized key order and preserves lexical shadowing. Opaque expressions remain unknown, and unsupported intermediate targets stop analysis instead of silently discarding a definition.
+
+[Global property stores](../packages/parser/src/evaluate/global-properties.ts) track presence separately from value. A present `undefined` property differs from an absent property. Each property cell belongs to its store’s lifetime, so a branch must restore even a newly accessed cell. The shared heap journal joins assignments and deletions without losing their guards.
+
+Client and server globals use separate stores, as do their builtin-object properties. When `process` is absent, an explicit `process.env.NODE_ENV` define creates that client object. Direct NODE_ENV expressions still follow Vite’s replacement rule.
+
+Modeled assignments can change injected values. Global reflection and binding semantics remain partial.
+
 The [module recorder](../packages/parser/src/graph/module-record.ts) uses the same `NODE_ENV` string as the interpreter. Otherwise, CommonJS exports could select development code while expressions select production code. The native adapter rejects non-string or unevaluated `NODE_ENV` replacements because they cannot select these branches safely.
 
 These rules do not establish complete build-environment parity. Remaining parity checks include:
 
 - Vite projects without a discovered configuration file
-- Server-side Vite environments and compiler-defined globals outside client environment fields
+- Server-side Vite environments
+- Reflective mutation and host-property descriptors
+- Alternative assignment targets and writes to deleted bindings
 - Environment changes from shell scripts and build tools outside native Vite resolution
 - Build tools that read the native system environment instead of `process.env`
 - Cached configuration with environment-dependent side effects
