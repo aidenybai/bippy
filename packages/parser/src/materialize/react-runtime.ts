@@ -9,6 +9,7 @@ import { getRootContainer } from "../harness/runtime-snapshot.js";
 import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
+import { createReactDomLoader } from "./react-dom-modules.js";
 
 export type ReactModule = typeof import("react");
 type ReactDomClientModule = typeof import("react-dom/client");
@@ -169,12 +170,26 @@ const hasAct = (
 ): value is { act: <T>(callback: () => T | Promise<T>) => Promise<T> } =>
   isRecord(value) && typeof value.act === "function";
 
+interface UnstableActModule {
+  unstable_act: ReactRuntime["act"];
+}
+
+const hasUnstableAct = (value: unknown): value is UnstableActModule =>
+  isRecord(value) && typeof value.unstable_act === "function";
+
+const getReactAct = (react: unknown): ReactRuntime["act"] | null => {
+  if (hasAct(react)) return react.act;
+  if (hasUnstableAct(react)) return react.unstable_act;
+  return null;
+};
+
 const loadAct = async (
   react: ReactModule,
   resolver: ModuleResolver | null,
   fromDirectory: string | null,
 ): Promise<ReactRuntime["act"]> => {
-  if (hasAct(react)) return react.act;
+  const act = getReactAct(react);
+  if (act) return act;
   const testUtils = await importResolved(resolver, "react-dom/test-utils", fromDirectory);
   if (hasAct(testUtils)) return testUtils.act;
   throw new ReactRuntimeError("neither React.act nor react-dom/test-utils act is available");
@@ -233,12 +248,11 @@ const hasClientEntry = (
 
 const loadRootFactory = async (
   dom: ReactDomModule,
-  appResolver: ModuleResolver | null,
-  rootDirectory: string | null,
-  packages: ReactPackageSpecifiers,
+  hasClient: boolean,
+  loadClient: () => Promise<unknown>,
 ): Promise<ReactRuntime["createRoot"]> => {
-  if (appResolver === null || hasClientEntry(appResolver, rootDirectory, packages)) {
-    const domClient = await importResolved(appResolver, packages.domClient, rootDirectory);
+  if (hasClient) {
+    const domClient = await loadClient();
     if (!isReactDomClientModule(domClient)) {
       throw new ReactRuntimeError("could not load react-dom/client");
     }
@@ -267,12 +281,25 @@ const loadPackages = async (
   rootDirectory: string | null,
   packages: ReactPackageSpecifiers,
 ): Promise<ReactRuntime> => {
-  const [react, dom, domServer] = await Promise.all([
-    importResolved(appResolver, packages.react, rootDirectory),
-    importResolved(appResolver, packages.dom, rootDirectory),
-    importResolved(appResolver, packages.domServer, rootDirectory),
-  ]);
+  const react = await importResolved(appResolver, packages.react, rootDirectory);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
+  const domPath = resolveFromApp(appResolver, packages.dom, rootDirectory);
+  const clientPath = resolveFromApp(appResolver, packages.domClient, rootDirectory);
+  const serverPath = resolveFromApp(appResolver, packages.domServer, rootDirectory);
+  const loadFrameworkModule =
+    packages.react !== DEFAULT_REACT_PACKAGES.react && domPath && clientPath && serverPath
+      ? createReactDomLoader(react, { dom: domPath, client: clientPath, server: serverPath })
+      : null;
+  const loadDomModule = async (specifier: string): Promise<unknown> => {
+    const filePath = resolveFromApp(appResolver, specifier, rootDirectory);
+    return loadFrameworkModule && filePath
+      ? unwrapModule(loadFrameworkModule(filePath))
+      : importResolved(appResolver, specifier, rootDirectory);
+  };
+  const [dom, domServer] = await Promise.all([
+    loadDomModule(packages.dom),
+    loadDomModule(packages.domServer),
+  ]);
   if (!isReactDomModule(dom)) throw new ReactRuntimeError("could not load react-dom");
   if (!isReactDomServerModule(domServer)) {
     throw new ReactRuntimeError("could not load react-dom/server");
@@ -284,7 +311,11 @@ const loadPackages = async (
     react,
     dom,
     domServer,
-    createRoot: await loadRootFactory(dom, appResolver, rootDirectory, packages),
+    createRoot: await loadRootFactory(
+      dom,
+      appResolver === null || hasClientEntry(appResolver, rootDirectory, packages),
+      () => loadDomModule(packages.domClient),
+    ),
     act: await loadAct(react, appResolver, rootDirectory),
     readContext: loadContextReader(react),
     version: react.version,
@@ -302,18 +333,40 @@ const isClientOfDom = (runtime: ReactRuntime): boolean => {
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
   });
-  const root = runtime.createRoot(container, { onUncaughtError: noop, onCaughtError: noop });
+  let root: MountedRoot | null = null;
+  let isCompatible = false;
+  let hasRenderError = false;
+  const onError = () => {
+    hasRenderError = true;
+  };
+  const Probe = () => {
+    runtime.react.useState(null);
+    return runtime.react.createElement("div");
+  };
   const { error: consoleError } = console;
   // HACK: a mismatched pair logs React warnings while this probe render mounts; they are not app output
   console.error = noop;
   try {
-    runtime.dom.flushSync(() => root.render(runtime.react.createElement("div")));
-    return recorder.commitCount() > 0;
+    const mounted = runtime.createRoot(container, {
+      onUncaughtError: onError,
+      onCaughtError: onError,
+    });
+    root = mounted;
+    runtime.dom.flushSync(() => mounted.render(runtime.react.createElement(Probe)));
+    isCompatible = !hasRenderError && recorder.commitCount() > 0;
+  } catch {
+    isCompatible = false;
   } finally {
-    root.unmount();
-    recorder.dispose();
-    console.error = consoleError;
+    try {
+      root?.unmount();
+    } catch {
+      isCompatible = false;
+    } finally {
+      console.error = consoleError;
+      recorder.dispose();
+    }
   }
+  return isCompatible;
 };
 
 const load = async (
