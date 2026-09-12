@@ -79,7 +79,7 @@ A macro is build-time code that rewrites application source. Its output can chan
 
 For Create React App projects, the [macro transform](../packages/parser/src/graph/babel-macros.ts) loads `babel-plugin-macros` from the installed `babel-preset-react-app` dependency. It uses the Babel compiler owned by `react-scripts`. The [installed-module loader](../packages/parser/src/libraries/installed-modules.ts) follows that dependency chain rather than assuming the project has one shared copy of each tool.
 
-The transform runs on the application's `src` files when the preset declares the macro plugin. Macro configuration and code execute as build infrastructure.
+The transform runs on the application's `src` files when the preset declares the macro plugin. It explicitly enables class-field syntax for older Babel compilers without running the preset's class-field lowering. Macro configuration and code execute as build infrastructure.
 
 The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
 
