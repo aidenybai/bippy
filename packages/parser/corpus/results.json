@@ -65722,6 +65722,361 @@
       "failure": null
     },
     {
+      "id": "nlw-podcastr",
+      "revision": "00c7678b55c5d3afd942a42fdfac7181501f1b19",
+      "framework": "next-pages",
+      "capturedAt": "2026-09-12T01:36:50.566Z",
+      "durationMs": 498,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 227,
+        "commits": 12,
+        "pageErrors": [],
+        "title": "Home | Podcastr"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 250,
+          "textCount": 0,
+          "branchCount": 10,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 269
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 214,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 10,
+        "repeatIterations": 0,
+        "transparentFibers": 7,
+        "runtimeFibers": 214,
+        "staticFibers": 219,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 229,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 1024,
+        "clusters": 10,
+        "tree": {
+          "nodes": 229,
+          "inputs": 10,
+          "guards": 20,
+          "branches": 10,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "choice(#10)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#9)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#8)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#6)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#4)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#2)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 768,
+          "omissions": []
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#2)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#2), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#2)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#2), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#3), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#3), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#4)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#4), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#4)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#4), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#5), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#5)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#5), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#6)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#6), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#6)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#6), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#7), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#7), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#8)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#8), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#8)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#8), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#9)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#9), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#9)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#9), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#10)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#10), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#10)",
+              "reason": "whether a lazy image has become visible",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#10), 0))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 10,
+          "possible": 10,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 256,
+        "assignments": 256,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-11T23:36:53.982Z",
+      "failure": null
+    },
+    {
       "id": "noteworthy",
       "revision": "48c786b63acbb433c37475790cf2c2afe1094a0a",
       "framework": "spa",

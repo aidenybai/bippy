@@ -6611,6 +6611,30 @@
         "entry": "src/main.tsx",
         "externalPackageAllowList": []
       }
+    },
+    {
+      "id": "nlw-podcastr",
+      "repository": "https://github.com/rocketseat-education/nlw-05-reactjs",
+      "revision": "00c7678b55c5d3afd942a42fdfac7181501f1b19",
+      "description": "React 17 / Next 10 podcast page using the repository's original JSON episode data and server script",
+      "framework": "next-pages",
+      "workingDirectory": ".",
+      "install": "corepack yarn@1.22.22 install --frozen-lockfile --non-interactive --ignore-scripts",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run server & backend_pid=$!; trap 'kill \"$backend_pid\" 2>/dev/null || true' EXIT INT TERM; pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 dlx pnpm run dev --hostname 127.0.0.1 --port 54345",
+      "env": {
+        "NODE_OPTIONS": "",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "url": "http://127.0.0.1:54345/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "route": "/",
+        "externalPackageAllowList": ["date-fns", "date-fns/*", "rc-slider", "rc-slider/*"]
+      },
+      "notes": "Pinned Yarn dependencies and verified Node 16.20.2/pnpm 8.15.9. Runs the original json-server script and unchanged episode data on port 3333. Initial-page evidence only; playback and navigation are not covered. The imported exact membership result retains 768 omitted states. Its matched assignment is outside the enumeration and is not among the sixteen replay samples."
     }
   ]
 }
