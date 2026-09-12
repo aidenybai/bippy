@@ -8250,6 +8250,60 @@
         "externalPackageAllowList": ["@mantine/*", "@tabler/icons-react"]
       },
       "notes": "Use Node20, the major declared by the original publish workflow, with a frozen original Yarn install. Preserve the original next dev --turbo command, static-export configuration, APP_VERSION compiler environment, package import optimization, Mantine7, Valtio and React19 RC. Empty storage does not provide saved tax inputs. Tax correctness, storage migration and renderer attributes remain unverified. Keep every original lock and source file, native warnings and generated configuration. Verify installed dependency locations and actual executable versions before capture. No application repair, fabricated inputs, CI/OpenSSL override or higher analysis budget. Initial membership is not whole-space completeness. Retain the original mismatch report and both identical-capture repetitions, including budgetExhausted:true at 200001 steps. This is failure to find a witness within the matching budget, not proof that the capture is absent from the symbolic model. The last divergence expects another Mantine Text in SettingsInfoCard; do not treat that search diagnostic as an isolated parser defect. Keep 422161152 bounded combinations, 256 enumerated states, 422161031 reported omissions, and all sixteen incomplete replays with no replay contradiction. Native Next15 React19.0.0-rc-66855b96-20241106 differs from installed package React19.0.0-rc-7670501b-20241124; both remain unchanged. The original Node20.19.0 workflow, pnpm10.12.1/Yarn1.22.22, Next turbo/static-export configuration, Valtio state, stored-state synchronization, currency data and Mantine7 source policy remain intact. No fabricated state, calculation input, altered matcher budget or Valtio-source trial is part of this selected comparison. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 697816333 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "kaihotz-react-calculator-app",
+      "repository": "https://github.com/KaiHotz/React-Calculator-App",
+      "revision": "ade00fa2bffffe4e54aa9692113f819e0fce3635",
+      "description": "KaiHotz/React-Calculator-App",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=@yarnpkg/cli-dist@4.12.0 dlx pnpm --config.verify-deps-before-run=false exec yarn install --immutable",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=@yarnpkg/cli-dist@4.12.0 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54562 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54562/React-Calculator-App/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["lodash.map"]
+      },
+      "notes": "Keep the original capitalized Vite base path, StrictMode, source-owning tsconfig.app.json, Sass, reducer and browser-locale display formatting. The README's older Node guidance does not override Vite7's installed engine requirement. No arithmetic or keyboard input is supplied. Preserve original Yarn4.12.0, its checked-in release and node-modules linker; no PnP conversion or lock regeneration. Frozen success is insufficient: verify Yarn lock locators, installed locations/versions and actual runner precedence before capture. No CI/OpenSSL override, app repair, changed comparison budget or whole-space completeness claim. Interpret installed lodash.map4.6.0 rather than invoke the application's iteratee through a native external callback. Preserve the original ten-fiber wildcard and stand-in refusal. This source policy neither bypasses that refusal nor establishes complete Lodash, arithmetic, keyboard or display-layout behavior. Original native React19.2.1 has 53 fibers, one commit and no page errors. The original sparse policy is partial, retaining a ten-fiber wildcard because lodash.map cannot invoke an interpreted callback natively. Explicit installed lodash.map4.6.0 source makes the same capture exact with one passing replay; both original and source-expanded comparisons repeat. Do not bypass stand-in refusal or claim a parser semantic repair. Keep the original Yarn4.12.0 CLI/linker, Vite base /React-Calculator-App/, Sass, locale formatting, reducer and empty calculator input. Fiber membership does not establish arithmetic, keyboard actions, attributes or layout. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 134986607 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "icecream17-solver",
+      "repository": "https://github.com/icecream17/solver",
+      "revision": "a7860af176ac75fe169733ef46c44c10f92d2931",
+      "description": "icecream17/solver",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=@yarnpkg/cli-dist@3.8.7 dlx pnpm --config.verify-deps-before-run=false exec yarn install --immutable",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=@yarnpkg/cli-dist@3.8.7 dlx pnpm --config.verify-deps-before-run=false run start",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1",
+        "HOST": "127.0.0.1",
+        "PORT": "54563"
+      },
+      "url": "http://127.0.0.1:54563/solver/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "servedDirectory": "public",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "Keep the explicitly required Node22 major, Set.isSubsetOf usage, original CRA5/TypeScript5 pairing, CSP, ErrorNotice, class cell-registration callbacks and original window alert/prompt wrappers. Preserve the README-documented fork-ts-checker error if it occurs; do not downgrade TypeScript or patch that dependency. No puzzle, solver action or dialog input is supplied. Preserve original Yarn3.8.7, its checked-in release and node-modules linker; no PnP conversion or lock regeneration. Frozen success is insufficient: verify Yarn lock locators, installed locations/versions and actual runner precedence before capture. No CI/OpenSSL override, app repair, changed comparison budget or whole-space completeness claim. Original native React17.0.2 has 307 fibers and one commit. Exact initial membership and one replay pass repeat against the same capture. Preserve the page warning about the unrecognized image-src Content-Security-Policy directive; do not correct it to img-src. The original server also logs TypeError: Cannot set property mark of #<Object> which has only a getter from the CRA5/TypeScript5 checker pairing. Preserve that log and the README-documented pairing. Keep original Yarn3.8.7, Node22, Set.isSubsetOf usage, class cell-registration callbacks, ErrorNotice and alert/prompt wrappers. No puzzle, solver action, dialog input or whole-space claim. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 363813301 identifies a distinct non-fork repository."
     }
   ]
 }
