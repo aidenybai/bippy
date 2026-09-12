@@ -132,8 +132,7 @@ are treated as client components.
 builds one from a corpus entry):
 
 - `spa` — the entry module's root render call (nested blocks and callbacks included).
-- `next-app` — `app/` route matching, layout/template/page/loading composition, async server
-  components, client boundaries, metadata; Next-specific externals in `next-externals.ts`.
+- `next-app`: `app/` route matching and layout/template/page/loading composition, with async server components and client boundaries. Next 13.2 metadata uses installed source helpers; other metadata APIs remain unsupported. Next-specific externals live in `next-externals.ts`.
 - `next-pages` — `pages/` matching and `_app` composition.
 - `react-router` — data/framework mode: route config objects, `lazy` routes (evaluated through an
   explicit awaited call), `HydratedRouter`/`RouterProvider` bootstrap, root `Layout`/`App`,

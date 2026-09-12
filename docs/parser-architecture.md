@@ -114,11 +114,25 @@ A library model needs the component structure of the installed version. The [Emo
 
 The [legacy Next image model](../packages/parser/src/frameworks/next-legacy-image.ts) also uses version-specific host structure. Next 10 and 11 use `div` wrappers; Next 12 uses `span` wrappers. Next 10.1 through 11.1.0 condition the `noscript` fallback on intersection visibility. The model retains both outputs when that visibility is unknown.
 
+For Next 13.2, the [metadata adapter](../packages/parser/src/frameworks/next-metadata.ts) interprets installed metadata helpers instead of inventing tags. It passes interpreted layout and page exports through those helpers. Application bodies do not execute natively.
+
+Metadata appears at the first router boundary, inside its template and loading boundary. A grouped root layout can put metadata outside the `body` subtree. Comparisons restricted to that subtree cannot check those metadata fibers.
+
+The adapter leaves these inputs unknown:
+
+- File-based metadata that requires the image loader
+- Catch-all metadata parameters
+- Parallel-route metadata collection
+
+Other Next metadata APIs remain outside this contract. Successful initial renders do not prove streaming or error-recovery parity.
+
 ### Resolve declarations without executing modules
 
 The [source parser](../packages/parser/src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.
 
 The [module graph](../packages/parser/src/graph/module-graph.ts) records declarations and module dependencies. Its resolver uses `oxc-resolver` with package conditions and project paths to locate dependencies. The graph follows exports across modules and reports missing or ambiguous exports.
+
+An explicitly analyzed framework module also enables its relative source dependencies. Bare package imports retain their existing policy unless the adapter explicitly selects another module.
 
 Resolving an export identifies its declaration. The interpreter evaluates that declaration when analysis needs its value. This separates the reusable source representation from values that can change during a render.
 

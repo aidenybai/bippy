@@ -1,11 +1,18 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import type { Interpreter } from "../evaluate/interpreter.js";
-import { objectFromRecord, objectValue, primitiveValue, unknownValue } from "../evaluate/values.js";
+import {
+  listValue,
+  objectFromRecord,
+  objectValue,
+  primitiveValue,
+  unknownValue,
+} from "../evaluate/values.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, readNextVendoredReactPackages } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
+import { renderNextMetadata, usesNextMetadataTree } from "./next-metadata.js";
 import {
   classifySegment,
   type DynamicSegment,
@@ -239,7 +246,14 @@ export const renderNextAppRoute = (
 
     // Next 15+ hands these to pages and layouts as promises; the interpreter
     // unwraps `await` of a plain object, so the resolved shape is used directly.
-    const searchParams = stringRecordValue(Object.fromEntries(url.searchParams));
+    const searchParams = objectFromRecord(
+      Object.fromEntries(
+        Array.from(new Set(url.searchParams.keys()), (name) => {
+          const values = url.searchParams.getAll(name).map(primitiveValue);
+          return [name, values.length === 1 ? values[0] : listValue(values)];
+        }),
+      ),
+    );
     const withRouteProps = (
       segment: NextAppSegment,
       children: StaticValue | null,
@@ -280,10 +294,26 @@ export const renderNextAppRoute = (
         serverContext(page.module),
       );
     };
+    const hasRootLayout = segments.some((segment) => segment.layout !== null);
+    const hasMetadataTree = usesNextMetadataTree(interpreter.project.readPackageVersion("next"));
+    if (hasMetadataTree && !hasRootLayout) {
+      return unknownValue("Next MetadataTree requires a root layout");
+    }
+    const metadata = hasMetadataTree
+      ? renderNextMetadata(renderer, interpreter, [
+          ...segments.map((segment) => ({
+            directory: segment.directory,
+            filePath: segment.layout,
+            props: objectFromRecord({ params: stringRecordValue(segment.params) }),
+          })),
+          { directory: leaf.directory, filePath: pagePath, props: withRouteProps(leaf, null) },
+        ])
+      : null;
     let element = pageElement();
 
     for (let index = segments.length - 1; index >= 0; index -= 1) {
       const segment = segments[index];
+      if (metadata && index === 0) element = listValue([metadata, element]);
       if (segment.loading) {
         const loading = loadDefaultExport(renderer, interpreter, segment.loading);
         if (loading) {
