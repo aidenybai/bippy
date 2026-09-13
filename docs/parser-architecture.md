@@ -388,6 +388,8 @@ The materializer records selected input guards for task checks. It does not use 
 
 Replay uses the same interpreter implementation. It is not an independent execution of application source. A model error that affects both the combined render and the replay can remain undetected.
 
+Many Games’ [saved comparisons](../scratchpad.md#six-original-second-game-captures) demonstrate this gap. Replay passes, but independent capture lacks a loading placeholder that the model retains.
+
 The replay claim describes what the symbolic model predicts under the selected decisions. The implementation derives this claim from all symbolic commits, not a truncated list of enumerated states. Otherwise, a state budget could remove a later commit from the claim and create a false contradiction.
 
 An undecided condition or unknown region can leave the claim incomplete. Complete comparisons check the claimed and replayed tree sequences. Incomplete comparisons check known regions without treating unknown regions as contradictions.

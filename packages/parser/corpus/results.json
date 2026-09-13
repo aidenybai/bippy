@@ -293544,6 +293544,783 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T21:37:03.046Z",
       "failure": null
+    },
+    {
+      "id": "kanugurajesh-virtual-calculator",
+      "revision": "5e91d2dd41a36212d11960d996f1efa61a39e260",
+      "framework": "spa",
+      "capturedAt": "2026-09-13T00:31:56.598Z",
+      "durationMs": 409,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 36,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.%s \n    at textarea\n    at div\n    at div\n    at App (http://127.0.0.1:54601/src/App.tsx:23:29)"
+        ],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 36,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 35,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 35,
+        "staticFibers": 35,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 35,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 35,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-13T00:00:43.787Z",
+      "failure": null
+    },
+    {
+      "id": "logicmason5-many-short-games-using-reactjs",
+      "revision": "20eb384862f322a5d4b07c126f951719f3ec44eb",
+      "framework": "spa",
+      "capturedAt": "2026-09-13T00:31:59.126Z",
+      "durationMs": 771,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 212,
+        "commits": 6,
+        "pageErrors": [],
+        "title": "ManyGames | Home"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 220,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 419
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 211,
+        "staticFibers": 215,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <DataRouter> [ContextProvider] > <DataRouterState> [ContextProvider] > <Router> [FunctionComponent] > <Navigation> [ContextProvider] > <Location> [ContextProvider] > <Routes> [FunctionComponent] > <RenderErrorBoundary> [ClassComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <GameLayout> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MainContent> [FunctionComponent] > <main> [HostComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderErrorBoundary> [ClassComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Hero> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <GameCardFallback> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <GameCard> [FunctionComponent] > <Link> [ForwardRef] > <a> [HostComponent] > <div> [HostComponent][0]",
+          "expected": "<div> [HostComponent]",
+          "actual": "<img> [HostComponent]"
+        },
+        "stepsUsed": 155,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 398,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 1,
+          "divergence": {
+            "path": "root > <StrictMode> [Mode] > <RouterProvider> [FunctionComponent] > <DataRouter> [ContextProvider] > <DataRouterState> [ContextProvider] > <Router> [FunctionComponent] > <Navigation> [ContextProvider] > <Location> [ContextProvider] > <Routes> [FunctionComponent] > <RenderErrorBoundary> [ClassComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <GameLayout> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <MainContent> [FunctionComponent] > <main> [HostComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderErrorBoundary> [ClassComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Hero> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <GameCardFallback> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <GameCard> [FunctionComponent] > <Link> [ForwardRef] > <a> [HostComponent] > <div> [HostComponent][0]",
+            "expected": "<div> [HostComponent]",
+            "actual": "<img> [HostComponent]"
+          }
+        },
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-13T00:00:50.003Z",
+      "failure": null
+    },
+    {
+      "id": "rafaellavborba-memorygame",
+      "revision": "2212297a18862466140be5742342f8e2dbefddfd",
+      "framework": "spa",
+      "capturedAt": "2026-09-13T00:28:09.953Z",
+      "durationMs": 241,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 55,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "A React TS Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 22,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 7
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 49,
+        "matchedText": 5,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 8,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 54,
+        "staticFibers": 19,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 64,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 21,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+              "count": 8
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+                "count": 8
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/rafaellavborba-memorygame/src/components/Grid/index.tsx:85:10",
+              "count": 8
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-13T00:00:56.079Z",
+      "failure": null
+    },
+    {
+      "id": "soniikot-memory-game-ts-strict",
+      "revision": "e82a631bf35db1233fca1e5cdaa927a6464d1e54",
+      "framework": "spa",
+      "capturedAt": "2026-09-13T00:28:11.849Z",
+      "durationMs": 344,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 10,
+        "commits": 6,
+        "pageErrors": [],
+        "title": "Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 10,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 12
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 9,
+        "staticFibers": 9,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 9,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 9,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-13T00:01:03.531Z",
+      "failure": null
+    },
+    {
+      "id": "luizomf-memory-game-with-react-ts",
+      "revision": "2703cf2e37a90b904b08b097d58c4e56a3a65137",
+      "framework": "spa",
+      "capturedAt": "2026-09-13T00:28:13.739Z",
+      "durationMs": 241,
+      "runtime": {
+        "reactVersion": "18.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 128,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "A React TS Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 32,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 11
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 123,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 12,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 127,
+        "staticFibers": 28,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 153,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 31,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+              "count": 12
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+                "count": 12
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-game-expansion-two/luizomf-memory-game-with-react-ts/src/components/Grid/index.tsx:116:10",
+              "count": 12
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-13T00:01:09.315Z",
+      "failure": null
+    },
+    {
+      "id": "aeenpah-sudoku-react-vite",
+      "revision": "bf964e02265965b61d698d03afb6acc043f73d3d",
+      "framework": "spa",
+      "capturedAt": "2026-09-13T00:28:15.678Z",
+      "durationMs": 380,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 126,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Sudoku Puzzle"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 126,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 9
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 124,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 125,
+        "staticFibers": 125,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 125,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 125,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-13T00:01:15.079Z",
+      "failure": null
     }
   ]
 }
