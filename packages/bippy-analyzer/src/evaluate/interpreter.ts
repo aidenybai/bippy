@@ -369,6 +369,7 @@ import {
 import {
   createPathPredicate,
   getAlternativeGuards,
+  getBranchPredicate,
   guardedPredicate,
   getPresencePredicate,
   getTruthinessPredicate,
@@ -2969,15 +2970,24 @@ export class Interpreter {
       ...context,
       forkDepth: context.forkDepth + 1,
     };
+    const resolved = getAlternativeGuards(branch);
+    const parentGuard = this.guard;
     return joinMappedAlternatives(
       branch,
       this.forkValues(
         context.scope,
-        branch.alternatives.map((alternative) => () => call(alternative, alternativeContext)),
+        branch.alternatives.map(
+          (alternative, index) => () =>
+            resolved
+              ? this.runWithGuard(andGuard([parentGuard, resolved.guards[index]]), () =>
+                  call(alternative, alternativeContext),
+                )
+              : call(alternative, alternativeContext),
+        ),
         branch.reason,
         branch.location,
         branch.preferredIndex,
-        branch.predicate,
+        getBranchPredicate(branch),
       ),
     );
   }
@@ -3983,7 +3993,6 @@ export class Interpreter {
       context.superBinding?.construct?.(this.evaluateArguments(node.arguments, context));
       return UNDEFINED_VALUE;
     }
-    let args: StaticValue[] | null = null;
     const callWith = (
       callee: StaticValue,
       thisValue: StaticValue | null,
@@ -3991,7 +4000,7 @@ export class Interpreter {
     ): StaticValue => {
       if (callee === CHAIN_SHORT_CIRCUIT) return callee;
       if (node.optional && isNullish(callee) === true) return CHAIN_SHORT_CIRCUIT;
-      args ??= this.evaluateArguments(node.arguments, context);
+      const args = this.evaluateArguments(node.arguments, callContext);
       return this.callValue(
         this.withStyledDisplayName(callee, node, context),
         args,

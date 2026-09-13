@@ -566,13 +566,39 @@ The candidate distributes numeric Math arguments while their Cartesian product s
 
 The new router trace confirms that `Math.min()` and `slice()` now preserve four finite alternatives and their route objects. It also falsifies a complete repair claim: both source-only and minimal-page runs still fail at the route-ID assertion. Later reads now include known route objects alongside optional or absent values. Callback execution against a branched receiver, including reads of the original array through a closure, is the next tracing target. No runtime observations were invented to suppress this failure.
 
-Root typecheck, 3,136 root tests with two skips, 1,090 analyzer tests across 66 files, build, and realm checks pass. Five saved-capture corpus controls repeat without changes to `report`, `runtime`, `static`, `stateSpace`, or `stateReplay`. Logs use `/tmp/bippy-math-finite-*` and `/tmp/bippy-math-corpus-lane-*`. Before/after traces remain in `/tmp/bippy-many-games-causal-investigation/router-operation-{trace,after-math}-*.json`. Corpus data and repository count remain unchanged at 307.
+Root typecheck, 3,136 root tests with two skips, 1,090 analyzer tests across 66 files, build, and realm checks pass. Five saved-capture corpus controls repeat without changes to `report`, `runtime`, `static`, `stateSpace`, or `stateReplay`.
+
+Logs use `/tmp/bippy-math-finite-*` and `/tmp/bippy-math-corpus-lane-*`. Before/after traces remain in `/tmp/bippy-many-games-causal-investigation/router-operation-{trace,after-math}-*.json`. Corpus data and repository count remain unchanged at 307.
+
+### Keep callback reads under the selected receiver
+
+The ordinary map and reduce closure controls already pass. A smaller route-context fixture exposes the missing precision: a callback spreads a prefix of its captured array into a provider. The interpreter evaluates that closure against every receiver alternative, including an empty array that cannot invoke the callback. The primary model contains a wildcard where native React reads known route IDs.
+
+`callAlternatives()` now combines each resolved choice with the caller’s guard. It restores that guard after each path and joins mutations under the branch’s original predicate. React’s `pushProvider()`, `readContextForConsumer()`, and `popProvider()` confirm that the consumer reads the selected provider value; the fix changes interpreter evaluation, not React context behavior.
+
+The first candidate passes 1,096 analyzer tests but fails a new argument-correlation check. It caches the first receiver path’s arguments, producing `root,child,root` where the second path requires `root,child,root,child`. Each receiver path now evaluates its own arguments, including their conditional side effects. Eight focused fixtures check context prefixes, generated choices, nested guards, closure reads, concatenation, argument counts, and optional short-circuiting.
+
+The unchanged original router now renders under both source-only and minimal-page policies. Both comparisons remain partial: the matcher absorbs 56 of 211 native fibers through a subtree omitted two alternatives away from the preferred path. Their bounded models contain 12 states and seven wildcards, with one reported subtree omission. The original key-list control retains its image-loading mismatch; neither the hydration value nor any observation changes.
+
+Separate home and `/memorymatch` models now freeze without opening saved captures or installing observers. Each enumerates 12 bounded states and reports the same subtree omission. The React version comes from interpreted rendering, not an independent capture. These models remain guarded trees with omitted route content, not extracted transitions or verified memory-game workflows.
+
+Evidence remains under `/tmp/bippy-many-games-causal-investigation/`:
+
+- `router-operation-scoped-*.json` and `router-operation-fresh-arguments-*.json`: successive diagnostic candidates
+- `source-only-call-guards-home-model.json`: SHA-256 `3e4e590977d6e772d8002bb77ff160f1076fc965e0a3d65d1d8f65c4c7a13254`
+- `source-only-call-guards-memory-model.json`: SHA-256 `11d5d5a22c0298e8b10328ca387e4beb9494cd1f478df98dc9fc06a88565a5cf`
+
+Five saved-capture corpus controls repeat with no changes to the five comparison fields. The first root gate has one conformance child-process failure: the frozen-bind test reports `status: null`. Its 60-second subprocess limit does not establish why the child stopped; the gate retains exit 1. An unchanged isolated rerun passes all 144 bind tests.
+
+The reviewed gate passes 3,152 root tests with two skips and 1,106 analyzer tests across 67 files. Root typecheck/build and realm checks pass; `/tmp/bippy-callback-reviewed-validation.exit` records 0. The source-only freeze helper also exits 0. Earlier failures remain separate; corpus data still contains 307 repositories.
+
+The first provenance helper exceeds the child-process stdout buffer while reading corpus JSON. Its failure log remains intact. The replacement checks Git blob IDs and records SHA-256 hashes without changing analyzer budgets; `call-guard-reviewed-gates.json` records the verified controls and frozen models.
 
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,101 tests**, with two existing React-19 DevTools skips; this includes **1,055 parser tests / 64 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,152 tests**, with two existing React-19 DevTools skips; this includes **1,106 analyzer tests / 67 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
