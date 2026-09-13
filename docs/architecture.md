@@ -256,14 +256,18 @@ Assignment references separate target evaluation from reading and writing. The i
 
 [Primitive updates](../packages/bippy-analyzer/tests/update-primitives.test.ts) coerce the old value before arithmetic. Postfix returns that converted value; prefix returns the new value. BigInt updates retain BigInt arithmetic, while object and symbol coercion remain unverified.
 
-[Calls preserve throwing argument guards](../packages/bippy-analyzer/tests/call-argument-throws.test.ts) when deciding whether to invoke the callee. Later argument expressions can still run after an earlier expression throws. Callee invocation and argument evaluation are separate checks.
+[Calls preserve throwing argument guards](../packages/bippy-analyzer/tests/call-argument-throws.test.ts) when deciding whether to invoke the callee. [Argument evaluation](../packages/bippy-analyzer/tests/argument-order.test.ts) now stops later expressions on throwing paths. Successful paths retain their argument values, guards, and side effects.
+
+Ordinary arguments use an iterative loop. Throwing alternatives and finite spread alternatives continue under their selected guards. The tests check spread-expression failures and finite arity, not complete iterator semantics.
+
+Method calls capture the callee and receiver together after evaluating the receiver and key. This avoids repeating getter effects. Equivalent receiver-independent targets can share an invocation without repeating argument evaluation.
 
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
-- Argument-expression short-circuiting
+- [Constructor outcome propagation](../packages/bippy-analyzer/src/evaluate/class-component.ts), including thrown `super()` arguments
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 
