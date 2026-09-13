@@ -8547,6 +8547,410 @@
         "entry": "src/main.tsx"
       },
       "notes": "Keep original PWA configuration, initial level-selection popup and original prefilled/validation data. Do not choose a level, supply a puzzle, alter validation or claim solver correctness. Native React18.3.1 has 126 fibers and one commit without page errors. Exact initial membership and one replay pass repeat for the original level-selection popup. Preserve undefined level, initial cell data, structuredClone use and PWA configuration; do not select a level, supply a puzzle or claim solving/validation completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 895631493 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "shivankacker-type",
+      "repository": "https://github.com/shivankacker/type",
+      "revision": "fc0f748c72f4b710a9a8681332c49ee23a7c23bc",
+      "description": "shivankacker/type",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@9.15.1 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@9.15.1 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54621 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54621/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Keep the original declared pnpm9.15.1 release, Jotai storage/tabs, hotkeys, random placeholders, nested button markup, CDN stylesheet and Vite Radar/analytics. Do not create tabs, type, change selection or replace source data. Preserve the repeated Fragment/button mismatch, original nested-button warning, 1890 bounded states and 1635 omissions. Sampled replay remains incomplete; no tab, mouse or keyboard input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 815327648 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "p32929-notes",
+      "repository": "https://github.com/p32929/notes",
+      "revision": "79e9c8f315708b4c9c4d95d10e1b11e22df428fd",
+      "description": "p32929/notes",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54622 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54622/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Keep original declared Yarn1.22.22, SWC TypeScript decorators, usm-redux controller, Dexie IndexedDB initialization/autosave, Tiptap, Radix, PWA and NODE_ENV-dependent base. Development uses /, not the production /notes/ path. Do not publish, generate notes, import data or edit original decorators. Retain the sparse partial comparison and incomplete replay, original IndexedDB initialization/autosave and all 30226 omissions. Source policy does not establish rich-editor or decorator completeness; no note or database data is fabricated. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 839893134 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "joycefatima-todo-list",
+      "repository": "https://github.com/JoyceFatima/Todo-List",
+      "revision": "2255105cb58905deec3434b64b6ddd379e5bb38a",
+      "description": "JoyceFatima/Todo-List",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54623 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54623/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["phosphor-react", "phosphor-react/*"]
+      },
+      "notes": "Preserve original v2 lock, Vite4, checked-in three tasks including their original spelling, React Hook Form/Yup configuration, Phosphor icons and fonts. Do not create, complete or delete a task. Before native capture, explicitly pin only the outer Corepack pnpm launcher to11.20.0; keep the original inner Node16.20.2/pnpm8.15.9/npm8.19.4 or Yarn1.22.22. The earlier no-CI runtime probe failed because pnpm11.25.0 dlx inserted an ESM --import loader that Node16 rejects. Preserve that failure, the successful original install and original source/locks; do not set CI, add OpenSSL flags or change the app's package manager. Separate installed-source policy for the listed fiber-bearing libraries, compared against the unchanged independent Bippy capture. Preserve the original sparse policy, failures, replay uncertainty and all omissions; no application or interpreter repair is claimed. Interpreting the original installed Phosphor icon source makes the initial capture exact with passing sampled replay. Both repetitions preserve the original three tasks and native warnings; no task/form interaction is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 596721918 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "wafa200099-note-app",
+      "repository": "https://github.com/wafa200099/Note-App",
+      "revision": "243bf9dbb85e6e86808447cf92daf8992529f348",
+      "description": "wafa200099/Note-App",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54624 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54624/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "react-router",
+          "react-router-dom",
+          "@remix-run/router",
+          "use-sync-external-store",
+          "use-sync-external-store/*",
+          "react-bootstrap",
+          "react-bootstrap/*",
+          "@restart/ui",
+          "@restart/ui/*",
+          "@restart/hooks",
+          "@restart/hooks/*",
+          "@react-aria/ssr",
+          "react-transition-group",
+          "react-transition-group/*",
+          "uncontrollable",
+          "react-select",
+          "react-select/*"
+        ]
+      },
+      "notes": "Preserve original v2 lock, BrowserRouter, empty NOTES/TAGS storage defaults, React Bootstrap, React Select and Markdown. Capture the original note list, not a new-note route or fabricated stored note. Before native capture, explicitly pin only the outer Corepack pnpm launcher to11.20.0; keep the original inner Node16.20.2/pnpm8.15.9/npm8.19.4 or Yarn1.22.22. The earlier no-CI runtime probe failed because pnpm11.25.0 dlx inserted an ESM --import loader that Node16 rejects. Preserve that failure, the successful original install and original source/locks; do not set CI, add OpenSSL flags or change the app's package manager. Separate installed-source policy for the listed fiber-bearing libraries, compared against the unchanged independent Bippy capture. Preserve the original sparse policy, failures, replay uncertainty and all omissions; no application or interpreter repair is claimed. Interpreting original router/Bootstrap/Select sources makes the initial empty note-list capture exact with passing sampled replay. Preserve native React18.2 and empty NOTES/TAGS defaults; no note, tag or route input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 579458172 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "sazardev-clean-notes-web",
+      "repository": "https://github.com/sazardev/clean-notes-web",
+      "revision": "9355a5235a5c9b85c6ea0e044e072f8489e78a43",
+      "description": "sazardev/clean-notes-web",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54625 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54625/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original initApp/error boundary, initial HTML loader, theme initialization, route tree, localization and both manual/PWA service-worker registration paths. Do not suppress original startup errors, populate storage, or rewrite HTML/service workers. Retain the original partial guest capture and both unchanged base repeats. The separate router-source trial remains without a result after a CPU-active long execution; ownership-checked interruption and native samples are preserved. Do not treat that interrupted trial as a pass, contradiction or replacement result. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 959603298 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "shadcndashboard-shadcndashboard",
+      "repository": "https://github.com/shadcndashboard/shadcndashboard",
+      "revision": "6f99c0b04b7169f9ef12dc99946bc4faaeb40b9b",
+      "description": "shadcndashboard/shadcndashboard",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54626 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54626/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original unconditional await of checked-in MSW worker startup before React mounting, original handlers/data, theme/Suspense, React Router and SVGR/compiler configuration. Audit the original worker and initial route before capture; do not bypass startup or replace APIs. Original tracked .npmrc already declares legacy-peer-deps=true; preserve this authored policy. No harness flag relaxed a failed installation; installed-version fidelity does not prove React19/Helmet peer compatibility. Retain the sparse partial comparison of the original 3163-fiber, 61-commit dashboard and passing sampled replay. Original tracked MSW worker and handlers start before React. The original .npmrc peer policy is unchanged; opaque router internals do not establish dashboard completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1244283723 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "nedois-mantine-dashboard",
+      "repository": "https://github.com/nedois/mantine-dashboard",
+      "revision": "f79b207d69cf335b2ddf7713cc548e18d50804b9",
+      "description": "nedois/mantine-dashboard",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54627 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54627/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Keep original npm lock, Git-pinned cuid2 dependency, React19/Mantine7/Helmet peer relationships, enableFakeBackend bootstrap, authentication, QueryClient and original worker/handlers. Audit original activation before native capture. Do not relax failed peer checks or substitute a mock server. Original tracked .npmrc already declares legacy-peer-deps=true; preserve this authored policy. No harness flag relaxed a failed installation; installed-version fidelity does not prove React19/Helmet peer compatibility. Retain the original partial guest/authentication comparison, fakeBackend:true, tracked MSW worker/account handler and native page error. Original .npmrc uses legacy-peer-deps=true; React19 plus Helmet's React16-18 declaration remains an authored compatibility caveat, not a harness repair. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 805431725 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "larry-xue-react-admin-dashboard",
+      "repository": "https://github.com/larry-xue/react-admin-dashboard",
+      "revision": "8223897259151c450f954e462c57df3703d5508d",
+      "description": "larry-xue/react-admin-dashboard",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54628 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54628/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve declared Node engine requirements, Vite import.meta.glob routes, Zustand persistence and original / to /auth/login effect navigation. Audit original mock/API activation and guest behavior before capture. Do not use published demo credentials, query shortcuts, fabricated tokens or a dashboard-only route. Retain the original partial initial guest comparison and native warnings. Original store starts with null user/token and false authentication; source mock mode remains true. No published demo credentials, login, URL shortcut or dashboard replacement is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 818830723 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "muzi59418-creator-personal-dashboard-template",
+      "repository": "https://github.com/muzi59418-creator/personal-dashboard-template",
+      "revision": "47d5cd1f384ddaa61e07711b52358907c4868415",
+      "description": "muzi59418-creator/personal-dashboard-template",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54629 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54629/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Keep original local-first behavior when optional Supabase configuration is absent, original checked-in public demo data, date/routine synchronization, interval/focus listeners, storage migrations and PAGES_BASE_PATH handling. Audit optional activation before capture. Do not enable cloud saving, supply credentials, alter dates or restore data manually. Retain partial membership with twelve evaluation-budget diagnostics despite unexhausted matching. Preserve 9438102 bounded states, 9437908 omissions and incomplete replay; 122 native commits do not prove routine/date synchronization. Original automatic demo seeding/migrations and optional cloud absence remain; no restored or private data is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1286696061 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "hariadiarief-react-vite-shadcn-dashboard-starter-kit",
+      "repository": "https://github.com/hariadiarief/react-vite-shadcn-dashboard-starter-kit",
+      "revision": "46ce5235b3ec7e01cbec3a511bc8e07343d8f536",
+      "description": "hariadiarief/react-vite-shadcn-dashboard-starter-kit",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54630 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54630/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "react-router",
+          "react-router-dom",
+          "@remix-run/router",
+          "use-sync-external-store",
+          "use-sync-external-store/*",
+          "lucide-react",
+          "@radix-ui/*"
+        ]
+      },
+      "notes": "Keep README-required Node22, original Husky prepare, auth/kanban/theme/query providers and BrowserRouter route tree. Audit original backend/auth defaults before capture; no credentials, cookies, board input or route substitution. Separate installed-source policy for the listed fiber-bearing libraries, compared against the unchanged independent Bippy capture. Preserve the original sparse policy, failures, replay uncertainty and all omissions; no application or interpreter repair is claimed. Select the repeated stronger router/icon/Radix source policy: still partial, now sampled-passed. Preserve the original empty-storage Login route and provider tree. Passing replay does not verify opaque internals, backend authentication, form submission or kanban behavior. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 643851920 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "sam70361-glass-ui-react",
+      "repository": "https://github.com/sam70361/glass-ui-react",
+      "revision": "f43d49e4e152003f6e8fca1bbc8be4977c8e7e29",
+      "description": "sam70361/glass-ui-react",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54631 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54631/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original pnpm lock and onlyBuiltDependencies approvals, MSW startup gated by import.meta.env.DEV, original fixture handlers, inline pre-paint settings script, locale synchronization, registry routes, PWA and regex Vite alias. Audit original worker before capture; do not edit source aliases, seed custom settings or choose a scenario. Retain the sparse partial 1726-fiber, 62-commit capture and passing sampled replay. Preserve original DEV-gated MSW initialization, tracked worker/fixtures, inline settings, query/store bridge and index navigation. No scenario, API response or settings input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1283503075 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "sonjoydatta-react-boilerplate",
+      "repository": "https://github.com/sonjoydatta/react-boilerplate",
+      "revision": "faec32955579a2b02ba49b871ee5dbd6b20c56ff",
+      "description": "sonjoydatta/react-boilerplate",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --non-interactive",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54632 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54632/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve frozen Yarn, Husky install, Redux Persist, Suspense, QueryClient, styled-components6 RC, SVGR and i18next backend. Audit original guest/API/environment behavior before capture; do not invent API configuration, repair the RC library or supply login state. Before native capture, explicitly pin only the outer Corepack pnpm launcher to11.20.0; keep the original inner Node16.20.2/pnpm8.15.9/npm8.19.4 or Yarn1.22.22. The earlier no-CI runtime probe failed because pnpm11.25.0 dlx inserted an ESM --import loader that Node16 rejects. Preserve that failure, the successful original install and original source/locks; do not set CI, add OpenSSL flags or change the app's package manager. Retain the original partial 201-fiber SignIn capture and passing sampled replay. Preserve authored form defaults without submission, absent optional backend configuration, token-storage guest state, Redux Persist, translation resources and styled-components RC. No authenticated/backend behavior is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 418894965 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "melau-eddy-react-tailwind-admin-dash",
+      "repository": "https://github.com/melau-eddy/react-tailwind-admin-dash",
+      "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
+      "description": "melau-eddy/react-tailwind-admin-dash",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54633 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54633/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original Home route, in-render data-router creation, Recharts, Sass, checked-in dashboard data and original saas dependency spelling. Review original environment/data workflow before capture; no dependency spelling fix, fabricated financial data or login input. The original 120-second navigation timeout has no runtime snapshot or report. Preserve that failure and the repeat helper's absent-capture error. A separately recorded fresh attempt with identical source/commands/budgets captures 590 fibers and 117 commits without page errors. Its partial comparison repeats against that fresh capture; preserve original Sass warnings and checked-in dashboard data rather than fabricate a response or remove styles. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 945044957 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "lethai2597-personal-tracker",
+      "repository": "https://github.com/lethai2597/personal-tracker",
+      "revision": "c2f5a86b3943e0f2254ac1077f7e9ff279ab930d",
+      "description": "lethai2597/personal-tracker",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54634 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54634/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original automatic seedSampleDataIfEmpty on a first visit, settings application before paint, rAF theme class, welcome modal, local storage, board/timer/bookmark/habit initialization and confirm provider. No manual data seeding, dismissal, timer start or private data. Automatic checked-in seeding is original app behavior, not an invented harness input. Retain the sparse partial initial capture, 180224 bounded states, 180008 omissions and incomplete replay. Original first-visit sample seeding precedes mount; preserve welcome UI, theme rAF and all storage behavior. No manual seed, tour dismissal, timer start or data input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1267231720 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "sagargupta16-financial-dashboard",
+      "repository": "https://github.com/Sagargupta16/Financial-Dashboard",
+      "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
+      "description": "Sagargupta16/Financial-Dashboard",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@11.25.0 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@11.25.0 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54635 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54635/Financial-Dashboard/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx"
+      },
+      "notes": "Preserve original declared pnpm11.25.0 (Node>=22.13), workspace build approval/overrides, Husky prepare, SheetJS URL dependency, React Router8, original Financial-Dashboard base, Google Analytics and empty upload state. Do not run deploy/analyze scripts, supply financial files, alter calculations or claim financial/tax correctness. Retain the original partial 642-fiber capture and passing sampled replay under original pnpm11.25/React Router8 and Financial-Dashboard base. Preserve header-only CSV, empty initial processor data, analytics and workspace approvals/overrides. No file upload, transactions, financial calculation or chart correctness is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1047785666 identifies a distinct non-fork repository."
     }
   ]
 }
