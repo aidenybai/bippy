@@ -776,11 +776,38 @@ Both models retain seven wildcards and one subtree omission. All 53 saved workfl
 
 Final gates pass 3,266 root tests with two existing skips and 1,220 analyzer tests across 74 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-assignment-reference-final-validation.exit` records 0; `assignment-reference-reviewed-gates.json` verifies the evidence. Complete assignment, causal-model, renderer, and 500-repository acceptance remain unmet.
 
+### Primitive updates and guarded argument failures
+
+The retained string-update probe now emits `number:1:2`, matching its original native snapshot. Previously, its unconstrained text matched that snapshot while failing the source-derived concrete expectation. The new comparison supplies no observations and performs no new native render.
+
+The update evaluator converts known primitives before arithmetic and returns the converted old value for postfix operations. BigInt values bypass Number conversion. This preserves signed zero and non-finite Number results in the tested cases. It does not repair object or symbol coercion.
+
+The numeric-only candidate passes five update fixtures, then fails the setter case wrapped in `String()`. Its four label/backing-value combinations expose another lost guard in `callValue()`. `/tmp/bippy-update-primitives-first.log` preserves that failure.
+
+`callValue()` now selects the first potentially throwing argument’s alternatives under their original guards. Successful alternatives can invoke the callee; throwing alternatives preserve their errors. This removes the independent `throwing argument` decision that detached callee effects and error payloads from their causes. It also prevents a later guaranteed throw from replacing an earlier possible throw in the returned outcome.
+
+Six update regressions and two argument regressions fail on baseline `8129316e` and pass after both changes. They require exact concrete states, no omissions, exact native membership, and no replay mismatches. The baseline worktree `/tmp/bippy-update-primitives-baseline` preserves identical test and fixture copies. `/tmp/bippy-update-primitives-expanded-baseline.log` retains all eight failures.
+
+The same saved native snapshots still check the earlier repairs. Four assignment snapshots and seven throw snapshots remain exact. The eight reference-limit comparisons now have one strict pass for numeric conversion and seven retained failures. Getter-only and proxy writes still mismatch, as does null-reference attempt 0; every replay still passes.
+
+A deterministic argument-order probe remains wrong. Its first argument increments a counter and throws; JavaScript never evaluates the second argument or invokes the callee. The analyzer emits `caught:2:0` instead of native `caught:1:0`. Its report mismatches in four matcher steps without exhaustion, but replay passes.
+
+The fixture and strict failure remain under `/tmp/bippy-update-primitives-baseline/packages/bippy-analyzer/tests/fixtures/pending-argument-order.tsx` and `/tmp/bippy-update-primitives-pending-order.log`. `pending-argument-order-updates-comparison.json` preserves source, production, raw-model, and native evidence. It is not passing coverage. Fixing invocation guards does not repair `evaluateArguments()` sequencing.
+
+The original-app model remains unchanged apart from render timestamps and production provenance. New files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-update-primitives-reviewed-home-model.json`: SHA-256 `4c698e368c6db994a78fc627f150023859ee3b8f2db5ec0f899299dd6efae561`
+- `source-only-update-primitives-reviewed-memory-model.json`: SHA-256 `c1ea220a4ee12780e779166181ef5d7d0f2cccb992280c726c17baeac239b032`
+
+Both retain 11 states, seven wildcards, and one subtree omission. All 53 saved workflow snapshots still compare partially. Five corpus controls repeat unchanged against identical captures; corpus JSON remains at 307 repositories.
+
+Final gates pass 3,282 root tests with two existing skips and 1,236 analyzer tests across 76 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-update-primitives-final-validation.exit` records 0; `update-primitives-reviewed-gates.json` verifies the evidence. Complete language, causal-model, renderer, and 500-repository gates remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,266 tests**, with two existing React-19 DevTools skips; this includes **1,220 analyzer tests / 74 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,282 tests**, with two existing React-19 DevTools skips; this includes **1,236 analyzer tests / 76 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

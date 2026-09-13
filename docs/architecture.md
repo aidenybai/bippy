@@ -254,12 +254,16 @@ Logical assignments also separate kept and assigned paths. `||=`, `&&=`, and `??
 
 Assignment references separate target evaluation from reading and writing. The interpreter captures receivers and computed-key expressions before the right-hand operand. Compound, logical, and update operations reuse those references. Successful operands reach the write; thrown operands and object setters propagate their errors. The [reference regressions](../packages/bippy-analyzer/tests/assignment-reference.test.ts) also check receiver replacement and correlated keys.
 
+[Primitive updates](../packages/bippy-analyzer/tests/update-primitives.test.ts) coerce the old value before arithmetic. Postfix returns that converted value; prefix returns the new value. BigInt updates retain BigInt arithmetic, while object and symbol coercion remain unverified.
+
+[Calls preserve throwing argument guards](../packages/bippy-analyzer/tests/call-argument-throws.test.ts) when deciding whether to invoke the callee. Later argument expressions can still run after an earlier expression throws. Callee invocation and argument evaluation are separate checks.
+
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
-- Numeric update coercion
+- Argument-expression short-circuiting
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

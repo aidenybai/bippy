@@ -3338,12 +3338,19 @@ export class Interpreter {
         reference.getValue(referenceContext),
         referenceContext,
         (current, readContext) => {
+          const previous =
+            current.kind === "primitive" && typeof current.value !== "bigint"
+              ? primitiveValue(Number(current.value))
+              : current;
+          const numericValue = previous.kind === "primitive" ? previous.value : null;
           const next =
-            current.kind === "primitive" && typeof current.value === "number"
-              ? primitiveValue(node.operator === "++" ? current.value + 1 : current.value - 1)
-              : unknownPrimitiveValue("number", `${node.operator} on ${describeValue(current)}`);
+            typeof numericValue === "number"
+              ? primitiveValue(node.operator === "++" ? numericValue + 1 : numericValue - 1)
+              : typeof numericValue === "bigint"
+                ? primitiveValue(node.operator === "++" ? numericValue + 1n : numericValue - 1n)
+                : unknownPrimitiveValue("number", `${node.operator} on ${describeValue(current)}`);
           return this.continueValue(reference.setValue(next, readContext), readContext, () =>
-            node.prefix ? next : current,
+            node.prefix ? next : previous,
           );
         },
       ),
@@ -4200,14 +4207,24 @@ export class Interpreter {
     location: SourceLocation | null,
     options: CallValueOptions = {},
   ): StaticValue {
+    const throwingArgumentIndex = args.findIndex(
+      (argument) => getThrowCertainty(argument) !== "never",
+    );
+    const firstThrowingArgument = args[throwingArgumentIndex];
+    if (firstThrowingArgument?.kind === "branch") {
+      return this.callAlternatives(firstThrowingArgument, context, (alternative, pathContext) =>
+        this.callValue(
+          callee,
+          args.map((argument, index) => (index === throwingArgumentIndex ? alternative : argument)),
+          pathContext,
+          location,
+          options,
+        ),
+      );
+    }
     const thrownArgument = getThrownOperand(args);
     if (thrownArgument) return thrownArgument;
     if (callee.kind === "unknown" && callee.thrown) return callee;
-    const thrownPaths = args.flatMap((argument) => getThrownPaths(argument) ?? []);
-    if (thrownPaths.length > 0) {
-      const settled = this.callValue(callee, args.map(withoutThrows), context, location, options);
-      return branchValue([settled, ...thrownPaths], "throwing argument", location);
-    }
     switch (callee.kind) {
       case "branch":
         return this.callAlternatives(callee, context, (alternative, alternativeContext) =>
