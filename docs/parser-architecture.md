@@ -69,6 +69,8 @@ The application capture follows a separate path. The application runs through it
 
 Before starting that application, the [corpus runner](../packages/parser/src/corpus/run-entry.ts) rejects an address that already has a listener. The check sends no page request and does not stop the existing service. Readiness probes have deadlines and reject responses after a recorded child exit. The runner keeps server stdin open until shutdown so tools such as CRA 3 do not exit on EOF. Install and setup commands still receive EOF; the runner does not set CI to keep a server alive. Another process can still bind the address during startup, so this does not prove server ownership.
 
+Check the outer launcher as well as the application’s package manager. An outer `pnpm dlx` can change child Node options before the pinned runner starts. The [productivity launcher audit](../scratchpad.md#productivity-capture-and-launcher-audit) records a Node16 failure and a separate outer-version pin. Preserve the application’s original peer policy rather than silently changing it.
+
 ## Module resolution and run state
 
 The parsed project can outlive an individual analysis. Evaluated module values cannot, because a replay must not reuse mutations from an earlier run.
