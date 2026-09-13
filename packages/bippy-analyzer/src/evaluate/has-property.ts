@@ -23,13 +23,16 @@ import {
   branchValue,
   FALSE_VALUE,
   getKnownObjectOwnNames,
+  getListLength,
   getStubOwnDisplayName,
+  mapValue,
   hasDefiniteItems,
   hasOwnKey,
   isIndefiniteItem,
   TRUE_VALUE,
   primitiveValue,
   thrownValue,
+  unknownPrimitiveValue,
 } from "./values.js";
 
 export const OBJECT_PROTOTYPE_OWN_NAMES = Object.getOwnPropertyNames(Object.prototype);
@@ -159,7 +162,14 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       if (!Number.isInteger(index) || index < 0) return FALSE_VALUE;
       const isReachable = target.items.slice(0, index + 1).every((item) => !isIndefiniteItem(item));
       if (index < target.items.length && isReachable) return TRUE_VALUE;
-      return hasDefiniteItems(target) ? FALSE_VALUE : null;
+      if (hasDefiniteItems(target)) return FALSE_VALUE;
+      const length = getListLength(target);
+      if (length.kind !== "primitive" && length.kind !== "branch") return null;
+      return mapValue(length, (alternative) =>
+        alternative.kind === "primitive" && typeof alternative.value === "number"
+          ? primitiveValue(index < alternative.value)
+          : unknownPrimitiveValue("boolean", "array index presence is not known"),
+      );
     }
     case "component-reference":
       return hasComponentProperty(target.type, name);

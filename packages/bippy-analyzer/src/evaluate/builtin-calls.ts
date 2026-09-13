@@ -1677,31 +1677,6 @@ const scheduledTask = (
 
 const CONTINUE_SEARCH = createSymbolValue("array search continues");
 
-interface ItemVerdict {
-  verdict: boolean | null;
-  preference: boolean | null;
-}
-
-/**
- * `predicate(item, index, list)` per item: its truthiness (null where the
- * analysis cannot decide) and the truthiness of the alternative it prefers.
- */
-const testItems = (
-  interpreter: Interpreter,
-  list: StaticListValue,
-  predicate: CallableValue,
-  context: EvaluationContext,
-): ItemVerdict[] =>
-  list.items.map((item, index) => {
-    const outcome = callCallback(
-      interpreter,
-      predicate,
-      [item, primitiveValue(index), list],
-      context,
-    );
-    return { verdict: getTruthiness(outcome), preference: getPreferredTruthiness(outcome) };
-  });
-
 const callCallback = (
   interpreter: Interpreter,
   callback: CallableValue,
@@ -2742,36 +2717,21 @@ export const evaluateBuiltinCall = (
         break;
       }
       case "some":
-      case "every": {
-        if (!isCallable(first) || !hasDefiniteItems(receiver)) break;
-        const isSome = name === "some";
-        const verdicts = testItems(interpreter, receiver, first, context);
-        if (verdicts.some(({ verdict }) => verdict === isSome))
-          return isSome ? TRUE_VALUE : FALSE_VALUE;
-        if (verdicts.every(({ verdict }) => verdict !== null))
-          return isSome ? FALSE_VALUE : TRUE_VALUE;
-        const undecided = verdicts.filter(({ verdict }) => verdict === null);
-        if (undecided.every(({ preference }) => preference === null)) {
-          return unknownPrimitiveValue("boolean", `${name}() with an uncertain predicate`);
-        }
-        const isPreferred = undecided.some(({ preference }) => preference === isSome)
-          ? isSome
-          : !isSome;
-        return branchValue(
-          [TRUE_VALUE, FALSE_VALUE],
-          `${name}() with an uncertain predicate`,
-          location,
-          isPreferred ? 0 : 1,
-        );
-      }
+      case "every":
       case "find":
       case "findLast":
       case "findIndex":
       case "findLastIndex": {
         const isIndex = name.endsWith("Index");
-        const missing = isIndex ? primitiveValue(-1) : UNDEFINED_VALUE;
+        const isEvery = name === "every";
+        const isQuantifier = isEvery || name === "some";
+        const missing = isQuantifier
+          ? primitiveValue(isEvery)
+          : isIndex
+            ? primitiveValue(-1)
+            : UNDEFINED_VALUE;
         if (!isCallable(first) || !hasDefiniteItems(receiver)) {
-          if (isIndex) break;
+          if (isIndex || isQuantifier) break;
           const candidates = receiver.items.filter((item) => item.kind !== "repeat");
           return branchValue([...candidates, missing], `${name}()`, location);
         }
@@ -2785,29 +2745,53 @@ export const evaluateBuiltinCall = (
             searchContext: EvaluationContext,
           ): StaticValue => {
             if (alternative !== CONTINUE_SEARCH) return alternative;
-            const item = interpreter.getProperty(receiver, String(index), searchContext, location);
-            const outcome = interpreter.callValue(
-              first,
-              [item, primitiveValue(index), receiver],
-              searchContext,
-              location,
-              { thisValue: second ?? UNDEFINED_VALUE },
-            );
-            return mapValue(outcome, (verdict) => {
-              if (getThrowCertainty(verdict) === "always") return verdict;
-              const truthiness = getTruthiness(verdict);
-              if (truthiness === false) return CONTINUE_SEARCH;
-              const found = isIndex ? primitiveValue(index) : item;
-              return truthiness === true
-                ? found
-                : branchValue(
-                    [found, CONTINUE_SEARCH],
-                    `${name}()`,
-                    location,
-                    getPreferredTruthiness(verdict) === false ? 1 : 0,
-                    getTruthinessPredicate(verdict),
-                  );
-            });
+            const test = (testContext: EvaluationContext): StaticValue => {
+              const item = interpreter.getProperty(receiver, String(index), testContext, location);
+              const outcome = interpreter.callValue(
+                first,
+                [item, primitiveValue(index), receiver],
+                testContext,
+                location,
+                { thisValue: second ?? UNDEFINED_VALUE },
+              );
+              return mapValue(outcome, (verdict) => {
+                if (getThrowCertainty(verdict) === "always") return verdict;
+                const found = isQuantifier
+                  ? primitiveValue(!isEvery)
+                  : isIndex
+                    ? primitiveValue(index)
+                    : item;
+                const whenTrue = isEvery ? CONTINUE_SEARCH : found;
+                const whenFalse = isEvery ? found : CONTINUE_SEARCH;
+                const truthiness = getTruthiness(verdict);
+                return truthiness === null
+                  ? branchValue(
+                      [whenTrue, whenFalse],
+                      `${name}()`,
+                      location,
+                      getPreferredTruthiness(verdict) === false ? 1 : 0,
+                      getTruthinessPredicate(verdict),
+                    )
+                  : truthiness
+                    ? whenTrue
+                    : whenFalse;
+              });
+            };
+            const presence = isQuantifier
+              ? (hasProperty(primitiveValue(index), receiver) ??
+                branchValue(
+                  [TRUE_VALUE, FALSE_VALUE],
+                  `${name}(): array index presence is not known`,
+                  location,
+                ))
+              : TRUE_VALUE;
+            return presence.kind === "branch"
+              ? interpreter.callAlternatives(presence, searchContext, (present, presentContext) =>
+                  getTruthiness(present) === false ? CONTINUE_SEARCH : test(presentContext),
+                )
+              : getTruthiness(presence) === false
+                ? CONTINUE_SEARCH
+                : test(searchContext);
           };
           result =
             result.kind === "branch"

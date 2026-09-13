@@ -339,6 +339,13 @@ export class HeapJournal {
         ];
         continue;
       }
+      if (!isRepeated && pathItems.every((items) => !items.some(isIndefiniteItem))) {
+        list.items = spreadListItems(
+          branchValue(pathItems.map(listValue), reason, location, preferredPath, predicate),
+          location,
+        );
+        continue;
+      }
       const uncertainItems = isEveryPathAppending ? appendedItems.flat() : pathItems.flat();
       list.items = isEveryPathAppending ? [...original.items] : [];
       if (uncertainItems.length > 0) {
