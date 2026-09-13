@@ -1,5 +1,20 @@
-import type { SourceLocation, StaticListValue, StaticUnknownValue, StaticValue } from "../types.js";
-import { branchValue, getObjectProperty, mapValue, unknownValue } from "./values.js";
+import type {
+  SourceLocation,
+  StaticBranchValue,
+  StaticListValue,
+  StaticUnknownValue,
+  StaticValue,
+} from "../types.js";
+import { getAlternativeGuards, guardedPredicate } from "./predicates.js";
+import {
+  branchValue,
+  FALSE_VALUE,
+  getObjectProperty,
+  mapValue,
+  TRUE_VALUE,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
 
 type ThrowCertainty = "never" | "maybe" | "always";
 
@@ -77,6 +92,15 @@ export const getThrowCertainty = (value: StaticValue): ThrowCertainty => {
   return certainty;
 };
 
+export const getThrowCondition = (value: StaticValue): StaticValue => {
+  const certainty = getThrowCertainty(value);
+  if (certainty === "always") return TRUE_VALUE;
+  if (certainty === "never") return FALSE_VALUE;
+  return value.kind === "branch"
+    ? mapValue(value, getThrowCondition)
+    : unknownPrimitiveValue("boolean", "value may throw");
+};
+
 /** The operand whose evaluation certainly threw, so the operation never runs; null when every operand may produce a value. */
 export const getThrownOperand = (operands: StaticValue[]): StaticValue | null =>
   operands.find((operand) => getThrowCertainty(operand) === "always") ?? null;
@@ -138,6 +162,26 @@ export const describeThrow = (value: StaticValue): string => {
   return `${thrown.reason}${where}${describeThrownValue(thrown.thrown)}`;
 };
 
+const selectBranchPaths = (
+  value: StaticBranchValue,
+  indices: number[],
+  transform: (alternative: StaticValue) => StaticValue = (alternative) => alternative,
+): StaticValue => {
+  const resolved = getAlternativeGuards(value);
+  return branchValue(
+    indices.map((index) => transform(value.alternatives[index])),
+    value.reason,
+    value.location,
+    Math.max(0, indices.indexOf(value.preferredIndex)),
+    resolved
+      ? guardedPredicate(
+          indices.map((index) => resolved.guards[index]),
+          [resolved.inputs],
+        )
+      : null,
+  );
+};
+
 /** `value` restricted to the paths that do not throw; a lone thrown path becomes a plain unknown. */
 export const withoutThrows = (value: StaticValue): StaticValue => {
   switch (value.kind) {
@@ -146,17 +190,12 @@ export const withoutThrows = (value: StaticValue): StaticValue => {
     case "list":
       return { ...value, items: value.items.map(withoutThrows) };
     case "branch": {
-      const surviving = value.alternatives.filter(
-        (alternative) => getThrowCertainty(alternative) !== "always",
+      const surviving = value.alternatives.flatMap((alternative, index) =>
+        getThrowCertainty(alternative) !== "always" ? [index] : [],
       );
-      if (surviving.length === 0) return unknownValue("thrown render", value.location);
-      const preferred = value.alternatives[value.preferredIndex];
-      return branchValue(
-        surviving.map(withoutThrows),
-        value.reason,
-        value.location,
-        Math.max(0, surviving.indexOf(preferred)),
-      );
+      return surviving.length === 0
+        ? unknownValue("thrown render", value.location)
+        : selectBranchPaths(value, surviving, withoutThrows);
     }
     case "optional":
       return { ...value, value: withoutThrows(value.value) };
@@ -176,10 +215,10 @@ export const getThrownPaths = (value: StaticValue): StaticValue | null => {
       return null;
     case "maybe": {
       if (value.kind !== "branch") return null;
-      const thrown = value.alternatives.filter(
-        (alternative) => getThrowCertainty(alternative) === "always",
+      const thrown = value.alternatives.flatMap((alternative, index) =>
+        getThrowCertainty(alternative) === "always" ? [index] : [],
       );
-      return thrown.length === 0 ? null : branchValue(thrown, value.reason, value.location, 0);
+      return thrown.length === 0 ? null : selectBranchPaths(value, thrown);
     }
   }
 };

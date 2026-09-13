@@ -196,7 +196,7 @@ Numeric `Math` arguments retain guarded alternatives when their Cartesian produc
 
 The `find` family, `some`, and `every` capture a definite initial length and read live elements in the method’s direction. Results that stop traversal also prevent later predicate calls. The model preserves callback receivers and propagates thrown predicates without escaping them. Quantifiers skip indices that the model identifies as absent, retaining explicit unknown decisions when presence remains unresolved.
 
-The list representation does not distinguish sparse holes from present `undefined` values. Surrounding `try`/`catch` joins can still lose correlations between successful and thrown paths.
+The list representation does not distinguish sparse holes from present `undefined` values.
 
 ### Preserve relationships between expressions
 
@@ -241,6 +241,14 @@ These changes preserve the shared list’s identity. Unbounded mutation counts s
 The journal distinguishes preexisting objects from objects allocated within a path. An object allocated inside one alternative does not need restoration for another alternative that cannot reference it. Pending hook updates also require this distinction because an update must remain conditional on the path that schedules it.
 
 Conditional reads require the same guards as writes. The interpreter narrows a value when the active conditions identify a compatible subset of its alternatives. Journaling writes alone would still permit a callback to read a value from an incompatible path.
+
+### Preserve state through abrupt exits
+
+Statement outcomes record a guarded completion condition separately from returned or thrown values. Later statements run under the completing paths’ guards. A possibly throwing initializer also guards the remaining declarations in its statement.
+
+Inside `try`, the interpreter retains local state from abrupt paths until a handler or finalizer can read it. Catch selection uses the original throw condition. [Filtering thrown or surviving alternatives](../packages/bippy-analyzer/src/evaluate/thrown.ts) preserves their guards and preferences, including error payloads.
+
+Finalizers run on both completing and exiting paths. Heap journals join terminal paths immediately; paths that jump within a loop retain deferred handling. The [throw-path regressions](../packages/bippy-analyzer/tests/throw-paths.test.ts) check these bounded cases, not complete exception, loop, or async semantics.
 
 ### Preserve identity as well as conditions
 

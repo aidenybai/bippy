@@ -666,15 +666,52 @@ After the recursive sum repair, new source-only models retain the same state, wi
 
 The frozen models still partially match all 13 saved resource snapshots and all 40 saved memory-workflow snapshots. These are retrospective snapshot membership checks, not transition extraction or reachability evidence. Five corpus controls repeat against identical captures without changes to their five comparison fields; `quantifier{,-sum}-corpus-lane-{0,1}.json` records both rounds. Corpus data remains unchanged at 307 repositories.
 
-Current source-only analyses also repeat the seven throw checks against their identical saved native snapshots. The `pending-throw-sum-*-comparison.json` files record the same raw-model failures and two native mismatches, still with passing replay. These controls perform no new native application renders.
+At the quantifier checkpoint, source-only analyses also repeat the seven throw checks against their identical saved native snapshots. The `pending-throw-sum-*-comparison.json` files record the same raw-model failures and two native mismatches, still with passing replay. These controls perform no new native application renders.
 
 The final sum gate passes 3,193 root tests with two existing skips and 1,147 analyzer tests across 70 files. Root typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-quantifier-sum-validation.exit` records 0; `quantifier-sum-reviewed-gates.json` records the models, controls, baseline failures, and open throw counterexamples. The earlier finalized gate and `quantifier-reviewed-gates.json` remain separate. These gates do not complete causal-model, renderer, or 500-repository acceptance.
+
+### Guarded completion, catches, and finalizers
+
+The three retained throw counters fail on `27a5f31f`: direct `try`/`catch` omits `caught:1`, while plain-call and quantifier variants admit four label/count combinations. The new `throw-paths.test.ts` reproduces them before any repair. Actual React source still routes uncaught rendering errors through `ReactFiberThrow`; it cannot repair a lexical catch that reads the wrong interpreted state.
+
+Statement outcomes now retain a completion condition separately from their returned values. Forked statements and the remaining statements run under their selected guards. Throw propagation keeps the full result’s predicate rather than reconstructing a decision from filtered exceptions. Later declarators run only when earlier initializers complete.
+
+A `try` body retains local snapshots from abrupt paths for its handlers and finalizers. Calls still create fresh evaluation contexts, so that local-preservation flag does not leak into callees. Catch selection uses the throwing paths’ guards, and filtering errors or survivors preserves the original choices, preferences, and payload correlations.
+
+Further regressions expose losses through nested finalizers and early returns. Normal completion and abrupt exits now select their own finalization paths. A finalizer failure can replace an earlier return. The implementation still does not establish complete exception, loop, or asynchronous semantics.
+
+Heap tests expose two additional defects in the candidate: reordered deferred snapshots receive the wrong guards, and nested terminal paths defer joins they no longer need. Deferred guards now follow snapshot order. Fully terminal paths join immediately; actual loop jumps retain deferred treatment. No budgets change.
+
+Fourteen component fixtures require exact raw sequences, no omissions, exact native membership, and no replay mismatches. Three direct completion/filtering tests fail on baseline `27a5f31f` and pass after the repair. The baseline worktree `/tmp/bippy-completion-baseline` preserves its test copy; its dependency links do not substitute for the main-owned final gates.
+
+Failure logs remain separate under `/tmp/bippy-throw-path-`:
+
+- `baseline.log`
+- `expanded.log`
+- `finally-before.log`
+- `return-heap-before.log`
+- `nested-return-heap-before.log`
+
+The early 1,153-test package gate passes before the expanded regressions expose those gaps. Later focused logs record each correction; no test relaxes its expected sequences.
+
+The seven original native throw snapshots now match without replay mismatches, including the two former `caught:1` contradictions. The `pending-throw-completion-*-comparison.json` files record source-only analyses against the identical saved snapshots. They perform no new native application render, supply no observations, and check the raw model before replay. Their results concern these fixtures, not every possible exception path.
+
+New original-app models still omit route content. The files remain under `/tmp/bippy-many-games-causal-investigation/`:
+
+- `source-only-completion-reviewed-home-model.json`: SHA-256 `0dc402eb0ad40e4018da9617470f2bbedddc8620cfd86a306a57a6f005b2b7e9`
+- `source-only-completion-reviewed-memory-model.json`: SHA-256 `e9ae1ec4cb8411081b8ddcdf372617ca952b332836b2cf5c1a823195fe903a72`
+
+Each model has 11 bounded and enumerated states, with 13 inputs and 18 guards. Seven wildcards and one subtree omission remain. The prior 12-state models remain intact; the changed state count does not establish complete reachability.
+
+All 13 saved resource snapshots and 40 saved memory snapshots still compare partially. Five corpus controls repeat against identical captures with no changes to their five comparison fields. Corpus JSON remains unchanged at 307 repositories. These are snapshot comparisons, not an emitted transition system or new workflow discovery.
+
+Final gates pass 3,224 root tests with two existing skips and 1,178 analyzer tests across 72 files. Root typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-throw-path-final-validation.exit` records 0; `completion-reviewed-gates.json` records the evidence. Causal-model, renderer, and 500-repository acceptance remain incomplete.
 
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,193 tests**, with two existing React-19 DevTools skips; this includes **1,147 analyzer tests / 70 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,224 tests**, with two existing React-19 DevTools skips; this includes **1,178 analyzer tests / 72 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
