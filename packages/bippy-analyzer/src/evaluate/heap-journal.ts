@@ -16,6 +16,7 @@ import {
   joinObjectEntries,
   listValue,
   spreadListItems,
+  unknownValue,
 } from "./values.js";
 
 export type MutableHeapValue = StaticObjectValue | StaticListValue;
@@ -28,7 +29,22 @@ export type ModuleValues = Map<string, StaticValue | typeof IN_PROGRESS>;
 type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
 
 /** A hook cell's pending update; null when none is queued. */
-type PendingUpdates = Map<StateCell, StaticValue | null>;
+interface PendingHookUpdate {
+  next: StaticValue | null;
+  actions: StaticValue | null;
+}
+
+type PendingUpdates = Map<StateCell, PendingHookUpdate>;
+
+const captureHookUpdate = (cell: StateCell): PendingHookUpdate => ({
+  next: cell.next,
+  actions: cell.pendingReducerActions,
+});
+
+const restoreHookUpdate = (cell: StateCell, update: PendingHookUpdate): void => {
+  cell.next = update.next;
+  cell.pendingReducerActions = update.actions;
+};
 
 interface ListState {
   items: StaticValue[];
@@ -162,7 +178,7 @@ export class HeapJournal {
 
   recordStateUpdate(cell: StateCell): void {
     if (this.unconditionalUpdates?.has(cell)) return;
-    if (!this.updates.has(cell)) this.updates.set(cell, cell.next);
+    if (!this.updates.has(cell)) this.updates.set(cell, captureHookUpdate(cell));
   }
 
   endPath(): void {
@@ -199,8 +215,8 @@ export class HeapJournal {
       path.bindings.set(values, pathValues);
     }
     for (const [cell, original] of this.updates) {
-      path.updates.set(cell, cell.next);
-      cell.next = original;
+      path.updates.set(cell, captureHookUpdate(cell));
+      restoreHookUpdate(cell, original);
     }
     this.paths.push(path);
   }
@@ -242,20 +258,29 @@ export class HeapJournal {
     isRepeated: boolean,
   ): void {
     for (const [cell, original] of this.updates) {
-      const pathUpdates = paths.map((path) =>
-        path.updates.has(cell) ? (path.updates.get(cell) ?? null) : original,
-      );
-      if (pathUpdates.every((update) => update === pathUpdates[0])) {
-        cell.next = pathUpdates[0];
-        continue;
-      }
-      cell.next = branchValue(
-        pathUpdates.map((update) => update ?? cell.current),
-        reason,
-        location,
-        preferredPath,
-        predicate,
-      );
+      const pathUpdates = paths.map((path) => path.updates.get(cell) ?? original);
+      const nextValues = pathUpdates.map((update) => update.next);
+      cell.next = nextValues.every((value) => value === nextValues[0])
+        ? nextValues[0]
+        : branchValue(
+            nextValues.map((value) => value ?? cell.current),
+            reason,
+            location,
+            preferredPath,
+            predicate,
+          );
+      const actionQueues = pathUpdates.map((update) => update.actions);
+      cell.pendingReducerActions = actionQueues.every((value) => value === actionQueues[0])
+        ? actionQueues[0]
+        : isRepeated
+          ? unknownValue("reducer dispatch count is not bounded", location)
+          : branchValue(
+              actionQueues.map((value) => value ?? listValue([])),
+              reason,
+              location,
+              preferredPath,
+              predicate,
+            );
     }
     for (const [values, originals] of this.bindings) {
       for (const [name, original] of originals) {

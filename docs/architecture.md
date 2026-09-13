@@ -278,6 +278,12 @@ The current class model does not invoke `componentDidCatch`. Mixed throwing and 
 
 Each stateful proxy has a `HookFrame`, which stores interpreted hook state. The proxy also uses real React hooks to request another render and schedule effect processing. This lets React control when the proxy renders while the interpreter controls the values that application hooks observe.
 
+[React queues reducer actions at dispatch](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-reconciler/src/ReactFiberHooks.js#L3583) and applies them during rendering. The interpreter also queues directly evaluated `useReducer` dispatches. The next hook pass uses that render’s reducer closure, preserving action order and object identity. Conditional queues retain their branch guards through the heap journal.
+
+Reducers run before the materializer decides whether unchanged state permits reusing a previous render. Reusing that render also preserves its effects. Failed reducer branches retain their actions for error recovery, rather than storing errors as state. For React 19+, Strict Mode duplicates normal update checks but not render-phase reducer updates.
+
+These queues don’t model React’s lane priorities or every escaped callback’s timing.
+
 The proxy processes modeled layout effects through its React layout effect. It processes modeled passive effects through its React passive effect. The materializer must preserve update conditions across those calls, including updates that affect later commits.
 
 The following component removes `Trigger` after its effect updates the parent. Canvas context creation can return a context or `null`:

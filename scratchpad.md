@@ -509,6 +509,47 @@ The previous 100-repository preparation finishes and yields 193 package inventor
 
 Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker validates 66 links and both executable examples. Parser implementation and the completed 3,101-test gate remain unchanged; repository count does not satisfy the causal-workflow acceptance requirements.
 
+### Source-only causal-workflow investigation
+
+The Many Games investigation is in `/tmp/bippy-many-games-causal-investigation/`. It uses the original repository at `20eb384862f322a5d4b07c126f951719f3ec44eb`. Both the home and memory-game source-only models were saved before their respective new browser traces. Neither model received captured observations. Both remain unresolved: the interpreted router reports a possible throw, `useRouteError can only be used on routes that contain a unique "id"`. This is not a native application error or an image-membership contradiction.
+
+Nine diagnostic ablations use only fields from the older unchanged capture. Removing its `windowKeys` reproduces the unresolved render. Retaining the original required page fields and `windowKeys` restores the two-state model, even without captured router state. That model still mismatches the original home capture in 155 matcher steps, without matcher exhaustion. These are observation-conditioned diagnostic results, not an upfront source-only success. The router reads `window.__staticRouterHydrationData`; attributing the whole failure to that one property still needs a direct read trace.
+
+The fresh home trace records thirteen resource/DOM frames and seven Bippy commits. Four received image bodies match the original tracked assets. The trace observes empty-source errors, later load events, and spinner removal. Source inspection finds two missing causal mechanisms: host function attributes become no-ops in `Materializer.toAttribute()`, and DOM observer callbacks escape at construction while observe/unobserve/disconnect are no-ops. Merely escaping image handlers would not establish valid resource-event ordering or observer lifetimes.
+
+The memory-game plan defines expectations from source before collecting its interaction trace. The trace contains 95 frames, thirty Bippy commits, and no page errors. Checks confirm tutorial interval registration and cleanup, no subsequent callbacks within the recorded closed windows, fresh tutorial state on reopening, score transitions `1 → 1 → 2 → 0`, and board removal with observed resize-listener removals. Tile IDs are distinct in this witness; the original short ID generator does not guarantee uniqueness. The tutorial was closed before navigating home, so navigation with an active tutorial interval was not tested. Host API calls and selected actual hook states are observed; original handler/setter calls and subscription ownership are not fully instrumented. These checks validate hand-authored expectations, not an analyzer-generated transition model.
+
+The tutorial exposes a reducer-phase issue. Its interval dispatches an action, then increments a ref. The reducer ignores its action and reads that ref when React renders. Native React 18.2 shows tutorial indices 13 and 12, then 13 after remount. A minimized, independently captured React 19.3 fixture confirms the analyzer instead reduces immediately: its tree contains `"0"`, while the browser contains `"1"`. The mismatch uses four matcher steps, no wildcards, and no exhausted budget; same-interpreter replay passes. `stateHook()` calls `reduce()` while dispatching and caches that dispatch closure. A repair must investigate pending actions, current reducer closures, guarded queues, and render-phase ordering—not merely defer a callback by a guessed timeout.
+
+The minimized probe's missing factory `await` remains a helper failure. Its corrected attempt saved the model, capture, and comparison before the outer 120-second command timed out. No surviving probe process was found, and the temporary fixture directory was removed. The result is evidence, not a clean execution-gate completion. At that checkpoint, no analyzer semantic repair or rewrite had been made. Corpus count remained 307; the real-workflow and whole-space acceptance gates remained open.
+
+### Reducer action queues
+
+The candidate now queues directly evaluated reducer actions and applies them during the next hook pass. The pass uses the current reducer closure. Heap journals preserve conditional queues, including shared prefixes, absent dispatches, and later actions. Action objects retain their identity, so reducers observe writes made after dispatch. An unbounded dispatch loop remains unknown rather than becoming one optional action.
+
+The repair follows the cloned React `ReactFiberHooks.js` at `82c44beb444eda5230c063eaa163d01f38817211`. It distinguishes pending work from changed state, preserves effects on no-op bailouts, and invalidates cached renders when materialization throws. Failed branches retain actions for recovery; retry batches don’t become newly dispatched render-phase updates. Strict Mode checks differ between normal updates and render-phase rerenders.
+
+Independent fixtures exposed defects during development:
+
+- The baseline reduced against stale refs and reducer closures. The initial tests failed twice; the no-op effect control passed.
+- The first queue candidate missed Strict Mode’s duplicate update check. A later candidate incorrectly duplicated render-phase reducer calls. Both wrong trees passed internal replay.
+- A throwing reducer initially reused an earlier successful render during error recovery.
+- A guarded throw disappeared from the primary model because a tuple contained the throwing branch. A raw-model assertion caught the missing fallback despite ordinary comparison checks passing. The hook now returns separate throwing and successful tuple branches.
+
+The focused tests check action identity, guarded ref writes, current closures, effect bailouts, both Strict Mode phases, and render-time errors. Raw enumeration checks require the guarded totals `0`, `40`, and `500`, and both normal and error-boundary outcomes. These checks do not substitute for a transition system or whole-space proof.
+
+The queue candidate matched the identical saved React 19.3 browser capture twice, without runtime observations or fixture changes. Results remain in `/tmp/bippy-many-games-causal-investigation/reducer-ref-phase-queue-*.json`. The helper completed its assertions but did not exit. At completion, its resource inventory listed a `MessagePort` and `Timeout`. Its owned process was sampled, identified again, and terminated; the nonzero execution receipt remains. No cleanup or performance success is claimed.
+
+Five saved-capture corpus controls completed twice without changes to `report`, `runtime`, `static`, `stateSpace`, or `stateReplay`. They cover Joyce, Wafa, Hari, Virtual Calculator, and Many Games. The first control helper used the unsupported `--output` flag; both failures remain. A new helper uses the documented `--results` flag and separate files. Final controls also completed twice after the guarded-throw and render-phase refinements; all five fields remained unchanged.
+
+Evidence includes `/tmp/bippy-reducer-phase-baseline.log`, `/tmp/bippy-reducer-phase-expanded-first.log`, `/tmp/bippy-reducer-strict-render-phase-before.log`, and `/tmp/bippy-reducer-phase-guarded-trace-visible.log`.
+
+Final review also separates actual state changes from queued work when a pending reducer becomes escaped. A regression checks that the eager state change is not mistaken for a reducer-only no-op.
+
+The final gates passed root typecheck, 3,118 root tests with two skips, 1,072 analyzer tests across 65 files, build, and realm checks. The receipt is `/tmp/bippy-reducer-queue-state-gate-validation.exit`. The five corpus controls again remained unchanged in both runs. Earlier gates and controls remain separate.
+
+The source-only router failure, escaped-dispatch timing, lane priorities, SDK lifecycle cleanup, and broader causal-model gates remain open. Corpus count remains 307.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.

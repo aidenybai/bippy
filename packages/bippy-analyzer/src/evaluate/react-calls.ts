@@ -22,17 +22,20 @@ import { callUncertainCallback } from "./builtin-calls.js";
 import { countChildrenExactly, mapChildrenExactly } from "./react-children.js";
 import type { EvaluationContext } from "./context.js";
 import {
+  applyReducerState,
   escapeReducerDispatch,
   escapeStateCell,
   escapedStateValue,
   invokeHookFactory,
   nextMemoCell,
   nextStateCell,
+  queueReducerAction,
   queueStateUpdate,
   type HookFrame,
   type StateCell,
 } from "./hooks.js";
 import { awaitedValue } from "./promises.js";
+import { getThrowCertainty } from "./thrown.js";
 import { isElementValue } from "./type-predicates.js";
 import type { Interpreter } from "./interpreter.js";
 import {
@@ -69,6 +72,39 @@ const isValidElementValue = (value: StaticValue): StaticValue => {
     : primitiveValue(verdict);
 };
 
+interface PendingReducer {
+  (pending: StaticValue, current: StaticValue): StaticValue;
+}
+
+const reduceActionQueue = (
+  interpreter: Interpreter,
+  reducer: StaticValue,
+  pending: StaticValue,
+  current: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (pending.kind === "branch") {
+    return interpreter.callAlternatives(pending, context, (alternative, alternativeContext) =>
+      reduceActionQueue(interpreter, reducer, alternative, current, alternativeContext, location),
+    );
+  }
+  if (pending.kind !== "list")
+    return pending.kind === "unknown"
+      ? pending
+      : unknownValue("reducer action queue is not a known sequence", location);
+  let state = current;
+  for (const action of pending.items) {
+    if (context.hooks?.doublesHookFactories) {
+      const checked = interpreter.callValue(reducer, [state, action], context, location);
+      if (getThrowCertainty(checked) === "always") return checked;
+    }
+    state = interpreter.callValue(reducer, [state, action], context, location);
+    if (getThrowCertainty(state) === "always") return state;
+  }
+  return state;
+};
+
 /** `mountState`/`mountReducer`: the initializer runs on mount only, twice under Strict Mode. */
 const stateHook = (
   context: EvaluationContext,
@@ -80,6 +116,7 @@ const stateHook = (
     tools: StubRenderTools,
   ) => StaticValue,
   escapeDispatch: (frame: HookFrame, cell: StateCell, action: StaticValue) => void,
+  reducePending?: PendingReducer,
 ): StaticValue => {
   const frame = context.hooks;
   if (!frame) {
@@ -93,16 +130,47 @@ const stateHook = (
     ]);
   }
   const cell = nextStateCell(frame, name, () => invokeHookFactory(frame, computeInitial));
+  if (cell.isEscaped) cell.pendingReducerActions = null;
+  let value = cell.current;
+  if (reducePending && cell.pendingReducerActions !== null) {
+    const pending = cell.pendingReducerActions;
+    cell.pendingReducerActions = null;
+    const reduced = reducePending(pending, cell.current);
+    if (getThrowCertainty(reduced) === "always") {
+      cell.pendingReducerActions = pending;
+      return reduced;
+    }
+    value = reduced;
+    if (getThrowCertainty(reduced) === "maybe") {
+      const previous = cell.current;
+      cell.pendingReducerActions = mapValue(reduced, (alternative) =>
+        getThrowCertainty(alternative) === "never" ? listValue([]) : pending,
+      );
+      applyReducerState(
+        frame,
+        cell,
+        mapValue(reduced, (alternative) =>
+          getThrowCertainty(alternative) === "never" ? alternative : previous,
+        ),
+      );
+    } else {
+      applyReducerState(frame, cell, reduced);
+    }
+  }
   cell.setter ??= {
     kind: "native-function",
     name: `set ${name}`,
     call: ([action], tools) => {
-      queueStateUpdate(
-        frame,
-        cell,
-        reduce(action, cell.next ?? cell.current, tools),
-        tools.isDeferred(),
-      );
+      if (reducePending) {
+        queueReducerAction(frame, cell, action ?? UNDEFINED_VALUE, tools.isDeferred());
+      } else {
+        queueStateUpdate(
+          frame,
+          cell,
+          reduce(action, cell.next ?? cell.current, tools),
+          tools.isDeferred(),
+        );
+      }
       return UNDEFINED_VALUE;
     },
     onEscape: (argumentValues) => {
@@ -113,7 +181,14 @@ const stateHook = (
       escapeDispatch(frame, cell, argumentValues[0] ?? UNDEFINED_VALUE);
     },
   };
-  return listValue([cell.current, cell.setter]);
+  const setter = cell.setter;
+  return getThrowCertainty(value) === "never"
+    ? listValue([value, setter])
+    : mapValue(value, (alternative) =>
+        getThrowCertainty(alternative) === "always"
+          ? alternative
+          : listValue([alternative, setter]),
+      );
 };
 
 /**
@@ -542,6 +617,10 @@ export const evaluateReactApiCall = (
             interpreter.callValue(first, [state, action], context, location),
           );
         },
+        (pending, current) =>
+          first
+            ? reduceActionQueue(interpreter, first, pending, current, context, location)
+            : unknownValue("reducer state after dispatch"),
       );
     }
     case "useMemo": {
