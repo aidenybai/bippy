@@ -220,6 +220,8 @@ Treating the tests as independent decisions would permit four combinations. Only
 
 The predicate model preserves that relationship through the assignment to `isAdmin`. Input provenance relates a guard to the source of its uncertainty. Each input has an identifier and source information. That information describes the input category and source location when available.
 
+For resolved alternatives, calls constrain closure reads with the current choice and the caller’s guard. Each receiver path evaluates its own arguments. The interpreter restores the caller’s guard afterward and joins mutations under the original decision.
+
 ### Restore mutations between alternatives
 
 Evaluating both sides of a condition can change shared state. If the interpreter retains mutations from the first side, the second side starts with the wrong values. This can produce a tree that neither path produces in the application.
