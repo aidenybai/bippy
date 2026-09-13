@@ -740,11 +740,47 @@ Final gates pass 3,244 root tests with two existing skips and 1,198 analyzer tes
 
 The earlier receipt compared absent top-level `states` fields; the corrected check compares the serialized model wrapper and its 11 states. The causal-model, renderer, and 500-repository gates remain incomplete.
 
+### Capture assignment references before evaluating values
+
+The scalar, receiver, and computed-key counterexamples now produce their original source-derived outcomes. Their unchanged saved native snapshots compare exactly, without observations or new native renders. The computed-key model no longer relies on unconstrained text to match that snapshot.
+
+`evaluateReference()` captures receivers and computed-key expressions once. Its read/write callbacks retain those values even if the right-hand operand changes the source bindings. Nested references retain their parents for existing component-wrapper replacements, without evaluating those parent expressions again.
+
+`continueValue()` distributes branched values under their existing guards and stops known throwing paths. Ordinary assignments write only successful operands. Compound and update expressions read the captured reference first; logical assignments reuse it after short-circuit selection. Object setter failures now propagate instead of disappearing inside `assignProperty()`.
+
+The React checkout still shows direct `ref.current` writes in `ReactFiberCommitEffects.js`. The ECMAScript source at `/tmp/bippy-assignment-reference-spec.html` distinguishes reference evaluation from `GetValue` and `PutValue`. In particular, `a[b] = c` evaluates the key expression before `c`, but can defer object-key coercion until the write. This repair preserves key expressions, not complete coercion semantics.
+
+Eleven component regressions fail on baseline `bd2f896d` and pass after the repair. They check reference identity and guarded evaluation, including object setters and numeric update ordering. Each requires exact concrete states, no omissions, exact native membership, and no replay mismatches. `/tmp/bippy-assignment-reference-baseline` preserves the baseline source and test copies; main-owned gates remain separate from its dependency-linked run.
+
+The initial typecheck failure remains in `/tmp/bippy-assignment-reference-first-typecheck.log`: an unused import and pattern nodes passed to the expression unwrapper. Explicit pattern handling and import cleanup resolve those errors. The early 1,204-test package pass precedes the expanded regressions and is not the final gate.
+
+The four original assignment snapshots and seven previous throw snapshots all remain exact. Their new receipts use `assignment-boundary-reference-reviewed-*-comparison.json` and `pending-throw-reference-reviewed-*-comparison.json`. Earlier failures remain intact.
+
+Four adjacent probes remain failures, not passing coverage:
+
+- Getter-only writes return normally instead of throwing in the tested module
+- Null receivers omit the caught outcome
+- Numeric postfix updates omit primitive coercion and produce unconstrained text
+- Proxy setter failures disappear instead of reaching the catch
+
+The fixtures and strict tests remain under `/tmp/bippy-assignment-reference-baseline/packages/bippy-analyzer/tests/fixtures/reference-limits`. They import main production through absolute paths. `/tmp/bippy-assignment-reference-limits.log` retains all four failures and `reference-limits-*-comparison.json` stores their native snapshots and raw states.
+
+Getter-only and proxy writes mismatch their native snapshots with four matcher steps and no exhaustion. The first null-receiver snapshot happens to match the valid receiver path. Four predeclared, unforced repeats capture the missing caught path in attempt 0; that comparison mismatches, while attempts 1–3 match. Every replay still passes. Numeric coercion reports exact despite unconstrained text, so that report does not prove its concrete expectation.
+
+The original-app model remains incomplete. New frozen files retain the same serialized trees, conditions, and 11 states as the logical-assignment checkpoint:
+
+- `source-only-assignment-reference-reviewed-home-model.json`: SHA-256 `9fe18589c38db564c55a152d6725d6bb6548a064487fecca063ea116985068d9`
+- `source-only-assignment-reference-reviewed-memory-model.json`: SHA-256 `440c065df40e5af8b20128d1a536ae195b8aa41746e8089dea63b341d659a68f`
+
+Both models retain seven wildcards and one subtree omission. All 53 saved workflow snapshots still compare partially. Five corpus controls repeat unchanged against identical captures, and corpus JSON stays at 307 repositories.
+
+Final gates pass 3,266 root tests with two existing skips and 1,220 analyzer tests across 74 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-assignment-reference-final-validation.exit` records 0; `assignment-reference-reviewed-gates.json` verifies the evidence. Complete assignment, causal-model, renderer, and 500-repository acceptance remain unmet.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,244 tests**, with two existing React-19 DevTools skips; this includes **1,198 analyzer tests / 73 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,266 tests**, with two existing React-19 DevTools skips; this includes **1,220 analyzer tests / 74 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
