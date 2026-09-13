@@ -834,6 +834,24 @@ Source review used the local React checkout at `82c44beb444eda5230c063eaa163d01f
 
 Final gates pass 3,305 root tests with two existing skips and 1,259 analyzer tests across 77 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-argument-order-final-validation.exit` records 0; `argument-order-reviewed-gates.json` verifies the retained evidence. Constructor outcomes, broader language semantics, causal models, renderer integration, and the 500-repository gate remain open.
 
+### Constructor boundary counterexamples after argument sequencing
+
+Three deterministic probes at `8a6cbd2d` independently confirm adjacent constructor defects:
+
+| Probe                                    | Source-derived and native result | Model result   |
+| ---------------------------------------- | -------------------------------- | -------------- |
+| Constructor body throws                  | `caught:1`                       | `returned:1`   |
+| Field initializer throws before the body | `caught:1:0`                     | `returned:1:1` |
+| Constructor returns a replacement object | `new`                            | `old`          |
+
+Each native comparison mismatches in four steps without budget exhaustion. Each model has no omissions, yet replay reports `sample-passed` with no mismatched samples. These are deterministic contradictions, not failures inferred from incomplete enumeration.
+
+`/tmp/bippy-constructor-boundaries-baseline.log` retains all three strict failures. Fixtures and `constructor-boundaries.test.ts` live in `/tmp/bippy-argument-order-baseline/packages/bippy-analyzer/tests/`; the test imports main production through absolute paths. Its source-derived expectations precede source-only analysis and independent native Bippy rendering. Immutable `constructor-boundary-argument-order-*-comparison.json` files preserve source and production hashes, raw states, native snapshots, and replay reports.
+
+The shared initializer also serves React class mounting. `initializeFields()` continues after storing a thrown initializer, while `constructLayer()` discards constructor results. Parent construction additionally uses a local boolean outside the heap journal. Repairing these paths requires preserving completion, replacement identity, initialization order, and guarded parent state together. No constructor repair is committed at this checkpoint.
+
+These probes add no repositories or workflow acceptance. The argument-order gates and 307-repository count remain unchanged.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
