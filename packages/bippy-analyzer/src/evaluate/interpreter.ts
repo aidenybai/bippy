@@ -3243,35 +3243,69 @@ export class Interpreter {
       return unknownValue(`compound assignment ${node.operator} to a pattern`);
     }
     const current = this.evaluateExpression(target, context);
-    let value: StaticValue;
     if (node.operator === "||=" || node.operator === "&&=" || node.operator === "??=") {
-      const truthiness =
-        node.operator === "??="
-          ? isNullish(current) === null
-            ? null
-            : !isNullish(current)
-          : getTruthiness(current);
-      const keepsCurrent = node.operator === "&&=" ? truthiness === false : truthiness === true;
-      if (keepsCurrent) return current;
-      const right = this.evaluateExpression(node.right, context, nameHint);
-      value =
-        truthiness === null
-          ? branchValue(
-              [current, right],
-              `${node.operator} on ${describeValue(current)}`,
-              null,
-              0,
-              node.operator === "??="
-                ? getPresencePredicate(current)
-                : getTruthinessPredicate(current, node.operator === "&&="),
-            )
-          : right;
-    } else {
-      const right = this.evaluateExpression(node.right, context);
-      value = applyBinaryOperator(node.operator.slice(0, -1), current, right);
+      return this.evaluateLogicalAssignment(node, current, context);
     }
+    const right = this.evaluateExpression(node.right, context);
+    const value = applyBinaryOperator(node.operator.slice(0, -1), current, right);
     this.assignTarget(target, value, context);
     return value;
+  }
+
+  private evaluateLogicalAssignment(
+    node: AssignmentExpression,
+    current: StaticValue,
+    context: EvaluationContext,
+  ): StaticValue {
+    if (current.kind === "branch") {
+      return this.callAlternatives(current, context, (alternative, pathContext) =>
+        this.evaluateLogicalAssignment(node, alternative, pathContext),
+      );
+    }
+    if (getThrowCertainty(current) === "always") return current;
+    const truthiness =
+      node.operator === "??="
+        ? isNullish(current) === null
+          ? null
+          : !isNullish(current)
+        : getTruthiness(current);
+    const keepsCurrent = node.operator === "&&=" ? truthiness === false : truthiness === true;
+    const assign = (value: StaticValue, pathContext: EvaluationContext): StaticValue => {
+      if (value.kind === "branch") return this.callAlternatives(value, pathContext, assign);
+      const certainty = getThrowCertainty(value);
+      if (certainty !== "always") {
+        this.assignTarget(
+          node.left,
+          certainty === "never" ? value : withoutThrows(value),
+          pathContext,
+        );
+      }
+      return value;
+    };
+    const assignRight = (pathContext: EvaluationContext) =>
+      assign(
+        this.evaluateExpression(
+          node.right,
+          pathContext,
+          node.left.type === "Identifier" ? node.left.name : null,
+        ),
+        pathContext,
+      );
+    if (truthiness !== null) return keepsCurrent ? current : assignRight(context);
+    const decision = branchValue(
+      [TRUE_VALUE, FALSE_VALUE],
+      `${node.operator} on ${describeValue(current)}`,
+      null,
+      0,
+      node.operator === "??="
+        ? getPresencePredicate(current)
+        : getTruthinessPredicate(current, node.operator === "&&="),
+    );
+    const select = (choice: StaticValue, pathContext: EvaluationContext) =>
+      getTruthiness(choice) === true ? current : assignRight(pathContext);
+    return decision.kind === "branch"
+      ? this.callAlternatives(decision, context, select)
+      : select(decision, context);
   }
 
   assignTarget(target: AssignmentTarget, value: StaticValue, context: EvaluationContext): void {
