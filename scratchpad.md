@@ -594,11 +594,38 @@ The reviewed gate passes 3,152 root tests with two skips and 1,106 analyzer test
 
 The first provenance helper exceeds the child-process stdout buffer while reading corpus JSON. Its failure log remains intact. The replacement checks Git blob IDs and records SHA-256 hashes without changing analyzer budgets; `call-guard-reviewed-gates.json` records the verified controls and frozen models.
 
+### Check the remaining omission and predicate searches
+
+Retrospective comparisons check the frozen call-guard models against unchanged independent traces. All 13 resource snapshots and all 40 saved memory-workflow snapshots remain partial. The other 55 memory frames contain no snapshot and do not enter the comparison. The memory model also partially matches seven snapshots after navigation home, which does not establish route or action reachability.
+
+The pass-through depth trace observes nine branch materializations and three cutoff calls. Both alternatives remain feasible at each cutoff under the existing guard solver. This does not support treating those branches as already decided or bypassing the depth budget. The cutoff calls merge into one reported subtree omission.
+
+Original `findIndex()` code exposes another defect: `testItems()` evaluates every predicate before selecting a result. The reverse search variants also evaluate predicates forward, and thrown predicates do not stop that evaluation. Four initial independent fixtures fail. Their logs remain in `/tmp/bippy-array-search-baseline.log`.
+
+The `find` family now traverses in the requested direction and stops after a match or throw. An internal continuation symbol distinguishes unfinished paths from legitimate return values; scoped alternatives preserve conditional callback mutations and result guards. The loop captures the original length but reads each element when visited, and it passes the predicate’s receiver. Conditional choices follow predicate preferences during traversal rather than ranking an eagerly evaluated verdict list.
+
+A second failure shows why a known throw must not count as an opaque call. `callBuiltin()` had escaped a callback’s captured mutations even after interpreting its exception. It now skips that escape for a known thrown result. Seven focused fixtures cover order, guarded counts, throws, live writes, initial length, callback receivers, and guarded catches; their primary models have no omissions or replay mismatches.
+
+The original guarded-list/interpolation fixture still produces an imprecise text value. Its unchanged source remains at `/tmp/bippy-array-search-guards-optional-join.tsx`; the failure remains in `/tmp/bippy-array-search-known-throw.log`. A separate scalar-count fixture checks conditional invocation without claiming to repair that text/list gap. `some()` and `every()` still use the older predicate helper and remain separate work.
+
+The reviewed source-only home and memory models retain 12 bounded states, seven wildcards, and one subtree omission. Their trees and states differ from the call-guard checkpoint even though their summaries match. Fresh retrospective comparisons still report 13 and 40 partial snapshots. No source observations, new native traces, or larger budgets enter these runs.
+
+Evidence remains under `/tmp/bippy-many-games-causal-investigation/`:
+
+- `call-guard-*-saved-workflow-comparison.json` and `call-guard-saved-workflow-summary.json`
+- `entailed-alternative-depth-trace.json`
+- `router-operation-search-*.json` and `array-search-source-model-comparison.json`
+- `source-only-array-search-reviewed-home-model.json`: SHA-256 `550ce6a67d624acf59f17be42d225f9112c9dc112f5f26705935ff6dd515f3a6`
+- `source-only-array-search-reviewed-memory-model.json`: SHA-256 `5646a00f0d07d7acbfcb18c28c2565d262d17eea16fdbc5dd643e995e7187ced`
+- `array-search-*-saved-workflow-comparison.json`
+
+Root typecheck, 3,166 root tests with two skips, 1,120 analyzer tests across 68 files, build, and realm checks pass. `/tmp/bippy-array-search-final-validation.exit` records 0. Five saved-capture corpus controls repeat without changes to their comparison fields. Corpus data remains unchanged at 307 repositories.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,152 tests**, with two existing React-19 DevTools skips; this includes **1,106 analyzer tests / 67 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,166 tests**, with two existing React-19 DevTools skips; this includes **1,120 analyzer tests / 68 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
