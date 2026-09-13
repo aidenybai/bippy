@@ -513,7 +513,7 @@ Data validation passes root typecheck, fifteen manifest tests, schema/identity/r
 
 The Many Games investigation is in `/tmp/bippy-many-games-causal-investigation/`. It uses the original repository at `20eb384862f322a5d4b07c126f951719f3ec44eb`. Both the home and memory-game source-only models were saved before their respective new browser traces. Neither model received captured observations. Both remain unresolved: the interpreted router reports a possible throw, `useRouteError can only be used on routes that contain a unique "id"`. This is not a native application error or an image-membership contradiction.
 
-Nine diagnostic ablations use only fields from the older unchanged capture. Removing its `windowKeys` reproduces the unresolved render. Retaining the original required page fields and `windowKeys` restores the two-state model, even without captured router state. That model still mismatches the original home capture in 155 matcher steps, without matcher exhaustion. These are observation-conditioned diagnostic results, not an upfront source-only success. The router reads `window.__staticRouterHydrationData`; attributing the whole failure to that one property still needs a direct read trace.
+Nine diagnostic ablations use only fields from the older unchanged capture. Removing its `windowKeys` reproduces the unresolved render. Retaining the original required page fields and `windowKeys` restores the two-state model, even without captured router state. That model still mismatches the original home capture in 155 matcher steps, without matcher exhaustion. These are observation-conditioned diagnostic results, not an upfront source-only success. The router reads `window.__staticRouterHydrationData`. This ablation did not yet trace that read directly or attribute the whole failure to it.
 
 The fresh home trace records thirteen resource/DOM frames and seven Bippy commits. Four received image bodies match the original tracked assets. The trace observes empty-source errors, later load events, and spinner removal. Source inspection finds two missing causal mechanisms: host function attributes become no-ops in `Materializer.toAttribute()`, and DOM observer callbacks escape at construction while observe/unobserve/disconnect are no-ops. Merely escaping image handlers would not establish valid resource-event ordering or observer lifetimes.
 
@@ -549,6 +549,14 @@ Final review also separates actual state changes from queued work when a pending
 The final gates passed root typecheck, 3,118 root tests with two skips, 1,072 analyzer tests across 65 files, build, and realm checks. The receipt is `/tmp/bippy-reducer-queue-state-gate-validation.exit`. The five corpus controls again remained unchanged in both runs. Earlier gates and controls remain separate.
 
 The source-only router failure, escaped-dispatch timing, lane priorities, SDK lifecycle cleanup, and broader causal-model gates remain open. Corpus count remains 307.
+
+### Source-only router read trace
+
+After the queue repair, a pass-through wrapper records the interpreter’s global property reads without changing their results. Original `react-router-dom/dist/index.js:218` reads `window.__staticRouterHydrationData` as an unknown value under both the source-only policy and original minimal page observations. Adding only the original captured `windowKeys` makes that read known `undefined`. The original key list does not contain the hydration property.
+
+The first two models remain unresolved. The original-key policy still produces the two-state mismatch, not a source-only success. These reads confirm one observation-dependent value change; they do not establish that this property alone causes the entire router failure. Further source review identifies the error-dependent `findIndex`/`slice` path before `useCurrentRouteId()` as a tracing target, not a confirmed defect.
+
+All three traces finish with exit zero. They preserve application source and the saved capture, and record only property names, source locations, value kinds, and truthiness. They neither supply new observation values nor execute application component bodies natively. Artifacts remain in `/tmp/bippy-many-games-causal-investigation/router-global-read-trace-*.json`; `/tmp/bippy-router-global-presence-trace.log` retains the interpreted key warning. Corpus count remains 307.
 
 ### Immediate continuation
 
