@@ -262,12 +262,16 @@ Ordinary arguments use an iterative loop. Throwing alternatives and finite sprea
 
 Method calls capture the callee and receiver together after evaluating the receiver and key. This avoids repeating getter effects. Equivalent receiver-independent targets can share an invocation without repeating argument evaluation.
 
+[Constructor completion](../packages/bippy-analyzer/tests/constructor-completion.test.ts) now preserves body and field-initializer failures. A failed initializer stops later fields and the constructor body. Direct object returns replace the instance, while known thrown outcomes propagate through `super()` and construction.
+
+Parent-construction status lives in a journaled object rather than an untracked local boolean. This preserves guarded retries after parent failures. React class rendering and lifecycle callbacks run only on completing constructor paths. Path-dependent React replacement instances remain conservative. These tests do not establish complete class or StrictMode semantics.
+
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
-- [Constructor completion](../packages/bippy-analyzer/src/evaluate/class-component.ts): body and field-initializer failures, thrown `super()` arguments, and replacement return values
+- [Derived constructors](../packages/bippy-analyzer/src/evaluate/class-component.ts): parent replacement objects and `this` before `super()`
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

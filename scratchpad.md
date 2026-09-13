@@ -852,11 +852,42 @@ The shared initializer also serves React class mounting. `initializeFields()` co
 
 These probes add no repositories or workflow acceptance. The argument-order gates and 307-repository count remain unchanged.
 
+### Preserving constructor completion
+
+The three deterministic constructor snapshots now match their original source-derived expectations: `caught:1`, `caught:1:0`, and `new`. All four saved `super()` snapshots also match `caught:1:0` / `returned:2:11`. These comparisons reuse identical source and native bytes without observations or new native rendering. Four earlier native contradictions are repaired; their failing records remain intact.
+
+`initializeFields()` stops after throwing initializers and journals successful data-property writes. `constructLayer()` now returns completion values instead of discarding constructor results. Direct object returns replace the instance; thrown results propagate through the class chain. `SuperBinding.construct` returns a value, including failures, to ordinary and reflective callers.
+
+Parent-construction status is stored in a journaled object. A parent failure leaves the path uninitialized so a guarded retry can run. A second successful parent call runs before the duplicate-binding error, matching the tested side-effect order. The initializer no longer fabricates a missing parent call after an explicit constructor finishes.
+
+React class records retain construction completion. Rendering and lifecycle callbacks are gated by completing paths. A path-dependent replacement that the class record cannot represent stays unknown with reason `React class constructor replacement varies by path`. The tests do not establish full class mounting, lifecycle, or StrictMode behavior.
+
+Ten strict component regressions fail on baseline `06b6380e` and pass after the repair. They cover the saved cases, guarded fields, parent retries, duplicate `super()`, replacement identity, and definite/guarded React constructor errors. Each checks exact raw states, no omissions, exact native membership, and no replay mismatches.
+
+The baseline worktree is `/tmp/bippy-constructor-completion-baseline`; its relative imports use baseline production with dependency links. The expanded test is `tests/constructor-completion-expanded.test.ts`, with failures in `/tmp/bippy-constructor-completion-retained-baseline.log`. The first eight-case test was briefly overwritten during expansion, then restored; the ten-case copy and rerun use separate paths. The initial typecheck failures remain in `/tmp/bippy-constructor-completion-first-typecheck.log`.
+
+An unnecessary command also copied four fixtures to `/tmp/{body,field,replacement,super}.tsx` without checking those convenience paths first. Those copies are not evidence. The original fixture and capture paths remain unchanged and are hash-checked by the saved comparisons.
+
+Two derived-constructor counterexamples remain. A parent replacement object still produces model `old` instead of native `new`. Accessing `this` before `super()` still produces `returned:1` instead of native `caught:0`. Both deterministic native comparisons mismatch in four steps without exhaustion; both have no omissions and pass replay.
+
+Their fixtures and strict test live under `/tmp/bippy-constructor-completion-baseline/packages/bippy-analyzer/tests/fixtures/derived-limits/` and `tests/derived-limits.test.ts`. The test imports main production. `/tmp/bippy-constructor-completion-derived-limits.log` and `derived-constructor-limit-completion-*-comparison.json` retain these failures, not passing coverage.
+
+Thirteen earlier saved checks remain concrete and exact, and seven reference-limit failures remain unchanged. Five corpus controls repeat unchanged across all five comparison fields. The corpus still contains 307 repositories.
+
+New source-only files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-constructor-completion-reviewed-home-model.json`: SHA-256 `72ea97d4841c649293fafe2e9b4c0a21dc936aefa37665026f5b8d6cd8d66475`
+- `source-only-constructor-completion-reviewed-memory-model.json`: SHA-256 `e9b2aa99d61c287ec2ad1fafb2c7a7d813f0109a6fcdcc37c536917b2ea81941`
+
+Their serialized models match the argument-order checkpoint: 11 states, seven wildcards, and one subtree omission. All 53 saved workflow snapshots still compare partially. These remain guarded trees, not emitted transition systems or complete reachability models.
+
+Final gates pass 3,325 root tests with two existing skips and 1,279 analyzer tests across 78 files. Typecheck/build, realm checks, formatting, and documentation checks pass. Lint retains two intentional fixture warnings for aliasing `this` and calling `super()` twice. `/tmp/bippy-constructor-completion-final-validation.exit` records 0; `constructor-completion-reviewed-gates.json` verifies the evidence, including class source and type-definition hashes. Complete language, renderer, causal-model, and 500-repository gates remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,305 tests**, with two existing React-19 DevTools skips; this includes **1,259 analyzer tests / 77 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,325 tests**, with two existing React-19 DevTools skips; this includes **1,279 analyzer tests / 78 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

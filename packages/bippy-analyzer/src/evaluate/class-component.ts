@@ -17,6 +17,8 @@ import type {
   SuperBinding,
 } from "../types.js";
 import type { EvaluationContext } from "./context.js";
+import { createErrorValue } from "./errors.js";
+import { getThrowCertainty } from "./thrown.js";
 import {
   applyPendingState,
   createHookFrame,
@@ -33,6 +35,7 @@ import { createScope } from "./scope.js";
 import {
   accessorEntry,
   describeValue,
+  FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
   getTruthiness,
@@ -41,8 +44,10 @@ import {
   NULL_VALUE,
   objectFromRecord,
   objectValue,
+  primitiveValue,
   setObjectProperty,
   TRUE_VALUE,
+  thrownValue,
   UNDEFINED_VALUE,
   unknownValue,
 } from "./values.js";
@@ -374,6 +379,7 @@ const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue 
 
 interface ClassInstanceRecord {
   instance: StaticObjectValue;
+  construction: StaticValue;
   stateCell: StateCell;
   isMounted: boolean;
   committedProps: StaticValue;
@@ -477,17 +483,25 @@ const mountClassInstance = (
   context: EvaluationContext,
   frame: HookFrame,
 ): ClassInstanceRecord => {
-  const instance = objectFromRecord({
+  let instance = objectFromRecord({
     props,
     state: UNDEFINED_VALUE,
     context: instanceContext,
     refs: objectFromRecord({}),
   });
-  initializeInstance(interpreter, classValue, instance, [props, instanceContext], context);
+  const initialized = initializeInstance(
+    interpreter,
+    classValue,
+    instance,
+    [props, instanceContext],
+    context,
+  );
+  if (initialized.value.kind === "object") instance = initialized.value;
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
     instance,
+    construction: initialized.value,
     stateCell,
     isMounted: false,
     committedProps: props,
@@ -638,6 +652,39 @@ export const renderClassComponent = (
     record = mountClassInstance(interpreter, classValue, props, instanceContext, context, frame);
     classInstances.set(frame, record);
   }
+  let childLegacyContext = legacyContext;
+  const rendered = interpreter.continueValue(record.construction, context, (constructed) => {
+    if (constructed.kind === "unknown") return constructed;
+    if (constructed !== record.instance)
+      return unknownValue("React class constructor replacement varies by path");
+    const result = renderClassInstance(
+      interpreter,
+      classValue,
+      record,
+      props,
+      legacyContext,
+      instanceContext,
+      context,
+      frame,
+      caughtError,
+    );
+    childLegacyContext = result.childLegacyContext;
+    return result.rendered;
+  });
+  return { rendered, childLegacyContext };
+};
+
+const renderClassInstance = (
+  interpreter: Interpreter,
+  classValue: StaticClassValue,
+  record: ClassInstanceRecord,
+  props: StaticValue,
+  legacyContext: StaticValue | null,
+  instanceContext: StaticValue,
+  context: EvaluationContext,
+  frame: HookFrame,
+  caughtError: StaticValue | null,
+): ClassRender => {
   const { instance, stateCell } = record;
   let state = stateCell.current;
   const deriveStateFromProps = getStaticMethod(classValue, "getDerivedStateFromProps");
@@ -711,18 +758,23 @@ export const constructClassInstance = (
   classValue: StaticClassValue,
   args: StaticValue[],
   context: EvaluationContext,
-): StaticObjectValue => {
+): StaticValue => {
   const instance = objectFromRecord({});
-  const chain = initializeInstance(interpreter, classValue, instance, args, context);
-  const baseValue = chain[chain.length - 1].body.superValue;
+  const initialized = initializeInstance(interpreter, classValue, instance, args, context);
+  const baseValue = initialized.chain[initialized.chain.length - 1].body.superValue;
   if (baseValue && baseValue.kind !== "class") {
     instance.entries.unshift({
       kind: "spread",
       value: unknownValue(`members inherited from ${describeValue(baseValue)}`),
     });
   }
-  return instance;
+  return initialized.value;
 };
+
+interface ClassInitialization {
+  chain: StaticClassValue[];
+  value: StaticValue;
+}
 
 interface ClassLayer {
   current: StaticClassValue;
@@ -734,61 +786,125 @@ const initializeFields = (
   interpreter: Interpreter,
   layer: ClassLayer,
   instance: StaticObjectValue,
-): void => {
-  for (const field of layer.members.fields) {
-    const fieldContext: EvaluationContext = {
-      ...layer.methodContext,
-      scope: createScope(layer.current.scope),
-    };
-    const value = field.value
-      ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
-      : UNDEFINED_VALUE;
-    instance.entries.push({ kind: "property", key: field.key, value });
-  }
+): StaticValue => {
+  const initializeFrom = (start: number): StaticValue => {
+    for (let index = start; index < layer.members.fields.length; index++) {
+      const field = layer.members.fields[index];
+      const fieldContext: EvaluationContext = {
+        ...layer.methodContext,
+        scope: createScope(layer.current.scope),
+      };
+      const value = field.value
+        ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+        : UNDEFINED_VALUE;
+      const setField = (resolved: StaticValue) => {
+        interpreter.recordHeapMutation(instance);
+        setObjectProperty(instance, field.key, resolved);
+      };
+      if (getThrowCertainty(value) !== "never") {
+        return interpreter.continueValue(value, fieldContext, (resolved) => {
+          setField(resolved);
+          return initializeFrom(index + 1);
+        });
+      }
+      setField(value);
+    }
+    return UNDEFINED_VALUE;
+  };
+  return initializeFrom(0);
 };
 
-/**
- * Runs the constructors as `new` does: a base class initializes its fields and
- * then runs its body; a derived class runs its body, and its fields initialize
- * when `super(...)` returns. A derived constructor whose `super(...)` the
- * interpreter never reached still gets its parent built and fields set
- * afterwards, so the instance never lacks members it definitely has.
- */
 const constructLayer = (
   interpreter: Interpreter,
   layers: ClassLayer[],
   index: number,
   args: StaticValue[],
   instance: StaticObjectValue,
-): void => {
+): StaticValue => {
   const layer = layers[index];
-  if (!layer) return;
+  if (!layer) return instance;
+  const context = layer.methodContext;
   const isDerived = layer.current.body.superValue !== null;
-  let hasConstructedParent = false;
-  const constructParent = (superArgs: StaticValue[]): void => {
-    if (hasConstructedParent) return;
-    hasConstructedParent = true;
-    constructLayer(interpreter, layers, index + 1, superArgs, instance);
-    initializeFields(interpreter, layer, instance);
+  const construction = objectFromRecord({ hasConstructedParent: FALSE_VALUE });
+  const getConstructionError = (name: "ReferenceError" | "TypeError", message: string) =>
+    thrownValue(
+      "class construction throws",
+      createErrorValue(name, [primitiveValue(message)], null),
+      null,
+    );
+  const getParentState = () => getObjectProperty(construction, "hasConstructedParent");
+  const constructParent = (superArgs: StaticValue[]): StaticValue =>
+    interpreter.continueValue(
+      constructLayer(interpreter, layers, index + 1, superArgs, instance),
+      context,
+      () =>
+        interpreter.continueValue(getParentState(), context, (hasConstructedParent) => {
+          if (getTruthiness(hasConstructedParent) === true)
+            return getConstructionError(
+              "ReferenceError",
+              "Super constructor may only be called once",
+            );
+          interpreter.recordHeapMutation(construction);
+          setObjectProperty(construction, "hasConstructedParent", TRUE_VALUE);
+          return interpreter.continueValue(
+            initializeFields(interpreter, layer, instance),
+            context,
+            () => instance,
+          );
+        }),
+    );
+  const finishConstructor = (returned: StaticValue): StaticValue => {
+    if (returned.kind === "unknown")
+      return unknownValue(`class constructor result: ${returned.reason}`, returned.location);
+    const result = interpreter.getConstructorResult(
+      returned,
+      instance,
+      interpreter.getRealm(context.environment),
+    );
+    if (!isDerived || result !== instance || returned === instance) return result;
+    if (returned.kind === "primitive" && returned.value !== undefined)
+      return getConstructionError(
+        "TypeError",
+        "Derived constructors may only return object or undefined",
+      );
+    return interpreter.continueValue(getParentState(), context, (hasConstructedParent) =>
+      getTruthiness(hasConstructedParent) === true
+        ? instance
+        : getConstructionError(
+            "ReferenceError",
+            "Must call super constructor in derived class before returning from derived constructor",
+          ),
+    );
   };
-  if (!isDerived) initializeFields(interpreter, layer, instance);
-  if (layer.members.constructor) {
+  const callConstructor = (): StaticValue => {
+    if (!layer.members.constructor) return isDerived ? constructParent(args) : instance;
     const superBinding: SuperBinding = {
       construct: isDerived ? constructParent : null,
       parent: layer.current.body.superValue,
     };
     const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);
     interpreter.pendingSuperBindings.set(instance, superBinding);
-    interpreter.callFunction(
-      { ...layer.members.constructor, superBinding },
-      args,
-      { ...layer.methodContext, superBinding },
-      { thisValue: instance },
-    );
-    if (outerSuperBinding) interpreter.pendingSuperBindings.set(instance, outerSuperBinding);
-    else interpreter.pendingSuperBindings.delete(instance);
-  }
-  if (isDerived) constructParent(args);
+    let returned: StaticValue;
+    try {
+      returned = interpreter.callFunction(
+        { ...layer.members.constructor, superBinding },
+        args,
+        { ...context, superBinding },
+        { thisValue: instance },
+      );
+    } finally {
+      if (outerSuperBinding) interpreter.pendingSuperBindings.set(instance, outerSuperBinding);
+      else interpreter.pendingSuperBindings.delete(instance);
+    }
+    return interpreter.continueValue(returned, context, finishConstructor);
+  };
+  return isDerived
+    ? callConstructor()
+    : interpreter.continueValue(
+        initializeFields(interpreter, layer, instance),
+        context,
+        callConstructor,
+      );
 };
 
 const initializeInstance = (
@@ -797,7 +913,7 @@ const initializeInstance = (
   instance: StaticObjectValue,
   args: StaticValue[],
   context: EvaluationContext,
-): StaticClassValue[] => {
+): ClassInitialization => {
   instance.constructedBy = classValue;
   if (classValue.body.prototype) instance.prototype = classValue.body.prototype;
   const chain = collectClassChain(classValue);
@@ -817,6 +933,5 @@ const initializeInstance = (
       );
     }
   }
-  constructLayer(interpreter, layers, 0, args, instance);
-  return chain;
+  return { chain, value: constructLayer(interpreter, layers, 0, args, instance) };
 };
