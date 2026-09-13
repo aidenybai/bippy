@@ -1,10 +1,120 @@
 import { describe, expect, it } from "vite-plus/test";
 import { HeapJournal } from "../src/evaluate/heap-journal.js";
-import { createHookFrame, nextStateCell, queueStateUpdate } from "../src/evaluate/hooks.js";
+import {
+  beginHookPass,
+  commitHookPass,
+  createHookFrame,
+  nextStateCell,
+  queueReducerAction,
+  queueStateUpdate,
+} from "../src/evaluate/hooks.js";
 import { createPathPredicate } from "../src/evaluate/predicates.js";
 import { primitiveValue } from "../src/evaluate/values.js";
 
 describe("guarded hook updates", () => {
+  it("preserves alternative reducer queues and their shared prefix", () => {
+    const frame = createHookFrame();
+    const cell = nextStateCell(frame, "reducer", () => primitiveValue(0));
+    queueReducerAction(frame, cell, primitiveValue(1), false);
+    const original = cell.pendingReducerActions;
+    const journal = new HeapJournal();
+    frame.recordUpdate = (updated) => journal.recordStateUpdate(updated);
+    const predicate = createPathPredicate("queued action", null);
+    queueReducerAction(frame, cell, primitiveValue(2), false);
+    journal.endPath();
+    expect(cell.pendingReducerActions).toBe(original);
+    queueReducerAction(frame, cell, primitiveValue(3), false);
+    journal.endPath();
+    journal.join("queued action", null, 0, predicate);
+    frame.recordUpdate = null;
+    queueReducerAction(frame, cell, primitiveValue(4), false);
+    expect(cell.current).toEqual(primitiveValue(0));
+    expect(cell.pendingReducerActions).toMatchObject({
+      kind: "branch",
+      predicate,
+      alternatives: [
+        { kind: "list", items: [primitiveValue(1), primitiveValue(2), primitiveValue(4)] },
+        { kind: "list", items: [primitiveValue(1), primitiveValue(3), primitiveValue(4)] },
+      ],
+    });
+  });
+
+  it("keeps an absent dispatch as an empty queue rather than a state value", () => {
+    const frame = createHookFrame();
+    const cell = nextStateCell(frame, "reducer", () => primitiveValue(8));
+    const journal = new HeapJournal();
+    frame.recordUpdate = (updated) => journal.recordStateUpdate(updated);
+    queueReducerAction(frame, cell, primitiveValue(2), false);
+    journal.endPath();
+    journal.endPath();
+    journal.join("optional dispatch", null, 0, createPathPredicate("optional dispatch", null));
+    expect(cell.pendingReducerActions).toMatchObject({
+      kind: "branch",
+      alternatives: [
+        { kind: "list", items: [primitiveValue(2)] },
+        { kind: "list", items: [] },
+      ],
+    });
+  });
+
+  it("records a state change when a queued reducer becomes escaped", () => {
+    const frame = createHookFrame();
+    const cell = nextStateCell(frame, "reducer", () => primitiveValue(0));
+    queueReducerAction(frame, cell, primitiveValue(1), false);
+    queueReducerAction(frame, cell, primitiveValue(2), true);
+    expect(commitHookPass(frame)).toEqual([cell]);
+    expect(cell.current).not.toEqual(primitiveValue(0));
+    expect(cell.pendingReducerActions).not.toBeNull();
+    expect(frame.didStateChange).toBe(true);
+  });
+
+  it("distinguishes a retained batch from dispatch during the current render", () => {
+    const frame = createHookFrame();
+    const cell = nextStateCell(frame, "reducer", () => primitiveValue(0));
+    queueReducerAction(frame, cell, primitiveValue(1), false);
+    expect(commitHookPass(frame)).toEqual([cell]);
+    beginHookPass(frame);
+    expect(commitHookPass(frame)).toEqual([]);
+    beginHookPass(frame);
+    queueReducerAction(frame, cell, primitiveValue(2), false);
+    expect(commitHookPass(frame)).toEqual([cell]);
+  });
+
+  it("does not treat an unbounded dispatch loop as one optional action", () => {
+    const frame = createHookFrame();
+    const cell = nextStateCell(frame, "reducer", () => primitiveValue(0));
+    const journal = new HeapJournal();
+    frame.recordUpdate = (updated) => journal.recordStateUpdate(updated);
+    queueReducerAction(frame, cell, primitiveValue(1), false);
+    journal.endPath();
+    journal.endPath();
+    journal.join("unbounded dispatch", null, 0, null, true);
+    expect(cell.pendingReducerActions).toMatchObject({
+      kind: "unknown",
+      reason: "reducer dispatch count is not bounded",
+    });
+  });
+
+  it("excludes owned queues only from their outer journal", () => {
+    const frame = createHookFrame();
+    const cell = nextStateCell(frame, "reducer", () => primitiveValue(0));
+    const outer = new HeapJournal(new Set([cell]));
+    const inner = new HeapJournal();
+    frame.recordUpdate = (updated) => {
+      outer.recordStateUpdate(updated);
+      inner.recordStateUpdate(updated);
+    };
+    queueReducerAction(frame, cell, primitiveValue(1), false);
+    inner.endPath();
+    inner.endPath();
+    inner.join("inner", null, 0, createPathPredicate("inner", null));
+    const conditionalQueue = cell.pendingReducerActions;
+    outer.endPath();
+    outer.endPath();
+    outer.join("outer", null, 0, createPathPredicate("outer", null));
+    expect(cell.pendingReducerActions).toBe(conditionalQueue);
+  });
+
   it("leaves excluded cells unconditional while joining other cells", () => {
     const frame = createHookFrame();
     const ownedCell = nextStateCell(frame, "owned", () => primitiveValue(0));

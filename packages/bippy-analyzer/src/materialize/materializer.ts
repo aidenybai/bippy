@@ -1878,13 +1878,13 @@ export class Materializer {
     this.frameCauses.set(frame, context.cause);
     const changedCells = commitHookPass(frame);
     const previous = instance.rendered;
-    if (
-      changedCells.length === 0 &&
+    const canRetain =
       previous &&
       isRetainedInput(previous.input, input) &&
       previous.context.ignoresMaybeThrows === context.ignoresMaybeThrows &&
-      previous.contextReads.every((read) => this.readContext(read.definition) === read.value)
-    ) {
+      previous.contextReads.every((read) => this.readContext(read.definition) === read.value);
+    let didStateChange = frame.didStateChange;
+    if (changedCells.length === 0 && canRetain && previous) {
       return this.commitRender(instance, previous, input.location);
     }
     if (changedCells.length > 0) {
@@ -1902,25 +1902,42 @@ export class Materializer {
       }
     }
     const contextReads: ContextRead[] = [];
-    const evaluatePass = (): CompositeEvaluation => {
+    const doublesHookFactories = frame.doublesHookFactories;
+    const evaluatePass = (isRenderPhaseUpdate = false): CompositeEvaluation => {
       beginHookPass(frame);
+      frame.doublesHookFactories = doublesHookFactories && !isRenderPhaseUpdate;
       contextReads.length = 0;
       this.contextReads = contextReads;
       try {
         return evaluate(frame);
       } finally {
+        didStateChange ||= frame.didStateChange;
+        frame.doublesHookFactories = doublesHookFactories;
         this.contextReads = null;
       }
     };
     let evaluation = evaluatePass();
     for (
       let renderPhaseUpdates = 0;
-      renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES && commitHookPass(frame).length > 0;
+      renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES &&
+      getThrowCertainty(evaluation.rendered) !== "always";
       renderPhaseUpdates++
     ) {
-      evaluation = evaluatePass();
+      const renderUpdates = commitHookPass(frame);
+      if (renderUpdates.length === 0) break;
+      didStateChange ||= frame.didStateChange;
+      evaluation = evaluatePass(true);
     }
     frame.isRendering = false;
+    if (
+      !didStateChange &&
+      canRetain &&
+      previous &&
+      getThrowCertainty(evaluation.rendered) === "never"
+    ) {
+      frame.effects = frame.previousEffects;
+      return this.commitRender(instance, previous, input.location);
+    }
     // The update reaches React at once, which picks its lane from the phase that
     // raised it: synchronous from the layout phase, default otherwise. Like
     // `nestedUpdateCount`, only chains of such updates count toward the limit,
@@ -1936,6 +1953,7 @@ export class Materializer {
       this.commitCauses.schedule();
       rerender();
     };
+    instance.rendered = null;
     const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
     instance.rendered = {
       input,

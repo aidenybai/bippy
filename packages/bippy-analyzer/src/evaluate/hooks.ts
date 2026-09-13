@@ -1,12 +1,20 @@
 import type { StaticNativeFunctionValue, StaticValue } from "../types.js";
 import { getStatePredicate } from "./predicates.js";
-import { areValuesEquivalent, branchValue, compareIdentity, unknownValue } from "./values.js";
+import {
+  areValuesEquivalent,
+  branchValue,
+  compareIdentity,
+  listValue,
+  mapValue,
+  unknownValue,
+} from "./values.js";
 
 export interface StateCell {
   name: string;
   initial: StaticValue;
   current: StaticValue;
   next: StaticValue | null;
+  pendingReducerActions: StaticValue | null;
   setter: StaticNativeFunctionValue | null;
   deferred: StaticValue[];
   isEscaped: boolean;
@@ -51,6 +59,8 @@ export interface HookFrame {
   isDeferred: boolean;
   isFrozen: boolean;
   doublesHookFactories: boolean;
+  didStateChange: boolean;
+  hasRenderPhaseReducerUpdate: boolean;
   requestRender: (() => void) | null;
   recordUpdateCause: (() => void) | null;
   recordUpdate: ((cell: StateCell) => void) | null;
@@ -70,6 +80,8 @@ export const createHookFrame = (
   isDeferred: false,
   isFrozen: false,
   doublesHookFactories,
+  didStateChange: false,
+  hasRenderPhaseReducerUpdate: false,
   requestRender: null,
   recordUpdateCause: null,
   recordUpdate,
@@ -97,6 +109,8 @@ export const beginHookPass = (frame: HookFrame): void => {
   frame.cursor = 0;
   frame.memoCursor = 0;
   frame.effects = [];
+  frame.didStateChange = false;
+  frame.hasRenderPhaseReducerUpdate = false;
   frame.isRendering = true;
 };
 
@@ -114,6 +128,7 @@ export const nextStateCell = (
     initial,
     current: initial,
     next: null,
+    pendingReducerActions: null,
     setter: null,
     deferred: [],
     isEscaped: false,
@@ -200,6 +215,34 @@ export const queueStateUpdate = (
   if (!frame.isRendering) frame.requestRender?.();
 };
 
+export const queueReducerAction = (
+  frame: HookFrame,
+  cell: StateCell,
+  action: StaticValue,
+  isDeferred: boolean,
+): void => {
+  if (cell.isEscaped || frame.isFrozen) return;
+  if (isDeferred) {
+    escapeStateCell(frame, cell, null);
+    return;
+  }
+  frame.recordUpdate?.(cell);
+  if (frame.isRendering) frame.hasRenderPhaseReducerUpdate = true;
+  cell.pendingReducerActions = mapValue(cell.pendingReducerActions ?? listValue([]), (pending) =>
+    pending.kind === "list"
+      ? listValue([...pending.items, action])
+      : pending.kind === "unknown"
+        ? pending
+        : unknownValue("reducer action queue is not a known sequence"),
+  );
+  if (!frame.isRendering) frame.requestRender?.();
+};
+
+export const applyReducerState = (frame: HookFrame, cell: StateCell, value: StaticValue): void => {
+  frame.didStateChange ||= !isSameHookValue(cell.current, value);
+  cell.current = value;
+};
+
 /**
  * A setter handed to code the analysis does not follow may fire at any time: a
  * known `value` it sets is one more the cell may hold by the commit, an unknown
@@ -257,10 +300,17 @@ export const applyPendingState = (cell: StateCell, isFrozen = false): boolean =>
   return true;
 };
 
-/** Applies the queued updates and returns the cells whose value changed. */
+/** Applies eager updates and returns cells with changed values or reducer work. */
 export const commitHookPass = (frame: HookFrame): StateCell[] => {
+  const hasReducerWork = !frame.isRendering || frame.hasRenderPhaseReducerUpdate;
   frame.isRendering = false;
-  return frame.cells.filter((cell) => applyPendingState(cell, frame.isFrozen));
+  frame.didStateChange = false;
+  return frame.cells.filter((cell) => {
+    const didChange = applyPendingState(cell, frame.isFrozen);
+    frame.didStateChange ||= didChange;
+    if (frame.isFrozen) cell.pendingReducerActions = null;
+    return didChange || (hasReducerWork && cell.pendingReducerActions !== null);
+  });
 };
 
 export const giveUpOnHookPass = (frame: HookFrame, cells: StateCell[]): void => {
