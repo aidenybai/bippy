@@ -531,7 +531,7 @@ Data validation passes root typecheck, fifteen manifest tests, schema/identity/r
 | Item                           | Value                                                                  |
 | ------------------------------ | ---------------------------------------------------------------------- |
 | Pull request                   | [aidenybai/bippy#115](https://github.com/aidenybai/bippy/pull/115)     |
-| Package                        | `packages/parser`, private `@bippy/parser`                             |
+| Package                        | `packages/bippy-analyzer`, private `bippy-analyzer`                    |
 | Branch                         | `devin/1788659752-parser-package`                                      |
 | Checked-out committed baseline | `3c2db5d8`                                                             |
 | Plan baseline date             | 2026-09-10                                                             |
@@ -1305,11 +1305,11 @@ These temporary files are supplemental and may disappear. This scratchpad intent
 Useful source documentation:
 
 - `AGENTS.md`
-- `packages/parser/README.md`—partly stale; audit against code.
-- `packages/parser/docs/exhaustive-states.md`
-- `packages/parser/docs/tsc-graph-investigation.md`
-- `packages/parser/corpus/manifest.json`
-- `packages/parser/corpus/results.json`
+- `packages/bippy-analyzer/README.md`—partly stale; audit against code.
+- `packages/bippy-analyzer/docs/exhaustive-states.md`
+- `packages/bippy-analyzer/docs/tsc-graph-investigation.md`
+- `packages/bippy-analyzer/corpus/manifest.json`
+- `packages/bippy-analyzer/corpus/results.json`
 
 Old worker claims that all guard sides must be witnessed for `exact` conflict with the current documented membership semantics. Do not inherit either wording accidentally: keep capture membership, model completeness, and empirical coverage separate, with an explicit contract and tests.
 

@@ -13,15 +13,15 @@ export default defineConfig({
     ...conformanceTestConfig,
     projects: [
       ...(conformanceTestConfig.projects ?? []),
-      resolve(import.meta.dirname, "packages/parser/vite.config.ts"),
+      resolve(import.meta.dirname, "packages/bippy-analyzer/vite.config.ts"),
     ],
   },
   fmt: {
     ignorePatterns: [
       "**/routeTree.gen.ts",
       "packages/bippy/src/react-internals/generated/**",
-      "packages/parser/corpus/results.json",
-      "packages/parser/src/host/realms/*.json",
+      "packages/bippy-analyzer/corpus/results.json",
+      "packages/bippy-analyzer/src/host/realms/*.json",
       reactDevToolsHookSources,
     ],
     semi: true,
@@ -45,7 +45,7 @@ export default defineConfig({
       "dist",
       "coverage",
       "pnpm-lock.yaml",
-      "packages/parser/tests/components/compiled-*.js",
+      "packages/bippy-analyzer/tests/components/compiled-*.js",
       reactDevToolsHookSources,
     ],
   },

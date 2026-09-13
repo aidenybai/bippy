@@ -357,7 +357,7 @@ TypeHint | null`) on `StaticRendererOptions`; `Interpreter.evaluateExpression` c
 
 ## 9. Prototype files and how to run them
 
-All under `packages/parser/scripts/tsc-graph-prototype/`, run from `packages/parser`
+All under `packages/bippy-analyzer/scripts/tsc-graph-prototype/`, run from `packages/bippy-analyzer`
 with `pnpm exec tsx`. All accept `--corpus-dir <dir>` and a list of corpus ids.
 
 | file                    | purpose                                                                                                                                                         |
