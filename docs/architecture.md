@@ -267,7 +267,7 @@ Object-key coercion and complete destructuring remain unverified. Preserved coun
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
-- [Constructor outcome propagation](../packages/bippy-analyzer/src/evaluate/class-component.ts), including thrown `super()` arguments
+- [Constructor completion](../packages/bippy-analyzer/src/evaluate/class-component.ts): body and field-initializer failures, thrown `super()` arguments, and replacement return values
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 
