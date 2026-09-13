@@ -252,7 +252,16 @@ Finalizers run on both completing and exiting paths. Heap journals join terminal
 
 Logical assignments also separate kept and assigned paths. `||=`, `&&=`, and `??=` skip the right-hand operand and the write when the current value suffices. A throwing read or right-hand operand stops the remaining operation. The [logical-assignment regressions](../packages/bippy-analyzer/tests/logical-assignment.test.ts) check guards, side effects, and kept object identity.
 
-Ordinary assignment can still write a surviving value on a throwing path. Receiver/key evaluation order and reference reuse remain open. An unconstrained text node can also match a native snapshot without establishing the source-derived concrete outcomes.
+Assignment references separate target evaluation from reading and writing. The interpreter captures receivers and computed-key expressions before the right-hand operand. Compound, logical, and update operations reuse those references. Successful operands reach the write; thrown operands and object setters propagate their errors. The [reference regressions](../packages/bippy-analyzer/tests/assignment-reference.test.ts) also check receiver replacement and correlated keys.
+
+Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
+
+- Null-receiver errors
+- Getter-only write errors
+- Proxy-setter failures
+- Numeric update coercion
+
+An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 
 ### Preserve identity as well as conditions
 

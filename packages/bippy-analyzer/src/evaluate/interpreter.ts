@@ -63,7 +63,6 @@ import {
   getVariableDeclaration,
   isFunctionLikeExpression,
   type LeadingAwaitOracle,
-  getStaticMemberKey,
   unwrapExpression,
 } from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
@@ -663,6 +662,15 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
   if (jumps.length === 0) return null;
   return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
 };
+
+interface AssignmentReference {
+  getValue: (context: EvaluationContext) => StaticValue;
+  setValue: (value: StaticValue, context: EvaluationContext) => StaticValue;
+}
+
+interface ReferenceContinuation {
+  (reference: AssignmentReference, context: EvaluationContext): StaticValue;
+}
 
 interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
@@ -1698,9 +1706,13 @@ export class Interpreter {
         const accessor = getObjectAccessor(target, propertyName);
         if (accessor) {
           if (accessor.set) {
-            this.callValue(accessor.set, [value], context, null, {
-              thisValue: target,
-            });
+            return this.continueValue(
+              this.callValue(accessor.set, [value], context, null, {
+                thisValue: target,
+              }),
+              context,
+              () => target,
+            );
           }
           return target;
         }
@@ -3211,18 +3223,131 @@ export class Interpreter {
     return member.kind === "external" && member.origin === "binding" ? null : TRUE_VALUE;
   }
 
+  private continueValue(
+    value: StaticValue,
+    context: EvaluationContext,
+    proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
+  ): StaticValue {
+    if (value.kind === "branch") {
+      return this.callAlternatives(value, context, (alternative, pathContext) =>
+        this.continueValue(alternative, pathContext, proceed),
+      );
+    }
+    return getThrowCertainty(value) === "always" ? value : proceed(value, context);
+  }
+
+  private evaluateReference(
+    target: AssignmentTarget,
+    context: EvaluationContext,
+    proceed: ReferenceContinuation,
+  ): StaticValue {
+    if (target.type === "Identifier") {
+      return proceed(
+        {
+          getValue: (readContext) => this.evaluateExpression(target, readContext),
+          setValue: (value, assignmentContext) => {
+            this.assignIdentifier(target.name, value, assignmentContext);
+            return value;
+          },
+        },
+        context,
+      );
+    }
+    if (target.type === "ObjectPattern" || target.type === "ArrayPattern") {
+      return unknownValue("assignment pattern is not a reference");
+    }
+    if (target.type !== "MemberExpression") {
+      const unwrapped = unwrapExpression(target);
+      return unwrapped.type === "Identifier" || unwrapped.type === "MemberExpression"
+        ? this.evaluateReference(unwrapped, context, proceed)
+        : unknownValue("assignment target is not a reference");
+    }
+    const location = this.locate(context.module, target);
+    const withObject = (
+      object: StaticValue,
+      parent: AssignmentReference | null,
+      objectContext: EvaluationContext,
+    ): StaticValue =>
+      this.continueValue(object, objectContext, (receiver, receiverContext) => {
+        const key = target.computed
+          ? this.evaluateExpression(target.property, receiverContext)
+          : primitiveValue(
+              target.property.type === "PrivateIdentifier"
+                ? `#${target.property.name}`
+                : target.property.name,
+            );
+        return this.continueValue(key, receiverContext, (propertyKey, keyContext) =>
+          proceed(
+            {
+              getValue: (readContext) => {
+                const inlined = this.getInlinedDefine(target, readContext);
+                if (inlined) return inlined;
+                const propertyName = toPropertyKey(propertyKey);
+                return propertyName === null
+                  ? this.getDynamicMember(receiver, propertyKey, location)
+                  : this.getProperty(
+                      receiver,
+                      propertyName,
+                      readContext,
+                      location,
+                      target.optional,
+                    );
+              },
+              setValue: (value, assignmentContext) => {
+                const propertyName = toPropertyKey(propertyKey);
+                if (propertyName === null) {
+                  this.assignDynamicProperty(receiver, propertyKey, value);
+                  return value;
+                }
+                return this.continueValue(
+                  this.assignProperty(receiver, propertyName, value, assignmentContext),
+                  assignmentContext,
+                  (assigned, writeContext) =>
+                    assigned !== receiver && parent
+                      ? this.continueValue(
+                          parent.setValue(assigned, writeContext),
+                          writeContext,
+                          () => value,
+                        )
+                      : value,
+                );
+              },
+            },
+            keyContext,
+          ),
+        );
+      });
+    const objectNode = target.object;
+    const inlined =
+      objectNode.type === "MemberExpression" ? this.getInlinedDefine(objectNode, context) : null;
+    if (inlined) return withObject(inlined, null, context);
+    if (objectNode.type === "Identifier" || objectNode.type === "MemberExpression") {
+      return this.evaluateReference(objectNode, context, (parent, parentContext) =>
+        withObject(parent.getValue(parentContext), parent, parentContext),
+      );
+    }
+    return withObject(this.evaluateExpression(objectNode, context), null, context);
+  }
+
   private evaluateUpdateExpression(
     node: UpdateExpression,
     context: EvaluationContext,
   ): StaticValue {
-    const target = node.argument;
-    const current = this.evaluateExpression(target, context);
-    const next =
-      current.kind === "primitive" && typeof current.value === "number"
-        ? primitiveValue(node.operator === "++" ? current.value + 1 : current.value - 1)
-        : unknownPrimitiveValue("number", `${node.operator} on ${describeValue(current)}`);
-    this.assignTarget(target, next, context);
-    return node.prefix ? next : current;
+    return this.evaluateReference(node.argument, context, (reference, referenceContext) =>
+      this.continueValue(
+        reference.getValue(referenceContext),
+        referenceContext,
+        (current, readContext) => {
+          const next =
+            current.kind === "primitive" && typeof current.value === "number"
+              ? primitiveValue(node.operator === "++" ? current.value + 1 : current.value - 1)
+              : unknownPrimitiveValue("number", `${node.operator} on ${describeValue(current)}`);
+          return this.continueValue(reference.setValue(next, readContext), readContext, () =>
+            node.prefix ? next : current,
+          );
+        },
+      ),
+    );
   }
 
   private evaluateAssignmentExpression(
@@ -3231,38 +3356,54 @@ export class Interpreter {
   ): StaticValue {
     const target = node.left;
     const nameHint = target.type === "Identifier" ? target.name : null;
-    if (node.operator === "=") {
-      const value = this.evaluateExpression(node.right, context, nameHint);
-      const certainty = getThrowCertainty(value);
-      if (certainty !== "always") {
-        this.assignTarget(target, certainty === "never" ? value : withoutThrows(value), context);
-      }
-      return value;
-    }
     if (target.type === "ObjectPattern" || target.type === "ArrayPattern") {
-      return unknownValue(`compound assignment ${node.operator} to a pattern`);
+      if (node.operator !== "=")
+        return unknownValue(`compound assignment ${node.operator} to a pattern`);
+      return this.continueValue(
+        this.evaluateExpression(node.right, context),
+        context,
+        (value, pathContext) => {
+          this.assignTarget(target, value, pathContext);
+          return value;
+        },
+      );
     }
-    const current = this.evaluateExpression(target, context);
-    if (node.operator === "||=" || node.operator === "&&=" || node.operator === "??=") {
-      return this.evaluateLogicalAssignment(node, current, context);
-    }
-    const right = this.evaluateExpression(node.right, context);
-    const value = applyBinaryOperator(node.operator.slice(0, -1), current, right);
-    this.assignTarget(target, value, context);
-    return value;
+    return this.evaluateReference(target, context, (reference, pathContext) => {
+      if (node.operator === "=") {
+        return this.continueValue(
+          this.evaluateExpression(node.right, pathContext, nameHint),
+          pathContext,
+          (value, assignmentContext) => reference.setValue(value, assignmentContext),
+        );
+      }
+      return this.continueValue(
+        reference.getValue(pathContext),
+        pathContext,
+        (current, readContext) => {
+          if (node.operator === "||=" || node.operator === "&&=" || node.operator === "??=") {
+            return this.evaluateLogicalAssignment(node, reference, current, readContext);
+          }
+          return this.continueValue(
+            this.evaluateExpression(node.right, readContext),
+            readContext,
+            (right, rightContext) =>
+              this.continueValue(
+                applyBinaryOperator(node.operator.slice(0, -1), current, right),
+                rightContext,
+                (value, assignmentContext) => reference.setValue(value, assignmentContext),
+              ),
+          );
+        },
+      );
+    });
   }
 
   private evaluateLogicalAssignment(
     node: AssignmentExpression,
+    reference: AssignmentReference,
     current: StaticValue,
     context: EvaluationContext,
   ): StaticValue {
-    if (current.kind === "branch") {
-      return this.callAlternatives(current, context, (alternative, pathContext) =>
-        this.evaluateLogicalAssignment(node, alternative, pathContext),
-      );
-    }
-    if (getThrowCertainty(current) === "always") return current;
     const truthiness =
       node.operator === "??="
         ? isNullish(current) === null
@@ -3270,26 +3411,15 @@ export class Interpreter {
           : !isNullish(current)
         : getTruthiness(current);
     const keepsCurrent = node.operator === "&&=" ? truthiness === false : truthiness === true;
-    const assign = (value: StaticValue, pathContext: EvaluationContext): StaticValue => {
-      if (value.kind === "branch") return this.callAlternatives(value, pathContext, assign);
-      const certainty = getThrowCertainty(value);
-      if (certainty !== "always") {
-        this.assignTarget(
-          node.left,
-          certainty === "never" ? value : withoutThrows(value),
-          pathContext,
-        );
-      }
-      return value;
-    };
     const assignRight = (pathContext: EvaluationContext) =>
-      assign(
+      this.continueValue(
         this.evaluateExpression(
           node.right,
           pathContext,
           node.left.type === "Identifier" ? node.left.name : null,
         ),
         pathContext,
+        (value, assignmentContext) => reference.setValue(value, assignmentContext),
       );
     if (truthiness !== null) return keepsCurrent ? current : assignRight(context);
     const decision = branchValue(
@@ -3313,21 +3443,11 @@ export class Interpreter {
       case "Identifier":
         this.assignIdentifier(target.name, value, context);
         return;
-      case "MemberExpression": {
-        const staticKey = getStaticMemberKey(target);
-        if (staticKey !== null) {
-          this.assignMember(target.object, staticKey, value, context);
-        } else if (target.computed) {
-          const key = this.evaluateExpression(target.property, context);
-          const propertyName = toPropertyKey(key);
-          if (propertyName !== null) {
-            this.assignMember(target.object, propertyName, value, context);
-          } else {
-            this.assignDynamicMember(target.object, key, value, context);
-          }
-        }
+      case "MemberExpression":
+        this.evaluateReference(target, context, (reference, pathContext) =>
+          reference.setValue(value, pathContext),
+        );
         return;
-      }
       case "ObjectPattern":
       case "ArrayPattern":
         this.destructure(target, value, context.scope, context, (leaf, leafValue) => {
@@ -3347,31 +3467,7 @@ export class Interpreter {
     }
   }
 
-  private assignMember(
-    objectNode: Expression,
-    key: string,
-    value: StaticValue,
-    context: EvaluationContext,
-  ): void {
-    const object = this.evaluateExpression(objectNode, context);
-    const reassigned = this.assignProperty(object, key, value, context);
-    if (reassigned === object) return;
-    if (objectNode.type === "Identifier") {
-      this.assignIdentifier(objectNode.name, reassigned, context);
-      return;
-    }
-    if (objectNode.type !== "MemberExpression") return;
-    const parentKey = getStaticMemberKey(objectNode);
-    if (parentKey !== null) this.assignMember(objectNode.object, parentKey, reassigned, context);
-  }
-
-  private assignDynamicMember(
-    objectNode: Expression,
-    key: StaticValue,
-    value: StaticValue,
-    context: EvaluationContext,
-  ): void {
-    const object = this.evaluateExpression(objectNode, context);
+  private assignDynamicProperty(object: StaticValue, key: StaticValue, value: StaticValue): void {
     for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
       if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
       else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
