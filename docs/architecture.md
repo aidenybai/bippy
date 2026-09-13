@@ -194,7 +194,9 @@ The [interpreter](../packages/bippy-analyzer/src/evaluate/interpreter.ts) evalua
 
 Numeric `Math` arguments retain guarded alternatives when their Cartesian product fits the existing eight-combination limit. This preserves finite slice bounds instead of replacing them with an unknown number. Other argument kinds and larger products retain their conservative handling.
 
-The `find` family models predicate calls on lists with definite initial positions. It captures the initial length and reads live elements in the specified direction. A match or throw stops the search, and earlier nonmatches guard later calls. The model preserves callback receivers and does not treat known exceptions as escaped callbacks.
+The `find` family, `some`, and `every` capture a definite initial length and read live elements in the method’s direction. Results that stop traversal also prevent later predicate calls. The model preserves callback receivers and propagates thrown predicates without escaping them. Quantifiers skip indices that the model identifies as absent, retaining explicit unknown decisions when presence remains unresolved.
+
+The list representation does not distinguish sparse holes from present `undefined` values. Surrounding `try`/`catch` joins can still lose correlations between successful and thrown paths.
 
 ### Preserve relationships between expressions
 
@@ -231,6 +233,10 @@ Evaluating both sides of a condition can change shared state. If the interpreter
 [`HeapJournal`](../packages/bippy-analyzer/src/evaluate/heap-journal.ts) records conditional changes to shared interpreted state. At the end of a path, it saves the changed values and restores the previous values. After evaluation of the alternatives, it combines their results under the branch conditions.
 
 For collections, the journal shares [read-only entry tables](../packages/bippy-analyzer/src/evaluate/collections.ts) across captures and restores. It copies a shared table before a write and reuses identical tables when joining paths. This sharing does not change application object identity. React still [compares application `getSnapshot()` values with `Object.is`](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-reconciler/src/ReactFiberHooks.js#L1681).
+
+For finite, nonrepeated list mutations, the journal joins values by position and guards whether each position exists. Spreading finite list alternatives preserves those guards. Guarded length sums handle definite prefixes and distribute independent counts within the shared 16-pair limit.
+
+These changes preserve the shared list’s identity. Unbounded mutation counts still use repeats, and larger length-sum products retain uncertainty.
 
 The journal distinguishes preexisting objects from objects allocated within a path. An object allocated inside one alternative does not need restoration for another alternative that cannot reference it. Pending hook updates also require this distinction because an update must remain conditional on the path that schedules it.
 

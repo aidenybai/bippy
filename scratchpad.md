@@ -606,7 +606,7 @@ The `find` family now traverses in the requested direction and stops after a mat
 
 A second failure shows why a known throw must not count as an opaque call. `callBuiltin()` had escaped a callback’s captured mutations even after interpreting its exception. It now skips that escape for a known thrown result. Seven focused fixtures cover order, guarded counts, throws, live writes, initial length, callback receivers, and guarded catches; their primary models have no omissions or replay mismatches.
 
-The original guarded-list/interpolation fixture still produces an imprecise text value. Its unchanged source remains at `/tmp/bippy-array-search-guards-optional-join.tsx`; the failure remains in `/tmp/bippy-array-search-known-throw.log`. A separate scalar-count fixture checks conditional invocation without claiming to repair that text/list gap. `some()` and `every()` still use the older predicate helper and remain separate work.
+The original guarded-list/interpolation fixture still produces an imprecise text value. Its unchanged source remains at `/tmp/bippy-array-search-guards-optional-join.tsx`; the failure remains in `/tmp/bippy-array-search-known-throw.log`. A separate scalar-count fixture checks conditional invocation without claiming to repair that text/list gap. At this checkpoint, `some()` and `every()` still use the older predicate helper and remain separate work.
 
 The reviewed source-only home and memory models retain 12 bounded states, seven wildcards, and one subtree omission. Their trees and states differ from the call-guard checkpoint even though their summaries match. Fresh retrospective comparisons still report 13 and 40 partial snapshots. No source observations, new native traces, or larger budgets enter these runs.
 
@@ -621,11 +621,60 @@ Evidence remains under `/tmp/bippy-many-games-causal-investigation/`:
 
 Root typecheck, 3,166 root tests with two skips, 1,120 analyzer tests across 68 files, build, and realm checks pass. `/tmp/bippy-array-search-final-validation.exit` records 0. Five saved-capture corpus controls repeat without changes to their comparison fields. Corpus data remains unchanged at 307 repositories.
 
+### Short-circuit quantifiers and finite list guards
+
+The first `some()`/`every()` regressions expose eager callback execution and lost throws: three fixtures fail, while unconditional shrinking already passes. The shared search traversal now stops when a quantifier decides its result or a predicate throws. It captures the initial length and passes the callback receiver. Later calls read live elements under their continuation guards.
+
+Quantifiers also check index presence before invoking a predicate. This does not add sparse-hole semantics.
+
+Conditional shrinking exposes a separate correlation loss. The journal had widened finite non-appending mutations into repeats. It now joins finite, nonrepeated list paths by position without replacing the shared list object. Spreads preserve guarded suffix positions rather than turning finite length choices into repeats. Index-presence queries use supported guarded lengths. Repeated mutation counts remain unbounded.
+
+Pass-through traces show that guarded length calculation also failed on a definite prefix: `distributeBinary()` returns null for two primitive operands. Adding that prefix directly restores the existing guarded sum. The conditional-shrink regression now has only `full:false:3` and `short:false:1`; no increment-operator change or extra presence input is needed on these paths. The finite-spread and guarded replacement fixtures also become concrete.
+
+Ten component fixtures assert exact raw text sequences, no omissions, exact native membership, and no replay mismatches. A shared test helper preserves the existing search and callback assertions, including their original text separators.
+
+Seven direct tests cover these cases:
+
+- Guarded lengths and index presence
+- Restoration and preferred shrinking
+- Positional replacement
+- Preferred empty spreads
+- Retained unbounded mutation counts
+- The existing 16-pair limit for independent length sums
+
+The first five tests produce four failures on baseline `b2304660`; the unbounded control passes. The expanded seven-test baseline produces five failures and two passes. Both runs remain at `/tmp/bippy-quantifier-finite{,-expanded}-baseline.log`; the worktree preserves both test files separately.
+
+A later regression exposes eight outcomes where two independent presence conditions permit only four. `/tmp/bippy-quantifier-independent-presence-baseline.log` retains that failure. The earlier 3,189-test gate had passed without this fixture. `getCombinedListCount()` now distributes both operands recursively and adds primitive counts directly. The fixed fixture preserves all four source-derived flag/count combinations without a separate presence decision.
+
+Length sums use the shared value-distribution limit of 16 pairs, not the numeric `Math` limit of eight. A first boundary test assumes the wrong limit and fails. Corrected tests distinguish eight independent optional positions from nine: the latter requires 18 pairings at the final sum and retains ranged uncertainty. No limit changes.
+
+A further predicate counterexample produces four catch-label/count combinations instead of the two source-derived expectations. The predicate can throw on its first call or complete two calls. The failed strict test remains in `/tmp/bippy-array-quantifier-expanded.log`.
+
+Copies at `/tmp/bippy-pending-array-quantifier-guarded-throw.tsx` and `/tmp/bippy-pending-array-quantifier.test.ts` preserve its unchanged fixture and test. This checkpoint does not count them as passing coverage. The surrounding throw propagation and `try`/`catch` joins remain investigation targets, not a completed repair.
+
+Three temporary controls use the main analyzer through absolute imports, despite running from the baseline worktree. The quantifier and plain-call controls both produce four combinations. A direct `try`/`catch` instead produces only `caught:2` and `returned:2`, omitting the valid `caught:1` path. All three initial native witnesses happen to match, and all replay samples pass.
+
+Four predeclared, unforced repeats of the unchanged direct fixture capture both native outcomes. Attempts 0 and 3 produce `caught:1` and mismatch in six matcher steps without budget exhaustion. Attempts 1 and 2 produce `returned:2` and match exactly. All four still pass replay. The `pending-throw-*-comparison.json` files preserve these native test-host renders; they are not browser workflows or added corpus repositories.
+
+The `/tmp/bippy-array-quantifier-*.log` files retain the baseline, conditional-presence, guarded-presence, finite-list-baseline, and finite-list-first failures. Matching JSON files retain the pass-through value, presence, journal, and length traces. The reviewed code contains no temporary wrappers.
+
+The first direct-test attempt incorrectly requires shared wrapper identity for an equal primitive value; the corrected assertion checks its value. The first full gate reports a missing location argument in that new test; `/tmp/bippy-quantifier-final-validation.exit` retains the failure. Lint also identifies an unnecessary spread in the fixture. The revised fixture mutates the original after copying, checking that the spread preserves the earlier elements.
+
+The first quantifier source-only models still contain 12 bounded states, seven wildcards, and one subtree omission. Both retain unknown hydration inputs and unchanged budgets. Under `/tmp/bippy-many-games-causal-investigation/`, the home model is `source-only-quantifier-reviewed-home-model.json` (SHA-256 `199729bf37d80be93c49ff03f412e1aacb3a7c6f190d90fdcbc122bd08e75af0`); the memory model is `source-only-quantifier-reviewed-memory-model.json` (SHA-256 `50b38a4c719cb30d0bff464332a9dac41347de728edcd62c8eeb88af7cd2ecc4`). Each records the interpreter and all four changed evaluator-file hashes.
+
+After the recursive sum repair, new source-only models retain the same state, wildcard, and omission counts. The files are `source-only-quantifier-sum-reviewed-home-model.json` (SHA-256 `dc5a1f2a5c0a7b2be6b820db9d78567757b033a7e3ec8b9a0e31c95146acc7c0`) and `source-only-quantifier-sum-reviewed-memory-model.json` (SHA-256 `41227bdc69af8196759c3d94bda81886cc895b922154cf628e1cfbbd005074c7`). Earlier models and receipts remain unchanged.
+
+The frozen models still partially match all 13 saved resource snapshots and all 40 saved memory-workflow snapshots. These are retrospective snapshot membership checks, not transition extraction or reachability evidence. Five corpus controls repeat against identical captures without changes to their five comparison fields; `quantifier{,-sum}-corpus-lane-{0,1}.json` records both rounds. Corpus data remains unchanged at 307 repositories.
+
+Current source-only analyses also repeat the seven throw checks against their identical saved native snapshots. The `pending-throw-sum-*-comparison.json` files record the same raw-model failures and two native mismatches, still with passing replay. These controls perform no new native application renders.
+
+The final sum gate passes 3,193 root tests with two existing skips and 1,147 analyzer tests across 70 files. Root typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-quantifier-sum-validation.exit` records 0; `quantifier-sum-reviewed-gates.json` records the models, controls, baseline failures, and open throw counterexamples. The earlier finalized gate and `quantifier-reviewed-gates.json` remain separate. These gates do not complete causal-model, renderer, or 500-repository acceptance.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,166 tests**, with two existing React-19 DevTools skips; this includes **1,120 analyzer tests / 68 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,193 tests**, with two existing React-19 DevTools skips; this includes **1,147 analyzer tests / 70 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

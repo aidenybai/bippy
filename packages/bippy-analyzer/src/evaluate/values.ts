@@ -1898,6 +1898,15 @@ export const getListLength = (list: StaticListValue): StaticValue => {
   };
 };
 
+const getCombinedListCount = (left: StaticValue, right: StaticValue): StaticValue =>
+  distributeBinary(left, right, getCombinedListCount) ??
+  (left.kind === "primitive" &&
+  typeof left.value === "number" &&
+  right.kind === "primitive" &&
+  typeof right.value === "number"
+    ? primitiveValue(left.value + right.value)
+    : unknownPrimitiveValue("number", "length of a partially known list"));
+
 const getGuardedListLength = (list: StaticListValue): StaticValue | null => {
   if (
     list.items.some(
@@ -1917,16 +1926,8 @@ const getGuardedListLength = (list: StaticListValue): StaticValue | null => {
             item.predicate,
           )
         : primitiveValue(1);
-    const combined = distributeBinary(length, count, (left, right) =>
-      left.kind === "primitive" &&
-      typeof left.value === "number" &&
-      right.kind === "primitive" &&
-      typeof right.value === "number"
-        ? primitiveValue(left.value + right.value)
-        : unknownPrimitiveValue("number", "length of a partially known list"),
-    );
-    if (combined === null || (combined.kind !== "primitive" && combined.kind !== "branch"))
-      return null;
+    const combined = getCombinedListCount(length, count);
+    if (combined.kind !== "primitive" && combined.kind !== "branch") return null;
     length = combined;
   }
   return length;
@@ -2030,9 +2031,8 @@ export const optionalValue = (
 
 /**
  * Items contributed by `...value` inside an array literal (also `concat`,
- * `flatMap`). A branch over lists stays positional when every alternative has
- * the same length, becomes one optional item when the alternatives are `[x]`
- * and `[]`, and otherwise collapses to a repeat over everything it could hold.
+ * `flatMap`). A branch over definite lists keeps each position's value and
+ * presence guarded by the original decision.
  */
 export const spreadListItems = (
   value: StaticValue,
@@ -2070,37 +2070,25 @@ export const spreadListItems = (
         ),
       );
     }
-    const present = lists.filter((list) => list.items.length > 0);
-    if (present.every((list) => list.items.length === 1)) {
+    const length = Math.max(...lengths);
+    return Array.from({ length }, (_value, index) => {
       const item = joinMappedAlternatives(
         value,
-        lists.map((list) => list.items[0] ?? UNDEFINED_VALUE),
+        lists.map((list) => list.items[index] ?? UNDEFINED_VALUE),
       );
-      return [
-        optionalValue(
-          item,
-          value.reason,
-          value.location,
-          lists[value.preferredIndex].items.length === 0,
-          getTruthinessPredicate(
-            mapValue(value, (alternative) =>
-              primitiveValue(alternative.kind === "list" && alternative.items.length > 0),
-            ),
+      if (lists.every((list) => index < list.items.length)) return item;
+      return optionalValue(
+        item,
+        value.reason,
+        value.location,
+        index >= lists[value.preferredIndex].items.length,
+        getTruthinessPredicate(
+          mapValue(value, (alternative) =>
+            primitiveValue(alternative.kind === "list" && index < alternative.items.length),
           ),
         ),
-      ];
-    }
-    return [
-      {
-        kind: "repeat",
-        item: branchValue(
-          lists.flatMap((list) => list.items),
-          value.reason,
-          value.location,
-        ),
-        location,
-      },
-    ];
+      );
+    });
   }
   return [{ kind: "repeat", item: unknownValue(`spread of ${describeValue(value)}`), location }];
 };
