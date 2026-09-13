@@ -205,7 +205,7 @@ export default defineConfig({
     jsx: "automatic",
   },
   test: {
-    name: "parser",
+    name: "bippy-analyzer",
     environment: "happy-dom",
     environmentOptions: {
       happyDOM: {

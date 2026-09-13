@@ -1,6 +1,8 @@
-# @bippy/parser
+# bippy-analyzer
 
-Static reconstruction of React fiber trees from source ASTs. The parser reads a project with
+React program analysis.
+
+The analyzer currently reconstructs React fiber trees from source ASTs. It reads a project with
 `oxc-parser`, links its modules with `oxc-resolver`, and abstractly evaluates component bodies
 without executing the application. The evaluated element values are then materialized into real
 React elements whose component types are thin proxies back into the interpreter, rendered with
@@ -14,16 +16,16 @@ component internals — is kept as explicit uncertainty: marker components (`$Br
 rather than being guessed. Exactness against runtime is only expected where the source fully
 determines the tree.
 
-Read [How the parser builds and checks React trees](../../docs/parser-architecture.md) for the architecture and current limits.
+Read [How the parser builds and checks React trees](../../docs/architecture.md) for the architecture and current limits.
 
 ## Run
 
 ```sh
-pnpm --filter @bippy/parser typecheck
-pnpm --filter @bippy/parser test
-pnpm --filter @bippy/parser render <projectRoot> <entryFile> [exportName]
-pnpm --filter @bippy/parser corpus -- [ids...] [--static-only] [--skip-install] [--list]
-pnpm --filter @bippy/parser exec tsx scripts/capture.ts <url> [snapshot.json]
+pnpm --filter bippy-analyzer typecheck
+pnpm --filter bippy-analyzer test
+pnpm --filter bippy-analyzer render <projectRoot> <entryFile> [exportName]
+pnpm --filter bippy-analyzer corpus -- [ids...] [--static-only] [--skip-install] [--list]
+pnpm --filter bippy-analyzer exec tsx scripts/capture.ts <url> [snapshot.json]
 ```
 
 `render` prints the static tree for an SPA entry (`createRoot().render`, `hydrateRoot`,

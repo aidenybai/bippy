@@ -1,8 +1,10 @@
-# Parser: progress, correctness ledger, and execution plan
+# bippy-analyzer: progress, correctness ledger, and execution plan
 
 ## Goal
 
-Build a maintainable, renderer-independent React source-analysis engine whose primary output is a **guarded symbolic tree of the UI states the program can produce**, with explicit input provenance, correlations, omissions, and evidence. Use real React fibers to verify those claims against applications running normally.
+Build a maintainable, renderer-independent React source-analysis engine that produces an **upfront causal model of the application** from available source, without requiring users to run their app. Explain possible UI structures, their conditions, what causes those conditions, and reachability through actions and async transitions. Preserve input provenance, correlations, omissions, and evidence. Symbolic UI trees are views of that model, not a complete description of application behavior. Use independently running real applications to validate the analyzer during development.
+
+The current implementation primarily reconstructs guarded symbolic trees. The causal-model direction below clarifies the product goal; it is not a claim that a transition-system architecture is implemented or that a rewrite has been approved.
 
 Continue until the acceptance gates in this document are satisfied. Creating this plan, fixing two review comments, passing the synthetic suite, or matching one captured page does **not** complete the project. Keep this file current as implementation, integration, and verification proceed.
 
@@ -18,9 +20,77 @@ Continue until the acceptance gates in this document are satisfied. Creating thi
 - A precise tree for recorded observations is conditional on those observations. It is not automatically a tree for every possible response, database, route, clock value, or user action.
 - Arbitrary JavaScript may have unbounded states or nontermination. Do not promise a terminating, exact enumeration for every program. The requirement is an honest, useful symbolic model with testable guarantees—not a misleading universal-completeness badge.
 
+### Causal-model discussion: requirements, research, and open decisions
+
+**Status: design discussion, not implementation or production-readiness evidence.** The user wants to continue evaluating the approach rather than commit prematurely to a replacement architecture. Existing implementation checkpoints and corpus results below retain their original scope.
+
+#### Agreed product requirements
+
+- Discover possibilities upfront from source. Do not require users to start the app, supply a working backend, or author mocks to obtain the model.
+- Explain structure, conditions, causes, correlations, and reachability. Support forward questions (what can this action cause?) and backward questions (what must happen for this UI to appear?).
+- Follow available code as deeply as possible: components, custom hooks, event handlers, effects, cleanup, callbacks, refs, context, stores, subscriptions, timers, promises, and dependency internals. Do not impose an application-component-only boundary for convenience.
+- Treat genuinely unavailable inputs symbolically. A frontend path conditional on a server response does not establish that the real server can produce that response.
+- Runtime exploration cannot be the discovery foundation: it misses unexercised paths and requires substantial environment setup and mocking. Interpreting ASTs with the analyzer remains acceptable; executing the user's application is not a user prerequisite.
+
+#### Candidate representation: interconnected symbolic state machines
+
+A guarded causal model can be understood as an extended state machine or symbolic transition system. Its transitions describe:
+
+```text
+trigger + guard → state changes + scheduled work
+```
+
+Keep variables and updates symbolic (`count' = count + 1`), represent repeated behavior with cycles, and retain independent subsystems separately until their interactions require composition. Do not eagerly enumerate every global state or action history. Composition can still make reachability expensive; factoring is not a universal solution to state explosion.
+
+UI is an output of the model, not its entire state. Identical visible trees can have different pending requests, captured values, component identities, or future behavior. The representation must preserve these distinctions when they affect causality.
+
+Distinguish causal dependencies from feasible transitions. An edge showing that a callback reads state does not establish when the callback runs. A path through a dependency graph is not proof of reachability. Effect registration, dependency comparisons, render/commit phases, cleanup, cancellation, and async ordering need explicit semantics.
+
+#### Findings from source study
+
+- **Pattycake:** inspected `aidenybai/pattycake` at `fac748174aadeab4e3404e5e70392e9c4cef085c`, cloned to `/tmp/bippy-pattycake`. `ARCHITECTURE.md`, `src/hir.ts`, `src/pattycake.ts`, and `src/codegen.ts` show the value of lowering awkward AST call chains into explicit domain concepts: input, patterns, guards, and handlers. This is a narrow ts-pattern compiler, not a React semantic model. Its runtime fallback for unsupported expressions is not an available completeness strategy for this analyzer.
+- **React Compiler:** inspected the React checkout at `82c44beb444eda5230c063eaa163d01f38817211` in `/tmp/bippy-parser-pr115-react`. Relevant sources under `compiler/packages/babel-plugin-react-compiler/src/` include `Entrypoint/Pipeline.ts`, `HIR/HIR.ts`, `HIR/Globals.ts`, `Inference/AnalyseFunctions.ts`, `Inference/InferReactivePlaces.ts`, `Inference/InferMutationAliasingEffects.ts`, and `Inference/MUTABILITY_ALIASING_MODEL.md`. The compiler uses control-flow graphs, SSA, mutation/alias analysis, nested-function summaries, control dependencies, and fixed-point abstract interpretation. These are relevant building blocks, not a complete app-state reachability engine.
+- Compiler mutation/aliasing “effects” are not a full temporal model of React effects. The `useEffect` signature captures/freezes arguments for compiler analysis; it does not describe every setup, cleanup, or scheduling transition. Existing function summaries do not preserve every guarded state transition needed here.
+- `compiler/docs/DESIGN_GOALS.md` explicitly assumes the Rules of React and excludes class components and some JavaScript features. Do not silently inherit those restrictions or treat compiler acceptance as proof of model correctness for arbitrary dependencies.
+- **React runtime:** inspected `packages/react-reconciler/src/ReactFiberHooks.js` and `ReactFiberCommitEffects.js` for dependency equality, effect registration/execution, cleanup, state queues, and eager bailout. The causal model needs semantics beyond value dependency tracking. A mount-only effect can capture an old state value in a timer; later state changes do not rerun it, and cleanup can cancel its pending work.
+
+The promising hypothesis is compositional abstract interpretation over a purpose-built representation, with guarded summaries linked across functions, hooks, components, and libraries. This is not “compiler analysis instead of abstract interpretation”: React Compiler itself uses abstract interpretation. Adding an intermediate representation alone does not solve reachability or prove a simpler implementation.
+
+#### Assessment of PR #115
+
+Keep the value of existing source resolution, abstract values, predicates, interpreter semantics, React integration, and the real-app corpus in view. Investigate whether the interpreter can emit guarded operations and transitions rather than replacing it wholesale.
+
+The architectural concern is the render-driven round trip: symbolic values → simultaneously mounted alternatives → captured fibers → recovered symbolic tree → isolated replay/corrections. Mutually exclusive alternatives can interfere through effects and shared state. Real React faithfully renders that synthetic program, which is not automatically equivalent to each original alternative in isolation.
+
+Producing a symbolic component tree directly would not, by itself, meet the causal-model goal. It could merely move React complexity into another layer. No decision has been made to remove materialization, abandon exact fibers, adopt React Compiler internals, or rewrite the interpreter.
+
+#### Verification: real applications drive acceptance
+
+Users need not execute their apps to obtain analysis; analyzer developers should execute real apps to validate it. The user explicitly rejects treating small generated fixtures or fuzzing as sufficient evidence of production readiness.
+
+- Evaluate substantial real workflows, not just initial-page tree matches or repository counts. Produce the source model before collecting the validation trace.
+- Check actions, handler execution, state updates, effect setup/cleanup, async completion, and committed UI where instrumentation can observe them. Fiber capture alone does not establish the full causal trace. Unobserved internal steps remain unverified.
+- **Runtime → model:** require observed traces to be explainable under consistent guards and ordering. A trace outside the model is a coverage counterexample if instrumentation and comparison are faithful.
+- **Model → runtime:** attempt to witness predicted paths. Successful execution is evidence; failure to exercise a path is not proof of impossibility.
+- Report how much a match depends on unknown regions. Wildcards must not turn an uninformative trace match into a readiness claim.
+- Separate normal-app/real-backend evidence, behavior conditional on controlled network responses, and same-interpreter replay. The last checks internal consistency, not independent correctness.
+- Real-app discrepancies should become minimized regression fixtures. Generated tests can supplement edge-case coverage, not substitute for production workflows. Held-out applications/workflows can help expose corpus overfitting.
+
+Let `R` be real reachable states and `M` the modeled states. `R ⊆ M` means no missed states; `M ⊆ R` means no invented states; equality requires both. Execution witnesses particular behavior, not universal completeness. A theoretical simulation argument must connect concrete JavaScript/React transitions to abstract transitions, including extraction and host assumptions, not merely prove the graph solver correct. No such whole-system proof was established in this discussion. Universal terminating exact reachability for arbitrary JavaScript is not a feasible promise.
+
+Keep predicted possibilities, runtime witnesses, proofs under declared assumptions, contradictions, and unresolved regions distinct. These are design evidence categories, not a claim that current result schemas already implement them.
+
+#### Open questions and proposed next investigation
+
+The central question is whether the existing interpreter can extract and compose guarded transition summaries, or whether its render-driven architecture obstructs that goal. Summary precision must retain relevant guards, captured values, aliases, scheduling, and identity; otherwise composition can lose the very causes the product needs.
+
+**Proposed next investigation, not an approved rewrite:** choose one substantial workflow in an existing corpus app, specify the expected causal model, and trace which facts the current implementation retains, loses, or never analyzes. Include conditional mounting, shared state, and effect/async cancellation where the real workflow contains them. Use that evidence to compare incremental evolution against a new representation before choosing an architecture.
+
+The historical 500-repository gate remains documented below; repository count alone is not adequate behavioral verification. Acceptance changes and implementation migration remain to be decided explicitly.
+
 ### Architecture documentation plan
 
-The conceptual page at `docs/parser-architecture.md` explains the current parser implementation. It does not describe unfinished acceptance goals as supported behavior.
+The conceptual page at `docs/architecture.md` explains the current parser implementation. It does not describe unfinished acceptance goals as supported behavior.
 
 - Goal. Explain how source analysis produces React trees and what the comparison results establish.
 - Audience. Contributors who know React and TypeScript but have not read the parser implementation.
