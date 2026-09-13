@@ -222,6 +222,7 @@ import {
   getCaughtValue,
   forgetThrowCertainty,
   getThrowCertainty,
+  getThrowCondition,
   getThrownOperand,
   getThrownPaths,
   withoutThrows,
@@ -381,6 +382,7 @@ import {
   andGuard,
   constantGuard,
   negateGuard,
+  orGuard,
   parseSymbolicPredicate,
   serializeSymbolicPredicate,
   type GuardContext,
@@ -628,6 +630,7 @@ export type LoopJump = "break" | "continue";
 export interface StatementOutcome {
   returned: StaticValue | null;
   mayComplete: boolean;
+  completion?: StaticValue;
   /** Set when some path left the enclosing loop early; labeled jumps are `uncertain`. */
   jump: LoopJump | "uncertain" | null;
   /** The list stopped at an `await` of a pending promise; its rest runs once that settles. */
@@ -671,6 +674,7 @@ interface PendingReturnJoin {
   reason: string;
   location: SourceLocation;
   preferredPath: number;
+  predicate?: string | null;
 }
 
 const completeBlock: StatementContinuation = () => COMPLETES;
@@ -682,6 +686,12 @@ export const returnOutcome = (value: StaticValue): StatementOutcome => ({
   isSuspended: false,
 });
 
+const getCompletionValue = (outcome: StatementOutcome): StaticValue => {
+  if (!outcome.mayComplete) return FALSE_VALUE;
+  if (outcome.returned === null && outcome.jump === null) return TRUE_VALUE;
+  return outcome.completion ?? unknownPrimitiveValue("boolean", "statement may complete");
+};
+
 const outcomeToReturnValue = (
   outcome: StatementOutcome,
   location: SourceLocation | null,
@@ -692,6 +702,8 @@ const outcomeToReturnValue = (
     [outcome.returned, UNDEFINED_VALUE],
     "function may fall through without returning",
     location,
+    0,
+    getTruthinessPredicate(getCompletionValue(outcome), true),
   );
 };
 
@@ -747,6 +759,13 @@ export const mergeOutcomes = (
           )
         : null,
     mayComplete: outcomes.some((outcome) => outcome.mayComplete),
+    completion: branchValue(
+      outcomes.map(getCompletionValue),
+      reason,
+      location,
+      preferredOutcome,
+      predicate,
+    ),
     jump: mergeJumps(outcomes),
     isSuspended: outcomes.some((outcome) => outcome.isSuspended),
   };
@@ -4929,6 +4948,35 @@ export class Interpreter {
     }
   }
 
+  private evaluateDeclarations(
+    declaration: VariableDeclaration,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+    startIndex = 0,
+  ): StatementOutcome | null {
+    for (let index = startIndex; index < declaration.declarations.length; index++) {
+      const initializer = this.evaluateDeclarator(
+        declaration,
+        declaration.declarations[index],
+        context,
+      );
+      if (!initializer) continue;
+      if (getThrowCertainty(initializer) === "always") return returnOutcome(initializer);
+      if (getThrownPaths(initializer)) {
+        return this.propagateThrow(
+          initializer,
+          context,
+          (pathContext) =>
+            this.evaluateDeclarations(declaration, pathContext, proceed, location, index + 1) ??
+            proceed(pathContext),
+          location,
+        );
+      }
+    }
+    return null;
+  }
+
   private hoistDeclarations(statements: Statement[], context: EvaluationContext): void {
     for (const statement of statements) {
       if (statement.type === "FunctionDeclaration" && statement.id) {
@@ -5001,15 +5049,8 @@ export class Interpreter {
         case "ContinueStatement":
           return jumpOutcome("continue", statement.label?.name ?? null);
         case "VariableDeclaration": {
-          let thrown: StaticValue | null = null;
-          for (const declarator of statement.declarations) {
-            const initializer = this.evaluateDeclarator(statement, declarator, context);
-            const paths = initializer && getThrownPaths(initializer);
-            if (!initializer || !paths) continue;
-            thrown = thrown ? branchValue([thrown, paths], "declarations", location) : paths;
-            if (getThrowCertainty(initializer) === "always") return returnOutcome(thrown);
-          }
-          if (thrown) return this.propagateThrow(thrown, context, proceed, location);
+          const outcome = this.evaluateDeclarations(statement, context, proceed, location);
+          if (outcome) return outcome;
           break;
         }
         case "FunctionDeclaration":
@@ -5039,7 +5080,7 @@ export class Interpreter {
           const value = this.evaluateExpression(statement.expression, context);
           if (getThrowCertainty(value) === "always") return returnOutcome(value);
           const thrown = getThrownPaths(value);
-          if (thrown) return this.propagateThrow(thrown, context, proceed, location);
+          if (thrown) return this.propagateThrow(value, context, proceed, location);
           break;
         }
         case "BlockStatement":
@@ -5111,16 +5152,19 @@ export class Interpreter {
 
   /** Ends the statement list on the paths that throw `thrown`; the others run the rest. */
   private propagateThrow(
-    thrown: StaticValue,
+    value: StaticValue,
     context: EvaluationContext,
     proceed: StatementContinuation,
     location: SourceLocation,
   ): StatementOutcome {
-    return mergeOutcomes(
-      [returnOutcome(thrown), proceed(withoutSuspension(context))],
-      `${describeValue(thrown)} may be thrown`,
+    return this.forkPaths(
+      [() => returnOutcome(getThrownPaths(value) ?? value), () => COMPLETES],
+      context,
+      proceed,
+      `${describeValue(value)} may be thrown`,
       location,
       1,
+      getTruthinessPredicate(getThrowCondition(value)),
     );
   }
 
@@ -5146,18 +5190,31 @@ export class Interpreter {
       const exit = this.evaluateBlock(finalizer.body, pathContext, true);
       if (!exit.mayComplete) return exit;
       if (exit.returned === null && exit.jump === null) return outcome;
-      return mergeOutcomes([outcome, { ...exit, mayComplete: false }], "finally", location);
+      return mergeOutcomes(
+        [outcome, { ...exit, mayComplete: false }],
+        "finally",
+        location,
+        0,
+        getTruthinessPredicate(getCompletionValue(exit)),
+      );
     };
     const handler = statement.handler;
     const afterBody = (outcome: StatementOutcome): StatementOutcome => {
       const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
       if (thrown === null || !handler) {
         if (!outcome.mayComplete) return finishExit(outcome, withoutSuspension(context));
-        return mergeOutcomes(
-          [{ ...outcome, mayComplete: false }, finish(withoutSuspension(context))],
-          "try",
+        if (isPureCompletion(outcome)) return finish(withoutSuspension(context));
+        return this.forkPaths(
+          [
+            (pathContext) => finishExit({ ...outcome, mayComplete: false }, pathContext),
+            () => COMPLETES,
+          ],
+          context,
+          finish,
+          "try completion",
           location,
           1,
+          getTruthinessPredicate(getCompletionValue(outcome), true),
         );
       }
       const passes: StatementOutcome = {
@@ -5183,19 +5240,32 @@ export class Interpreter {
         );
       };
       const isPassFeasible = passes.mayComplete || passes.returned !== null || passes.jump !== null;
+      const throwCondition = outcome.mayComplete
+        ? branchValue(
+            [FALSE_VALUE, getThrowCondition(outcome.returned ?? thrown)],
+            "try completion",
+            location,
+            0,
+            getTruthinessPredicate(getCompletionValue(outcome)),
+          )
+        : getThrowCondition(outcome.returned ?? thrown);
       return this.forkPaths(
         isPassFeasible ? [(pathContext) => finishExit(passes, pathContext), catches] : [catches],
         context,
         finish,
         `${describeValue(thrown)} caught`,
         location,
+        0,
+        getTruthinessPredicate(throwCondition, true),
       );
     };
+    const pendingDepth = this.pendingReturnJoins.length;
     const outcome = this.evaluateBlock(
       statement.block.body,
-      withOutcomeHandler(context, afterBody),
+      withOutcomeHandler({ ...context, preservesAbruptLocals: true }, afterBody),
       true,
     );
+    this.settlePendingReturns(pendingDepth);
     return outcome.isSuspended ? outcome : afterBody(outcome);
   }
 
@@ -5313,7 +5383,7 @@ export class Interpreter {
     predicate: string,
   ): void {
     if (returningPaths.length === 0) return;
-    const closureScopes = getClosureScopes(context);
+    const closureScopes = context.preservesAbruptLocals ? null : getClosureScopes(context);
     const toClosureSnapshots = (snapshots: ScopeSnapshot[]): ScopeSnapshot[] =>
       closureScopes === null
         ? snapshots
@@ -5348,7 +5418,12 @@ export class Interpreter {
     for (const pending of this.pendingReturnJoins.splice(depth).reverse()) {
       this.removeHeapJournal(pending.journal);
       pending.journal.endPath();
-      pending.journal.join(pending.reason, pending.location, pending.preferredPath, null);
+      pending.journal.join(
+        pending.reason,
+        pending.location,
+        pending.preferredPath,
+        pending.predicate ?? null,
+      );
     }
   }
 
@@ -5380,6 +5455,15 @@ export class Interpreter {
     narrowing: TestNarrowing | null = null,
   ): StatementOutcome {
     const isTooDeep = context.forkDepth >= this.maxForkDepth;
+    const choices = branchValue(
+      branches.map((_branch, index) => primitiveValue(index)),
+      reason,
+      location,
+      preferredBranch,
+      predicate,
+    );
+    const pathGuards = choices.kind === "branch" ? getAlternativeGuards(choices) : null;
+    const parentGuard = this.guard;
     const forkContext: EvaluationContext = {
       ...context,
       forkDepth: context.forkDepth + 1,
@@ -5407,7 +5491,11 @@ export class Interpreter {
           this.journalHeapValue(object),
         );
       }
-      const outcome = branch(forkContext);
+      const outcome = pathGuards
+        ? this.runWithGuard(andGuard([parentGuard, pathGuards.guards[branchIndex]]), () =>
+            branch(forkContext),
+          )
+        : branch(forkContext);
       pathSnapshots.push(snapshotScopes(context.scope));
       if (narrowedBinding !== null && lookupScope(context.scope, narrowedBinding) !== narrowed) {
         isSubjectReassigned = true;
@@ -5474,12 +5562,24 @@ export class Interpreter {
       );
     }
     if (context.hooks) context.hooks.cursor = completedHookCursor;
-    const rest = proceed(context);
+    const completingGuard = pathGuards
+      ? orGuard(completingPaths.map((index) => pathGuards.guards[index]))
+      : null;
+    const rest = completingGuard
+      ? this.runWithGuard(andGuard([parentGuard, completingGuard]), () => proceed(context))
+      : proceed(context);
     joinReturningClosures();
     if (isMixed) {
+      const remainingPredicate =
+        pathGuards && completingGuard
+          ? guardedPredicate(
+              [...jumpingPaths.map((index) => pathGuards.guards[index]), completingGuard],
+              [pathGuards.inputs],
+            )
+          : null;
       journal.endPath();
       const preferredJumping = jumpingPaths.indexOf(preferredOutcome);
-      if (isPureReturn(rest)) {
+      if (isPureReturn(rest) && jumpingPaths.some((index) => outcomes[index].jump !== null)) {
         journal.continueFrom(
           jumpingPaths.map((_, index) => index),
           reason,
@@ -5492,6 +5592,13 @@ export class Interpreter {
           reason,
           location,
           preferredPath: preferredJumping === -1 ? 0 : 1,
+          predicate:
+            pathGuards && completingGuard
+              ? guardedPredicate(
+                  [completingGuard, orGuard(jumpingPaths.map((index) => pathGuards.guards[index]))],
+                  [pathGuards.inputs],
+                )
+              : null,
         });
       } else {
         this.removeHeapJournal(journal);
@@ -5499,7 +5606,7 @@ export class Interpreter {
           reason,
           location,
           preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
-          null,
+          remainingPredicate,
         );
       }
     }

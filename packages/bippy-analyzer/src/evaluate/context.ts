@@ -73,6 +73,7 @@ export interface EvaluationContext {
   environment: RenderEnvironment | null;
   hooks: HookFrame | null;
   suspension: SuspensionPoint | null;
+  preservesAbruptLocals?: boolean;
   /** The component render evaluating, recorded on the elements it creates. */
   owner: ElementOwner | null;
 }
