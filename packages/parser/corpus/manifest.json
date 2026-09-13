@@ -8358,6 +8358,32 @@
         "externalPackageAllowList": ["reactjs-flip-card"]
       },
       "notes": "Follow the original two-package demo workflow: frozen root npm install, original npm build including prebuild/postbuild, then frozen demo install and original CRA5 start. Preserve both v2 locks and independently verify both installed scopes before capture. Root package version1.1.6 and lock-root metadata1.1.5 are original; do not normalize or rewrite them. The original build generates dist and demo/src/lib from the checked-in TypeScript/CSS. Do not run version, postversion, deploy, publish or git push. Keep the initial grid-selection page without choosing a size or unsuccessful-attempt setting. Generated artifacts require receipts and do not establish gameplay, flipping, arithmetic or whole-space coverage. The original root build runs prebuild/clean, TypeScript/CSS emission and postbuild copying. Both original npm v2 locks verify: 54 root packages and 1,400 demo packages. All thirteen dist files match all thirteen demo/src/lib copies byte for byte; compiler manifests, source hashes, original build logs and complete artifact copies remain in build-games-artifact-provenance.json. Root package1.1.6 versus lock-root1.1.5 is original metadata, not normalization. Preserve the first failed recipe's incorrect leading cd .. and its separate pre-capture correction; install commands use the repository root rather than workingDirectory. Original Node16.20.2/npm8.19.4/pnpm8.15.9 runs the CRA5 demo. Native React18.2.0 records eleven fibers, one commit and no page errors. Baseline/current/repeated comparisons remain exact with one passing replay, but only for the initial grid-selection page; no grid, difficulty or card choice is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 576318362 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "thomasjclark-elden-ring-weapon-calculator",
+      "repository": "https://github.com/ThomasJClark/elden-ring-weapon-calculator",
+      "revision": "b8a1cf8847fe67aacc7f8fcb038a9cfd6725f19a",
+      "description": "ThomasJClark/elden-ring-weapon-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=@yarnpkg/cli-dist@4.8.1 dlx pnpm --config.verify-deps-before-run=false exec yarn install --immutable",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=@yarnpkg/cli-dist@4.8.1 dlx pnpm --config.verify-deps-before-run=false run start --host 127.0.0.1 --port 54561 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54561/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["@mui/*", "@radix-ui/*", "react-is", "react-transition-group"]
+      },
+      "notes": "Keep the original committed regulation data rather than regenerate it using external game files. README starts with yarn install/start; rebuilding data is a separate optional workflow. Preserve original SWC/ESLint Vite plugins, HTML preload, env placeholders and analytics. No buildData.env, player stats, weapon selection, storage or external game files are supplied. Preserve original Yarn4.8.1, its checked-in release and node-modules linker; no PnP conversion or lock regeneration. Frozen success is insufficient: verify Yarn lock locators, installed locations/versions and actual runner precedence before capture. No CI/OpenSSL override, app repair, changed comparison budget or whole-space completeness claim. Original React18.2.0 native capture has 8956 fibers, eleven commits and no page errors. Original/current/repeated comparisons retain two matched fibers and 8953 wildcard-absorbed fibers with reason step budget exhausted. Eighteen evaluation-budget and seven call-depth cutoffs remain, despite matcher budgetExhausted:false and only three matching steps. Preserve five bounded states, the 18266-node symbolic tree and the one incomplete replay with no contradiction. These results do not validate the hidden application body. Keep original Node22.16.0/pnpm10.12.1/Yarn4.8.1, the vendored CLI, node-modules linker, frozen lock and 414 checked package locations. Original regulation data, defaults, loading effects and MUI/Radix source policy remain unchanged. Do not run external-game-file rebuilds, invent configuration or weapon input, or claim gameplay/calculation completeness. Collection journal sharing retains all five comparison fields; concurrent timings are not a controlled performance measurement. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 509273074 identifies a distinct non-fork repository."
     }
   ]
 }

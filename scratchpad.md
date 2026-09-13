@@ -333,7 +333,7 @@ Elden Ring’s completed original analysis records:
 - Five bounded states, an 18,266-node symbolic tree and one incomplete replay
 - Eighteen evaluation budget cutoffs and seven call-depth cutoffs, but only three matcher steps and `report.budgetExhausted:false`
 
-It remains unimported while same-capture comparisons run. Its checked-in regulation data remains unchanged; no rebuild using external game files runs. The wildcard’s reason is `step budget exhausted`, not evidence that the hidden application body matches.
+It was unimported while same-capture comparisons ran. Its checked-in regulation data remains unchanged; no rebuild using external game files runs. The wildcard’s reason is `step budget exhausted`, not evidence that the hidden application body matches.
 
 ### Copy-on-write collection journal trial
 
@@ -345,7 +345,7 @@ The initial full candidate-worktree suite fails seven checks that also fail on t
 
 Main validation passes 3,101 root tests with two existing skips, including 1,055 parser tests across 64 files. Typecheck, build, realm checks, lint, formatting and diff checks pass. The worktree dependency failures do not recur in the owned main installation.
 
-Seven policies across six independent captures retain five comparison fields, including static diagnostics. These include both KaiHotz policies, Icecream17, EC-82MS, original Taxe PFA, SwiftCalc and the card-memory demo. `collection-snapshots-checkpoint-provenance.json` records the completed checks; Elden Ring’s comparison is still running. The commands preserve source files, captures, budgets and prior diagnostics; neither concurrent timing nor the interrupted Valtio profile establishes an end-to-end speed improvement.
+At this checkpoint, seven policies across six independent captures retain five comparison fields, including static diagnostics. These include both KaiHotz policies, Icecream17, EC-82MS, original Taxe PFA, SwiftCalc and the card-memory demo. `collection-snapshots-checkpoint-provenance.json` records these completed checks; Elden Ring’s comparison was still running. The commands preserve source files, captures, budgets and prior diagnostics; neither concurrent timing nor the interrupted Valtio profile establishes an end-to-end speed improvement.
 
 The documentation checker initially treats the new pinned React source URL as a local path and fails. It now fetches HTTPS targets and checks pinned GitHub line anchors against the actual source length. The original failed check remains saved; local path and heading checks remain strict.
 
@@ -365,13 +365,45 @@ SwiftCalc and the card-memory demo bring the corpus to 285 distinct GitHub IDs, 
 
 The importer rechecks the memory demo’s explicit nested npm scope as well as the repository root. Fresh identity checks, original locks, actual runners, unchanged artifacts and baseline/current/repeated captures verify before import. `build-games-import-provenance.json` preserves all 283 prior raw rows and their nested property order. `build-games-artifact-provenance.json` and the copied build output preserve generated-file provenance and the original lifecycle logs.
 
-Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker validates 63 links and both executable TSX examples. The parser implementation and completed 3,101-test gate remain unchanged from `154ea7e4`. Elden Ring’s separate collection-snapshot comparison remains uncompleted and uncounted.
+Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker validates 63 links and both executable TSX examples. The parser implementation and completed 3,101-test gate remain unchanged from `154ea7e4`. At this checkpoint, Elden Ring’s separate collection-snapshot comparison remained uncompleted and uncounted.
+
+### Evaluator-limited Elden Ring import
+
+Elden Ring brings the corpus to 286 distinct GitHub IDs, leaving 214. The seventy-nine additions beyond the historical 207 contain fifty-seven exact, six truncated, ten partial and six mismatch reports.
+
+Both collection-journal comparisons have completed. Original/current/repeated results agree on report, runtime, static diagnostics, state space and replay. The partial result still absorbs 8,953 native fibers through a wildcard after matching only two known fibers. Eighteen evaluation-budget cutoffs, seven call-depth cutoffs and one incomplete replay remain. Three matching steps and `report.budgetExhausted:false` do not establish that evaluation completed or validate the hidden body.
+
+Fresh installation and actual-runner checks verify 414 package locations, React18.2.0, Node22.16.0, pnpm10.12.1 and original vendored Yarn4.8.1. Original regulation data, defaults, source policy, lock and native capture remain unchanged. No external-game-file rebuild or weapon input is supplied. `elden-import-provenance.json` preserves all 285 prior raw rows and nested order.
+
+The completed collection controls now cover eight policies across seven independent captures. `collection-snapshots-completed-provenance.json` aggregates the saved checks, including the two library-build controls, and verifies unchanged candidate/main source and tests.
+
+This receipt does not rerun or replace the 3,101-test gate. Original worktree failures, evaluator/matcher limits and the interrupted Valtio-source trial remain evidence. Concurrent timings do not establish a speed ratio.
+
+Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker validates 64 links, two executable TSX examples, four server renders and two effect updates.
+
+### Further discovery and second-game preparation
+
+Preparation scripts cloned and pinned fifty remaining game-search repositories and 86 productivity repositories; none count as additions. The productivity searches retain 147 distinct candidates, with 61 separately classified for further review.
+
+Metadata filtering is not proof of web support: the source inventory still contains React Native, desktop, backend and non-React workflows. Twenty productivity source bundles are ready for review. Search receipts describe only the fetched result pages, not every possible repository.
+
+Ten second-game Vite source bundles produced eight original frozen recipes. Lithium Pack Designer fails with `ERR_PNPM_OUTDATED_LOCKFILE`: the lock retains a replicad specifier missing from package.json. Dora’s memory game fails the original React Hooks testing-library optional peer check against React18 type definitions. Neither receives a lock or peer-policy repair. Two other workflows await credentials or a separate original backend/port audit; no credentials or substitute backend are supplied.
+
+Six installed trees and actual runners pass separate audits. Six initial Bippy captures complete with unchanged tracked source: two exact, two truncated and two partial results. Both original truncated memory games retain one omission and incomplete replay. The virtual calculator retains its read-only textarea warning.
+
+These six repositories remain unimported pending final checks. Luiz’s original Vite root is `src`, with `src/index.html`; the source collector’s failed root-index assumption remains saved. The recipe uses that original HTML file.
+
+The first repetition helper wrongly passes `--replay`; the CLI rejects it before analysis. Static-only mode already loads a saved capture. After correcting the flag, all six original policies repeat in five fields.
+
+The first expanded manifest then uses unsupported `static.allowlist`; schema validation rejects it before analysis. The corrected experiment uses the declared `externalPackageAllowList` field. Both failed helpers, logs and the invalid manifest remain saved; neither failure is an application or parser-semantics verdict.
+
+Explicit installed Toast/Goober source makes the virtual calculator exact against its unchanged capture. Expanded router, icon and analytics source exposes a repeated Many Games mismatch with no evaluation or matching cutoff. The model retains a loading div beneath `GameCard` where native renders the image next; the original image-load handler clears this loading state. One replay still passes, so the missing event continuation needs independent isolation rather than a replay-based completeness claim.
 
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,101 tests**, with two existing React-19 DevTools skips; this includes **1,055 parser tests / 64 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **285 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,101 tests**, with two existing React-19 DevTools skips; this includes **1,055 parser tests / 64 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **286 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

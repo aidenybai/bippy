@@ -293369,6 +293369,181 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-12T23:27:59.020Z",
       "failure": null
+    },
+    {
+      "id": "thomasjclark-elden-ring-weapon-calculator",
+      "revision": "b8a1cf8847fe67aacc7f8fcb038a9cfd6725f19a",
+      "framework": "spa",
+      "capturedAt": "2026-09-12T23:44:04.642Z",
+      "durationMs": 2474473,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 8956,
+        "commits": 11,
+        "pageErrors": [],
+        "title": "Elden Ring Weapon Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 4,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 872
+        },
+        "diagnostics": [
+          {
+            "code": "budget-exhausted",
+            "count": 18
+          },
+          {
+            "code": "max-call-depth",
+            "count": 7
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 2,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 8953,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent]",
+            "reason": "step budget exhausted",
+            "absorbedFibers": 8953,
+            "heads": [
+              "<ThemeProvider> [FunctionComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 8955,
+        "staticFibers": 2,
+        "coverage": 1,
+        "strictCoverage": 0.00022333891680625348,
+        "divergence": null,
+        "stepsUsed": 3,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "stateCount": 5,
+        "clusters": 0,
+        "tree": {
+          "nodes": 18266,
+          "inputs": 1,
+          "guards": 5,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 4,
+              "commitCount": 5
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "eq(choice(commit), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 4,
+              "guard": "eq(choice(commit), 4)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 4,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 5,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "conditions": [],
+            "unresolvedClaimCommits": [
+              4
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-12T21:37:03.046Z",
+      "failure": null
     }
   ]
 }
