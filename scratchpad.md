@@ -803,11 +803,42 @@ Both retain 11 states, seven wildcards, and one subtree omission. All 53 saved w
 
 Final gates pass 3,282 root tests with two existing skips and 1,236 analyzer tests across 76 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-update-primitives-final-validation.exit` records 0; `update-primitives-reviewed-gates.json` verifies the evidence. Complete language, causal-model, renderer, and 500-repository gates remain open.
 
+### Guarded argument evaluation and captured call targets
+
+The original deterministic argument-order snapshot now matches `caught:1:0`. The analyzer no longer evaluates the second argument after the first throws. `pending-argument-order-reviewed-comparison.json` checks the same saved native bytes and unchanged fixture, without observations or a new native render. The earlier mismatch and passing replay remain evidence.
+
+`evaluateArguments()` now accepts a continuation. Ordinary arguments stay in an iterative loop; throwing alternatives resume the remaining expressions only on completing paths. Finite spread alternatives retain their arity and guards. Calls, `new`, `super`, and compiled-class wrappers use the same sequencing boundary.
+
+Method calls capture callee/receiver pairs after evaluating receivers and keys under their guards. Getter effects run once per selected reference. Equivalent receiver-independent targets can share an invocation after those reads, without repeating argument evaluation.
+
+The first candidate introduced a duplicate branch around an unchanged Next Script subtree. `/tmp/bippy-argument-order-first-package.log` retains the failing framework assertion. Separating reference capture from invocation restores that control without relaxing its expectation or repeating getters.
+
+Eleven component regressions fail against baseline `ce9ee782` and pass after the repair. They cover deterministic and guarded throws, competing error payloads, callee/receiver/key failures, receiver binding, getter counts, optional calls, finite spreads, and constructor arguments. They require exact concrete states, no omissions, exact native membership, and no replay mismatches. The baseline worktree is `/tmp/bippy-argument-order-baseline`; its relative imports use baseline production with main-owned dependency links.
+
+Seventeen direct evaluation controls pass on both revisions. A new control evaluates 10,000 ordinary arguments without recursive sequencing or an increased budget. This checks that bounded example, not general stack safety or performance.
+
+An expanded `super()` case exposes a separate constructor-outcome defect. The argument failure now stops later expressions, but `class-component.ts` discards the constructor body’s returned completion. Its model emits `returned:1:0` instead of `caught:1:0`; the successful path remains `returned:2:11`.
+
+The strict fixture and test remain under `/tmp/bippy-argument-order-baseline/packages/bippy-analyzer/tests/fixtures/pending-constructor/super.tsx` and `tests/pending-constructor.test.ts`. The test uses main production through absolute imports. Four unforced native captures retain four raw-model failures. Attempt 1 contradicts native membership; the other three match the successful snapshot. Every replay passes. `/tmp/bippy-argument-order-pending-constructor.log` and `pending-constructor-super-argument-order-attempt-*-comparison.json` preserve these failures, not passing coverage.
+
+Four saved assignment snapshots, seven saved throw snapshots, and the numeric-update snapshot remain concrete and exact. Seven reference-limit failures remain against their original captures. Five corpus controls repeat unchanged across all five comparison fields. No repositories were added; the corpus remains at 307.
+
+New source-only files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-argument-order-reviewed-home-model.json`: SHA-256 `6b0fa434339da482b136616be73511be78293647e7c6768c9ee2dcbf6c0ea54d`
+- `source-only-argument-order-reviewed-memory-model.json`: SHA-256 `11c2cb1e921412347587efe2f78fc75bd316cf527a10d1328b965fd0db0f6bd5`
+
+Their serialized `model` fields match the primitive-update checkpoint. Both retain 11 states, seven wildcards, and one subtree omission; all 53 saved workflow snapshots remain partial. These trees do not establish transitions or workflow reachability.
+
+Source review used the local React checkout at `82c44beb444eda5230c063eaa163d01f38817211`. `ReactFiberHooks.js` invokes components with their arguments; `ReactFiberClassComponent.js` constructs classes before adopting their instances. The retained ECMAScript source specifies abrupt completion between argument expressions and during spread iteration. These reads motivate the boundary, not complete React or iterator coverage.
+
+Final gates pass 3,305 root tests with two existing skips and 1,259 analyzer tests across 77 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-argument-order-final-validation.exit` records 0; `argument-order-reviewed-gates.json` verifies the retained evidence. Constructor outcomes, broader language semantics, causal models, renderer integration, and the 500-repository gate remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,282 tests**, with two existing React-19 DevTools skips; this includes **1,236 analyzer tests / 76 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,305 tests**, with two existing React-19 DevTools skips; this includes **1,259 analyzer tests / 77 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

@@ -672,6 +672,10 @@ interface ReferenceContinuation {
   (reference: AssignmentReference, context: EvaluationContext): StaticValue;
 }
 
+interface ArgumentsContinuation {
+  (args: StaticValue[], context: EvaluationContext): StaticValue;
+}
+
 interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
 }
@@ -4046,26 +4050,53 @@ export class Interpreter {
     }
   }
 
-  evaluateArguments(args: Argument[], context: EvaluationContext): StaticValue[] {
-    const values: StaticValue[] = [];
-    for (const argument of args) {
-      if (argument.type === "SpreadElement") {
-        const evaluated = this.evaluateExpression(argument.argument, context);
-        const spread = this.resolveIterable(
-          evaluated,
-          context,
-          this.locate(context.module, argument),
+  private evaluateArguments(
+    args: Argument[],
+    context: EvaluationContext,
+    proceed: ArgumentsContinuation,
+  ): StaticValue {
+    const evaluateFrom = (
+      start: number,
+      values: StaticValue[],
+      pathContext: EvaluationContext,
+    ): StaticValue => {
+      for (let index = start; index < args.length; index++) {
+        const argument = args[index];
+        const isSpread = argument.type === "SpreadElement";
+        const evaluated = this.evaluateExpression(
+          isSpread ? argument.argument : argument,
+          pathContext,
         );
-        if (spread.kind === "list" && spread.items.every((item) => item.kind !== "repeat")) {
-          values.push(...spread.items);
-        } else {
-          values.push(unknownValue(`spread argument ${describeValue(spread)}`));
+        const resolve = (value: StaticValue, argumentContext: EvaluationContext) =>
+          isSpread
+            ? this.resolveIterable(
+                value,
+                argumentContext,
+                this.locate(argumentContext.module, argument),
+              )
+            : value;
+        const getItems = (value: StaticValue) =>
+          !isSpread
+            ? [value]
+            : value.kind === "list" && value.items.every((item) => item.kind !== "repeat")
+              ? value.items
+              : [unknownValue(`spread argument ${describeValue(value)}`)];
+        const continueArguments = (value: StaticValue, argumentContext: EvaluationContext) =>
+          evaluateFrom(index + 1, [...values, ...getItems(value)], argumentContext);
+        if (getThrowCertainty(evaluated) !== "never") {
+          return this.continueValue(evaluated, pathContext, (value, argumentContext) =>
+            this.continueValue(resolve(value, argumentContext), argumentContext, continueArguments),
+          );
         }
-        continue;
+        const resolved = resolve(evaluated, pathContext);
+        if ((isSpread && resolved.kind === "branch") || getThrowCertainty(resolved) !== "never") {
+          return this.continueValue(resolved, pathContext, continueArguments);
+        }
+        values.push(...getItems(resolved));
       }
-      values.push(this.evaluateExpression(argument, context));
-    }
-    return values;
+      return proceed(values, pathContext);
+    };
+    return evaluateFrom(0, [], context);
   }
 
   /**
@@ -4146,58 +4177,71 @@ export class Interpreter {
     if (requiredSpecifier !== null)
       return this.importModule(requiredSpecifier, context, location, true);
     if (node.callee.type === "Super") {
-      context.superBinding?.construct?.(this.evaluateArguments(node.arguments, context));
-      return UNDEFINED_VALUE;
+      return this.evaluateArguments(node.arguments, context, (args, argumentContext) => {
+        argumentContext.superBinding?.construct?.(args);
+        return UNDEFINED_VALUE;
+      });
     }
     const callWith = (
       callee: StaticValue,
       thisValue: StaticValue | null,
       callContext: EvaluationContext,
     ): StaticValue => {
-      if (callee === CHAIN_SHORT_CIRCUIT) return callee;
+      if (callee.kind === "branch") {
+        return this.callAlternatives(callee, callContext, (alternative, alternativeContext) =>
+          callWith(alternative, thisValue, alternativeContext),
+        );
+      }
+      if (getThrowCertainty(callee) === "always" || callee === CHAIN_SHORT_CIRCUIT) return callee;
       if (node.optional && isNullish(callee) === true) return CHAIN_SHORT_CIRCUIT;
-      const args = this.evaluateArguments(node.arguments, callContext);
-      return this.callValue(
-        this.withStyledDisplayName(callee, node, context),
-        args,
-        callContext,
-        location,
-        {
-          thisValue,
-          nameHint,
-        },
+      return this.evaluateArguments(node.arguments, callContext, (args, argumentContext) =>
+        this.callValue(
+          this.withStyledDisplayName(callee, node, argumentContext),
+          args,
+          argumentContext,
+          location,
+          { thisValue, nameHint },
+        ),
       );
     };
     if (node.callee.type !== "MemberExpression") {
       return callWith(this.evaluateExpression(node.callee, context), null, context);
     }
     const member = node.callee;
-    const receiver = this.evaluateExpression(member.object, context);
-    const key =
-      member.property.type === "PrivateIdentifier"
-        ? primitiveValue(`#${member.property.name}`)
-        : member.computed
-          ? this.evaluateExpression(member.property, context)
-          : primitiveValue(member.property.name);
-    const propertyName = toPropertyKey(key);
-    const getCallee = (target: StaticValue): StaticValue => {
-      if (target === CHAIN_SHORT_CIRCUIT) return target;
-      if (member.optional && isNullish(target) === true) return CHAIN_SHORT_CIRCUIT;
-      return propertyName === null
-        ? unknownValue("computed method call", location)
-        : this.getProperty(target, propertyName, context, location, member.optional);
-    };
-    const receiverOf = (target: StaticValue): StaticValue | null =>
-      member.object.type === "Super" ? context.thisValue : target;
-    if (receiver.kind !== "branch") {
-      const callee = getCallee(receiver);
-      return callWith(callee, isReceiverIndependent(callee) ? null : receiverOf(receiver), context);
-    }
-    const callee = mapValue(receiver, getCallee);
-    if (isReceiverIndependent(callee)) return callWith(callee, null, context);
-    return this.callAlternatives(receiver, context, (target, alternativeContext) =>
-      callWith(getCallee(target), receiverOf(target), alternativeContext),
+    const references = this.continueValue(
+      this.evaluateExpression(member.object, context),
+      context,
+      (receiver, receiverContext) => {
+        if (receiver === CHAIN_SHORT_CIRCUIT || (member.optional && isNullish(receiver) === true))
+          return CHAIN_SHORT_CIRCUIT;
+        const key =
+          member.property.type === "PrivateIdentifier"
+            ? primitiveValue(`#${member.property.name}`)
+            : member.computed
+              ? this.evaluateExpression(member.property, receiverContext)
+              : primitiveValue(member.property.name);
+        return this.continueValue(key, receiverContext, (propertyKey, keyContext) => {
+          const propertyName = toPropertyKey(propertyKey);
+          const callee =
+            propertyName === null
+              ? unknownValue("computed method call", location)
+              : this.getProperty(receiver, propertyName, keyContext, location, member.optional);
+          return listValue([callee, receiver]);
+        });
+      },
     );
+    const callee = mapValue(references, (reference) =>
+      reference.kind === "list" ? reference.items[0] : reference,
+    );
+    if (isReceiverIndependent(callee)) return callWith(callee, null, context);
+    return this.continueValue(references, context, (reference, referenceContext) => {
+      if (reference.kind !== "list") return reference;
+      return callWith(
+        reference.items[0],
+        member.object.type === "Super" ? referenceContext.thisValue : reference.items[1],
+        referenceContext,
+      );
+    });
   }
 
   callValue(
@@ -4472,8 +4516,11 @@ export class Interpreter {
   private evaluateNewExpression(node: NewExpression, context: EvaluationContext): StaticValue {
     const callee = this.evaluateExpression(node.callee, context);
     const location = this.locate(context.module, node);
-    const args = this.evaluateArguments(node.arguments, context);
-    return this.construct(callee, args, context, location);
+    return this.continueValue(callee, context, (constructor, constructorContext) =>
+      this.evaluateArguments(node.arguments, constructorContext, (args, argumentContext) =>
+        this.construct(constructor, args, argumentContext, location),
+      ),
+    );
   }
 
   /** Runs the pending `super(...)` of `instance` when `superClass` is its parent; null when it is not under construction by that parent. */
@@ -4887,24 +4934,26 @@ export class Interpreter {
     call: CallExpression,
     context: EvaluationContext,
   ): StaticValue {
-    const superValue = this.evaluateArguments(call.arguments, context)[0] ?? null;
-    const scope = createScope(context.scope);
-    const wrapperContext: EvaluationContext = { ...context, scope };
-    this.bindParameters(
-      compiled.wrapper.params,
-      superValue ? [superValue] : [],
-      scope,
-      wrapperContext,
-    );
-    const classValue = this.defineClass(
-      compiled.wrapper,
-      { members: compiled.members, superValue },
-      wrapperContext,
-      compiled.name,
-    );
-    declareInScope(scope, compiled.name, classValue);
-    this.evaluateFunctionBlock(compiled.setup, wrapperContext);
-    return classValue;
+    return this.evaluateArguments(call.arguments, context, (args, argumentContext) => {
+      const superValue = args[0] ?? null;
+      const scope = createScope(argumentContext.scope);
+      const wrapperContext: EvaluationContext = { ...argumentContext, scope };
+      this.bindParameters(
+        compiled.wrapper.params,
+        superValue ? [superValue] : [],
+        scope,
+        wrapperContext,
+      );
+      const classValue = this.defineClass(
+        compiled.wrapper,
+        { members: compiled.members, superValue },
+        wrapperContext,
+        compiled.name,
+      );
+      declareInScope(scope, compiled.name, classValue);
+      this.evaluateFunctionBlock(compiled.setup, wrapperContext);
+      return classValue;
+    });
   }
 
   /** Parameters of a callback whose caller is not analyzed: each argument is unknown. */

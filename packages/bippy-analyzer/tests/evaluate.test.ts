@@ -236,6 +236,18 @@ const evaluateExports = async (
   return described;
 };
 
+it("evaluates ten thousand ordinary arguments without recursive sequencing", async () => {
+  const argumentsSource = Array.from({ length: 10_000 }, () => "1").join(",");
+  const results = await evaluateExports(
+    `
+    const consume = (...values: number[]) => values.length;
+    export const wide = () => consume(${argumentsSource});
+  `,
+    ["wide"],
+  );
+  expect(results).toEqual({ wide: "10000" });
+});
+
 describe("integer parsing", () => {
   it.each(["parseInt", "Number.parseInt"])("matches native %s radix inference", async (callee) => {
     const inputs = [
