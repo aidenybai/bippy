@@ -707,11 +707,44 @@ All 13 saved resource snapshots and 40 saved memory snapshots still compare part
 
 Final gates pass 3,224 root tests with two existing skips and 1,178 analyzer tests across 72 files. Root typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-throw-path-final-validation.exit` records 0; `completion-reviewed-gates.json` records the evidence. Causal-model, renderer, and 500-repository acceptance remain incomplete.
 
+### Short-circuit logical assignments
+
+Four source-derived probes expose assignment defects after `2aba4984`. They use main production through absolute imports, although `/tmp/bippy-completion-baseline` hosts the temporary runner. Their first native snapshots and strict failures remain under `assignment-boundary-*-comparison.json` and `/tmp/bippy-assignment-boundary-baseline.log`.
+
+React’s DevTools store uses `||=` to avoid further recursive collapse calls once a change occurs. Its Fizz tests use `??=` to avoid constructing replacement promises. The checkout at `82c44beb444eda5230c063eaa163d01f38817211` preserves these sources; this repair does not claim DevTools or Fizz integration coverage.
+
+`evaluateLogicalAssignment()` now selects the current value’s alternatives under their guards. Kept paths skip both the right-hand operand and the write. Assigned paths evaluate the operand under the selected guard, then write only successful results. A throwing getter stops the right-hand operand as well. Unknown truthiness or presence still produces a guarded decision with the existing budgets.
+
+Ten fixtures cover the three logical assignment operators. They check guarded effects and identity, including unknown booleans and exceptions. All ten strict raw-model checks fail on `2aba4984` in `/tmp/bippy-logical-assignment-baseline`; all pass after the repair. Each requires no omissions, exact native membership, and no replay mismatches.
+
+The unchanged saved logical-assignment snapshot now matches the expected `kept:old:0` and `set:new:1` states. Seven saved throw controls remain exact as well. These comparisons perform no new native renders and supply no observations.
+
+The other three assignment probes remain unresolved:
+
+- Scalar assignment emits `caught:new` instead of `caught:old`
+- Member assignment evaluates the right-hand operand before its receiver and writes the surviving value on the throwing path
+- Computed-key assignment emits an invalid `returned:RK:old` state and an unconstrained text node
+
+The first two still mismatch their identical saved native snapshots, with six matcher steps and no budget exhaustion. The computed-key comparison reports exact, but its unconstrained text cannot establish the declared concrete outcomes. All four assignment replays pass, including those unresolved cases. `/tmp/bippy-logical-assignment-saved-boundaries.log` retains three strict failures and the repaired logical case’s pass.
+
+Retrospective source-only models preserve the three unresolved trees under `assignment-reference-logical-reviewed-*-model.json`. Those models use neither observations nor replay, but they follow the existing native snapshots. They are not pre-trace evidence. Receiver/key evaluation order and reuse, ordinary assignment on throwing paths, and broader assignment semantics remain open.
+
+New original-app model files retain 11 states, seven wildcards, and one subtree omission. Their enumerated states and conditions match the completion checkpoint; rendered capture timestamps and the interpreter hash differ. The files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-logical-assignment-reviewed-home-model.json`: SHA-256 `8e9781cd1f40cd069836a9fb1165b7991ceb809b0582bf3e8f02d57c75a98fd0`
+- `source-only-logical-assignment-reviewed-memory-model.json`: SHA-256 `8b393dc527b9023ee12e5eed3b51ba55319e8514533db15f94968361c5b8cc12`
+
+All 53 saved workflow snapshots still compare partially. Five corpus controls repeat unchanged against identical captures. The corpus remains at 307 repositories; no fixture or preparation increases that count.
+
+Final gates pass 3,244 root tests with two existing skips and 1,198 analyzer tests across 73 files. Typecheck/build, realm checks, lint, formatting, and documentation checks pass. `/tmp/bippy-logical-assignment-final-validation.exit` records 0; `logical-assignment-verified-gates.json` records the evidence.
+
+The earlier receipt compared absent top-level `states` fields; the corrected check compares the serialized model wrapper and its 11 states. The causal-model, renderer, and 500-repository gates remain incomplete.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,224 tests**, with two existing React-19 DevTools skips; this includes **1,178 analyzer tests / 72 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,244 tests**, with two existing React-19 DevTools skips; this includes **1,198 analyzer tests / 73 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

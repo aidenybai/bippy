@@ -250,6 +250,10 @@ Inside `try`, the interpreter retains local state from abrupt paths until a hand
 
 Finalizers run on both completing and exiting paths. Heap journals join terminal paths immediately; paths that jump within a loop retain deferred handling. The [throw-path regressions](../packages/bippy-analyzer/tests/throw-paths.test.ts) check these bounded cases, not complete exception, loop, or async semantics.
 
+Logical assignments also separate kept and assigned paths. `||=`, `&&=`, and `??=` skip the right-hand operand and the write when the current value suffices. A throwing read or right-hand operand stops the remaining operation. The [logical-assignment regressions](../packages/bippy-analyzer/tests/logical-assignment.test.ts) check guards, side effects, and kept object identity.
+
+Ordinary assignment can still write a surviving value on a throwing path. Receiver/key evaluation order and reference reuse remain open. An unconstrained text node can also match a native snapshot without establishing the source-derived concrete outcomes.
+
 ### Preserve identity as well as conditions
 
 Two equal-looking objects need not be the same object. Two references to the same function must retain that identity. The [value implementation](../packages/bippy-analyzer/src/evaluate/values.ts) therefore records allocation identity separately from symbolic conditions.
