@@ -1,8 +1,8 @@
 {
-  "name": "@bippy/parser",
+  "name": "bippy-analyzer",
   "version": "0.0.0",
   "private": true,
-  "description": "Static React fiber tree construction from source ASTs",
+  "description": "React program analysis",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vp test --project parser",
+    "test": "vp test --project bippy-analyzer",
     "generate:realms": "tsx scripts/generate-host-realms.ts",
     "check:realms": "tsx scripts/generate-host-realms.ts --check",
     "render": "tsx scripts/render.ts",

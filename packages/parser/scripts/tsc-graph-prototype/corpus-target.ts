@@ -43,7 +43,7 @@ export const loadCorpusTargets = (corpusDirectory: string, ids: string[]): Corpu
     const cloneDirectory = path.join(corpusDirectory, entry.id);
     if (!existsSync(cloneDirectory)) {
       throw new Error(
-        `${cloneDirectory} is missing; clone it with: pnpm --filter @bippy/parser corpus -- --static-only --corpus-dir ${corpusDirectory} ${id}`,
+        `${cloneDirectory} is missing; clone it with: pnpm --filter bippy-analyzer corpus -- --static-only --corpus-dir ${corpusDirectory} ${id}`,
       );
     }
     const rootDirectory = path.join(cloneDirectory, entry.static.rootDirectory);

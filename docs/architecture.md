@@ -9,7 +9,7 @@ meta:
 
 # How the parser builds and checks React trees
 
-This document explains how `@bippy/parser` builds a model of a React application and checks it against application captures. It describes the data structures and design decisions so you can understand and modify the implementation. It assumes you know TypeScript and React.
+This document explains how `bippy-analyzer` builds a model of a React application and checks it against application captures. It describes the data structures and design decisions so you can understand and modify the implementation. It assumes you know TypeScript and React.
 
 The implementation is incomplete. Some checks can find errors without proving that the model is correct. The sections below distinguish the intended guarantees from the checks that the code currently performs.
 
