@@ -4191,7 +4191,7 @@ export class Interpreter {
     location: SourceLocation | null,
   ): StaticValue {
     const result = evaluateBuiltinCall(this, callee, args, context, location);
-    if (result.kind === "unknown") this.markEscapes(args);
+    if (result.kind === "unknown" && result.thrown === undefined) this.markEscapes(args);
     return result;
   }
 

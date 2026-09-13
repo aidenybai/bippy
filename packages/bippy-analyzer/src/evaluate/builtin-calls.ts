@@ -112,7 +112,13 @@ import {
 } from "./primitive-shapes.js";
 import { memoizeScalarOperation } from "./scalar-memo.js";
 import { isArrayValue } from "./type-predicates.js";
-import { recordDerivation, recordInputSource, recordRepeatSource } from "./predicates.js";
+import {
+  getTruthinessPredicate,
+  recordDerivation,
+  recordInputSource,
+  recordRepeatSource,
+} from "./predicates.js";
+import { getThrowCertainty } from "./thrown.js";
 import type { GuardLiteral } from "../harness/symbolic-tree.js";
 import { createSearchParamsValue } from "./url-search-params.js";
 import {
@@ -1669,6 +1675,8 @@ const scheduledTask = (
   return () => interpreter.runTimerTask(handle, context, location, task);
 };
 
+const CONTINUE_SEARCH = createSymbolValue("array search continues");
+
 interface ItemVerdict {
   verdict: boolean | null;
   preference: boolean | null;
@@ -2767,28 +2775,52 @@ export const evaluateBuiltinCall = (
           const candidates = receiver.items.filter((item) => item.kind !== "repeat");
           return branchValue([...candidates, missing], `${name}()`, location);
         }
-        const verdicts = testItems(interpreter, receiver, first, context);
-        const order = name.includes("Last")
-          ? verdicts.map((_, index) => verdicts.length - 1 - index)
-          : verdicts.map((_, index) => index);
-        const candidates: StaticValue[] = [];
-        const preferences: (boolean | null)[] = [];
-        for (const index of order) {
-          const { verdict, preference } = verdicts[index];
-          if (verdict === false) continue;
-          candidates.push(isIndex ? primitiveValue(index) : receiver.items[index]);
-          preferences.push(preference);
-          if (verdict === true) break;
+        const length = receiver.items.length;
+        const isReverse = name.includes("Last");
+        let result: StaticValue = CONTINUE_SEARCH;
+        for (let position = 0; position < length; position++) {
+          const index = isReverse ? length - position - 1 : position;
+          const search = (
+            alternative: StaticValue,
+            searchContext: EvaluationContext,
+          ): StaticValue => {
+            if (alternative !== CONTINUE_SEARCH) return alternative;
+            const item = interpreter.getProperty(receiver, String(index), searchContext, location);
+            const outcome = interpreter.callValue(
+              first,
+              [item, primitiveValue(index), receiver],
+              searchContext,
+              location,
+              { thisValue: second ?? UNDEFINED_VALUE },
+            );
+            return mapValue(outcome, (verdict) => {
+              if (getThrowCertainty(verdict) === "always") return verdict;
+              const truthiness = getTruthiness(verdict);
+              if (truthiness === false) return CONTINUE_SEARCH;
+              const found = isIndex ? primitiveValue(index) : item;
+              return truthiness === true
+                ? found
+                : branchValue(
+                    [found, CONTINUE_SEARCH],
+                    `${name}()`,
+                    location,
+                    getPreferredTruthiness(verdict) === false ? 1 : 0,
+                    getTruthinessPredicate(verdict),
+                  );
+            });
+          };
+          result =
+            result.kind === "branch"
+              ? interpreter.callAlternatives(result, context, search)
+              : search(result, context);
+          if (
+            result !== CONTINUE_SEARCH &&
+            (result.kind !== "branch" || !result.alternatives.includes(CONTINUE_SEARCH))
+          )
+            break;
         }
-        if (preferences.at(-1) !== true) {
-          candidates.push(missing);
-          preferences.push(preferences.every((preference) => preference === false));
-        }
-        return branchValue(
-          candidates,
-          `${name}()`,
-          location,
-          Math.max(0, preferences.indexOf(true)),
+        return mapValue(result, (alternative) =>
+          alternative === CONTINUE_SEARCH ? missing : alternative,
         );
       }
       case "reduce":
