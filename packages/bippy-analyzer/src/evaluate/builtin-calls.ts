@@ -1550,6 +1550,29 @@ const callGlobal = (
   if (name.startsWith("Math.")) {
     const method = name.slice("Math.".length);
     const mathFunction: unknown = Reflect.get(Math, method);
+    const branchIndex = args.findIndex((argument) => argument.kind === "branch");
+    const combinations = args.reduce(
+      (count, argument) => count * (argument.kind === "branch" ? argument.alternatives.length : 1),
+      1,
+    );
+    if (
+      typeof mathFunction === "function" &&
+      !isConstructor &&
+      branchIndex !== -1 &&
+      combinations <= MAX_DISTRIBUTED_ALTERNATIVES &&
+      args.every(isNumericMathArgument)
+    ) {
+      return mapValue(args[branchIndex], (alternative) =>
+        callGlobal(
+          interpreter,
+          name,
+          args.with(branchIndex, alternative),
+          context,
+          location,
+          false,
+        ),
+      );
+    }
     const natives = toNativeArguments(args, null);
     if (typeof mathFunction === "function" && natives !== null)
       return fromNativeValue(Reflect.apply(mathFunction, Math, natives), `${name}()`, null);
@@ -2369,6 +2392,16 @@ const callPromiseMethod = (
 };
 
 const MAX_DISTRIBUTED_ALTERNATIVES = 8;
+
+const isNumericMathArgument = (value: StaticValue): boolean => {
+  if (value.kind === "branch")
+    return value.alternatives.every(
+      (alternative) => alternative.kind === "primitive" && typeof alternative.value === "number",
+    );
+  return value.kind === "primitive"
+    ? typeof value.value === "number"
+    : value.kind === "unknown-primitive" && value.primitiveType === "number";
+};
 
 const isPrimitiveBranch = (value: StaticValue): boolean =>
   value.kind === "branch" &&
