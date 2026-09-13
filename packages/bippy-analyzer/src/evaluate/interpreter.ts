@@ -3227,7 +3227,7 @@ export class Interpreter {
     return member.kind === "external" && member.origin === "binding" ? null : TRUE_VALUE;
   }
 
-  private continueValue(
+  continueValue(
     value: StaticValue,
     context: EvaluationContext,
     proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
@@ -4178,8 +4178,7 @@ export class Interpreter {
       return this.importModule(requiredSpecifier, context, location, true);
     if (node.callee.type === "Super") {
       return this.evaluateArguments(node.arguments, context, (args, argumentContext) => {
-        argumentContext.superBinding?.construct?.(args);
-        return UNDEFINED_VALUE;
+        return argumentContext.superBinding?.construct?.(args) ?? UNDEFINED_VALUE;
       });
     }
     const callWith = (
@@ -4532,8 +4531,7 @@ export class Interpreter {
     if (instance.kind !== "object") return null;
     const binding = this.pendingSuperBindings.get(instance);
     if (!binding?.construct || binding.parent !== superClass) return null;
-    binding.construct(args);
-    return instance;
+    return binding.construct(args);
   }
 
   construct(
@@ -4596,7 +4594,7 @@ export class Interpreter {
   }
 
   /** `new` yields the constructor's return value only when it is an object or function. */
-  private getConstructorResult(
+  getConstructorResult(
     returned: StaticValue,
     instance: StaticObjectValue,
     realm: HostRealm,
@@ -4606,6 +4604,7 @@ export class Interpreter {
         this.getConstructorResult(alternative, instance, realm),
       );
     }
+    if (getThrowCertainty(returned) === "always") return returned;
     const typeofValue = getTypeofValue(returned, realm);
     const isObjectLike =
       typeofValue.kind === "primitive" &&
