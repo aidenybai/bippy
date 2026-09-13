@@ -192,6 +192,8 @@ A result can also depend on captured observations, such as configuration or stor
 
 The [interpreter](../packages/bippy-analyzer/src/evaluate/interpreter.ts) evaluates source with `StaticValue` records. A record can describe an exact value or alternative values, including values within objects and collections. When the model cannot determine a value, it records uncertainty and a reason.
 
+Numeric `Math` arguments retain guarded alternatives when their Cartesian product fits the existing eight-combination limit. This preserves finite slice bounds instead of replacing them with an unknown number. Other argument kinds and larger products retain their conservative handling.
+
 ### Preserve relationships between expressions
 
 A branch value records alternatives for an unresolved condition. The [predicate model](../packages/bippy-analyzer/src/evaluate/predicates.ts) relates those alternatives to symbolic inputs. A symbolic input represents data whose value the analysis does not know.

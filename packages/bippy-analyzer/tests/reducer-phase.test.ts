@@ -1,14 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { enumerateStaticStates } from "../src/harness/compare-render.js";
-import type { PatternNode } from "../src/harness/static-pattern.js";
 import { listComponentFixtures, runComponentFixture } from "./helpers/component-runner.js";
-
-const getTexts = (nodes: PatternNode[]): string[] =>
-  nodes.flatMap((node) => {
-    if (node.kind === "fiber") return getTexts(node.children);
-    if (node.kind === "text" && node.text !== null) return [node.text];
-    throw new Error(`Expected a concrete tree, received ${node.kind}`);
-  });
+import { getConcretePatternText } from "./helpers/concrete-pattern-text.js";
 
 describe("queued reducer phases", () => {
   it.each([
@@ -20,9 +13,9 @@ describe("queued reducer phases", () => {
     const result = await runComponentFixture(fixture);
     const model = enumerateStaticStates(result.staticResult);
     expect(model.omitted).toBeNull();
-    expect([...new Set(model.states.flatMap((state) => getTexts(state.tree)))].sort()).toEqual(
-      expectedTexts,
-    );
+    expect(
+      [...new Set(model.states.flatMap((state) => getConcretePatternText(state.tree)))].sort(),
+    ).toEqual(expectedTexts);
     expect(result.comparison.report.status).toBe("exact");
     expect(result.comparison.stateReplay?.mismatched).toEqual([]);
   });
