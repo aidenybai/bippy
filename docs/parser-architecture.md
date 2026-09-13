@@ -365,7 +365,7 @@ The work stack does not raise the matching step budget. Recursive tree indexing 
 
 Check `budgetExhausted` when a comparison reports `mismatch`. If true, the search found no witness within its budget. That does not prove the capture is absent from the model. The recorded divergence describes the search, not a proven parser defect.
 
-Check evaluation diagnostics even when the matcher’s `budgetExhausted` flag is false. Evaluation can replace a component body with a wildcard after a step or call-depth cutoff. A partial match through that wildcard does not validate the missing body.
+Check evaluation diagnostics even when the matcher’s `budgetExhausted` flag is false. Evaluation can replace a component body with a wildcard after a step or call-depth cutoff. A partial match through that wildcard does not validate the missing body. The [Elden Ring capture](../scratchpad.md#evaluator-limited-elden-ring-import) records three matching steps alongside eighteen evaluation-budget cutoffs.
 
 The comparison checks fiber structure. It also compares these recorded fields:
 
