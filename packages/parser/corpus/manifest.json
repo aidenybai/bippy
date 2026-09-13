@@ -8384,6 +8384,169 @@
         "externalPackageAllowList": ["@mui/*", "@radix-ui/*", "react-is", "react-transition-group"]
       },
       "notes": "Keep the original committed regulation data rather than regenerate it using external game files. README starts with yarn install/start; rebuilding data is a separate optional workflow. Preserve original SWC/ESLint Vite plugins, HTML preload, env placeholders and analytics. No buildData.env, player stats, weapon selection, storage or external game files are supplied. Preserve original Yarn4.8.1, its checked-in release and node-modules linker; no PnP conversion or lock regeneration. Frozen success is insufficient: verify Yarn lock locators, installed locations/versions and actual runner precedence before capture. No CI/OpenSSL override, app repair, changed comparison budget or whole-space completeness claim. Original React18.2.0 native capture has 8956 fibers, eleven commits and no page errors. Original/current/repeated comparisons retain two matched fibers and 8953 wildcard-absorbed fibers with reason step budget exhausted. Eighteen evaluation-budget and seven call-depth cutoffs remain, despite matcher budgetExhausted:false and only three matching steps. Preserve five bounded states, the 18266-node symbolic tree and the one incomplete replay with no contradiction. These results do not validate the hidden application body. Keep original Node22.16.0/pnpm10.12.1/Yarn4.8.1, the vendored CLI, node-modules linker, frozen lock and 414 checked package locations. Original regulation data, defaults, loading effects and MUI/Radix source policy remain unchanged. Do not run external-game-file rebuilds, invent configuration or weapon input, or claim gameplay/calculation completeness. Collection journal sharing retains all five comparison fields; concurrent timings are not a controlled performance measurement. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 509273074 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "kanugurajesh-virtual-calculator",
+      "repository": "https://github.com/kanugurajesh/Virtual-Calculator",
+      "revision": "5e91d2dd41a36212d11960d996f1efa61a39e260",
+      "description": "kanugurajesh/Virtual-Calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54601 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54601/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["react-hot-toast", "react-hot-toast/*", "goober", "goober/*"]
+      },
+      "notes": "Preserve the original empty textarea, keyboard component and toast provider without entering a calculation. Interpret the explicitly listed installed libraries rather than accept their opaque fiber subtrees. Preserve the original sparse policy and compare both policies against the identical saved Bippy capture. This is a source-policy experiment, not a semantic repair or complete event/network/style proof. Original native React18.3.1 has 36 fibers and one commit. Keep the original read-only textarea warning. Explicit installed react-hot-toast and Goober source removes the sparse policy's opaque Toaster and repeats exact with one passing replay against the same capture. Do not enter calculator input or claim keyboard, toast-event, style or arithmetic completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 818951968 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "logicmason5-many-short-games-using-reactjs",
+      "repository": "https://github.com/LogicMason5/Many-short-games-using-reactjs",
+      "revision": "20eb384862f322a5d4b07c126f951719f3ec44eb",
+      "description": "LogicMason5/Many-short-games-using-reactjs",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --non-interactive",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54603 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54603/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "react-router",
+          "react-router-dom",
+          "@remix-run/router",
+          "use-sync-external-store",
+          "use-sync-external-store/*",
+          "@headlessui/react",
+          "@heroicons/react",
+          "@heroicons/react/*",
+          "@vercel/analytics",
+          "@vercel/analytics/*"
+        ]
+      },
+      "notes": "Keep original frozen Yarn installation and Husky postinstall. Preserve the relative Vite base, PWA configuration, service-worker registration, analytics and data-router layout. Capture the original index Hero, not an invented game route or storage state. Interpret the explicitly listed installed libraries rather than accept their opaque fiber subtrees. Preserve the original sparse policy and compare both policies against the identical saved Bippy capture. This is a source-policy experiment, not a semantic repair or complete event/network/style proof. Retain the stronger repeated source-expanded mismatch over the original 210-fiber opaque match. Native React18.2.0 has 212 fibers, six commits and no page errors. Installed router, Headless UI, icon and analytics source exposes a modeled loading div under GameCard where native has an img. The original IntersectionObserver controls the src and the image-load handler clears loading. Matching uses 155 steps without exhaustion, evaluation has no diagnostics, and one internal replay passes over the two-state model. Preserve this independent counterexample and isolate missing resource-event continuation; do not infer completeness from replay or hide it behind the sparse policy. Keep the original Hero route, analytics, PWA, lazy card boundaries, source, lock and empty storage. No game input or image response is fabricated. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1094159728 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "rafaellavborba-memorygame",
+      "repository": "https://github.com/rafaellavborba/memoryGame",
+      "revision": "2212297a18862466140be5742342f8e2dbefddfd",
+      "description": "rafaellavborba/memoryGame",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54605 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54605/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Keep the original v2 lock, Vite2.9 workflow, checked-in card data, React18 createRoot and StrictMode. Do not flip cards, regenerate inputs or claim matching-game behavior. Native React18.2.0 has 55 fibers and one commit without page errors. Preserve truncated membership, three bounded states and one omitted repeat range above length two with no finite maximum. Four replay assignments retain three incomplete cases, including the outside-enumeration length-eight witness. Do not increase repeat budgets, supply cards or claim shuffle/gameplay completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 510570231 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "soniikot-memory-game-ts-strict",
+      "repository": "https://github.com/soniikot/memory-game-ts-strict",
+      "revision": "e82a631bf35db1233fca1e5cdaa927a6464d1e54",
+      "description": "soniikot/memory-game-ts-strict",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54606 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54606/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original Husky prepare, ESLint Vite plugin, reducer/context initialization and original unauthenticated Cat API fetch. Do not substitute responses, suppress network errors or start a game. Review API-derived observations as separate native evidence. Native React18.3.1 has ten fibers, six commits and no page errors. Exact initial membership and one replay pass repeat with the original Cat API request. Preserve the original fetch/reducer lifecycle, including catch not clearing loading; no response, cats, game start or storage is supplied. Fiber evidence does not prove network or gameplay completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 844213836 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "luizomf-memory-game-with-react-ts",
+      "repository": "https://github.com/luizomf/memory-game-with-react-ts",
+      "revision": "2703cf2e37a90b904b08b097d58c4e56a3a65137",
+      "description": "luizomf/memory-game-with-react-ts",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54607 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54607/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Preserve original Vite2 root src and src/index.html, original /src TypeScript baseUrl, styled-components theme and global styles, sorted-card generation and confirm wrapper. The review helper's failed root-index assumption is retained. Do not create index.html, rewrite aliases, choose cards or invent dialog input. Native React18.1.0 has 128 fibers and one commit without page errors. Preserve original Vite root src and src/index.html. Truncated membership retains three bounded states, one omitted repeat range above two with no finite maximum, and three incomplete cases among four assignments, including the outside length-twelve witness. Keep original sorted cards, refs and confirm wrapper; no HTML correction, invented dialog input or budget increase. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 501221607 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "aeenpah-sudoku-react-vite",
+      "repository": "https://github.com/AeenPah/Sudoku-react-vite",
+      "revision": "bf964e02265965b61d698d03afb6acc043f73d3d",
+      "description": "AeenPah/Sudoku-react-vite",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54608 --strictPort",
+      "env": {
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54608/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "tsconfig": "tsconfig.app.json",
+        "entry": "src/main.tsx"
+      },
+      "notes": "Keep original PWA configuration, initial level-selection popup and original prefilled/validation data. Do not choose a level, supply a puzzle, alter validation or claim solver correctness. Native React18.3.1 has 126 fibers and one commit without page errors. Exact initial membership and one replay pass repeat for the original level-selection popup. Preserve undefined level, initial cell data, structuredClone use and PWA configuration; do not select a level, supply a puzzle or claim solving/validation completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 895631493 identifies a distinct non-fork repository."
     }
   ]
 }

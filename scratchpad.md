@@ -391,7 +391,7 @@ Ten second-game Vite source bundles produced eight original frozen recipes. Lith
 
 Six installed trees and actual runners pass separate audits. Six initial Bippy captures complete with unchanged tracked source: two exact, two truncated and two partial results. Both original truncated memory games retain one omission and incomplete replay. The virtual calculator retains its read-only textarea warning.
 
-These six repositories remain unimported pending final checks. Luiz’s original Vite root is `src`, with `src/index.html`; the source collector’s failed root-index assumption remains saved. The recipe uses that original HTML file.
+At this checkpoint, these six repositories remained unimported pending final checks. Luiz’s original Vite root is `src`, with `src/index.html`; the source collector’s failed root-index assumption remains saved. The recipe uses that original HTML file.
 
 The first repetition helper wrongly passes `--replay`; the CLI rejects it before analysis. Static-only mode already loads a saved capture. After correcting the flag, all six original policies repeat in five fields.
 
@@ -399,11 +399,29 @@ The first expanded manifest then uses unsupported `static.allowlist`; schema val
 
 Explicit installed Toast/Goober source makes the virtual calculator exact against its unchanged capture. Expanded router, icon and analytics source exposes a repeated Many Games mismatch with no evaluation or matching cutoff. The model retains a loading div beneath `GameCard` where native renders the image next; the original image-load handler clears this loading state. One replay still passes, so the missing event continuation needs independent isolation rather than a replay-based completeness claim.
 
+### Six original second-game captures
+
+Six original repositories bring the corpus to 292 distinct GitHub IDs, leaving 208. The eighty-five additions beyond the historical 207 contain sixty exact, eight truncated, ten partial and seven mismatch reports.
+
+The virtual calculator, Soni’s memory game and AeenPah’s Sudoku match their initial captures exactly, with one passing replay each. The virtual calculator keeps its native read-only textarea warning; its installed Toast/Goober source policy replaces the original opaque comparison. Soni keeps the original Cat API request and reducer lifecycle. Sudoku keeps the initial level-selection popup without puzzle input.
+
+Rafa’s and Luiz’s memory games remain truncated. Each retains three bounded states, one omitted repeat range and three incomplete cases among four assignments. Their outside-enumeration witnesses use lengths eight and twelve; both remain incomplete. The repeats do not establish shuffle or gameplay completeness.
+
+Many Games retains the stronger source-expanded mismatch rather than the sparse policy’s 210 skipped fibers. The native capture records 212 fibers and six commits without page errors. The mismatch repeats without matching or evaluation cutoffs, while internal replay passes. Its image-load continuation remains unresolved; no loading state or image response is fabricated.
+
+Fresh checks verify 294, 542, 109, 639, 105 and 532 installed packages in manifest order. The two Vite2 apps retain Node16.20.2/npm8.19.4/pnpm8.15.9; the four modern apps retain Node22.16.0/pnpm10.12.1 and original npm10.9.2 or Yarn1.22.22. All tracked source and locks remain unchanged. `second-games-import-provenance.json` preserves all 286 prior raw rows and nested order under `/tmp/bippy-parser-game-expansion-two`.
+
+All six original policies and both expanded policies repeat in five comparison fields. The pre-analysis CLI/schema failures, two frozen-install failures, source-review error and original native/server logs remain saved. No budgets or comparisons change.
+
+Data validation passes root typecheck, fifteen manifest tests, schema/identity/raw-order checks, formatting and diff checks. The documentation checker validates 65 links and both executable TSX examples. Parser implementation and the completed 3,101-test gate remain unchanged.
+
+Seven further public-repository searches each retain their first 100 results, not all search matches. Their receipts identify 690 distinct candidates after counted-ID exclusions. The next preparation batch selects 100, records 112 separate-review exclusions and leaves 478 eligible candidates unprepared. Preparation is running under `/tmp/bippy-parser-ui-expansion-three`; it adds no corpus rows. Source inventory must still check renderer support and original workflows.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,101 tests**, with two existing React-19 DevTools skips; this includes **1,055 parser tests / 64 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **286 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,101 tests**, with two existing React-19 DevTools skips; this includes **1,055 parser tests / 64 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **292 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
