@@ -305801,52 +305801,52 @@
     {
       "id": "melau-eddy-react-tailwind-admin-dash",
       "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
-      "framework": "spa",
-      "capturedAt": "2026-09-13T03:33:20.649Z",
-      "durationMs": 625,
+      "framework": "react-router",
+      "capturedAt": "2026-09-14T12:11:00.426Z",
+      "durationMs": 574,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 590,
-        "commits": 117,
+        "commits": 103,
         "pageErrors": [],
         "title": "React Admin Dashboard"
       },
       "static": {
         "stats": {
-          "fiberCount": 4,
-          "textCount": 0,
+          "fiberCount": 275,
+          "textCount": 14,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 24,
           "unknownCount": 0,
           "modulesLoaded": 14
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 2,
-        "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 586,
-        "slotsMatched": 0,
+        "status": "partial",
+        "matchedFibers": 235,
+        "matchedText": 14,
+        "opaqueSubtrees": 24,
+        "opaqueSkippedFibers": 330,
+        "slotsMatched": 12,
         "slotsUnmatched": 0,
-        "opaqueRenamed": 0,
+        "opaqueRenamed": 4,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 1,
-        "status": "partial",
-        "runtimeFibers": 588,
-        "staticFibers": 3,
+        "transparentFibers": 10,
+        "runtimeFibers": 579,
+        "staticFibers": 273,
         "coverage": 1,
-        "strictCoverage": 0.003401360544217687,
+        "strictCoverage": 0.43005181347150256,
         "divergence": null,
-        "stepsUsed": 3,
+        "stepsUsed": 2929,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -305854,12 +305854,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 3,
+          "nodes": 273,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 24,
           "wildcards": 0
         },
         "matchedState": {
@@ -305877,15 +305877,15 @@
       },
       "stateReplay": {
         "verification": "sample-passed",
+        "incomplete": [],
         "states": 1,
         "assignments": 1,
         "replayed": 1,
         "maxReplayed": 16,
-        "mismatched": [],
-        "incomplete": []
+        "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-13T03:12:14.470Z",
+      "note": "runtime replayed from 2026-09-14T12:09:36.952Z",
       "failure": null
     },
     {
@@ -310968,9 +310968,9 @@
     {
       "id": "sagargupta16-financial-dashboard",
       "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
-      "framework": "spa",
-      "capturedAt": "2026-09-13T03:12:28.094Z",
-      "durationMs": 879,
+      "framework": "react-router",
+      "capturedAt": "2026-09-14T12:06:28.841Z",
+      "durationMs": 1193,
       "runtime": {
         "reactVersion": "19.2.8",
         "rendererName": "react-dom",
@@ -310983,67 +310983,64 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 16,
-          "textCount": 0,
-          "branchCount": 1,
+          "fiberCount": 637,
+          "textCount": 45,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 92
+          "modulesLoaded": 1856
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 2
+          }
+        ]
       },
       "report": {
-        "matchedFibers": 3,
-        "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 638,
+        "status": "exact",
+        "matchedFibers": 588,
+        "matchedText": 44,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 1,
+        "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "status": "partial",
-        "runtimeFibers": 641,
-        "staticFibers": 8,
+        "transparentFibers": 9,
+        "runtimeFibers": 632,
+        "staticFibers": 632,
         "coverage": 1,
-        "strictCoverage": 0.0046801872074883,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 5,
+        "stepsUsed": 632,
         "budgetExhausted": false
       },
       "stateSpace": {
         "states": 3,
         "stateCount": 3,
-        "clusters": 1,
+        "clusters": 0,
         "tree": {
-          "nodes": 16,
-          "inputs": 2,
-          "guards": 4,
-          "branches": 1,
+          "nodes": 928,
+          "inputs": 1,
+          "guards": 3,
+          "branches": 0,
           "repeats": 0,
-          "opaque": 3,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
-          "index": 1,
+          "index": 2,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 1,
-              "commitCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(#1)",
-              "reason": "Suspense boundary may be suspended when observed",
-              "location": null,
-              "alternativeIndex": 0,
-              "alternativeCount": 2
+              "commit": 2,
+              "commitCount": 3
             }
           ]
         },
@@ -311067,43 +311064,34 @@
               "location": null,
               "side": 1,
               "guard": "eq(choice(commit), 1)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(#1)",
-              "reason": "Suspense boundary may be suspended when observed",
-              "location": null,
-              "side": 0,
-              "guard": "eq(choice(#1), 0)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(#1)",
-              "reason": "Suspense boundary may be suspended when observed",
-              "location": null,
-              "side": 1,
-              "guard": "not(eq(choice(#1), 0))",
               "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
+              "status": "witnessed"
             }
           ],
-          "witnessed": 2,
+          "witnessed": 1,
           "possible": 2,
           "unreachable": 0
         }
       },
       "stateReplay": {
         "verification": "sample-passed",
+        "incomplete": [],
         "states": 3,
-        "assignments": 2,
-        "replayed": 2,
+        "assignments": 1,
+        "replayed": 1,
         "maxReplayed": 16,
-        "mismatched": [],
-        "incomplete": []
+        "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-13T02:21:01.060Z",
+      "note": "runtime replayed from 2026-09-14T11:53:34.083Z",
       "failure": null
     }
   ]

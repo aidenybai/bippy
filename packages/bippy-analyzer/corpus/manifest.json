@@ -8882,7 +8882,7 @@
       "repository": "https://github.com/melau-eddy/react-tailwind-admin-dash",
       "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
       "description": "melau-eddy/react-tailwind-admin-dash",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54633 --strictPort",
@@ -8900,7 +8900,7 @@
         "tsconfig": "tsconfig.json",
         "entry": "src/main.tsx"
       },
-      "notes": "Preserve original Home route, in-render data-router creation, Recharts, Sass, checked-in dashboard data and original saas dependency spelling. Review original environment/data workflow before capture; no dependency spelling fix, fabricated financial data or login input. The original 120-second navigation timeout has no runtime snapshot or report. Preserve that failure and the repeat helper's absent-capture error. A separately recorded fresh attempt with identical source/commands/budgets captures 590 fibers and 117 commits without page errors. Its partial comparison repeats against that fresh capture; preserve original Sass warnings and checked-in dashboard data rather than fabricate a response or remove styles. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 945044957 identifies a distinct non-fork repository."
+      "notes": "Preserve original Home route, in-render data-router creation, Recharts, Sass, checked-in dashboard data and original saas dependency spelling. Review original environment/data workflow before capture; no dependency spelling fix, fabricated financial data or login input. The original 120-second navigation timeout has no runtime snapshot or report. Preserve that failure and the repeat helper's absent-capture error. A separately recorded fresh attempt with identical source/commands/budgets captures 590 fibers and 117 commits without page errors. Its partial comparison repeats against that fresh capture; preserve original Sass warnings and checked-in dashboard data rather than fabricate a response or remove styles. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 945044957 identifies a distinct non-fork repository. Bottom-up recheck on 2026-09-14: The React Router adapter exposes the original layout and Home route: strict initial-page coverage rises from 0.3401% to 43.0052%, with 235 fibers and 14 text nodes matched after framework normalization. Twenty-four Recharts regions still skip 330 fibers; the result remains partial with one passing replay and no omissions. Baseline and selected policy use the same fresh native capture and repeat identically. Source, lockfiles, commands, URL, data and analysis budgets remain unchanged. This is a corpus configuration correction, not an interpreter repair or interaction/financial correctness claim. Earlier results and rejected experiments are retained in corpus/evidence/bottom-up-2026-09-14.json."
     },
     {
       "id": "lethai2597-personal-tracker",
@@ -8932,7 +8932,7 @@
       "repository": "https://github.com/Sagargupta16/Financial-Dashboard",
       "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
       "description": "Sagargupta16/Financial-Dashboard",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@11.25.0 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
       "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@11.25.0 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54635 --strictPort",
@@ -8948,9 +8948,10 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["lucide-react", "@radix-ui/*", "zustand", "zustand/*"]
       },
-      "notes": "Preserve original declared pnpm11.25.0 (Node>=22.13), workspace build approval/overrides, Husky prepare, SheetJS URL dependency, React Router8, original Financial-Dashboard base, Google Analytics and empty upload state. Do not run deploy/analyze scripts, supply financial files, alter calculations or claim financial/tax correctness. Retain the original partial 642-fiber capture and passing sampled replay under original pnpm11.25/React Router8 and Financial-Dashboard base. Preserve header-only CSV, empty initial processor data, analytics and workspace approvals/overrides. No file upload, transactions, financial calculation or chart correctness is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1047785666 identifies a distinct non-fork repository."
+      "notes": "Preserve original declared pnpm11.25.0 (Node>=22.13), workspace build approval/overrides, Husky prepare, SheetJS URL dependency, React Router8, original Financial-Dashboard base, Google Analytics and empty upload state. Do not run deploy/analyze scripts, supply financial files, alter calculations or claim financial/tax correctness. Retain the original partial 642-fiber capture and passing sampled replay under original pnpm11.25/React Router8 and Financial-Dashboard base. Preserve header-only CSV, empty initial processor data, analytics and workspace approvals/overrides. No file upload, transactions, financial calculation or chart correctness is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1047785666 identifies a distinct non-fork repository. Bottom-up recheck on 2026-09-14: The React Router adapter plus installed lucide-react, Radix and Zustand source reaches exact initial-page membership: 588 fibers and 44 text nodes after framework normalization, three modeled commits, one passing replay, no omissions or opaque/wildcard regions. Baseline and selected policy use the same fresh native capture and repeat identically. Source, lockfiles, commands, URL, data and analysis budgets remain unchanged. This is a corpus configuration correction, not an interpreter repair or interaction/financial correctness claim. Earlier results and rejected experiments are retained in corpus/evidence/bottom-up-2026-09-14.json."
     }
   ]
 }
