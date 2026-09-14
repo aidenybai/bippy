@@ -171,7 +171,7 @@ The reviewed implementation has useful separation already:
 - [`ModuleRecord`](../src/types.ts) retains bindings, imports, exports, dependency specifiers, and module-initialization statements.
 - Each render starts fresh evaluation state rather than sharing interpreted module values through `StaticRenderer.derive()`.
 
-However, `ModuleGraph.getModule()` returns cached records before consulting `SourceFileCache`. Cached `null` records also persist. The resolver's own map has no invalidation entry point. Therefore the source cache's metadata check does **not** establish incremental correctness for an existing graph. This is a source-inspection finding, not a completed watch-mode experiment.
+However, `ModuleGraph.getModule()` returns cached records before consulting `SourceFileCache`. Cached `null` records also persist. The resolver's own map has no invalidation entry point. Therefore the source cache's metadata check does **not** establish incremental correctness for an existing graph. The lifetime probes below now exercise these boundaries; they do not implement watch mode.
 
 The dependency list is not yet a unified occurrence graph. It cannot by itself retain every request's import kind, source span, transform cause, target identity, uncertainty, and reverse dependency relation. Dynamic imports, side-effect imports, configuration dependencies, and runtime invocation causes must not collapse into one reachability bit.
 
@@ -233,6 +233,29 @@ Value modeling does not establish declaration identity. Equal modeled references
 The [modeled-star suite](../tests/modeled-star-exports.test.ts) uses the installed Redux 5.0.1 package, unchanged through a temporary symlink. Fourteen cases in both declaration orders cover modeled/local mixtures, matching references, a model plus its parsed ESM source, distinct modeled names, explicit overrides, opaque stars and independently known conflicts. The package's ESM source hash is checked before and after. This tests linking and modeling boundaries, not Redux behavior or other versions.
 
 The native linker now uses Node's ESM resolution with the explicit parent-resolution flag. Redux's actual conditional `exports.import` target is linked; its CommonJS default target is not parsed as an ESM substitute. The existing native link suites pass with the same ESM resolution path. V8 linking and esbuild builds do not evaluate application bodies. Explicit origin graphs, uncertain-origin provenance, module instantiation and incremental invalidation remain separate work.
+
+## Graph lifetime probes
+
+The [lifetime suite](../tests/module-graph-lifetime.test.ts) characterizes fourteen cases with controlled temporary files. It reads declarations and resolves requests without rendering components or executing application bodies. Its passing assertions describe existing cache behavior, including stale results; they are not freshness or incremental-correctness claims.
+
+| Change or control                                          | Reused state                                                                          | Fresh control                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Unchanged source                                           | Same module and parsed-file identities                                                | No replacement needed                                                |
+| Source edit with changed size                              | The source cache sees new text; the graph retains its old record                      | A new graph can use the refreshed source cache                       |
+| Missing file created                                       | Cached graph `null` persists                                                          | A new graph sees the file                                            |
+| Loaded file deleted                                        | The graph retains its record even when the source cache returns `null`                | A new graph returns `null`                                           |
+| Virtual module registered again                            | The first record stays registered, as documented by `addVirtualModule`                | A new graph accepts the replacement source                           |
+| Previously missing resolution                              | Replacing only the graph still uses the resolver's cached failure                     | A new resolver finds the file                                        |
+| Higher-priority extension created                          | The resolver retains its original target                                              | A new resolver selects the higher-priority file                      |
+| Package exports or tsconfig paths changed                  | The resolver retains its original target                                              | A new resolver observes each tested change                           |
+| Transform dependency changed, ordinary or queried source   | The source cache retains old transformed text; a new graph sharing it is insufficient | A new source cache runs the transform against the changed dependency |
+| Source bytes changed with equal size and modification time | The source cache retains old text                                                     | A new source cache reads the changed bytes                           |
+| Loaded and unread files changed together                   | Old loaded records coexist with new lazily loaded records                             | A new graph reads both changed files                                 |
+| Renderer derived after a source edit                       | `derive` shares the already loaded record                                             | A newly constructed renderer sees the tested source edit             |
+
+An existing graph is therefore neither a live filesystem view nor an atomic filesystem snapshot. Keep source and project inputs fixed during analysis and replay. `derive` changes render-time options over the same parsed project; it is not a reload operation. Recreating the whole renderer avoids the tested loaded-record reuse, but these probes do not establish that every framework/plugin cache refreshes correctly or that reads during concurrent edits are coherent.
+
+No `invalidate(file)` method or additional cache is introduced here. A future reload design must account for graph records, analyzed-module membership, resolver successes and failures, resolution configuration, transform dependencies, and renderer project state together. webpack's snapshot validation tracks dependencies beyond the resolved file. React Flight's chunk cache tracks runtime loading by chunk ID; it does not establish validity of Bippy's filesystem-derived products. Neither mechanism should be copied into an unrelated cache without its validity conditions.
 
 ## Parity work still required
 

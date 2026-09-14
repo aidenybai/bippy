@@ -180,6 +180,8 @@ A dependency can remain external to source analysis. The interpreter can use an 
 
 `StaticRenderer.derive` creates a renderer that shares the parsed project with its parent. Each render still calls `startRun`, which creates a fresh interpreter and document environment. This avoids reparsing the project for every replay without sharing evaluated application state.
 
+Keep source and project inputs fixed across these runs. `derive` does not reload changed files or configuration. The graph retains loaded records and missing-file results, while later reads of previously unloaded files can see newer bytes. It is neither a live filesystem view nor an atomic snapshot. The [graph lifetime probes](module-graph-research.md#graph-lifetime-probes) distinguish graph, resolver and transformed-source cache behavior. Constructing a new renderer sees the tested source edit, but general watch-mode refresh and coherent reads during edits remain unimplemented.
+
 A [scope](../src/evaluate/scope.ts) maps names to interpreted values and refers to a parent scope. Looking up a name searches the current scope and then its parents. Function values retain their source body and scope, so the interpreter can evaluate closures.
 
 JSX `this` tags use the current receiver rather than a variable named `this`. For example, [`<this.Views.Leaf />`](../tests/components/jsx-this-members.tsx) reads the receiver, then its two properties. `<this />` uses the receiver directly.
