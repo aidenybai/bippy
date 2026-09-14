@@ -154,7 +154,7 @@ import {
   isPromiseMethodName,
 } from "./builtin-calls.js";
 import {
-  collectClassMembers,
+  evaluateClassMembers,
   constructClassInstance,
   getClassLength,
   getClassPrototypeObject,
@@ -2049,20 +2049,16 @@ export class Interpreter {
     const finishClass = (
       parent: StaticValue | null,
       parentContext: EvaluationContext,
-    ): StaticValue => {
-      const classValue = this.defineClass(
-        node,
-        {
-          members: collectClassMembers(node, (key) =>
-            this.evaluatePropertyKey(key, true, parentContext),
-          ),
-          superValue: parent,
-        },
-        parentContext,
-        this.getDeclaredName(node, parentContext.module) ?? nameHint,
-      );
-      return this.decorateClass(node, classValue, parentContext);
-    };
+    ): StaticValue =>
+      evaluateClassMembers(this, node, parentContext, (members, memberContext) => {
+        const classValue = this.defineClass(
+          node,
+          { members, superValue: parent },
+          memberContext,
+          this.getDeclaredName(node, memberContext.module) ?? nameHint,
+        );
+        return this.decorateClass(node, classValue, memberContext);
+      });
     return superValue === null
       ? finishClass(null, context)
       : this.continueValue(superValue, context, finishClass);
