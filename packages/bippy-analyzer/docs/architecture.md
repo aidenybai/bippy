@@ -4,7 +4,7 @@ meta:
   navLabel: Understand Parser Architecture
   contentType: Conceptual
   category: Architecture
-  plan: ../scratchpad.md#architecture-documentation-plan
+  plan: ../../../scratchpad.md#architecture-documentation-plan
 ---
 
 # How the parser builds and checks React trees
@@ -38,7 +38,7 @@ This restriction does not make analysis a security sandbox. React packages and a
 
 Reconciliation is the React process that computes component updates. Reimplementing that process would require the parser to reproduce React behavior across versions. Instead, the parser constructs React components that call the interpreter when React renders them.
 
-React and React DOM must share the dispatcher that selects hook implementations during rendering. Next’s bundled files expect aliases that plain Node module loading does not supply. The [scoped DOM loader](../packages/bippy-analyzer/src/materialize/react-dom-modules.ts) applies those aliases without changing Node’s shared cache or resolver. It loads framework React DOM code, not application component bodies.
+React and React DOM must share the dispatcher that selects hook implementations during rendering. Next’s bundled files expect aliases that plain Node module loading does not supply. The [scoped DOM loader](../src/materialize/react-dom-modules.ts) applies those aliases without changing Node’s shared cache or resolver. It loads framework React DOM code, not application component bodies.
 
 React creates the fibers, which are internal records for elements and components. Each fiber has a work tag that identifies its category. Bippy records the fiber tree after a commit, the stage when React applies an update to its rendering target. It stores the tree and capture metadata in a snapshot.
 
@@ -52,7 +52,7 @@ The state space is the set of trees that this model describes. A bounded list of
 
 ## Analysis phases
 
-[`StaticRenderer`](../packages/bippy-analyzer/src/render/static-renderer.ts) manages source preparation and model rendering. The comparison code then converts recorded fibers into a symbolic model and checks application captures against it.
+[`StaticRenderer`](../src/render/static-renderer.ts) manages source preparation and model rendering. The comparison code then converts recorded fibers into a symbolic model and checks application captures against it.
 
 The main operations are:
 
@@ -67,9 +67,9 @@ Evaluation and rendering are not separate passes over the entire application. Th
 
 The application capture follows a separate path. The application runs through its normal build and runtime while Bippy records its fibers. The model and application therefore use the same snapshot format but do not obtain their trees in the same way.
 
-Before starting that application, the [corpus runner](../packages/bippy-analyzer/src/corpus/run-entry.ts) rejects an address that already has a listener. The check sends no page request and does not stop the existing service. Readiness probes have deadlines and reject responses after a recorded child exit. The runner keeps server stdin open until shutdown so tools such as CRA 3 do not exit on EOF. Install and setup commands still receive EOF; the runner does not set CI to keep a server alive. Another process can still bind the address during startup, so this does not prove server ownership.
+Before starting that application, the [corpus runner](../src/corpus/run-entry.ts) rejects an address that already has a listener. The check sends no page request and does not stop the existing service. Readiness probes have deadlines and reject responses after a recorded child exit. The runner keeps server stdin open until shutdown so tools such as CRA 3 do not exit on EOF. Install and setup commands still receive EOF; the runner does not set CI to keep a server alive. Another process can still bind the address during startup, so this does not prove server ownership.
 
-Check the outer launcher as well as the application’s package manager. An outer `pnpm dlx` can change child Node options before the pinned runner starts. The [productivity launcher audit](../scratchpad.md#productivity-capture-and-launcher-audit) records a Node16 failure and a separate outer-version pin. Preserve the application’s original peer policy rather than silently changing it.
+Check the outer launcher as well as the application’s package manager. An outer `pnpm dlx` can change child Node options before the pinned runner starts. The [productivity launcher audit](../../../scratchpad.md#productivity-capture-and-launcher-audit) records a Node16 failure and a separate outer-version pin. Preserve the application’s original peer policy rather than silently changing it.
 
 ## Module resolution and run state
 
@@ -79,21 +79,21 @@ The parsed project can outlive an individual analysis. Evaluated module values c
 
 A macro is build-time code that rewrites application source. Its output can change imports and component names. Modeling a macro import as a library alias can therefore produce a different tree from the application.
 
-For Create React App projects, the [macro transform](../packages/bippy-analyzer/src/graph/babel-macros.ts) loads `babel-plugin-macros` from the installed `babel-preset-react-app` dependency. It uses the Babel compiler owned by `react-scripts`. The [installed-module loader](../packages/bippy-analyzer/src/libraries/installed-modules.ts) follows that dependency chain rather than assuming the project has one shared copy of each tool.
+For Create React App projects, the [macro transform](../src/graph/babel-macros.ts) loads `babel-plugin-macros` from the installed `babel-preset-react-app` dependency. It uses the Babel compiler owned by `react-scripts`. The [installed-module loader](../src/libraries/installed-modules.ts) follows that dependency chain rather than assuming the project has one shared copy of each tool.
 
 The transform runs on the application's `src` files when the preset declares the macro plugin. It explicitly enables class-field syntax for older Babel compilers without running the preset's class-field lowering. Macro configuration and code execute as build infrastructure.
 
-For demos that import generated library files, preserve the original build lifecycles before capture. Verify generated files separately from the root and demo dependency trees. A frozen root install does not verify a nested demo’s dependencies. The [corpus runner](../packages/bippy-analyzer/src/corpus/run-entry.ts) runs installation commands at the repository root, regardless of `workingDirectory`.
+For demos that import generated library files, preserve the original build lifecycles before capture. Verify generated files separately from the root and demo dependency trees. A frozen root install does not verify a nested demo’s dependencies. The [corpus runner](../src/corpus/run-entry.ts) runs installation commands at the repository root, regardless of `workingDirectory`.
 
 The parser temporarily removes DOM-only globals and supplies the development compile environment. It restores the process directory, environment and DOM globals afterward. It interprets the transformed application source instead of executing application bodies. This integration does not run the complete Create React App Babel preset.
 
-Build configuration can read variables that a client bundle does not expose. The [corpus renderer](../packages/bippy-analyzer/src/corpus/render-entry.ts) uses the entry’s child-process environment during native configuration loading and later renders. It serializes these operations because `process.env` is shared, then restores the harness environment even after failure. Inherited `CI` and package-manager variables follow the [dev-server rules](../packages/bippy-analyzer/src/corpus/dev-server.ts).
+Build configuration can read variables that a client bundle does not expose. The [corpus renderer](../src/corpus/render-entry.ts) uses the entry’s child-process environment during native configuration loading and later renders. It serializes these operations because `process.env` is shared, then restores the harness environment even after failure. Inherited `CI` and package-manager variables follow the [dev-server rules](../src/corpus/dev-server.ts).
 
-The [environment reader](../packages/bippy-analyzer/src/corpus/process-environment.ts) retains declared variables without requiring a dotenv file list. Without that list, it marks the environment as partial and preserves uncertainty about unlisted variables. Client exposure also remains unknown when neither the manifest nor a recognized tool establishes a prefix. Node configuration can read declared private variables regardless of the client prefix.
+The [environment reader](../src/corpus/process-environment.ts) retains declared variables without requiring a dotenv file list. Without that list, it marks the environment as partial and preserves uncertainty about unlisted variables. Client exposure also remains unknown when neither the manifest nor a recognized tool establishes a prefix. Node configuration can read declared private variables regardless of the client prefix.
 
-The [Vite configuration loader](../packages/bippy-analyzer/src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
+The [Vite configuration loader](../src/graph/vite-asset-transform.ts) uses the command-line mode when it calls the exported configuration function. An explicit command-line mode overrides `config.mode` when Vite filters plugins and runs `configResolved`. Without that override, Vite calls the function in development mode and then applies the configuration’s mode.
 
-Vite plugins can skip transforms when their project paths differ from the source resolver’s paths. For automatic TanStack Router splitting, a skipped transform omits the application’s `Lazy` component from the analyzed tree. [Configuration discovery](../packages/bippy-analyzer/src/graph/vite-config.ts) therefore resolves directory symlinks before loading Vite.
+Vite plugins can skip transforms when their project paths differ from the source resolver’s paths. For automatic TanStack Router splitting, a skipped transform omits the application’s `Lazy` component from the analyzed tree. [Configuration discovery](../src/graph/vite-config.ts) therefore resolves directory symlinks before loading Vite.
 
 Vite reads `NODE_ENV` before loading configuration modules. The parser supplies the development default when this variable is absent or empty. It removes an unchanged temporary default before resolution, preserving Vite’s original presence check for dotenv handling. The parser does not replace explicit inherited values.
 
@@ -103,13 +103,13 @@ The interpreter creates a mutable `import.meta.env` object for each client modul
 
 Native Vite defines outside `import.meta.env.*` initialize mutable client globals, including dotted properties. The interpreter applies the serialized key order and preserves lexical shadowing. Opaque expressions remain unknown, and unsupported intermediate targets stop analysis instead of silently discarding a definition.
 
-[Global property stores](../packages/bippy-analyzer/src/evaluate/global-properties.ts) track presence separately from value. A present `undefined` property differs from an absent property. Each property cell belongs to its store’s lifetime, so a branch must restore even a newly accessed cell. The shared heap journal joins assignments and deletions without losing their guards.
+[Global property stores](../src/evaluate/global-properties.ts) track presence separately from value. A present `undefined` property differs from an absent property. Each property cell belongs to its store’s lifetime, so a branch must restore even a newly accessed cell. The shared heap journal joins assignments and deletions without losing their guards.
 
 Client and server globals use separate stores, as do their builtin-object properties. When `process` is absent, an explicit `process.env.NODE_ENV` define creates that client object. Direct NODE_ENV expressions still follow Vite’s replacement rule.
 
 Modeled assignments can change injected values. Global reflection and binding semantics remain partial.
 
-The [module recorder](../packages/bippy-analyzer/src/graph/module-record.ts) uses the same `NODE_ENV` string as the interpreter. Otherwise, CommonJS exports could select development code while expressions select production code. The native adapter rejects non-string or unevaluated `NODE_ENV` replacements because they cannot select these branches safely.
+The [module recorder](../src/graph/module-record.ts) uses the same `NODE_ENV` string as the interpreter. Otherwise, CommonJS exports could select development code while expressions select production code. The native adapter rejects non-string or unevaluated `NODE_ENV` replacements because they cannot select these branches safely.
 
 These rules do not establish complete build-environment parity. Remaining parity checks include:
 
@@ -122,27 +122,27 @@ These rules do not establish complete build-environment parity. Remaining parity
 - Cached configuration with environment-dependent side effects
 - Configuration branches that depend on unlisted variables
 
-[Package metadata](../packages/bippy-analyzer/src/graph/installed-package.ts) also distinguishes a wrapper's package version from its declared bundled engine version. Vite asset URLs and compiler selection use the engine version when the package supplies it. They must not treat Vite Plus version `0.3.1` as Vite version `0`.
+[Package metadata](../src/graph/installed-package.ts) also distinguishes a wrapper's package version from its declared bundled engine version. Vite asset URLs and compiler selection use the engine version when the package supplies it. They must not treat Vite Plus version `0.3.1` as Vite version `0`.
 
-The [library registry](../packages/bippy-analyzer/src/libraries/index.ts) can model selected exports while the graph interprets other exports from opted-in packages. An analyzed namespace records its external specifier, so property reads apply the same overrides as named imports. Namespace materialization also uses those overrides.
+The [library registry](../src/libraries/index.ts) can model selected exports while the graph interprets other exports from opted-in packages. An analyzed namespace records its external specifier, so property reads apply the same overrides as named imports. Namespace materialization also uses those overrides.
 
-For an allowlisted `mobx-react` package, unmodeled `Provider` and `inject` exports resolve to installed source. Existing [observer models](../packages/bippy-analyzer/src/libraries/mobx.ts) still take precedence; core MobX remains modeled. This policy does not establish complete observability or lifecycle behavior.
+For an allowlisted `mobx-react` package, unmodeled `Provider` and `inject` exports resolve to installed source. Existing [observer models](../src/libraries/mobx.ts) still take precedence; core MobX remains modeled. This policy does not establish complete observability or lifecycle behavior.
 
 Expanding this source policy changes the analyzed model, not its saved native capture. Preserve both comparisons; higher coverage does not prove complete library semantics.
 
 Native library calls can refuse interpreted callbacks, as a `lodash.map` call does for an interpreted JSX callback. Interpreting the installed library source can resolve that case without weakening the native-execution boundary. Preserve the earlier refusal and its unknown region.
 
-Record legacy-router source policies separately from [framework model selection](../packages/bippy-analyzer/src/frameworks/react-router.ts). An opaque provider can hide which route children the library mounts. Interpreting installed router and context helpers can expose those children without establishing complete navigation or lifecycle behavior.
+Record legacy-router source policies separately from [framework model selection](../src/frameworks/react-router.ts). An opaque provider can hide which route children the library mounts. Interpreting installed router and context helpers can expose those children without establishing complete navigation or lifecycle behavior.
 
-Assigned stub names are not yet fully symbolic. For unknown or branched `displayName` values, the [name reader](../packages/bippy-analyzer/src/evaluate/values.ts) falls back to the library name. Interpreting a missing naming helper can resolve the value without repairing that fallback. Preserve the earlier mismatch and replay evidence.
+Assigned stub names are not yet fully symbolic. For unknown or branched `displayName` values, the [name reader](../src/evaluate/values.ts) falls back to the library name. Interpreting a missing naming helper can resolve the value without repairing that fallback. Preserve the earlier mismatch and replay evidence.
 
-Native Vite configuration does not yet connect `resolve.alias` to the [module resolver](../packages/bippy-analyzer/src/graph/module-resolver.ts). A configured alias can remain opaque even when the browser resolves it. Explicit parser aliases and TypeScript paths are separate.
+Native Vite configuration does not yet connect `resolve.alias` to the [module resolver](../src/graph/module-resolver.ts). A configured alias can remain opaque even when the browser resolves it. Explicit parser aliases and TypeScript paths are separate.
 
-A library model needs the component structure of the installed version. The [Emotion model](../packages/bippy-analyzer/src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
+A library model needs the component structure of the installed version. The [Emotion model](../src/libraries/emotion.ts) includes an `Insertion` component before styled content starting in Emotion 11.8. Earlier Emotion 11 releases render that content directly. The wrong structure can disagree with application fibers while its internal replay passes.
 
-The [legacy Next image model](../packages/bippy-analyzer/src/frameworks/next-legacy-image.ts) also uses version-specific host structure. Next 10 and 11 use `div` wrappers; Next 12 uses `span` wrappers. Next 10.1 through 11.1.0 condition the `noscript` fallback on intersection visibility. The model retains both outputs when that visibility is unknown.
+The [legacy Next image model](../src/frameworks/next-legacy-image.ts) also uses version-specific host structure. Next 10 and 11 use `div` wrappers; Next 12 uses `span` wrappers. Next 10.1 through 11.1.0 condition the `noscript` fallback on intersection visibility. The model retains both outputs when that visibility is unknown.
 
-For Next 13.2, the [metadata adapter](../packages/bippy-analyzer/src/frameworks/next-metadata.ts) interprets installed metadata helpers instead of inventing tags. It passes interpreted layout and page exports through those helpers. Application bodies do not execute natively.
+For Next 13.2, the [metadata adapter](../src/frameworks/next-metadata.ts) interprets installed metadata helpers instead of inventing tags. It passes interpreted layout and page exports through those helpers. Application bodies do not execute natively.
 
 Metadata appears at the first router boundary, inside its template and loading boundary. A grouped root layout can put metadata outside the `body` subtree. Comparisons restricted to that subtree cannot check those metadata fibers.
 
@@ -156,7 +156,7 @@ Other Next metadata APIs remain outside this contract. Successful initial render
 
 ### Scope router inputs to each provider
 
-A router’s basename is the URL prefix excluded from its route paths. The [React Router model](../packages/bippy-analyzer/src/frameworks/react-router.ts) removes that prefix before matching routes. A nonmatching known prefix renders no router children. The link models use the same local pathname and basename.
+A router’s basename is the URL prefix excluded from its route paths. The [React Router model](../src/frameworks/react-router.ts) removes that prefix before matching routes. A nonmatching known prefix renders no router children. The link models use the same local pathname and basename.
 
 For a fixed analyzed URL, the model stores one location object per mounted router instance. A change in the normalized basename replaces that object. Returning to an earlier prefix does not restore its old object. An unchanged basename preserves identity, so unrelated parent updates do not invalidate memoized location consumers.
 
@@ -164,9 +164,9 @@ An unknown basename does not justify an empty tree. `useHref` resolves static pa
 
 ### Resolve declarations without executing modules
 
-The [source parser](../packages/bippy-analyzer/src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.
+The [source parser](../src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.
 
-The [module graph](../packages/bippy-analyzer/src/graph/module-graph.ts) records declarations and module dependencies. Its resolver uses `oxc-resolver` with package conditions and project paths to locate dependencies. The graph follows exports across modules and reports missing or ambiguous exports.
+The [module graph](../src/graph/module-graph.ts) records declarations and module dependencies. Its resolver uses `oxc-resolver` with package conditions and project paths to locate dependencies. The graph follows exports across modules and reports missing or ambiguous exports.
 
 An explicitly analyzed framework module also enables its relative source dependencies. Bare package imports retain their existing policy unless the adapter explicitly selects another module.
 
@@ -180,9 +180,9 @@ A dependency can remain external to source analysis. The interpreter can use an 
 
 `StaticRenderer.derive` creates a renderer that shares the parsed project with its parent. Each render still calls `startRun`, which creates a fresh interpreter and document environment. This avoids reparsing the project for every replay without sharing evaluated application state.
 
-A [scope](../packages/bippy-analyzer/src/evaluate/scope.ts) maps names to interpreted values and refers to a parent scope. Looking up a name searches the current scope and then its parents. Function values retain their source body and scope, so the interpreter can evaluate closures.
+A [scope](../src/evaluate/scope.ts) maps names to interpreted values and refers to a parent scope. Looking up a name searches the current scope and then its parents. Function values retain their source body and scope, so the interpreter can evaluate closures.
 
-JSX `this` tags use the current receiver rather than a variable named `this`. For example, [`<this.Views.Leaf />`](../packages/bippy-analyzer/tests/components/jsx-this-members.tsx) reads the receiver, then its two properties. `<this />` uses the receiver directly.
+JSX `this` tags use the current receiver rather than a variable named `this`. For example, [`<this.Views.Leaf />`](../tests/components/jsx-this-members.tsx) reads the receiver, then its two properties. `<this />` uses the receiver directly.
 
 Arrow functions retain their lexical receiver; ordinary calls use their call receiver. Other bare lowercase tags still name host elements.
 
@@ -190,7 +190,7 @@ A result can also depend on captured observations, such as configuration or stor
 
 ## Conditional evaluation
 
-The [interpreter](../packages/bippy-analyzer/src/evaluate/interpreter.ts) evaluates source with `StaticValue` records. A record can describe an exact value or alternative values, including values within objects and collections. When the model cannot determine a value, it records uncertainty and a reason.
+The [interpreter](../src/evaluate/interpreter.ts) evaluates source with `StaticValue` records. A record can describe an exact value or alternative values, including values within objects and collections. When the model cannot determine a value, it records uncertainty and a reason.
 
 Numeric `Math` arguments retain guarded alternatives when their Cartesian product fits the existing eight-combination limit. This preserves finite slice bounds instead of replacing them with an unknown number. Other argument kinds and larger products retain their conservative handling.
 
@@ -200,7 +200,7 @@ The list representation does not distinguish sparse holes from present `undefine
 
 ### Preserve relationships between expressions
 
-A branch value records alternatives for an unresolved condition. The [predicate model](../packages/bippy-analyzer/src/evaluate/predicates.ts) relates those alternatives to symbolic inputs. A symbolic input represents data whose value the analysis does not know.
+A branch value records alternatives for an unresolved condition. The [predicate model](../src/evaluate/predicates.ts) relates those alternatives to symbolic inputs. A symbolic input represents data whose value the analysis does not know.
 
 The following component tests the same `role` value twice. The local `isAdmin` variable does not make the second test independent:
 
@@ -230,9 +230,9 @@ For resolved alternatives, calls constrain closure reads with the current choice
 
 Evaluating both sides of a condition can change shared state. If the interpreter retains mutations from the first side, the second side starts with the wrong values. This can produce a tree that neither path produces in the application.
 
-[`HeapJournal`](../packages/bippy-analyzer/src/evaluate/heap-journal.ts) records conditional changes to shared interpreted state. At the end of a path, it saves the changed values and restores the previous values. After evaluation of the alternatives, it combines their results under the branch conditions.
+[`HeapJournal`](../src/evaluate/heap-journal.ts) records conditional changes to shared interpreted state. At the end of a path, it saves the changed values and restores the previous values. After evaluation of the alternatives, it combines their results under the branch conditions.
 
-For collections, the journal shares [read-only entry tables](../packages/bippy-analyzer/src/evaluate/collections.ts) across captures and restores. It copies a shared table before a write and reuses identical tables when joining paths. This sharing does not change application object identity. React still [compares application `getSnapshot()` values with `Object.is`](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-reconciler/src/ReactFiberHooks.js#L1681).
+For collections, the journal shares [read-only entry tables](../src/evaluate/collections.ts) across captures and restores. It copies a shared table before a write and reuses identical tables when joining paths. This sharing does not change application object identity. React still [compares application `getSnapshot()` values with `Object.is`](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-reconciler/src/ReactFiberHooks.js#L1681).
 
 For finite, nonrepeated list mutations, the journal joins values by position and guards whether each position exists. Spreading finite list alternatives preserves those guards. Guarded length sums handle definite prefixes and distribute independent counts within the shared 16-pair limit.
 
@@ -246,67 +246,69 @@ Conditional reads require the same guards as writes. The interpreter narrows a v
 
 Statement outcomes record a guarded completion condition separately from returned or thrown values. Later statements run under the completing paths’ guards. A possibly throwing initializer also guards the remaining declarations in its statement.
 
-Inside `try`, the interpreter retains local state from abrupt paths until a handler or finalizer can read it. Catch selection uses the original throw condition. [Filtering thrown or surviving alternatives](../packages/bippy-analyzer/src/evaluate/thrown.ts) preserves their guards and preferences, including error payloads.
+Inside `try`, the interpreter retains local state from abrupt paths until a handler or finalizer can read it. Catch selection uses the original throw condition. [Filtering thrown or surviving alternatives](../src/evaluate/thrown.ts) preserves their guards and preferences, including error payloads.
 
-Finalizers run on both completing and exiting paths. Heap journals join terminal paths immediately; paths that jump within a loop retain deferred handling. The [throw-path regressions](../packages/bippy-analyzer/tests/throw-paths.test.ts) check these bounded cases, not complete exception, loop, or async semantics.
+Finalizers run on both completing and exiting paths. Heap journals join terminal paths immediately; paths that jump within a loop retain deferred handling. The [throw-path regressions](../tests/throw-paths.test.ts) check these bounded cases, not complete exception, loop, or async semantics.
 
-Logical assignments also separate kept and assigned paths. `||=`, `&&=`, and `??=` skip the right-hand operand and the write when the current value suffices. A throwing read or right-hand operand stops the remaining operation. The [logical-assignment regressions](../packages/bippy-analyzer/tests/logical-assignment.test.ts) check guards, side effects, and kept object identity.
+Logical assignments also separate kept and assigned paths. `||=`, `&&=`, and `??=` skip the right-hand operand and the write when the current value suffices. A throwing read or right-hand operand stops the remaining operation. The [logical-assignment regressions](../tests/logical-assignment.test.ts) check guards, side effects, and kept object identity.
 
-Assignment references separate target evaluation from reading and writing. The interpreter captures receivers and computed-key expressions before the right-hand operand. Compound, logical, and update operations reuse those references. Successful operands reach the write; thrown operands and object setters propagate their errors. The [reference regressions](../packages/bippy-analyzer/tests/assignment-reference.test.ts) also check receiver replacement and correlated keys.
+Assignment references separate target evaluation from reading and writing. The interpreter captures receivers and computed-key expressions before the right-hand operand. Compound, logical, and update operations reuse those references. Successful operands reach the write; thrown operands and object setters propagate their errors. The [reference regressions](../tests/assignment-reference.test.ts) also check receiver replacement and correlated keys.
 
-[Primitive updates](../packages/bippy-analyzer/tests/update-primitives.test.ts) coerce the old value before arithmetic. Postfix returns that converted value; prefix returns the new value. BigInt updates retain BigInt arithmetic, while object and symbol coercion remain unverified.
+[Primitive updates](../tests/update-primitives.test.ts) coerce the old value before arithmetic. Postfix returns that converted value; prefix returns the new value. BigInt updates retain BigInt arithmetic, while object and symbol coercion remain unverified.
 
-[Calls preserve throwing argument guards](../packages/bippy-analyzer/tests/call-argument-throws.test.ts) when deciding whether to invoke the callee. [Argument evaluation](../packages/bippy-analyzer/tests/argument-order.test.ts) now stops later expressions on throwing paths. Successful paths retain their argument values, guards, and side effects.
+[Calls preserve throwing argument guards](../tests/call-argument-throws.test.ts) when deciding whether to invoke the callee. [Argument evaluation](../tests/argument-order.test.ts) now stops later expressions on throwing paths. Successful paths retain their argument values, guards, and side effects.
 
 Ordinary arguments use an iterative loop. Throwing alternatives and finite spread alternatives continue under their selected guards. The tests check spread-expression failures and finite arity, not complete iterator semantics.
 
 Method calls capture the callee and receiver together after evaluating the receiver and key. This avoids repeating getter effects. Equivalent receiver-independent targets can share an invocation without repeating argument evaluation.
 
-[Constructor completion](../packages/bippy-analyzer/tests/constructor-completion.test.ts) now preserves body and field-initializer failures. A failed initializer stops later fields and the constructor body. Direct object returns replace the instance, while known thrown outcomes propagate through `super()` and construction.
+[Constructor completion](../tests/constructor-completion.test.ts) now preserves body and field-initializer failures. A failed initializer stops later fields and the constructor body. Direct object returns replace the instance, while known thrown outcomes propagate through `super()` and construction.
 
 Parent-construction status lives in a journaled object rather than an untracked local boolean. This preserves guarded retries after parent failures. React class rendering and lifecycle callbacks run only on completing constructor paths. Path-dependent React replacement instances remain conservative. These tests do not establish complete class or StrictMode semantics.
 
-[Derived constructor bindings](../packages/bippy-analyzer/tests/derived-this.test.ts) retain the object returned by the parent and reject reads of uninitialized `this`. Derived fields use that object. Arrows capture the live binding; nested non-arrow functions keep their own receivers. Compiled function wrappers do not acquire native-class `this` checks.
+[Derived constructor bindings](../tests/derived-this.test.ts) retain the object returned by the parent and reject reads of uninitialized `this`. Derived fields use that object. Arrows capture the live binding; nested non-arrow functions keep their own receivers. Compiled function wrappers do not acquire native-class `this` checks.
 
 Known receiver and key failures stop member evaluation. Optional finite receiver alternatives skip keys on absent paths. Declared instance `super` getters run when their property is read, after key evaluation, rather than while assembling the parent-member view. Parent replacements require a known `object` value; other modeled value kinds remain unknown.
 
-[Class identity tests](../packages/bippy-analyzer/tests/class-identity.test.ts) check fresh allocation on native-class `super()` attempts, including retries and duplicate calls. Failed instances retain their earlier fields and identity. React adopts the common completing instance before reading its state; incompatible path-dependent instances remain conservative.
+[Class identity tests](../tests/class-identity.test.ts) check fresh allocation on native-class `super()` attempts, including retries and duplicate calls. Failed instances retain their earlier fields and identity. React adopts the common completing instance before reading its state; incompatible path-dependent instances remain conservative.
 
 Declared class methods are no longer implicitly bound. Member calls supply a receiver, while extracted methods default to `undefined`. Explicit binds and lexical arrows retain their receivers. React’s instance lifecycle helpers supply the instance explicitly.
 
-[Escape walks](../packages/bippy-analyzer/tests/escapes-receivers.test.ts) retain receivers for resolved member callees. Receiver-specific cache entries terminate recursive walks and support invalidation after mutations. Passing a method as an argument does not bind it.
+[Escape walks](../tests/escapes-receivers.test.ts) retain receivers for resolved member callees. Receiver-specific cache entries terminate recursive walks and support invalidation after mutations. Passing a method as an argument does not bind it.
 
-[Class result tests](../packages/bippy-analyzer/tests/class-results.test.ts) require derived constructors to reject known non-undefined primitive types even when their values are unknown. This covers unknown numeric and string returns, including guarded returns. Base constructors still ignore primitive results.
+[Class result tests](../tests/class-results.test.ts) require derived constructors to reject known non-undefined primitive types even when their values are unknown. This covers unknown numeric and string returns, including guarded returns. Base constructors still ignore primitive results.
 
 React’s calls to `getDerivedStateFromProps` and `getDerivedStateFromError` now supply an undefined receiver, matching its extracted calls. Explicitly bound callbacks and static arrows retain their receivers. These checks do not establish complete class lifecycle or StrictMode behavior.
 
-[Nullish property tests](../packages/bippy-analyzer/tests/nullish-properties.test.ts) preserve read and write failures for concrete `null` and `undefined` receivers. Computed-key expressions still run first. Simple assignments evaluate their right-hand side before the write fails; reads and compound assignments stop before later operands or arguments. `typeof` preserves property-read errors. Error names are known, while engine-specific messages remain unknown.
+[Nullish property tests](../tests/nullish-properties.test.ts) preserve read and write failures for concrete `null` and `undefined` receivers. Computed-key expressions still run first. Simple assignments evaluate their right-hand side before the write fails; reads and compound assignments stop before later operands or arguments. `typeof` preserves property-read errors. Error names are known, while engine-specific messages remain unknown.
 
-[Property effect tests](../packages/bippy-analyzer/tests/property-effects.test.ts) run getter reads under the selected receiver’s guards. Getter mutations no longer leak onto a null-receiver path. Deletion sequences receiver and key evaluation, preserving earlier failures and nullish errors.
+[Property effect tests](../tests/property-effects.test.ts) run getter reads under the selected receiver’s guards. Getter mutations no longer leak onto a null-receiver path. Deletion sequences receiver and key evaluation, preserving earlier failures and nullish errors.
 
-Proxy writes preserve failures from retrieving or calling the `set` trap. Trap calls use the handler as their receiver, and successful delegation retains the proxy’s identity. [Proxy setter tests](../packages/bippy-analyzer/tests/proxy-receivers.test.ts) distinguish the lookup target from the original receiver. Nested delegation passes that receiver to setters and inner traps. Guarded targets preserve setter failures and isolate effects; explicit bindings still take precedence. This does not establish complete proxy semantics.
+Proxy writes preserve failures from retrieving or calling the `set` trap. Trap calls use the handler as their receiver, and successful delegation retains the proxy’s identity. [Proxy setter tests](../tests/proxy-receivers.test.ts) distinguish the lookup target from the original receiver. Nested delegation passes that receiver to setters and inner traps. Guarded targets preserve setter failures and isolate effects; explicit bindings still take precedence. This does not establish complete proxy semantics.
 
-[Property-presence tests](../packages/bippy-analyzer/tests/property-presence.test.ts) keep conditional keys separate from present `undefined` values. `in` and `hasOwnProperty` retain the original guards. Explicit `undefined` shadows earlier values, and finite spread snapshots retain values and presence after the source changes. Whole-object joins no longer restore the original entries after deletion.
+[Property-presence tests](../tests/property-presence.test.ts) keep conditional keys separate from present `undefined` values. `in` and `hasOwnProperty` retain the original guards. Explicit `undefined` shadows earlier values, and finite spread snapshots retain values and presence after the source changes. Whole-object joins no longer restore the original entries after deletion.
 
-[Proxy read tests](../packages/bippy-analyzer/tests/proxy-reads.test.ts) cover getter-backed trap lookup, handler receivers, null-trap fallback, and original receivers through nested delegation and ordinary object getters. Lookup failures stop later call arguments; explicit bindings keep their receiver.
+[Proxy read tests](../tests/proxy-reads.test.ts) cover getter-backed trap lookup, handler receivers, null-trap fallback, and original receivers through nested delegation and ordinary object getters. Lookup failures stop later call arguments; explicit bindings keep their receiver.
 
-[Trap-method tests](../packages/bippy-analyzer/tests/proxy-methods.test.ts) reject `get` and `set` traps whose modeled type is known not to be a function. Lookup effects and guards remain intact, nullish traps fall back, and unknown types retain existing call handling. An object does not become callable by defining `call` or an `apply` trap.
+[Trap-method tests](../tests/proxy-methods.test.ts) reject `get` and `set` traps whose modeled type is known not to be a function. Lookup effects and guards remain intact, nullish traps fall back, and unknown types retain existing call handling. An object does not become callable by defining `call` or an `apply` trap.
 
-[Strict-write tests](../packages/bippy-analyzer/tests/strict-writes.test.ts) reject getter-only assignments and falsy proxy-set results in strict code. Trap effects survive rejection; an ordinary setter's return value does not determine write success. [Scope checks](../packages/bippy-analyzer/tests/strict-write-scopes.test.ts) distinguish lexical directives and class methods from caller strictness, block strings, and escaped directives. References retain their source strictness through delegation. Module classification comes from `ModuleRecord`; script/loader modes, eval, and dynamic function constructors remain unverified.
+[Strict-write tests](../tests/strict-writes.test.ts) reject getter-only assignments and falsy proxy-set results in strict code. Trap effects survive rejection; an ordinary setter's return value does not determine write success. [Scope checks](../tests/strict-write-scopes.test.ts) distinguish lexical directives and class methods from caller strictness, block strings, and escaped directives. References retain their source strictness through delegation. Module classification comes from `ModuleRecord`; script/loader modes, eval, and dynamic function constructors remain unverified.
 
-[Class-heritage tests](../packages/bippy-analyzer/tests/class-heritage.test.ts) stop class creation when evaluating the superclass throws, before member keys or static initialization run. Completing superclass alternatives retain their guards and inherited values. Class declarations propagate these abrupt paths rather than storing them as bindings. [Comma-expression tests](../packages/bippy-analyzer/tests/sequence-completion.test.ts) stop later operands and calls after an earlier error, retain the last completing value, and preserve unbound call receivers. A 10,000-operand control checks iterative sequencing, not general scalability.
+[Class-heritage tests](../tests/class-heritage.test.ts) stop class creation when evaluating the superclass throws, before member keys or static initialization run. Completing superclass alternatives retain their guards and inherited values. Class declarations propagate these abrupt paths rather than storing them as bindings. [Comma-expression tests](../tests/sequence-completion.test.ts) stop later operands and calls after an earlier error, retain the last completing value, and preserve unbound call receivers. A 10,000-operand control checks iterative sequencing, not general scalability.
 
-[Computed-key tests](../packages/bippy-analyzer/tests/class-keys.test.ts) evaluate class member names before static initialization. A throwing key stops later keys, class creation, and constructor-call arguments. Finite key alternatives retain their guards and distinct class members. Instance field values remain deferred. A 10,000-key control checks iterative concrete-key sequencing. Effectful object-key coercion and class-name temporal dead zones remain unverified.
+[Computed-key tests](../tests/class-keys.test.ts) evaluate class member names before static initialization. A throwing key stops later keys, class creation, and constructor-call arguments. Finite key alternatives retain their guards and distinct class members. Instance field values remain deferred. A 10,000-key control checks iterative concrete-key sequencing. Effectful object-key coercion and class-name temporal dead zones remain unverified.
 
-[Callable-property tests](../packages/bippy-analyzer/tests/callable-properties.test.ts) cover guarded function/class writes, property presence, inherited fallback, explicit undefined, deletion, and prototype ownership. Function and class values share journaled object storage with their React component definitions. Prototypes are initialized before guarded program work, rather than first access inside a branch. Method, arrow, async, generator, and bound-function controls distinguish own prototype shape; this is not an `IsConstructor` implementation. Descriptor-sensitive writes, instance-method metadata, wrapper mutations, and complete reflection remain unverified.
+[Callable-property tests](../tests/callable-properties.test.ts) cover guarded function/class writes, property presence, inherited fallback, explicit undefined, deletion, and prototype ownership. Function and class values share journaled object storage with their React component definitions. Prototypes are initialized before guarded program work, rather than first access inside a branch. Method, arrow, async, generator, and bound-function controls distinguish own prototype shape; this is not an `IsConstructor` implementation. Descriptor-sensitive writes, instance-method metadata, wrapper mutations, and complete reflection remain unverified.
 
-[Static-initializer tests](../packages/bippy-analyzer/tests/static-initializers.test.ts) preserve field and block errors before later static work. A failed field initializer does not replace an existing method or create its field. Guarded failures retain the observable state of an escaped partial class. Static blocks have a separate scope and completion boundary; handled errors and finalizer effects remain visible. Mixed return/jump paths can still run later iteration effects on a thrown path.
+[Static-initializer tests](../tests/static-initializers.test.ts) preserve field and block errors before later static work. A failed field initializer does not replace an existing method or create its field. Guarded failures retain the observable state of an escaped partial class. Static blocks have a separate scope and completion boundary; handled errors and finalizer effects remain visible. Mixed return/jump paths can still run later iteration effects on a thrown path.
 
-[Loop-continuation tests](../packages/bippy-analyzer/tests/loop-completion.test.ts) cover body returns and throws in `for`, `while`, `do…while`, and known `for…of`/`for…in` iterations. Surviving paths run remaining iterations before the enclosing fork rejoins terminal state. A completion-depth marker follows actual terminal/completing forks, rather than structural guard changes. Post-loop statements retain the body's completion predicate. Ordinary iterations remain iterative, including a 10,000-item control. Mixed jumps, optional iterations, iterator semantics, and per-iteration lexical bindings remain unverified.
+[Loop-continuation tests](../tests/loop-completion.test.ts) cover body returns and throws in `for`, `while`, `do…while`, and known `for…of`/`for…in` iterations. Surviving paths run remaining iterations before the enclosing fork rejoins terminal state. A completion-depth marker follows actual terminal/completing forks, rather than structural guard changes. Post-loop statements retain the body's completion predicate. Ordinary iterations remain iterative, including a 10,000-item control. Mixed jumps, optional iterations, iterator semantics, and per-iteration lexical bindings remain unverified.
 
-[Loop-expression tests](../packages/bippy-analyzer/tests/loop-expressions.test.ts) preserve errors in `for` initializers, conditional-loop tests, and `for` updates. Declaration headers use the original statement evaluator, so a failed declarator stops later declarations. Successful test paths reuse the evaluated value rather than rerunning an effectful test. Header and body errors skip later work while preserving prior effects and thrown payloads. Ordinary iterations remain iterative. Iterable-expression failures and uncertain loop-tail evaluation remain unverified.
+[Loop-expression tests](../tests/loop-expressions.test.ts) preserve errors in `for` initializers, conditional-loop tests, and `for` updates. Declaration headers use the original statement evaluator, so a failed declarator stops later declarations. Successful test paths reuse the evaluated value rather than rerunning an effectful test. Header and body errors skip later work while preserving prior effects and thrown payloads. Ordinary iterations remain iterative. Uncertain loop-tail evaluation remains unverified.
 
-[Value-level checks](../packages/bippy-analyzer/tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
+[Loop-source tests](../tests/loop-sources.test.ts) preserve right-hand expression errors before `for…of`/`for…in` iteration extraction. The expression runs once; completing paths retain their value and context. Errors skip assignment-target evaluation and body effects. Iterator acquisition, interleaving and closing, invalid iterables, and loop-head temporal dead zones remain unverified.
+
+[Value-level checks](../tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Frozen-object and primitive-property write errors
 - Superclass constructor/prototype validation and descriptor-sensitive field definition errors
@@ -320,7 +322,7 @@ An unconstrained text node can match a native snapshot without establishing the 
 
 ### Preserve identity as well as conditions
 
-Two equal-looking objects need not be the same object. Two references to the same function must retain that identity. The [value implementation](../packages/bippy-analyzer/src/evaluate/values.ts) therefore records allocation identity separately from symbolic conditions.
+Two equal-looking objects need not be the same object. Two references to the same function must retain that identity. The [value implementation](../src/evaluate/values.ts) therefore records allocation identity separately from symbolic conditions.
 
 Timer handles retain resource identity even when their numeric ranges match. The queue uses that identity for cancellation after the interpreter copies a value.
 
@@ -336,11 +338,11 @@ These checks still cannot prove that recursion never terminates. A cutoff produc
 
 ## Rendering with React
 
-The [materializer](../packages/bippy-analyzer/src/materialize/materializer.ts) converts interpreted values into real React elements. Each source component becomes a proxy component whose render calls the interpreter. The proxy never calls the application function itself.
+The [materializer](../src/materialize/materializer.ts) converts interpreted values into real React elements. Each source component becomes a proxy component whose render calls the interpreter. The proxy never calls the application function itself.
 
 ### Represent uncertainty in the fiber tree
 
-React requires elements to render, so an unknown value cannot remain only an interpreter record. The materializer converts uncertain structures into [marker components](../packages/bippy-analyzer/src/materialize/markers.ts). Their fibers record where the uncertainty occurs:
+React requires elements to render, so an unknown value cannot remain only an interpreter record. The materializer converts uncertain structures into [marker components](../src/materialize/markers.ts). Their fibers record where the uncertainty occurs:
 
 | Marker                       | Meaning                                                                       |
 | ---------------------------- | ----------------------------------------------------------------------------- |
@@ -356,9 +358,9 @@ React can render alternative branches together in one analysis run. Their simult
 
 An error boundary can choose its fallback from the value a child throws. A replacement object can change that choice, even when its message resembles the original error.
 
-The proxy therefore retains the interpreted thrown value while React locates the boundary. The [class renderer](../packages/bippy-analyzer/src/evaluate/class-component.ts) passes that value to `getDerivedStateFromError`, preserving primitive values and object identity.
+The proxy therefore retains the interpreted thrown value while React locates the boundary. The [class renderer](../src/evaluate/class-component.ts) passes that value to `getDerivedStateFromError`, preserving primitive values and object identity.
 
-When every branch throws, [caught-value extraction](../packages/bippy-analyzer/src/evaluate/thrown.ts) maps the payloads without creating a new decision. Otherwise, the model could pair an error with the condition that selects a different error.
+When every branch throws, [caught-value extraction](../src/evaluate/thrown.ts) maps the payloads without creating a new decision. Otherwise, the model could pair an error with the condition that selects a different error.
 
 The current class model does not invoke `componentDidCatch`. Mixed throwing and nonthrowing paths still need cause-preserving validation.
 
@@ -401,7 +403,7 @@ export default () => {
 
 The final `<strong>` tree no longer contains the condition on `context`. Its existence still requires a context, because only `Trigger` schedules the update. A model that records only the final tree loses that requirement.
 
-[`CommitCauses`](../packages/bippy-analyzer/src/materialize/commit-causes.ts) records the conditions under which modeled updates occur. Nested causes require both conditions. Independent causes that each suffice for an update permit either condition.
+[`CommitCauses`](../src/materialize/commit-causes.ts) records the conditions under which modeled updates occur. Nested causes require both conditions. Independent causes that each suffice for an update permit either condition.
 
 Effects and ref callbacks use conditional mutation evaluation, so their writes retain those causes. The render result associates the resulting commit causes with its recorded trees. The state analysis can then reject a later tree whose cause conflicts with the selected inputs.
 
@@ -409,11 +411,11 @@ Effects and ref callbacks use conditional mutation evaluation, so their writes r
 
 A deferred callback can run after an unrelated commit. Using conditions from that commit would associate the callback with the wrong inputs. Modeled tasks instead retain the conditions that applied when analysis scheduled them.
 
-The [timer queue](../packages/bippy-analyzer/src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never schedule them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions. Cancellation through a conditional handle uses the selection condition for each handle.
+The [timer queue](../src/evaluate/timers.ts) also records cancellation as journaled state. The same state keeps timers inactive on paths that never schedule them. If a conditional child cancels a shared timer, the timer remains active on paths without that child. Callback execution uses both the scheduling and cancellation conditions. Cancellation through a conditional handle uses the selection condition for each handle.
 
 Direct `queueMicrotask` calls use the same activation checks without exposing a cancellation handle to application code. The queue records activation when it enqueues work, not when the interpreter allocates a handle. Cancellation does not count as an update when the queue has no record of the handle.
 
-[Promise reactions](../packages/bippy-analyzer/src/evaluate/promises.ts) record activation when a handler subscribes, even if the promise is still pending. A reaction uses both its registration condition and its settlement condition. Journaled promise state keeps settlement on one path from changing another path. `Promise.all` records each input reaction's completion separately instead of sharing a counter across paths.
+[Promise reactions](../src/evaluate/promises.ts) record activation when a handler subscribes, even if the promise is still pending. A reaction uses both its registration condition and its settlement condition. Journaled promise state keeps settlement on one path from changing another path. `Promise.all` records each input reaction's completion separately instead of sharing a counter across paths.
 
 Task callbacks also journal their writes under the full execution condition. This matters when a conditional component schedules a callback that later changes a shared store. Checking that the callback can run is not enough to restrict its writes.
 
@@ -423,25 +425,25 @@ A modeled leading `await` resumes in a reaction microtask even when its operand 
 
 Promise support remains incomplete. Thenable behavior, custom promise constructors, escaped or widened outcomes, non-leading await expressions, and render-local suspension still require verification.
 
-[Mounting](../packages/bippy-analyzer/src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. If unmounting throws, it still restores console handlers and releases the recorder and container. When rendering and unmounting both fail, an aggregate retains both errors, including thrown `null` or `undefined`. A cleanup failure remains a failed analysis. Reaching the settlement limit does not prove that the application has no further updates.
+[Mounting](../src/materialize/mount.ts) runs React updates and modeled tasks within a bounded settlement period. It records committed trees before it unmounts the root and removes instrumentation. If unmounting throws, it still restores console handlers and releases the recorder and container. When rendering and unmounting both fail, an aggregate retains both errors, including thrown `null` or `undefined`. A cleanup failure remains a failed analysis. Reaching the settlement limit does not prove that the application has no further updates.
 
 ## Symbolic states
 
-The [pattern reader](../packages/bippy-analyzer/src/harness/static-pattern.ts) converts recorded fibers into comparison patterns. A pattern describes known fibers and uncertain regions. Marker fibers become branch, repeat, opaque, or wildcard pattern nodes.
+The [pattern reader](../src/harness/static-pattern.ts) converts recorded fibers into comparison patterns. A pattern describes known fibers and uncertain regions. Marker fibers become branch, repeat, opaque, or wildcard pattern nodes.
 
 An opaque node represents a component with an unmodeled body. A wildcard permits structure that the analysis cannot determine. Neither node establishes the exact structure of the region that it represents.
 
 ### Keep commits and causes together
 
-The [symbolic tree](../packages/bippy-analyzer/src/harness/symbolic-tree.ts) stores symbolic inputs and guarded commit patterns. Each commit has a tree and a guard. A guard restricts when that committed tree can occur in the model.
+The [symbolic tree](../src/harness/symbolic-tree.ts) stores symbolic inputs and guarded commit patterns. Each commit has a tree and a guard. A guard restricts when that committed tree can occur in the model.
 
 Commit guards matter even when two commits have the same visible tree. Combining identical patterns must retain the conditions that permit either occurrence. Otherwise, deduplication changes which inputs appear to produce the tree.
 
 ### Enumerate related decisions together
 
-The [state-space implementation](../packages/bippy-analyzer/src/harness/state-space.ts) groups decisions that share inputs. A guard solver checks whether their conditions permit a common assignment of values. Independent groups do not require immediate enumeration of every combined state.
+The [state-space implementation](../src/harness/state-space.ts) groups decisions that share inputs. A guard solver checks whether their conditions permit a common assignment of values. Independent groups do not require immediate enumeration of every combined state.
 
-A wide group can exhaust JavaScript’s call stack before it reaches the state budget. The [cluster enumerator](../packages/bippy-analyzer/src/harness/enumerate-states.ts) therefore schedules continuations on an explicit work stack. It schedules guard cleanup after each path, preserving depth-first choice and omission order. This removes sibling-count stack growth without raising enumeration or repetition budgets.
+A wide group can exhaust JavaScript’s call stack before it reaches the state budget. The [cluster enumerator](../src/harness/enumerate-states.ts) therefore schedules continuations on an explicit work stack. It schedules guard cleanup after each path, preserving depth-first choice and omission order. This removes sibling-count stack growth without raising enumeration or repetition budgets.
 
 For two independent Boolean inputs, each group has two local assignments. The full combination has four assignments. Grouping lets the model retain the local choices without constructing all four trees before a query needs them.
 
@@ -453,15 +455,15 @@ Application comparison and replay check different properties of the model. Appli
 
 ### Match an application capture
 
-[`compareStaticToRuntime`](../packages/bippy-analyzer/src/harness/compare-render.ts) checks whether an application tree matches the symbolic model. This test is membership checking. It can search the symbolic tree without requiring the matching state in the initial enumerated list.
+[`compareStaticToRuntime`](../src/harness/compare-render.ts) checks whether an application tree matches the symbolic model. This test is membership checking. It can search the symbolic tree without requiring the matching state in the initial enumerated list.
 
-The [matcher](../packages/bippy-analyzer/src/harness/compare.ts) drives suspended calls through an [explicit work stack](../packages/bippy-analyzer/src/harness/work-stack.ts). Generator frames keep decision constraints active while descendant calls run. The driver resumes a frame with its child’s result or throws its error into that frame. Its `finally` blocks release constraints during completion, backtracking, and errors. A wide sibling list or repeat therefore does not consume one JavaScript frame per step.
+The [matcher](../src/harness/compare.ts) drives suspended calls through an [explicit work stack](../src/harness/work-stack.ts). Generator frames keep decision constraints active while descendant calls run. The driver resumes a frame with its child’s result or throws its error into that frame. Its `finally` blocks release constraints during completion, backtracking, and errors. A wide sibling list or repeat therefore does not consume one JavaScript frame per step.
 
 The work stack does not raise the matching step budget. Recursive tree indexing and guard-solver resource bounds remain separate limits. Enumeration success still does not establish that comparison will complete.
 
 Check `budgetExhausted` when a comparison reports `mismatch`. If true, the search found no witness within its budget. That does not prove the capture is absent from the model. The recorded divergence describes the search, not a proven parser defect.
 
-Check evaluation diagnostics even when the matcher’s `budgetExhausted` flag is false. Evaluation can replace a component body with a wildcard after a step or call-depth cutoff. A partial match through that wildcard does not validate the missing body. The [Elden Ring capture](../scratchpad.md#evaluator-limited-elden-ring-import) records three matching steps alongside eighteen evaluation-budget cutoffs.
+Check evaluation diagnostics even when the matcher’s `budgetExhausted` flag is false. Evaluation can replace a component body with a wildcard after a step or call-depth cutoff. A partial match through that wildcard does not validate the missing body. The [Elden Ring capture](../../../scratchpad.md#evaluator-limited-elden-ring-import) records three matching steps alongside eighteen evaluation-budget cutoffs.
 
 The comparison checks fiber structure. It also compares these recorded fields:
 
@@ -478,13 +480,13 @@ An `exact` membership result applies to the captured state and the comparison ru
 
 ### Render selected decisions again
 
-[`replayEnumeratedStates`](../packages/bippy-analyzer/src/harness/state-replay.ts) creates a fresh interpreter and materializer for each sampled decision assignment. A pinned decision selects one branch alternative or repeat count instead of rendering all alternatives together. This can expose shared-state interference that the combined render failed to prevent.
+[`replayEnumeratedStates`](../src/harness/state-replay.ts) creates a fresh interpreter and materializer for each sampled decision assignment. A pinned decision selects one branch alternative or repeat count instead of rendering all alternatives together. This can expose shared-state interference that the combined render failed to prevent.
 
 The materializer records selected input guards for task checks. It does not use these assumptions to narrow ordinary render values. That narrowing can remove branch markers and cause React to remount their children. Iteration-local inputs and synthetic choices do not become global task assumptions.
 
 Replay uses the same interpreter implementation. It is not an independent execution of application source. A model error that affects both the combined render and the replay can remain undetected.
 
-Many Games’ [saved comparisons](../scratchpad.md#six-original-second-game-captures) demonstrate this gap. Replay passes, but independent capture lacks a loading placeholder that the model retains.
+Many Games’ [saved comparisons](../../../scratchpad.md#six-original-second-game-captures) demonstrate this gap. Replay passes, but independent capture lacks a loading placeholder that the model retains.
 
 The replay claim describes what the symbolic model predicts under the selected decisions. The implementation derives this claim from all symbolic commits, not a truncated list of enumerated states. Otherwise, a state budget could remove a later commit from the claim and create a false contradiction.
 
@@ -513,18 +515,18 @@ Corrections currently change the state array without changing the original symbo
 
 ## Implementation limits
 
-The current renderer uses React DOM and the happy-dom implementation of the Document Object Model. The [runtime loader](../packages/bippy-analyzer/src/materialize/react-runtime.ts) resolves application React packages or framework-specific replacements. It can use the analysis package versions when application packages are unavailable or lack the required support.
+The current renderer uses React DOM and the happy-dom implementation of the Document Object Model. The [runtime loader](../src/materialize/react-runtime.ts) resolves application React packages or framework-specific replacements. It can use the analysis package versions when application packages are unavailable or lack the required support.
 
 The runtime uses its React module’s `act` or `unstable_act` export when available. A Bippy-recorded hook probe checks runtime compatibility. Failed probes release their recorder and restore console output before fallback.
 
 A host model defines available platform names and modeled behavior. Host declarations for React Native do not establish native renderer support. Fiber-only comparison also misses scalar host text that React stores without a separate text fiber.
 
-[Framework adapters](../packages/bippy-analyzer/README.md#frameworks-srcframeworks) select roots and compose framework-specific trees. With server component support enabled, the interpreter evaluates server bodies without client fiber boundaries. Client components retain their fiber boundaries.
+[Framework adapters](../README.md#frameworks-srcframeworks) select roots and compose framework-specific trees. With server component support enabled, the interpreter evaluates server bodies without client fiber boundaries. Client components retain their fiber boundaries.
 
 The guard model supports selected comparisons, not every JavaScript constraint. Expression limits can discard condition detail, and evaluation limits can produce unknown values. A solver result applies to the represented conditions, not to every behavior of the original program.
 
-Task registration and captured lexical variables still require further isolation checks. Lifecycle scheduling also needs further verification. Partial replay comparison does not establish every commit order or unresolved cause. The [execution plan](../scratchpad.md#7-workstream-p1-effect-cause-guards-and-reachable-commits) records these gaps.
+Task registration and captured lexical variables still require further isolation checks. Lifecycle scheduling also needs further verification. Partial replay comparison does not establish every commit order or unresolved cause. The [execution plan](../../../scratchpad.md#7-workstream-p1-effect-cause-guards-and-reachable-commits) records these gaps.
 
-The [witness planner](../packages/bippy-analyzer/src/harness/witness-plan.ts) proposes input assignments for guard alternatives without runtime evidence. A runtime witness is an application capture that demonstrates an alternative. The planner does not execute browser actions or establish coverage of event sequences.
+The [witness planner](../src/harness/witness-plan.ts) proposes input assignments for guard alternatives without runtime evidence. A runtime witness is an application capture that demonstrates an alternative. The planner does not execute browser actions or establish coverage of event sequences.
 
-The parser has not established that every modeled state is reachable or that every reachable state appears in the model. Interpret membership results alongside replay verification and any reported omissions. The [state-model design](../packages/bippy-analyzer/docs/exhaustive-states.md) describes the intended guarantees. The [documentation plan](../scratchpad.md#architecture-documentation-plan) records the scope of this page.
+The parser has not established that every modeled state is reachable or that every reachable state appears in the model. Interpret membership results alongside replay verification and any reported omissions. The [state-model design](exhaustive-states.md) describes the intended guarantees. The [documentation plan](../../../scratchpad.md#architecture-documentation-plan) records the scope of this page.
