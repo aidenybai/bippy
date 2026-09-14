@@ -319165,6 +319165,1152 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T15:26:42.835Z",
       "failure": null
+    },
+    {
+      "id": "dilsherb-react-budget-calculator",
+      "revision": "a8deb697fa35c03e2c07ef418520cd24a8c39732",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:07.661Z",
+      "durationMs": 284,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 51,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 45,
+          "textCount": 13,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 30,
+        "matchedText": 13,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 7,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 50,
+        "staticFibers": 44,
+        "coverage": 1,
+        "strictCoverage": 0.86,
+        "divergence": null,
+        "stepsUsed": 44,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 44,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 1,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:05.403Z",
+      "failure": null
+    },
+    {
+      "id": "hstevanoski-react-redux-notes-app",
+      "revision": "88eaf2fa601240098741c9bd22e527d7c6d32443",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:06.632Z",
+      "durationMs": 235,
+      "runtime": {
+        "reactVersion": "16.9.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 25,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React-Redux Notes App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 8,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 9
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 4,
+        "matchedText": 0,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 20,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 24,
+        "staticFibers": 7,
+        "coverage": 1,
+        "strictCoverage": 0.16666666666666666,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 7,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:03.930Z",
+      "failure": null
+    },
+    {
+      "id": "mr-dev-dragon-calculator-react-tlwincss",
+      "revision": "82c0cfd700435ad9e623a0f715d0e1c7d660b13d",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:20.273Z",
+      "durationMs": 267,
+      "runtime": {
+        "reactVersion": "18.0.0-fc46dba67-20220329",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 67,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: ReactDOM.render is no longer supported in React 18. Use createRoot instead. Until you switch to the new API, your app will behave as if it's running React 17. Learn more: https://reactjs.org/link/switch-to-createroot",
+          "Warning: Invalid DOM property `%s`. Did you mean `%s`?%s class className \n    at div\n    at div\n    at div\n    at Cal (http://127.0.0.1:54944/static/js/bundle.js:128:72)\n    at div\n    at Navbar (http://127.0.0.1:54944/static/js/bundle.js:637:5)\n    at div\n    at div\n    at App (http://127.0.0.1:54944/static/js/bundle.js:32:84)"
+        ],
+        "title": "Calculator App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 67,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 65,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 66,
+        "staticFibers": 66,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 66,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 66,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:18.110Z",
+      "failure": null
+    },
+    {
+      "id": "dycodes-calculator-reactjs",
+      "revision": "085180c40c49d8cd182fc571775d2d483adaff05",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:18.190Z",
+      "durationMs": 239,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 30,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Calculator by dyCodes"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 30,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 29,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 29,
+        "staticFibers": 29,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 29,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 29,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:16.091Z",
+      "failure": null
+    },
+    {
+      "id": "ahangarha-mv-mathmagicians",
+      "revision": "67804d18395a1eb3811ab24d398b8fda645ae804",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:31.049Z",
+      "durationMs": 263,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 50,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 32,
+          "textCount": 7,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 8,
+          "unknownCount": 0,
+          "modulesLoaded": 11
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 16,
+        "matchedText": 4,
+        "opaqueSubtrees": 5,
+        "opaqueSkippedFibers": 29,
+        "slotsMatched": 1,
+        "slotsUnmatched": 4,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <main> [HostComponent] > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 16,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <main> [HostComponent] > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"Quote\"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"Calculator\"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Router> (opaque) > <Header> [FunctionComponent] > <header> [HostComponent] > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"Home\"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 49,
+        "staticFibers": 31,
+        "coverage": 1,
+        "strictCoverage": 0.40816326530612246,
+        "divergence": null,
+        "stepsUsed": 97,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 31,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 8,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:28.891Z",
+      "failure": null
+    },
+    {
+      "id": "ilynette-math-magician",
+      "revision": "b441768996896a8950c6852a3567d0b7618ec06a",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:33.135Z",
+      "durationMs": 253,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 35,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 24,
+          "textCount": 3,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 9,
+          "unknownCount": 0,
+          "modulesLoaded": 8
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 11,
+        "matchedText": 0,
+        "opaqueSubtrees": 6,
+        "opaqueSkippedFibers": 23,
+        "slotsMatched": 2,
+        "slotsUnmatched": 4,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 7,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Nav> [ClassComponent] > <nav> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Nav> [ClassComponent] > <nav> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"Quotes\"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Nav> [ClassComponent] > <nav> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Nav> [ClassComponent] > <nav> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"Calculator\"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Nav> [ClassComponent] > <nav> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <App> [ClassComponent] > <div> [HostComponent] > <Nav> [ClassComponent] > <nav> [HostComponent] > <div> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"Home \"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 34,
+        "staticFibers": 23,
+        "coverage": 1,
+        "strictCoverage": 0.3235294117647059,
+        "divergence": null,
+        "stepsUsed": 68,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 23,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 9,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:30.933Z",
+      "failure": null
+    },
+    {
+      "id": "nostackdevv-react-noteapp",
+      "revision": "67d2dbbdbdb528cab9db47dfd54185b7af58e5be",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:44.141Z",
+      "durationMs": 305,
+      "runtime": {
+        "reactVersion": "16.10.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 17,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Notes"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 43,
+          "textCount": 5,
+          "branchCount": 1,
+          "repeatCount": 1,
+          "opaqueCount": 18,
+          "unknownCount": 2,
+          "modulesLoaded": 7
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 8,
+        "matchedText": 0,
+        "opaqueSubtrees": 4,
+        "opaqueSkippedFibers": 8,
+        "slotsMatched": 3,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [
+          {
+            "path": "root > <App> [ClassComponent] > <div> [HostComponent] > <Navbar> [ClassComponent] > <nav> [HostComponent] > <AddNote> [ClassComponent] > <Modal> (opaque) > <Form> (opaque)",
+            "reason": "Form from react-bootstrap is not analyzed",
+            "head": "<ContextProvider> [ContextProvider]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <App> [ClassComponent] > <div> [HostComponent] > <Navbar> [ClassComponent] > <nav> [HostComponent] > <AddNote> [ClassComponent] > <Modal> (opaque) > <Form> (opaque)[1]",
+              "expected": "<Modal.Body> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 16,
+        "staticFibers": 36,
+        "coverage": 1,
+        "strictCoverage": 0.5,
+        "divergence": null,
+        "stepsUsed": 30,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "stateCount": 5,
+        "clusters": 1,
+        "tree": {
+          "nodes": 69,
+          "inputs": 3,
+          "guards": 5,
+          "branches": 1,
+          "repeats": 1,
+          "opaque": 34,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#2.notes)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2.notes)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
+              "side": 0,
+              "guard": "eq(len(#2.notes), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2.notes)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
+              "side": 1,
+              "guard": "len(#2.notes) > 0",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 4,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 5,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.notes)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2.notes)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:41.891Z",
+      "failure": null
+    },
+    {
+      "id": "excalibur79-react-calculator",
+      "revision": "2b5b97c7434854c94cef48f3292a08e85b71e43a",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:44.708Z",
+      "durationMs": 259,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 82,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://fb.me/react-warning-keys for more information.%s \n\nCheck the render method of `CalculatorBoard`.  \n    in div (at CalculatorBoard.jsx:129)\n    in CalculatorBoard (at App.jsx:8)\n    in div (at App.jsx:7)\n    in App (at src/index.js:11)\n    in StrictMode (at src/index.js:10)"
+        ],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 82,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 5
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 81,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 81,
+        "staticFibers": 81,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 81,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 81,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:42.565Z",
+      "failure": null
+    },
+    {
+      "id": "john-smilga-react-hooks-budged-calculator-app",
+      "revision": "d0c098af63b6c86ca74b1a1bad97af3fab9b1845",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:56.387Z",
+      "durationMs": 266,
+      "runtime": {
+        "reactVersion": "16.8.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 28,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 23,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 17,
+        "matchedText": 4,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 6,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 27,
+        "staticFibers": 22,
+        "coverage": 1,
+        "strictCoverage": 0.7777777777777778,
+        "divergence": null,
+        "stepsUsed": 22,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 22,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 1,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:54.202Z",
+      "failure": null
+    },
+    {
+      "id": "nitbravoa92-math-magicians",
+      "revision": "6023e0186e0f46d1706967f11daec310b7495e33",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:31:56.831Z",
+      "durationMs": 273,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 42,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Math Magicians WebApp"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 8,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 5,
+          "unknownCount": 0,
+          "modulesLoaded": 18
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 2,
+        "matchedText": 0,
+        "opaqueSubtrees": 5,
+        "opaqueSkippedFibers": 39,
+        "slotsMatched": 2,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 3,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 41,
+        "staticFibers": 7,
+        "coverage": 1,
+        "strictCoverage": 0.04878048780487805,
+        "divergence": null,
+        "stepsUsed": 95,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 7,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 5,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:31:54.642Z",
+      "failure": null
     }
   ]
 }

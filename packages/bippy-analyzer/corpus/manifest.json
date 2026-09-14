@@ -10377,6 +10377,266 @@
         "entry": "src/index.js"
       },
       "notes": "Original root Home and three navigation links with PUBLIC_URL basename; no Calculator/Quote navigation or arithmetic input. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original root Home and three navigation links with PUBLIC_URL basename; no Calculator/Quote navigation or arithmetic input. Partial original root Home has37.9% strict coverage, eight opaque router tree nodes and four unmatched slots. No Calculator/Quote navigation or arithmetic claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 586846123 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "dilsherb-react-budget-calculator",
+      "repository": "https://github.com/DilsherB/react-budget-calculator",
+      "revision": "a8deb697fa35c03e2c07ef418520cd24a8c39732",
+      "description": "DilsherB/react-budget-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54942",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54942/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original empty budgetItems, blank expense/amount, PKR default/zero spending, no alert and focused input. Authored autoprefixer10.4.5 override retained; no added override, expense, currency toggle or backend. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty budgetItems, blank expense/amount, PKR default/zero spending, no alert and focused input. Authored autoprefixer10.4.5 override retained; no added override, expense, currency toggle or backend. Partial86% strict coverage, one opaque icon; original empty budget/PKR/zero spending/focused input and authored autoprefixer override retained. No expense submission or currency toggle. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 635176110 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "hstevanoski-react-redux-notes-app",
+      "repository": "https://github.com/hstevanoski/react-redux-notes-app",
+      "revision": "88eaf2fa601240098741c9bd22e527d7c6d32443",
+      "description": "hstevanoski/react-redux-notes-app",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54943",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54943/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original class-component branch empty Redux notes/form and optional DevTools extension. NotesForm has duplicate default exports; retain source/compiler failure instead of switching to hooks branch or editing it. No DevTools substitute. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original class-component branch empty Redux notes/form and optional DevTools extension. NotesForm has duplicate default exports; retain source/compiler failure instead of switching to hooks branch or editing it. No DevTools substitute. Partial16.7% strict coverage, three opaque Redux nodes. Original class branch and duplicate default-export source retained; native compiler produces an empty notes/form screen, not an inferred compiler failure or parser-validity proof. No hooks-branch switch or Redux DevTools substitute. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 205370811 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "mr-dev-dragon-calculator-react-tlwincss",
+      "repository": "https://github.com/mr-dev-dragon/Calculator....react....tlwincss",
+      "revision": "82c0cfd700435ad9e623a0f715d0e1c7d660b13d",
+      "description": "mr-dev-dragon/Calculator....react....tlwincss",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54944",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54944/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original light theme, cal/result empty with displayed0,20 keypad buttons and Dark Mode button. Original class attributes and legacy ReactDOM.render withReact18 retained; no toggle or eval. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original light theme, cal/result empty with displayed0,20 keypad buttons and Dark Mode button. Original class attributes and legacy ReactDOM.render withReact18 retained; no toggle or eval. Exact66-node initial screen with original React18.0.0-fc46dba67-20220329 and legacy-render/class warnings. No theme toggle, input or eval. Original repository lacks .gitignore; only node_modules is untracked and installed tree is independently audited; no source/lock exemption. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 482073992 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "dycodes-calculator-reactjs",
+      "repository": "https://github.com/dyCodes/calculator-reactjs",
+      "revision": "085180c40c49d8cd182fc571775d2d483adaff05",
+      "description": "dyCodes/calculator-reactjs",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54945",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54945/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original empty global/state history and output,19 div keys. No key input, eval or service worker activation. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty global/state history and output,19 div keys. No key input, eval or service worker activation. Exact29-node original empty output/history and19 div keys; no arithmetic, history update or service worker activation. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 398947287 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "ahangarha-mv-mathmagicians",
+      "repository": "https://github.com/ahangarha/MV-MathMagicians",
+      "revision": "67804d18395a1eb3811ab24d398b8fda645ae804",
+      "description": "ahangarha/MV-MathMagicians",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54947",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54947/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original root educational Home, three navigation links and AGPL footer. No navigation to calculator/quote or arithmetic; authored homepage dot retained. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original root educational Home, three navigation links and AGPL footer. No navigation to calculator/quote or arithmetic; authored homepage dot retained. Partial40.8% strict coverage, eight opaque router nodes and four unmatched slots on original Home. AGPL footer remains; no calculator/quote navigation. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 469646769 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "ilynette-math-magician",
+      "repository": "https://github.com/iLynette/math_magician",
+      "revision": "b441768996896a8950c6852a3567d0b7618ec06a",
+      "description": "iLynette/math_magician",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54948",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54948/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original root Home/two paragraphs and four NavLinks; authored username.github.io homepage retained. No navigation, new CRA app or arithmetic input. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original root Home/two paragraphs and four NavLinks; authored username.github.io homepage retained. No navigation, new CRA app or arithmetic input. Partial32.4% strict coverage, nine opaque router nodes and four unmatched slots on original Home. Placeholder homepage retained; no navigation or replacement CRA app. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 469640331 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "nostackdevv-react-noteapp",
+      "repository": "https://github.com/nostackdevv/react-noteapp",
+      "revision": "67d2dbbdbdb528cab9db47dfd54185b7af58e5be",
+      "description": "nostackdevv/react-noteapp",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54949",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54949/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original empty notes, Write Note button and closed Bootstrap modal. Original serviceWorker.unregister; no modal opening, title/body entry or storage injection. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty notes, Write Note button and closed Bootstrap modal. Original serviceWorker.unregister; no modal opening, title/body entry or storage injection. Partial50% strict coverage,34 opaque tree nodes/two wildcards/five bounded states/one repeat omission above2 and two incomplete replay assignments. Empty notes/closed Bootstrap modal and Form slot mismatch/opaque renaming retained; no note creation or storage injection. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 215992377 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "excalibur79-react-calculator",
+      "repository": "https://github.com/Excalibur79/React-Calculator",
+      "revision": "2b5b97c7434854c94cef48f3292a08e85b71e43a",
+      "description": "Excalibur79/React-Calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54950",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54950/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original empty display and22 div controls including CLR/equal, class defaultProps arrays, Bootstrap JS/jQuery and missing-key warning retained. No input, eval or service worker activation. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty display and22 div controls including CLR/equal, class defaultProps arrays, Bootstrap JS/jQuery and missing-key warning retained. No input, eval or service worker activation. Exact81-node original empty display/22 div controls. Missing-key warning, original Bootstrap JS/jQuery and defaultProps retained; no input or eval. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 290827763 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "john-smilga-react-hooks-budged-calculator-app",
+      "repository": "https://github.com/john-smilga/react-hooks-budged-calculator-app",
+      "revision": "d0c098af63b6c86ca74b1a1bad97af3fab9b1845",
+      "description": "john-smilga/react-hooks-budged-calculator-app",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54951",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54951/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original empty expenses fallback/blank form/zero total, no alert or clear-items button, authored storage write. Commented sample expenses stay commented; no seeded data, submit/edit/delete or timeout override. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty expenses fallback/blank form/zero total, no alert or clear-items button, authored storage write. Commented sample expenses stay commented; no seeded data, submit/edit/delete or timeout override. Partial77.8% strict coverage, one opaque icon on original empty budget form/zero total; authored storage write remains, commented sample expenses not seeded. No submit/edit/delete or alert timer override. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 195668566 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "nitbravoa92-math-magicians",
+      "repository": "https://github.com/NitBravoA92/math-magicians",
+      "revision": "6023e0186e0f46d1706967f11daec310b7495e33",
+      "description": "NitBravoA92/math-magicians",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54952",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54952/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original root Home/header with three NavLinks and GIF logo. Quote route contains a checked-in API key; never navigate there, reuse it or request API-Ninjas. No credentials supplied, source altered or quote API acceptance. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original root Home/header with three NavLinks and GIF logo. Quote route contains a checked-in API key; never navigate there, reuse it or request API-Ninjas. No credentials supplied, source altered or quote API acceptance. Partial4.9% strict coverage, five opaque router nodes and three opaque renamings on original root Home/header/GIF logo. No Quote route navigation/API-Ninjas request or use of checked-in API key; no credentials supplied. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 661830983 identifies a distinct non-fork repository."
     }
   ]
 }
