@@ -166,7 +166,7 @@ An unknown basename does not justify an empty tree. `useHref` resolves static pa
 
 The [source parser](../src/parse/parse-source-file.ts) uses `oxc-parser` to build an abstract syntax tree. This tree describes source expressions and statements. `SourceFileCache` reuses parsed files and checks file metadata for changes.
 
-The [module graph](../src/graph/module-graph.ts) records declarations and module dependencies. Its resolver uses `oxc-resolver` with package conditions and project paths to locate dependencies. The graph follows exports across modules and reports missing or ambiguous exports.
+The [module graph](../src/graph/module-graph.ts) records declarations and module dependencies. Its resolver uses `oxc-resolver` with package conditions and project paths to locate dependencies. The graph follows exports across modules and reports missing or ambiguous exports. Internal star exports compare defining bindings rather than selecting the first match. [Module graph research](module-graph-research.md) records the source review, regression cases, cross-tool disagreements, and remaining parity work.
 
 An explicitly analyzed framework module also enables its relative source dependencies. Bare package imports retain their existing policy unless the adapter explicitly selects another module.
 

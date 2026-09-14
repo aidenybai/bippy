@@ -347,6 +347,7 @@ export class ModuleGraph {
     }
     if (exportedName !== "default") {
       const externalSources: ResolvedSymbol[] = [];
+      let starResolution: ResolvedSymbol | null = null;
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
         const resolution = this.resolveSpecifier(entry.specifier, module);
@@ -364,8 +365,28 @@ export class ModuleGraph {
           continue;
         }
         const resolved = this.resolveExportFrom(target, exportedName, module, visited);
-        if (resolved.kind !== "unresolved") return resolved;
+        if (resolved.kind === "unresolved") {
+          if (resolved.isAmbiguous) return resolved;
+          continue;
+        }
+        if (starResolution && !isSameResolvedSymbol(starResolution, resolved)) {
+          return {
+            kind: "unresolved",
+            reason: `ambiguous export "${exportedName}" in ${module.filePath}`,
+            isAmbiguous: true,
+          };
+        }
+        if (
+          !starResolution ||
+          ((resolved.kind === "binding" ||
+            resolved.kind === "expression" ||
+            resolved.kind === "module-exports") &&
+            resolved.isClientReference)
+        ) {
+          starResolution = resolved;
+        }
       }
+      if (starResolution) return starResolution;
       if (externalSources.length === 1) return externalSources[0];
       if (externalSources.length > 1) {
         return {
@@ -383,6 +404,51 @@ export class ModuleGraph {
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
   }
 }
+
+const isSameResolvedSymbol = (left: ResolvedSymbol, right: ResolvedSymbol): boolean => {
+  switch (left.kind) {
+    case "binding":
+      return (
+        right.kind === "binding" && left.module === right.module && left.binding === right.binding
+      );
+    case "expression":
+      return (
+        right.kind === "expression" &&
+        left.module === right.module &&
+        left.expression === right.expression
+      );
+    case "namespace":
+      return right.kind === "namespace" && left.module === right.module;
+    case "module-exports":
+      return (
+        right.kind === "module-exports" &&
+        left.module === right.module &&
+        left.exportedName === right.exportedName
+      );
+    case "external":
+      return (
+        right.kind === "external" &&
+        left.filePath === right.filePath &&
+        left.specifier === right.specifier &&
+        describeImportedName(left.imported) === describeImportedName(right.imported)
+      );
+    case "stylesheet":
+      return (
+        right.kind === "stylesheet" &&
+        left.filePath === right.filePath &&
+        describeImportedName(left.imported) === describeImportedName(right.imported)
+      );
+    case "asset":
+      return (
+        right.kind === "asset" &&
+        left.filePath === right.filePath &&
+        left.specifier === right.specifier &&
+        describeImportedName(left.imported) === describeImportedName(right.imported)
+      );
+    case "unresolved":
+      return false;
+  }
+};
 
 export const isModuleRecord = (value: ModuleRecord | ModuleResolution): value is ModuleRecord =>
   "bindings" in value;
