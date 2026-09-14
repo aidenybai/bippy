@@ -57,6 +57,8 @@ Activity/store replays run sixteen cases twice: either root, both ref contracts,
 
 Entangled-Action replays run eight cases twice with independent promise gates. Optimistic commits precede suspended work; current-fiber lookup must select the committed branch both during an urgent render and its later blocked retry. Completing one Action cannot commit either root while the other remains pending, but an unrelated root can still update urgently. Deleting and remounting either participant retires its old IDs; a late Action can release the shared scope without rendering or updating the new instance. Two queue cases change the Action implementation while work is pending: a queued call must retain its captured implementation and receive the previous Action's result, extend the shared scope, and delay the other root. A later dispatch uses the replacement implementation. Exact traces include ref replacement with live IDs, both roots' completion order, precise render-visitor identity, throwing observers/reporters and final cleanup. All gates settle in `finally`, including assertion-failure paths. These are pinned React 19 development semantics, not independent-Action concurrency or browser scheduling guarantees.
 
+Rejected-Action replays run eight cases twice: either failing root, either settlement order, and matching versus distinct boundary-reset keys. Native queues are located by dispatch identity, not hook position; distinct running/queued nodes must retain their exact payloads and reject with the same original error. Queue cancellation precedes the error-boundary commit when another root is still pending. The same boundary instance captures that error while the healthy root completes; failing deletion observers/reporters cannot interrupt teardown. Error capture creates a fresh fallback even with a matching key. Reset either retains that fallback's recovered state or creates a third fresh instance. A failed queue's retained dispatcher remains a no-op, unlike a normally unmounted queue: the latter can still run an async callback without reviving its IDs or UI, and can hold a live Action through the shared scope. Native queue results distinguish completed async work from still-pending committed UI. Exact traces, payload/queue identity, current visitors, live/retired IDs, control-root isolation and `finally` gate cleanup are checked. These are pinned React 19 development/Happy DOM semantics, not a recommendation to call detached dispatchers or a version-independent queue representation.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -76,6 +78,7 @@ pnpm test --project conformance strict-effects-replay
 pnpm test --project conformance store-consistency-replay
 pnpm test --project conformance activity-store-replay
 pnpm test --project conformance entangled-action-replay
+pnpm test --project conformance rejected-action-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
