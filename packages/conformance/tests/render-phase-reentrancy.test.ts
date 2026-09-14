@@ -18,7 +18,10 @@ interface PhaseProbeProps {
   value: number;
 }
 
-const runPhaseObservers = async (hasSecondObserver: boolean): Promise<string[]> => {
+const runPhaseObservers = async (
+  hasSecondObserver: boolean,
+  rootInput = "object",
+): Promise<string[]> => {
   const harness = createRenderHarness();
   const transcript: string[] = [];
   const trace: string[] = [];
@@ -36,15 +39,20 @@ const runPhaseObservers = async (hasSecondObserver: boolean): Promise<string[]> 
         ? "root"
         : null;
   const visit = (root: FiberRoot, observer: string, isNested = false): void =>
-    traverseRenderedFibers(root, (fiber, phase) => {
-      const name = getName(fiber);
-      if (!name || (name === "root" && phase !== "unmount")) return;
-      record(`${observer}:${name}:${phase}`);
-      if (observer === "first" && name === "a") {
-        if (shouldThrow) throw failure;
-        if (!isNested) visit(root, "nested", true);
-      }
-    });
+    traverseRenderedFibers(
+      rootInput === "fiber" || (rootInput === "mixed" && observer !== "first")
+        ? root.current
+        : root,
+      (fiber, phase) => {
+        const name = getName(fiber);
+        if (!name || (name === "root" && phase !== "unmount")) return;
+        record(`${observer}:${name}:${phase}`);
+        if (observer === "first" && name === "a") {
+          if (shouldThrow) throw failure;
+          if (!isNested) visit(root, "nested", true);
+        }
+      },
+    );
   using _reporter = vi
     .spyOn(console, "error")
     .mockImplementation((message: unknown, error: unknown) => {
@@ -103,6 +111,19 @@ it.each([false, true])(
   async (hasSecondObserver) => {
     expect(await runPhaseObservers(hasSecondObserver)).toEqual(
       await runPhaseObservers(hasSecondObserver),
+    );
+  },
+);
+
+it.each(
+  ["fiber", "mixed"].flatMap((rootInput) =>
+    [false, true].map((hasSecondObserver) => ({ rootInput, hasSecondObserver })),
+  ),
+)(
+  "preserves phases across root argument aliases, input $rootInput, second observer $hasSecondObserver",
+  async ({ rootInput, hasSecondObserver }) => {
+    expect(await runPhaseObservers(hasSecondObserver, rootInput)).toEqual(
+      await runPhaseObservers(hasSecondObserver, rootInput),
     );
   },
 );

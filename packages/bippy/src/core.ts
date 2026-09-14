@@ -625,12 +625,13 @@ const isRootFiberMounted = (fiber: Fiber): boolean => {
  */
 export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: RenderHandler): void => {
   const fiber = "current" in root ? root.current : root;
+  const rootKey = "current" in root || !isFiberRoot(root.stateNode) ? root : root.stateNode;
 
-  let rootInstance = rootInstanceMap.get(root);
+  let rootInstance = rootInstanceMap.get(rootKey);
 
   if (!rootInstance) {
     rootInstance = { prevFiber: null };
-    rootInstanceMap.set(root, rootInstance);
+    rootInstanceMap.set(rootKey, rootInstance);
   }
 
   const { prevFiber } = rootInstance;
