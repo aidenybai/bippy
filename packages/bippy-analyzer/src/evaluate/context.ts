@@ -71,6 +71,7 @@ export interface EvaluationContext {
   callStack: CallFrame[];
   uncertainDepth: number;
   forkDepth: number;
+  scopedCompletionDepth?: number;
   environment: RenderEnvironment | null;
   hooks: HookFrame | null;
   suspension: SuspensionPoint | null;
