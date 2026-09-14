@@ -7,6 +7,7 @@ import type {
   ModuleRecord,
   ModuleResolution,
   ResolvedSymbol,
+  UnresolvedSymbol,
 } from "../types.js";
 import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
 import { isPurePackage } from "../libraries/pure-packages.js";
@@ -348,6 +349,7 @@ export class ModuleGraph {
     if (exportedName !== "default") {
       const externalSources: ResolvedSymbol[] = [];
       let starResolution: ResolvedSymbol | null = null;
+      let uncertainResolution: UnresolvedSymbol | null = null;
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
         const resolution = this.resolveSpecifier(entry.specifier, module);
@@ -367,6 +369,7 @@ export class ModuleGraph {
         const resolved = this.resolveExportFrom(target, exportedName, module, visited);
         if (resolved.kind === "unresolved") {
           if (resolved.isAmbiguous) return resolved;
+          if (!module.isCommonJs && resolved.isUncertain) uncertainResolution ??= resolved;
           continue;
         }
         if (module.isCommonJs) return resolved;
@@ -385,6 +388,16 @@ export class ModuleGraph {
             resolved.isClientReference)
         ) {
           starResolution = resolved;
+        }
+      }
+      if (!module.isCommonJs) {
+        if (uncertainResolution) return uncertainResolution;
+        if (externalSources.length > 0) {
+          return {
+            kind: "unresolved",
+            reason: `cannot determine export "${exportedName}" through unanalyzed star exports in ${module.filePath}`,
+            isUncertain: true,
+          };
         }
       }
       if (starResolution) return starResolution;
