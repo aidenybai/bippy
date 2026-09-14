@@ -190,6 +190,7 @@ export class ModuleGraph {
 
   /** Export names plus whether an `export *` from an unanalyzed module may add more. */
   collectExportNames(module: ModuleRecord, visited = new Set<string>()): ExportNameSet {
+    if (hasUnparsedSource(module)) return { names: [], complete: false };
     if (visited.has(module.filePath)) return { names: [], complete: true };
     visited.add(module.filePath);
     const names = new Set<string>();
@@ -311,6 +312,13 @@ export class ModuleGraph {
     exportedName: string,
     visited: Set<string>,
   ): ResolvedSymbol {
+    if (hasUnparsedSource(module)) {
+      return {
+        kind: "unresolved",
+        reason: `cannot analyze exports of ${module.filePath}: ${module.file.errors.join("; ")}`,
+        isUncertain: true,
+      };
+    }
     const visitKey = `${module.filePath}\u0000${exportedName}`;
     if (visited.has(visitKey)) {
       return { kind: "unresolved", reason: `cyclic re-export of "${exportedName}"` };
@@ -431,6 +439,9 @@ export class ModuleGraph {
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
   }
 }
+
+const hasUnparsedSource = (module: ModuleRecord): boolean =>
+  module.file.errors.length > 0 && module.file.program.body.length === 0;
 
 const getUnavailableModuleSymbol = (
   resolution: Extract<ModuleResolution, { kind: "internal" | "unresolved" }>,
