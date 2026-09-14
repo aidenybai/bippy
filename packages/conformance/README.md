@@ -61,6 +61,8 @@ Rejected-Action replays run eight cases twice: either failing root, either settl
 
 Dispatch-membership replays run sixteen cases twice across commit, unmount, post-commit and schedule callbacks. A listener disposes and re-registers itself, optionally replaces another pending registration using the same options object, and can dispatch a nested event before throwing into a throwing reporter. A named renewal guard makes the broken live-Set implementation fail finitely rather than hang. Each delivery must use a registration snapshot: newly added entries join nested/later deliveries, disposed entries are skipped, and identity is the registration rather than its options object. Exact traces check inherited-hook order, renderer/root/payload/priority/error arguments, foreign-target exclusion and both alternate IDs through nested unmount release. All sixteen cases failed before the fix, with four self invocations per outer event under the guard. `core.ts` now snapshots membership in all four dispatchers and rechecks each entry's liveness before calling it. React's DevTools emitter has an array-bounded iteration; this also preserves Bippy's existing cancellation-during-delivery behavior.
 
+Class-commit replays run twelve cases twice: either sibling fails in its snapshot, layout lifecycle or first state callback, with or without another error during recovery deletion. A callback-bearing `shouldComponentUpdate` bailout advances class state/current identity without rendering or changing DOM; `forceUpdate` then bypasses that predicate. Exact traces distinguish pre-mutation snapshots from post-swap layout/callback lookup. A thrown snapshot leaves the preceding successful snapshot object available to `componentDidUpdate`; a thrown layout lifecycle still permits state callbacks, whereas a thrown callback discards the remaining callbacks in that class's batch without suppressing its sibling. Recovery-cleanup errors reach the same boundary and force a second fresh fallback, even though its type/key match. The intermediate fallback's IDs and instance are retained for retirement checks. Throwing Bippy deletion observers/reporters cannot interrupt class/host cleanup or error recovery. A stable sibling and separate root remain unchanged, and retained instances' later state/force updates cannot invoke callbacks or drive their replacements. Both root argument forms, exact render phases, original errors/boundary identity, DOM, current/alternate lookup and final ID release are checked. These pinned React 19 development semantics required no production change.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -82,6 +84,7 @@ pnpm test --project conformance activity-store-replay
 pnpm test --project conformance entangled-action-replay
 pnpm test --project conformance rejected-action-replay
 pnpm test --project conformance dispatch-membership-replay
+pnpm test --project conformance class-commit-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
