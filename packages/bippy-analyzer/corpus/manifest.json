@@ -10195,6 +10195,188 @@
         "entry": "src/index.js"
       },
       "notes": "Original five dated notes, light theme,500 remaining and authored storage writes. Undeclared nanoid remains as locked resolution; no added dependency, typing or toggle. Original CRA/Vite source, startup, data, scripts and locks retained. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original five dated notes, light theme,500 remaining and authored storage writes. Undeclared nanoid remains as locked resolution; no added dependency, typing or toggle. Partial original five authored notes has50% strict coverage,13 opaque tree nodes, two wildcards, five bounded states, one repeat omission above2 and two incomplete assignments. Missing-key warning, light theme,500 remaining and authored storage writes retained; no notes added or theme toggle. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 672691100 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "trananhtuat-react-calculator",
+      "repository": "https://github.com/trananhtuat/react-calculator",
+      "revision": "82046d1ea6de5c18cad4d64cefee7bf50d10c809",
+      "description": "trananhtuat/react-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54923",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54923/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original empty expression/two result divs and20 buttons, mount DOM-only button sizing retained. No theme toggle, DOM spans, eval or timeout-driven arithmetic input. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty expression/two result divs and20 buttons, mount DOM-only button sizing retained. No theme toggle, DOM spans, eval or timeout-driven arithmetic input. Exact29-node original empty expression/twenty-key screen. Mount DOM-only height sizing is not established by fiber equality; no theme, span insertion, eval or delayed effects triggered. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 412357022 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "sheebasalaman-bmi-calculator-react",
+      "repository": "https://github.com/SheebaSalaman/BMI_Calculator_React",
+      "revision": "8ab7deea3263af3b0f66b9b5bd6b894929965335",
+      "description": "SheebaSalaman/BMI_Calculator_React",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54924 --strictPort",
+      "env": {
+        "PORT": "54924",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54924/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx"
+      },
+      "notes": "Original empty name/age/height/weight, male default and null result; no health inputs, diet recommendation or medical correctness claim. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty name/age/height/weight, male default and null result; no health inputs, diet recommendation or medical correctness claim. Exact23-node original React19.1.1 empty BMI form/male default; one sampled state does not validate form attributes, diet recommendations or health correctness. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 1142530242 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "fedgut-calculator",
+      "repository": "https://github.com/fedgut/Calculator",
+      "revision": "1e8a6db67e86db9c9490b401710c7fbbd3f393e5",
+      "description": "fedgut/Calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54927",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54927/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original null total/next/operation with explicitly passed null result (not default0),19 div-buttons. No button input or Big arithmetic claim. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original null total/next/operation with explicitly passed null result (not default0),19 div-buttons. No button input or Big arithmetic claim. Exact50-node original null-result/19 div-button calculator. Explicit null is not replaced with default0; no Big arithmetic or user input. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 274957585 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "elk15-colour-memo",
+      "repository": "https://github.com/elk15/colour-memo",
+      "revision": "2aca1e913412a328a2323164ee7f17e70a4e570c",
+      "description": "elk15/colour-memo",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54928 --strictPort",
+      "env": {
+        "PORT": "54928",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54928/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx"
+      },
+      "notes": "Original level1/zero scores, empty initial colors and four sequential random TheColorAPI read-only requests per mount. Preserve native request errors/loading and hidden GameOver fibers, no generated colors, shuffle seed, clicks or visual claim. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original level1/zero scores, empty initial colors and four sequential random TheColorAPI read-only requests per mount. Preserve native request errors/loading and hidden GameOver fibers, no generated colors, shuffle seed, clicks or visual claim. Exact49-fiber native membership coexists with eight whole-model wildcards, four bounded states, two incomplete replay assignments and dynamic-key diagnostic. Original random read-only TheColorAPI requests produce four-card structure; no color identity/text attributes/pixels, network completeness, gameplay or transition proof. Hidden GameOver fibers are not evidence of visible game-over state. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 681950019 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "mubashiralam89-calculator-using-react-js",
+      "repository": "https://github.com/MubashirAlam89/calculator-using-react-js",
+      "revision": "c517587aaa10930562aad68de047fa8e17b3cc28",
+      "description": "MubashirAlam89/calculator-using-react-js",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54929 --strictPort",
+      "env": {
+        "PORT": "54929",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54929/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/main.jsx"
+      },
+      "notes": "Original empty history/main disabled inputs, HS-8LV header, checked-in logo/solar/backspace images,17 buttons and backspace div. No eval or input. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty history/main disabled inputs, HS-8LV header, checked-in logo/solar/backspace images,17 buttons and backspace div. No eval or input. Exact60-node original empty input/history calculator,17 buttons/backspace div and local images. No attribute/image-lifecycle, eval or interaction proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 651030898 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "nickgermaine-react-calculator-project",
+      "repository": "https://github.com/nickgermaine/React-Calculator-Project",
+      "revision": "aa529233f5909420406170352c80248182a69584",
+      "description": "nickgermaine/React-Calculator-Project",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54930",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54930/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original current0/empty previous/nextIsReset false and17 buttons, input-without-onChange warning retained. Original serviceWorker.unregister, no keyboard or eval. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original current0/empty previous/nextIsReset false and17 buttons, input-without-onChange warning retained. Original serviceWorker.unregister, no keyboard or eval. Exact55-node original current0/empty-history calculator retains value-without-onChange warning. No input, history updates or eval; authored serviceWorker.unregister retained. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 175686024 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "lucas-erkana-math-magician-react",
+      "repository": "https://github.com/Lucas-Erkana/math_magician_react",
+      "revision": "cdf7061fa5092753c7064ef8de9ae50822d996be",
+      "description": "Lucas-Erkana/math_magician_react",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54931",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54931/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original root Home and three navigation links with PUBLIC_URL basename; no Calculator/Quote navigation or arithmetic input. Original CRA/Vite source, startup, data, scripts and locks retained. Caleb uses authored Node14.16.1/npm6.14.12 with child pnpm7.33.7. Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1; CRA uses pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original root Home and three navigation links with PUBLIC_URL basename; no Calculator/Quote navigation or arithmetic input. Partial original root Home has37.9% strict coverage, eight opaque router tree nodes and four unmatched slots. No Calculator/Quote navigation or arithmetic claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 586846123 identifies a distinct non-fork repository."
     }
   ]
 }
