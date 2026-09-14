@@ -51,6 +51,8 @@ Context/portal replays compare four fresh-fixture pairs with outer and shadowing
 
 Strict-effects replays run eight cases twice: root-level versus nested Strict Mode, cleanup-returning versus null-detached refs, and state updates from layout versus passive cleanup. Exact traces distinguish development effect reconnection from real deletion: insertion effects do not replay, ref/layout/passive cleanup keeps both IDs live, and cleanup-triggered updates retain the same host and state token. Newly inserted children replay effects in both placements; keyed moves do not replay effects or reorder the hosts of distinct portals sharing one container. Key replacement must retire the old host/ID/state and replay the new instance. A recorded parent passive effect makes post-commit delivery independent of profiling duration. The non-strict control root remains unchanged. These are pinned React 19 development cases, not production Strict Mode or version-matrix coverage.
 
+Store-consistency replays run eight cases twice: fresh versus existing readers, value-mismatch versus throwing validation, and two reader orders. A controlled sibling publishes between reads on a new store with zero subscribers, so notification cannot repair the inconsistent render. The pre-commit read must force a synchronous retry before any layout or commit notification. Fresh mounts discard their speculative fibers/tokens; existing readers reuse the inactive alternate without losing committed identity. Planned values, not the mutable store, generate expected traces. Parent layout reads the consistent DOM, getter spies verify the exact validation exception, and subscription traces require complete handoff before a later real notification updates the same fibers. A memoized anchor and a separate subscribed root remain unchanged. This deliberately staged render-side mutation isolates pinned React 19's consistency check; it is not a browser scheduling/yield test or a recommended application pattern.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -67,6 +69,7 @@ pnpm test --project conformance nested-commit-replay
 pnpm test --project conformance superseded-transition-replay
 pnpm test --project conformance context-portal-replay
 pnpm test --project conformance strict-effects-replay
+pnpm test --project conformance store-consistency-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
