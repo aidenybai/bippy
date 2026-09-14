@@ -53,6 +53,8 @@ Strict-effects replays run eight cases twice: root-level versus nested Strict Mo
 
 Store-consistency replays run eight cases twice: fresh versus existing readers, value-mismatch versus throwing validation, and two reader orders. A controlled sibling publishes between reads on a new store with zero subscribers, so notification cannot repair the inconsistent render. The pre-commit read must force a synchronous retry before any layout or commit notification. Fresh mounts discard their speculative fibers/tokens; existing readers reuse the inactive alternate without losing committed identity. Planned values, not the mutable store, generate expected traces. Parent layout reads the consistent DOM, getter spies verify the exact validation exception, and subscription traces require complete handoff before a later real notification updates the same fibers. A memoized anchor and a separate subscribed root remain unchanged. This deliberately staged render-side mutation isolates pinned React 19's consistency check; it is not a browser scheduling/yield test or a recommended application pattern.
 
+Activity/store replays run sixteen cases twice: either root, both ref contracts, publication while hidden versus during reveal layout, and initially visible versus hidden mounting. Initial hidden mounts keep the root tracked through its empty first commit, then acquire fibers, IDs and insertion effects without refs, layout effects or subscriptions. Memoized reveal retains those identities without another render phase. A props-only update replaces the store effect list before hiding; subsequent passive reconnection must catch a missed store mutation even though the subscriber bails out on reveal. The oracle retains the actual stale-snapshot reveal commit followed by the correcting store update, rather than imposing the pre-commit consistency guarantee from the preceding suite. Exact traces separate insertion lifetime, ref/layout disconnection, passive unsubscription and background hidden commits. Hidden deletion releases IDs and insertion effects without repeating already disconnected cleanup; remount gets fresh host/ID/state. Another subscribed root stays unchanged. These are pinned React 19/Happy DOM Activity semantics, not browser paint or scheduling guarantees.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -70,6 +72,7 @@ pnpm test --project conformance superseded-transition-replay
 pnpm test --project conformance context-portal-replay
 pnpm test --project conformance strict-effects-replay
 pnpm test --project conformance store-consistency-replay
+pnpm test --project conformance activity-store-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
