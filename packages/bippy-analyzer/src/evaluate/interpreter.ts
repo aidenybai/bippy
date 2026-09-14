@@ -689,6 +689,11 @@ interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
 }
 
+interface LoopBodyEvaluation {
+  outcome: StatementOutcome;
+  isContinued: boolean;
+}
+
 /** A fork whose returning paths still await the state the surviving paths end in. */
 interface PendingReturnJoin {
   journal: HeapJournal;
@@ -5561,19 +5566,7 @@ export class Interpreter {
           const outcome = evaluateLoop(this, statement, withoutSuspension(context), location);
           if (!outcome.mayComplete) return outcome;
           if (!outcome.returned) break;
-          // Loop bodies are not in continuation style: a return on some
-          // iterations means the rest of the function may not run.
-          const rest = this.runMaybe(
-            context.scope,
-            () => proceed(withoutSuspension(context)),
-            "return inside a loop",
-            location,
-          );
-          return mergeOutcomes(
-            [returnOutcome(outcome.returned), rest],
-            "return inside a loop",
-            location,
-          );
+          return this.continueStatements(outcome, withoutSuspension(context), proceed, location);
         }
         case "LabeledStatement":
           return this.evaluateBlock([statement.body], context, false, proceed);
@@ -5582,6 +5575,40 @@ export class Interpreter {
       }
     }
     return continuation(context);
+  }
+
+  evaluateLoopBody(
+    body: Statement,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+  ): LoopBodyEvaluation {
+    const completionDepth = context.scopedCompletionDepth ?? 0;
+    let isContinued = false;
+    const outcome = this.evaluateBlock([body], context, true, (pathContext) => {
+      if ((pathContext.scopedCompletionDepth ?? 0) === completionDepth) return COMPLETES;
+      isContinued = true;
+      return proceed(withScope(pathContext, context.scope));
+    });
+    return { outcome, isContinued };
+  }
+
+  continueStatements(
+    outcome: StatementOutcome,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+  ): StatementOutcome {
+    if (!outcome.mayComplete) return outcome;
+    if (isPureCompletion(outcome)) return proceed(context);
+    return this.forkPaths(
+      [() => ({ ...outcome, mayComplete: false }), () => COMPLETES],
+      context,
+      proceed,
+      "statement completion",
+      location,
+      1,
+      getTruthinessPredicate(getCompletionValue(outcome), true),
+    );
   }
 
   /** Ends the statement list on the paths that throw `thrown`; the others run the rest. */
@@ -5999,9 +6026,15 @@ export class Interpreter {
     const completingGuard = pathGuards
       ? orGuard(completingPaths.map((index) => pathGuards.guards[index]))
       : null;
+    const completingContext =
+      returningPaths.length > 0
+        ? { ...context, scopedCompletionDepth: (context.scopedCompletionDepth ?? 0) + 1 }
+        : context;
     const rest = completingGuard
-      ? this.runWithGuard(andGuard([parentGuard, completingGuard]), () => proceed(context))
-      : proceed(context);
+      ? this.runWithGuard(andGuard([parentGuard, completingGuard]), () =>
+          proceed(completingContext),
+        )
+      : proceed(completingContext);
     joinReturningClosures();
     if (isMixed) {
       const remainingPredicate =

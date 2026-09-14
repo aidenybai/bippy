@@ -45,6 +45,14 @@ type UnrollResult =
   | { kind: "exact"; outcome: StatementOutcome }
   | { kind: "partial"; outcomes: StatementOutcome[] };
 
+const completeUnrolling = (
+  outcomes: StatementOutcome[],
+  location: SourceLocation,
+): UnrollResult => ({
+  kind: "exact",
+  outcome: mergeOutcomes(outcomes, "return inside a loop", location),
+});
+
 const exactCompletion = (outcomes: StatementOutcome[]): UnrollResult => ({
   kind: "exact",
   outcome: mergeOutcomes([...outcomes, COMPLETES], "return inside a loop", null),
@@ -148,23 +156,28 @@ const advanceIteration = (
     : { kind: "partial", outcomes };
 };
 
-const runIteration = (
+const createForEachContext = (
   interpreter: Interpreter,
-  body: Statement,
+  statement: ForOfStatement | ForInStatement,
+  value: StaticValue,
   context: EvaluationContext,
-  outcomes: StatementOutcome[],
-): "next" | UnrollResult => advanceIteration(runBody(interpreter, body, context), outcomes);
+): EvaluationContext => {
+  const iterationContext = withScope(context, createScope(context.scope));
+  bindLoopLeft(interpreter, statement.left, value, iterationContext);
+  return iterationContext;
+};
 
 const runForEachIteration = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
   value: StaticValue,
   context: EvaluationContext,
-): StatementOutcome => {
-  const iterationContext = withScope(context, createScope(context.scope));
-  bindLoopLeft(interpreter, statement.left, value, iterationContext);
-  return runBody(interpreter, statement.body, iterationContext);
-};
+): StatementOutcome =>
+  runBody(
+    interpreter,
+    statement.body,
+    createForEachContext(interpreter, statement, value, context),
+  );
 
 /** An item present on some paths only runs its iteration on those paths, so the loop may skip it. */
 const runOptionalIteration = (
@@ -189,25 +202,47 @@ const unrollForEach = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
   context: EvaluationContext,
+  location: SourceLocation,
 ): UnrollResult | null => {
   const iteration = iterationValues(interpreter, statement, context);
   if (!iteration) return null;
-  const outcomes: StatementOutcome[] = [];
-  for (const item of iteration.items) {
-    const outcome =
-      item.kind === "optional"
-        ? runOptionalIteration(interpreter, statement, item, context)
-        : runForEachIteration(interpreter, statement, item, context);
-    const step = advanceIteration(outcome, outcomes);
-    if (step !== "next") return step;
-  }
-  return iteration.isComplete ? exactCompletion(outcomes) : { kind: "partial", outcomes };
+  const collectFrom = (start: number, iterationContext: EvaluationContext): UnrollResult => {
+    const outcomes: StatementOutcome[] = [];
+    for (let index = start; index < iteration.items.length; index++) {
+      const item = iteration.items[index];
+      const evaluation =
+        item.kind === "optional"
+          ? {
+              outcome: runOptionalIteration(interpreter, statement, item, iterationContext),
+              isContinued: false,
+            }
+          : interpreter.evaluateLoopBody(
+              statement.body,
+              createForEachContext(interpreter, statement, item, iterationContext),
+              (pathContext) =>
+                finishUnrolling(
+                  interpreter,
+                  statement,
+                  collectFrom(index + 1, withScope(pathContext, iterationContext.scope)),
+                  pathContext,
+                  location,
+                ),
+            );
+      if (evaluation.isContinued)
+        return completeUnrolling([...outcomes, evaluation.outcome], location);
+      const step = advanceIteration(evaluation.outcome, outcomes);
+      if (step !== "next") return step;
+    }
+    return iteration.isComplete ? exactCompletion(outcomes) : { kind: "partial", outcomes };
+  };
+  return collectFrom(0, context);
 };
 
 const unrollConditional = (
   interpreter: Interpreter,
   statement: ForStatement | WhileStatement | DoWhileStatement,
   context: EvaluationContext,
+  location: SourceLocation,
 ): UnrollResult | null => {
   const loopContext = withScope(context, createScope(context.scope));
   if (statement.type === "ForStatement" && statement.init) {
@@ -220,22 +255,43 @@ const unrollConditional = (
     }
   }
   const test = statement.test;
-  const outcomes: StatementOutcome[] = [];
-  let skipFirstTest = statement.type === "DoWhileStatement";
-  for (let iteration = 0; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
-    if (!skipFirstTest && test) {
-      const truthiness = getTruthiness(interpreter.evaluateExpression(test, loopContext));
-      if (truthiness === null)
-        return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
-      if (truthiness === false) return exactCompletion(outcomes);
+  const collectFrom = (
+    startIteration: number,
+    iterationContext: EvaluationContext,
+  ): UnrollResult | null => {
+    const outcomes: StatementOutcome[] = [];
+    for (let iteration = startIteration; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
+      if (test && (iteration !== 0 || statement.type !== "DoWhileStatement")) {
+        const truthiness = getTruthiness(interpreter.evaluateExpression(test, iterationContext));
+        if (truthiness === null)
+          return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
+        if (truthiness === false) return exactCompletion(outcomes);
+      }
+      const evaluation = interpreter.evaluateLoopBody(
+        statement.body,
+        iterationContext,
+        (pathContext) => {
+          if (statement.type === "ForStatement" && statement.update)
+            interpreter.evaluateExpression(statement.update, pathContext);
+          return finishUnrolling(
+            interpreter,
+            statement,
+            collectFrom(iteration + 1, pathContext),
+            pathContext,
+            location,
+          );
+        },
+      );
+      if (evaluation.isContinued)
+        return completeUnrolling([...outcomes, evaluation.outcome], location);
+      const step = advanceIteration(evaluation.outcome, outcomes);
+      if (step !== "next") return step;
+      if (statement.type === "ForStatement" && statement.update)
+        interpreter.evaluateExpression(statement.update, iterationContext);
     }
-    skipFirstTest = false;
-    const step = runIteration(interpreter, statement.body, loopContext, outcomes);
-    if (step !== "next") return step;
-    if (statement.type === "ForStatement" && statement.update)
-      interpreter.evaluateExpression(statement.update, loopContext);
-  }
-  return { kind: "partial", outcomes };
+    return { kind: "partial", outcomes };
+  };
+  return collectFrom(0, loopContext);
 };
 
 /**
@@ -288,6 +344,18 @@ const evaluateUncertainTail = (
   return { ...outcome, mayComplete: true, jump: null };
 };
 
+const finishUnrolling = (
+  interpreter: Interpreter,
+  statement: LoopStatement,
+  unrolled: UnrollResult | null,
+  context: EvaluationContext,
+  location: SourceLocation,
+): StatementOutcome => {
+  if (unrolled?.kind === "exact") return unrolled.outcome;
+  const tail = evaluateUncertainTail(interpreter, statement, context, location);
+  return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
+};
+
 /**
  * Loops are unrolled while their iteration count is statically known (a known
  * list, a known key set, or a counter whose test stays decidable) and every
@@ -302,9 +370,7 @@ export const evaluateLoop = (
 ): StatementOutcome => {
   const unrolled =
     statement.type === "ForOfStatement" || statement.type === "ForInStatement"
-      ? unrollForEach(interpreter, statement, context)
-      : unrollConditional(interpreter, statement, context);
-  if (unrolled?.kind === "exact") return unrolled.outcome;
-  const tail = evaluateUncertainTail(interpreter, statement, context, location);
-  return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
+      ? unrollForEach(interpreter, statement, context, location)
+      : unrollConditional(interpreter, statement, context, location);
+  return finishUnrolling(interpreter, statement, unrolled, context, location);
 };
