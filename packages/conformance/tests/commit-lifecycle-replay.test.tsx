@@ -171,7 +171,8 @@ const runCommitLifecycle = async (deletedOwner: number): Promise<string[]> => {
     expect(harnesses.map((harness) => harness.container.childElementCount)).toEqual([0, 0]);
   } finally {
     hook.onCommitFiberUnmount = previousUnmount;
-    using _restore = instrument({});
+    const unsubscribe = instrument({});
+    unsubscribe();
   }
   return transcript;
 };

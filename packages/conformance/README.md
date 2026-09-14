@@ -59,6 +59,8 @@ pnpm test --project conformance selective-hydration-replay
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
 
+Run the core suites on Node 22 as well as Node 24. The current transformer left a `using` declaration inside the commit-lifecycle replay's `finally` block untransformed: Node 24 parsed it, but CI's Node 22 failed before collecting tests. That cleanup now explicitly calls the instrumentation disposer; lifecycle and identity assertions remain unchanged.
+
 ## Keep each contract in one place
 
 - Add React behavior and adversarial regression tests in `tests/`. Extend an existing case rather than copying it into another suite.
@@ -129,7 +131,7 @@ Work-tag lookups distinguish explicit associations from inherited cache entries.
 4. **Setup gaps.** The combined suite can emit localhost:3000 connection-refused errors while passing and needs a hermetic network audit. Installation still reports Detox/expect and playground Vite/plugin peer mismatches. Broad dependency ranges need review on lockfile refresh. `publint` suggests declaring supported Node versions and reviewing side effects; blindly setting `sideEffects: false` would break hook installation.
 5. **Export scope.** The runtime inventory covers `bippy` and `bippy/source`, and packaged checks exercise `bippy/install-hook-only`. Public `./dist/*` patterns expose additional implementation chunks; removing them requires a compatibility decision.
 
-Next priorities are the API/version mismatches, unchecked ports, and broader runtime coverage. The audit was verified locally on Node 24; browser/Detox and CI's Node 22 runtime were not run locally.
+Next priorities are the API/version mismatches, unchecked ports, and broader runtime coverage. The broader audit was verified locally on Node 24. Core unit/conformance suites and packaged-entry checks were also run locally on Node 22 after the commit-lifecycle cleanup compatibility fix; this does not extend the full audit or browser/Detox coverage to that runtime.
 
 ## Performance checks
 
