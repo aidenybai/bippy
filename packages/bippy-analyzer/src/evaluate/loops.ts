@@ -18,7 +18,9 @@ import {
   type StatementOutcome,
 } from "./interpreter.js";
 import { createScope } from "./scope.js";
+import { getThrowCertainty } from "./thrown.js";
 import {
+  UNDEFINED_VALUE,
   getOwnEnumerableEntries,
   getObjectProperty,
   getTruthiness,
@@ -245,24 +247,59 @@ const unrollConditional = (
   location: SourceLocation,
 ): UnrollResult | null => {
   const loopContext = withScope(context, createScope(context.scope));
-  if (statement.type === "ForStatement" && statement.init) {
-    if (statement.init.type === "VariableDeclaration") {
-      for (const declarator of statement.init.declarations) {
-        interpreter.evaluateDeclarator(statement.init, declarator, loopContext);
-      }
-    } else {
-      interpreter.evaluateExpression(statement.init, loopContext);
-    }
-  }
   const test = statement.test;
+  const resumeFrom = (
+    iteration: number,
+    iterationContext: EvaluationContext,
+    completion: StaticValue = UNDEFINED_VALUE,
+  ): StatementOutcome =>
+    interpreter.continueStatementValue(
+      completion,
+      iterationContext,
+      (_value, pathContext) =>
+        finishUnrolling(
+          interpreter,
+          statement,
+          collectFrom(iteration, pathContext),
+          pathContext,
+          location,
+        ),
+      location,
+    );
   const collectFrom = (
     startIteration: number,
     iterationContext: EvaluationContext,
+    completedTest: StaticValue | null = null,
   ): UnrollResult | null => {
     const outcomes: StatementOutcome[] = [];
     for (let iteration = startIteration; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
       if (test && (iteration !== 0 || statement.type !== "DoWhileStatement")) {
-        const truthiness = getTruthiness(interpreter.evaluateExpression(test, iterationContext));
+        const tested =
+          iteration === startIteration && completedTest !== null
+            ? completedTest
+            : interpreter.evaluateExpression(test, iterationContext);
+        if (getThrowCertainty(tested) !== "never") {
+          return completeUnrolling(
+            [
+              ...outcomes,
+              interpreter.continueStatementValue(
+                tested,
+                iterationContext,
+                (value, pathContext) =>
+                  finishUnrolling(
+                    interpreter,
+                    statement,
+                    collectFrom(iteration, pathContext, value),
+                    pathContext,
+                    location,
+                  ),
+                location,
+              ),
+            ],
+            location,
+          );
+        }
+        const truthiness = getTruthiness(tested);
         if (truthiness === null)
           return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
         if (truthiness === false) return exactCompletion(outcomes);
@@ -271,26 +308,37 @@ const unrollConditional = (
         statement.body,
         iterationContext,
         (pathContext) => {
-          if (statement.type === "ForStatement" && statement.update)
-            interpreter.evaluateExpression(statement.update, pathContext);
-          return finishUnrolling(
-            interpreter,
-            statement,
-            collectFrom(iteration + 1, pathContext),
-            pathContext,
-            location,
-          );
+          const updated =
+            statement.type === "ForStatement" && statement.update
+              ? interpreter.evaluateExpression(statement.update, pathContext)
+              : UNDEFINED_VALUE;
+          return resumeFrom(iteration + 1, pathContext, updated);
         },
       );
       if (evaluation.isContinued)
         return completeUnrolling([...outcomes, evaluation.outcome], location);
       const step = advanceIteration(evaluation.outcome, outcomes);
       if (step !== "next") return step;
-      if (statement.type === "ForStatement" && statement.update)
-        interpreter.evaluateExpression(statement.update, iterationContext);
+      if (statement.type === "ForStatement" && statement.update) {
+        const updated = interpreter.evaluateExpression(statement.update, iterationContext);
+        if (getThrowCertainty(updated) !== "never")
+          return completeUnrolling(
+            [...outcomes, resumeFrom(iteration + 1, iterationContext, updated)],
+            location,
+          );
+      }
     }
     return { kind: "partial", outcomes };
   };
+  if (statement.type === "ForStatement" && statement.init) {
+    const initialized =
+      statement.init.type === "VariableDeclaration"
+        ? interpreter.evaluateBlock([statement.init], loopContext, false, (pathContext) =>
+            resumeFrom(0, pathContext),
+          )
+        : resumeFrom(0, loopContext, interpreter.evaluateExpression(statement.init, loopContext));
+    return completeUnrolling([initialized], location);
+  }
   return collectFrom(0, loopContext);
 };
 

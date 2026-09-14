@@ -689,6 +689,10 @@ interface StatementContinuation {
   (context: EvaluationContext): StatementOutcome;
 }
 
+interface StatementValueContinuation {
+  (value: StaticValue, context: EvaluationContext): StatementOutcome;
+}
+
 interface LoopBodyEvaluation {
   outcome: StatementOutcome;
   isContinued: boolean;
@@ -5590,6 +5594,23 @@ export class Interpreter {
       return proceed(withScope(pathContext, context.scope));
     });
     return { outcome, isContinued };
+  }
+
+  continueStatementValue(
+    value: StaticValue,
+    context: EvaluationContext,
+    proceed: StatementValueContinuation,
+    location: SourceLocation,
+  ): StatementOutcome {
+    const certainty = getThrowCertainty(value);
+    if (certainty === "always") return returnOutcome(value);
+    if (certainty === "never") return proceed(value, context);
+    return this.propagateThrow(
+      value,
+      context,
+      (pathContext) => proceed(this.getGuardedValue(withoutThrows(value)), pathContext),
+      location,
+    );
   }
 
   continueStatements(
