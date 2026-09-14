@@ -47,6 +47,8 @@ Same-root commit replays run six explicit nested-commit schedules through both r
 
 Superseded-transition replays run all six assignments of three keyed rows to two suspension points and an urgent deletion. Cases either abandon both transitions or complete the newer one before deletion; obsolete wakeables are fulfilled or rejected. Each fresh-fixture replay proves that the second pending render reuses the first render's inactive fiber, while lookups still select the committed branch. Urgent deletion must release both alternates, and later remounting must create a fresh host, ID, and state token. Exact traces retain React's additional unchanged-tree commit while skipped updates are rebased; component-body presence sets independently prove that this commit renders no rows. When both transitions are abandoned, the earlier wakeable settles while newer work remains pending; the later one settles after the urgent update without rendering or committing. When the newer transition completes, the older wakeable stays pending through urgent deletion and settles afterward without reviving stale state. Exact alternate identities differ between these paths, while retained state/DOM and subsequent fresh remounts follow the same logical key model. Mixed root arguments, throwing deletion observers/reporters, memo bailouts, and another live root remain covered. These are pinned React 19 state-queue cases, not scheduler timing or version-matrix guarantees.
 
+Context/portal replays compare four fresh-fixture pairs with outer and shadowing providers, memoized consumers with unchanged props, and two roots sharing a portal container. A label-based model distinguishes signed-zero context changes from repeated NaN values; body-presence sets distinguish conservative context reads from committed update phases. A shared wakeable holds both outer-provider transitions while an urgent inner-provider update commits; one outer transition is abandoned and the other completes without losing that inner state. Relocating either portal scope into the other root's DOM container must remount its host/ID/state while retaining its logical provider and root. Emptying the DOM-owner root must leave the foreign portal connected and its Bippy identity live. Exact effect/phase/deletion order and current-fiber checks cover every checkpoint. These are pinned React 19/Happy DOM cases, not a context or portal version matrix.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -61,6 +63,7 @@ pnpm test --project conformance hydration-fallback-replay
 pnpm test --project conformance selective-hydration-replay
 pnpm test --project conformance nested-commit-replay
 pnpm test --project conformance superseded-transition-replay
+pnpm test --project conformance context-portal-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
