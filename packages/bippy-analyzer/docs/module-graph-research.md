@@ -244,6 +244,16 @@ The [specification's `GetImportedModule`](https://tc39.es/ecma262/#sec-GetImport
 
 Global loading/instantiation validation, parse failures, unresolved local declarations, loader-specific semantics and structured dependency-failure provenance remain open. This change does not refresh stale caches or make partial module analysis a complete linker.
 
+## Parser failure is not an empty export set
+
+The [unparsed-export suite](../tests/unparsed-exports.test.ts) covers parser failures that leave an empty statement list. When diagnostics accompany that empty list, export lookup now retains `isUncertain` and export-name collection reports `complete: false`. A genuinely empty source with no diagnostics remains a known empty module. The failed record and its diagnostics remain available; the graph does not fall back from a failed queried transform to the valid, untransformed file.
+
+Twenty-seven export checks compare disk-backed sources, failed query transforms and rejected virtual modules. They cover nested stars, named/local re-exports, known siblings, explicit declarations, conflicts and default exclusion. Native reference fixtures contain the specified transformed bytes, not replacements inferred from observations. V8 linking and esbuild builds reject those malformed dependencies without evaluating application bodies. Declaration results remain distinct from whole-program loading success.
+
+Fourteen additional parser checks prevent a broader, unjustified claim. With the installed Oxc 0.148.0 parser's current options, duplicate bindings and missing local exports can produce no diagnostics despite native syntax errors. A valid CommonJS top-level return can produce a diagnostic, while a duplicate default export can retain statements despite an error. Consequently, neither an empty diagnostic list nor a blanket rejection of every diagnostic establishes correct validation. Contextual parser mode plus semantic checks agrees with the native compiler on these fixtures only; production parser options are unchanged.
+
+[esbuild retains parse success separately from its AST](https://github.com/evanw/esbuild/blob/f6058f8364fe7ab91ca57a83e02577ed74c9cae4/internal/bundler/bundler.go#L267-L300). [React Flight's Node loader](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-server-dom-webpack/src/ReactFlightWebpackNodeLoader.js) catches parse errors while transforming directives or collecting export names, leaving later loading/validation responsibilities separate. These behaviors do not authorize Bippy to equate a failed parse with an empty module. Format-aware parsing, nonfatal diagnostics, semantic validation, namespace creation and global loading/instantiation remain open. The 41 new checks include retained parser limits, not 41 exact rendering repairs.
+
 ## Graph lifetime probes
 
 The [lifetime suite](../tests/module-graph-lifetime.test.ts) characterizes fourteen cases with controlled temporary files. It reads declarations and resolves requests without rendering components or executing application bodies. Its passing assertions describe existing cache behavior, including stale results; they are not freshness or incremental-correctness claims.
