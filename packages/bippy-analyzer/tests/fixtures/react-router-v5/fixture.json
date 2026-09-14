@@ -1,0 +1,11 @@
+{
+  "route": "/login",
+  "externalPackages": [
+    "react-router-dom-v5",
+    "react-router",
+    "history",
+    "hoist-non-react-statics",
+    "react-is"
+  ],
+  "notes": "react-router v5 (class components, legacy context, path-to-regexp matching): a top-level `Switch` whose `exact` route misses, a layout child cloned with `computedMatch`, nested `Switch`/`Route` with `component`, `render`, children and `withRouter`. Resolved at /login."
+}

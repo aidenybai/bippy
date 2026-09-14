@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "Canvas rasterization is a browser fact: `getContext` and text measurement stay explicit branches instead of pretending a headless context exists or does not."
+}

@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "A recursive walk over a value built by an opaque package (a schema's `_def.innerType` chain), caching each level in a Map as it goes. Every level is as opaque as the last, so the walk must stop with an explicit unknown instead of following ever-longer derived member chains to the call-depth limit."
+}

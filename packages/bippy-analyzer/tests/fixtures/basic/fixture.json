@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "Branches on useState and a conditional && keep the result partial by design."
+}

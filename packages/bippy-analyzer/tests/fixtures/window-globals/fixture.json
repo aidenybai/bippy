@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A bootstrap script assigns a payload to `window` and components read it as a bare global (`ENV`), the way a server-rendered document inlines its public environment."
+}

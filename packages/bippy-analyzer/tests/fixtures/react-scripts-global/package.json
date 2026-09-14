@@ -1,0 +1,8 @@
+{
+  "name": "fixture-react-scripts-global",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react-scripts": "5.0.1"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "truncated",
+  "minCoverage": 1,
+  "expectedStates": 3,
+  "expectOmitted": true,
+  "notes": "A list from an opaque package has unknown length. Cardinalities 0, 1 and 2 are enumerated as states; larger counts are reported as an omission, so a runtime match is truncated rather than exact."
+}

@@ -15,7 +15,7 @@ export const createRenderHarness = () => {
   let committedRoot: FiberRoot | null = null;
   const unsubscribe = instrument({
     onCommitFiberRoot: (_rendererId, root) => {
-      committedRoot = root;
+      if ("containerInfo" in root && root.containerInfo === container) committedRoot = root;
     },
   });
   const root = createRoot(container);

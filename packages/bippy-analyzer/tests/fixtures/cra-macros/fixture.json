@@ -1,0 +1,4 @@
+{
+  "skipRuntime": true,
+  "notes": "Static compilation test with real Babel/macros packages and mocked CRA package metadata. The dedicated tests check output, DOM-only global removal, environment restoration and the application execution boundary. Independent macro parity is checked against the react-shopping-cart CRA capture."
+}

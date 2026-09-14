@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "An analytics-style loader tags an injected <script> through `dataset` (the pattern in @vercel/analytics); the attribute round-trips through the real DOM on both sides, so the rendered branch is decided."
+}

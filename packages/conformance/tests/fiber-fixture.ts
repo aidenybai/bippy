@@ -41,3 +41,13 @@ export const linkChildren = (parent: Fiber, children: Fiber[]): void => {
     child.sibling = children[index + 1] ?? null;
   });
 };
+
+export const getFiberPreorder = (fiber: Fiber): Fiber[] => {
+  const fibers = [fiber];
+  let child = fiber.child;
+  while (child) {
+    fibers.push(...getFiberPreorder(child));
+    child = child.sibling;
+  }
+  return fibers;
+};

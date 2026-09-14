@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.jsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Emotion 10's `@jsx jsx` pragma: elements with a `css` prop render under `EmotionCssPropInternal`, reading the cache (and the theme, for a function css prop) through Consumer fibers, then `Noop` and the element."
+}

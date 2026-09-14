@@ -1,0 +1,5 @@
+{
+  "name": "fixture-deferred-root-render",
+  "private": true,
+  "type": "module"
+}

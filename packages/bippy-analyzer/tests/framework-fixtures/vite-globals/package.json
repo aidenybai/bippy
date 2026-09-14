@@ -1,0 +1,8 @@
+{
+  "name": "fixture-vite-globals",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite": "^8.0.0"
+  }
+}

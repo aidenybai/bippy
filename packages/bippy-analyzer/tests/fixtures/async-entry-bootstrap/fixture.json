@@ -1,0 +1,7 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 1,
+  "notes": "Entry whose root render sits in an async setup function: the session store is populated after awaiting a timer-settled promise and a resolved one, so the mounted tree must see the store as those awaits left it, not as module evaluation left it."
+}

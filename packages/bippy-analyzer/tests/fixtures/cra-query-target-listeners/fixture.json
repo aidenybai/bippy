@@ -1,0 +1,9 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "externalPackages": ["popover-kit"],
+  "expectedStats": { "unknownCount": 0, "branchCount": 0 },
+  "notes": "A Babel loose-mode dependency in the shape reactstrap ships `UncontrolledTooltip`, mounted by a react-scripts app: on mount it resolves its `target` id with `document.querySelectorAll` (tag selector first, then `#id`), copies the `NodeList` with `Array.from` and registers its bound toggle methods as hover listeners on each element. The empty first query is definite because `public/index.html` is the page's shell (the static document is complete), the copy must yield the list's elements rather than a dynamic iterable that lets the listeners escape, and hover listeners never fire before the snapshot, so the closed popover is one definite state."
+}

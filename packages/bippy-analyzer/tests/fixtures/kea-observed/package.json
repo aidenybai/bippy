@@ -1,0 +1,9 @@
+{
+  "name": "fixture-kea-observed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "kea": "3.1.7",
+    "kea-loaders": "3.1.1"
+  }
+}

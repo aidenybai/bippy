@@ -1,0 +1,13 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": [
+    "@mui/*",
+    "@babel/runtime/*",
+    "clsx",
+    "prop-types",
+    "react-is",
+    "react-transition-group"
+  ],
+  "notes": "MUI 5 over Emotion, interpreted from node_modules: ThemeProvider/createTheme, CssBaseline, Button/Typography/Box/Stack, styled() with theme callbacks and sx, useTheme/useMediaQuery, closed Dialog/Menu/Snackbar/Tooltip, TextField with useFormControl, plus AppBar/Drawer/List/Tabs/Table/Select/Accordion/Checkbox/Switch/Chip/Badge/Avatar/Alert."
+}

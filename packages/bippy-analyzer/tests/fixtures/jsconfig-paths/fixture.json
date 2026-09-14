@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.jsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "JavaScript project whose @/ alias is declared in jsconfig.json (no tsconfig.json), as Next.js and CRA read it."
+}

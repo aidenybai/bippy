@@ -11,3 +11,11 @@ next-env.d.ts
 # copied into the package by prepack
 packages/bippy/README.md
 packages/bippy/LICENSE
+
+# committed fake packages used by the parser harness fixtures
+!packages/bippy-analyzer/tests/fixtures/*/node_modules
+!packages/bippy-analyzer/tests/resolver-fixtures/*/node_modules
+!packages/bippy-analyzer/tests/resolver-fixtures/*/node_modules/*/dist
+!packages/bippy-analyzer/tests/framework-fixtures/*/node_modules
+**/node_modules/.vite/
+packages/bippy-analyzer/.corpus
