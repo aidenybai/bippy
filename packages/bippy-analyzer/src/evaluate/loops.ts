@@ -98,9 +98,9 @@ const isPositionalItem = (item: StaticValue): boolean =>
 const iterationValues = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
   context: EvaluationContext,
 ): IterationItems | null => {
-  const right = interpreter.evaluateExpression(statement.right, context);
   if (statement.type === "ForOfStatement") {
     const iterated = interpreter.resolveIterable(
       right,
@@ -203,10 +203,11 @@ const runOptionalIteration = (
 const unrollForEach = (
   interpreter: Interpreter,
   statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
   context: EvaluationContext,
   location: SourceLocation,
 ): UnrollResult | null => {
-  const iteration = iterationValues(interpreter, statement, context);
+  const iteration = iterationValues(interpreter, statement, right, context);
   if (!iteration) return null;
   const collectFrom = (start: number, iterationContext: EvaluationContext): UnrollResult => {
     const outcomes: StatementOutcome[] = [];
@@ -416,9 +417,27 @@ export const evaluateLoop = (
   context: EvaluationContext,
   location: SourceLocation,
 ): StatementOutcome => {
-  const unrolled =
-    statement.type === "ForOfStatement" || statement.type === "ForInStatement"
-      ? unrollForEach(interpreter, statement, context, location)
-      : unrollConditional(interpreter, statement, context, location);
-  return finishUnrolling(interpreter, statement, unrolled, context, location);
+  if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
+    const right = interpreter.evaluateExpression(statement.right, context);
+    return interpreter.continueStatementValue(
+      right,
+      context,
+      (value, pathContext) =>
+        finishUnrolling(
+          interpreter,
+          statement,
+          unrollForEach(interpreter, statement, value, pathContext, location),
+          pathContext,
+          location,
+        ),
+      location,
+    );
+  }
+  return finishUnrolling(
+    interpreter,
+    statement,
+    unrollConditional(interpreter, statement, context, location),
+    context,
+    location,
+  );
 };

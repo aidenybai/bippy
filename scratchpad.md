@@ -90,7 +90,7 @@ The historical 500-repository gate remains documented below; repository count al
 
 ### Architecture documentation plan
 
-The conceptual page at `docs/architecture.md` explains the current parser implementation. It does not describe unfinished acceptance goals as supported behavior.
+The conceptual page at `packages/bippy-analyzer/docs/architecture.md` explains the current parser implementation. It does not describe unfinished acceptance goals as supported behavior.
 
 - Goal. Explain how source analysis produces React trees and what the comparison results establish.
 - Audience. Contributors who know React and TypeScript but have not read the parser implementation.
@@ -1335,11 +1335,23 @@ Serialized models equal the loop-continuation checkpoint. The 53 saved workflows
 
 Iterable expressions, iterator protocol, uncertain tails, optional iterations, mixed jumps/labels, per-iteration lexical bindings, destructuring, class validation/scope/getters/descriptors, renderer lifecycle, causal transitions, reachability, and general scalability remain unverified. `loop-expressions-single-iteration.tsx` intentionally retains its constant-condition lint warning.
 
+### Loop source-expression completion
+
+The detached `/tmp/bippy-loop-sources-baseline` at `ff4a6563` reproduces seven failures and three controls across ten fixtures. `loops.ts` now evaluates a `for…of`/`for…in` source once and passes completing values and their contexts through `continueStatementValue()` before extracting iterations. Throwing sources skip assignment-target evaluation and body effects. Tests cover guarded arrays/objects, correlation, getter failures, null/undefined payloads, empty arrays, nullish `for…in`, and strings. ECMAScript `ForIn/OfHeadEvaluation` and the pinned React constructor path were reviewed.
+
+Validation passes 3,718 root tests with two existing skips and 1,672 analyzer tests across 99 files, plus typecheck, build, realms, lint, formatting and documentation checks. The receipt is `/tmp/bippy-many-games-causal-investigation/loop-sources-reviewed-gates.json`; the successful log is `/tmp/bippy-loop-sources-provenance-complete.log`. An earlier receipt attempt lacked the review exit file and remains preserved. All 21 production/type hashes match the models and saved comparisons. The legacy argument-order helper now records that full inventory rather than only the unchanged interpreter hash.
+
+Both original iterable-expression captures now meet concrete expectations, bringing saved exact checks from 70 to 72. Nineteen older strict failures remain. Five additional probes preserve iterator-getter, next-getter, null-for-of, eager iteration/absent closing, and loop-head temporal-dead-zone failures. The first three produce nonconcrete text despite exact membership. The closing probe produces `returned:NNNNBL` instead of `returned:NBRL`; the temporal-dead-zone probe produces `returned:1L` instead of `caught:`. Both mismatch native captures. All five pass replay without omissions or matcher exhaustion; none is repaired by source-expression completion.
+
+Full serialized source-only models equal the loop-expression checkpoint. The 53 saved workflows remain partial; ten corpus controls remain unchanged; acceptance remains 307/500. No application observations, new workflow traces, forced inputs or increased budgets were introduced. Concurrent conformance fuzz-test files appeared after the root gate; they belong to separate work and are not included in this validation claim.
+
+At the user's request, the architecture page moved into `packages/bippy-analyzer/docs/architecture.md`. Its 86 relative links and plan reference were rebased, incoming links updated, and the relocated page's links and executable examples validated. The active package is `bippy-analyzer`, not a new `packages/analyzer` directory. Module-graph source research is the next requested workstream.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,698 tests**, with two existing React-19 DevTools skips; this includes **1,652 analyzer tests / 98 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,718 tests**, with two existing React-19 DevTools skips; this includes **1,672 analyzer tests / 99 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
