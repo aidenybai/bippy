@@ -1067,11 +1067,38 @@ Both models still have 11 states, seven wildcards, and one subtree omission. All
 
 Final gates pass 3,454 root tests with two existing skips and 1,408 analyzer tests across 86 files, plus typecheck/build, realms, lint, formatting, and documentation validation. `property-presence-provenance-reviewed-gates.json` verifies production/type/source hashes, the baseline, 43 exact saved checks, four retained write/proxy failures, models, controls, and unchanged corpus bytes. Descriptor and key-order behavior, complete enumeration/property/lifecycle semantics, causal modeling, renderer integration, and 500-repository acceptance remain open. Continue with proxy setter receiver forwarding and strict write failures, not the repaired guarded-deletion example.
 
+### Proxy setter receiver forwarding
+
+`5f664f8e` committed conditional property presence and spread snapshots. Proxy setter delegation now carries the original receiver separately from the lookup target. An absent or null `set` trap forwards that receiver through nested proxies; an inner trap receives it as its fourth argument. Ordinary accessors receive it as `this`, while explicitly bound setters retain their own binding. Branch-target assignment now uses completion guards instead of mutating every alternative and discarding setter errors.
+
+Eight strict checks cover the original accessor and identity failures, nested traps, guarded throwing/successful targets, null traps, bound setters, ordinary inherited setters, and throw sequencing. Baseline `/tmp/bippy-proxy-receivers-baseline` at `5f664f8e` fails six and passes the two binding/ordinary controls; its test and eight fixtures match main by hash. The ECMAScript proxy `[[Set]]` and `OrdinarySetWithOwnDescriptor` algorithms distinguish target and receiver. The pinned React opaque-origin proxy test was also reviewed; it is not additional integration coverage.
+
+Both original forwarding snapshots now satisfy the concrete `proxy` expectation. This repairs the four-step native mismatch and removes the identity probe’s spurious `target` alternative, which previously passed native membership and replay. All 43 earlier checks remain exact, for 45 same-snapshot checks. Getter-only writes and falsy `set` results still fail their original expectations.
+
+New probes are preserved in `tests/fixtures/proxy-limits/`, `tests/proxy-limits.test.ts`, and `tests/proxy-get-receiver-inspected.test.ts` in that baseline worktree. They import main production explicitly:
+
+| Probe                                           | Native/source-derived expectation | Model/comparison                        |
+| ----------------------------------------------- | --------------------------------- | --------------------------------------- |
+| Getter-backed `get` trap                        | `GT`                              | `empty`; four-step mismatch             |
+| `defineProperty` during an ordinary proxy write | `caught:1:old`                    | `returned:0:new`; four-step mismatch    |
+| `get` trap handler receiver                     | `handler`                         | Nonconcrete wildcard; four-step partial |
+
+The first two have no omissions/exhaustion and pass replay. The receiver probe has no omissions/exhaustion but incomplete replay. Its first helper failed concrete-text extraction before saving the capture; a separately named inspected helper records a new native capture and the wildcard error. Neither run establishes an exact model. `proxy-receivers-limit-*-comparison.json` preserves these distinctions.
+
+Source-only files in `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-proxy-receivers-reviewed-home-model.json`: SHA-256 `a72e9a1fef6e36294de2e2bcf20d3fa7120ae1d771e3b0fb130faf44875f66e0`
+- `source-only-proxy-receivers-reviewed-memory-model.json`: SHA-256 `1c8aa01c36d8d4c5d434357fcd967d614c09605000dbec7c99a929bce5b610fc`
+
+Their serialized models match the previous provenance-reviewed checkpoint, including its conditional-key descriptions: 11 states, seven wildcards, and one subtree omission. All 53 saved workflow snapshots remain partial. Ten repeated corpus-control rows are unchanged against identical captures. No new app traces, observations, forced inputs, budgets, or repositories were added.
+
+Final gates pass 3,470 root tests with two existing skips and 1,424 analyzer tests across 87 files, plus typecheck/build, realms, lint, formatting, and documentation validation. `proxy-receivers-reviewed-gates.json` verifies production/type/source hashes, baseline failures/controls, all 45 exact saved comparisons, retained write failures, new proxy probes, models, controls, and unchanged corpus bytes. Continue with `get` trap lookup/receivers, property-definition dispatch, and strict writes; do not treat setter forwarding as complete proxy, descriptor, reflection, lifecycle, causal-model, renderer, or 500-repository acceptance.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,454 tests**, with two existing React-19 DevTools skips; this includes **1,408 analyzer tests / 86 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,470 tests**, with two existing React-19 DevTools skips; this includes **1,424 analyzer tests / 87 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

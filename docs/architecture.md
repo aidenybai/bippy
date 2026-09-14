@@ -284,7 +284,7 @@ React’s calls to `getDerivedStateFromProps` and `getDerivedStateFromError` now
 
 [Property effect tests](../packages/bippy-analyzer/tests/property-effects.test.ts) run getter reads under the selected receiver’s guards. Getter mutations no longer leak onto a null-receiver path. Deletion sequences receiver and key evaluation, preserving earlier failures and nullish errors.
 
-Proxy writes preserve failures from retrieving or calling the `set` trap. Trap calls use the handler as their receiver, and successful delegation retains the proxy’s identity. This does not establish complete proxy semantics.
+Proxy writes preserve failures from retrieving or calling the `set` trap. Trap calls use the handler as their receiver, and successful delegation retains the proxy’s identity. [Proxy setter tests](../packages/bippy-analyzer/tests/proxy-receivers.test.ts) distinguish the lookup target from the original receiver. Nested delegation passes that receiver to setters and inner traps. Guarded targets preserve setter failures and isolate effects; explicit bindings still take precedence. This does not establish complete proxy semantics.
 
 [Property-presence tests](../packages/bippy-analyzer/tests/property-presence.test.ts) keep conditional keys separate from present `undefined` values. `in` and `hasOwnProperty` retain the original guards. Explicit `undefined` shadows earlier values, and finite spread snapshots retain values and presence after the source changes. Whole-object joins no longer restore the original entries after deletion.
 
@@ -292,7 +292,8 @@ Proxy writes preserve failures from retrieving or calling the `set` trap. Trap c
 
 - Getter-only write errors
 - Falsy proxy-set results in strict code
-- Receiver forwarding to setters behind proxies
+- Getter-backed `get` trap lookup and handler receivers
+- `defineProperty` trap dispatch during ordinary proxy writes
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

@@ -1720,6 +1720,7 @@ export class Interpreter {
     propertyName: string,
     value: StaticValue,
     context: EvaluationContext,
+    receiver?: StaticValue,
   ): StaticValue {
     const error = getNullishPropertyError(target, propertyName, "set", null);
     if (error) return error;
@@ -1730,7 +1731,7 @@ export class Interpreter {
           if (accessor.set) {
             return this.continueValue(
               this.callValue(accessor.set, [value], context, null, {
-                thisValue: target,
+                thisValue: receiver ?? target,
               }),
               context,
               () => target,
@@ -1814,10 +1815,16 @@ export class Interpreter {
           (trap, trapContext) =>
             this.continueValue(
               isNullish(trap) === true
-                ? this.assignProperty(target.target, propertyName, value, trapContext)
+                ? this.assignProperty(
+                    target.target,
+                    propertyName,
+                    value,
+                    trapContext,
+                    receiver ?? target,
+                  )
                 : this.callValue(
                     trap,
-                    [target.target, primitiveValue(propertyName), value, target],
+                    [target.target, primitiveValue(propertyName), value, receiver ?? target],
                     trapContext,
                     null,
                     { thisValue: target.handler },
@@ -1866,10 +1873,9 @@ export class Interpreter {
         return target;
       }
       case "branch":
-        for (const alternative of target.alternatives) {
-          this.assignProperty(alternative, propertyName, value, context);
-        }
-        return target;
+        return this.continueValue(target, context, (alternative, alternativeContext) =>
+          this.assignProperty(alternative, propertyName, value, alternativeContext, receiver),
+        );
       case "namespace": {
         if (target.module.moduleExports === null) return target;
         const replacement = this.evaluateModuleExport(
