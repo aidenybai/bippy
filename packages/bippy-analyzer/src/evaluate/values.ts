@@ -293,7 +293,11 @@ export const getObjectAccessor = (
 ): StaticAccessor | null => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
-    if (entry.kind === "spread") return null;
+    if (entry.kind === "spread") {
+      const presence = withLookupMemo((memo) => getSpreadOwnPresence(memo, entry.value, key));
+      if (getTruthiness(presence) === false) continue;
+      return null;
+    }
     if (entry.key === key) return entry.accessor ?? null;
   }
   return object.prototype ? getObjectAccessor(object.prototype, key) : null;
@@ -312,7 +316,7 @@ export const accessorEntry = (
 
 interface LookupMemo {
   properties: Map<StaticObjectValue, Map<number, Map<string, StaticValue>>>;
-  ownKeys: Map<StaticObjectValue, Map<string, boolean | null>>;
+  ownKeys: Map<StaticObjectValue, Map<string, StaticValue>>;
   spreadKeys: Map<StaticObjectValue, string[] | null>;
 }
 
@@ -375,34 +379,40 @@ const lookupObjectProperty = (
       if (entry.key === key) return entry.value;
       continue;
     }
-    const spread = entry.value;
-    if (spread.kind === "branch") {
-      let fromEarlier: StaticValue | null = null;
-      return branchValue(
-        spread.alternatives.map((alternative) => {
-          const own =
-            getSpreadProperty(memo, alternative, key) ?? unknownSpreadProperty(alternative, key);
-          if (isPresent(own)) return own;
-          fromEarlier ??= getMemoizedObjectProperty(memo, object, key, index);
-          return fromEarlier;
-        }),
-        spread.reason,
-        spread.location,
-        spread.preferredIndex,
-        getBranchPredicate(spread),
-      );
-    }
-    const own = getSpreadProperty(memo, spread, key);
-    if (own === null) {
-      const fromSpread = unknownSpreadProperty(spread, key);
-      const fromEarlier = getMemoizedObjectProperty(memo, object, key, index);
-      return isPresent(fromEarlier)
-        ? branchValue([fromEarlier, fromSpread], fromSpread.reason, null)
-        : fromSpread;
-    }
-    if (isPresent(own)) return own;
+    let fromEarlier: StaticValue | null = null;
+    return getSpreadContribution(memo, entry.value, key, () => {
+      fromEarlier ??= getMemoizedObjectProperty(memo, object, key, index);
+      return fromEarlier;
+    });
   }
   return getInheritedProperty(memo, object, key);
+};
+
+const getSpreadContribution = (
+  memo: LookupMemo,
+  spread: StaticValue,
+  key: string,
+  getEarlier: () => StaticValue,
+): StaticValue => {
+  if (spread.kind === "branch")
+    return mapValue(spread, (alternative) =>
+      getSpreadContribution(memo, alternative, key, getEarlier),
+    );
+  if (spread.kind !== "object") {
+    const own = getSpreadProperty(memo, spread, key);
+    if (own !== null) return isPresent(own) ? own : getEarlier();
+  }
+  return mapValue(getSpreadOwnPresence(memo, spread, key), (presence) => {
+    const truthiness = getTruthiness(presence);
+    if (truthiness === false) return getEarlier();
+    const own = getSpreadProperty(memo, spread, key);
+    if (truthiness === true && own !== null) return own;
+    const fromSpread = own?.kind === "unknown" ? own : unknownSpreadProperty(spread, key);
+    const earlier = getEarlier();
+    return isPresent(earlier)
+      ? branchValue([earlier, fromSpread], fromSpread.reason, null)
+      : fromSpread;
+  });
 };
 
 const unknownSpreadProperty = (spread: StaticValue, key: string): StaticUnknownValue =>
@@ -500,6 +510,7 @@ export const getPropertyName = (key: StaticValue): string | null => {
 const getKnownOwnKeys = (
   object: StaticObjectValue,
   isIncluded: (key: string) => boolean,
+  requiresFixedPresence = true,
 ): Map<string, boolean> | null =>
   withLookupMemo((memo) => {
     const keys = new Map<string, boolean>();
@@ -510,7 +521,16 @@ const getKnownOwnKeys = (
       }
       const spreadKeys = getKnownSpreadKeys(memo, entry.value);
       if (!spreadKeys) return null;
-      for (const key of spreadKeys) if (isIncluded(key)) keys.set(key, true);
+      for (const key of spreadKeys) {
+        if (!isIncluded(key)) continue;
+        if (
+          requiresFixedPresence &&
+          keys.get(key) !== true &&
+          getTruthiness(getSpreadOwnPresence(memo, entry.value, key)) !== true
+        )
+          return null;
+        keys.set(key, true);
+      }
     }
     return keys;
   });
@@ -528,53 +548,57 @@ export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | nu
   return keys && [...keys.keys()];
 };
 
-const spreadHasOwnKey = (memo: LookupMemo, spread: StaticValue, key: string): boolean | null => {
+const getSpreadOwnPresence = (memo: LookupMemo, spread: StaticValue, key: string): StaticValue => {
   switch (spread.kind) {
     case "object":
-      return getMemoizedOwnKey(memo, spread, key);
+      return getMemoizedOwnPresence(memo, spread, key);
     case "primitive":
-      return false;
-    case "branch": {
-      const verdicts = spread.alternatives.map((alternative) =>
-        spreadHasOwnKey(memo, alternative, key),
-      );
-      if (verdicts.every((verdict) => verdict === true)) return true;
-      return verdicts.every((verdict) => verdict === false) ? false : null;
-    }
+      return FALSE_VALUE;
+    case "branch":
+      return mapValue(spread, (alternative) => getSpreadOwnPresence(memo, alternative, key));
     default:
-      return null;
+      return unknownPrimitiveValue("boolean", `presence of ${JSON.stringify(key)} in a spread`);
   }
 };
 
-const getMemoizedOwnKey = (
+const getMemoizedOwnPresence = (
   memo: LookupMemo,
   object: StaticObjectValue,
   key: string,
-): boolean | null => {
+): StaticValue => {
   let verdicts = memo.ownKeys.get(object);
   const memoized = verdicts?.get(key);
-  if (memoized !== undefined) return memoized;
-  let verdict: boolean | null = false;
-  for (const entry of object.entries) {
-    const entryVerdict =
-      entry.kind === "property" ? entry.key === key : spreadHasOwnKey(memo, entry.value, key);
-    if (entryVerdict === true) {
-      verdict = true;
-      break;
-    }
-    if (entryVerdict === null) verdict = null;
-  }
+  if (memoized) return memoized;
   if (!verdicts) {
     verdicts = new Map();
     memo.ownKeys.set(object, verdicts);
+  }
+  const unknown = unknownPrimitiveValue("boolean", `presence of ${JSON.stringify(key)}`);
+  verdicts.set(key, unknown);
+  let verdict: StaticValue = FALSE_VALUE;
+  for (const entry of object.entries) {
+    if (entry.kind === "property") {
+      if (entry.key !== key) continue;
+      verdict = TRUE_VALUE;
+      break;
+    }
+    const previous = verdict;
+    verdict = mapValue(getSpreadOwnPresence(memo, entry.value, key), (presence) => {
+      const truthiness = getTruthiness(presence);
+      return truthiness === true ? TRUE_VALUE : truthiness === false ? previous : unknown;
+    });
+    if (getTruthiness(verdict) === true) break;
   }
   verdicts.set(key, verdict);
   return verdict;
 };
 
+export const getOwnPropertyPresence = (object: StaticObjectValue, key: string): StaticValue =>
+  withLookupMemo((memo) => getMemoizedOwnPresence(memo, object, key));
+
 /** Whether `key` is an own property; null when a spread may or may not carry it. */
 export const hasOwnKey = (object: StaticObjectValue, key: string): boolean | null =>
-  withLookupMemo((memo) => getMemoizedOwnKey(memo, object, key));
+  getTruthiness(getOwnPropertyPresence(object, key));
 
 /** `Object.getOwnPropertyDescriptor(object, key)`, or null when a dynamic spread could own `key`. */
 export const getOwnPropertyDescriptor = (
@@ -624,7 +648,7 @@ const getKnownSpreadKeys = (memo: LookupMemo, spread: StaticValue): string[] | n
     case "object": {
       const memoized = memo.spreadKeys.get(spread);
       if (memoized !== undefined) return memoized;
-      const keys = getKnownEnumerableOwnKeys(spread);
+      const keys = getEnumerableKeys(getKnownOwnKeys(spread, () => true, false));
       memo.spreadKeys.set(spread, keys);
       return keys;
     }
@@ -655,7 +679,29 @@ export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | nul
   const keys = withLookupMemo((memo) => getKnownSpreadKeys(memo, spread));
   if (!keys) return null;
   const holder = objectValue([{ kind: "spread", value: spread }]);
-  return keys.map((key) => ({ kind: "property", key, value: getObjectProperty(holder, key) }));
+  return keys.map((key) =>
+    getPropertyEntry(key, getObjectProperty(holder, key), getOwnPropertyPresence(holder, key)),
+  );
+};
+
+const getPropertyEntry = (
+  key: string,
+  value: StaticValue,
+  presence: StaticValue,
+): StaticObjectEntry => {
+  const entry: StaticPropertyEntry = { kind: "property", key, value };
+  if (getTruthiness(presence) === true) return entry;
+  return {
+    kind: "spread",
+    value: mapValue(presence, (alternative) => {
+      const truthiness = getTruthiness(alternative);
+      return truthiness === true
+        ? objectValue([entry])
+        : truthiness === false
+          ? objectValue([])
+          : unknownValue(`presence of property ${JSON.stringify(key)}`);
+    }),
+  };
 };
 
 /**
@@ -675,24 +721,30 @@ export const joinObjectEntries = (
   const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
   if (joinedKeys === null) {
     return [
-      ...original,
       {
         kind: "spread",
         value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
       },
     ];
   }
-  const joinedEntry = (key: string): StaticObjectEntry => ({
-    kind: "property",
-    key,
-    value: branchValue(
-      pathObjects.map((pathObject) => getObjectProperty(pathObject, key)),
-      reason,
-      location,
-      preferredIndex,
-      predicate,
-    ),
-  });
+  const joinedEntry = (key: string): StaticObjectEntry =>
+    getPropertyEntry(
+      key,
+      branchValue(
+        pathObjects.map((pathObject) => getObjectProperty(pathObject, key)),
+        reason,
+        location,
+        preferredIndex,
+        predicate,
+      ),
+      branchValue(
+        pathObjects.map((pathObject) => getOwnPropertyPresence(pathObject, key)),
+        reason,
+        location,
+        preferredIndex,
+        predicate,
+      ),
+    );
   const lastSpreadIndex = original.findLastIndex((entry) => entry.kind === "spread");
   const placedKeys = new Set<string>();
   const entries = original.map((entry, index) => {

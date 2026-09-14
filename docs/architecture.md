@@ -286,12 +286,13 @@ React’s calls to `getDerivedStateFromProps` and `getDerivedStateFromError` now
 
 Proxy writes preserve failures from retrieving or calling the `set` trap. Trap calls use the handler as their receiver, and successful delegation retains the proxy’s identity. This does not establish complete proxy semantics.
 
-Object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
+[Property-presence tests](../packages/bippy-analyzer/tests/property-presence.test.ts) keep conditional keys separate from present `undefined` values. `in` and `hasOwnProperty` retain the original guards. Explicit `undefined` shadows earlier values, and finite spread snapshots retain values and presence after the source changes. Whole-object joins no longer restore the original entries after deletion.
+
+[Value-level checks](../packages/bippy-analyzer/tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Getter-only write errors
 - Falsy proxy-set results in strict code
 - Receiver forwarding to setters behind proxies
-- Property presence after guarded deletion
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

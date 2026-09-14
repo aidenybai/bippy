@@ -159,7 +159,7 @@ import {
   compareIdentity,
   hasDefiniteItems,
   ITERATOR_PROPERTY_KEY,
-  hasOwnKey,
+  getOwnPropertyPresence,
   isIndefiniteItem,
   isKnownList,
   jsonValue,
@@ -726,10 +726,7 @@ const hasOwnProperty = (
     if (receiver.kind === "list" && propertyName === "length")
       return primitiveValue(name === "hasOwnProperty");
     if (receiver.kind === "object" && name === "hasOwnProperty") {
-      const isOwn = hasOwnKey(receiver, propertyName);
-      return isOwn === null
-        ? unknownPrimitiveValue("boolean", `${name} of a partially known target`)
-        : primitiveValue(isOwn);
+      return getOwnPropertyPresence(receiver, propertyName);
     }
     const ownKeys =
       receiver.kind === "object" && isSymbolPropertyKey(propertyName)

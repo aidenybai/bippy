@@ -27,7 +27,8 @@ import {
   getStubOwnDisplayName,
   mapValue,
   hasDefiniteItems,
-  hasOwnKey,
+  getOwnPropertyPresence,
+  getTruthiness,
   isIndefiniteItem,
   TRUE_VALUE,
   primitiveValue,
@@ -117,11 +118,19 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     case "element":
       return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;
     case "object": {
-      const isOwn = hasOwnKey(target, name);
-      if (isOwn === null) return null;
-      if (isOwn) return TRUE_VALUE;
-      if (target.prototype) return hasNamedProperty(name, target.prototype);
-      return hasIntrinsicMember(getPrototypeWitness(target) ?? {}, name) ? TRUE_VALUE : FALSE_VALUE;
+      return mapValue(getOwnPropertyPresence(target, name), (presence) => {
+        const truthiness = getTruthiness(presence);
+        if (truthiness === true) return TRUE_VALUE;
+        if (truthiness === null) return presence;
+        if (target.prototype)
+          return (
+            hasNamedProperty(name, target.prototype) ??
+            unknownPrimitiveValue("boolean", `inherited presence of ${name}`)
+          );
+        return hasIntrinsicMember(getPrototypeWitness(target) ?? {}, name)
+          ? TRUE_VALUE
+          : FALSE_VALUE;
+      });
     }
     case "function":
     case "class": {
