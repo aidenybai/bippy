@@ -174,6 +174,12 @@ export interface BuiltinModuleResolution {
   specifier: string;
 }
 
+export interface UnresolvedSymbol {
+  kind: "unresolved";
+  reason: string;
+  isAmbiguous?: true;
+}
+
 /**
  * Under RSC, what server code imports from a `"use client"` module is a
  * reference to the export, rendered on the client, wherever the value itself
@@ -212,7 +218,7 @@ export type ResolvedSymbol =
       specifier: string;
       imported: ImportedName;
     }
-  | { kind: "unresolved"; reason: string };
+  | UnresolvedSymbol;
 
 export interface ComponentDefinition {
   /** Function/class name or the binding it was assigned to; null for anonymous components. */
