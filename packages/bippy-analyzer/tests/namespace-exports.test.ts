@@ -48,6 +48,17 @@ const captureNative = (filePath: string): RuntimeSnapshot => {
 
 it.each([
   { name: "keys", expected: "left,right", ssrExpected: "value,left,right" },
+  { name: "symbol", expected: "yes", ssrExpected: "yes" },
+  {
+    name: "symbol-properties",
+    expected: "yes:yes:no:no:no:no",
+    ssrExpected: "yes:yes:no:no:no:no",
+  },
+  {
+    name: "registry-symbols",
+    expected: "different:same:different:well-known:registered:escaped:3:Symbol.toStringTag",
+    ssrExpected: "different:same:different:well-known:registered:escaped:3:Symbol.toStringTag",
+  },
   {
     name: "own-control",
     expected: "yes:no:yes:yes:no:yes:no",
@@ -87,16 +98,4 @@ it.each([
   const ssr = await runComponentFixture({ name, filePath });
   expect(ssr.runtime.roots.flatMap(getRuntimeText)).toEqual([ssrExpected]);
   expect(ssr.comparison.report.status).toBe(expected === ssrExpected ? "exact" : "mismatch");
-});
-
-it("does not infer namespace symbol absence from enumerable string exports", async () => {
-  const filePath = join(directory, "namespace-exports-symbol.tsx");
-  const renderer = await createStaticRenderer({ rootDirectory: directory });
-  const rendered = await renderer.renderComponent(filePath);
-  const model = enumerateStaticStates(rendered);
-  expect(model.states.map((state) => getConcretePatternText(state.tree).join("|")).sort()).toEqual([
-    "no",
-    "yes",
-  ]);
-  expect(captureNative(filePath).roots.flatMap(getRuntimeText)).toEqual(["yes"]);
 });

@@ -929,8 +929,8 @@ export interface StaticRegExpValue {
 }
 
 /**
- * A symbol, identified by its `Symbol.for` registry key, its well-known name
- * (`Symbol.iterator`), or a per-allocation id for `Symbol(description)`.
+ * A symbol, identified by an internal key for its registry entry, well-known name
+ * (`Symbol.iterator`), or allocation. Registry keys that collide with reserved names are escaped.
  */
 export interface StaticSymbolValue {
   kind: "symbol";
