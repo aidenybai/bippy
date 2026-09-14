@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "vp test run --config vite.config.ts"
   },
   "dependencies": {
+    "badge-maker": "^6.0.0",
     "next": "15.5.18",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

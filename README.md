@@ -3,8 +3,8 @@
   bippy
 </h1>
 
-[![version](https://img.shields.io/npm/v/bippy?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
-[![downloads](https://img.shields.io/npm/dt/bippy.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/bippy)
+[![version](https://bippy.dev/api/badges/version)](https://npmjs.com/package/bippy)
+[![downloads](https://bippy.dev/api/badges/downloads)](https://npmjs.com/package/bippy)
 
 bippy hacks into React internals.
 
