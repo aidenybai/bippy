@@ -10793,6 +10793,32 @@
         "entry": "src/index.js"
       },
       "notes": "Original LOAD screen then automatic local worlds.json GET and authored levelGame=1 first-visit write. Level1 has LCD0/MOVES02/GOAL2 and Solve,+1,CLR,Menu keys. All130 JSON worlds/credit URLs reviewed without clicking links or running solutions. Original Howl sound.mp3 preload and production-only service worker retained; no game input, sound playback request, storage injection, solution repair or 130-level completeness claim. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original LOAD screen then automatic local worlds.json GET and authored levelGame=1 first-visit write. Level1 has LCD0/MOVES02/GOAL2 and Solve,+1,CLR,Menu keys. All130 JSON worlds/credit URLs reviewed without clicking links or running solutions. Original Howl sound.mp3 preload and production-only service worker retained; no game input, sound playback request, storage injection, solution repair or 130-level completeness claim. Exact47-fiber original first-level screen after local worlds.json GET and authored levelGame=1 write. Two bounded states/one passing sampled replay with no opacity/wildcards/omissions. Original Node16/React16.3.1/CRA1.1.4, Howl preload, all130 worlds and misassigned component prototype metadata remain. No Solve/+1/Menu input, sound playback, solution correction, attribute/pixel or 130-level transition/reachability proof. Repository has no tracked .gitignore; only independently audited node_modules is untracked, with no source/lock exemption. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 129789226 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "runtimeterror10-club-animals",
+      "repository": "https://github.com/RuntimeTerror10/club-animals",
+      "revision": "4c2519e31e269f929e0f437b1cb56673b0f6d57b",
+      "description": "RuntimeTerror10/club-animals",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54991",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54991/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original three-second animated loader and Club Animals menu/Start Game/footer, Helmet title and new Audio construction. Module-level17-animal double/shuffle retained; no Start, game-grid mount, flips, confetti, moves, sound playback or timer suppression. Do not inject image/random identities, viewport or storage; initial fiber matching cannot prove animation/audio/attributes or gameplay. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original three-second animated loader and Club Animals menu/Start Game/footer, Helmet title and new Audio construction. Module-level17-animal double/shuffle retained; no Start, game-grid mount, flips, confetti, moves, sound playback or timer suppression. Do not inject image/random identities, viewport or storage; initial fiber matching cannot prove animation/audio/attributes or gameplay. Partial91.7% strict coverage on original Club Animals menu after three-second loader. Two opaque whole-tree nodes, one unmatched Helmet slot/opaque renaming, three bounded states/two passing sampled assignments, no wildcards/omissions. Original StrictMode UNSAFE_componentWillMount warning from SideEffect(NullComponent), Helmet title, audio construction and module-level animal shuffle remain. No Start, card flips, sound playback, confetti, random identity, pixel/host-lifecycle or gameplay completeness claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 451588125 identifies a distinct non-fork repository."
     }
   ]
 }
