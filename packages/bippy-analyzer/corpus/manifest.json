@@ -10637,6 +10637,84 @@
         "entry": "src/index.js"
       },
       "notes": "Original root Home/header with three NavLinks and GIF logo. Quote route contains a checked-in API key; never navigate there, reuse it or request API-Ninjas. No credentials supplied, source altered or quote API acceptance. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original root Home/header with three NavLinks and GIF logo. Quote route contains a checked-in API key; never navigate there, reuse it or request API-Ninjas. No credentials supplied, source altered or quote API acceptance. Partial4.9% strict coverage, five opaque router nodes and three opaque renamings on original root Home/header/GIF logo. No Quote route navigation/API-Ninjas request or use of checked-in API key; no credentials supplied. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 661830983 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "ishandeveloper-notes-keeper",
+      "repository": "https://github.com/ishandeveloper/Notes-Keeper",
+      "revision": "32b020ecf07e21127e866e40d8f08336daa72f07",
+      "description": "ishandeveloper/Notes-Keeper",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54961",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54961/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original authored first-visit single Hey, I am a note fallback, Keep header/search, unexpanded empty note form and footer. Do not inject saved notes/NULL placeholders, type, add/delete, copy to clipboard or trigger recursive save timers. Preserve original local-storage reads and CSS textAlign typo. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original authored first-visit single Hey, I am a note fallback, Keep header/search, unexpanded empty note form and footer. Do not inject saved notes/NULL placeholders, type, add/delete, copy to clipboard or trigger recursive save timers. Preserve original local-storage reads and CSS textAlign typo. Truncated53-fiber original authored first-visit note screen:256 bounded states,16 whole-model wildcards, one state omission, dynamic-key diagnostic and15 incomplete assignments among16 replays. Strict initial coverage1 does not prove storage/cardinality or all states; no saved notes, input, clipboard operation or recursive save timer triggered. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 260011028 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "lucas-zz-zap-recall",
+      "repository": "https://github.com/Lucas-zz/Zap_Recall",
+      "revision": "af4cf26dfb5272e678b36c08807be7edbfeb40b8",
+      "description": "Lucas-zz/Zap_Recall",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54962",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54962/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original App effect sets StartScreen after initial empty page: logo and four deck buttons for HTML, React, JavaScript and Fund. da Computacao. Original checked-in decks, missing keys, console/setPage output and .root container retained; no deck choice, card flip or educational/gameplay correctness claim. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original App effect sets StartScreen after initial empty page: logo and four deck buttons for HTML, React, JavaScript and Fund. da Computacao. Original checked-in decks, missing keys, console/setPage output and .root container retained; no deck choice, card flip or educational/gameplay correctness claim. Exact22-fiber original four-deck selection after authored initial App effect; two bounded states/one sampled assignment with no opacity/wildcards/omissions. Missing-key warning retained. No deck selection, card flip, educational correctness, transitions or full-space proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 436103665 identifies a distinct non-fork repository."
+    },
+    {
+      "id": "keremciu-retro-calculator",
+      "repository": "https://github.com/keremciu/retro-calculator",
+      "revision": "b0c26adefd48c3d5f6cf0d65b7a635eade6c1e89",
+      "description": "keremciu/retro-calculator",
+      "framework": "spa",
+      "workingDirectory": ".",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
+      "env": {
+        "PORT": "54963",
+        "HOST": "127.0.0.1",
+        "NODE_OPTIONS": "",
+        "BROWSER": "none",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+        "PUPPETEER_SKIP_DOWNLOAD": "1"
+      },
+      "url": "http://127.0.0.1:54963/",
+      "readyTimeoutMs": 120000,
+      "settleMs": 3000,
+      "static": {
+        "rootDirectory": ".",
+        "entry": "src/index.js"
+      },
+      "notes": "Original calculator off/open=false with empty screen, no memory indicator,26 buttons and keyboard keyup listeners; original jsconfig baseUrl aliases and page/photo/footer retained. No Space/Enter/input or first-operation auto-off timer triggered; ten-minute auto-off is not suppressed or claimed tested. Original production-only service worker remains gated. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original calculator off/open=false with empty screen, no memory indicator,26 buttons and keyboard keyup listeners; original jsconfig baseUrl aliases and page/photo/footer retained. No Space/Enter/input or first-operation auto-off timer triggered; ten-minute auto-off is not suppressed or claimed tested. Original production-only service worker remains gated. Exact104-fiber original powered-off empty-screen calculator/26 keys, one bounded state and one passing sample, no opacity/wildcards/omissions. Keyboard listeners remain; no power-on, arithmetic, memory input or ten-minute auto-off interaction. No pixels, photo/lifecycle or hardware parity claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 123430137 identifies a distinct non-fork repository."
     }
   ]
 }
