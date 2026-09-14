@@ -316209,6 +316209,1382 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T14:58:02.125Z",
       "failure": null
+    },
+    {
+      "id": "gizemnkorkmaz-matching-pairs",
+      "revision": "874dc8ed80d30c2f1feb65f53052a14e71dfd0f8",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:04:48.274Z",
+      "durationMs": 275,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 34,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Matching Pairs"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 34,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 20
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 33,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 33,
+        "staticFibers": 33,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 33,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 33,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:04:45.561Z",
+      "failure": null
+    },
+    {
+      "id": "nathanhfoster-memory",
+      "revision": "be96fd1118f0eee1b6be9419d474feb5bcf1b8b2",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:07:54.809Z",
+      "durationMs": 74942,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 165,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element.%s imageKey imagekey \n    in img (at Image/index.js:11)\n    in div (at Image/index.js:9)\n    in Image (at ImageContainer/index.js:60)\n    in div (at ImageContainer/index.js:72)\n    in ImageContainer (at App.js:7)\n    in main (at App.js:6)\n    in App (at src/index.js:7)"
+        ],
+        "title": "Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 169,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 10
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 164,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 164,
+        "staticFibers": 164,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 166,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 166,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on unknown(call of Object.values of {imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...})",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/nathanhfoster-memory/src/containers/ImageContainer/index.js:69:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on unknown(call of Object.values of {imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...})",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/nathanhfoster-memory/src/containers/ImageContainer/index.js:69:10",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "conditional on unknown(call of Object.values of {imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., imageKey-0, ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...})",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/nathanhfoster-memory/src/containers/ImageContainer/index.js:69:10",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:05:23.838Z",
+      "failure": null
+    },
+    {
+      "id": "dcavalcante-megahooks",
+      "revision": "b505b2ac9555f0223b359d522f78f38986282d6b",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:04:48.295Z",
+      "durationMs": 280,
+      "runtime": {
+        "reactVersion": "16.8.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 75,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "🧠 MeGa Hooks ️⚛️"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 67,
+          "textCount": 3,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 4,
+          "unknownCount": 0,
+          "modulesLoaded": 13
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 59,
+        "matchedText": 3,
+        "opaqueSubtrees": 4,
+        "opaqueSkippedFibers": 12,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 74,
+        "staticFibers": 66,
+        "coverage": 1,
+        "strictCoverage": 0.8378378378378378,
+        "divergence": null,
+        "stepsUsed": 66,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 66,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 4,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:04:45.287Z",
+      "failure": null
+    },
+    {
+      "id": "saadusufzai-quiz-app-react-and-typescrpt",
+      "revision": "6e4476606da86afd33862a9e61c6cdf7ca1a0325",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:09:22.699Z",
+      "durationMs": 328,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 64,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Quiz App by Saad Aslam"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 49,
+          "textCount": 2,
+          "branchCount": 2,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 61,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "repeatIterations": 24,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 63,
+        "staticFibers": 40,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 67,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 7,
+        "stateCount": 7,
+        "clusters": 2,
+        "tree": {
+          "nodes": 89,
+          "inputs": 5,
+          "guards": 10,
+          "branches": 3,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/App.tsx:42:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/components/Welcome.tsx:17:15",
+              "count": 24
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/components/Welcome.tsx:17:15",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/App.tsx:42:3",
+              "side": 0,
+              "guard": "and(eq(choice(commit), 1), or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/App.tsx:42:3",
+              "side": 1,
+              "guard": "or(and(eq(choice(commit), 1), not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length)))))), and(eq(choice(commit), 2), not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length)))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "and(eq(choice(commit), 2), not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length))))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#3), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/components/Welcome.tsx:17:15",
+              "side": 0,
+              "guard": "eq(len(#4), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/components/Welcome.tsx:17:15",
+              "side": 1,
+              "guard": "len(#4) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 4,
+          "possible": 5,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 7,
+        "assignments": 6,
+        "replayed": 6,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 2,
+              "commitCount": 3
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), not(truthy(#2.length))))",
+              "reason": "if (branch(true | <boolean>))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/App.tsx:42:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#3)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#4)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-six/saadusufzai-quiz-app-react-and-typescrpt/src/components/Welcome.tsx:17:15",
+              "count": 24
+            }
+          ],
+          "verification": "passed"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:09:20.440Z",
+      "failure": null
+    },
+    {
+      "id": "shehza-d-quiz-app",
+      "revision": "8bf4e6e6a9a4227442f20b22adab36a2fc1677c0",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:05:02.074Z",
+      "durationMs": 313,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 20,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 13,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 6,
+          "unknownCount": 0,
+          "modulesLoaded": 19
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 6,
+        "matchedText": 0,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 13,
+        "slotsMatched": 1,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <ContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <main> [HostComponent] > <AppRouter> [FunctionComponent] > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 9,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <ContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <main> [HostComponent] > <AppRouter> [FunctionComponent] > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 19,
+        "staticFibers": 12,
+        "coverage": 1,
+        "strictCoverage": 0.3157894736842105,
+        "divergence": null,
+        "stepsUsed": 37,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 12,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 6,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:04:59.775Z",
+      "failure": null
+    },
+    {
+      "id": "heysagnik-todoist",
+      "revision": "06a1e8b55de66a7721776c005e0c4f87e03bce57",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:11:20.790Z",
+      "durationMs": 19303,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 218,
+        "commits": 64,
+        "pageErrors": [],
+        "title": "Todoist"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 108,
+          "textCount": 21,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 36,
+          "unknownCount": 1,
+          "modulesLoaded": 14
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 42,
+        "matchedText": 4,
+        "opaqueSubtrees": 36,
+        "opaqueSkippedFibers": 155,
+        "slotsMatched": 18,
+        "slotsUnmatched": 8,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
+            "reason": "StatNumber from @chakra-ui/react is not analyzed",
+            "head": "<StatNumber> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)[0]",
+              "expected": "\"0 times\"",
+              "actual": "<Styled(dd)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
+            "reason": "StatLabel from @chakra-ui/react is not analyzed",
+            "head": "<StatLabel> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
+              "expected": "\"Edited\"",
+              "actual": "<Styled(dt)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
+            "reason": "StatNumber from @chakra-ui/react is not analyzed",
+            "head": "<StatNumber> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)[0]",
+              "expected": "\"0 items\"",
+              "actual": "<Styled(dd)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
+            "reason": "StatLabel from @chakra-ui/react is not analyzed",
+            "head": "<StatLabel> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
+              "expected": "\"Completed\"",
+              "actual": "<Styled(dt)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
+            "reason": "StatNumber from @chakra-ui/react is not analyzed",
+            "head": "<StatNumber> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)[0]",
+              "expected": "\"0 items\"",
+              "actual": "<Styled(dd)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
+            "reason": "StatLabel from @chakra-ui/react is not analyzed",
+            "head": "<StatLabel> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
+              "expected": "\"Added\"",
+              "actual": "<Styled(dt)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
+            "reason": "StatLabel from @chakra-ui/react is not analyzed",
+            "head": "<StatLabel> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
+              "expected": "\"Active Session\"",
+              "actual": "<Styled(dt)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Container> (opaque) > <Wrapper> [FunctionComponent] > <Box> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Container> (opaque) > <Wrapper> [FunctionComponent] > <Box> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"✅Todoist\"",
+              "actual": "<Styled(h2)> [ForwardRef]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 2,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
+            "reason": "updated state of productiveTime",
+            "absorbedFibers": 2,
+            "heads": [
+              "<Styled(dd)> [ForwardRef]"
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 203,
+        "staticFibers": 91,
+        "coverage": 1,
+        "strictCoverage": 0.22660098522167488,
+        "divergence": null,
+        "stepsUsed": 10555,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 11,
+        "stateCount": 11,
+        "clusters": 2,
+        "tree": {
+          "nodes": 193,
+          "inputs": 7,
+          "guards": 13,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 72,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 10,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "alternativeIndex": 5,
+              "alternativeCount": 6
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+              "side": 0,
+              "guard": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+              "side": 1,
+              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+              "side": 2,
+              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+              "side": 3,
+              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "reason": "if (branch(<boolean> | false))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+              "side": 4,
+              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 0,
+              "guard": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 1,
+              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 2,
+              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 3,
+              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 4,
+              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 5,
+              "guard": "not(eq(choice(#6), 0))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 11,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 11,
+        "assignments": 10,
+        "replayed": 10,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+                "reason": "if (branch(<boolean> | false))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "state-update",
+                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 5,
+                "alternativeCount": 6
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              1,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+                "reason": "if (branch(<boolean> | false))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "state-update",
+                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 5,
+                "alternativeCount": 6
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+                "reason": "if (branch(<boolean> | false))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "state-update",
+                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 5,
+                "alternativeCount": 6
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              3,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+                "reason": "if (branch(<boolean> | false))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "state-update",
+                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 5,
+                "alternativeCount": 6
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              4,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+                "reason": "if (branch(<boolean> | false))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+                "alternativeIndex": 4,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "state-update",
+                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 5,
+                "alternativeCount": 6
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:10:38.557Z",
+      "failure": null
+    },
+    {
+      "id": "hqwuzhaoyi-react-ddd",
+      "revision": "cc5a264af5005f8afff48f62bfce6a4327f9e806",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:05:21.833Z",
+      "durationMs": 285,
+      "runtime": {
+        "reactVersion": "17.0.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 2,
+        "fibers": 121,
+        "commits": 23,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 56,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 36,
+          "unknownCount": 0,
+          "modulesLoaded": 20
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 3,
+        "matchedText": 0,
+        "opaqueSubtrees": 6,
+        "opaqueSkippedFibers": 112,
+        "slotsMatched": 3,
+        "slotsUnmatched": 2,
+        "opaqueRenamed": 3,
+        "unmatchedSlots": [
+          {
+            "path": "root > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Router> [FunctionComponent] > <Switch> (opaque) > <Route> (opaque)",
+            "reason": "Route from react-router-dom is not analyzed",
+            "head": "<FormItem> [FunctionComponent]",
+            "skippedFibers": 25,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Router> [FunctionComponent] > <Switch> (opaque) > <Route> (opaque)[0]",
+              "expected": "<DashRoutes> [FunctionComponent]",
+              "actual": "<Row> key=\"row\" [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Router> [FunctionComponent] > <Switch> (opaque) > <Route> (opaque)",
+            "reason": "Route from react-router-dom is not analyzed",
+            "head": "<FormItem> [FunctionComponent]",
+            "skippedFibers": 30,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Router> [FunctionComponent] > <Switch> (opaque) > <Route> (opaque) > <Login> [FunctionComponent][0]",
+              "expected": "<LoginWrapper> [FunctionComponent]",
+              "actual": "<Input> [ClassComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 115,
+        "staticFibers": 55,
+        "coverage": 1,
+        "strictCoverage": 0.02608695652173913,
+        "divergence": null,
+        "stepsUsed": 727,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 55,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 36,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:05:19.580Z",
+      "failure": null
+    },
+    {
+      "id": "kajal-rekha-immemorial",
+      "revision": "1326a6243df9518dd86fae455982a09747f0a0de",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:11:54.660Z",
+      "durationMs": 1018,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 97,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Immemorial"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 38,
+          "textCount": 8,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 13,
+          "unknownCount": 0,
+          "modulesLoaded": 14
+        },
+        "diagnostics": [
+          {
+            "code": "max-call-depth",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 16,
+        "matchedText": 3,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 77,
+        "slotsMatched": 2,
+        "slotsUnmatched": 5,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 63,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <div> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <div> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"Blog\"",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"Gallery\"",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"About\"",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <BrowserRouter> (opaque) > <StrictMode> [Mode] > <App> [FunctionComponent] > <div> [HostComponent] > <Navbar> [FunctionComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"Featured\"",
+              "actual": "<a> [HostComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 96,
+        "staticFibers": 36,
+        "coverage": 1,
+        "strictCoverage": 0.19791666666666666,
+        "divergence": null,
+        "stepsUsed": 215,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 36,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 13,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:11:51.062Z",
+      "failure": null
     }
   ]
 }
