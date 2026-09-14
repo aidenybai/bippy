@@ -55,6 +55,8 @@ Store-consistency replays run eight cases twice: fresh versus existing readers, 
 
 Activity/store replays run sixteen cases twice: either root, both ref contracts, publication while hidden versus during reveal layout, and initially visible versus hidden mounting. Initial hidden mounts keep the root tracked through its empty first commit, then acquire fibers, IDs and insertion effects without refs, layout effects or subscriptions. Memoized reveal retains those identities without another render phase. A props-only update replaces the store effect list before hiding; subsequent passive reconnection must catch a missed store mutation even though the subscriber bails out on reveal. The oracle retains the actual stale-snapshot reveal commit followed by the correcting store update, rather than imposing the pre-commit consistency guarantee from the preceding suite. Exact traces separate insertion lifetime, ref/layout disconnection, passive unsubscription and background hidden commits. Hidden deletion releases IDs and insertion effects without repeating already disconnected cleanup; remount gets fresh host/ID/state. Another subscribed root stays unchanged. These are pinned React 19/Happy DOM Activity semantics, not browser paint or scheduling guarantees.
 
+Entangled-Action replays run eight cases twice with independent promise gates. Optimistic commits precede suspended work; current-fiber lookup must select the committed branch both during an urgent render and its later blocked retry. Completing one Action cannot commit either root while the other remains pending, but an unrelated root can still update urgently. Deleting and remounting either participant retires its old IDs; a late Action can release the shared scope without rendering or updating the new instance. Two queue cases change the Action implementation while work is pending: a queued call must retain its captured implementation and receive the previous Action's result, extend the shared scope, and delay the other root. A later dispatch uses the replacement implementation. Exact traces include ref replacement with live IDs, both roots' completion order, precise render-visitor identity, throwing observers/reporters and final cleanup. All gates settle in `finally`, including assertion-failure paths. These are pinned React 19 development semantics, not independent-Action concurrency or browser scheduling guarantees.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -73,6 +75,7 @@ pnpm test --project conformance context-portal-replay
 pnpm test --project conformance strict-effects-replay
 pnpm test --project conformance store-consistency-replay
 pnpm test --project conformance activity-store-replay
+pnpm test --project conformance entangled-action-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
