@@ -187,7 +187,7 @@ The repair aggregates successful internal resolutions, compares terminal binding
 
 The first full run exposed a regression in the existing `commonjs-package` fixture: reconstructed CommonJS getter loops were incorrectly treated as ESM star conflicts. `ModuleRecord` marks those synthetic re-exports as CommonJS. They now retain their prior lookup behavior instead of receiving the new ESM conflict rule. The unchanged native fixture and the twenty export controls pass after that correction.
 
-This is declaration-resolution work. It does not implement global ESM instantiation errors, repair namespace enumeration, or establish complete CommonJS and modeled-external star semantics.
+This does not implement global ESM instantiation errors or establish complete CommonJS and modeled-external star semantics. Namespace membership now has the separate checks below.
 
 ### Reference tools disagree
 
@@ -202,17 +202,29 @@ Both declaration orders exhibit these differences. The test data records `ambigu
 
 The [native helper](../tests/helpers/link-module-graph.ts) constructs and links `SourceTextModule` records. It never calls `evaluate()`. esbuild compiles with `write: false`; it does not execute application bodies. An initial helper failed because a Vite-rewritten URL was not a filesystem URL. That setup failure remains separate from semantic results.
 
+## Namespace membership and reference-loader fidelity
+
+ECMAScript separates `GetExportedNames` from [GetModuleNamespace](https://tc39.es/ecma262/#sec-getmodulenamespace). Candidate names can include an ambiguous star export. A namespace excludes that ambiguous name; reading the absent property yields `undefined`. Bippy now filters proven ambiguities during ESM namespace materialization and handles reads accordingly. CommonJS handling remains separate.
+
+The [namespace suite](../tests/namespace-exports.test.ts) checks keys, reads, spread snapshots, explicit overrides, default re-exports, and a binding diamond. The source-derived expectations are checked before independent execution. Eight cases reproduce six strict baseline failures and two controls.
+
+The original component harness exposed another tool disagreement. Vitest's installed Vite SSR module runner implements `exportAll` by copying keys only when they are not already present. It does not remove conflicting names and does not reproduce ESM namespace key ordering. Consequently, five of these source-derived expectations disagree with its recorded fibers. Those discrepancies remain explicit assertions; they are not normalized away or called exact matches.
+
+A separate [native ESM capture helper](../tests/helpers/capture-esm-component.ts) lowers TypeScript/JSX without bundling the modules, links them using V8 module records, and captures real React commits through Bippy. Application execution occurs only in this independent child-process capture, after static expectations have been checked. The helper does not replace Bippy's hook, fabricate fibers, or execute component bodies during analysis. These are synchronous fixture captures, not general lifecycle validation or a replacement for application build-pipeline captures.
+
+The spread probe initially used the unmodeled `Object.hasOwn` API. Its uncertainty was not evidence of a broken spread snapshot. An unnecessary eager-spread candidate was preserved and removed. `Object.hasOwn` now reuses modeled own-property presence, handles known primitive boxing and missing keys, and rejects nullish targets before key coercion. Controls cover present `undefined`, absence, inheritance, string indices/length, and nullish failures. Effectful key coercion, proxy descriptor traps, and unknown targets remain incomplete. Namespace own-property queries remain uncertain: the enumerable string-export view is not the namespace exotic object. A rejected candidate inferred that `Symbol.toStringTag` was absent, despite its [specified non-enumerable own property](https://tc39.es/ecma262/#sec-module-namespace-objects) and a native `yes` capture. A ninth safety check preserves uncertainty rather than that incorrect `no`; it is not a complete semantic match. Namespace symbols, prototype/extensibility, writes, and live bindings need separate modeling. An initial error-constructor call used the wrong internal signature; its failing typecheck and empty-model result remain preserved separately.
+
 ## Parity work still required
 
-| Priority | Work                                   | Acceptance evidence                                                                                                                                                |
-| -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1        | Complete export-resolution boundaries  | Namespace omission, default exclusion, external uncertainty, CommonJS cases, cyclic aliases, and source-located conflicting origins; preserve engine disagreements |
-| 2        | Define graph lifetime and invalidation | Edit a source; create a previously missing file; change package exports, tsconfig paths, and transform dependencies; compare a reused graph with a fresh graph     |
-| 3        | Retain dependency occurrences          | Distinguish static import, require, dynamic import, type-only, side-effect, asset, and configuration edges with original spans and resolution provenance           |
-| 4        | Make identity contextual               | Query/fragment, loader/plugin result, environment/layer, conditions, symlink policy, and import attributes; prove sharing and separation with counterexamples      |
-| 5        | Separate linking from execution        | Live bindings, initialization order, cycles, module errors, and async dependencies without evaluating application bodies natively                                  |
-| 6        | Optimize only measured queries         | Stable diagnostics and symbol results on deep chains, diamonds, cycles, and wide barrels; measure time, memory, and work counts without raising analysis budgets   |
-| 7        | Connect the graph to causal analysis   | Preserve why a source or callback matters, then verify scheduling and reachable effects separately from module or symbol reachability                              |
+| Priority | Work                                   | Acceptance evidence                                                                                                                                                        |
+| -------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | Complete export-resolution boundaries  | Extend the bounded namespace/default checks to external uncertainty, CommonJS cases, cyclic aliases, and source-located conflicting origins; preserve engine disagreements |
+| 2        | Define graph lifetime and invalidation | Edit a source; create a previously missing file; change package exports, tsconfig paths, and transform dependencies; compare a reused graph with a fresh graph             |
+| 3        | Retain dependency occurrences          | Distinguish static import, require, dynamic import, type-only, side-effect, asset, and configuration edges with original spans and resolution provenance                   |
+| 4        | Make identity contextual               | Query/fragment, loader/plugin result, environment/layer, conditions, symlink policy, and import attributes; prove sharing and separation with counterexamples              |
+| 5        | Separate linking from execution        | Live bindings, initialization order, cycles, module errors, and async dependencies without evaluating application bodies natively                                          |
+| 6        | Optimize only measured queries         | Stable diagnostics and symbol results on deep chains, diamonds, cycles, and wide barrels; measure time, memory, and work counts without raising analysis budgets           |
+| 7        | Connect the graph to causal analysis   | Preserve why a source or callback matters, then verify scheduling and reachable effects separately from module or symbol reachability                                      |
 
 Do not copy tree shaking into the analyzer as a blanket deletion rule. An apparently unused import can execute initialization effects. A callback reference is not evidence that it was invoked. An external module with unknown exports is not an empty module.
 
