@@ -1,4 +1,4 @@
-import type { Class, ClassElement, ParamPattern, PropertyKey } from "oxc-parser";
+import type { Class, ClassElement, ParamPattern } from "oxc-parser";
 import type {
   ClassBody,
   ClassFieldMember,
@@ -31,6 +31,7 @@ import {
   type StateCell,
 } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
+import { toPropertyKey } from "./primitive-shapes.js";
 import { providedContextValue } from "./react-calls.js";
 import { createScope } from "./scope.js";
 import {
@@ -56,43 +57,74 @@ import {
 
 const MAX_INHERITANCE_DEPTH = 8;
 
-const getElementName = (
-  element: ClassElement,
-  resolveComputedKey: (key: PropertyKey) => string | null,
-): string | null => {
+interface ClassMembersContinuation {
+  (members: ClassMember[], context: EvaluationContext): StaticValue;
+}
+
+const getElementName = (element: ClassElement): string | null => {
   if (element.type === "StaticBlock" || element.type === "TSIndexSignature") return null;
   const key = element.key;
-  if (element.computed) return resolveComputedKey(key);
   if (key.type === "Identifier") return key.name;
   if (key.type === "PrivateIdentifier") return `#${key.name}`;
   if (key.type === "Literal") return String(key.value);
   return null;
 };
 
-export const collectClassMembers = (
-  node: Class,
-  resolveComputedKey: (key: PropertyKey) => string | null,
-): ClassMember[] => {
-  const members: ClassMember[] = [];
-  for (const element of node.body.body) {
-    if (element.type === "StaticBlock") {
-      members.push({ kind: "static-block", isStatic: true, body: element.body });
-      continue;
-    }
-    const key = getElementName(element, resolveComputedKey);
-    if (key === null) continue;
-    if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
-      if (element.kind === "set" || element.value.body === null) continue;
-      const kind = element.kind === "get" ? "getter" : element.kind;
-      members.push({ key, isStatic: element.static, kind, functionNode: element.value });
-    } else if (
-      (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
-      !element.declare
-    ) {
-      members.push({ key, isStatic: element.static, kind: "field", value: element.value });
-    }
+const getClassMember = (element: ClassElement, key: string | null): ClassMember | null => {
+  if (key === null) return null;
+  if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
+    if (element.kind === "set" || element.value.body === null) return null;
+    const kind = element.kind === "get" ? "getter" : element.kind;
+    return { key, isStatic: element.static, kind, functionNode: element.value };
   }
-  return members;
+  if (
+    (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
+    !element.declare
+  ) {
+    return { key, isStatic: element.static, kind: "field", value: element.value };
+  }
+  return null;
+};
+
+export const evaluateClassMembers = (
+  interpreter: Interpreter,
+  node: Class,
+  context: EvaluationContext,
+  proceed: ClassMembersContinuation,
+): StaticValue => {
+  const collectFrom = (
+    start: number,
+    members: ClassMember[],
+    memberContext: EvaluationContext,
+  ): StaticValue => {
+    for (let index = start; index < node.body.body.length; index++) {
+      const element = node.body.body[index];
+      if (element.type === "StaticBlock") {
+        members.push({ kind: "static-block", isStatic: true, body: element.body });
+        continue;
+      }
+      if (element.type === "TSIndexSignature") continue;
+      let key: string | null;
+      if (element.computed && element.key.type !== "PrivateIdentifier") {
+        const evaluated = interpreter.evaluateExpression(element.key, memberContext);
+        if (evaluated.kind === "branch" || getThrowCertainty(evaluated) !== "never") {
+          return interpreter.continueValue(evaluated, memberContext, (value, keyContext) => {
+            const nextMembers = [...members];
+            const member = getClassMember(element, toPropertyKey(value));
+            if (member) nextMembers.push(member);
+            return collectFrom(index + 1, nextMembers, keyContext);
+          });
+        }
+        key = toPropertyKey(evaluated);
+      } else {
+        key = getElementName(element);
+      }
+      const member = getClassMember(element, key);
+      if (member) members.push(member);
+    }
+    return proceed(members, memberContext);
+  };
+  return collectFrom(0, [], context);
 };
 
 const hasPresentProperty = (object: StaticObjectValue, key: string): boolean =>

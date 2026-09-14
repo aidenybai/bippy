@@ -1200,11 +1200,43 @@ Serialized models match the strict-write checkpoint: 11 states, seven wildcards,
 
 Final gates pass 3,568 root tests with two existing skips and 1,522 analyzer tests across 93 files, plus typecheck/build, realms, lint, formatting, and documentation validation. Lint retains four unused-class-binding warnings in effectful declaration fixtures; removing those declarations would remove the tested evaluation. `class-heritage-reviewed-gates.json` verifies source hashes, baseline, 51 exact saved checks, two retained definition/invariant failures, fifteen other strict probes, models, controls, and unchanged 307-entry corpus bytes. Complete class/scope/descriptor/language/lifecycle semantics, causal modeling, renderer integration, and 500-repository acceptance remain open.
 
+### Computed class-key completion
+
+`40e61a98` committed heritage and comma completion. Class-member collection now evaluates computed key expressions through guarded continuations before defining the class. `evaluateClassMembers()` preserves finite key alternatives, completing contexts, and ordered member prefixes. A throwing key stops later keys, static work, and constructor-call arguments. Concrete key evaluation remains iterative. Existing unknown-key, getter/setter, coercion, and class-scope limits are not treated as repaired.
+
+Nine strict components cover the original key error, static work declared before a failing key, later keys and setter names, guarded failures, finite member names, repeated-key ordering, deferred instance fields, null/undefined payloads, and call boundaries. A 10,000-key direct control checks concrete sequencing without a budget increase. Baseline `/tmp/bippy-class-keys-baseline` at `40e61a98` fails seven and passes three controls; its test and nine fixtures match main by hash.
+
+The initial implementation imported `toPropertyKey` from `values.ts`, which does not export it. Typecheck reports `TS2305`; seven focused checks failed, including empty models. Those logs remain at `/tmp/bippy-class-keys-first{,-typecheck}.log`. The corrected import is from `primitive-shapes.ts`; the corrected focused run passes 29 checks, and only corrected artifacts validate this phase.
+
+The original computed-key snapshot now yields `caught:K`, repairing a four-step native mismatch that passed replay. All 51 earlier saved comparisons remain exact, for 52 total. Definition dispatch, frozen-target get invariants, and fourteen earlier strict probes remain unchanged failures on identical native snapshots. The five remaining class-definition probes still expose superclass/prototype validation, static-field/static-block completion, and eager static getter gaps.
+
+Static initialization needs more than an early return on error: class properties still live in an unjournaled map. New fixtures in the baseline's `tests/fixtures/class-key-limits/` preserve this and two other limits:
+
+| Case             | Source expectation                 | Model            |
+| ---------------- | ---------------------------------- | ---------------- |
+| `coercion`       | `caught:C`                         | `returned:S`     |
+| `tdz`            | `caught:`                          | `returned:S`     |
+| `static-capture` | `caught:missing`, `returned:ready` | `returned:ready` |
+| `properties`     | `missing:false`, `ready:true`      | `ready:true`     |
+
+The first three native captures mismatch in four steps. Four unforced property-mutation captures produce two four-step mismatches and two exact memberships; all four still fail the raw expectation. All seven have no omissions/exhaustion and passing replay. `class-keys-limit-*-comparison.json` preserves source/production hashes, raw models, and native snapshots. Effectful key coercion and class-name temporal dead zones remain unmodeled; guarded class writes lose absent paths. These are not passing tests or corpus additions.
+
+The ECMAScript class-element/field-definition algorithms and the pinned React class-construction source informed the change. The member evaluator runs keys before field initializers; it does not invoke application bodies natively during analysis.
+
+Final source-only models in `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-class-keys-reviewed-home-model.json`: SHA-256 `713b95523771a6dda94f30eb0cf99027daadffd4739d8cae1a1cb662e67f65f4`
+- `source-only-class-keys-reviewed-memory-model.json`: SHA-256 `5d90f5e2696982800b0414eae2678ca560fb385022bf93ee8a8a7b7bdc66fa64`
+
+Serialized models match the heritage checkpoint: 11 states, seven wildcards, one subtree omission. All 53 saved workflow snapshots remain partial; ten repeated corpus-control rows are unchanged on identical captures. No app workflow traces, observations, forced inputs, budgets, or repositories were added.
+
+Final gates pass 3,587 root tests with two existing skips and 1,541 analyzer tests across 94 files, plus typecheck/build, realms, lint, formatting, and documentation validation. Lint retains six unused-class-binding warnings in effectful declaration fixtures. `class-keys-reviewed-gates.json` verifies source hashes, baseline, 52 exact saved checks, two retained definition/invariant failures, twenty-one other strict probes, models, controls, and unchanged 307-entry corpus bytes. Complete class/scope/descriptor/language/lifecycle semantics, causal modeling, renderer integration, and 500-repository acceptance remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,568 tests**, with two existing React-19 DevTools skips; this includes **1,522 analyzer tests / 93 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,587 tests**, with two existing React-19 DevTools skips; this includes **1,541 analyzer tests / 94 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
