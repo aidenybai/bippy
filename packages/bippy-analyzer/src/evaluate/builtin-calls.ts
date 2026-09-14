@@ -1163,6 +1163,28 @@ const callGlobal = (
         ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
         : mapped;
     }
+    case "Object.hasOwn":
+      return mapValue(first ?? UNDEFINED_VALUE, (target) => {
+        if (target.kind === "primitive") {
+          if (target.value === null || target.value === undefined) {
+            return thrownValue(
+              "Object.hasOwn on a nullish target",
+              createErrorValue(
+                "TypeError",
+                [primitiveValue("Cannot convert undefined or null to object")],
+                location,
+              ),
+              location,
+            );
+          }
+          const key = toPropertyKey(second ?? UNDEFINED_VALUE);
+          if (key !== null) return primitiveValue(Object.hasOwn(Object(target.value), key));
+        }
+        return (
+          hasOwnProperty(target, second ?? UNDEFINED_VALUE, "hasOwnProperty") ??
+          unknownPrimitiveValue("boolean", "Object.hasOwn of a partially known target")
+        );
+      });
     case "Object.keys":
     case "Object.values":
     case "Object.entries": {

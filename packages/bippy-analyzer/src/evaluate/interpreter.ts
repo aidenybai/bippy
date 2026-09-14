@@ -1369,6 +1369,10 @@ export class Interpreter {
     if (module.isCommonJs && module.moduleExports === null) {
       return this.evaluateModuleExport(module, key, environment);
     }
+    if (!module.isCommonJs) {
+      const resolved = this.graph.resolveExport(module, key);
+      if (resolved.kind === "unresolved" && resolved.isAmbiguous) return UNDEFINED_VALUE;
+    }
     const { names, complete } = this.graph.collectExportNames(module);
     return complete && !names.includes(key)
       ? UNDEFINED_VALUE
@@ -1387,7 +1391,14 @@ export class Interpreter {
     if (!complete) {
       return unknownValue(`namespace of ${module.filePath} re-exports an unanalyzed module`);
     }
-    const orderedNames = module.isCommonJs ? names : [...names].sort();
+    const orderedNames = module.isCommonJs
+      ? names
+      : names
+          .filter((name) => {
+            const resolved = this.graph.resolveExport(module, name);
+            return resolved.kind !== "unresolved" || !resolved.isAmbiguous;
+          })
+          .sort();
     return objectValue(
       orderedNames.map((name) => ({
         kind: "property",

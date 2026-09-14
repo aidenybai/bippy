@@ -15,6 +15,6 @@ export const checkConcreteComponentStates = async (
   expect(model.omitted).toBeNull();
   const sequences = model.states.map((state) => getConcretePatternText(state.tree).join(separator));
   expect([...new Set(sequences)].sort()).toEqual(expected);
-  expect(result.comparison.report.status).toBe("exact");
+  expect(result.comparison.report.status, JSON.stringify(result.comparison.report)).toBe("exact");
   expect(result.comparison.stateReplay?.mismatched).toEqual([]);
 };
