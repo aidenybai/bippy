@@ -67,6 +67,7 @@ export const createFunctionComponentDefinition = (
   scope: value.scope,
   classBody: null,
   properties: value.properties,
+  hasPrototype: value.hasPrototype,
   boundArgs: value.boundArgs,
   boundThis: value.boundThis,
   isClientReference: value.isClientReference ?? false,
@@ -136,7 +137,9 @@ export const toElementType = (value: StaticValue, nameHint: string | null): Stat
         reason: `element type is ${String(value.value)}`,
       };
     case "function": {
-      const prototype = value.boundArgs ? undefined : value.properties.get("prototype");
+      const prototype = value.boundArgs
+        ? undefined
+        : getObjectProperty(value.properties, "prototype");
       const isConstructed =
         prototype?.kind === "object"
           ? getTruthiness(getObjectProperty(prototype, "isReactComponent"))

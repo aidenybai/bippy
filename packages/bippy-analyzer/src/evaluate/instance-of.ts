@@ -172,7 +172,7 @@ const isInstanceOfClass = (left: StaticValue, classValue: StaticClassValue): boo
 const isInstanceOfFunction = (left: StaticValue, fn: StaticFunctionValue): boolean | null => {
   if (isPrimitiveLike(left)) return false;
   if (left.kind !== "object") return getPrototypeWitness(left) === null ? null : false;
-  const prototype = fn.properties.get("prototype");
+  const prototype = getObjectProperty(fn.properties, "prototype");
   let current = left;
   while (current.prototype) {
     if (current.prototype === prototype) return true;

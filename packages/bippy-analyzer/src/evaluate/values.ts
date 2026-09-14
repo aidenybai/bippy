@@ -466,13 +466,14 @@ const getSpreadProperty = (
   }
 };
 
-/** `fn.prototype` of a constructor function, created on first access like engines do. */
+/** Own prototype storage for function values that have it. */
 export const getFunctionPrototype = (fn: StaticFunctionValue): StaticValue => {
-  if (fn.node.type === "ArrowFunctionExpression") return UNDEFINED_VALUE;
-  const existing = fn.properties.get("prototype");
-  if (existing) return existing;
+  if (fn.hasPrototype === false || fn.node.type === "ArrowFunctionExpression")
+    return UNDEFINED_VALUE;
+  if (hasOwnKey(fn.properties, "prototype") !== false)
+    return getObjectProperty(fn.properties, "prototype");
   const prototype = objectFromRecord({ constructor: fn });
-  fn.properties.set("prototype", prototype);
+  setObjectProperty(fn.properties, "prototype", prototype);
   return prototype;
 };
 
@@ -507,7 +508,7 @@ export const getPropertyName = (key: StaticValue): string | null => {
 };
 
 /** Own keys in definition order mapped to their enumerability (the last definition of a key decides); null when a spread source is not fully known. */
-const getKnownOwnKeys = (
+export const getKnownOwnKeys = (
   object: StaticObjectValue,
   isIncluded: (key: string) => boolean,
   requiresFixedPresence = true,
@@ -1067,7 +1068,7 @@ const getElementTypeIdentity = (type: StaticElementType): object | null => {
   }
 };
 
-/** Element types share their statics map with the value they were created from. */
+/** Element types share their statics with the value they were created from. */
 const getComponentIdentity = (value: StaticValue): object | null => {
   if (value.kind === "function") return value.boundThis ? null : value.properties;
   if (value.kind === "class") return value.properties;

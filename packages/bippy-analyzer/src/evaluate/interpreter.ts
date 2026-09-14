@@ -330,6 +330,9 @@ import {
   getKnownObjectOwnNames,
   getObjectAccessor,
   getObjectProperty,
+  getOwnPropertyPresence,
+  getKnownOwnKeys,
+  setObjectProperty,
   getPreferredTruthiness,
   getStubDisplayName,
   getStubOwnDisplayName,
@@ -795,11 +798,22 @@ const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean 
   next.kind === "primitive" &&
   typeof previous.value === typeof next.value;
 
-const hasSameProperties = (
-  previous: Map<string, StaticValue>,
-  next: Map<string, StaticValue>,
-): boolean =>
-  previous.size === next.size && [...previous].every(([key, value]) => next.get(key) === value);
+const hasSameProperties = (previous: StaticObjectValue, next: StaticObjectValue): boolean => {
+  const previousKeys = getKnownOwnKeys(previous, () => true);
+  const nextKeys = getKnownOwnKeys(next, () => true);
+  if (!previousKeys || !nextKeys)
+    return (
+      previous.entries.length === next.entries.length &&
+      previous.entries.every((entry, index) => entry === next.entries[index])
+    );
+  return (
+    previousKeys.size === nextKeys.size &&
+    [...previousKeys.keys()].every(
+      (key) =>
+        nextKeys.has(key) && getObjectProperty(previous, key) === getObjectProperty(next, key),
+    )
+  );
+};
 
 /**
  * A recursive call whose arguments and receiver are equivalent to those of an
@@ -1317,8 +1331,8 @@ export class Interpreter {
     );
     if (value.kind === "function" || value.kind === "class") {
       for (const name of module.moduleExportsMembers) {
-        if (!value.properties.has(name)) {
-          value.properties.set(name, this.evaluateModuleExport(module, name));
+        if (getTruthiness(getOwnPropertyPresence(value.properties, name)) === false) {
+          this.assignOwnProperty(value.properties, name, this.evaluateModuleExport(module, name));
         }
       }
     }
@@ -1835,7 +1849,7 @@ export class Interpreter {
       case "class":
         this.mutations.record(0);
         if (target.kind === "function") this.escapeWalk.memo.invalidate(target, propertyName);
-        target.properties.set(propertyName, value);
+        this.assignOwnProperty(target.properties, propertyName, value);
         return target;
       case "react-api":
         this.setReactApiProperty(target.api, propertyName, value, context);
@@ -1908,7 +1922,7 @@ export class Interpreter {
         const type = target.type;
         if (type.kind === "function" || type.kind === "class") {
           this.mutations.record(0);
-          type.component.properties.set(propertyName, value);
+          this.assignOwnProperty(type.component.properties, propertyName, value);
           return target;
         }
         const displayName =
@@ -2016,10 +2030,11 @@ export class Interpreter {
     node: FunctionLikeNode,
     context: EvaluationContext,
     nameHint: string | null,
+    isMethod = false,
   ): StaticValue {
     const explicitName =
       node.type === "ArrowFunctionExpression" ? null : this.getDeclaredName(node, context.module);
-    return {
+    const value: StaticFunctionValue = {
       kind: "function",
       node,
       scope: context.scope,
@@ -2027,8 +2042,12 @@ export class Interpreter {
       thisValue: node.type === "ArrowFunctionExpression" ? context.thisValue : null,
       superBinding: node.type === "ArrowFunctionExpression" ? context.superBinding : null,
       name: explicitName ?? nameHint,
-      properties: new Map(),
+      properties: objectValue(),
+      hasPrototype:
+        node.type !== "ArrowFunctionExpression" && (node.generator || (!node.async && !isMethod)),
     };
+    getFunctionPrototype(value);
+    return value;
   }
 
   private getDeclaredName(node: FunctionNode | Class, module: ModuleRecord): string | null {
@@ -2088,10 +2107,9 @@ export class Interpreter {
   }
 
   /**
-   * Materializes a class as `ClassDefinitionEvaluation` does: the class name is
-   * bound in a scope of its own before any element runs, the methods are defined
-   * first, and the static fields and `static {}` blocks then run in source order
-   * with `this` bound to the class. Static getters are read once, after that.
+   * Binds the class name and defines methods and the prototype before static
+   * fields and blocks run in source order with `this` bound to the class.
+   * Static getters are read once afterward.
    */
   defineClass(
     node: Class | FunctionLikeNode,
@@ -2109,7 +2127,10 @@ export class Interpreter {
       scope,
       module: context.module,
       name,
-      properties: new Map(),
+      properties: {
+        ...objectValue(),
+        prototype: body.superValue?.kind === "class" ? body.superValue.properties : undefined,
+      },
     };
     if (classId) declareInScope(scope, classId.name, classValue);
     const staticContext: EvaluationContext = { ...context, scope, thisValue: classValue };
@@ -2120,6 +2141,7 @@ export class Interpreter {
         member.functionNode,
         staticContext,
         member.key,
+        true,
       );
       if (functionValue.kind !== "function") continue;
       const method: StaticFunctionValue = {
@@ -2128,12 +2150,14 @@ export class Interpreter {
         superBinding: { construct: null, parent: body.superValue },
       };
       if (member.kind === "getter") staticGetters.set(member.key, method);
-      else classValue.properties.set(member.key, method);
+      else this.assignOwnProperty(classValue.properties, member.key, method);
     }
+    getClassPrototypeObject(this, classValue, staticContext);
     for (const member of body.members) {
       if (!member.isStatic) continue;
       if (member.kind === "field") {
-        classValue.properties.set(
+        this.assignOwnProperty(
+          classValue.properties,
           member.key,
           member.value
             ? this.evaluateExpression(member.value, staticContext, member.key)
@@ -2144,7 +2168,8 @@ export class Interpreter {
       }
     }
     for (const [key, getter] of staticGetters) {
-      classValue.properties.set(
+      this.assignOwnProperty(
+        classValue.properties,
         key,
         this.callFunction(getter, [], staticContext, { thisValue: classValue }),
       );
@@ -2813,15 +2838,20 @@ export class Interpreter {
         });
         continue;
       }
+      const value =
+        property.value.type === "FunctionExpression" &&
+        (property.method || property.kind !== "init")
+          ? this.createFunctionValue(property.value, context, key, true)
+          : this.evaluateExpression(property.value, context, key);
       if (property.kind !== "init") {
         const accessor = this.getAccessorEntry(entries, key, context, property);
-        accessor[property.kind] = this.evaluateExpression(property.value, context, key);
+        accessor[property.kind] = value;
         continue;
       }
       entries.push({
         kind: "property",
         key,
-        value: this.evaluateExpression(property.value, context, key),
+        value,
       });
     }
     const object = objectValue(entries);
@@ -3230,6 +3260,14 @@ export class Interpreter {
       case "native-object":
         if (name !== null) deleteNativeObjectMember(target, name);
         else if (key.kind === "unknown-primitive") deleteNativeObjectComposedMember(target, key);
+        return;
+      case "function":
+      case "class":
+        this.deleteProperty(target.properties, key, context);
+        return;
+      case "component-reference":
+        if (target.type.kind === "function" || target.type.kind === "class")
+          this.deleteProperty(target.type.component.properties, key, context);
         return;
       case "object":
         if (target.isFrozen) return;
@@ -4136,7 +4174,11 @@ export class Interpreter {
       case "function":
       case "class": {
         const property =
-          object.kind === "class" ? getStaticProperty(object, key) : object.properties.get(key);
+          object.kind === "class"
+            ? getStaticProperty(object, key)
+            : getTruthiness(getOwnPropertyPresence(object.properties, key)) === false
+              ? null
+              : getObjectProperty(object.properties, key);
         if (property) return property;
         if (isCallableProtocolKey(key)) return { kind: "method", receiver: object, name: key };
         if (object.kind === "class") {
@@ -5061,7 +5103,10 @@ export class Interpreter {
           changeCount: this.mutations.changeCount,
           allocation: getAllocationCount(),
           forkDepth: context.forkDepth,
-          properties: new Map(functionValue.properties),
+          properties: {
+            ...functionValue.properties,
+            entries: [...functionValue.properties.entries],
+          },
         },
       ],
       uncertainDepth: context.uncertainDepth,
@@ -6685,12 +6730,16 @@ const isNumberValue = (value: StaticValue): boolean =>
 
 /** React's dev `displayName` setter on `memo`/`forwardRef` also names an anonymous inner function. */
 const nameAnonymousInner = (
-  inner: { name: string | null; properties: Map<string, StaticValue> },
+  inner: { name: string | null; properties: StaticObjectValue },
   displayName: string,
 ): void => {
-  if (inner.name || inner.properties.has("displayName")) return;
+  if (
+    inner.name ||
+    getTruthiness(getOwnPropertyPresence(inner.properties, "displayName")) !== false
+  )
+    return;
   inner.name = displayName;
-  inner.properties.set("displayName", primitiveValue(displayName));
+  setObjectProperty(inner.properties, "displayName", primitiveValue(displayName));
 };
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);

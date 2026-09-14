@@ -562,7 +562,7 @@ const defineOwnProperty = (
           target.name = value.value;
         return;
       }
-      target.properties.set(key, value);
+      interpreter.assignOwnProperty(target.properties, key, value);
       return;
     case "react-api":
       interpreter.setReactApiProperty(target.api, key, value, context);
@@ -624,10 +624,12 @@ const getIntrinsicPrototypeObject = (globalName: string): StaticObjectValue | nu
 };
 
 /** `Object.getOwnPropertyNames(fn)`: the intrinsic names, then the names the analyzed code assigned. */
-const getFunctionOwnNames = (callable: StaticFunctionValue): string[] => {
+const getFunctionOwnNames = (callable: StaticFunctionValue): string[] | null => {
+  const ownKeys = getKnownObjectOwnNames(callable.properties);
+  if (!ownKeys) return null;
   const names = ["length", "name"];
   if (isIntrinsicFunctionKey(callable, "prototype")) names.push("prototype");
-  for (const key of callable.properties.keys()) {
+  for (const key of ownKeys) {
     if (!names.includes(key) && !isSymbolPropertyKey(key)) names.push(key);
   }
   return names;
@@ -640,7 +642,9 @@ const getFunctionOwnPropertyDescriptor = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue => {
-  if (!getFunctionOwnNames(callable).includes(key)) return UNDEFINED_VALUE;
+  const ownNames = getFunctionOwnNames(callable);
+  if (!ownNames) return unknownValue(`descriptor of a partially known function`, location);
+  if (!ownNames.includes(key)) return UNDEFINED_VALUE;
   const isIntrinsic = isIntrinsicFunctionKey(callable, key);
   return objectFromRecord({
     value: interpreter.getProperty(callable, key, context, location),
@@ -657,8 +661,10 @@ const getOwnPropertyDescriptors = (
   location: SourceLocation | null,
 ): StaticValue => {
   if (target.kind === "function") {
+    const names = getFunctionOwnNames(target);
+    if (!names) return unknownValue(`descriptors of a partially known function`, location);
     return objectValue(
-      getFunctionOwnNames(target).map((key) => ({
+      names.map((key) => ({
         kind: "property",
         key,
         value: getFunctionOwnPropertyDescriptor(interpreter, target, key, context, location),
@@ -739,7 +745,13 @@ const hasOwnProperty = (
       : unknownPrimitiveValue("boolean", `${name} of a partially known target`);
   }
   if (receiver.kind === "function" || receiver.kind === "class") {
-    if (receiver.properties.has(propertyName)) {
+    if (
+      isIntrinsicFunctionKey(receiver, propertyName) &&
+      (name === "hasOwnProperty" || propertyName === "prototype")
+    )
+      return primitiveValue(name === "hasOwnProperty");
+    const presence = getOwnPropertyPresence(receiver.properties, propertyName);
+    if (getTruthiness(presence) !== false) {
       const isClassMember =
         receiver.kind === "class" &&
         receiver.body.members.some(
@@ -749,11 +761,9 @@ const hasOwnProperty = (
             member.kind !== "static-block" &&
             member.key === propertyName,
         );
-      return primitiveValue(name === "hasOwnProperty" || !isClassMember);
+      return name === "hasOwnProperty" || !isClassMember ? presence : FALSE_VALUE;
     }
-    return primitiveValue(
-      name === "hasOwnProperty" && isIntrinsicFunctionKey(receiver, propertyName),
-    );
+    return FALSE_VALUE;
   }
   if (receiver.kind === "global") {
     const languageObject = getLanguageObject(receiver.name);
@@ -1235,11 +1245,10 @@ const callGlobal = (
     case "Object.getOwnPropertySymbols":
     case "Reflect.ownKeys": {
       if (first?.kind === "function") {
-        return listValue(
-          name === "Object.getOwnPropertySymbols"
-            ? []
-            : getFunctionOwnNames(first).map((key) => primitiveValue(key)),
-        );
+        const names = name === "Object.getOwnPropertySymbols" ? [] : getFunctionOwnNames(first);
+        return names
+          ? listValue(names.map((key) => primitiveValue(key)))
+          : unknownValue(`${name} on a partially known function`, location);
       }
       if (first?.kind !== "object" && first?.kind !== "list")
         return unknownValue(`${name} on a dynamic target`, location);
@@ -2411,12 +2420,18 @@ export const evaluateBuiltinCall = (
     if (sourceText !== null) return sourceText;
   }
 
+  if ((name === "hasOwnProperty" || name === "propertyIsEnumerable") && first !== undefined) {
+    const ownProperty = hasOwnProperty(receiver, first, name);
+    if (ownProperty) return ownProperty;
+  }
+
   if (receiver.kind === "function") {
     if (name === "bind") {
       return {
         ...receiver,
         name: `bound ${receiver.name ?? ""}`,
-        properties: new Map(),
+        properties: objectValue(),
+        hasPrototype: false,
         boundThis: receiver.boundThis ?? first ?? UNDEFINED_VALUE,
         boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
       };
@@ -2436,10 +2451,6 @@ export const evaluateBuiltinCall = (
     return unknownValue(`function.${name}()`, location);
   }
 
-  if ((name === "hasOwnProperty" || name === "propertyIsEnumerable") && first !== undefined) {
-    const ownProperty = hasOwnProperty(receiver, first, name);
-    if (ownProperty) return ownProperty;
-  }
   if (name === "isPrototypeOf" && first !== undefined) {
     const isOnChain = isPrototypeOf(receiver, first);
     if (isOnChain !== null) return primitiveValue(isOnChain);

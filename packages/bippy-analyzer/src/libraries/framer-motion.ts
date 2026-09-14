@@ -191,7 +191,7 @@ const describeWrapped = (type: StaticElementType): string => {
       return type.tagName;
     case "function":
     case "class": {
-      const displayName = type.component.properties.get("displayName");
+      const displayName = getObjectProperty(type.component.properties, "displayName");
       if (displayName?.kind === "primitive" && typeof displayName.value === "string")
         return displayName.value;
       return type.component.name ?? "";

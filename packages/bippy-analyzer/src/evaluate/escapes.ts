@@ -18,7 +18,7 @@ import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
 import { isUserDrivenEventHandlerProp } from "./event-listeners.js";
 import { findOwningScope } from "./scope.js";
-import { getObjectProperty, primitiveValue } from "./values.js";
+import { getObjectProperty, hasOwnKey, primitiveValue } from "./values.js";
 
 /** `context[key]`: a member read whose key is the string another path names. */
 interface ComputedAccess {
@@ -512,7 +512,9 @@ const getMemberValues = (
       case "function": {
         record(value, key);
         const property =
-          value.kind === "object" ? getObjectProperty(value, key) : value.properties.get(key);
+          value.kind === "function" && hasOwnKey(value.properties, key) === false
+            ? null
+            : getObjectProperty(value.kind === "object" ? value : value.properties, key);
         return property
           ? [
               callMemo && property.kind === "function"
