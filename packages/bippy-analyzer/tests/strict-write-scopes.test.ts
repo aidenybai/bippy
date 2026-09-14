@@ -42,6 +42,11 @@ it.each([
     expected: "TypeError",
   },
   {
+    name: "class heritage",
+    source: `${TARGET} module.exports.run = () => { try { class Writer extends (target.value = "new", Object) {} return "returned"; } ${CATCH} };`,
+    expected: "TypeError",
+  },
+  {
     name: "block string is not a directive",
     source: `${TARGET} module.exports.run = () => { if (true) { "use strict"; ${WRITE} } };`,
     expected: "old",
