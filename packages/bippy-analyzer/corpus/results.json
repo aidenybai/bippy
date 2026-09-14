@@ -313237,6 +313237,1796 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T14:37:24.747Z",
       "failure": null
+    },
+    {
+      "id": "scdjango-todo-list-react",
+      "revision": "0c9c61bce9e095320a9fbaf5283aee9cd5c062e2",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:52:19.382Z",
+      "durationMs": 444,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 36,
+        "commits": 2,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 404 ()"
+        ],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 11,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 9,
+          "unknownCount": 0,
+          "modulesLoaded": 19
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 1,
+        "matchedText": 0,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 34,
+        "slotsMatched": 2,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <Provider> (opaque) > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 28,
+            "divergence": {
+              "path": "root > <Provider> (opaque) > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 35,
+        "staticFibers": 10,
+        "coverage": 1,
+        "strictCoverage": 0.02857142857142857,
+        "divergence": null,
+        "stepsUsed": 986,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 10,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 9,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:52:16.620Z",
+      "failure": null
+    },
+    {
+      "id": "buluthamali-labtasker-frontend",
+      "revision": "4280fe5253b85f90e82f5144ec26d59b3d056f22",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:52:19.399Z",
+      "durationMs": 462,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 78,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 25,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 11,
+          "unknownCount": 0,
+          "modulesLoaded": 15
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 13,
+        "matchedText": 0,
+        "opaqueSubtrees": 5,
+        "opaqueSkippedFibers": 64,
+        "slotsMatched": 3,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> (opaque) > <TooltipProvider> (opaque) > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 53,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <BrowserRouter> (opaque) > <AuthProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <QueryClientProvider> (opaque) > <TooltipProvider> (opaque) > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 77,
+        "staticFibers": 24,
+        "coverage": 1,
+        "strictCoverage": 0.16883116883116883,
+        "divergence": null,
+        "stepsUsed": 909,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 24,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 11,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:52:16.679Z",
+      "failure": null
+    },
+    {
+      "id": "orodrigogo-pomodoro-react-extension",
+      "revision": "569ca9c73519c4230a5ecb38d70847be76a24554",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:52:30.669Z",
+      "durationMs": 354,
+      "runtime": {
+        "reactVersion": "19.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 25,
+        "commits": 2,
+        "pageErrors": [
+          "Erro ao carregar configurações: ReferenceError: chrome is not defined\n    at getConfig (http://127.0.0.1:54843/src/utils/configManager.ts:7:20)\n    at loadConfig (http://127.0.0.1:54843/src/hooks/usePomodoro.ts:11:34)\n    at http://127.0.0.1:54843/src/hooks/usePomodoro.ts:16:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:18565:20)\n    at runWithFiberInDEV (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:995:72)\n    at commitHookEffectListMount (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:9409:163)\n    at commitHookPassiveMountEffects (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:9463:60)\n    at commitPassiveMountOnFiber (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:11038:29)\n    at recursivelyTraversePassiveMountEffects (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:11008:13)\n    at commitPassiveMountOnFiber (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:11199:13)",
+          "Erro ao carregar configurações: ReferenceError: chrome is not defined\n    at getConfig (http://127.0.0.1:54843/src/utils/configManager.ts:7:20)\n    at loadConfig (http://127.0.0.1:54843/src/hooks/usePomodoro.ts:11:34)\n    at http://127.0.0.1:54843/src/hooks/usePomodoro.ts:16:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:18565:20)\n    at runWithFiberInDEV (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:995:72)\n    at commitHookEffectListMount (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:9409:163)\n    at commitHookPassiveMountEffects (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:9463:60)\n    at reconnectPassiveEffects (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:11271:13)\n    at recursivelyTraverseReconnectPassiveEffects (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:11238:11)\n    at reconnectPassiveEffects (http://127.0.0.1:54843/node_modules/.vite/deps/react-dom_client.js?v=aa0070bf:11315:13)"
+        ],
+        "title": "Pomodoro"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 8,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 4,
+          "unknownCount": 0,
+          "modulesLoaded": 12
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 3,
+        "matchedText": 0,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 21,
+        "slotsMatched": 1,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <AppRoutes> [FunctionComponent] > <HashRouter> (opaque) > <Routes> (opaque)",
+            "reason": "Routes from react-router is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 17,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <AppRoutes> [FunctionComponent] > <HashRouter> (opaque) > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 24,
+        "staticFibers": 7,
+        "coverage": 1,
+        "strictCoverage": 0.125,
+        "divergence": null,
+        "stepsUsed": 203,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 7,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 4,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:52:28.274Z",
+      "failure": null
+    },
+    {
+      "id": "krutie-quiz-machine-react-vite-ts",
+      "revision": "0ba9879f77cc826ba25f77210b8f4a939cc6fda1",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:52:30.742Z",
+      "durationMs": 560,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 50,
+        "commits": 1,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 402 ()"
+        ],
+        "title": "Vite App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 182,
+          "textCount": 8,
+          "branchCount": 6,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 3,
+          "modulesLoaded": 19
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 43,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 5,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 49,
+        "staticFibers": 83,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 59,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 240,
+        "stateCount": 240,
+        "clusters": 5,
+        "tree": {
+          "nodes": 162,
+          "inputs": 8,
+          "guards": 18,
+          "branches": 6,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 3
+        },
+        "matchedState": {
+          "index": 23,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "truthy(#8)",
+              "reason": "&& on <boolean: negation of unknown>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "&& on @xstate/react#useMachine().0.matches()",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "&& on @xstate/react#useMachine().0.matches()",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 5
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+              "side": 0,
+              "guard": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+              "side": 1,
+              "guard": "and(eq(#1, 1), eq(choice(#2), 1))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+              "side": 2,
+              "guard": "and(eq(#1, 1), eq(choice(#2), 2))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+              "side": 3,
+              "guard": "and(eq(#1, 1), eq(choice(#2), 3))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+              "side": 4,
+              "guard": "and(eq(#1, 1), eq(choice(#2), 4))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "&& on @xstate/react#useMachine().0.matches()",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+              "side": 0,
+              "guard": "truthy(#3)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#3)",
+              "reason": "&& on @xstate/react#useMachine().0.matches()",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+              "side": 1,
+              "guard": "not(truthy(#3))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "&& on @xstate/react#useMachine().0.matches()",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+              "side": 0,
+              "guard": "truthy(#4)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4)",
+              "reason": "&& on @xstate/react#useMachine().0.matches()",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+              "side": 1,
+              "guard": "not(truthy(#4))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+              "side": 0,
+              "guard": "and(not(truthy(#5)), not(truthy(#6)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+              "side": 0,
+              "guard": "eq(choice(#7), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+              "side": 1,
+              "guard": "eq(choice(#7), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+              "side": 2,
+              "guard": "eq(choice(#7), 2)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+              "side": 3,
+              "guard": "eq(choice(#7), 3)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#7)",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+              "side": 4,
+              "guard": "not(or(eq(choice(#7), 0), eq(choice(#7), 1), eq(choice(#7), 2), eq(choice(#7), 3)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+              "reason": "&& on branch(<boolean> | false)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+              "side": 1,
+              "guard": "not(and(not(truthy(#5)), not(truthy(#6))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#8)",
+              "reason": "&& on <boolean: negation of unknown>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+              "side": 0,
+              "guard": "truthy(#8)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#8)",
+              "reason": "&& on <boolean: negation of unknown>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+              "side": 1,
+              "guard": "not(truthy(#8))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 5,
+          "possible": 13,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 240,
+        "assignments": 240,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              23
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              32
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 4,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              48
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              64
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              80
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 4,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              96
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 0,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              112
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              127
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              143
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 2,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              159
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 1,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              175
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              191
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              207
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 4,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 1,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              223
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 4,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#7)",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Hooks/useQuiz.ts:23:27",
+                "alternativeIndex": 3,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              239
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(#1, 1), eq(choice(#2), 0)), and(eq(#1, 1), eq(choice(#2), 5)), not(eq(#1, 1))) | and(eq(#1, 1), eq(choice(#2), 1)) | and(eq(#1, 1), eq(choice(#2), 2)) | and(eq(#1, 1), eq(choice(#2), 3)) | and(eq(#1, 1), eq(choice(#2), 4))",
+                "reason": "conditional on <boolean: === on dynamic values>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Feedback/index.tsx:30:10",
+                "alternativeIndex": 4,
+                "alternativeCount": 5
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:13:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4)",
+                "reason": "&& on @xstate/react#useMachine().0.matches()",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Instructions.tsx:18:9",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#5)), not(truthy(#6)))",
+                "reason": "&& on branch(<boolean> | false)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/App.tsx:44:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8)",
+                "reason": "&& on <boolean: negation of unknown>",
+                "location": "/private/tmp/bippy-parser-ui-expansion-seven/krutie-quiz-machine-react-vite-ts/src/Components/Action.tsx:17:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:52:27.915Z",
+      "failure": null
+    },
+    {
+      "id": "ayokanmi-adejola-frontend-quiz",
+      "revision": "9037a812654f63892ae07bf1ee13613265953def",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:52:41.980Z",
+      "durationMs": 514,
+      "runtime": {
+        "reactVersion": "19.2.5",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 185,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Frontend Quiz"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 61,
+          "textCount": 7,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 43,
+          "unknownCount": 0,
+          "modulesLoaded": 12
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 10,
+        "matchedText": 0,
+        "opaqueSubtrees": 43,
+        "opaqueSkippedFibers": 174,
+        "slotsMatched": 26,
+        "slotsUnmatched": 7,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"Accessibility\"",
+              "actual": "<chakra(h2)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"JavaScript\"",
+              "actual": "<chakra(h2)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"CSS\"",
+              "actual": "<chakra(h2)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Stack> (opaque) > <Flex> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"HTML\"",
+              "actual": "<chakra(h2)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Box> (opaque) > <Text> (opaque)",
+            "reason": "Text from @chakra-ui/react is not analyzed",
+            "head": "<Text> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Box> (opaque) > <Text> (opaque)[0]",
+              "expected": "\"Pick a subject to get started.\"",
+              "actual": "<chakra(p)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Box> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Box> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"Frontend Quiz!\"",
+              "actual": "<chakra(h2)> [ForwardRef]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Box> (opaque) > <Heading> (opaque)",
+            "reason": "Heading from @chakra-ui/react is not analyzed",
+            "head": "<Heading> [ForwardRef]",
+            "skippedFibers": 4,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Provider> [FunctionComponent] > <ChakraProvider> (opaque) > <ThemeProvider> (opaque) > <QuizApp> [FunctionComponent] > <Box> (opaque) > <Container> (opaque) > <Flex> (opaque) > <Box> (opaque) > <HomePage> [FunctionComponent] > <Flex> (opaque) > <Box> (opaque) > <Heading> (opaque)[0]",
+              "expected": "\"Welcome to the\"",
+              "actual": "<chakra(h2)> [ForwardRef]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 184,
+        "staticFibers": 60,
+        "coverage": 1,
+        "strictCoverage": 0.05434782608695652,
+        "divergence": null,
+        "stepsUsed": 168446,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 60,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 43,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:52:39.266Z",
+      "failure": null
+    },
+    {
+      "id": "m0hc3n-memory-game-front-end",
+      "revision": "41b96c07809b38d7cd56f606b1b3acfe69e26925",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:52:42.193Z",
+      "durationMs": 575,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 18,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 9,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 5,
+          "unknownCount": 0,
+          "modulesLoaded": 9
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 2,
+        "matchedText": 0,
+        "opaqueSubtrees": 2,
+        "opaqueSkippedFibers": 15,
+        "slotsMatched": 1,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <index> [FunctionComponent] > <BrowserRouter> (opaque) > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 11,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <index> [FunctionComponent] > <BrowserRouter> (opaque) > <Routes> (opaque)[1]",
+              "expected": "\"            \"",
+              "actual": "<end of children>"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 17,
+        "staticFibers": 8,
+        "coverage": 1,
+        "strictCoverage": 0.11764705882352941,
+        "divergence": null,
+        "stepsUsed": 124,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 8,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 5,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:52:39.351Z",
+      "failure": null
     }
   ]
 }
