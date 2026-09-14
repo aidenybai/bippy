@@ -280,12 +280,14 @@ Declared class methods are no longer implicitly bound. Member calls supply a rec
 
 React’s calls to `getDerivedStateFromProps` and `getDerivedStateFromError` now supply an undefined receiver, matching its extracted calls. Explicitly bound callbacks and static arrows retain their receivers. These checks do not establish complete class lifecycle or StrictMode behavior.
 
+[Nullish property tests](../packages/bippy-analyzer/tests/nullish-properties.test.ts) preserve read and write failures for concrete `null` and `undefined` receivers. Computed-key expressions still run first. Simple assignments evaluate their right-hand side before the write fails; reads and compound assignments stop before later operands or arguments. `typeof` preserves property-read errors. Error names are known, while engine-specific messages remain unknown.
+
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
-- Null-receiver errors
+- Deletion through nullish receivers
 - Getter-only write errors
 - Proxy-setter failures
-- Unbound methods reading properties from `undefined`
+- Getter effects leaking across receiver alternatives
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

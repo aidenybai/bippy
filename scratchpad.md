@@ -972,11 +972,41 @@ Their serialized models match the class-identity checkpoint: 11 states, seven wi
 
 Corrected gates pass 3,385 root tests with two existing skips and 1,339 analyzer tests across 82 files. Typecheck/build, realm checks, lint, formatting, and documentation validation pass. `class-results-corrected-reviewed-gates.json` verifies production and baseline hashes, all 27 exact same-snapshot checks, retained failures, model/control evidence, and unchanged corpus bytes. Complete property-error, class/lifecycle/StrictMode, language, causal-model, renderer, and 500-repository gates remain open.
 
+### Nullish property reads and writes
+
+Known null/undefined receivers now produce modeled `TypeError` completions on reads and writes. The checks cover named/dynamic reads, captured assignment references, and dynamic method lookup. Error names remain concrete; messages remain unknown rather than assuming an engine-specific string. `typeof` now preserves a throwing operand’s completion.
+
+The preserved ECMAScript `GetValue`/`PutValue` algorithms place receiver coercion at the read/write boundary. Computed-key expressions therefore still run first. Simple assignments evaluate the RHS before the nullish write fails; compound assignments and calls stop before later operands/arguments. Earlier key or RHS errors retain their payloads. The pinned React checkout’s error-update payload shows the caught error passed into `getDerivedStateFromError`.
+
+Twelve strict component cases cover those boundaries, optional short circuiting, and guarded reads/`typeof`. Baseline `/tmp/bippy-nullish-properties-baseline` at `d108d480` fails nine cases and passes three controls. `tests/nullish-properties-expanded.test.ts` and its fixtures match main by hash; relative imports use baseline production. The original nine-case baseline and a later local-variable variant remain separate.
+
+The first `typeof` fixture also read an undeclared browser-global name. That remains unknown under the source-only environment policy, so its concrete expectation was unsupported independently of the property failure. The original fixture is retained in the baseline and `/tmp/bippy-nullish-properties-typeof-global-preserved.tsx`; a separately named fixture uses a declared undefined local. No global absence was forced. An exploratory package run started while that test path changed and retained a missing-fixture failure; its counts are not the final gate.
+
+Five original null-assignment snapshots and the extracted-method undefined-read snapshot now satisfy their unchanged raw expectations. All 27 earlier saved checks remain exact, for 33 total. Two previously mismatching native snapshots are repaired; the other four null snapshots had matched while their raw expectations failed. Getter-only and proxy writes remain unchanged strict failures.
+
+New adjacent counterexamples remain under `tests/fixtures/property-limits/` and `tests/property-limits.test.ts` in the nullish baseline worktree. That runner imports main production explicitly:
+
+| Probe                                  | Source-derived expectation | Model                 |
+| -------------------------------------- | -------------------------- | --------------------- |
+| Delete a property through null         | `caught`                   | `returned`            |
+| Read a guarded getter or null receiver | `caught:0`, `ready:1`      | `caught:1`, `ready:1` |
+
+`nullish-properties-limit-delete-0-comparison.json` mismatches native execution in four steps. Four unforced getter captures preserve two exact native snapshots and two mismatches in six steps. All four getter models fail the raw expectation; all five probes have no omissions/exhaustion and pass replay. No sampled getter path was forced, and exact membership on a successful path is not a repair.
+
+Source-only files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-nullish-properties-reviewed-home-model.json`: SHA-256 `3f426a4a8109af4c27d5be986bb28d533b5707e767ce002a9bd281b5efd9664e`
+- `source-only-nullish-properties-reviewed-memory-model.json`: SHA-256 `bca0c34df5b84196d69c1452fd65bd0badc560aaba42872ec99d55198a9c6518`
+
+Their serialized models match the corrected class-results checkpoint: 11 states, seven wildcards, and one subtree omission. All 53 saved workflow snapshots remain partial. Five corpus controls repeat unchanged against identical captures; the corpus stays at 307 repositories.
+
+Final gates pass 3,409 root tests with two existing skips and 1,363 analyzer tests across 83 files. Typecheck/build, realms, lint, formatting, and documentation validation pass. `nullish-properties-reviewed-gates.json` verifies baseline/main hashes, all 33 exact same-snapshot checks, retained write/delete/getter failures, model/control evidence, and unchanged corpus bytes. Optional wrappers, sparse holes, coercion, destructuring, complete property errors, causal modeling, renderer integration, and the 500-repository gate remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,385 tests**, with two existing React-19 DevTools skips; this includes **1,339 analyzer tests / 82 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,409 tests**, with two existing React-19 DevTools skips; this includes **1,363 analyzer tests / 83 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
