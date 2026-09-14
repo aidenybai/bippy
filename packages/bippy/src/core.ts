@@ -248,8 +248,15 @@ export const traverseFiber = ((
     while (currentFiber) {
       const selectedFiber = currentFiber;
       const selection = selector(selectedFiber);
-      if (isPromiseLike<boolean | void>(selection)) {
-        return Promise.resolve(selection).then((didSelectFiber) =>
+      const then =
+        selection !== null && (typeof selection === "object" || typeof selection === "function")
+          ? selection.then
+          : null;
+      if (typeof then === "function") {
+        return Promise.resolve<boolean | void>({
+          // oxlint-disable-next-line unicorn/no-thenable -- Assimilate the captured method without reading the accessor twice.
+          then: (resolve, reject) => Reflect.apply(then, selection, [resolve, reject]),
+        }).then((didSelectFiber) =>
           didSelectFiber === true ? selectedFiber : visit(getNextFiber(selectedFiber)),
         );
       }
@@ -260,12 +267,6 @@ export const traverseFiber = ((
   };
   return visit(fiber);
 }) as TraverseFiber;
-
-const isPromiseLike = <Result>(value: unknown): value is PromiseLike<Result> =>
-  (typeof value === "object" || typeof value === "function") &&
-  value !== null &&
-  "then" in value &&
-  typeof value.then === "function";
 
 /**
  * Returns `true` if the {@link Fiber} uses React Compiler's memo cache.
@@ -690,10 +691,12 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       priority,
       didError,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onCommitFiberRoot === dispatchCommitFiberRoot;
       if (prevOnCommitFiberRoot) {
         callListener(prevOnCommitFiberRoot, rdtHook, rendererID, root, priority, didError);
       }
-      if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
+      if (!isCurrentDispatcher) return;
       setReactWorkTagsForFiber(root.current, rdtHook.renderers.get(rendererID));
       // Custom renderers and test harnesses commit roots without a memoizedState;
       // those must stay tracked, so only explicit unmount evidence removes a root.
@@ -725,13 +728,13 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       rendererID,
       fiber,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onCommitFiberUnmount === dispatchCommitFiberUnmount;
       setReactWorkTagsForFiber(fiber, rdtHook.renderers.get(rendererID));
       if (prevOnCommitFiberUnmount) {
         callListener(prevOnCommitFiberUnmount, rdtHook, rendererID, fiber);
       }
-      if (hookDispatchers.get(rdtHook)?.onCommitFiberUnmount !== dispatchCommitFiberUnmount) {
-        return;
-      }
+      if (!isCurrentDispatcher) return;
       try {
         for (const { options, target } of instrumentationSubscriptions) {
           if (target === hookTargets.get(rdtHook) && options.onCommitFiberUnmount) {
@@ -755,12 +758,12 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       rendererID,
       root,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot === dispatchPostCommitFiberRoot;
       if (prevOnPostCommitFiberRoot) {
         callListener(prevOnPostCommitFiberRoot, rdtHook, rendererID, root);
       }
-      if (hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot !== dispatchPostCommitFiberRoot) {
-        return;
-      }
+      if (!isCurrentDispatcher) return;
       for (const { options, target } of instrumentationSubscriptions) {
         if (target === hookTargets.get(rdtHook) && options.onPostCommitFiberRoot) {
           callListener(options.onPostCommitFiberRoot, options, rendererID, root);
@@ -781,10 +784,12 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       root,
       children,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onScheduleFiberRoot === dispatchScheduleFiberRoot;
       if (prevOnScheduleFiberRoot) {
         callListener(prevOnScheduleFiberRoot, rdtHook, rendererID, root, children);
       }
-      if (hookDispatchers.get(rdtHook)?.onScheduleFiberRoot !== dispatchScheduleFiberRoot) return;
+      if (!isCurrentDispatcher) return;
       for (const { options, target } of instrumentationSubscriptions) {
         if (target === hookTargets.get(rdtHook) && options.onScheduleFiberRoot) {
           callListener(options.onScheduleFiberRoot, options, rendererID, root, children);
