@@ -353,20 +353,22 @@ export class ModuleGraph {
       for (const entry of module.exports) {
         if (entry.kind !== "re-export-all") continue;
         const resolution = this.resolveSpecifier(entry.specifier, module);
+        let resolved: ResolvedSymbol;
         if (
           resolution.kind === "external" &&
           isModeledLibraryExport(resolution.specifier, exportedName)
         ) {
-          return externalSymbol(resolution, { kind: "named", name: exportedName });
-        }
-        const target = this.resolveImportedModule(entry.specifier, module);
-        if (!isModuleRecord(target)) {
-          if (target.kind === "external" || target.kind === "builtin") {
-            externalSources.push(externalSymbol(target, { kind: "named", name: exportedName }));
+          resolved = externalSymbol(resolution, { kind: "named", name: exportedName });
+        } else {
+          const target = this.resolveImportedModule(entry.specifier, module);
+          if (!isModuleRecord(target)) {
+            if (target.kind === "external" || target.kind === "builtin") {
+              externalSources.push(externalSymbol(target, { kind: "named", name: exportedName }));
+            }
+            continue;
           }
-          continue;
+          resolved = this.resolveExportFrom(target, exportedName, module, visited);
         }
-        const resolved = this.resolveExportFrom(target, exportedName, module, visited);
         if (resolved.kind === "unresolved") {
           if (resolved.isAmbiguous) return resolved;
           if (!module.isCommonJs && resolved.isUncertain) uncertainResolution ??= resolved;
@@ -374,14 +376,23 @@ export class ModuleGraph {
         }
         if (module.isCommonJs) return resolved;
         if (starResolution && !isSameResolvedSymbol(starResolution, resolved)) {
-          return {
-            kind: "unresolved",
-            reason: `ambiguous export "${exportedName}" in ${module.filePath}`,
-            isAmbiguous: true,
-          };
+          if (starResolution.kind === "external" || resolved.kind === "external") {
+            uncertainResolution ??= {
+              kind: "unresolved",
+              reason: `cannot determine binding identity for export "${exportedName}" in ${module.filePath}`,
+              isUncertain: true,
+            };
+          } else {
+            return {
+              kind: "unresolved",
+              reason: `ambiguous export "${exportedName}" in ${module.filePath}`,
+              isAmbiguous: true,
+            };
+          }
         }
         if (
           !starResolution ||
+          (starResolution.kind === "external" && resolved.kind !== "external") ||
           ((resolved.kind === "binding" ||
             resolved.kind === "expression" ||
             resolved.kind === "module-exports") &&

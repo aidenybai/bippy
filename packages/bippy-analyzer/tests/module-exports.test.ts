@@ -168,6 +168,7 @@ it.each(exportCases.flatMap((entry) => [false, true].map((reverse) => ({ ...entr
         process.execPath,
         [
           "--experimental-vm-modules",
+          "--experimental-import-meta-resolve",
           "--import",
           requireDependency.resolve("tsx"),
           join(import.meta.dirname, "helpers/link-module-graph.ts"),
