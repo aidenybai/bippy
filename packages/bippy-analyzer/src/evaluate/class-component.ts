@@ -204,22 +204,29 @@ export const getSuperObject = (
 ): StaticValue => {
   const parent = context.superBinding?.parent;
   if (!parent) return unknownValue("super outside a derived class", location);
-  const thisValue = context.thisValue;
-  if (parent.kind !== "class" || !thisValue || thisValue.kind === "class") return parent;
-  const prototype = objectFromRecord({});
-  const seen = new Set<string>();
-  for (const current of collectClassChain(parent)) {
-    const methodContext = methodContextFor(current, context, thisValue);
-    const members = bindMethods(interpreter, current, prototype, methodContext, seen);
-    for (const getter of members.getters) {
-      prototype.entries.push({
-        kind: "property",
-        key: getter.key,
-        value: interpreter.callFunction(getter.functionValue, [], methodContext, { thisValue }),
-      });
-    }
-  }
-  return prototype;
+  return interpreter.continueValue(
+    interpreter.getThisValue(context, location),
+    context,
+    (thisValue) => {
+      if (parent.kind !== "class" || thisValue.kind === "class") return parent;
+      const prototype = objectFromRecord({});
+      const seen = new Set<string>();
+      for (const current of collectClassChain(parent)) {
+        const methodContext = methodContextFor(current, context, thisValue);
+        const members = bindMethods(interpreter, current, prototype, methodContext, seen);
+        for (const getter of members.getters) {
+          prototype.entries.push(
+            accessorEntry(
+              getter.key,
+              { get: { ...getter.functionValue, boundThis: thisValue }, set: null },
+              location,
+            ),
+          );
+        }
+      }
+      return prototype;
+    },
+  );
 };
 
 /** Keyed by the evaluated class body, which a class value and the component definition derived from it share. */
@@ -792,6 +799,7 @@ const initializeFields = (
       const field = layer.members.fields[index];
       const fieldContext: EvaluationContext = {
         ...layer.methodContext,
+        thisValue: instance,
         scope: createScope(layer.current.scope),
       };
       const value = field.value
@@ -825,7 +833,10 @@ const constructLayer = (
   if (!layer) return instance;
   const context = layer.methodContext;
   const isDerived = layer.current.body.superValue !== null;
-  const construction = objectFromRecord({ hasConstructedParent: FALSE_VALUE });
+  const construction = objectFromRecord({
+    hasConstructedParent: FALSE_VALUE,
+    thisValue: UNDEFINED_VALUE,
+  });
   const getConstructionError = (name: "ReferenceError" | "TypeError", message: string) =>
     thrownValue(
       "class construction throws",
@@ -833,11 +844,20 @@ const constructLayer = (
       null,
     );
   const getParentState = () => getObjectProperty(construction, "hasConstructedParent");
+  const getThisValue = (): StaticValue =>
+    interpreter.continueValue(getParentState(), context, (hasConstructedParent) =>
+      getTruthiness(hasConstructedParent) === true
+        ? getObjectProperty(construction, "thisValue")
+        : getConstructionError(
+            "ReferenceError",
+            "Must call super constructor in derived class before accessing 'this' or returning from derived constructor",
+          ),
+    );
   const constructParent = (superArgs: StaticValue[]): StaticValue =>
     interpreter.continueValue(
       constructLayer(interpreter, layers, index + 1, superArgs, instance),
       context,
-      () =>
+      (parentInstance) =>
         interpreter.continueValue(getParentState(), context, (hasConstructedParent) => {
           if (getTruthiness(hasConstructedParent) === true)
             return getConstructionError(
@@ -846,10 +866,16 @@ const constructLayer = (
             );
           interpreter.recordHeapMutation(construction);
           setObjectProperty(construction, "hasConstructedParent", TRUE_VALUE);
+          const thisValue =
+            parentInstance.kind === "object"
+              ? parentInstance
+              : unknownValue("derived constructor replacement is not a known object");
+          setObjectProperty(construction, "thisValue", thisValue);
+          if (thisValue.kind !== "object") return thisValue;
           return interpreter.continueValue(
-            initializeFields(interpreter, layer, instance),
+            initializeFields(interpreter, layer, thisValue),
             context,
-            () => instance,
+            () => thisValue,
           );
         }),
     );
@@ -867,19 +893,18 @@ const constructLayer = (
         "TypeError",
         "Derived constructors may only return object or undefined",
       );
-    return interpreter.continueValue(getParentState(), context, (hasConstructedParent) =>
-      getTruthiness(hasConstructedParent) === true
-        ? instance
-        : getConstructionError(
-            "ReferenceError",
-            "Must call super constructor in derived class before returning from derived constructor",
-          ),
-    );
+    return getThisValue();
   };
   const callConstructor = (): StaticValue => {
     if (!layer.members.constructor) return isDerived ? constructParent(args) : instance;
     const superBinding: SuperBinding = {
       construct: isDerived ? constructParent : null,
+      getThisValue:
+        isDerived &&
+        (layer.current.node.type === "ClassDeclaration" ||
+          layer.current.node.type === "ClassExpression")
+          ? getThisValue
+          : undefined,
       parent: layer.current.body.superValue,
     };
     const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);

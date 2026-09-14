@@ -266,12 +266,16 @@ Method calls capture the callee and receiver together after evaluating the recei
 
 Parent-construction status lives in a journaled object rather than an untracked local boolean. This preserves guarded retries after parent failures. React class rendering and lifecycle callbacks run only on completing constructor paths. Path-dependent React replacement instances remain conservative. These tests do not establish complete class or StrictMode semantics.
 
+[Derived constructor bindings](../packages/bippy-analyzer/tests/derived-this.test.ts) retain the object returned by the parent and reject reads of uninitialized `this`. Derived fields use that object. Arrows capture the live binding; nested non-arrow functions keep their own receivers. Compiled function wrappers do not acquire native-class `this` checks.
+
+Known receiver and key failures stop member evaluation. Optional finite receiver alternatives skip keys on absent paths. Declared instance `super` getters run when their property is read, after key evaluation, rather than while assembling the parent-member view. Parent replacements require a known `object` value; other modeled value kinds remain unknown.
+
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
-- [Derived constructors](../packages/bippy-analyzer/src/evaluate/class-component.ts): parent replacement objects and `this` before `super()`
+- [Class identity and receiver rules](../packages/bippy-analyzer/src/evaluate/class-component.ts): fresh allocation on parent retries and unbound extracted methods
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 
