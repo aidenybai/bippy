@@ -6,4 +6,4 @@ export const createSeededRandom = (seed: number): ((limit: number) => number) =>
   };
 };
 
-export const fuzzSeeds = [0, 1, 42, 0xdeadbeef, 0xffffffff];
+export const fuzzSeeds = Object.freeze([0, 1, 42, 0xdeadbeef, 0xffffffff]);

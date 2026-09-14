@@ -25,6 +25,22 @@ pnpm --filter conformance bench:smoke
 
 Library coverage retains its original unit-test scope and writes reports to `coverage/` here. The normal test command runs all projects, including exact upstream stack assertions, without coverage instrumentation.
 
+## Deterministic core scenarios
+
+The core scenario corpus uses the fixed seeds `0`, `1`, `42`, `3735928559`, and `4294967295`, not fresh randomness on each run. `seeded-random.test.ts` pins the generator's output vectors and checks independent streams. Keep the lockfile pinned when replaying React behavior.
+
+The shared-wakeable, hidden-deletion, and gated concurrent-traversal scenarios compute their entire operation or handoff schedule before executing it. Each runs twice with fresh fixtures and compares its complete logical event transcript. Async traversal advances through explicit promise gates, not sleeps or timing thresholds. React tests require evidence that suspension and memo bailout occurred, but do not snapshot speculative render-attempt counts, timestamps, or absolute global Fiber IDs.
+
+Replay one scenario from the repository root:
+
+```sh
+pnpm test --project conformance shared-wakeable-fuzz -t "seed 42$"
+pnpm test --project conformance hidden-deletion-fuzz -t "seed 42$"
+pnpm test --project conformance traversal-fuzz -t "early stop, seed 42$"
+```
+
+Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
+
 ## Keep each contract in one place
 
 - Add React behavior and adversarial regression tests in `tests/`. Extend an existing case rather than copying it into another suite.
@@ -65,6 +81,8 @@ The source-backed audit reproduced and fixed:
 - **Production Node crash:** the inherited browser DCE diagnostic scheduled a fatal exception for React's intentionally unbundled Node entrypoints. Node now skips that diagnostic; browser behavior remains tested. Packaged checks do not disable `checkDCE`.
 - **Inspection corruption:** hook replay mutated committed compiler-cache slots/indexes, and nested inspection stole outer hook state/logs. Replay now uses copied slots and an independent index, rejects reentrancy, and cleans up dependency-resolution errors.
 - **Traversal failures:** `traverseFiber` and `traverseRenderedFibers` overflowed on deep trees; cyclic/deep type wrappers also overflowed. These now use iterative traversal, with cycle detection for wrappers. Rendered-phase tests cover 20,000-deep and 20,000-wide mounts, updates, and simulated unmounts while preserving the existing visitation order. Suspense primary mounts also handle React 16's unwrapped children; live tests cover primary/fallback siblings across the version/build matrix.
+- **Thenable assimilation:** async traversal read a selector's `then` accessor twice, rejecting valid one-shot thenables. It now captures the method once and assimilates it with its original receiver. Fixed cases compare accessor/call traces, nested settlement, rejection, and throw-after-resolution behavior against native Promise assimilation.
+- **In-flight instrumentation replacement:** rewiring a dispatcher from a previous hook dropped the current event, including root tracking and unmount ID release. Dispatch ownership is now captured before invoking the previous hook; superseded wrappers still forward without duplicate listener delivery.
 - **Incorrect identity checks:** forged/coercible element markers were accepted, and unchanged falsy host props were reported as renders. Element markers now use global symbol identity; prop comparison preserves falsy values.
 - **Excessive work:** cached work-tag lookup still walked to the root, current-fiber lookup scanned unrelated subtrees, and invalid host keys polluted the lookup cache. Operation-count regressions cover reductions from 1,001,000 to 2,000 parent reads, 2,000 to zero unrelated child reads, and 500 to zero poisoned-key reads in their respective fixtures.
 

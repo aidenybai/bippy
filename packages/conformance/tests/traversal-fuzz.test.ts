@@ -130,85 +130,105 @@ describe.each(fuzzSeeds)("traversal model seed %i", (seed) => {
   });
 });
 
-it.each(fuzzSeeds)(
-  "isolates explicitly interleaved completion, rejection and early stop, seed %i",
-  async (seed) => {
-    const getRandom = createSeededRandom(seed);
-    const nodes = createTree(getRandom);
-    const expected = getPreorder(nodes[0]);
-    const failure = new Error(`rejected traversal, seed ${seed}`);
-    const runs: ControlledTraversal[] = Array.from({ length: 3 }, (_, index) => ({
-      visited: [],
-      gate: Promise.withResolvers<boolean>(),
-      progress: Promise.withResolvers<void>(),
-      stopIndex: index === 1 ? 10 + getRandom(70) : -1,
-      failureIndex: index === 2 ? 10 + getRandom(70) : -1,
-      isFinished: false,
-    }));
-    const completions = runs.map((run) =>
-      Promise.resolve(
-        traverseFiber(nodes[0].fiber, (fiber) => {
-          run.visited.push(fiber);
-          run.gate = Promise.withResolvers<boolean>();
-          run.progress.resolve();
-          return run.gate.promise;
-        }),
-      ).then(
-        (result) => {
-          run.result = result;
-          run.isFinished = true;
-          run.progress.resolve();
-        },
-        (error: unknown) => {
-          run.error = error;
-          run.isFinished = true;
-          run.progress.resolve();
-        },
+const runInterleavedTraversal = async (seed: number): Promise<string[]> => {
+  const getRandom = createSeededRandom(seed);
+  const nodes = createTree(getRandom);
+  const expected = getPreorder(nodes[0]);
+  const failure = new Error(`rejected traversal, seed ${seed}`);
+  const runs: ControlledTraversal[] = Array.from({ length: 3 }, (_, index) => ({
+    visited: [],
+    gate: Promise.withResolvers<boolean>(),
+    progress: Promise.withResolvers<void>(),
+    stopIndex: index === 1 ? 10 + getRandom(70) : -1,
+    failureIndex: index === 2 ? 10 + getRandom(70) : -1,
+    isFinished: false,
+  }));
+  const handoffs = Array.from({ length: expected.length * runs.length }, () =>
+    getRandom(runs.length),
+  );
+  const transcript: string[] = [];
+  const completions = runs.map((run) =>
+    Promise.resolve(
+      traverseFiber(nodes[0].fiber, (fiber) => {
+        run.visited.push(fiber);
+        run.gate = Promise.withResolvers<boolean>();
+        run.progress.resolve();
+        return run.gate.promise;
+      }),
+    ).then(
+      (result) => {
+        run.result = result;
+        run.isFinished = true;
+        run.progress.resolve();
+      },
+      (error: unknown) => {
+        run.error = error;
+        run.isFinished = true;
+        run.progress.resolve();
+      },
+    ),
+  );
+
+  let step = 0;
+  while (runs.some((run) => !run.isFinished)) {
+    expect(step, `bounded schedule, seed ${seed}`).toBeLessThan(handoffs.length);
+    const active = runs.filter((run) => !run.isFinished);
+    const run = active[handoffs[step] % active.length];
+    const snapshots = runs.map((innerRun) => [...innerRun.visited]);
+    const index = run.visited.length - 1;
+    run.progress = Promise.withResolvers<void>();
+    if (index === run.failureIndex) run.gate.reject(failure);
+    else run.gate.resolve(index === run.stopIndex);
+    await run.progress.promise;
+    const context = `seed ${seed}, handoff ${step++}`;
+    transcript.push(
+      JSON.stringify(
+        runs.map((innerRun) => ({
+          visits: innerRun.visited.map((fiber) => fiber.key),
+          isFinished: innerRun.isFinished,
+          result: innerRun.result?.key ?? innerRun.result,
+          didReject: innerRun.error === failure,
+        })),
       ),
     );
-
-    let step = 0;
-    while (runs.some((run) => !run.isFinished)) {
-      const active = runs.filter((run) => !run.isFinished);
-      const run = active[getRandom(active.length)];
-      const snapshots = runs.map((innerRun) => [...innerRun.visited]);
-      const index = run.visited.length - 1;
-      run.progress = Promise.withResolvers<void>();
-      if (index === run.failureIndex) run.gate.reject(failure);
-      else run.gate.resolve(index === run.stopIndex);
-      await run.progress.promise;
-      const context = `seed ${seed}, handoff ${step++}`;
-      for (const [runIndex, checkedRun] of runs.entries()) {
-        expectIdenticalOrder(
-          checkedRun.visited,
-          checkedRun === run ? expected.slice(0, checkedRun.visited.length) : snapshots[runIndex],
-          context,
-        );
-      }
-      expect(run.visited.length, context).toBe(
-        snapshots[runs.indexOf(run)].length + (run.isFinished ? 0 : 1),
-      );
-    }
-    await Promise.all(completions);
-    for (const run of runs) {
-      const endIndex = run.stopIndex >= 0 ? run.stopIndex : run.failureIndex;
+    for (const [runIndex, checkedRun] of runs.entries()) {
       expectIdenticalOrder(
-        run.visited,
-        endIndex < 0 ? expected : expected.slice(0, endIndex + 1),
-        `seed ${seed}`,
-      );
-      expect(run.error).toBe(run.failureIndex >= 0 ? failure : undefined);
-      expect(run.result).toBe(
-        run.failureIndex >= 0 ? undefined : (expected[run.stopIndex] ?? null),
+        checkedRun.visited,
+        checkedRun === run ? expected.slice(0, checkedRun.visited.length) : snapshots[runIndex],
+        context,
       );
     }
-    const finalVisits: Fiber[] = [];
-    expect(
-      traverseFiber(nodes[0].fiber, (fiber) => {
-        finalVisits.push(fiber);
-      }),
-    ).toBeNull();
-    expectIdenticalOrder(finalVisits, expected, `fresh traversal, seed ${seed}`);
+    expect(run.visited.length, context).toBe(
+      snapshots[runs.indexOf(run)].length + (run.isFinished ? 0 : 1),
+    );
+  }
+  await Promise.all(completions);
+  for (const run of runs) {
+    const endIndex = run.stopIndex >= 0 ? run.stopIndex : run.failureIndex;
+    expectIdenticalOrder(
+      run.visited,
+      endIndex < 0 ? expected : expected.slice(0, endIndex + 1),
+      `seed ${seed}`,
+    );
+    expect(run.error).toBe(run.failureIndex >= 0 ? failure : undefined);
+    expect(run.result).toBe(run.failureIndex >= 0 ? undefined : (expected[run.stopIndex] ?? null));
+  }
+  const finalVisits: Fiber[] = [];
+  expect(
+    traverseFiber(nodes[0].fiber, (fiber) => {
+      finalVisits.push(fiber);
+    }),
+  ).toBeNull();
+  expectIdenticalOrder(finalVisits, expected, `fresh traversal, seed ${seed}`);
+  return transcript;
+};
+
+it.each(fuzzSeeds)(
+  "replays identical explicitly interleaved completion, rejection and early stop, seed %i",
+  async (seed) => {
+    const first = await runInterleavedTraversal(seed);
+    const second = await runInterleavedTraversal(seed);
+    expect(second, `replay seed ${seed}`).toEqual(first);
   },
 );
 
