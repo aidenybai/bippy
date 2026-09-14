@@ -1766,7 +1766,7 @@ PNC's entire851-word dictionary was displayed, closing its earlier truncated sup
 
 The500-row corpus, original evidence and246 production-source hashes remain unchanged. These scoped reviews and captures do not establish14 full repository acceptances, new CLI replay, full transitive-source review, visual/timing/transition correctness or renderer cleanup.
 
-### UI31: six scoped recaptures completed; Aanglin remains unapproved
+### UI31 earlier checkpoint: six scoped recaptures; Aanglin unapproved
 
 UI31's inventory covers only its seven imported records, not five verified-but-unimported extras:149 regular tracked files, including118 text files, seven locks and24 binaries. Bounded chunks0–55 and383–392 have now been displayed;56–382 remain unread. Source reading approved Sintu, Brainrot, Arhmali, Whydee, Het and MK through separate first-three, next-two and MK receipts. Their combined scope is88 text files, six machine-audited locks and16 binaries outside visual review, totaling110 tracked files. SVG text review does not establish visual correctness.
 
@@ -1781,6 +1781,18 @@ Aanglin is not approved for recapture. Its146,706-byte tracked build JavaScript 
 These six scoped reviews and recaptures do not establish full repository acceptance, new CLI replay, full transitive-source review, visual/timing/transition correctness or renderer cleanup. The next unread bounded chunk is56. Five hundred audited acceptances remain unestablished.
 
 UI26 inventory initially failed with EISDIR on Ravi's tracked Timer gitlink at0c3556e71d21a9ac87e7de024b53672ae8dca3b8. Its directory is empty and no .gitmodules URL is supplied. The reviewed root entry instead imports src/component/Timer.jsx; the gitlink's unavailable source is not fabricated or labeled reviewed. Kartik also tracks a143,965-byte build bundle and364,408-byte source map. Its recorded CRA5 npm-start recipe uses src/index.js/public/index.html; installed webpack-dev-server configuration serves public files and virtual development outputs. The12 archived build artifacts remain hashed, unchanged and explicitly unread—not exempt from mutation checks. The initial120-chunk inventory is retained. `/tmp/bippy-ui26-authored-review-plan.json` records a narrower pending23-chunk authored-source review plus these separate gaps; it is not approval or completion. No new UI26 post-read capture has been launched.
+
+### UI31: Aanglin review and seventh scoped recapture completed
+
+All393 bounded UI31 chunks have now been displayed without truncation. The continuation completed232–382 after the preceding review reached231; the main bundle, separate license, complete source-map text, embedded sources and names are no longer unread gaps. Aanglin's scope includes30 text files (19 new bodies,10 UI30 references and one within-batch reference), one machine-audited lock and eight binaries outside visual review. Its39 tracked files, pinned revision and referenced bytes were checked before approval at2026-09-14T21:16:50.490Z. Earlier unread-range receipts remain historical evidence, not current blockers.
+
+The main map contains34 embedded sources,197,585 mapping characters and1,409 names. Separate machine comparisons found its five embedded application JavaScript bodies byte-equal to the live tracked files. Displaying encoded mappings does not establish decoded mapping correctness or equivalence of compiled code. The archived ReactDOM export reports18.2.0-next-9e3b772b8-20220608 while renderer metadata reports18.2.0; these archive observations are distinct from installed-tree and launcher audits. Authored /dice/, initial one/one, FontAwesome requests, two random draws per roll and the2000ms timeout without unmount cleanup remain unchanged. No interaction or visual test was added.
+
+Aanglin's independent native recapture passed all five stages and both negative timestamp controls. Its complete source model and rendered contents, excluding only snapshot.capturedAt and commits[index].capturedAt, matched originals before native launch. Its full report and pageErrors also matched. UI31 now has seven scoped recaptures,35 successful stages and14 controls: six exact and Het partial, all non-exhausted. All149 batch tracked files, original evidence, the500-row corpus and246 production hashes remain unchanged at the final audit.
+
+Evidence: `/tmp/bippy-ui31-aanglin-scoped-source-reviewed.json`, `/tmp/bippy-ui31-aanglin-scoped-read-v4-lane-0.json` and `/tmp/bippy-ui31-all-scoped-final-audit-v2.json`. The first aggregate audit failed before execution because its generated TypeScript had an unterminated string; its script/log/exit remain preserved. The corrected v2 audited existing evidence without rerunning native capture. Aggregate timestamps do not backdate partition approvals. No matching Aanglin scoped runner/server process remained in the subsequent process check; this does not certify renderer cleanup.
+
+Five verified-but-unimported extras remain unimported. UI24/UI25 complete-reading gaps, UI26 Ravi's unavailable gitlink and Kartik's12 unread archived artifacts remain unresolved. Seven scoped reviews are not seven full acceptances, new CLI replay, transitive-source review, workflow/timing/visual correctness or cleanup certification. Five hundred imported repositories still do not establish500 audited acceptances.
 
 ## Immediate continuation
 
