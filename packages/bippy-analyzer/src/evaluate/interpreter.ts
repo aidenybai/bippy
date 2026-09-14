@@ -856,7 +856,7 @@ const isNonProgressingRecursion = (
 const getNullishPropertyError = (
   receiver: StaticValue,
   propertyName: string | null,
-  operation: "read" | "set",
+  operation: "read" | "set" | "delete",
   location: SourceLocation | null,
 ): StaticValue | null => {
   if (receiver.kind !== "primitive" || (receiver.value !== null && receiver.value !== undefined))
@@ -1807,20 +1807,25 @@ export class Interpreter {
         setNativeObjectMember(target, propertyName, value);
         startImageLoad(this, target, propertyName, value, context);
         return target;
-      case "proxy": {
-        const trap = getObjectProperty(target.handler, "set");
-        if (trap.kind === "primitive" && trap.value === undefined) {
-          this.assignProperty(target.target, propertyName, value, context);
-        } else {
-          this.callValue(
-            trap,
-            [target.target, primitiveValue(propertyName), value, target],
-            context,
-            null,
-          );
-        }
-        return target;
-      }
+      case "proxy":
+        return this.continueValue(
+          this.getProperty(target.handler, "set", context, null),
+          context,
+          (trap, trapContext) =>
+            this.continueValue(
+              isNullish(trap) === true
+                ? this.assignProperty(target.target, propertyName, value, trapContext)
+                : this.callValue(
+                    trap,
+                    [target.target, primitiveValue(propertyName), value, target],
+                    trapContext,
+                    null,
+                    { thisValue: target.handler },
+                  ),
+              trapContext,
+              () => target,
+            ),
+        );
       case "context":
         if (propertyName === "displayName") {
           if (value.kind === "primitive" && typeof value.value === "string")
@@ -3102,18 +3107,35 @@ export class Interpreter {
   private evaluateDelete(argument: Expression, context: EvaluationContext): StaticValue {
     const target = unwrapExpression(argument);
     if (target.type !== "MemberExpression") {
-      return getThrownOperand([this.evaluateExpression(argument, context)]) ?? TRUE_VALUE;
+      return this.continueValue(
+        this.evaluateExpression(argument, context),
+        context,
+        () => TRUE_VALUE,
+      );
     }
-    const object = this.evaluateExpression(target.object, context);
-    const key = target.computed
-      ? this.evaluateExpression(target.property, context)
-      : primitiveValue(target.property.type === "Identifier" ? target.property.name : null);
-    const thrown = getThrownOperand([object, key]);
-    if (thrown) return thrown;
-    for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
-      this.deleteProperty(alternative, key, context);
-    }
-    return TRUE_VALUE;
+    const location = this.locate(context.module, target);
+    return this.continueValue(
+      this.evaluateExpression(target.object, context),
+      context,
+      (receiver, receiverContext) => {
+        if (receiver === CHAIN_SHORT_CIRCUIT || (target.optional && isNullish(receiver) === true))
+          return TRUE_VALUE;
+        const key = target.computed
+          ? this.evaluateExpression(target.property, receiverContext)
+          : primitiveValue(target.property.type === "Identifier" ? target.property.name : null);
+        return this.continueValue(key, receiverContext, (propertyKey, keyContext) => {
+          const error = getNullishPropertyError(
+            receiver,
+            toPropertyKey(propertyKey),
+            "delete",
+            location,
+          );
+          if (error) return error;
+          this.deleteProperty(receiver, propertyKey, keyContext);
+          return TRUE_VALUE;
+        });
+      },
+    );
   }
 
   private deleteProperty(target: StaticValue, key: StaticValue, context: EvaluationContext): void {
@@ -3809,8 +3831,8 @@ export class Interpreter {
     if (error) return error;
     switch (object.kind) {
       case "branch":
-        return mapValue(object, (alternative) =>
-          this.getProperty(alternative, key, context, location, optional),
+        return this.continueValue(object, context, (alternative, alternativeContext) =>
+          this.getProperty(alternative, key, alternativeContext, location, optional),
         );
       case "object": {
         const accessor = getObjectAccessor(object, key);

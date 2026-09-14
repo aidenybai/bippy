@@ -282,12 +282,16 @@ React’s calls to `getDerivedStateFromProps` and `getDerivedStateFromError` now
 
 [Nullish property tests](../packages/bippy-analyzer/tests/nullish-properties.test.ts) preserve read and write failures for concrete `null` and `undefined` receivers. Computed-key expressions still run first. Simple assignments evaluate their right-hand side before the write fails; reads and compound assignments stop before later operands or arguments. `typeof` preserves property-read errors. Error names are known, while engine-specific messages remain unknown.
 
-Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
+[Property effect tests](../packages/bippy-analyzer/tests/property-effects.test.ts) run getter reads under the selected receiver’s guards. Getter mutations no longer leak onto a null-receiver path. Deletion sequences receiver and key evaluation, preserving earlier failures and nullish errors.
 
-- Deletion through nullish receivers
+Proxy writes preserve failures from retrieving or calling the `set` trap. Trap calls use the handler as their receiver, and successful delegation retains the proxy’s identity. This does not establish complete proxy semantics.
+
+Object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
+
 - Getter-only write errors
-- Proxy-setter failures
-- Getter effects leaking across receiver alternatives
+- Falsy proxy-set results in strict code
+- Receiver forwarding to setters behind proxies
+- Property presence after guarded deletion
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 
