@@ -616,12 +616,13 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
   }
 
   const { prevFiber } = rootInstance;
+  rootInstance.prevFiber = fiber;
   if (!fiber) {
     if (prevFiber) {
       unmountFiber(onRender, prevFiber);
     }
   } else if (prevFiber !== null) {
-    const wasMounted = isRootFiberMounted(prevFiber);
+    const wasMounted = isRootFiberMounted(fiber.alternate ?? prevFiber);
     const isMounted = isRootFiberMounted(fiber);
 
     if (!wasMounted && isMounted) {
@@ -634,8 +635,6 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
   } else {
     mountFiberTree(onRender, fiber, true);
   }
-
-  rootInstance.prevFiber = fiber;
 };
 
 export interface InstrumentationOptions {

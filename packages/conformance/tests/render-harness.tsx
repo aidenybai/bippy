@@ -1,6 +1,6 @@
 import { instrument, type FiberRoot } from "bippy";
 import { act, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type RootOptions } from "react-dom/client";
 import { afterEach } from "vite-plus/test";
 
 const cleanups: Array<() => Promise<void>> = [];
@@ -9,7 +9,7 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
 });
 
-export const createRenderHarness = () => {
+export const createRenderHarness = (options?: RootOptions) => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   let committedRoot: FiberRoot | null = null;
@@ -18,7 +18,7 @@ export const createRenderHarness = () => {
       if ("containerInfo" in root && root.containerInfo === container) committedRoot = root;
     },
   });
-  const root = createRoot(container);
+  const root = createRoot(container, options);
   cleanups.push(async () => {
     try {
       await act(async () => root.unmount());
