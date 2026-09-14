@@ -1,6 +1,17 @@
-import { getObjectProperty, getTruthiness, unknownValue } from "../evaluate/values.js";
+import {
+  getObjectProperty,
+  getKnownOwnKeys,
+  hasOwnKey,
+  getTruthiness,
+  unknownValue,
+} from "../evaluate/values.js";
 import { nativeFunction } from "../evaluate/stubs.js";
-import type { ExternalValueProvider, StaticValue } from "../types.js";
+import type {
+  ExternalValueProvider,
+  StaticValue,
+  StaticObjectValue,
+  StubRenderTools,
+} from "../types.js";
 
 export const HOIST_NON_REACT_STATICS_PACKAGES = ["hoist-non-react-statics"];
 
@@ -31,7 +42,9 @@ const NON_HOISTED_STATICS: ReadonlySet<string> = new Set([
 const isBlacklisted = (blacklist: StaticValue | undefined, key: string): boolean =>
   blacklist?.kind === "object" && getTruthiness(getObjectProperty(blacklist, key)) === true;
 
-const getOwnStatics = (value: StaticValue | undefined): Map<string, StaticValue> | null => {
+const getOwnStatics = (
+  value: StaticValue | undefined,
+): Map<string, StaticValue> | StaticObjectValue | null => {
   if (value?.kind === "function" || value?.kind === "class") return value.properties;
   if (value?.kind !== "component-reference") return null;
   const type = value.type;
@@ -45,18 +58,27 @@ const hoistNonReactStatics = (
   target: StaticValue | undefined,
   source: StaticValue | undefined,
   blacklist: StaticValue | undefined,
+  tools: StubRenderTools,
 ): StaticValue => {
   if (!target) return unknownValue("hoistNonReactStatics() without a target");
   const targetStatics = getOwnStatics(target);
   const sourceStatics = getOwnStatics(source);
   if (!targetStatics || !sourceStatics) return target;
-  for (const [key, value] of sourceStatics) {
-    if (
-      !NON_HOISTED_STATICS.has(key) &&
-      !targetStatics.has(key) &&
-      !isBlacklisted(blacklist, key)
-    ) {
-      targetStatics.set(key, value);
+  const keys =
+    sourceStatics instanceof Map
+      ? [...sourceStatics.keys()]
+      : [...(getKnownOwnKeys(sourceStatics, () => true)?.keys() ?? [])];
+  for (const key of keys) {
+    const hasKey =
+      targetStatics instanceof Map ? targetStatics.has(key) : hasOwnKey(targetStatics, key);
+    if (!NON_HOISTED_STATICS.has(key) && hasKey === false && !isBlacklisted(blacklist, key)) {
+      const value =
+        sourceStatics instanceof Map
+          ? sourceStatics.get(key)
+          : getObjectProperty(sourceStatics, key);
+      if (!value) continue;
+      if (targetStatics instanceof Map) targetStatics.set(key, value);
+      else tools.setProperty(targetStatics, key, value);
     }
   }
   return target;
@@ -65,8 +87,8 @@ const hoistNonReactStatics = (
 export const hoistNonReactStaticsValue: ExternalValueProvider = (specifier, importedName) => {
   if (!HOIST_NON_REACT_STATICS_PACKAGES.includes(specifier)) return null;
   return importedName === "default"
-    ? nativeFunction("hoistNonReactStatics", ([target, source, blacklist]) =>
-        hoistNonReactStatics(target, source, blacklist),
+    ? nativeFunction("hoistNonReactStatics", ([target, source, blacklist], tools) =>
+        hoistNonReactStatics(target, source, blacklist, tools),
       )
     : null;
 };

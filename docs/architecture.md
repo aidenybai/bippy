@@ -296,13 +296,15 @@ Proxy writes preserve failures from retrieving or calling the `set` trap. Trap c
 
 [Class-heritage tests](../packages/bippy-analyzer/tests/class-heritage.test.ts) stop class creation when evaluating the superclass throws, before member keys or static initialization run. Completing superclass alternatives retain their guards and inherited values. Class declarations propagate these abrupt paths rather than storing them as bindings. [Comma-expression tests](../packages/bippy-analyzer/tests/sequence-completion.test.ts) stop later operands and calls after an earlier error, retain the last completing value, and preserve unbound call receivers. A 10,000-operand control checks iterative sequencing, not general scalability.
 
-[Computed-key tests](../packages/bippy-analyzer/tests/class-keys.test.ts) evaluate class member names before static initialization. A throwing key stops later keys, class creation, and constructor-call arguments. Finite key alternatives retain their guards and distinct class members. Instance field values remain deferred. A 10,000-key control checks iterative concrete-key sequencing. Effectful object-key coercion, class-name temporal dead zones, and journaled class property maps remain unverified.
+[Computed-key tests](../packages/bippy-analyzer/tests/class-keys.test.ts) evaluate class member names before static initialization. A throwing key stops later keys, class creation, and constructor-call arguments. Finite key alternatives retain their guards and distinct class members. Instance field values remain deferred. A 10,000-key control checks iterative concrete-key sequencing. Effectful object-key coercion and class-name temporal dead zones remain unverified.
+
+[Callable-property tests](../packages/bippy-analyzer/tests/callable-properties.test.ts) cover guarded function/class writes, property presence, inherited fallback, explicit undefined, deletion, and prototype ownership. Function and class values share journaled object storage with their React component definitions. Prototypes are initialized before guarded program work, rather than first access inside a branch. Method, arrow, async, generator, and bound-function controls distinguish own prototype shape; this is not an `IsConstructor` implementation. Static initializer completion, descriptor-sensitive writes, instance-method metadata, wrapper mutations, and complete reflection remain unverified.
 
 [Value-level checks](../packages/bippy-analyzer/tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Frozen-object and primitive-property write errors
 - Superclass constructor/prototype validation and class-definition errors from static fields and static blocks
-- Eager static getter evaluation, class-name temporal dead zones, and guarded class property mutations
+- Eager static getter evaluation, class-name temporal dead zones, and descriptor-sensitive class property writes
 - Direct boolean interpolation losing guard precision
 - `defineProperty` trap dispatch during ordinary proxy writes
 - Noncallable `apply` traps and class calls without `new`

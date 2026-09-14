@@ -186,9 +186,10 @@ const typeOf: HelperImplementation = ([value], tools) =>
   value ? getTypeofValue(value, tools.realm) : primitiveValue("undefined");
 
 /** A lowered class already carries its parent; a plain constructor function gets a prototype the analysis does not model. */
-const inherits: HelperImplementation = ([subClass, superClass]) => {
+const inherits: HelperImplementation = ([subClass, superClass], tools) => {
   if (subClass?.kind === "function" && superClass) {
-    subClass.properties.set(
+    tools.setProperty(
+      subClass.properties,
       "prototype",
       unknownValue(`prototype inheriting from ${describeValue(superClass)}`),
     );

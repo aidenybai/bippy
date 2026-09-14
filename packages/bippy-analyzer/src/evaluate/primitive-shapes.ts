@@ -77,8 +77,10 @@ const CONVERSION_METHOD_KEYS = [
   "@@Symbol.toStringTag",
 ];
 
-const hasConversionOverride = (properties: Map<string, StaticValue>): boolean =>
-  CONVERSION_METHOD_KEYS.some((key) => properties.has(key));
+const hasConversionOverride = (properties: Map<string, StaticValue> | StaticObjectValue): boolean =>
+  CONVERSION_METHOD_KEYS.some((key) =>
+    properties instanceof Map ? properties.has(key) : hasOwnKey(properties, key) !== false,
+  );
 
 /** Whether a class chain defines its own conversion; null once the chain reaches a base the analysis cannot see. */
 const classOverridesConversion = (classValue: StaticClassValue): boolean | null => {

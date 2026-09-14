@@ -40,6 +40,7 @@ import {
   FALSE_VALUE,
   getKnownObjectKeys,
   getObjectProperty,
+  getOwnPropertyPresence,
   getTruthiness,
   isCallable,
   isNullish,
@@ -139,7 +140,7 @@ export const isErrorBoundaryClass = (classValue: StaticClassValue): boolean =>
           ((member.key === "getDerivedStateFromError" && member.isStatic) ||
             (member.key === "componentDidCatch" && !member.isStatic)),
       ) ||
-      properties.has("getDerivedStateFromError") ||
+      getTruthiness(getOwnPropertyPresence(properties, "getDerivedStateFromError")) !== false ||
       (body.prototype !== undefined && hasPresentProperty(body.prototype, "componentDidCatch")),
   );
 
@@ -194,7 +195,12 @@ const bindMethods = (
     target.entries.push(entry);
   }
   const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
-    const functionValue = interpreter.createFunctionValue(member.functionNode, methodContext, name);
+    const functionValue = interpreter.createFunctionValue(
+      member.functionNode,
+      methodContext,
+      name,
+      true,
+    );
     return functionValue.kind === "function"
       ? {
           ...functionValue,
@@ -337,8 +343,8 @@ export const getStaticProperty = (
   key: string,
 ): StaticValue | null => {
   for (const current of collectClassChain(classValue)) {
-    const property = current.properties.get(key);
-    if (property) return property;
+    if (getTruthiness(getOwnPropertyPresence(current.properties, key)) !== false)
+      return getObjectProperty(classValue.properties, key);
   }
   return null;
 };
@@ -351,8 +357,8 @@ export const getComponentProperty = (
   component: ComponentDefinition,
   key: string,
 ): StaticValue | null => {
-  const own = component.properties.get(key);
-  if (own) return own;
+  if (getTruthiness(getOwnPropertyPresence(component.properties, key)) !== false)
+    return getObjectProperty(component.properties, key);
   const superValue = component.classBody?.superValue;
   return superValue?.kind === "class" ? getStaticProperty(superValue, key) : null;
 };

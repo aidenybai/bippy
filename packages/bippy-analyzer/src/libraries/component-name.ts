@@ -1,12 +1,14 @@
-import { describeElementType, getStubOwnDisplayName, getStubOwnName } from "../evaluate/values.js";
+import {
+  describeElementType,
+  getObjectProperty,
+  getStubOwnDisplayName,
+  getStubOwnName,
+} from "../evaluate/values.js";
 import { toElementType } from "../react/element-type.js";
-import type { StaticValue } from "../types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 
-const getStringProperty = (
-  properties: ReadonlyMap<string, StaticValue>,
-  key: string,
-): string | null => {
-  const value = properties.get(key);
+const getStringProperty = (properties: StaticObjectValue, key: string): string | null => {
+  const value = getObjectProperty(properties, key);
   return value?.kind === "primitive" && typeof value.value === "string" ? value.value : null;
 };
 

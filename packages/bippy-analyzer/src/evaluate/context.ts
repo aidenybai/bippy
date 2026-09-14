@@ -6,6 +6,7 @@ import type {
   RenderEnvironment,
   Scope,
   StaticValue,
+  StaticObjectValue,
   SuperBinding,
 } from "../types.js";
 import type { HookFrame } from "./hooks.js";
@@ -31,7 +32,7 @@ export interface CallFrame {
   /** `EvaluationContext.forkDepth` at the call site. */
   forkDepth: number;
   /** The callee's own properties when the activation began. */
-  properties: Map<string, StaticValue>;
+  properties: StaticObjectValue;
 }
 
 interface OutcomeHandler {

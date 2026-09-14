@@ -7,13 +7,11 @@ import {
 } from "../react/element-shape.js";
 import { isReactLikePackage, resolveReactApi } from "../react/react-api.js";
 import type {
-  ClassBody,
   StaticClassValue,
   StaticElementType,
   StaticFunctionValue,
   StaticValue,
 } from "../types.js";
-import { getStaticProperty } from "./class-component.js";
 import { createErrorValue } from "./errors.js";
 import { getLanguageCounterpart, toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
@@ -63,21 +61,23 @@ export const hasIntrinsicMember = (intrinsic: object, name: string): boolean => 
   return false;
 };
 
-/** Own keys every function object has without source assigning them; arrows have no `prototype`. */
+/** Own keys intrinsically present on the modeled function or class. */
 export const isIntrinsicFunctionKey = (
   callable: StaticFunctionValue | StaticClassValue,
   key: string,
 ): boolean =>
   key === "length" ||
   key === "name" ||
-  (key === "prototype" && callable.node.type !== "ArrowFunctionExpression");
+  (key === "prototype" &&
+    callable.node.type !== "ArrowFunctionExpression" &&
+    (callable.kind === "class" || callable.hasPrototype !== false));
 
 const hasComponentProperty = (type: StaticElementType, name: string): StaticValue | null => {
   switch (type.kind) {
     case "function":
     case "class":
-      if (type.component.properties.has(name)) return TRUE_VALUE;
-      return type.kind === "function" && !FUNCTION_OWN_KEYS.has(name) ? FALSE_VALUE : null;
+      if (FUNCTION_OWN_KEYS.has(name)) return null;
+      return hasNamedProperty(name, type.component.properties);
     case "memo":
     case "forward-ref":
     case "lazy":
@@ -134,15 +134,9 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     }
     case "function":
     case "class": {
-      const isOwn =
-        target.kind === "class"
-          ? getStaticProperty(target, name) !== null
-          : target.properties.has(name);
-      return isOwn ||
-        isIntrinsicFunctionKey(target, name) ||
-        hasIntrinsicMember(Function.prototype, name)
-        ? TRUE_VALUE
-        : FALSE_VALUE;
+      if (isIntrinsicFunctionKey(target, name) || hasIntrinsicMember(Function.prototype, name))
+        return TRUE_VALUE;
+      return hasNamedProperty(name, target.properties);
     }
     case "native-object": {
       const languageKey = toLanguagePropertyKey(name);
@@ -205,13 +199,6 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
 const couldBeFunctionText = (name: string): boolean =>
   name.includes("(") || name.includes("=>") || /^class[\s{]/.test(name);
 
-const getStaticMemberKeys = (body: ClassBody | null): string[] =>
-  body === null
-    ? []
-    : body.members.flatMap((member) =>
-        member.kind !== "static-block" && member.isStatic ? [member.key] : [],
-      );
-
 const getOwnPropertyKeys = (target: StaticValue): string[] | null => {
   switch (target.kind) {
     case "object":
@@ -219,19 +206,15 @@ const getOwnPropertyKeys = (target: StaticValue): string[] | null => {
     case "list":
       return target.properties ? [...target.properties.keys()] : [];
     case "function":
-      return [...target.properties.keys()];
     case "class":
-      return [...target.properties.keys(), ...getStaticMemberKeys(target.body)];
+      return getKnownObjectOwnNames(target.properties);
     case "element":
       return [];
     case "component-reference":
       switch (target.type.kind) {
         case "function":
         case "class":
-          return [
-            ...target.type.component.properties.keys(),
-            ...getStaticMemberKeys(target.type.component.classBody),
-          ];
+          return getKnownObjectOwnNames(target.type.component.properties);
         case "memo":
         case "forward-ref":
         case "lazy":

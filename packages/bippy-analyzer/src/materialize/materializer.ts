@@ -498,6 +498,7 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     superBinding: null,
     name: component.name,
     properties: component.properties,
+    hasPrototype: component.hasPrototype,
     boundArgs: component.boundArgs,
     boundThis: component.boundThis,
     isClientReference: component.isClientReference,
@@ -1466,7 +1467,7 @@ export class Materializer {
                 legacyContext === null
                   ? null
                   : getMaskedLegacyContext(
-                      component.properties.get("contextTypes") ?? null,
+                      getObjectProperty(component.properties, "contextTypes"),
                       legacyContext,
                     );
               return contextArgument ? [props, contextArgument] : [props];
