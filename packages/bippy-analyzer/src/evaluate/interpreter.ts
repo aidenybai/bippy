@@ -1714,6 +1714,34 @@ export class Interpreter {
     }
   }
 
+  private getProxyMethod(
+    handler: StaticObjectValue,
+    name: "get" | "set",
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    return this.continueValue(
+      this.getProperty(handler, name, context, location),
+      context,
+      (method, methodContext) => {
+        if (isNullish(method) === true) return UNDEFINED_VALUE;
+        return this.continueValue(
+          getTypeofValue(method, this.getRealm(methodContext.environment)),
+          methodContext,
+          (methodType) => {
+            if (methodType.kind !== "primitive" || methodType.value === "function") return method;
+            const reason = `Proxy ${name} trap is not callable`;
+            return thrownValue(
+              reason,
+              createErrorValue("TypeError", [primitiveValue(reason)], location),
+              location,
+            );
+          },
+        );
+      },
+    );
+  }
+
   /** `target[propertyName] = value`; returns the value the binding should now hold (wrappers are re-created for `displayName`). */
   assignProperty(
     target: StaticValue,
@@ -1810,7 +1838,7 @@ export class Interpreter {
         return target;
       case "proxy":
         return this.continueValue(
-          this.getProperty(target.handler, "set", context, null),
+          this.getProxyMethod(target.handler, "set", context, null),
           context,
           (trap, trapContext) =>
             this.continueValue(
@@ -4114,7 +4142,7 @@ export class Interpreter {
       }
       case "proxy":
         return this.continueValue(
-          this.getProperty(object.handler, "get", context, location),
+          this.getProxyMethod(object.handler, "get", context, location),
           context,
           (trap, trapContext) =>
             isNullish(trap) === true

@@ -1113,11 +1113,38 @@ Serialized models match the setter checkpoint: 11 states, seven wildcards, one s
 
 Final gates pass 3,486 root tests with two existing skips and 1,440 analyzer tests across 88 files, plus typecheck/build, realms, lint, formatting, and documentation validation. `proxy-reads-reviewed-gates.json` verifies baseline/source/production hashes, 47 exact same-snapshot checks, the three retained write/definition failures, two new proxy counterexamples, models, controls, and unchanged corpus bytes. Trap callability, proxy invariants, definition dispatch, strict writes, complete proxy/descriptor/reflection/lifecycle semantics, causal modeling, renderer integration, and 500-repository acceptance remain open.
 
+### Proxy trap callability
+
+`1d59b199` committed proxy getter lookup and receivers. The shared `getProxyMethod()` now rejects `get` and `set` traps whose modeled `typeof` is known not to be `function`, producing a modeled `TypeError` after trap lookup and before invocation. Nullish methods still delegate; unknown types retain existing call handling. Method/type alternatives pass through guarded continuations, preserving lookup effects, errors, and original input decisions.
+
+Ten strict `proxy-methods` checks cover numeric and typed-unknown numeric traps, objects with a `call` property, noncallable proxy objects with an `apply` trap, getter branches, computed-write/RHS/lookup ordering, explicit binding, nullish fallback, and callable-proxy controls. Baseline `/tmp/bippy-proxy-methods-baseline` at `1d59b199` fails seven and passes three controls. Its `tests/proxy-methods-expanded.test.ts` and ten fixtures match main by hash; the earlier eight-case baseline remains separately preserved. The ECMAScript `GetMethod` and proxy `[[Get]]` algorithms informed the repair. React's pinned `ReactPerformanceTrack-test.js` also exercises throwing proxy reads on an opaque-origin window.
+
+The unchanged noncallable-`get` snapshot now yields `caught`, repairing a four-step native mismatch that passed replay. All 47 earlier saved comparisons remain exact, for 48 total. Getter-only writes, falsy `set` results, ordinary-write `defineProperty` dispatch, and frozen-target read invariants remain unchanged strict failures on their saved captures.
+
+Three additional source cases in the baseline's `tests/fixtures/proxy-limits/` remain outside passing coverage:
+
+- `class-get.tsx`: a class used as a trap satisfies `IsCallable`, but calling it without `new` must throw. Native yields `caught`; the model yields `returned`.
+- `noncallable-apply.tsx`: a numeric `apply` trap yields native `caught`, model `returned`.
+- `guarded-freeze.tsx`: native source permits `frozen:true` or `open:false`; the model emits `frozen:true` or spurious `open:true`. `Object.freeze` currently writes an unjournaled `isFrozen` flag. Using that flag for guarded proxy invariants would reject the wrong path, so this phase does not add frozen-target validation.
+
+The first two captures mismatch in four steps. Four unforced guarded-freeze captures produce one six-step mismatch and three five-step exact memberships; all four still fail the original raw expectation. All six reports have no omissions/exhaustion and passing replay. `proxy-methods-limit-*-comparison.json` preserves the original records; `proxy-callability-limit-*-saved-comparison.json` rechecks identical source/native bytes against final production.
+
+The first `proxy-methods` broad gate passed. Diff review found that the new helper displaced the existing assignment-method JSDoc. Restoring that comment changed the production hash, so final gates, model freezes, and saved comparisons use new `proxy-callability` artifacts rather than relabeling old evidence.
+
+Final source-only models in `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-proxy-callability-reviewed-home-model.json`: SHA-256 `7806798d517879d60643a9b7be2a2dea4387b252e66b4d19868af1eee38473c1`
+- `source-only-proxy-callability-reviewed-memory-model.json`: SHA-256 `be123228fe2ad96d26fcca3ea08a775432d2589ddbe037846999d457a379cc00`
+
+Serialized models match the getter checkpoint: 11 states, seven wildcards, one subtree omission. All 53 saved workflow snapshots remain partial; ten repeated corpus-control rows are unchanged on identical captures. No app workflow traces, observations, forced inputs, budgets, or repositories were added.
+
+Final gates pass 3,506 root tests with two existing skips and 1,460 analyzer tests across 89 files, plus typecheck/build, realms, lint, formatting, and documentation validation. `proxy-callability-reviewed-gates.json` verifies source/production hashes, baseline, 48 exact saved checks, four retained write/definition/invariant failures, six additional strict failures, models, controls, and unchanged 307-entry corpus bytes. Complete callability, proxy/descriptor/integrity/strict-write/lifecycle semantics, causal modeling, renderer integration, and 500-repository acceptance remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,486 tests**, with two existing React-19 DevTools skips; this includes **1,440 analyzer tests / 88 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,506 tests**, with two existing React-19 DevTools skips; this includes **1,460 analyzer tests / 89 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
