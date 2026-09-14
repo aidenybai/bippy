@@ -430,7 +430,8 @@ export const setFiberId = (fiber: Fiber, fiberId: number = getNextFiberId()): vo
   }
   fiberIdMap.set(fiber, fiberId);
   fiberByIdMap.set(fiberId, createFiberReference(fiber));
-  fiberIdFinalizationRegistry?.register(fiber, fiberId);
+  if (previousFiberId !== undefined) fiberIdFinalizationRegistry?.unregister(fiber);
+  fiberIdFinalizationRegistry?.register(fiber, fiberId, fiber);
   if (Number.isSafeInteger(fiberId) && fiberId >= nextFiberId) {
     nextFiberId = fiberId + 1;
   }
@@ -473,6 +474,7 @@ const releaseFiberId = (fiber: Fiber): void => {
     const fiberId = fiberIdMap.get(relatedFiber);
     if (fiberId !== undefined) fiberIds.add(fiberId);
     fiberIdMap.delete(relatedFiber);
+    fiberIdFinalizationRegistry?.unregister(relatedFiber);
   }
 
   for (const fiberId of fiberIds) {

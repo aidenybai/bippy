@@ -1,24 +1,11 @@
-import { spawnSync } from "node:child_process";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, it } from "vite-plus/test";
-
-const testsDirectory = dirname(fileURLToPath(import.meta.url));
-const worker = resolve(testsDirectory, "fiber-id-boundary-worker.ts");
-const directory = resolve(testsDirectory, "..");
+import { runCoreWorker } from "./run-core-worker.js";
 
 const runBoundary = (boundary: string): string => {
-  const result = spawnSync("pnpm", ["exec", "tsx", worker, boundary], {
-    cwd: directory,
-    encoding: "utf8",
-    timeout: 30000,
-  });
-  expect(result.error).toBeUndefined();
-  expect(result.status, result.stderr).toBe(0);
-  expect(result.stderr).toBe("");
+  const output = runCoreWorker("fiber-id-boundary-worker.ts", [boundary]);
   const isExhausted = boundary === "near" || boundary === "at";
   const exhaustion = { error: "RangeError:Fiber ID space exhausted" };
-  expect(JSON.parse(result.stdout)).toEqual({
+  expect(JSON.parse(output)).toEqual({
     attempts: isExhausted
       ? [
           boundary === "near" ? { identifier: Number.MAX_SAFE_INTEGER } : exhaustion,
@@ -35,7 +22,7 @@ const runBoundary = (boundary: string): string => {
     inheritedLookup: true,
     allocationLookups: isExhausted ? [boundary === "near" ? true : null, null] : [true, true],
   });
-  return result.stdout;
+  return output;
 };
 
 it.each(["near", "at", "beyond", "infinity", "nan", "negative"])(
