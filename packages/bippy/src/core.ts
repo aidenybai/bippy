@@ -853,6 +853,8 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const target = options.target ?? globalThis;
   const activeListener = options.onActive;
   const onActive = activeListener ? () => activeListener() : undefined;
+  const existingHook = target.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (existingHook) wireHookEventDispatchers(existingHook, target);
   const rdtHook = getRDTHook(undefined, target);
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
