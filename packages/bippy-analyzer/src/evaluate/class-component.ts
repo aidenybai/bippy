@@ -16,6 +16,7 @@ import type {
   StaticValue,
   SuperBinding,
 } from "../types.js";
+import { getTypeofValue } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
 import { getThrowCertainty, withoutThrows } from "./thrown.js";
@@ -248,10 +249,6 @@ export const isBaseClassPrototype = (value: StaticObjectValue): boolean =>
 
 export const isClassPrototype = (value: StaticObjectValue): boolean => prototypeOwners.has(value);
 
-/**
- * `Class.prototype`: the chain's methods and accessors with the prototype as
- * their receiver, inheriting like an instance of the parent class does.
- */
 export const getClassPrototypeObject = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
@@ -696,7 +693,7 @@ const renderClassInstance = (
     state = mergeState(
       state,
       interpreter.callFunction(deriveStateFromProps, [props, state], context, {
-        thisValue: classValue,
+        thisValue: UNDEFINED_VALUE,
       }),
     );
   } else if (!record.isMounted && !getInstanceMethod(instance, "getSnapshotBeforeUpdate")) {
@@ -716,7 +713,7 @@ const renderClassInstance = (
     state = mergeState(
       state,
       interpreter.callFunction(deriveStateFromError, [caughtError], context, {
-        thisValue: classValue,
+        thisValue: UNDEFINED_VALUE,
       }),
     );
   }
@@ -891,13 +888,11 @@ const constructLayer = (
   const finishConstructor = (returned: StaticValue): StaticValue => {
     if (returned.kind === "unknown")
       return unknownValue(`class constructor result: ${returned.reason}`, returned.location);
-    const result = interpreter.getConstructorResult(
-      returned,
-      instance,
-      interpreter.getRealm(context.environment),
-    );
+    const realm = interpreter.getRealm(context.environment);
+    const result = interpreter.getConstructorResult(returned, instance, realm);
     if (!isDerived || result !== instance || returned === instance) return result;
-    if (returned.kind === "primitive" && returned.value !== undefined)
+    const returnType = getTypeofValue(returned, realm);
+    if (returnType.kind === "primitive" && returnType.value !== "undefined")
       return getConstructionError(
         "TypeError",
         "Derived constructors may only return object or undefined",

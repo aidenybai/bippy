@@ -276,13 +276,16 @@ Declared class methods are no longer implicitly bound. Member calls supply a rec
 
 [Escape walks](../packages/bippy-analyzer/tests/escapes-receivers.test.ts) retain receivers for resolved member callees. Receiver-specific cache entries terminate recursive walks and support invalidation after mutations. Passing a method as an argument does not bind it.
 
+[Class result tests](../packages/bippy-analyzer/tests/class-results.test.ts) require derived constructors to reject known non-undefined primitive types even when their values are unknown. This covers unknown numeric and string returns, including guarded returns. Base constructors still ignore primitive results.
+
+React’s calls to `getDerivedStateFromProps` and `getDerivedStateFromError` now supply an undefined receiver, matching its extracted calls. Explicitly bound callbacks and static arrows retain their receivers. These checks do not establish complete class lifecycle or StrictMode behavior.
+
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
 - Unbound methods reading properties from `undefined`
-- [Derived constructors](../packages/bippy-analyzer/src/evaluate/class-component.ts) returning unknown numeric values
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

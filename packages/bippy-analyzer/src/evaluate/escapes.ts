@@ -508,18 +508,11 @@ const getMemberValues = (
 ): StaticValue[] =>
   values.flatMap((value) => {
     switch (value.kind) {
-      case "object": {
-        record(value, key);
-        const property = getObjectProperty(value, key);
-        return [
-          callMemo && property.kind === "function"
-            ? callMemo.bindReceiver(property, value)
-            : property,
-        ];
-      }
+      case "object":
       case "function": {
         record(value, key);
-        const property = value.properties.get(key);
+        const property =
+          value.kind === "object" ? getObjectProperty(value, key) : value.properties.get(key);
         return property
           ? [
               callMemo && property.kind === "function"
