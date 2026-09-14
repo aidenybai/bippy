@@ -853,12 +853,13 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const target = options.target ?? globalThis;
   const activeListener = options.onActive;
   const onActive = activeListener ? () => activeListener() : undefined;
-  const rdtHook = getRDTHook(onActive, target);
+  const rdtHook = getRDTHook(undefined, target);
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
   wireHookEventDispatchers(rdtHook, target);
   const subscription: InstrumentationSubscription = { options, target };
   instrumentationSubscriptions.add(subscription);
+  if (onActive) getRDTHook(onActive, target);
 
   return createUnsubscribe(() => {
     if (onActive) removeActiveListener(onActive, target);

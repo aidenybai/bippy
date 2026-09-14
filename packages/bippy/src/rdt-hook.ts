@@ -116,8 +116,10 @@ export const removeActiveListener = (
   }
 };
 
-const notifyActiveListeners = (target: ReactDevToolsTarget): void => {
-  const pendingListeners = [..._onActiveListeners];
+const notifyActiveListeners = (
+  target: ReactDevToolsTarget,
+  pendingListeners = [..._onActiveListeners],
+): void => {
   for (const listener of pendingListeners) {
     if (activeListenerTargets.get(listener)?.has(target)) callListener(listener, undefined);
   }
@@ -245,9 +247,10 @@ export const installRDTHook = (
             nextRenderers.set(rendererId, renderer);
           });
           if (ourRenderers.size > 0 || rdtHookReplaceListeners.size > 0) {
-            patchRDTHook(undefined, target);
+            patchRDTHook(undefined, target, () => notifyRDTHookReplaceListeners(newHook, target));
+          } else {
+            notifyRDTHookReplaceListeners(newHook, target);
           }
-          notifyRDTHookReplaceListeners(rdtHook, target);
         }
       },
     });
@@ -289,9 +292,10 @@ export const installRDTHook = (
 export const patchRDTHook = (
   onActive?: ActiveListener,
   target: ReactDevToolsTarget = globalThis,
+  onReady?: () => void,
 ): void => {
   if (onActive) addActiveListener(onActive, target);
-  let didNotifyActiveListeners = false;
+  let shouldNotifyActiveListeners = false;
   const rdtHook = getTargetHook(target);
   if (!rdtHook) return;
   const renderers = getRendererMap(rdtHook);
@@ -307,28 +311,25 @@ export const patchRDTHook = (
     if (!isReactDevtools) {
       rdtHook.on = noOp;
     }
-    if (renderers.size) {
-      renderers.forEach((renderer) => _renderers.add(renderer));
-      rdtHook._instrumentationIsActive = true;
-      notifyActiveListeners(target);
-      didNotifyActiveListeners = true;
-    } else if (!isReactDevtools && isReactRefresh(rdtHook)) {
-      // HACK: react-refresh's stub inject never records renderers, so a React app
-      // that injected before bippy loaded is undetectable through the renderers map.
-      // A react-refresh hook implies a dev renderer, so activate immediately.
-      rdtHook._instrumentationIsActive = true;
-      notifyActiveListeners(target);
-      didNotifyActiveListeners = true;
-    }
+    const shouldActivate = renderers.size > 0 || (!isReactDevtools && isReactRefresh(rdtHook));
     const previousInject = rdtHook.inject;
     rdtHook.inject = (renderer) => {
       const rendererId = previousInject.call(rdtHook, renderer);
       trackInjectedRenderer(rdtHook, target, renderers, rendererId, renderer);
       return rendererId;
     };
+    if (shouldActivate) {
+      renderers.forEach((renderer) => _renderers.add(renderer));
+      rdtHook._instrumentationIsActive = true;
+      shouldNotifyActiveListeners = true;
+    }
   }
-  if (!didNotifyActiveListeners && (renderers.size || rdtHook._instrumentationIsActive)) {
-    if (onActive) callListener(onActive, undefined);
+  const pendingListeners = shouldNotifyActiveListeners ? [..._onActiveListeners] : [];
+  onReady?.();
+  if (shouldNotifyActiveListeners) {
+    notifyActiveListeners(target, pendingListeners);
+  } else if (onActive && (renderers.size || rdtHook._instrumentationIsActive)) {
+    callListener(onActive, undefined);
   }
 };
 
