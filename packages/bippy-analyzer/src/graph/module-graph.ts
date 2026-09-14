@@ -369,6 +369,7 @@ export class ModuleGraph {
           if (resolved.isAmbiguous) return resolved;
           continue;
         }
+        if (module.isCommonJs) return resolved;
         if (starResolution && !isSameResolvedSymbol(starResolution, resolved)) {
           return {
             kind: "unresolved",

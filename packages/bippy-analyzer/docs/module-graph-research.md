@@ -28,7 +28,7 @@ The repositories were cloned locally and the following revisions inspected. Link
 
 Local clones are under `/tmp/bippy-module-graph-research`. Source inspection does not mean these six revisions were built or their complete suites run. The differential export experiment uses installed esbuild **0.28.2**, not a build of the reviewed esbuild revision, and Node **24.21.0**. No comparative performance measurements were made.
 
-The semantic reference is ECMAScript [Source Text Module Record `ResolveExport`](https://tc39.es/ecma262/#sec-source-text-module-records-resolveexport). React's [webpack client-reference resolver](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-server-dom-webpack/src/client/ReactFlightClientConfigBundlerWebpack.js#L71-L119) was also inspected. It resolves a module ID and export name through a manifest, with a namespace fallback. Resolving the defining JavaScript binding is not sufficient to reproduce that boundary or its chunk-loading behavior.
+The semantic reference is ECMAScript [Source Text Module Record `ResolveExport`](https://tc39.es/ecma262/#sec-resolveexport). React's [webpack client-reference resolver](https://github.com/facebook/react/blob/82c44beb444eda5230c063eaa163d01f38817211/packages/react-server-dom-webpack/src/client/ReactFlightClientConfigBundlerWebpack.js#L71-L119) was also inspected. It resolves a module ID and export name through a manifest, with a namespace fallback. Resolving the defining JavaScript binding is not sufficient to reproduce that boundary or its chunk-loading behavior.
 
 ## 1. Knip: usage is richer than file reachability
 
@@ -184,6 +184,8 @@ Before the repair, `resolveExportWithVisited()` returned the first successful in
 The [regression suite](../tests/module-exports.test.ts) keeps source-derived expectations separate from compiler outcomes. It covers both star orders, equal-valued distinct bindings, distinct bindings in one module, alias diamonds, direct overrides, explicit re-export overrides, nested conflicts, cycles with a valid source, and namespace origins.
 
 The repair aggregates successful internal resolutions, compares terminal binding identity, and propagates a structured `isAmbiguous` result. Direct exports still win. Multiple paths to the same binding remain valid. It does not evaluate export values to determine identity.
+
+The first full run exposed a regression in the existing `commonjs-package` fixture: reconstructed CommonJS getter loops were incorrectly treated as ESM star conflicts. `ModuleRecord` marks those synthetic re-exports as CommonJS. They now retain their prior lookup behavior instead of receiving the new ESM conflict rule. The unchanged native fixture and the twenty export controls pass after that correction.
 
 This is declaration-resolution work. It does not implement global ESM instantiation errors, repair namespace enumeration, or establish complete CommonJS and modeled-external star semantics.
 
