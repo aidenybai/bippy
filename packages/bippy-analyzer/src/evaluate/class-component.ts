@@ -18,7 +18,7 @@ import type {
 } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
-import { getThrowCertainty } from "./thrown.js";
+import { getThrowCertainty, withoutThrows } from "./thrown.js";
 import {
   applyPendingState,
   createHookFrame,
@@ -43,6 +43,7 @@ import {
   isNullish,
   NULL_VALUE,
   objectFromRecord,
+  mapValue,
   objectValue,
   primitiveValue,
   setObjectProperty,
@@ -144,7 +145,6 @@ const methodContextFor = (
   superBinding: { construct: null, parent: classValue.body.superValue },
 });
 
-/** Binds `classValue`'s own prototype members onto `target` with `this` as the receiver. */
 const bindMethods = (
   interpreter: Interpreter,
   classValue: StaticClassValue,
@@ -165,7 +165,7 @@ const bindMethods = (
     return functionValue.kind === "function"
       ? {
           ...functionValue,
-          thisValue: methodContext.thisValue,
+          thisValue: UNDEFINED_VALUE,
           superBinding: methodContext.superBinding,
         }
       : null;
@@ -193,10 +193,6 @@ const bindMethods = (
   return members;
 };
 
-/**
- * `super` as a value: in a static member the parent class itself, in an instance
- * member the parent's prototype methods bound to the current `this`.
- */
 export const getSuperObject = (
   interpreter: Interpreter,
   context: EvaluationContext,
@@ -372,7 +368,7 @@ const getInstanceMethod = (
   name: string,
 ): StaticFunctionValue | null => {
   const method = getObjectProperty(instance, name);
-  return method.kind === "function" ? { ...method, thisValue: method.thisValue ?? instance } : null;
+  return method.kind === "function" ? { ...method, boundThis: method.boundThis ?? instance } : null;
 };
 
 /** `assign({}, prevState, partialState)` of `getStateFromUpdate`; null and undefined leave the state as is. */
@@ -503,7 +499,8 @@ const mountClassInstance = (
     [props, instanceContext],
     context,
   );
-  if (initialized.value.kind === "object") instance = initialized.value;
+  const completed = withoutThrows(initialized.value);
+  if (completed.kind === "object") instance = completed;
   const initialState = getObjectProperty(instance, "state");
   const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
   const record: ClassInstanceRecord = {
@@ -769,13 +766,17 @@ export const constructClassInstance = (
   const instance = objectFromRecord({});
   const initialized = initializeInstance(interpreter, classValue, instance, args, context);
   const baseValue = initialized.chain[initialized.chain.length - 1].body.superValue;
-  if (baseValue && baseValue.kind !== "class") {
-    instance.entries.unshift({
-      kind: "spread",
-      value: unknownValue(`members inherited from ${describeValue(baseValue)}`),
-    });
-  }
-  return initialized.value;
+  if (!baseValue || baseValue.kind === "class") return initialized.value;
+  return mapValue(initialized.value, (constructed) => {
+    if (constructed.kind === "object" && constructed.constructedBy === classValue) {
+      interpreter.recordHeapMutation(constructed);
+      constructed.entries.unshift({
+        kind: "spread",
+        value: unknownValue(`members inherited from ${describeValue(baseValue)}`),
+      });
+    }
+    return constructed;
+  });
 };
 
 interface ClassInitialization {
@@ -833,6 +834,8 @@ const constructLayer = (
   if (!layer) return instance;
   const context = layer.methodContext;
   const isDerived = layer.current.body.superValue !== null;
+  const isNativeClass =
+    layer.current.node.type === "ClassDeclaration" || layer.current.node.type === "ClassExpression";
   const construction = objectFromRecord({
     hasConstructedParent: FALSE_VALUE,
     thisValue: UNDEFINED_VALUE,
@@ -855,7 +858,13 @@ const constructLayer = (
     );
   const constructParent = (superArgs: StaticValue[]): StaticValue =>
     interpreter.continueValue(
-      constructLayer(interpreter, layers, index + 1, superArgs, instance),
+      constructLayer(
+        interpreter,
+        layers,
+        index + 1,
+        superArgs,
+        isNativeClass ? { ...instance, ...objectValue([...instance.entries]) } : instance,
+      ),
       context,
       (parentInstance) =>
         interpreter.continueValue(getParentState(), context, (hasConstructedParent) => {
@@ -899,12 +908,7 @@ const constructLayer = (
     if (!layer.members.constructor) return isDerived ? constructParent(args) : instance;
     const superBinding: SuperBinding = {
       construct: isDerived ? constructParent : null,
-      getThisValue:
-        isDerived &&
-        (layer.current.node.type === "ClassDeclaration" ||
-          layer.current.node.type === "ClassExpression")
-          ? getThisValue
-          : undefined,
+      getThisValue: isDerived && isNativeClass ? getThisValue : undefined,
       parent: layer.current.body.superValue,
     };
     const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);

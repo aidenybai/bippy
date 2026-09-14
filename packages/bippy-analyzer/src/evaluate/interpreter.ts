@@ -2025,13 +2025,13 @@ export class Interpreter {
         member.key,
       );
       if (functionValue.kind !== "function") continue;
-      const bound: StaticFunctionValue = {
+      const method: StaticFunctionValue = {
         ...functionValue,
-        thisValue: classValue,
+        thisValue: UNDEFINED_VALUE,
         superBinding: { construct: null, parent: body.superValue },
       };
-      if (member.kind === "getter") staticGetters.set(member.key, bound);
-      else classValue.properties.set(member.key, bound);
+      if (member.kind === "getter") staticGetters.set(member.key, method);
+      else classValue.properties.set(member.key, method);
     }
     for (const member of body.members) {
       if (!member.isStatic) continue;

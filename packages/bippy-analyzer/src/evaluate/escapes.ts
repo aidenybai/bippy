@@ -504,21 +504,34 @@ const getMemberValues = (
   values: StaticValue[],
   key: string,
   record: RecordDependency,
+  callMemo: EscapeMemo | null,
 ): StaticValue[] =>
   values.flatMap((value) => {
     switch (value.kind) {
-      case "object":
+      case "object": {
         record(value, key);
-        return [getObjectProperty(value, key)];
+        const property = getObjectProperty(value, key);
+        return [
+          callMemo && property.kind === "function"
+            ? callMemo.bindReceiver(property, value)
+            : property,
+        ];
+      }
       case "function": {
         record(value, key);
         const property = value.properties.get(key);
-        return property ? [property] : [];
+        return property
+          ? [
+              callMemo && property.kind === "function"
+                ? callMemo.bindReceiver(property, value)
+                : property,
+            ]
+          : [];
       }
       case "branch":
-        return getMemberValues(value.alternatives, key, record);
+        return getMemberValues(value.alternatives, key, record, callMemo);
       case "optional":
-        return getMemberValues([value.value], key, record);
+        return getMemberValues([value.value], key, record, callMemo);
       default:
         return [];
     }
@@ -535,18 +548,22 @@ export const resolveAccessPath = (
   path: AccessPath,
   walk: EscapeWalk,
   bindings: ItemBinding[],
+  isCall = false,
 ): StaticValue[] => {
   const record: RecordDependency = (dependency, key) =>
     walk.memo.addDependency(closure, dependency, key);
   const [root, ...members] = path;
-  const thisValue = closure.thisValue ?? closure.boundThis;
+  const thisValue =
+    closure.node.type === "ArrowFunctionExpression"
+      ? closure.thisValue
+      : (closure.boundThis ?? closure.thisValue);
   let values =
     root === "this"
       ? thisValue
         ? [thisValue]
         : []
       : resolveEscapedIdentifier(closure, frame, root, bindings, walk, record);
-  for (const member of members) {
+  for (const [index, member] of members.entries()) {
     const keys =
       typeof member === "string"
         ? [member]
@@ -556,7 +573,14 @@ export const resolveAccessPath = (
               ? [String(key.value)]
               : [],
           );
-    values = keys.flatMap((key) => getMemberValues(values, key, record));
+    values = keys.flatMap((key) =>
+      getMemberValues(
+        values,
+        key,
+        record,
+        isCall && index === members.length - 1 ? walk.memo : null,
+      ),
+    );
   }
   return values;
 };
@@ -728,7 +752,9 @@ const forEachInvokedCallable = (
       const [value, ...others] = path ? resolve(path) : [];
       return value && others.length === 0 ? value : null;
     });
-    const callees = callSite.callee ? resolve(callSite.callee) : [];
+    const callees = callSite.callee
+      ? resolveAccessPath(closure, frame, callSite.callee, walk, callSite.bindings, true)
+      : [];
     const isEveryCalleeFollowed =
       callees.length > 0 && callees.every((callee) => callee.kind === "function");
     for (const callee of callees) {

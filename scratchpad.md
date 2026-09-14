@@ -915,11 +915,45 @@ Their serialized models match the constructor-completion checkpoint: 11 states, 
 
 Final gates pass 3,347 root tests with two existing skips and 1,301 analyzer tests across 79 files. Typecheck/build, realm checks, formatting, and documentation checks pass. Lint retains two intentional pre-`super()` access warnings in fixtures. `/tmp/bippy-derived-this-final-validation.exit` records 0; `derived-this-reviewed-gates.json` checks production/type hashes and all 22 exact same-snapshot comparisons. Complete class, language, causal-model, renderer, and 500-repository gates remain open.
 
+### Class allocation and call receivers
+
+The saved allocation and extracted-method contradictions now match their original native snapshots. `class-identity-{allocation,extraction}-saved-comparison.json` records `false:2` and `unbound` using unchanged source/capture bytes, without observations or new native rendering. The original contradictions and their passing replay remain preserved.
+
+Each native-class `super()` attempt now receives a fresh instance with the original prototype metadata. Failed instances retain their fields and frozen state. Duplicate calls construct another parent before rejecting the second binding; the first initialized receiver remains selected. Compiled function wrappers retain their earlier allocation path. This is not full reflective construction or `new.target` coverage.
+
+Declared instance and static methods now default to an undefined receiver rather than storing an implicit class/instance binding. Explicit calls, binds, and lexical arrows keep their receivers. React’s instance lifecycle helpers supply the instance explicitly. Mounting reads state from the common completing constructor result, while incompatible path-dependent instances remain conservative.
+
+The first full suite exposed a regression in `escaped-queue-callbacks.tsx`: the model retained `<em>` while native React reached `<strong>`. `/tmp/bippy-class-identity-first-package.log` preserves that mismatch and its passing replay. Escape walks now capture receivers at resolved member-call sites, not when reading methods as arguments. Memoized receiver-specific wrappers retain recursion termination and mutation invalidation. Bound receivers take precedence over default receivers; arrows retain lexical `this`.
+
+Eight strict component checks cover allocation, extraction, direct/static/bound/arrow receivers, shared method identity, frozen failed instances, guarded retries, duplicate calls, and React mount updates. Six direct escape checks cover receiver separation, passed methods, bound receivers, arrows, recursion, and stale reads. Baseline `/tmp/bippy-class-identity-baseline` at `d83ce6f0` fails nine checks and passes five controls. Relative imports in those two baseline tests use baseline production; both tests and all eight fixtures are hash-identical to main.
+
+Two adjacent deterministic failures remain outside passing coverage:
+
+| Probe                                                     | Source-derived and native result | Model result |
+| --------------------------------------------------------- | -------------------------------- | ------------ |
+| Extracted method reads `this.value` with undefined `this` | `caught`                         | `returned`   |
+| Derived constructor returns `Math.random()`               | `caught`                         | `returned`   |
+
+Both native comparisons mismatch in four steps without exhaustion or model omissions, while replay passes. `class-identity-limit-*.json` and `/tmp/bippy-class-identity-limits.log` preserve the failures. Their fixtures and runner are in the new baseline worktree, but the runner imports main production explicitly. React source review also found that static derivation callbacks are invoked as extracted functions; the analyzer’s explicit class receiver still needs independent verification.
+
+All 24 same-snapshot checks are now concrete and exact: two allocation/extraction, two derived-binding, seven constructor, and thirteen earlier controls. Seven reference-limit failures remain unchanged. Five corpus controls repeated unchanged; all 53 saved workflow snapshots remain partial. The corpus remains at 307 repositories.
+
+Source-only files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-class-identity-reviewed-home-model.json`: SHA-256 `a9844774cf708ee70542a1615e92a0cd068c4a8ef1eb2b604f15d1ac3c755a2e`
+- `source-only-class-identity-reviewed-memory-model.json`: SHA-256 `6afd19d6049f5ac5f3ea01215a22bb5f8c1b0f584a19c5d23ebbd5baea1341f8`
+
+Their serialized models match the derived-binding checkpoint: 11 states, seven wildcards, and one subtree omission. The new production hash lists include `escapes.ts` and `escape-memo.ts`.
+
+A helper-preparation command initially invoked Bun without its stdin argument, so the helper files were not created. The first model/control launches failed to load those files. Their logs and nonzero markers remain; corrected launches use separate `*-retried` logs. No model, capture, or result evidence was overwritten.
+
+Final gates pass 3,369 root tests with two existing skips and 1,323 analyzer tests across 81 files. Typecheck/build, realm checks, formatting, and documentation validation pass. Lint retains three intentional `this`-alias warnings and one duplicate-`super()` warning in fixtures. `class-identity-reviewed-gates.json` verifies baseline/main hashes, same-snapshot checks, retained failures, controls, and corpus bytes. The preserved ECMAScript source supplies construction, call-reference, and strict-receiver rules; the pinned React checkout supplies construction/adoption and instance-lifecycle call sites. No complete language, lifecycle, causal-model, renderer, or 500-repository claim follows.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,347 tests**, with two existing React-19 DevTools skips; this includes **1,301 analyzer tests / 79 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,369 tests**, with two existing React-19 DevTools skips; this includes **1,323 analyzer tests / 81 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.

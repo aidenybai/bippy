@@ -34,11 +34,30 @@ const isSameTuple = (left: EscapeTuple, right: EscapeTuple): boolean =>
  * the first closure goes stale since the last `takeStale`.
  */
 export class EscapeMemo {
+  private readonly receivers = new WeakMap<
+    StaticFunctionValue,
+    WeakMap<StaticValue, StaticFunctionValue>
+  >();
   private readonly followed = new Map<StaticFunctionValue, EscapeTuple[]>();
   private readonly stale = new Map<StaticFunctionValue, EscapeTuple[]>();
   private readonly dependents = new Map<EscapeDependency, Map<string, Set<StaticFunctionValue>>>();
 
   constructor(private readonly onStale: () => void) {}
+
+  bindReceiver(closure: StaticFunctionValue, receiver: StaticValue): StaticFunctionValue {
+    if (closure.node.type === "ArrowFunctionExpression" || closure.boundThis) return closure;
+    let receivers = this.receivers.get(closure);
+    if (!receivers) {
+      receivers = new WeakMap();
+      this.receivers.set(closure, receivers);
+    }
+    let method = receivers.get(receiver);
+    if (!method) {
+      method = { ...closure, boundThis: receiver };
+      receivers.set(receiver, method);
+    }
+    return method;
+  }
 
   /** Records the tuple as followed; false when the closure was already followed with it. */
   follow(closure: StaticFunctionValue, tuple: EscapeTuple): boolean {
