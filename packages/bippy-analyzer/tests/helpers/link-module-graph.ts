@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, extname, resolve } from "node:path";
 import { SourceTextModule } from "node:vm";
 
@@ -14,6 +15,9 @@ const loadModule = (filename: string): SourceTextModule => {
 
 void loadModule(process.argv[2])
   .link((specifier, referringModule) => {
+    if (!specifier.startsWith(".")) {
+      return loadModule(createRequire(referringModule.identifier).resolve(specifier));
+    }
     const filename = resolve(dirname(referringModule.identifier), specifier);
     return loadModule(extname(filename) ? filename : `${filename}.ts`);
   })

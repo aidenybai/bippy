@@ -178,6 +178,7 @@ export interface UnresolvedSymbol {
   kind: "unresolved";
   reason: string;
   isAmbiguous?: true;
+  isUncertain?: true;
 }
 
 /**
