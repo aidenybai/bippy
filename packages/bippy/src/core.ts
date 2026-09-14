@@ -414,7 +414,12 @@ const fiberIdFinalizationRegistry =
 const createFiberReference = (fiber: Fiber): FiberReference =>
   typeof WeakRef === "function" ? new WeakRef(fiber) : { deref: () => fiber };
 
-export const setFiberId = (fiber: Fiber, fiberId: number = nextFiberId++): void => {
+const getNextFiberId = (): number => {
+  if (!Number.isSafeInteger(nextFiberId)) throw new RangeError("Fiber ID space exhausted");
+  return nextFiberId++;
+};
+
+export const setFiberId = (fiber: Fiber, fiberId: number = getNextFiberId()): void => {
   const previousFiberId = fiberIdMap.get(fiber);
   if (
     previousFiberId !== undefined &&
@@ -435,10 +440,17 @@ export const getFiberId = (fiber: Fiber): number => {
   let currentFiberId = fiberIdMap.get(fiber);
   if (currentFiberId === undefined && fiber.alternate) {
     currentFiberId = fiberIdMap.get(fiber.alternate);
-    if (currentFiberId !== undefined) setFiberId(fiber, currentFiberId);
+    if (currentFiberId !== undefined) {
+      const assignedFiber = fiberByIdMap.get(currentFiberId)?.deref();
+      if (assignedFiber && assignedFiber !== fiber.alternate) {
+        fiberIdMap.set(fiber, currentFiberId);
+      } else {
+        setFiberId(fiber, currentFiberId);
+      }
+    }
   }
   if (currentFiberId === undefined) {
-    currentFiberId = nextFiberId++;
+    currentFiberId = getNextFiberId();
     setFiberId(fiber, currentFiberId);
   }
   return currentFiberId;
