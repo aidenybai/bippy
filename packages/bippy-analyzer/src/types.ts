@@ -271,6 +271,7 @@ export interface ClassBody {
 export interface SuperBinding {
   /** `super(...)` inside a derived constructor; null elsewhere. */
   construct: ((args: StaticValue[]) => StaticValue) | null;
+  getThisValue?: () => StaticValue;
   /** The class `super.member` reads from; null for a base class. */
   parent: StaticValue | null;
 }

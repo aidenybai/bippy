@@ -2421,7 +2421,7 @@ export class Interpreter {
         if (node.name === "undefined") return UNDEFINED_VALUE;
         return this.lookupIdentifier(node.name, context);
       case "ThisExpression":
-        return context.thisValue ?? this.evaluateUnboundThis(context, location);
+        return this.getThisValue(context, location);
       case "ArrayExpression":
         return this.evaluateArrayExpression(node, context);
       case "ObjectExpression":
@@ -3042,6 +3042,14 @@ export class Interpreter {
   }
 
   /** `this` of a function called without a receiver: the global object in sloppy code, uncertain in strict code we cannot place. */
+  getThisValue(context: EvaluationContext, location: SourceLocation | null): StaticValue {
+    return (
+      context.superBinding?.getThisValue?.() ??
+      context.thisValue ??
+      this.evaluateUnboundThis(context, location)
+    );
+  }
+
   private evaluateUnboundThis(
     context: EvaluationContext,
     location: SourceLocation | null,
@@ -3623,19 +3631,41 @@ export class Interpreter {
     if (inlined) return inlined;
     const object = this.evaluateExpression(node.object, context);
     const location = this.locate(context.module, node);
-    if (node.property.type === "PrivateIdentifier") {
-      return this.getProperty(object, `#${node.property.name}`, context, location, node.optional);
-    }
-    if (!node.computed) {
-      return this.getProperty(object, node.property.name, context, location, node.optional);
-    }
-    const key = this.evaluateExpression(node.property, context);
-    const propertyName = toPropertyKey(key);
-    if (propertyName !== null) {
-      return this.getProperty(object, propertyName, context, location, node.optional);
-    }
-    if (object === CHAIN_SHORT_CIRCUIT) return object;
-    return mapValue(object, (alternative) => this.getDynamicMember(alternative, key, location));
+    const readMember = (receiver: StaticValue, receiverContext: EvaluationContext): StaticValue => {
+      if (receiver === CHAIN_SHORT_CIRCUIT || (node.optional && isNullish(receiver) === true))
+        return CHAIN_SHORT_CIRCUIT;
+      if (node.property.type === "PrivateIdentifier")
+        return this.getProperty(
+          receiver,
+          `#${node.property.name}`,
+          receiverContext,
+          location,
+          node.optional,
+        );
+      if (!node.computed)
+        return this.getProperty(
+          receiver,
+          node.property.name,
+          receiverContext,
+          location,
+          node.optional,
+        );
+      const key = this.evaluateExpression(node.property, receiverContext);
+      const readKey = (propertyKey: StaticValue, keyContext: EvaluationContext): StaticValue => {
+        const propertyName = toPropertyKey(propertyKey);
+        return propertyName !== null
+          ? this.getProperty(receiver, propertyName, keyContext, location, node.optional)
+          : mapValue(receiver, (alternative) =>
+              this.getDynamicMember(alternative, propertyKey, location),
+            );
+      };
+      return getThrowCertainty(key) === "never"
+        ? readKey(key, receiverContext)
+        : this.continueValue(key, receiverContext, readKey);
+    };
+    return getThrowCertainty(object) !== "never" || (node.optional && object.kind === "branch")
+      ? this.continueValue(object, context, readMember)
+      : readMember(object, context);
   }
 
   private getDynamicMember(
@@ -4237,7 +4267,9 @@ export class Interpreter {
       if (reference.kind !== "list") return reference;
       return callWith(
         reference.items[0],
-        member.object.type === "Super" ? referenceContext.thisValue : reference.items[1],
+        member.object.type === "Super"
+          ? this.getThisValue(referenceContext, location)
+          : reference.items[1],
         referenceContext,
       );
     });
@@ -5923,10 +5955,7 @@ export class Interpreter {
     switch (name.type) {
       case "JSXIdentifier":
         if (name.name === "this")
-          return (
-            context.thisValue ??
-            this.evaluateUnboundThis(context, this.locate(context.module, name))
-          );
+          return this.getThisValue(context, this.locate(context.module, name));
         // Only a bare lowercase tag is a host element; `<ctx.Provider>` looks
         // up `ctx` whatever its case.
         if (!isMemberObject && /^[a-z]/.test(name.name)) return primitiveValue(name.name);

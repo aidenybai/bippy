@@ -883,11 +883,43 @@ Their serialized models match the argument-order checkpoint: 11 states, seven wi
 
 Final gates pass 3,325 root tests with two existing skips and 1,279 analyzer tests across 78 files. Typecheck/build, realm checks, formatting, and documentation checks pass. Lint retains two intentional fixture warnings for aliasing `this` and calling `super()` twice. `/tmp/bippy-constructor-completion-final-validation.exit` records 0; `constructor-completion-reviewed-gates.json` verifies the evidence, including class source and type-definition hashes. Complete language, renderer, causal-model, and 500-repository gates remain open.
 
+### Live derived-constructor bindings
+
+The two saved derived-constructor contradictions now match their original expectations: parent replacement returns `new`, and pre-`super()` access produces `caught:0`. `derived-this-binding-*-saved-comparison.json` reuses identical source and native snapshot bytes without observations or new native rendering. The old failures and passing replay remain evidence.
+
+The journaled construction object now stores the initialized `this` value as well as parent-construction status. Native class constructors expose that binding through `SuperBinding.getThisValue`. Reads before initialization throw; derived fields and later reads use the parent’s replacement object. Arrows retain the live binding, while nested non-arrow functions keep their own receivers. Compiled function wrappers do not acquire native-class initialization checks.
+
+The first expanded test exposed a remaining read-order error. `super[getKey()]` evaluated its key after the uninitialized receiver had thrown, producing `caught:1:0` instead of `caught:0:0`. `/tmp/bippy-derived-this-expanded.log` retains that failure. Member reads now guard known receiver/key failures and skip computed keys on absent finite optional paths.
+
+A later getter test emitted `new:GXK` instead of `new:KG`: selected and unrelated getters ran before key evaluation. `/tmp/bippy-derived-this-super-getters-before.log` preserves that failure. Declared instance `super` getters now remain accessors until selected, with the actual receiver retained. Parent replacements represented by value kinds other than `object` remain unknown.
+
+Eleven strict component regressions fail on baseline `d770182a` and pass after the repair. They check fields, replacement guards, captured arrows, nested-function receivers, `super` methods, optional keys, throwing keys, and getter order. Each requires exact concrete states, no omissions, exact native membership, and no replay mismatches. Baseline production is under `/tmp/bippy-derived-this-baseline`, with dependency links; its expanded test uses `tests/derived-this-expanded.test.ts`. The original ten-case test and both baseline logs remain separate.
+
+Two adjacent deterministic contradictions remain:
+
+| Probe                                                 | Source-derived and native result | Model result |
+| ----------------------------------------------------- | -------------------------------- | ------------ |
+| Retried parent allocates a fresh instance             | `false:2`                        | `true:2`     |
+| Extracted `super` method is called without a receiver | `unbound`                        | `new`        |
+
+Both native comparisons mismatch in four steps without exhaustion. Both models have no omissions and pass replay. Their fixtures and test remain under `/tmp/bippy-derived-this-baseline/packages/bippy-analyzer/tests/fixtures/derived-limits/` and `tests/derived-limits.test.ts`, using main production through absolute imports. `/tmp/bippy-derived-this-limits.log` and `derived-this-limit-*-comparison.json` preserve these failures, not passing coverage.
+
+Seven saved constructor checks and thirteen earlier saved checks remain concrete and exact. Seven reference-limit failures remain unchanged. Five corpus controls repeat unchanged against identical captures; the corpus remains at 307 repositories.
+
+New source-only files under `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-derived-this-reviewed-home-model.json`: SHA-256 `e6f94ec05884be5636bf34b4f1447fb11c90d0b0fdc36bb0440e1d89cf67c188`
+- `source-only-derived-this-reviewed-memory-model.json`: SHA-256 `96d8ea9b07e6c3a74389254b7b810ddf144419662e62c9b84e43878f585581b5`
+
+Their serialized models match the constructor-completion checkpoint: 11 states, seven wildcards, and one subtree omission. All 53 saved workflow snapshots remain partial. The retained ECMAScript source specifies `BindThisValue`, `GetThisBinding`, and `super` property order. The local React checkout supplies the class construction/adoption and DevTools bridge `super` call examples; these reads are not integration coverage.
+
+Final gates pass 3,347 root tests with two existing skips and 1,301 analyzer tests across 79 files. Typecheck/build, realm checks, formatting, and documentation checks pass. Lint retains two intentional pre-`super()` access warnings in fixtures. `/tmp/bippy-derived-this-final-validation.exit` records 0; `derived-this-reviewed-gates.json` checks production/type hashes and all 22 exact same-snapshot comparisons. Complete class, language, causal-model, renderer, and 500-repository gates remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,325 tests**, with two existing React-19 DevTools skips; this includes **1,279 analyzer tests / 78 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,347 tests**, with two existing React-19 DevTools skips; this includes **1,301 analyzer tests / 79 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
