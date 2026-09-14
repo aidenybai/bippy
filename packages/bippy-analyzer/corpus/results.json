@@ -317585,6 +317585,803 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T15:11:51.062Z",
       "failure": null
+    },
+    {
+      "id": "arjuncvinod-ios-calculator-clone",
+      "revision": "bfc369ef821d28cdfe88b88ddceb3b418169b083",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:16:11.987Z",
+      "durationMs": 256,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 26,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 26,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 25,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 25,
+        "staticFibers": 25,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 25,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 25,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:16:09.741Z",
+      "failure": null
+    },
+    {
+      "id": "soburjon19-calculator",
+      "revision": "027ae3b576870fdb27bb30ff9d07df489b3b23d6",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:16:11.968Z",
+      "durationMs": 258,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 24,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: Invalid DOM property `%s`. Did you mean `%s`?%s class className \n    at input\n    at div\n    at div\n    at App (http://127.0.0.1:54902/static/js/bundle.js:33:78)",
+          "Warning: You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.%s \n    at input\n    at div\n    at div\n    at App (http://127.0.0.1:54902/static/js/bundle.js:33:78)"
+        ],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 24,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 23,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 23,
+        "staticFibers": 23,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 23,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 23,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:16:09.647Z",
+      "failure": null
+    },
+    {
+      "id": "webrevo-bmi-calculator",
+      "revision": "86b9d99f56246dac74d01a887d02ea25e89b5531",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:16:24.907Z",
+      "durationMs": 263,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 31,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 31,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 28,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 30,
+        "staticFibers": 30,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 30,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 30,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:16:22.616Z",
+      "failure": null
+    },
+    {
+      "id": "batuhanyilmazzz-budget-calculator-react",
+      "revision": "64594b40e924fe92e1bc5a62181edbf31921f992",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:16:37.114Z",
+      "durationMs": 228,
+      "runtime": {
+        "reactVersion": "16.12.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 19,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Budget App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 19,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 18,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 18,
+        "staticFibers": 18,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 18,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 18,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:16:34.995Z",
+      "failure": null
+    },
+    {
+      "id": "ikuzweelisa-javascipt-calculator",
+      "revision": "135f21155975c3d6b97298c496ea5182a96f06c4",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:16:22.530Z",
+      "durationMs": 377,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 53,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "FCC Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 53,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 52,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 52,
+        "staticFibers": 52,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 52,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 52,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:16:20.147Z",
+      "failure": null
+    },
+    {
+      "id": "graysonm23-react-memory-game",
+      "revision": "5295333da992059a9f64082aa0a6ebd10634ce89",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:16:35.425Z",
+      "durationMs": 569,
+      "runtime": {
+        "reactVersion": "16.12.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 71,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: The final argument passed to %s changed size between renders. The order and size of this array must remain constant.\n\nPrevious: %s\nIncoming: %s%s useEffect [] [[object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object]] \n    in App (at src/index.js:5)",
+          "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://fb.me/react-warning-keys for more information.%s \n\nCheck the render method of `Board`.  \n    in Card (at board/index.jsx:19)\n    in Board (at app.jsx:81)\n    in div (at app.jsx:79)\n    in App (at src/index.js:5)"
+        ],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 71,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 5
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 70,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 70,
+        "staticFibers": 70,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 70,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 76,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:16:32.616Z",
+      "failure": null
+    },
+    {
+      "id": "hanzalahwaheed-react-notes-app",
+      "revision": "41caa5fcaaafb3e189b4cb7276711af8050225fc",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:20:58.439Z",
+      "durationMs": 327,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 95,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `NotesList`.  \n    at Note (http://127.0.0.1:54912/static/js/bundle.js:374:3)\n    at NotesList (http://127.0.0.1:54912/static/js/bundle.js:475:3)\n    at div\n    at div\n    at App (http://127.0.0.1:54912/static/js/bundle.js:35:76)"
+        ],
+        "title": "My Notes"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 66,
+          "textCount": 2,
+          "branchCount": 1,
+          "repeatCount": 1,
+          "opaqueCount": 7,
+          "unknownCount": 2,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 45,
+        "matchedText": 2,
+        "opaqueSubtrees": 6,
+        "opaqueSkippedFibers": 47,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 94,
+        "staticFibers": 53,
+        "coverage": 1,
+        "strictCoverage": 0.5,
+        "divergence": null,
+        "stepsUsed": 57,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "stateCount": 5,
+        "clusters": 1,
+        "tree": {
+          "nodes": 116,
+          "inputs": 2,
+          "guards": 5,
+          "branches": 1,
+          "repeats": 1,
+          "opaque": 13,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 4,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (unknown(JSON.parse))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (unknown(JSON.parse))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+              "side": 0,
+              "guard": "truthy(#1)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#1)",
+              "reason": "if (unknown(JSON.parse))",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+              "side": 1,
+              "guard": "not(truthy(#1))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 4,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 5,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "truthy(#1)",
+                "reason": "if (unknown(JSON.parse))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "truthy(#1)",
+                "reason": "if (unknown(JSON.parse))",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:20:56.256Z",
+      "failure": null
     }
   ]
 }
