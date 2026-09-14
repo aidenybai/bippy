@@ -551,10 +551,10 @@ const updateFiberTree = (
     if (wasTimedOut && isTimedOut) {
       const nextFallback = fiber.child?.sibling;
       const previousFallback = previousFiber.child?.sibling;
-      if (nextFallback && previousFallback) {
+      if (nextFallback) {
         pendingUpdates.push({
           fiber: nextFallback,
-          previousFiber: previousFallback,
+          previousFiber: previousFallback ?? null,
           traverseSiblings: false,
         });
       }
