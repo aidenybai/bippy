@@ -322651,6 +322651,3570 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T15:57:30.149Z",
       "failure": null
+    },
+    {
+      "id": "safdarjamal-interest-calculator",
+      "revision": "496eb1824a82ffc7a7dee5caf13e15b981e8100e",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:27:52.662Z",
+      "durationMs": 308,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 261,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Interest Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 27,
+          "textCount": 1,
+          "branchCount": 2,
+          "repeatCount": 0,
+          "opaqueCount": 11,
+          "unknownCount": 0,
+          "modulesLoaded": 12
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 8,
+        "matchedText": 0,
+        "opaqueSubtrees": 10,
+        "opaqueSkippedFibers": 252,
+        "slotsMatched": 6,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Header> [FunctionComponent] > <AppBar> (opaque) > <Toolbar> (opaque) > <Typography> (opaque)",
+            "reason": "default from @material-ui/core is not analyzed",
+            "head": "<WithStyles(ForwardRef(Paper))> [ForwardRef]",
+            "skippedFibers": 9,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Header> [FunctionComponent] > <AppBar> (opaque) > <Toolbar> (opaque) > <Typography> (opaque)[0]",
+              "expected": "\"Interest Calculator\"",
+              "actual": "<Paper> [ForwardRef]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 2,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 260,
+        "staticFibers": 20,
+        "coverage": 1,
+        "strictCoverage": 0.03076923076923077,
+        "divergence": null,
+        "stepsUsed": 169,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 1,
+        "tree": {
+          "nodes": 41,
+          "inputs": 3,
+          "guards": 6,
+          "branches": 2,
+          "repeats": 0,
+          "opaque": 21,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, 0)))",
+              "reason": "&& on branch(true | <boolean>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/safdarjamal-interest-calculator/src/components/Main/index.jsx:43:10",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2, 1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/safdarjamal-interest-calculator/src/components/Main/index.jsx:46:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, 0)))",
+              "reason": "&& on branch(true | <boolean>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/safdarjamal-interest-calculator/src/components/Main/index.jsx:43:10",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, 0)))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, 0)))",
+              "reason": "&& on branch(true | <boolean>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/safdarjamal-interest-calculator/src/components/Main/index.jsx:43:10",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(#2, 0))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2, 1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/safdarjamal-interest-calculator/src/components/Main/index.jsx:46:10",
+              "side": 0,
+              "guard": "and(not(eq(choice(#1), 0)), eq(#2, 1))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#1), 0)), eq(#2, 1))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/safdarjamal-interest-calculator/src/components/Main/index.jsx:46:10",
+              "side": 1,
+              "guard": "not(and(not(eq(choice(#1), 0)), eq(#2, 1)))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 3,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 4,
+        "assignments": 3,
+        "replayed": 3,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:27:50.216Z",
+      "failure": null
+    },
+    {
+      "id": "epranka-descent-app",
+      "revision": "b4eb0109020d266b431cc2c62b0482426c3bcf04",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:27:51.481Z",
+      "durationMs": 403,
+      "runtime": {
+        "reactVersion": "16.14.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 89,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Calculate your descent path | Top of descent calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 80,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 9,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 68,
+        "matchedText": 2,
+        "opaqueSubtrees": 9,
+        "opaqueSkippedFibers": 18,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 88,
+        "staticFibers": 79,
+        "coverage": 1,
+        "strictCoverage": 0.7954545454545454,
+        "divergence": null,
+        "stepsUsed": 79,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 79,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 9,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:27:48.898Z",
+      "failure": null
+    },
+    {
+      "id": "gabrielwr-react-retirement-calculator",
+      "revision": "089f16efbdf684df81f6e4ee813cc504acdc6613",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:28:08.626Z",
+      "durationMs": 855,
+      "runtime": {
+        "reactVersion": "16.14.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 437,
+        "commits": 96,
+        "pageErrors": [
+          "Warning: Failed prop type: You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.\n    in input (created by styled.input)\n    in styled.input (at age-form/index.js:24)\n    in div (created by styled.div)\n    in styled.div (at age-form/index.js:22)\n    in AgeForm (created by Connect(AgeForm))\n    in Connect(AgeForm) (at calculator-container/index.js:158)\n    in div (created by styled.div)\n    in styled.div (at calculator-container/index.js:157)\n    in div (created by styled.div)\n    in styled.div (at calculator-container/index.js:156)\n    in CalculatorContainer (created by Connect(CalculatorContainer))\n    in Connect(CalculatorContainer) (created by Context.Consumer)\n    in Route (at App.js:18)\n    in div (created by styled.div)\n    in styled.div (at App.js:16)\n    in App (created by Context.Consumer)\n    in Route (at src/index.js:18)\n    in Switch (at src/index.js:17)\n    in Router (created by BrowserRouter)\n    in BrowserRouter (at src/index.js:16)\n    in Provider (at src/index.js:15)"
+        ],
+        "title": "Retirement Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 6,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 5,
+          "unknownCount": 0,
+          "modulesLoaded": 22
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 436,
+        "staticFibers": 5,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 200001,
+        "budgetExhausted": true
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 5,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 5,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:28:05.759Z",
+      "failure": null
+    },
+    {
+      "id": "deependrasingh002-stopwatch-react",
+      "revision": "fecae625e3e59834183d1601f0feff09c6e71874",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:11.348Z",
+      "durationMs": 257,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 15,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 15,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 10,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 14,
+        "staticFibers": 14,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 14,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 14,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:09.153Z",
+      "failure": null
+    },
+    {
+      "id": "meenakshi-dhanani-react-hangman",
+      "revision": "f44ba24878c838c347029844a20e1900403bdb89",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:10.772Z",
+      "durationMs": 253,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 33,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 37,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 32,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 32,
+        "staticFibers": 33,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 33,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 66,
+          "inputs": 2,
+          "guards": 4,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-thirteen/meenakshi-dhanani-react-hangman/src/Hangman.jsx:29:5",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-thirteen/meenakshi-dhanani-react-hangman/src/Hangman.jsx:29:5",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(false | true)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-thirteen/meenakshi-dhanani-react-hangman/src/Hangman.jsx:29:5",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 3,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:08.007Z",
+      "failure": null
+    },
+    {
+      "id": "dulanachathurma-my-stop-watch",
+      "revision": "82c1b5065cd587b901c83f5ac77059bec09879ae",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:22.442Z",
+      "durationMs": 299,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 10,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "stopwatch-app"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 10,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 9,
+        "staticFibers": 9,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 9,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 9,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:20.129Z",
+      "failure": null
+    },
+    {
+      "id": "fajrcode-color-generator",
+      "revision": "41ee1171cabf07fba74b673dd4a00175fab78412",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:22.761Z",
+      "durationMs": 441,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 21,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Color Generator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 21,
+          "textCount": 6,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 14,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 20,
+        "staticFibers": 20,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 20,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 20,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:20.187Z",
+      "failure": null
+    },
+    {
+      "id": "esmaaksoy-color-generator",
+      "revision": "6894621f0c5c6bbc1c789728df1abb02515e6b61",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:35.885Z",
+      "durationMs": 355,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 135,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Color Generator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 17,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 4
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 92,
+        "matchedText": 21,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 21,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"100\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"90\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"80\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"70\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"60\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"50\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"40\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"30\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"20\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"10\""
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "repeatIterations": 21,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 134,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 0.8432835820895522,
+        "divergence": null,
+        "stepsUsed": 178,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 16,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+              "count": 21
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+                "count": 21
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/esmaaksoy-color-generator/src/App.js:29:10",
+              "count": 21
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:33.222Z",
+      "failure": null
+    },
+    {
+      "id": "saglamburcu-react-color-generator",
+      "revision": "0c48605da9673cf5c38008c458e20b4c8ee46ca3",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:35.885Z",
+      "durationMs": 314,
+      "runtime": {
+        "reactVersion": "18.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 140,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Color Generator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 18,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 1,
+          "unknownCount": 1,
+          "modulesLoaded": 4
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 17,
+        "matchedText": 2,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 118,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 2,
+        "wildcards": [
+          {
+            "path": "root > <App> [FunctionComponent] > <main> [HostComponent] > <article> [HostComponent] > <section> [HostComponent] > <Grid> (opaque) > <SingleColor> [FunctionComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"90\""
+            ]
+          },
+          {
+            "path": "root > <App> [FunctionComponent] > <main> [HostComponent] > <article> [HostComponent] > <section> [HostComponent] > <Grid> (opaque) > <SingleColor> [FunctionComponent] > <div> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"100\""
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 139,
+        "staticFibers": 20,
+        "coverage": 1,
+        "strictCoverage": 0.1366906474820144,
+        "divergence": null,
+        "stepsUsed": 27,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 17,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 1,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+              "count": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+                "count": 21
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/saglamburcu-react-color-generator/src/App.js:36:13",
+              "count": 21
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:33.312Z",
+      "failure": null
+    },
+    {
+      "id": "agusprats-colorgenerator",
+      "revision": "5743740324512d057912394dadca60bea07e6eff",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:48.836Z",
+      "durationMs": 296,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 135,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Color Generator Setup"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 16,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 3
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 92,
+        "matchedText": 21,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 21,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"100\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"90\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"80\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"70\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"60\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"50\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"40\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"30\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"20\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"10\""
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "repeatIterations": 21,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 134,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 0.8432835820895522,
+        "divergence": null,
+        "stepsUsed": 157,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 15,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+              "count": 21
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+                "count": 21
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/agusprats-colorgenerator/src/App.js:42:8",
+              "count": 21
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:46.546Z",
+      "failure": null
+    },
+    {
+      "id": "john-smilga-react-projects-9-color-generator",
+      "revision": "e767c4819414ab3231f1bdaec8bff73044c0fda8",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:47.994Z",
+      "durationMs": 299,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 135,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Color Generator Complete"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 16,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 4
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 92,
+        "matchedText": 21,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 21,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"100\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"90\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"80\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"70\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"60\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"50\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"40\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"30\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"20\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"10\""
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "repeatIterations": 21,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 134,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 0.8432835820895522,
+        "divergence": null,
+        "stepsUsed": 157,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 15,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+              "count": 21
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+                "count": 21
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-projects-9-color-generator/src/App.js:39:10",
+              "count": 21
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:45.687Z",
+      "failure": null
+    },
+    {
+      "id": "shubhamkadu-color-generator-react",
+      "revision": "7af5952d536a43c626330b4e781d3a8c24b0c2af",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:42:59.422Z",
+      "durationMs": 288,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 135,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 16,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 3
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 92,
+        "matchedText": 21,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 21,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"100\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"90\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"80\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"70\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"60\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"50\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"40\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"30\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"20\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <button> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"10\""
+            ]
+          }
+        ],
+        "branchesResolved": 0,
+        "repeatIterations": 21,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 134,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 0.8432835820895522,
+        "divergence": null,
+        "stepsUsed": 157,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 15,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+              "count": 21
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+                "count": 21
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/shubhamkadu-color-generator-react/src/App.js:48:10",
+              "count": 21
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:42:57.177Z",
+      "failure": null
+    },
+    {
+      "id": "gulceabaci-random-color-generator",
+      "revision": "665a350f627021d06d6c7b52dc50d209139937ec",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:48:58.772Z",
+      "durationMs": 261,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 7,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 7,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 6,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 6,
+        "staticFibers": 6,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 6,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 6,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:48:56.367Z",
+      "failure": null
+    },
+    {
+      "id": "wilfried-237-random-color-generator-react",
+      "revision": "ed48e0a77fcfd1de3afeaf941e0a6c73289246ce",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:48:56.269Z",
+      "durationMs": 381,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 9,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 9,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 7,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 8,
+        "staticFibers": 8,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 8,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:48:53.874Z",
+      "failure": null
+    },
+    {
+      "id": "satyamall-react-useeffect-we-stopwatch",
+      "revision": "c8352dc974302b63cc7fb7f136b6ab81c60f454e",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:15.650Z",
+      "durationMs": 259,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 9,
+        "commits": 6,
+        "pageErrors": [],
+        "title": "React App UseEffect StopWatch"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 9,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 8,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 8,
+        "staticFibers": 8,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 8,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:13.485Z",
+      "failure": null
+    },
+    {
+      "id": "nethuchathuu-stopwatch",
+      "revision": "5d96314f2fcc722b9a3d8beac3be2d845566583c",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:08.957Z",
+      "durationMs": 266,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 19,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 19,
+          "textCount": 6,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 12,
+        "matchedText": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 18,
+        "staticFibers": 18,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 18,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 18,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:06.798Z",
+      "failure": null
+    },
+    {
+      "id": "kritikpoudel-stopwatch",
+      "revision": "22dcf72e50c487523d65479647f4f24ece8a6cde",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:26.114Z",
+      "durationMs": 315,
+      "runtime": {
+        "reactVersion": "19.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 10,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Stopwatch"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 10,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 9,
+        "staticFibers": 9,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 9,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 9,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:23.803Z",
+      "failure": null
+    },
+    {
+      "id": "flp-pcll-react-random-color-generator",
+      "revision": "189aa91ce7c67a33a22aa146a3c22d0568de9477",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:21.127Z",
+      "durationMs": 237,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 20,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "The Random Color Generator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 20,
+          "textCount": 10,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 10,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 19,
+        "staticFibers": 19,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 19,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 19,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:18.969Z",
+      "failure": null
+    },
+    {
+      "id": "abhishekrtp-stopwatch-react-app",
+      "revision": "c58843a7d57490f86fb02a4289ccd72d4b646e29",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:36.643Z",
+      "durationMs": 360,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 9,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 9,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 8,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 8,
+        "staticFibers": 8,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 8,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 8,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:34.219Z",
+      "failure": null
+    },
+    {
+      "id": "norhanreda-timer-and-stopwatch",
+      "revision": "e22fc03c087ed770eca77c83a26cf42d080e5ae6",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:33.608Z",
+      "durationMs": 259,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 20,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 20,
+          "textCount": 7,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 12,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 19,
+        "staticFibers": 19,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 19,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 19,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:31.439Z",
+      "failure": null
+    },
+    {
+      "id": "karthikn-vr-stopwatch-react",
+      "revision": "8d35b1e0fbd494fb17c1f6ec279438edde29e702",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:47.065Z",
+      "durationMs": 328,
+      "runtime": {
+        "reactVersion": "19.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 11,
+        "commits": 1,
+        "pageErrors": [
+          "Functions are not valid as a React child. This may happen if you return %s instead of <%s /> from render. Or maybe you meant to call this function rather than return it.\n  <%s>{%s}</%s> formateTime formateTime button formateTime button"
+        ],
+        "title": "StopWatch"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 12,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 10,
+        "staticFibers": 10,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 11,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 11,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0
+            ],
+            "conditions": [],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:44.600Z",
+      "failure": null
+    },
+    {
+      "id": "swapvp-react-random-color-generator",
+      "revision": "ff6a12ff0c66b8c732f146135eae6ff46ef8cc55",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:44.219Z",
+      "durationMs": 460,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 11,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Vite + React"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 15,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 10,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 10,
+        "staticFibers": 10,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 12,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 22,
+          "inputs": 2,
+          "guards": 4,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8)) | or(eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13), not(or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8), eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13))))",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/swapvp-react-random-color-generator/src/Component/RandomColor.jsx:17:19",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8)) | or(eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13), not(or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8), eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13))))",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/swapvp-react-random-color-generator/src/Component/RandomColor.jsx:17:19",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8)) | or(eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13), not(or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8), eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13))))",
+              "reason": "dynamic list index",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/swapvp-react-random-color-generator/src/Component/RandomColor.jsx:17:19",
+              "side": 1,
+              "guard": "or(eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13), not(or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8), eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13))))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8)) | or(eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13), not(or(eq(choice(#1), 0), eq(choice(#1), 1), eq(choice(#1), 2), eq(choice(#1), 3), eq(choice(#1), 4), eq(choice(#1), 5), eq(choice(#1), 6), eq(choice(#1), 7), eq(choice(#1), 8), eq(choice(#1), 9), eq(choice(#1), 10), eq(choice(#1), 11), eq(choice(#1), 12), eq(choice(#1), 13))))",
+                "reason": "dynamic list index",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/swapvp-react-random-color-generator/src/Component/RandomColor.jsx:17:19",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:41.701Z",
+      "failure": null
+    },
+    {
+      "id": "ernest96-react-monocrhome-color-generator",
+      "revision": "b18131c1bd593a4bde4a716b3f361a86a95a8d0c",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:59.471Z",
+      "durationMs": 349,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 248,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Color Generator Setup"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 31,
+          "textCount": 4,
+          "branchCount": 1,
+          "repeatCount": 2,
+          "opaqueCount": 1,
+          "unknownCount": 2,
+          "modulesLoaded": 4
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 132,
+        "matchedText": 42,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 52,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 21,
+        "wildcards": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"100\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"90\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"80\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"70\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"60\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"50\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"40\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"30\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"20\""
+            ]
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <section> [HostComponent] > <SingleColor> [FunctionComponent] > <article> [HostComponent] > <p> [HostComponent]",
+            "reason": "property \"weight\" may come from a spread of unknown(item of values.js#new default.all())",
+            "absorbedFibers": 1,
+            "heads": [
+              "\"10\""
+            ]
+          }
+        ],
+        "branchesResolved": 1,
+        "repeatIterations": 21,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 247,
+        "staticFibers": 15,
+        "coverage": 1,
+        "strictCoverage": 0.7044534412955465,
+        "divergence": null,
+        "stepsUsed": 432,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 6,
+        "stateCount": 6,
+        "clusters": 1,
+        "tree": {
+          "nodes": 28,
+          "inputs": 3,
+          "guards": 4,
+          "branches": 1,
+          "repeats": 2,
+          "opaque": 1,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "count": 21
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 2,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "side": 0,
+              "guard": "eq(len(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "side": 1,
+              "guard": "len(#2) > 0",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "side": 0,
+              "guard": "eq(len(#3), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#3)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "side": 1,
+              "guard": "len(#3) > 0",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 4,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 6,
+        "assignments": 7,
+        "replayed": 7,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#3)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              5
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#3)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+                "count": 21
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state setter escapes to code that is not evaluated",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/ernest96-react-monocrhome-color-generator/src/App.js:42:8",
+              "count": 21
+            }
+          ],
+          "verification": "incomplete"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:57.136Z",
+      "failure": null
+    },
+    {
+      "id": "mediumtutorial-stopwatch",
+      "revision": "bb1805d0fda4ccbba7ebc723d62252ecd54b8140",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T16:49:56.196Z",
+      "durationMs": 263,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 17,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 17,
+          "textCount": 7,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 16,
+        "staticFibers": 16,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 16,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 16,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T16:49:54.056Z",
+      "failure": null
     }
   ]
 }
