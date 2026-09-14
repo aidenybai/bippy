@@ -8923,9 +8923,18 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@radix-ui/*",
+          "lucide-react",
+          "@dnd-kit/*",
+          "motion",
+          "motion/*",
+          "framer-motion",
+          "framer-motion/*"
+        ]
       },
-      "notes": "Preserve original automatic seedSampleDataIfEmpty on a first visit, settings application before paint, rAF theme class, welcome modal, local storage, board/timer/bookmark/habit initialization and confirm provider. No manual data seeding, dismissal, timer start or private data. Automatic checked-in seeding is original app behavior, not an invented harness input. Retain the sparse partial initial capture, 180224 bounded states, 180008 omissions and incomplete replay. Original first-visit sample seeding precedes mount; preserve welcome UI, theme rAF and all storage behavior. No manual seed, tour dismissal, timer start or data input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1267231720 identifies a distinct non-fork repository."
+      "notes": "Preserve original automatic seedSampleDataIfEmpty on a first visit, settings application before paint, rAF theme class, welcome modal, local storage, board/timer/bookmark/habit initialization and confirm provider. No manual data seeding, dismissal, timer start or private data. Automatic checked-in seeding is original app behavior, not an invented harness input. Retain the sparse partial initial capture, 180224 bounded states, 180008 omissions and incomplete replay. Original first-visit sample seeding precedes mount; preserve welcome UI, theme rAF and all storage behavior. No manual seed, tour dismissal, timer start or data input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1267231720 identifies a distinct non-fork repository. Symbolic JSON recheck on 2026-09-14: preserve known seeded task/bookmark/habit structure through JSON.stringify, Web Storage and JSON.parse; analyze Radix, icons, drag-and-drop and AnimatePresence source. The unchanged fresh 1251-fiber capture matches all 1250 compared nodes (1206 fibers and 44 text), with zero opaque or wildcard regions. The result repeats identically. Replay remains sample-incomplete: 83261924352 bounded states, 256 enumerated, 83261924096 omitted. Dynamic map-key collisions and calendar conditions remain unresolved; exact initial-page membership is not exhaustive workflow verification. No source, lockfile, URL, seed data or budget is changed. The earlier partial result and dependency-only mismatch are summarized in corpus/evidence/symbolic-json-2026-09-14.json."
     },
     {
       "id": "sagargupta16-financial-dashboard",

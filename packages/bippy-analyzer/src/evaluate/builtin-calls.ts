@@ -79,6 +79,7 @@ import { mediaQueryListValue } from "./media-query.js";
 import { getObjectTag } from "./object-tag.js";
 import { callHistoryMethod, isHistoryName } from "./session-history.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
+import { parseSerializedJson, stringifyJsonValue } from "./json-values.js";
 import type { EvaluationContext } from "./context.js";
 import {
   createCollectionValue,
@@ -105,7 +106,6 @@ import {
   getFunctionText,
   isFunctionText,
   joinStrings,
-  quoteUnknownString,
   rangedNumberValue,
   toPropertyKey,
   toStringValue,
@@ -171,7 +171,6 @@ import {
   mapValue,
   nativeObjectValue,
   toBooleanValue,
-  toJsonValue,
   NULL_VALUE,
   objectFromRecord,
   objectValue,
@@ -975,6 +974,7 @@ const INSPECTING_GLOBALS = new Set([
   "Number.isInteger",
   "Number.isSafeInteger",
   "JSON.stringify",
+  "JSON.parse",
 ]);
 
 const callGlobal = (
@@ -1411,18 +1411,14 @@ const callGlobal = (
     }
     case "JSON.stringify": {
       if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
-      return mapValue(distributeObjectBranches(first), (alternative) => {
-        if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string") {
-          return quoteUnknownString(alternative);
-        }
-        const json = toJsonValue(alternative);
-        return json === undefined
-          ? unknownPrimitiveValue("string", "JSON.stringify")
-          : primitiveValue(JSON.stringify(json));
-      });
+      return stringifyJsonValue(first, location);
     }
     case "JSON.parse": {
       const text = first ?? UNDEFINED_VALUE;
+      if (second === undefined || (second.kind === "primitive" && second.value === undefined)) {
+        const parsed = parseSerializedJson(text);
+        if (parsed !== null) return parsed;
+      }
       if (
         text.kind === "primitive" &&
         (second === undefined || (second.kind === "primitive" && second.value === undefined))

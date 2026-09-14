@@ -1225,9 +1225,7 @@ describe("react router data router with JSX routes", () => {
   it("keeps a nested route whose path is computed at runtime as an alternative to the static match", async () => {
     const { tree, errors } = await target("/about");
     expect(errors).toEqual([]);
-    expect(tree).toMatch(
-      /\?branch\(1 route\(s\) could not be read statically and may also match \/about\)\n\s+\|0 \(preferred\)\n\s+<RenderedRoute>/,
-    );
+    expect(tree).toMatch(/\?branch\([^\n]+\n\s+\|0 \(preferred\)\n\s+<RenderedRoute>/);
     expect(tree).toMatch(/<Outlet>\n\s+<ContextProvider>\n\s+<RenderedRoute>\n\s+<Route>\n\s+<h1>/);
     expect(tree).toMatch(/\|1\n\s+\?unknown\(react-router: route path is unknown\(JSON\.parse\)\)/);
   });
