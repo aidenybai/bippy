@@ -312487,6 +312487,756 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T13:53:17.395Z",
       "failure": null
+    },
+    {
+      "id": "nas5w-react-typescript-todo-app",
+      "revision": "37685b33fa42ea06fd888d7a47ab78f6a105e05e",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:36:00.052Z",
+      "durationMs": 398,
+      "runtime": {
+        "reactVersion": "16.9.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 18,
+        "commits": 1,
+        "pageErrors": [
+          "/private/tmp/bippy-parser-ui-expansion-three/nas5w-react-typescript-todo-app/src/AddTodoForm.tsx\nTypeScript error in /private/tmp/bippy-parser-ui-expansion-three/nas5w-react-typescript-todo-app/src/AddTodoForm.tsx(2,25):\nFile '/private/tmp/bippy-parser-ui-expansion-three/nas5w-react-typescript-todo-app/src/types.d.ts' is not a module.  TS2306\n\n    1 | import React, { useState, ChangeEvent, FormEvent } from \"react\";\n  > 2 | import { AddTodo } from \"./types\";\n      |                         ^\n    3 | \n    4 | interface AddTodoFormProps {\n    5 |   addTodo: AddTodo;",
+          "/private/tmp/bippy-parser-ui-expansion-three/nas5w-react-typescript-todo-app/src/TodoList.tsx\nTypeScript error in /private/tmp/bippy-parser-ui-expansion-three/nas5w-react-typescript-todo-app/src/TodoList.tsx(2,38):\nFile '/private/tmp/bippy-parser-ui-expansion-three/nas5w-react-typescript-todo-app/src/types.d.ts' is not a module.  TS2306\n\n    1 | import React from \"react\";\n  > 2 | import { Todo, ToggleComplete } from \"./types\";\n      |                                      ^\n    3 | import { TodoListItem } from \"./TodoListItem\";\n    4 | \n    5 | interface TodoListProps {"
+        ],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 18,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 15,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 17,
+        "staticFibers": 17,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 17,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 17,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:35:56.612Z",
+      "failure": null
+    },
+    {
+      "id": "suporteb7web-todo-react",
+      "revision": "1dbede4222d0c557fc17f5d79a9d8178cb841601",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:36:00.350Z",
+      "durationMs": 433,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 25,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 25,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 9
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 24,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 24,
+        "staticFibers": 24,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 24,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 24,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:35:56.937Z",
+      "failure": null
+    },
+    {
+      "id": "chriswiles-react-todomvc",
+      "revision": "2f3ec816f84251d0ee7c3b2123d7ed307fbb9c2e",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:36:17.947Z",
+      "durationMs": 398,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 32,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React TodoMVC Example"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 32,
+          "textCount": 3,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 28,
+        "matchedText": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 31,
+        "staticFibers": 31,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 31,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 31,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:36:14.761Z",
+      "failure": null
+    },
+    {
+      "id": "heitorpcrl-chronos-pomodoro-v2",
+      "revision": "7198985ce41e8dee2007814eba3c8c65877df095",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:35:57.501Z",
+      "durationMs": 462,
+      "runtime": {
+        "reactVersion": "19.1.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 106,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "chronos-pomodoro-v2"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 73,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 6,
+          "unknownCount": 0,
+          "modulesLoaded": 14
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 66,
+        "matchedText": 0,
+        "opaqueSubtrees": 6,
+        "opaqueSkippedFibers": 39,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 6,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 105,
+        "staticFibers": 72,
+        "coverage": 1,
+        "strictCoverage": 0.6285714285714286,
+        "divergence": null,
+        "stepsUsed": 72,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 72,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 6,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:35:54.128Z",
+      "failure": null
+    },
+    {
+      "id": "jose-guilhermeg-pomodorosystem",
+      "revision": "e55c4dcfbb732fd324b643987b6eee0fa4cdc6c7",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:35:57.796Z",
+      "durationMs": 460,
+      "runtime": {
+        "reactVersion": "19.2.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 14,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Pomodoro System"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 14,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 13,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 13,
+        "staticFibers": 13,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 13,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 13,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:35:54.455Z",
+      "failure": null
+    },
+    {
+      "id": "weibenfalk-react-quiz",
+      "revision": "088fde6f48daac9e8aed2e07d17cb22b8d789b72",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:36:12.138Z",
+      "durationMs": 538,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 8,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 8,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 8
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 7,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 7,
+        "staticFibers": 7,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 7,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 7,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:36:08.434Z",
+      "failure": null
+    },
+    {
+      "id": "ayokanmi-adejola-frontend-quiz-app",
+      "revision": "9b26a5142b319d3d1b5ce0bb444f88acd5c2015f",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:40:30.679Z",
+      "durationMs": 896,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 99,
+        "commits": 3,
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
+        "title": "Frontend Quiz App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 74,
+          "textCount": 14,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 7,
+          "unknownCount": 0,
+          "modulesLoaded": 11
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 52,
+        "matchedText": 14,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 32,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 98,
+        "staticFibers": 73,
+        "coverage": 1,
+        "strictCoverage": 0.673469387755102,
+        "divergence": null,
+        "stepsUsed": 73,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 77,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 7,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:40:24.922Z",
+      "failure": null
+    },
+    {
+      "id": "godkingjay-typescript-and-react-quiz-app",
+      "revision": "d852de7f837943419b306f8ca065c4adb3b8aab8",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:37:29.565Z",
+      "durationMs": 899,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 56,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Quizard"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 56,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 6
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 55,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 55,
+        "staticFibers": 55,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 55,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 55,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:37:24.747Z",
+      "failure": null
     }
   ]
 }
