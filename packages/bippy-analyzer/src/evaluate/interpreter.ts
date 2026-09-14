@@ -51,6 +51,7 @@ import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
 import { getPackageNameFromSpecifier, isInsideNodeModules } from "../graph/module-resolver.js";
 import { nativeFunction } from "./stubs.js";
+import { isStrictCode } from "./strict-code.js";
 import { GlobalProperties, type GlobalPropertyState } from "./global-properties.js";
 import { getLibraryValue, isModeledLibraryExport } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
@@ -662,6 +663,11 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
   if (jumps.length === 0) return null;
   return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
 };
+
+interface PropertyAssignmentOptions {
+  receiver?: StaticValue;
+  isStrict?: boolean;
+}
 
 interface AssignmentReference {
   getValue: (context: EvaluationContext) => StaticValue;
@@ -1742,14 +1748,40 @@ export class Interpreter {
     );
   }
 
+  private getPropertyWriteResult(
+    target: StaticValue,
+    propertyName: string,
+    success: StaticValue,
+    isStrict: boolean,
+  ): StaticValue {
+    const truthiness = getTruthiness(success);
+    if (!isStrict || truthiness === true) return target;
+    const reason = `Cannot assign property ${JSON.stringify(propertyName)}`;
+    const error = thrownValue(
+      reason,
+      createErrorValue("TypeError", [primitiveValue(reason)], null),
+      null,
+    );
+    return truthiness === false
+      ? error
+      : branchValue(
+          [target, error],
+          `property write succeeds when ${describeValue(success)}`,
+          null,
+          getPreferredTruthiness(success) === false ? 1 : 0,
+          getTruthinessPredicate(success),
+        );
+  }
+
   /** `target[propertyName] = value`; returns the value the binding should now hold (wrappers are re-created for `displayName`). */
   assignProperty(
     target: StaticValue,
     propertyName: string,
     value: StaticValue,
     context: EvaluationContext,
-    receiver?: StaticValue,
+    options: PropertyAssignmentOptions = {},
   ): StaticValue {
+    const { receiver, isStrict = false } = options;
     const error = getNullishPropertyError(target, propertyName, "set", null);
     if (error) return error;
     switch (target.kind) {
@@ -1765,7 +1797,7 @@ export class Interpreter {
               () => target,
             );
           }
-          return target;
+          return this.getPropertyWriteResult(target, propertyName, FALSE_VALUE, isStrict);
         }
         this.assignOwnProperty(target, propertyName, value);
         return target;
@@ -1840,16 +1872,14 @@ export class Interpreter {
         return this.continueValue(
           this.getProxyMethod(target.handler, "set", context, null),
           context,
-          (trap, trapContext) =>
-            this.continueValue(
-              isNullish(trap) === true
-                ? this.assignProperty(
-                    target.target,
-                    propertyName,
-                    value,
-                    trapContext,
-                    receiver ?? target,
-                  )
+          (trap, trapContext) => {
+            const isFallback = isNullish(trap) === true;
+            return this.continueValue(
+              isFallback
+                ? this.assignProperty(target.target, propertyName, value, trapContext, {
+                    ...options,
+                    receiver: receiver ?? target,
+                  })
                 : this.callValue(
                     trap,
                     [target.target, primitiveValue(propertyName), value, receiver ?? target],
@@ -1858,8 +1888,12 @@ export class Interpreter {
                     { thisValue: target.handler },
                   ),
               trapContext,
-              () => target,
-            ),
+              (result) =>
+                isFallback
+                  ? target
+                  : this.getPropertyWriteResult(target, propertyName, result, isStrict),
+            );
+          },
         );
       case "context":
         if (propertyName === "displayName") {
@@ -1902,7 +1936,7 @@ export class Interpreter {
       }
       case "branch":
         return this.continueValue(target, context, (alternative, alternativeContext) =>
-          this.assignProperty(alternative, propertyName, value, alternativeContext, receiver),
+          this.assignProperty(alternative, propertyName, value, alternativeContext, options),
         );
       case "namespace": {
         if (target.module.moduleExports === null) return target;
@@ -1916,7 +1950,7 @@ export class Interpreter {
           replacement.kind === "class" ||
           replacement.kind === "object"
         ) {
-          this.assignProperty(replacement, propertyName, value, context);
+          this.assignProperty(replacement, propertyName, value, context, options);
         }
         return target;
       }
@@ -3387,7 +3421,9 @@ export class Interpreter {
                   return value;
                 }
                 return this.continueValue(
-                  this.assignProperty(receiver, propertyName, value, assignmentContext),
+                  this.assignProperty(receiver, propertyName, value, assignmentContext, {
+                    isStrict: isStrictCode(context.module, target),
+                  }),
                   assignmentContext,
                   (assigned, writeContext) =>
                     assigned !== receiver && parent
