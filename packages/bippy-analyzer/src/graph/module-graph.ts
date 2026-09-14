@@ -265,9 +265,9 @@ export class ModuleGraph {
         if (isCssModulePath(target.filePath)) {
           return { kind: "stylesheet", filePath: target.filePath, imported };
         }
-        return { kind: "unresolved", reason: `unsupported module ${target.filePath}` };
+        return getUnavailableModuleSymbol(target);
       case "unresolved":
-        return { kind: "unresolved", reason: `cannot resolve "${specifier}": ${target.error}` };
+        return getUnavailableModuleSymbol(target);
     }
   }
 
@@ -364,6 +364,8 @@ export class ModuleGraph {
           if (!isModuleRecord(target)) {
             if (target.kind === "external" || target.kind === "builtin") {
               externalSources.push(externalSymbol(target, { kind: "named", name: exportedName }));
+            } else if (!module.isCommonJs) {
+              uncertainResolution ??= getUnavailableModuleSymbol(target);
             }
             continue;
           }
@@ -429,6 +431,17 @@ export class ModuleGraph {
     return { kind: "unresolved", reason: `no export "${exportedName}" in ${module.filePath}` };
   }
 }
+
+const getUnavailableModuleSymbol = (
+  resolution: Extract<ModuleResolution, { kind: "internal" | "unresolved" }>,
+): UnresolvedSymbol => ({
+  kind: "unresolved",
+  reason:
+    resolution.kind === "internal"
+      ? `unsupported module ${resolution.filePath}`
+      : `cannot resolve "${resolution.specifier}": ${resolution.error}`,
+  isUncertain: true,
+});
 
 const isSameResolvedSymbol = (left: ResolvedSymbol, right: ResolvedSymbol): boolean => {
   switch (left.kind) {
