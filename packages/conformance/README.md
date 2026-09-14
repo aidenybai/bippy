@@ -45,6 +45,8 @@ Selective-hydration replays retain successful server content while both boundari
 
 Same-root commit replays run six explicit nested-commit schedules through both root argument forms. The first listener flushes an update, keyed replacement, or empty tree before the outer event reaches the later listener; two-flush cases also reuse the outer root alternate. An independent operation model checks exact layout/deletion/observer order, repeated mount/update/unmount notifications, live/released IDs, host detachment, and subsequent recovery. The later listener sees the newest tree with the outer event's original priority, not the nested synchronous priority. Throwing observers/reporters cannot suppress delivery, and another root remains unchanged. These cases test pinned React 19 commit callbacks, not immutable traversal snapshots or updates made from inside a traversal visitor.
 
+Superseded-transition replays run all six assignments of three keyed rows to two suspension points and an urgent deletion. Cases either abandon both transitions or complete the newer one before deletion; obsolete wakeables are fulfilled or rejected. Each fresh-fixture replay proves that the second pending render reuses the first render's inactive fiber, while lookups still select the committed branch. Urgent deletion must release both alternates, and later remounting must create a fresh host, ID, and state token. Exact traces retain React's additional unchanged-tree commit while skipped updates are rebased; component-body presence sets independently prove that this commit renders no rows. When both transitions are abandoned, the earlier wakeable settles while newer work remains pending; the later one settles after the urgent update without rendering or committing. When the newer transition completes, the older wakeable stays pending through urgent deletion and settles afterward without reviving stale state. Exact alternate identities differ between these paths, while retained state/DOM and subsequent fresh remounts follow the same logical key model. Mixed root arguments, throwing deletion observers/reporters, memo bailouts, and another live root remain covered. These are pinned React 19 state-queue cases, not scheduler timing or version-matrix guarantees.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -58,6 +60,7 @@ pnpm test --project conformance cleanup-cascade-replay render-phase-reentrancy
 pnpm test --project conformance hydration-fallback-replay
 pnpm test --project conformance selective-hydration-replay
 pnpm test --project conformance nested-commit-replay
+pnpm test --project conformance superseded-transition-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
