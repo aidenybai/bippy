@@ -228,7 +228,7 @@ then anchor search, then the largest root.
 
 `corpus/manifest.json` pins 500 real repositories by revision with framework, install/setup/dev commands, URL, static target and notes. `corpus/results.json` holds the latest merged results. Clones and captures live under the ignored `.corpus/`.
 
-This is an imported repository count, not 500 fully audited acceptances. Source-review reconciliation remains incomplete; exact, partial, truncated, mismatch and budget-exhausted results retain their limits.
+This is an imported repository count, not 500 fully audited acceptances. Twelve rows lack native runtime reports, and 146 lack replay records. Source-review reconciliation remains incomplete; exact, partial, truncated, mismatch and budget-exhausted results retain their limits.
 
 The twenty-nine repositories added beyond the original 207-repository snapshot report:
 
