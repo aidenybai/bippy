@@ -43,6 +43,8 @@ Hydration replays generate real server markup with two failed Suspense boundarie
 
 Selective-hydration replays retain successful server content while both boundaries suspend on the client. Two blocked focus events exercise React's latest-event coalescing; the overwritten target hydrates first without receiving focus. The latest target either hydrates and receives one cloned event that updates its state, or is deleted before hydration and receives only a native replay on the detached server node. An explicit native-event gate waits for replay without sleeps. Late wakeable settlement must not render or commit, and a subsequent remount must use fresh host/boundary identity without inheriting focus state. Exact traces and identity checks cover root/fiber argument aliases, host lookup before/after hydration and detachment, observer/reporting failures, and a separate unaffected root. Four additional replay-error cases throw during the focus-triggered render after successful hydration. They require the original caught error and boundary instance, force-remounted error fallback, retired hydrated identity, and unchanged sibling/control roots. After changing fallback state, resetting the same boundary must retain that state and identity with matching type/key, but discard both with a distinct fallback key. This follows React's forced reconciliation on error entry versus ordinary reconciliation on reset; the initial reset oracle incorrectly expected both paths to remount. These pinned React 19/Happy DOM cases are not browser event-compatibility or streaming-SSR coverage.
 
+Same-root commit replays run six explicit nested-commit schedules through both root argument forms. The first listener flushes an update, keyed replacement, or empty tree before the outer event reaches the later listener; two-flush cases also reuse the outer root alternate. An independent operation model checks exact layout/deletion/observer order, repeated mount/update/unmount notifications, live/released IDs, host detachment, and subsequent recovery. The later listener sees the newest tree with the outer event's original priority, not the nested synchronous priority. Throwing observers/reporters cannot suppress delivery, and another root remains unchanged. These cases test pinned React 19 commit callbacks, not immutable traversal snapshots or updates made from inside a traversal visitor.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -55,6 +57,7 @@ pnpm test --project conformance fiber-finalization-replay
 pnpm test --project conformance cleanup-cascade-replay render-phase-reentrancy
 pnpm test --project conformance hydration-fallback-replay
 pnpm test --project conformance selective-hydration-replay
+pnpm test --project conformance nested-commit-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
