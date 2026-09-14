@@ -345,4 +345,4 @@ const parentFrames = await getParentStack(fiber);
 
 ## Acknowledgements
 
-[@dairyfreerice](https://www.instagram.com/dairyfreerice) created and owns the original bippy character. this project has nothing to do with the bippy brand, i think the character is cute.
+The bippy character is originally created by [@bippyandfriends](https://www.instagram.com/bippyandfriends/) (See [website](https://www.bippyandfriends.com/)). This project has nothing to do with the bippy brand. I just think the character is cute.
