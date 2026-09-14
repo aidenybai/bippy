@@ -315027,6 +315027,1188 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T14:52:39.351Z",
       "failure": null
+    },
+    {
+      "id": "0shuvo0-react-memory-game",
+      "revision": "7d15e0352b76c06a2208ed6db92b370021bad792",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:04.669Z",
+      "durationMs": 277,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 55,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 11,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 54,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 16,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 54,
+        "staticFibers": 9,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 56,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 10,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "count": 16
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 3,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "count": 16
+            }
+          ],
+          "verification": "passed"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:02.450Z",
+      "failure": null
+    },
+    {
+      "id": "michfah-react-memory-game",
+      "revision": "574aa22a00b56ef72e25ecd484109d0674eef055",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:16.521Z",
+      "durationMs": 277,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 71,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 17,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 68,
+        "matchedText": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 12,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 70,
+        "staticFibers": 15,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 72,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 1,
+        "tree": {
+          "nodes": 26,
+          "inputs": 2,
+          "guards": 3,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/michfah-react-memory-game/src/App.js:81:10",
+              "count": 12
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/michfah-react-memory-game/src/App.js:81:10",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/michfah-react-memory-game/src/App.js:81:10",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/michfah-react-memory-game/src/App.js:81:10",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 4,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [],
+        "matchedOutsideEnumeration": {
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-seven/michfah-react-memory-game/src/App.js:81:10",
+              "count": 12
+            }
+          ],
+          "verification": "passed"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:14.359Z",
+      "failure": null
+    },
+    {
+      "id": "palgorhythm-todotshooks",
+      "revision": "da94857ad1fb5a7fe58b323bb7f5b30768568c20",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:08.935Z",
+      "durationMs": 285,
+      "runtime": {
+        "reactVersion": "16.8.6",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 8,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 9,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 1,
+          "opaqueCount": 1,
+          "unknownCount": 1,
+          "modulesLoaded": 7
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 7,
+        "slotsMatched": 0,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <Provider> (opaque)",
+            "reason": "Provider from react-redux is not analyzed",
+            "head": "<Provider> [ClassComponent]",
+            "skippedFibers": 7,
+            "divergence": {
+              "path": "root > <Provider> (opaque) > <App> [FunctionComponent] > <div> [HostComponent][1]",
+              "expected": "<button> [HostComponent]",
+              "actual": "<Fragment> [Fragment]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 7,
+        "staticFibers": 6,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 13,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 8,
+          "inputs": 1,
+          "guards": 1,
+          "branches": 0,
+          "repeats": 1,
+          "opaque": 1,
+          "wildcards": 1
+        },
+        "matchedState": {
+          "index": null,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
+              "side": 0,
+              "guard": "eq(len(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
+              "side": 1,
+              "guard": "len(#1) > 0",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 3,
+        "assignments": 3,
+        "replayed": 3,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ],
+        "matchedOutsideEnumeration": {
+          "conditions": [],
+          "verification": "passed"
+        }
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:06.721Z",
+      "failure": null
+    },
+    {
+      "id": "wllm-chndlr-clicky-game",
+      "revision": "14203893568872476d8c110e1cd976fd04ab583d",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:19.799Z",
+      "durationMs": 118,
+      "runtime": {
+        "reactVersion": "16.12.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 81,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://fb.me/react-warning-keys for more information.%s \n\nCheck the render method of `App`.  \n    in div (at App.js:84)\n    in App (at src/index.js:6)"
+        ],
+        "title": "Simpsons Clicky Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 81,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 14
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 76,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 80,
+        "staticFibers": 80,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 80,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 80,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:17.942Z",
+      "failure": null
+    },
+    {
+      "id": "elisa-amaral-pomodoro-timer-built-with-typescript-and-reactjs",
+      "revision": "2df453e1c8b9b49713260e38e18b4f7e7564b200",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:40.209Z",
+      "durationMs": 373,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 31,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Pomodoro Timer built with TypeScript and React.JS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 31,
+          "textCount": 8,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 8
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 22,
+        "matchedText": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 30,
+        "staticFibers": 30,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 30,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 30,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:35.301Z",
+      "failure": null
+    },
+    {
+      "id": "fontainm-react-memorygame",
+      "revision": "697cb8122eae5e4a4041a81e8b8977717254ad22",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:31.011Z",
+      "durationMs": 343,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 268,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Memory Game"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 98,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 79,
+          "unknownCount": 0,
+          "modulesLoaded": 2
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 4,
+        "matchedText": 2,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 261,
+        "slotsMatched": 6,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <MemoryGame> [ClassComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque)",
+            "reason": "default from @material-ui/core is not analyzed",
+            "head": "<WithStyles(ForwardRef(Grid))> [ForwardRef]",
+            "skippedFibers": 243,
+            "divergence": {
+              "path": "root > <MemoryGame> [ClassComponent] > <Container> (opaque) > <Grid> (opaque) > <Grid> (opaque)[8]",
+              "expected": "<MemoryCard> key=\"2\" [FunctionComponent]",
+              "actual": "<MemoryCard> key=\"11\" [FunctionComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 267,
+        "staticFibers": 97,
+        "coverage": 1,
+        "strictCoverage": 0.02247191011235955,
+        "divergence": null,
+        "stepsUsed": 120555,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 97,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 79,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:28.567Z",
+      "failure": null
+    },
+    {
+      "id": "caknoooo-react-quiz-ts",
+      "revision": "77d537da1c21d8021849906d135e17c65079b77e",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:48.239Z",
+      "durationMs": 362,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 8,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 8,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 8
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 7,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 7,
+        "staticFibers": 7,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 7,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 7,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:45.063Z",
+      "failure": null
+    },
+    {
+      "id": "nicolaeciobanuu-react-timer",
+      "revision": "f0efe6c782d2213e7d5a2a5f93c16a9941195460",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:57:57.132Z",
+      "durationMs": 298,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 62,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "(25:00) Pomodoro"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 57,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 11
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 55,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 6,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 61,
+        "staticFibers": 56,
+        "coverage": 1,
+        "strictCoverage": 0.9016393442622951,
+        "divergence": null,
+        "stepsUsed": 56,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 56,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 1,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:57:54.662Z",
+      "failure": null
+    },
+    {
+      "id": "quocbao19982009-todo-app",
+      "revision": "0ce55a85a7235c9013b5732cb0bf28e5b9ea06c0",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:58:04.450Z",
+      "durationMs": 331,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 191,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: Encountered two children with the same key, `%s`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.%s 1777275243892 \n    at div\n    at TodoList (http://127.0.0.1:54872/static/js/bundle.js:759:68)\n    at div\n    at main\n    at App\n    at TodoContextProvider (http://127.0.0.1:54872/static/js/bundle.js:1011:76)"
+        ],
+        "title": "Todo App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 42,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 1,
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 9
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 190,
+        "staticFibers": 35,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <StrictMode> [Mode] > <TodoContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <TodoList> [FunctionComponent] > <div> [HostComponent] > <Fragment> [Fragment][0]",
+          "expected": "<end of children>",
+          "actual": "<TodoDetails> key=\"1757861711169\" [FunctionComponent]"
+        },
+        "stepsUsed": 24,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 5,
+        "stateCount": 5,
+        "clusters": 1,
+        "tree": {
+          "nodes": 61,
+          "inputs": 3,
+          "guards": 5,
+          "branches": 1,
+          "repeats": 1,
+          "opaque": 0,
+          "wildcards": 1
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 1,
+          "divergence": {
+            "path": "root > <StrictMode> [Mode] > <TodoContextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <main> [HostComponent] > <div> [HostComponent] > <TodoList> [FunctionComponent] > <div> [HostComponent] > <Fragment> [Fragment][0]",
+            "expected": "<end of children>",
+            "actual": "<TodoDetails> key=\"1757861711169\" [FunctionComponent]"
+          }
+        },
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/quocbao19982009-todo-app/src/components/TodoList.tsx:20:3",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/quocbao19982009-todo-app/src/components/TodoList.tsx:20:3",
+              "side": 0,
+              "guard": "eq(len(#2), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#2)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/quocbao19982009-todo-app/src/components/TodoList.tsx:20:3",
+              "side": 1,
+              "guard": "len(#2) > 0",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 6,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 5,
+        "assignments": 4,
+        "replayed": 4,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state set by a continuation that may run after the commit",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/quocbao19982009-todo-app/src/components/TodoList.tsx:20:3",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state set by a continuation that may run after the commit",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#2)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/quocbao19982009-todo-app/src/components/TodoList.tsx:20:3",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:58:02.125Z",
+      "failure": null
     }
   ]
 }
