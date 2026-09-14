@@ -22,6 +22,12 @@ import { createRenderHarness } from "./render-harness.js";
 interface SelectiveOwnerProps {
   owner: number;
 }
+interface SelectiveBoundaryProps extends SelectiveOwnerProps {
+  children: React.ReactNode;
+}
+interface SelectiveBoundaryState {
+  didFail: boolean;
+}
 interface SelectiveIdentity {
   fiber: Fiber;
   identifier: number;
@@ -31,6 +37,8 @@ interface SelectiveIdentity {
 const runSelectiveHydration = async (
   latestOwner: number,
   isLatestDeleted: boolean,
+  isReplayRejected = false,
+  hasDistinctFallbackKey = false,
 ): Promise<string[]> => {
   const earlierOwner = 1 - latestOwner;
   const owners = [0, 1];
@@ -52,6 +60,15 @@ const runSelectiveHydration = async (
   const reports: unknown[] = [];
   const recoveries: unknown[] = [];
   const failure = new Error("selective hydration observer failed");
+  const renderFailure = new Error("replayed focus update failed");
+  const caught: unknown[] = [];
+  const failedOwners = new Set<number>();
+  const retiredIdentifiers: number[] = [];
+  const boundaryInstances = new Map<
+    number,
+    React.Component<SelectiveBoundaryProps, SelectiveBoundaryState>
+  >();
+  let shouldRejectReplay = isReplayRejected;
   const trace: string[] = [];
   const transcript: string[] = [];
   const listeners: Array<() => void> = [];
@@ -120,6 +137,10 @@ const runSelectiveHydration = async (
         record(`passive-off:${owner}:${getFiberById(getIdentity(owner).identifier) === null}`);
       };
     }, [owner]);
+    if (owner === latestOwner && count === 1 && shouldRejectReplay) {
+      failedOwners.add(owner);
+      throw renderFailure;
+    }
     return jsx("button", {
       "data-owner": owner,
       children: `${owner}:${count}`,
@@ -131,12 +152,26 @@ const runSelectiveHydration = async (
       },
     });
   };
+  class Boundary extends React.Component<SelectiveBoundaryProps, SelectiveBoundaryState> {
+    state = { didFail: false };
+    static getDerivedStateFromError = (): SelectiveBoundaryState => ({ didFail: true });
+    componentDidMount = (): void => {
+      boundaryInstances.set(this.props.owner, this);
+    };
+    componentDidCatch = (error: Error): void => {
+      record(`boundary-caught:${this.props.owner}:${error === renderFailure}`);
+    };
+    render = () =>
+      this.state.didFail
+        ? jsx(Probe, { owner: this.props.owner + 3 }, hasDistinctFallbackKey ? "error" : undefined)
+        : this.props.children;
+  }
   const Gate = ({ owner }: SelectiveOwnerProps) => {
     if (!isServerRendering && !gates[owner].isReady) {
       suspended.add(owner);
       throw gates[owner].promise;
     }
-    return jsx(Probe, { owner });
+    return jsx(Boundary, { owner, children: jsx(Probe, { owner }) });
   };
   const getTree = (visibleOwners = owners) =>
     jsxs("main", {
@@ -182,7 +217,7 @@ const runSelectiveHydration = async (
     expect(getCurrentHostFiber(identity.host) === current.child).toBe(true);
     expect(getCurrentHostFiber(identity.host, false) === current.child).toBe(true);
     expect(identity.host.textContent).toBe(`${owner}:${count}`);
-    if (owner !== 2)
+    if (owners.includes(owner))
       expect(getFiberById(getBoundaryIdentifier(owner)) === getBoundary(owner)).toBe(true);
   };
   using _reporter = vi
@@ -251,6 +286,12 @@ const runSelectiveHydration = async (
     clientRenders.clear();
     await React.act(async () => {
       hydrationRoot = hydrateRoot(container, getTree(), {
+        onCaughtError: (error, errorInfo) => {
+          caught.push(error);
+          record(
+            `caught:${error === renderFailure}:${errorInfo.errorBoundary === boundaryInstances.get(latestOwner)}`,
+          );
+        },
         onRecoverableError: (error) => {
           recoveries.push(error);
           record("recover");
@@ -349,18 +390,88 @@ const runSelectiveHydration = async (
         `passive-on:${latestOwner}`,
         `native:${latestOwner}:true:true`,
         `focus:${latestOwner}:true:true:true`,
-        "commit:0:primary,1:primary:true",
-        `phase:${latestOwner}:update`,
+        ...(isReplayRejected
+          ? [
+              ...getProbeDeletion(latestOwner),
+              `layout-on:${latestOwner + 3}:true`,
+              "caught:true:true",
+              `boundary-caught:${latestOwner}:true`,
+              "commit:0:primary,1:primary:true",
+              `phase:${latestOwner + 3}:mount`,
+              `passive-off:${latestOwner}:true`,
+              `passive-on:${latestOwner + 3}`,
+            ]
+          : ["commit:0:primary,1:primary:true", `phase:${latestOwner}:update`]),
       ]);
-      expect(clientRenders).toEqual(new Set([latestOwner]));
+      expect(clientRenders).toEqual(
+        new Set(isReplayRejected ? [latestOwner, latestOwner + 3] : [latestOwner]),
+      );
       expect(getIdentity(latestOwner).host === buttons[latestOwner]).toBe(true);
       expect(getBoundaryIdentifier(latestOwner)).toBe(originalBoundaryIds[latestOwner]);
+      if (isReplayRejected) {
+        const hydratedPrimary = getIdentity(latestOwner);
+        const errorFallback = getIdentity(latestOwner + 3);
+        retiredIdentifiers.push(hydratedPrimary.identifier);
+        if (hasDistinctFallbackKey) retiredIdentifiers.push(errorFallback.identifier);
+        expect(failedOwners).toEqual(new Set([latestOwner]));
+        expect(caught).toHaveLength(1);
+        expect(caught[0] === renderFailure).toBe(true);
+        expect(getFiberById(hydratedPrimary.identifier)).toBeNull();
+        expect(getFiber(hydratedPrimary.host)).toBeNull();
+        expect(hydratedPrimary.host.isConnected).toBe(false);
+        expect(errorFallback.identifier).not.toBe(hydratedPrimary.identifier);
+        checkLive(latestOwner + 3, 0);
+        checkLive(earlierOwner, 0);
+        checkLive(2, 0);
+        clientRenders.clear();
+        await React.act(async () =>
+          errorFallback.host.dispatchEvent(new FocusEvent("focusin", { bubbles: true })),
+        );
+        expect(trace.splice(0)).toEqual([
+          `focus:${latestOwner + 3}:true:true:false`,
+          "commit:0:primary,1:primary:true",
+          `phase:${latestOwner + 3}:update`,
+        ]);
+        expect(clientRenders).toEqual(new Set([latestOwner + 3]));
+        checkLive(latestOwner + 3, 1);
+        const errorCurrent = getProbe(latestOwner + 3);
+        const boundary = boundaryInstances.get(latestOwner);
+        if (!boundary) throw new Error("Missing caught boundary");
+        shouldRejectReplay = false;
+        clientRenders.clear();
+        await React.act(async () => boundary.setState({ didFail: false }));
+        expect(trace.splice(0)).toEqual([
+          ...(hasDistinctFallbackKey
+            ? getProbeDeletion(latestOwner + 3)
+            : [`layout-off:${latestOwner + 3}:false`]),
+          `layout-on:${latestOwner}:true`,
+          "commit:0:primary,1:primary:true",
+          `phase:${latestOwner}:${hasDistinctFallbackKey ? "mount" : "update"}`,
+          `passive-off:${latestOwner + 3}:${hasDistinctFallbackKey}`,
+          `passive-on:${latestOwner}`,
+        ]);
+        expect(clientRenders).toEqual(new Set([latestOwner]));
+        const recovered = getIdentity(latestOwner);
+        expect(retiredIdentifiers).not.toContain(recovered.identifier);
+        expect(recovered.host === hydratedPrimary.host).toBe(false);
+        expect(recovered.host === errorFallback.host).toBe(!hasDistinctFallbackKey);
+        if (hasDistinctFallbackKey) {
+          expect(getFiber(errorFallback.host)).toBeNull();
+          expect(recovered.fiber.alternate).toBeNull();
+        } else {
+          expect(recovered.identifier).toBe(errorFallback.identifier);
+          expect(recovered.fiber.alternate === errorCurrent).toBe(true);
+          expect(getFiberById(errorFallback.identifier) === recovered.fiber).toBe(true);
+        }
+        expect(boundaryInstances.get(latestOwner) === boundary).toBe(true);
+        expect(getBoundaryIdentifier(latestOwner)).toBe(originalBoundaryIds[latestOwner]);
+      }
     }
     expect([...nativeReplays.keys()]).toEqual([latestOwner]);
-    expect(captures).toHaveLength(isLatestDeleted ? 2 : 3);
+    expect(captures).toHaveLength(isLatestDeleted ? 2 : isReplayRejected ? 4 : 3);
     if (!isLatestDeleted) expect(captures[2] === nativeReplays.get(latestOwner)).toBe(true);
     checkLive(earlierOwner, 0);
-    checkLive(latestOwner, isLatestDeleted ? 0 : 1);
+    checkLive(latestOwner, isLatestDeleted || (isReplayRejected && hasDistinctFallbackKey) ? 0 : 1);
     checkLive(2, 0);
     expect(getBoundaryIdentifier(earlierOwner)).toBe(originalBoundaryIds[earlierOwner]);
     expect(container.firstElementChild === serverMain).toBe(true);
@@ -384,7 +495,12 @@ const runSelectiveHydration = async (
     expect(trace.splice(0)).toEqual([...getProbeDeletion(2), "passive-off:2:true"]);
     for (const identity of identities.values())
       expect(getFiberById(identity.identifier)).toBeNull();
-    expect(reports).toHaveLength(isLatestDeleted ? 7 : 5);
+    for (const identifier of retiredIdentifiers) expect(getFiberById(identifier)).toBeNull();
+    expect(caught).toHaveLength(isReplayRejected ? 1 : 0);
+    expect(failedOwners).toEqual(new Set(isReplayRejected ? [latestOwner] : []));
+    expect(reports).toHaveLength(
+      isLatestDeleted ? 7 : isReplayRejected ? (hasDistinctFallbackKey ? 7 : 6) : 5,
+    );
     expect(reports.every((error) => error === failure)).toBe(true);
     expect(recoveries).toEqual([]);
     return transcript;
@@ -397,14 +513,29 @@ const runSelectiveHydration = async (
 };
 
 it.each(
-  [0, 1].flatMap((latestOwner) =>
-    [false, true].map((isLatestDeleted) => ({ latestOwner, isLatestDeleted })),
-  ),
+  [0, 1].flatMap((latestOwner) => [
+    { latestOwner, isLatestDeleted: false, isReplayRejected: false, hasDistinctFallbackKey: false },
+    { latestOwner, isLatestDeleted: true, isReplayRejected: false, hasDistinctFallbackKey: false },
+    { latestOwner, isLatestDeleted: false, isReplayRejected: true, hasDistinctFallbackKey: false },
+    { latestOwner, isLatestDeleted: false, isReplayRejected: true, hasDistinctFallbackKey: true },
+  ]),
 )(
-  "replays coalesced focus during selective hydration, latest $latestOwner, delete latest $isLatestDeleted",
-  async ({ latestOwner, isLatestDeleted }) => {
-    expect(await runSelectiveHydration(latestOwner, isLatestDeleted)).toEqual(
-      await runSelectiveHydration(latestOwner, isLatestDeleted),
+  "replays coalesced focus during selective hydration, latest $latestOwner, delete latest $isLatestDeleted, reject replay $isReplayRejected, distinct fallback key $hasDistinctFallbackKey",
+  async ({ latestOwner, isLatestDeleted, isReplayRejected, hasDistinctFallbackKey }) => {
+    expect(
+      await runSelectiveHydration(
+        latestOwner,
+        isLatestDeleted,
+        isReplayRejected,
+        hasDistinctFallbackKey,
+      ),
+    ).toEqual(
+      await runSelectiveHydration(
+        latestOwner,
+        isLatestDeleted,
+        isReplayRejected,
+        hasDistinctFallbackKey,
+      ),
     );
   },
 );
