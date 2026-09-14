@@ -292,10 +292,13 @@ Proxy writes preserve failures from retrieving or calling the `set` trap. Trap c
 
 [Trap-method tests](../packages/bippy-analyzer/tests/proxy-methods.test.ts) reject `get` and `set` traps whose modeled type is known not to be a function. Lookup effects and guards remain intact, nullish traps fall back, and unknown types retain existing call handling. An object does not become callable by defining `call` or an `apply` trap.
 
+[Strict-write tests](../packages/bippy-analyzer/tests/strict-writes.test.ts) reject getter-only assignments and falsy proxy-set results in strict code. Trap effects survive rejection; an ordinary setter's return value does not determine write success. [Scope checks](../packages/bippy-analyzer/tests/strict-write-scopes.test.ts) distinguish lexical directives and class methods from caller strictness, block strings, and escaped directives. References retain their source strictness through delegation. Module classification comes from `ModuleRecord`; script/loader modes, eval, and dynamic function constructors remain unverified.
+
 [Value-level checks](../packages/bippy-analyzer/tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
 
-- Getter-only write errors
-- Falsy proxy-set results in strict code
+- Frozen-object and primitive-property write errors
+- Class creation discarding a heritage-expression error
+- Direct boolean interpolation losing guard precision
 - `defineProperty` trap dispatch during ordinary proxy writes
 - Noncallable `apply` traps and class calls without `new`
 - Guarded `Object.freeze` state and frozen-target read invariants
