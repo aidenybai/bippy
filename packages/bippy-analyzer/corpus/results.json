@@ -311105,6 +311105,1388 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-13T02:21:01.060Z",
       "failure": null
+    },
+    {
+      "id": "sadikou-faiz-todo-reactjs",
+      "revision": "f237bdf30a1e361f5a5c2fb16a87651424dcbdd6",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:05:53.630Z",
+      "durationMs": 2127,
+      "runtime": {
+        "reactVersion": "19.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 49,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 49,
+          "textCount": 15,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1621
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 33,
+        "matchedText": 15,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 48,
+        "staticFibers": 48,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 48,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 48,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T13:52:19.674Z",
+      "failure": null
+    },
+    {
+      "id": "gulugulu33-react-yuan-todolist",
+      "revision": "25634c3f9030ca64d314d4f3d0837f1638f722a3",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T13:52:23.473Z",
+      "durationMs": 496,
+      "runtime": {
+        "reactVersion": "19.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 242,
+        "commits": 7,
+        "pageErrors": [
+          "Warning: [antd: Input] `addonAfter` is deprecated. Please use `Space.Compact` instead."
+        ],
+        "title": "react-yuan-todolist"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 16,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 7,
+          "unknownCount": 0,
+          "modulesLoaded": 11
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 8,
+        "matchedText": 0,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 233,
+        "slotsMatched": 3,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 2,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 241,
+        "staticFibers": 15,
+        "coverage": 1,
+        "strictCoverage": 0.03319502074688797,
+        "divergence": null,
+        "stepsUsed": 6540,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 15,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 7,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T13:52:20.118Z",
+      "failure": null
+    },
+    {
+      "id": "phixyn-react-todo-app",
+      "revision": "42eab19c06bfbe5bfd6bebec001ff780262619fa",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:01:03.272Z",
+      "durationMs": 687,
+      "runtime": {
+        "reactVersion": "19.2.5",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 70,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "To-Do List"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 25,
+          "textCount": 3,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 5,
+          "unknownCount": 0,
+          "modulesLoaded": 16
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 11,
+        "matchedText": 0,
+        "opaqueSubtrees": 5,
+        "opaqueSkippedFibers": 58,
+        "slotsMatched": 2,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 2,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TodoProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <div> [HostComponent] > <Router> (opaque) > <AppFooter> [FunctionComponent] > <footer> [HostComponent] > <NavLink> (opaque)",
+            "reason": "NavLink from react-router-dom is not analyzed",
+            "head": "<NavLink> [ForwardRef]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <TodoProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <div> [HostComponent] > <Router> (opaque) > <AppFooter> [FunctionComponent] > <footer> [HostComponent] > <NavLink> (opaque)[0]",
+              "expected": "\"About\"",
+              "actual": "<Link> [ForwardRef]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 69,
+        "staticFibers": 19,
+        "coverage": 1,
+        "strictCoverage": 0.15942028985507245,
+        "divergence": null,
+        "stepsUsed": 142,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 22,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 5,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "eq(#1.pathname, \"/\")",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/phixyn-react-todo-app/src/components/AppFooter.tsx:8:8",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "eq(#1.pathname, \"/\")",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/phixyn-react-todo-app/src/components/AppFooter.tsx:8:8",
+              "side": 0,
+              "guard": "eq(#1.pathname, \"/\")",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#1.pathname, \"/\")",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/phixyn-react-todo-app/src/components/AppFooter.tsx:8:8",
+              "side": 1,
+              "guard": "not(eq(#1.pathname, \"/\"))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:00:58.931Z",
+      "failure": null
+    },
+    {
+      "id": "devpedrofurquim-todo-list",
+      "revision": "814a0e108bc49750434a4eb2e74c33460415df1a",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:06:02.607Z",
+      "durationMs": 986,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 64,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 64,
+          "textCount": 4,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1482
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 59,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 63,
+        "staticFibers": 63,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 63,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 63,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T13:52:33.965Z",
+      "failure": null
+    },
+    {
+      "id": "thapatechnical-react-todo-youtube",
+      "revision": "31f4cc279f15166d9efed14f0f6ce0d8aa9f2204",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:06:10.535Z",
+      "durationMs": 1992,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 25,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React + TS"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 25,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 10
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 24,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 24,
+        "staticFibers": 24,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 24,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 24,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:01:13.691Z",
+      "failure": null
+    },
+    {
+      "id": "mirayavandiepen-drag-track",
+      "revision": "75d9eb2b5bf7f492cc3f6cde8fe390cc10ddd8fc",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T13:52:52.154Z",
+      "durationMs": 912,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 37,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Drag Track"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 46,
+          "textCount": 2,
+          "branchCount": 0,
+          "repeatCount": 2,
+          "opaqueCount": 11,
+          "unknownCount": 2,
+          "modulesLoaded": 30
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 6
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 13,
+        "matchedText": 1,
+        "opaqueSubtrees": 7,
+        "opaqueSkippedFibers": 22,
+        "slotsMatched": 2,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 36,
+        "staticFibers": 41,
+        "coverage": 1,
+        "strictCoverage": 0.3888888888888889,
+        "divergence": null,
+        "stepsUsed": 89,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 13,
+        "stateCount": 13,
+        "clusters": 1,
+        "tree": {
+          "nodes": 45,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 2,
+          "opaque": 11,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+              "count": 0
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 3,
+          "omissions": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+              "countsAbove": 2,
+              "max": null,
+              "conditions": []
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+              "side": 0,
+              "guard": "eq(len(#1.containers), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+              "side": 1,
+              "guard": "len(#1.containers) > 0",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers[].items)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+              "side": 0,
+              "guard": "eq(len(#1.containers[].items), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "repeat",
+              "variable": "len(#1.containers[].items)",
+              "reason": "repeated list",
+              "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+              "side": 1,
+              "guard": "len(#1.containers[].items) > 0",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 13,
+        "assignments": 13,
+        "replayed": 13,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              1
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 1
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 1
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 1
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              5
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              6
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              7
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              8
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              9
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 0
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              11
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 1
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              12
+            ],
+            "conditions": [
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:272:16",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[0]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              },
+              {
+                "kind": "repeat",
+                "variable": "len(#1.containers[].items)@len(#1.containers)[1]",
+                "location": "/private/tmp/bippy-parser-ui-expansion-three/mirayavandiepen-drag-track/src/App.tsx:298:24",
+                "count": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T13:52:47.933Z",
+      "failure": null
+    },
+    {
+      "id": "azlanibrahim1-pure-kanban",
+      "revision": "dce1c95a2d30f468e06f586ce7f0567e6efaab2a",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:06:20.370Z",
+      "durationMs": 987,
+      "runtime": {
+        "reactVersion": "18.3.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 418,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Pure Kanban - No External DnD Libraries"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 418,
+          "textCount": 12,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 1572
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 405,
+        "matchedText": 12,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 417,
+        "staticFibers": 417,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 417,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 417,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:01:28.331Z",
+      "failure": null
+    },
+    {
+      "id": "muhammad-faizan-tariq-kanban-board-react-dnd-kit",
+      "revision": "a38915c173a03814296a4cf7cfffb678d5d535c4",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T13:53:06.152Z",
+      "durationMs": 769,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 31,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "kanban Board"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 16,
+          "textCount": 1,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 9
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 11,
+        "matchedText": 1,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 18,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 30,
+        "staticFibers": 15,
+        "coverage": 1,
+        "strictCoverage": 0.4,
+        "divergence": null,
+        "stepsUsed": 27,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 15,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T13:53:02.238Z",
+      "failure": null
+    },
+    {
+      "id": "rendy278-kanban-board",
+      "revision": "0a2965a647190e9c5468ee65a85be404c5b3de65",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T14:06:26.978Z",
+      "durationMs": 1302,
+      "runtime": {
+        "reactVersion": "19.1.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 311,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Kanban Board"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 89,
+          "textCount": 6,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 58,
+          "unknownCount": 0,
+          "modulesLoaded": 19
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 310,
+        "staticFibers": 84,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": null,
+        "stepsUsed": 200001,
+        "budgetExhausted": true
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 1,
+        "tree": {
+          "nodes": 86,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 58,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "eq(#1.forcedTheme, \"dark\")",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-four/rendy278-kanban-board/src/components/ui/color-mode.tsx:46:10",
+              "side": 0,
+              "guard": "eq(#1.forcedTheme, \"dark\")",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(#1.forcedTheme, \"dark\")",
+              "reason": "conditional on <boolean: === on dynamic values>",
+              "location": "/private/tmp/bippy-parser-ui-expansion-four/rendy278-kanban-board/src/components/ui/color-mode.tsx:46:10",
+              "side": 1,
+              "guard": "not(eq(#1.forcedTheme, \"dark\"))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 0,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T14:01:43.446Z",
+      "failure": null
+    },
+    {
+      "id": "marmelab-ra-example-kanban",
+      "revision": "f23e37b4e9d2b3b89674f2c39cf785d0e722a770",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T13:53:21.443Z",
+      "durationMs": 786,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1327,
+        "commits": 13,
+        "pageErrors": [
+          "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+        ],
+        "title": "ra-example-kanban"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 6,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 11
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 2,
+        "matchedText": 0,
+        "opaqueSubtrees": 3,
+        "opaqueSkippedFibers": 1324,
+        "slotsMatched": 1,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 1326,
+        "staticFibers": 5,
+        "coverage": 1,
+        "strictCoverage": 0.0015082956259426848,
+        "divergence": null,
+        "stepsUsed": 2415,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 5,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T13:53:17.395Z",
+      "failure": null
     }
   ]
 }
