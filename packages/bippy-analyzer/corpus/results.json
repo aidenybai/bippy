@@ -322496,6 +322496,161 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T15:54:29.008Z",
       "failure": null
+    },
+    {
+      "id": "runtimeterror10-club-animals",
+      "revision": "4c2519e31e269f929e0f437b1cb56673b0f6d57b",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:57:32.325Z",
+      "durationMs": 314,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 37,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: Using UNSAFE_componentWillMount in strict mode is not recommended and may indicate bugs in your code. See https://reactjs.org/link/unsafe-component-lifecycles for details.\n\n* Move code with side effects to componentDidMount, and set initial state in the constructor.\n\nPlease update the following components: %s SideEffect(NullComponent)"
+        ],
+        "title": "Club Animals"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 66,
+          "textCount": 0,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 1,
+          "unknownCount": 0,
+          "modulesLoaded": 27
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 33,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 3,
+        "slotsMatched": 0,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 1,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Helmet> (opaque)",
+            "reason": "Helmet from react-helmet is not analyzed",
+            "head": "<HelmetWrapper> [ClassComponent]",
+            "skippedFibers": 3,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Helmet> (opaque)[0]",
+              "expected": "<title> [HostComponent]",
+              "actual": "<SideEffect(NullComponent)> [ClassComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 36,
+        "staticFibers": 35,
+        "coverage": 1,
+        "strictCoverage": 0.9166666666666666,
+        "divergence": null,
+        "stepsUsed": 39,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 3,
+        "stateCount": 3,
+        "clusters": 1,
+        "tree": {
+          "nodes": 95,
+          "inputs": 2,
+          "guards": 4,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 2,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/runtimeterror10-club-animals/src/App.js:47:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/runtimeterror10-club-animals/src/App.js:47:8",
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(choice(#1), 0)",
+              "reason": "conditional on branch(true | false)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-eight/runtimeterror10-club-animals/src/App.js:47:8",
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 2,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 3,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:57:30.149Z",
+      "failure": null
     }
   ]
 }
