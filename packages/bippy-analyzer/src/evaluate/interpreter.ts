@@ -2076,7 +2076,9 @@ export class Interpreter {
           memberContext,
           this.getDeclaredName(node, memberContext.module) ?? nameHint,
         );
-        return this.decorateClass(node, classValue, memberContext);
+        return this.continueValue(classValue, memberContext, (value, classContext) =>
+          this.decorateClass(node, value, classContext),
+        );
       });
     return superValue === null
       ? finishClass(null, context)
@@ -2116,7 +2118,7 @@ export class Interpreter {
     body: ClassBody,
     context: EvaluationContext,
     name: string | null,
-  ): StaticClassValue {
+  ): StaticValue {
     const classId =
       node.type === "ClassDeclaration" || node.type === "ClassExpression" ? node.id : null;
     const scope = classId ? createScope(context.scope) : context.scope;
@@ -2153,28 +2155,46 @@ export class Interpreter {
       else this.assignOwnProperty(classValue.properties, member.key, method);
     }
     getClassPrototypeObject(this, classValue, staticContext);
-    for (const member of body.members) {
-      if (!member.isStatic) continue;
-      if (member.kind === "field") {
+    const initializeFrom = (
+      start: number,
+      initializationContext: EvaluationContext,
+    ): StaticValue => {
+      for (let index = start; index < body.members.length; index++) {
+        const member = body.members[index];
+        if (!member.isStatic || (member.kind !== "field" && member.kind !== "static-block"))
+          continue;
+        const initialized =
+          member.kind === "field"
+            ? member.value
+              ? this.evaluateExpression(member.value, initializationContext, member.key)
+              : UNDEFINED_VALUE
+            : outcomeToReturnValue(
+                this.evaluateFunctionBlock(member.body, {
+                  ...initializationContext,
+                  scope: createScope(initializationContext.scope),
+                }),
+                this.locate(context.module, node),
+              );
+        if (getThrowCertainty(initialized) !== "never") {
+          return this.continueValue(initialized, initializationContext, (value, fieldContext) => {
+            if (member.kind === "field")
+              this.assignOwnProperty(classValue.properties, member.key, value);
+            return initializeFrom(index + 1, fieldContext);
+          });
+        }
+        if (member.kind === "field")
+          this.assignOwnProperty(classValue.properties, member.key, initialized);
+      }
+      for (const [key, getter] of staticGetters) {
         this.assignOwnProperty(
           classValue.properties,
-          member.key,
-          member.value
-            ? this.evaluateExpression(member.value, staticContext, member.key)
-            : UNDEFINED_VALUE,
+          key,
+          this.callFunction(getter, [], initializationContext, { thisValue: classValue }),
         );
-      } else if (member.kind === "static-block") {
-        this.evaluateBlock(member.body, staticContext, true);
       }
-    }
-    for (const [key, getter] of staticGetters) {
-      this.assignOwnProperty(
-        classValue.properties,
-        key,
-        this.callFunction(getter, [], staticContext, { thisValue: classValue }),
-      );
-    }
-    return classValue;
+      return classValue;
+    };
+    return initializeFrom(0, staticContext);
   }
 
   lookupIdentifier(name: string, context: EvaluationContext): StaticValue {
@@ -5161,9 +5181,11 @@ export class Interpreter {
         wrapperContext,
         compiled.name,
       );
-      declareInScope(scope, compiled.name, classValue);
-      this.evaluateFunctionBlock(compiled.setup, wrapperContext);
-      return classValue;
+      return this.continueValue(classValue, wrapperContext, (value, classContext) => {
+        declareInScope(scope, compiled.name, value);
+        this.evaluateFunctionBlock(compiled.setup, classContext);
+        return value;
+      });
     });
   }
 
