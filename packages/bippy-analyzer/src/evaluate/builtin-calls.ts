@@ -140,6 +140,7 @@ import {
   accessorEntry,
   branchValue,
   countAlternatives,
+  createRegisteredSymbolValue,
   createSymbolValue,
   describeValue,
   distributeObjectBranches,
@@ -725,6 +726,9 @@ const hasOwnProperty = (
   key: StaticValue,
   name: string,
 ): StaticValue | null => {
+  if (receiver.kind === "namespace" && !receiver.module.isCommonJs && key.kind === "symbol") {
+    return primitiveValue(name === "hasOwnProperty" && key.key === "Symbol.toStringTag");
+  }
   const propertyName = toPropertyKey(key);
   if (propertyName === null)
     return isFunctionText(key) && ownsNoFunctionTextKey(receiver) ? FALSE_VALUE : null;
@@ -1110,7 +1114,7 @@ const callGlobal = (
         : unknownValue("Symbol with a dynamic description", location);
     case "Symbol.for":
       return first?.kind === "primitive" && typeof first.value === "string"
-        ? { kind: "symbol", key: first.value }
+        ? createRegisteredSymbolValue(first.value)
         : unknownValue("Symbol.for with a dynamic key", location);
     case "Promise.resolve":
       return resolvedPromiseValue(first ?? UNDEFINED_VALUE);

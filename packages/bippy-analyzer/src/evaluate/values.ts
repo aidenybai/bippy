@@ -487,8 +487,22 @@ export const createSymbolValue = (description: string | undefined): StaticSymbol
   return symbol;
 };
 
+const REGISTERED_SYMBOL_KEY_PREFIX = "\uE000registry:";
+
+export const createRegisteredSymbolValue = (key: string): StaticSymbolValue => ({
+  kind: "symbol",
+  key:
+    key.startsWith("Symbol.") || key.startsWith("#") || key.startsWith(REGISTERED_SYMBOL_KEY_PREFIX)
+      ? `${REGISTERED_SYMBOL_KEY_PREFIX}${key}`
+      : key,
+});
+
 export const getSymbolDescription = (symbol: StaticSymbolValue): string | undefined =>
-  unregisteredSymbols.has(symbol.key) ? symbol.description : symbol.key;
+  unregisteredSymbols.has(symbol.key)
+    ? symbol.description
+    : symbol.key.startsWith(REGISTERED_SYMBOL_KEY_PREFIX)
+      ? symbol.key.slice(REGISTERED_SYMBOL_KEY_PREFIX.length)
+      : symbol.key;
 
 /** Symbol-keyed properties are stored under a private-use-character prefix no program string key starts with; enumeration skips them like `Object.keys` does. */
 export const SYMBOL_PROPERTY_KEY_PREFIX = "\uE000symbol:";
@@ -2218,7 +2232,7 @@ export const describeValue = (value: StaticValue, depth = 0): string => {
         return `Symbol(${value.description === undefined ? "" : JSON.stringify(value.description)})`;
       return value.key.startsWith("Symbol.")
         ? value.key
-        : `Symbol.for(${JSON.stringify(value.key)})`;
+        : `Symbol.for(${JSON.stringify(getSymbolDescription(value))})`;
     case "object":
       return `{${value.entries.map((entry) => (entry.kind === "property" ? entry.key : "...")).join(", ")}}`;
     case "function":
