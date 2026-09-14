@@ -222,7 +222,7 @@ The [external-star suite](../tests/external-star-exports.test.ts) checks fourtee
 
 This follows webpack's distinction between `provided === false`, `provided === true`, and exports requiring runtime checks, and Rolldown's separate `NoMatch`, `Found`, and `External` import states. [esbuild propagates dynamic export status](https://github.com/evanw/esbuild/blob/f6058f8364fe7ab91ca57a83e02577ed74c9cae4/internal/linker/linker.go#L2940-L2968) before star-name resolution and leaves unavailable source indices for runtime resolution. Bippy does not copy these tools' runtime fallback generation into analysis. An initial esbuild check used a TypeScript re-export that the compiler could elide as type-only. The preserved failing check was replaced with a live imported value exported by the consumer; source expectations were unchanged.
 
-Unresolved module requests, unavailable internal modules, global instantiation errors, and richer conflict provenance still need separate work. The modeled-library shortcut is addressed separately below. The new marker does not imply that an unknown name definitely exists or is definitely ambiguous, and it does not establish causal reachability.
+Unavailable-module propagation and the modeled-library shortcut are addressed separately below. Global instantiation errors and richer conflict provenance still need separate work. The new marker does not imply that an unknown name definitely exists or is definitely ambiguous, and it does not establish causal reachability.
 
 ## Modeled values are not binding origins
 
@@ -233,6 +233,16 @@ Value modeling does not establish declaration identity. Equal modeled references
 The [modeled-star suite](../tests/modeled-star-exports.test.ts) uses the installed Redux 5.0.1 package, unchanged through a temporary symlink. Fourteen cases in both declaration orders cover modeled/local mixtures, matching references, a model plus its parsed ESM source, distinct modeled names, explicit overrides, opaque stars and independently known conflicts. The package's ESM source hash is checked before and after. This tests linking and modeling boundaries, not Redux behavior or other versions.
 
 The native linker now uses Node's ESM resolution with the explicit parent-resolution flag. Redux's actual conditional `exports.import` target is linked; its CommonJS default target is not parsed as an ESM substitute. The existing native link suites pass with the same ESM resolution path. V8 linking and esbuild builds do not evaluate application bodies. Explicit origin graphs, uncertain-origin provenance, module instantiation and incremental invalidation remain separate work.
+
+## Unavailable modules are not empty modules
+
+The [unavailable-module suite](../tests/unavailable-module-exports.test.ts) distinguishes a successfully analyzed module with no matching export from a module Bippy cannot resolve or analyze. Missing relative requests and resolved internal paths without a module record now produce `isUncertain` symbols. Named imports, namespace re-exports, local import/re-export pairs and nested stars retain that marker. Star aggregation no longer discards these outcomes as if the target had no matching export. Known conflicting bindings still prove ambiguity; CommonJS star lookup keeps its existing behavior.
+
+Eighteen cases run in both declaration orders. Controls cover a missing package, explicit declarations, default exclusion, successfully analyzed empty modules and a file removed after path resolution. Unsupported-source cases compare the same bytes with and without a supplied source transform. V8 links those fixture bytes as ESM; esbuild uses an explicit `.fixture` loader. Neither reference evaluates application bodies. These are module-boundary checks, not 36 exact rendering repairs.
+
+The [specification's `GetImportedModule`](https://tc39.es/ecma262/#sec-GetImportedModule) assumes requested modules have already loaded successfully before export resolution. A missing dependency is therefore not the same outcome as `ResolveExport` returning `null`. Bippy's uncertainty marker describes incomplete analysis; it is not a modeled native loading exception. The tests assert native loading failure separately even when Bippy can identify an explicit declaration or a known declaration conflict. A resolved symbol must not be used as proof that the whole module graph loads or instantiates successfully.
+
+Global loading/instantiation validation, parse failures, unresolved local declarations, loader-specific semantics and structured dependency-failure provenance remain open. This change does not refresh stale caches or make partial module analysis a complete linker.
 
 ## Graph lifetime probes
 
