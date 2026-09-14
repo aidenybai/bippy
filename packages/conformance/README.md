@@ -49,6 +49,8 @@ Superseded-transition replays run all six assignments of three keyed rows to two
 
 Context/portal replays compare four fresh-fixture pairs with outer and shadowing providers, memoized consumers with unchanged props, and two roots sharing a portal container. A label-based model distinguishes signed-zero context changes from repeated NaN values; body-presence sets distinguish conservative context reads from committed update phases. A shared wakeable holds both outer-provider transitions while an urgent inner-provider update commits; one outer transition is abandoned and the other completes without losing that inner state. Relocating either portal scope into the other root's DOM container must remount its host/ID/state while retaining its logical provider and root. Emptying the DOM-owner root must leave the foreign portal connected and its Bippy identity live. Exact effect/phase/deletion order and current-fiber checks cover every checkpoint. These are pinned React 19/Happy DOM cases, not a context or portal version matrix.
 
+Strict-effects replays run eight cases twice: root-level versus nested Strict Mode, cleanup-returning versus null-detached refs, and state updates from layout versus passive cleanup. Exact traces distinguish development effect reconnection from real deletion: insertion effects do not replay, ref/layout/passive cleanup keeps both IDs live, and cleanup-triggered updates retain the same host and state token. Newly inserted children replay effects in both placements; keyed moves do not replay effects or reorder the hosts of distinct portals sharing one container. Key replacement must retire the old host/ID/state and replay the new instance. A recorded parent passive effect makes post-commit delivery independent of profiling duration. The non-strict control root remains unchanged. These are pinned React 19 development cases, not production Strict Mode or version-matrix coverage.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -64,6 +66,7 @@ pnpm test --project conformance selective-hydration-replay
 pnpm test --project conformance nested-commit-replay
 pnpm test --project conformance superseded-transition-replay
 pnpm test --project conformance context-portal-replay
+pnpm test --project conformance strict-effects-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
