@@ -320311,6 +320311,1871 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T15:31:54.642Z",
       "failure": null
+    },
+    {
+      "id": "ishandeveloper-notes-keeper",
+      "revision": "32b020ecf07e21127e866e40d8f08336daa72f07",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:44:32.581Z",
+      "durationMs": 541,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 54,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "NotesKeeper"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 185,
+          "textCount": 1,
+          "branchCount": 9,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 16,
+          "modulesLoaded": 6
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 52,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 9,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "truncated",
+        "runtimeFibers": 53,
+        "staticFibers": 130,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 71,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 256,
+        "stateCount": 256,
+        "clusters": 1,
+        "tree": {
+          "nodes": 166,
+          "inputs": 1,
+          "guards": 18,
+          "branches": 9,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 16
+        },
+        "matchedState": {
+          "index": 128,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+              "reason": "if (<boolean: != on dynamic values>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "state",
+              "conditions": [
+                {
+                  "kind": "branch",
+                  "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                  "reason": "if (<boolean: != on dynamic values>)",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                },
+                {
+                  "kind": "branch",
+                  "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                  "reason": "function may fall through without returning",
+                  "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                  "alternativeIndex": 1,
+                  "alternativeCount": 2
+                }
+              ]
+            }
+          ]
+        },
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+              "reason": "if (<boolean: != on dynamic values>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+              "side": 0,
+              "guard": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+              "reason": "if (<boolean: != on dynamic values>)",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+              "side": 1,
+              "guard": "not(or(eq(#1, null), eq(typeof(#1), \"undefined\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.0), not(eq(#1.0.note, \"NULL\"))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.2), not(eq(#1.2.note, \"NULL\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.1), not(eq(#1.1.note, \"NULL\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.3), not(eq(#1.3.note, \"NULL\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.4), not(eq(#1.4.note, \"NULL\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.5), not(eq(#1.5.note, \"NULL\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.6), not(eq(#1.6.note, \"NULL\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 0,
+              "guard": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+              "reason": "function may fall through without returning",
+              "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+              "side": 1,
+              "guard": "not(and(truthy(#1.7), not(eq(#1.7.note, \"NULL\"))))",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 9,
+          "possible": 9,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 256,
+        "assignments": 256,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              17
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              34
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              51
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              68
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              85
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              102
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              119
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              128
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              153
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              170
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              187
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              204
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              221
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              238
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              255
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "or(eq(#1, null), eq(typeof(#1), \"undefined\"))",
+                "reason": "if (<boolean: != on dynamic values>)",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/app.jsx:17:5",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.0), not(eq(#1.0.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.2), not(eq(#1.2.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.1), not(eq(#1.1.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.3), not(eq(#1.3.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.4), not(eq(#1.4.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.5), not(eq(#1.5.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.6), not(eq(#1.6.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#1.7), not(eq(#1.7.note, \"NULL\")))",
+                "reason": "function may fall through without returning",
+                "location": "/private/tmp/bippy-parser-ui-expansion-nine/ishandeveloper-notes-keeper/src/components/minors/card.jsx:3:1",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:44:29.845Z",
+      "failure": null
+    },
+    {
+      "id": "lucas-zz-zap-recall",
+      "revision": "af4cf26dfb5272e678b36c08807be7edbfeb40b8",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:44:31.946Z",
+      "durationMs": 242,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 23,
+        "commits": 2,
+        "pageErrors": [
+          "Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `StartScreen`.  \n    at button\n    at StartScreen (http://127.0.0.1:54962/static/js/main.chunk.js:1511:5)\n    at App (http://127.0.0.1:54962/static/js/main.chunk.js:75:81)"
+        ],
+        "title": "Zap Recall"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 23,
+          "textCount": 8,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 12
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 14,
+        "matchedText": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 22,
+        "staticFibers": 22,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 22,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 2,
+        "stateCount": 2,
+        "clusters": 0,
+        "tree": {
+          "nodes": 24,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:44:29.825Z",
+      "failure": null
+    },
+    {
+      "id": "keremciu-retro-calculator",
+      "revision": "b0c26adefd48c3d5f6cf0d65b7a635eade6c1e89",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:44:44.427Z",
+      "durationMs": 278,
+      "runtime": {
+        "reactVersion": "17.0.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 105,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Casio Calculator"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 105,
+          "textCount": 3,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 18
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 101,
+        "matchedText": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 104,
+        "staticFibers": 104,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 104,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 104,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:44:42.318Z",
+      "failure": null
     }
   ]
 }
