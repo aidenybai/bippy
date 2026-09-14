@@ -270,12 +270,19 @@ Parent-construction status lives in a journaled object rather than an untracked 
 
 Known receiver and key failures stop member evaluation. Optional finite receiver alternatives skip keys on absent paths. Declared instance `super` getters run when their property is read, after key evaluation, rather than while assembling the parent-member view. Parent replacements require a known `object` value; other modeled value kinds remain unknown.
 
+[Class identity tests](../packages/bippy-analyzer/tests/class-identity.test.ts) check fresh allocation on native-class `super()` attempts, including retries and duplicate calls. Failed instances retain their earlier fields and identity. React adopts the common completing instance before reading its state; incompatible path-dependent instances remain conservative.
+
+Declared class methods are no longer implicitly bound. Member calls supply a receiver, while extracted methods default to `undefined`. Explicit binds and lexical arrows retain their receivers. React’s instance lifecycle helpers supply the instance explicitly.
+
+[Escape walks](../packages/bippy-analyzer/tests/escapes-receivers.test.ts) retain receivers for resolved member callees. Receiver-specific cache entries terminate recursive walks and support invalidation after mutations. Passing a method as an argument does not bind it.
+
 Object-key coercion and complete destructuring remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Null-receiver errors
 - Getter-only write errors
 - Proxy-setter failures
-- [Class identity and receiver rules](../packages/bippy-analyzer/src/evaluate/class-component.ts): fresh allocation on parent retries and unbound extracted methods
+- Unbound methods reading properties from `undefined`
+- [Derived constructors](../packages/bippy-analyzer/src/evaluate/class-component.ts) returning unknown numeric values
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 
