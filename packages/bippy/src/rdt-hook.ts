@@ -117,7 +117,8 @@ export const removeActiveListener = (
 };
 
 const notifyActiveListeners = (target: ReactDevToolsTarget): void => {
-  for (const listener of _onActiveListeners) {
+  const pendingListeners = [..._onActiveListeners];
+  for (const listener of pendingListeners) {
     if (activeListenerTargets.get(listener)?.has(target)) callListener(listener, undefined);
   }
 };
@@ -244,7 +245,7 @@ export const installRDTHook = (
             nextRenderers.set(rendererId, renderer);
           });
           if (ourRenderers.size > 0 || rdtHookReplaceListeners.size > 0) {
-            patchRDTHook(onActive, target);
+            patchRDTHook(undefined, target);
           }
           notifyRDTHookReplaceListeners(rdtHook, target);
         }

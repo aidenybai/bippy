@@ -416,7 +416,11 @@ const createFiberReference = (fiber: Fiber): FiberReference =>
 
 export const setFiberId = (fiber: Fiber, fiberId: number = nextFiberId++): void => {
   const previousFiberId = fiberIdMap.get(fiber);
-  if (previousFiberId !== undefined && previousFiberId !== fiberId) {
+  if (
+    previousFiberId !== undefined &&
+    previousFiberId !== fiberId &&
+    fiberByIdMap.get(previousFiberId)?.deref() === fiber
+  ) {
     fiberByIdMap.delete(previousFiberId);
   }
   fiberIdMap.set(fiber, fiberId);
@@ -847,7 +851,9 @@ try {
  */
 export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const target = options.target ?? globalThis;
-  const rdtHook = getRDTHook(options.onActive, target);
+  const activeListener = options.onActive;
+  const onActive = activeListener ? () => activeListener() : undefined;
+  const rdtHook = getRDTHook(onActive, target);
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
   wireHookEventDispatchers(rdtHook, target);
@@ -855,7 +861,7 @@ export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   instrumentationSubscriptions.add(subscription);
 
   return createUnsubscribe(() => {
-    if (options.onActive) removeActiveListener(options.onActive, target);
+    if (onActive) removeActiveListener(onActive, target);
     instrumentationSubscriptions.delete(subscription);
   });
 };
