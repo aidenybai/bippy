@@ -853,6 +853,22 @@ const isNonProgressingRecursion = (
   return activations.filter((frame) => frame.forkDepth < forkDepth).length > MAX_FORKED_REENTRIES;
 };
 
+const getNullishPropertyError = (
+  receiver: StaticValue,
+  propertyName: string | null,
+  operation: "read" | "set",
+  location: SourceLocation | null,
+): StaticValue | null => {
+  if (receiver.kind !== "primitive" || (receiver.value !== null && receiver.value !== undefined))
+    return null;
+  const reason = `cannot ${operation} property ${propertyName === null ? "with a dynamic key" : JSON.stringify(propertyName)} of ${String(receiver.value)}`;
+  return thrownValue(
+    reason,
+    createErrorValue("TypeError", [unknownPrimitiveValue("string", reason)], location),
+    location,
+  );
+};
+
 const getCallReceiver = (
   functionValue: StaticFunctionValue,
   options: CallOptions,
@@ -1705,6 +1721,8 @@ export class Interpreter {
     value: StaticValue,
     context: EvaluationContext,
   ): StaticValue {
+    const error = getNullishPropertyError(target, propertyName, "set", null);
+    if (error) return error;
     switch (target.kind) {
       case "object": {
         const accessor = getObjectAccessor(target, propertyName);
@@ -3076,9 +3094,8 @@ export class Interpreter {
       if (resolved) return getTypeofValue(resolved, this.getRealm(context.environment));
       if (this.isAbsentGlobal(target.name, context.environment)) return primitiveValue("undefined");
     }
-    return getTypeofValue(
-      this.evaluateExpression(argument, context),
-      this.getRealm(context.environment),
+    return this.continueValue(this.evaluateExpression(argument, context), context, (value) =>
+      getTypeofValue(value, this.getRealm(context.environment)),
     );
   }
 
@@ -3307,6 +3324,8 @@ export class Interpreter {
               },
               setValue: (value, assignmentContext) => {
                 const propertyName = toPropertyKey(propertyKey);
+                const error = getNullishPropertyError(receiver, propertyName, "set", location);
+                if (error) return error;
                 if (propertyName === null) {
                   this.assignDynamicProperty(receiver, propertyKey, value);
                   return value;
@@ -3673,6 +3692,8 @@ export class Interpreter {
     key: StaticValue,
     location: SourceLocation | null,
   ): StaticValue {
+    const error = getNullishPropertyError(object, null, "read", location);
+    if (error) return error;
     if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
       const candidates = object.items.filter((item) => item.kind !== "repeat");
@@ -3784,6 +3805,8 @@ export class Interpreter {
     location: SourceLocation | null,
     optional = false,
   ): StaticValue {
+    const error = optional ? null : getNullishPropertyError(object, key, "read", location);
+    if (error) return error;
     switch (object.kind) {
       case "branch":
         return mapValue(object, (alternative) =>
@@ -3841,10 +3864,7 @@ export class Interpreter {
         if (key === "description") return primitiveValue(getSymbolDescription(object));
         return prototypeMember(object, Symbol.prototype, key);
       case "primitive":
-        if (object.value === null || object.value === undefined) {
-          if (optional) return CHAIN_SHORT_CIRCUIT;
-          return unknownValue(`property "${key}" of ${String(object.value)}`, location);
-        }
+        if (object.value === null || object.value === undefined) return CHAIN_SHORT_CIRCUIT;
         if (typeof object.value === "string") {
           if (key === "length") return primitiveValue(object.value.length);
           const index = toIndexKey(key);
@@ -4253,7 +4273,8 @@ export class Interpreter {
           const propertyName = toPropertyKey(propertyKey);
           const callee =
             propertyName === null
-              ? unknownValue("computed method call", location)
+              ? (getNullishPropertyError(receiver, null, "read", location) ??
+                unknownValue("computed method call", location))
               : this.getProperty(receiver, propertyName, keyContext, location, member.optional);
           return listValue([callee, receiver]);
         });
