@@ -9,6 +9,19 @@ interface Registration {
   finalize: () => void;
 }
 
+interface NumericIdentifier {
+  name: string;
+  value: number;
+}
+
+interface NumericOwnershipTrace {
+  from: string;
+  to: string;
+  owners: number[][];
+  registrations: number[][];
+  generated: number;
+}
+
 interface UnmountObservation {
   live: boolean[];
   registrations: number[];
@@ -268,5 +281,95 @@ const runCollection = () => {
   };
 };
 
-assert.ok(scenario === "churn" || scenario === "collection");
-console.log(JSON.stringify(scenario === "churn" ? runChurn() : runCollection()));
+const runNumericKeys = () => {
+  const deletedIndex = Number(direction);
+  assert.ok(deletedIndex === 0 || deletedIndex === 1);
+  const identifiers: NumericIdentifier[] = [
+    { name: "nan", value: NaN },
+    { name: "positive-zero", value: 0 },
+    { name: "negative-zero", value: -0 },
+    { name: "infinity", value: Infinity },
+    { name: "negative-infinity", value: -Infinity },
+    { name: "minimum", value: Number.MIN_VALUE },
+    { name: "negative-minimum", value: -Number.MIN_VALUE },
+    { name: "fraction", value: 0.5 },
+    { name: "negative-fraction", value: -0.5 },
+  ];
+  const schedule = identifiers.flatMap((from) => identifiers.map((to) => ({ from, to })));
+  const control = createFiber();
+  setFiberId(control, 1);
+  let nextIdentifier = 2;
+  const count = hasFinalizer ? 1 : 0;
+  const transcript: NumericOwnershipTrace[] = [];
+  for (const { from, to } of schedule) {
+    const retained = createFiber();
+    const alternate = createFiber({ alternate: retained });
+    retained.alternate = alternate;
+    const claimant = createFiber();
+    const handles = [retained, alternate, claimant, control];
+    const owners: number[][] = [];
+    const counts: number[][] = [];
+    const observe = (): void => {
+      owners.push(
+        [from.value, to.value].map((identifier) => {
+          const fiber = getFiberById(identifier);
+          if (fiber === null) return -1;
+          const owner = handles.indexOf(fiber);
+          assert.notEqual(owner, -1, "Reverse lookup returned an unrelated fiber");
+          return owner;
+        }),
+      );
+      counts.push(handles.map(getRegistrationCount));
+      assert.equal(getFiberById(1), control);
+    };
+    setFiberId(retained, from.value);
+    assert.ok(Object.is(getFiberId(retained), from.value));
+    observe();
+    setFiberId(claimant, from.value);
+    observe();
+    assert.ok(Object.is(getFiberId(alternate), from.value));
+    observe();
+    setFiberId(retained, to.value);
+    assert.ok(Object.is(getFiberId(retained), to.value));
+    assert.ok(Object.is(getFiberId(alternate), from.value));
+    observe();
+    setFiberId(claimant, to.value);
+    assert.ok(Object.is(getFiberId(claimant), to.value));
+    assert.ok(Object.is(getFiberId(alternate), from.value));
+    observe();
+    hook.onCommitFiberUnmount(1, handles[deletedIndex]);
+    observe();
+    assert.deepEqual(handles.map(getRegistrationCount), [0, 0, count, count]);
+    const generated = getFiberId(retained);
+    assert.equal(generated, nextIdentifier++);
+    assert.equal(getFiberId(alternate), generated);
+    assert.equal(getFiberById(generated), alternate);
+    observe();
+    hook.onCommitFiberUnmount(1, claimant);
+    observe();
+    hook.onCommitFiberUnmount(1, alternate);
+    assert.equal(getFiberById(generated), null);
+    observe();
+    assert.deepEqual(handles.map(getRegistrationCount), [0, 0, 0, count]);
+    transcript.push({ from: from.name, to: to.name, owners, registrations: counts, generated });
+  }
+  hook.onCommitFiberUnmount(1, control);
+  assert.equal(getFiberById(1), null);
+  assert.equal(registrations.size, 0);
+  return {
+    transcript,
+    nativeChecked: nativeUnregisterChecks > 0,
+    afterCleanup: registrations.size,
+  };
+};
+
+assert.ok(scenario === "churn" || scenario === "collection" || scenario === "numeric-keys");
+console.log(
+  JSON.stringify(
+    scenario === "churn"
+      ? runChurn()
+      : scenario === "collection"
+        ? runCollection()
+        : runNumericKeys(),
+  ),
+);
