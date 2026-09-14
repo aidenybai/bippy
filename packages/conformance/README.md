@@ -59,6 +59,8 @@ Entangled-Action replays run eight cases twice with independent promise gates. O
 
 Rejected-Action replays run eight cases twice: either failing root, either settlement order, and matching versus distinct boundary-reset keys. Native queues are located by dispatch identity, not hook position; distinct running/queued nodes must retain their exact payloads and reject with the same original error. Queue cancellation precedes the error-boundary commit when another root is still pending. The same boundary instance captures that error while the healthy root completes; failing deletion observers/reporters cannot interrupt teardown. Error capture creates a fresh fallback even with a matching key. Reset either retains that fallback's recovered state or creates a third fresh instance. A failed queue's retained dispatcher remains a no-op, unlike a normally unmounted queue: the latter can still run an async callback without reviving its IDs or UI, and can hold a live Action through the shared scope. Native queue results distinguish completed async work from still-pending committed UI. Exact traces, payload/queue identity, current visitors, live/retired IDs, control-root isolation and `finally` gate cleanup are checked. These are pinned React 19 development/Happy DOM semantics, not a recommendation to call detached dispatchers or a version-independent queue representation.
 
+Dispatch-membership replays run sixteen cases twice across commit, unmount, post-commit and schedule callbacks. A listener disposes and re-registers itself, optionally replaces another pending registration using the same options object, and can dispatch a nested event before throwing into a throwing reporter. A named renewal guard makes the broken live-Set implementation fail finitely rather than hang. Each delivery must use a registration snapshot: newly added entries join nested/later deliveries, disposed entries are skipped, and identity is the registration rather than its options object. Exact traces check inherited-hook order, renderer/root/payload/priority/error arguments, foreign-target exclusion and both alternate IDs through nested unmount release. All sixteen cases failed before the fix, with four self invocations per outer event under the guard. `core.ts` now snapshots membership in all four dispatchers and rechecks each entry's liveness before calling it. React's DevTools emitter has an array-bounded iteration; this also preserves Bippy's existing cancellation-during-delivery behavior.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -79,6 +81,7 @@ pnpm test --project conformance store-consistency-replay
 pnpm test --project conformance activity-store-replay
 pnpm test --project conformance entangled-action-replay
 pnpm test --project conformance rejected-action-replay
+pnpm test --project conformance dispatch-membership-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
