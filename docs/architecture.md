@@ -294,10 +294,13 @@ Proxy writes preserve failures from retrieving or calling the `set` trap. Trap c
 
 [Strict-write tests](../packages/bippy-analyzer/tests/strict-writes.test.ts) reject getter-only assignments and falsy proxy-set results in strict code. Trap effects survive rejection; an ordinary setter's return value does not determine write success. [Scope checks](../packages/bippy-analyzer/tests/strict-write-scopes.test.ts) distinguish lexical directives and class methods from caller strictness, block strings, and escaped directives. References retain their source strictness through delegation. Module classification comes from `ModuleRecord`; script/loader modes, eval, and dynamic function constructors remain unverified.
 
+[Class-heritage tests](../packages/bippy-analyzer/tests/class-heritage.test.ts) stop class creation when evaluating the superclass throws, before member keys or static initialization run. Completing superclass alternatives retain their guards and inherited values. Class declarations propagate these abrupt paths rather than storing them as bindings. [Comma-expression tests](../packages/bippy-analyzer/tests/sequence-completion.test.ts) stop later operands and calls after an earlier error, retain the last completing value, and preserve unbound call receivers. A 10,000-operand control checks iterative sequencing, not general scalability.
+
 [Value-level checks](../packages/bippy-analyzer/tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Frozen-object and primitive-property write errors
-- Class creation discarding a heritage-expression error
+- Superclass constructor/prototype validation and class-definition errors from computed keys, static fields, and static blocks
+- Eager static getter evaluation
 - Direct boolean interpolation losing guard precision
 - `defineProperty` trap dispatch during ordinary proxy writes
 - Noncallable `apply` traps and class calls without `new`

@@ -2046,16 +2046,26 @@ export class Interpreter {
     const superValue = node.superClass
       ? this.evaluateExpression(node.superClass, context, null)
       : null;
-    const classValue = this.defineClass(
-      node,
-      {
-        members: collectClassMembers(node, (key) => this.evaluatePropertyKey(key, true, context)),
-        superValue,
-      },
-      context,
-      this.getDeclaredName(node, context.module) ?? nameHint,
-    );
-    return this.decorateClass(node, classValue, context);
+    const finishClass = (
+      parent: StaticValue | null,
+      parentContext: EvaluationContext,
+    ): StaticValue => {
+      const classValue = this.defineClass(
+        node,
+        {
+          members: collectClassMembers(node, (key) =>
+            this.evaluatePropertyKey(key, true, parentContext),
+          ),
+          superValue: parent,
+        },
+        parentContext,
+        this.getDeclaredName(node, parentContext.module) ?? nameHint,
+      );
+      return this.decorateClass(node, classValue, parentContext);
+    };
+    return superValue === null
+      ? finishClass(null, context)
+      : this.continueValue(superValue, context, finishClass);
   }
 
   /** Legacy (`transform-decorators-legacy`, TS `experimentalDecorators`) class decorators: innermost first, `decorator(Class) || Class`. */
@@ -2536,13 +2546,12 @@ export class Interpreter {
         return this.evaluateExpression(node.expression, context, nameHint);
       case "ChainExpression":
         return completeChain(this.evaluateExpression(node.expression, context, nameHint));
-      case "SequenceExpression": {
-        const lastIndex = node.expressions.length - 1;
-        for (const expression of node.expressions.slice(0, lastIndex)) {
-          this.evaluateExpression(expression, context);
-        }
-        return this.evaluateExpression(node.expressions[lastIndex], context);
-      }
+      case "SequenceExpression":
+        return this.evaluateArguments(
+          node.expressions,
+          context,
+          (values) => values.at(-1) ?? UNDEFINED_VALUE,
+        );
       case "AwaitExpression": {
         const resolved = this.takeResolvedAwait(node);
         if (resolved) return resolved;
@@ -5412,15 +5421,20 @@ export class Interpreter {
         }
         case "FunctionDeclaration":
           break;
-        case "ClassDeclaration":
+        case "ClassDeclaration": {
+          const classValue = this.createClassValue(statement, context, statement.id?.name ?? null);
+          if (getThrowCertainty(classValue) === "always") return returnOutcome(classValue);
+          const thrown = getThrownPaths(classValue);
           if (statement.id) {
             declareInScope(
               context.scope,
               statement.id.name,
-              this.createClassValue(statement, context, statement.id.name),
+              thrown ? withoutThrows(classValue) : classValue,
             );
           }
+          if (thrown) return this.propagateThrow(classValue, context, proceed, location);
           break;
+        }
         case "TSEnumDeclaration":
         case "TSModuleDeclaration": {
           const name = getTypeScriptDeclarationName(statement);

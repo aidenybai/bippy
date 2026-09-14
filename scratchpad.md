@@ -1166,11 +1166,45 @@ Serialized models match the callability checkpoint: 11 states, seven wildcards, 
 
 Final gates pass 3,540 root tests with two existing skips and 1,494 analyzer tests across 91 files, plus typecheck/build, realms, lint, formatting, and documentation validation. Lint retains the intentional `no-setter-return` warning in the ordinary-setter control. `strict-write-completion-reviewed-gates.json` verifies eleven production-source hashes including `strict-code.ts`, baseline, 50 exact saved checks, two retained definition/invariant failures, ten other strict probes, models, controls, and unchanged 307-entry corpus bytes. Broader write/descriptor/integrity/class-definition/strictness semantics, causal modeling, renderer integration, and 500-repository acceptance remain open.
 
+### Heritage and comma-expression completion
+
+`20d37480` committed strict getter-only and proxy-write failures. The next investigation found two separate boundaries behind the preserved heritage example. The earlier diagnosis was incomplete: `(target.value = "new", Object)` discards the write error in comma evaluation before class creation receives it. Directly throwing heritage expressions also reach `createClassValue()` as a thrown value that it stores in the class body; class declarations then store the resulting value as a binding without propagating completion.
+
+`createClassValue()` now selects completing superclass paths before collecting keys, defining statics, or applying the existing decorator handling. Each path keeps its selected superclass and evaluation context. Declarations return always-throwing results and fork mixed completions, binding only the nonthrowing alternatives. Comma expressions reuse the existing iterative operand evaluator and return the final value; earlier errors stop later operands, assignment, argument evaluation, and calls. This does not validate superclass constructability, prototype objects, decorators, or all class-definition semantics.
+
+Nine class-heritage cases and four comma cases check payloads, ordering, guarded completion, unchanged assignment targets, call boundaries, inherited static values, null/no-heritage controls, and an unbound comma-result call. A 10,000-operand direct control verifies iterative sequencing without a budget increase. The exact original eleven-case CJS scope suite, including its previously failing heritage assertion, is restored by hash.
+
+Baseline `/tmp/bippy-class-heritage-baseline` at `20d37480` fails eleven and passes fourteen controls across 25 checks. Its `class-heritage.test.ts`, `sequence-completion.test.ts`, `strict-write-scopes-heritage.test.ts`, and thirteen fixtures match main by hash. The first candidate repaired direct heritage failures but still failed the two comma-based heritage assertions; `/tmp/bippy-class-heritage-first.log` preserves that result. The final focused run passes all 25. The ECMAScript `ClassDefinitionEvaluation`, binding-class-declaration, and comma-operator algorithms informed the changes; React's pinned reconciler source constructs instances after obtaining the class constructor.
+
+The original saved heritage snapshot now yields `caught`, repairing a four-step native mismatch that passed replay. All fifty earlier saved comparisons remain exact, for 51 total. Definition dispatch, frozen-target read invariants, and nine earlier class/apply/guarded-freeze/write/boolean probes remain unchanged failures on identical captures.
+
+Six new `tests/fixtures/class-definition-limits/` probes in the baseline host import main production and preserve further failures:
+
+| Case             | Native expectation | Model         |
+| ---------------- | ------------------ | ------------- |
+| `invalid-parent` | `caught:H`         | `returned:HS` |
+| `prototype`      | `caught:P`         | `returned:S`  |
+| `key`            | `caught:K`         | `returned:KS` |
+| `field`          | `caught:F`         | `returned:FL` |
+| `block`          | `caught:B`         | `returned:BL` |
+| `getter`         | `A`                | `GA`          |
+
+All six mismatch in four steps with no omissions/exhaustion and passing replay. They expose missing superclass/prototype validation, swallowed computed-key/static-field/static-block errors, and eager static getter evaluation. `class-heritage-limit-*-comparison.json` retains source/production hashes, raw models, and native snapshots. These are not passing tests or corpus additions.
+
+Final source-only models in `/tmp/bippy-many-games-causal-investigation/` are:
+
+- `source-only-class-heritage-reviewed-home-model.json`: SHA-256 `e7fe6b65d94a24385f7a4014c0b825698b6af19e18f138af111622072d7c4b18`
+- `source-only-class-heritage-reviewed-memory-model.json`: SHA-256 `de85ee96b6102addd54d487e02d841b377782735c894de99920728be74e6cf43`
+
+Serialized models match the strict-write checkpoint: 11 states, seven wildcards, one subtree omission. All 53 saved workflow snapshots remain partial; ten repeated corpus-control rows are unchanged on identical captures. No app workflow traces, observations, forced inputs, budgets, or repositories were added.
+
+Final gates pass 3,568 root tests with two existing skips and 1,522 analyzer tests across 93 files, plus typecheck/build, realms, lint, formatting, and documentation validation. Lint retains four unused-class-binding warnings in effectful declaration fixtures; removing those declarations would remove the tested evaluation. `class-heritage-reviewed-gates.json` verifies source hashes, baseline, 51 exact saved checks, two retained definition/invariant failures, fifteen other strict probes, models, controls, and unchanged 307-entry corpus bytes. Complete class/scope/descriptor/language/lifecycle semantics, causal modeling, renderer integration, and 500-repository acceptance remain open.
+
 ### Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
 2. Both saved captures still match with 100% strict coverage and no replay contradictions. Sentry is `sample-passed` (1 replay); PostHog is `sample-incomplete` (2 replays, 1 inconclusive missing-container path). Do not describe PostHog's entire sample as verified.
-3. The latest implementation validation passes **3,540 tests**, with two existing React-19 DevTools skips; this includes **1,494 analyzer tests / 91 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
+3. The latest implementation validation passes **3,568 tests**, with two existing React-19 DevTools skips; this includes **1,522 analyzer tests / 93 files**. Root typecheck/build, realm checks, lint and formatting pass. Current tooling uses Node 24.21.0; timings are not a controlled comparison with earlier environments. Preferred outside-match replay now checks matching candidates without raising the replay budget. The corpus contains **307 repositories**, checked against distinct GitHub repository IDs. P1/P2 and the 500-repository gate remain incomplete.
 4. Complete effect-cause coverage beyond the tested paths; do not confuse this first implementation with full lifecycle/lane/branch isolation.
 5. Audit replay classification and incomplete claims, including historical `exact` entries with contradictions.
 6. Review and integrate the already-pushed correlation branch without duplicating its work.
