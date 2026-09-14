@@ -318382,6 +318382,789 @@
       "anchor": null,
       "note": "runtime replayed from 2026-09-14T15:20:56.256Z",
       "failure": null
+    },
+    {
+      "id": "trananhtuat-react-calculator",
+      "revision": "82046d1ea6de5c18cad4d64cefee7bf50d10c809",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:26:08.329Z",
+      "durationMs": 260,
+      "runtime": {
+        "reactVersion": "17.0.2",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 30,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 30,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 29,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 29,
+        "staticFibers": 29,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 29,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 29,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:26:06.132Z",
+      "failure": null
+    },
+    {
+      "id": "sheebasalaman-bmi-calculator-react",
+      "revision": "8ab7deea3263af3b0f66b9b5bd6b894929965335",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:26:06.841Z",
+      "durationMs": 319,
+      "runtime": {
+        "reactVersion": "19.1.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 24,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Vite + React"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 24,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 3
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 23,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 23,
+        "staticFibers": 23,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 23,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 23,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:26:04.589Z",
+      "failure": null
+    },
+    {
+      "id": "fedgut-calculator",
+      "revision": "1e8a6db67e86db9c9490b401710c7fbbd3f393e5",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:26:21.262Z",
+      "durationMs": 253,
+      "runtime": {
+        "reactVersion": "16.13.1",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 51,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 51,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 7
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 50,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 50,
+        "staticFibers": 50,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 50,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 50,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:26:18.537Z",
+      "failure": null
+    },
+    {
+      "id": "elk15-colour-memo",
+      "revision": "2aca1e913412a328a2323164ee7f17e70a4e570c",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:28:31.141Z",
+      "durationMs": 629,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 50,
+        "commits": 3,
+        "pageErrors": [],
+        "title": "Colour Memo"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 78,
+          "textCount": 8,
+          "branchCount": 1,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 8,
+          "modulesLoaded": 7
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "matchedFibers": 41,
+        "matchedText": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 1,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 49,
+        "staticFibers": 49,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 54,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 1,
+        "tree": {
+          "nodes": 107,
+          "inputs": 2,
+          "guards": 5,
+          "branches": 1,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 8
+        },
+        "matchedState": {
+          "index": 2,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "state-update",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "alternativeIndex": 1,
+              "alternativeCount": 3
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(#1), 1)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "state set by a continuation that may run after the commit",
+              "location": null,
+              "side": 2,
+              "guard": "not(or(eq(choice(#1), 0), eq(choice(#1), 1)))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 2,
+          "possible": 3,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 4,
+        "assignments": 3,
+        "replayed": 3,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state set by a continuation that may run after the commit",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 3
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "choice(#1)",
+                "reason": "state set by a continuation that may run after the commit",
+                "location": null,
+                "alternativeIndex": 2,
+                "alternativeCount": 3
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:28:28.176Z",
+      "failure": null
+    },
+    {
+      "id": "mubashiralam89-calculator-using-react-js",
+      "revision": "c517587aaa10930562aad68de047fa8e17b3cc28",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:26:32.314Z",
+      "durationMs": 638,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 61,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "Calculator With React.js"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 61,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 8
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 60,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 60,
+        "staticFibers": 60,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 60,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 60,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:26:29.471Z",
+      "failure": null
+    },
+    {
+      "id": "nickgermaine-react-calculator-project",
+      "revision": "aa529233f5909420406170352c80248182a69584",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:28:44.526Z",
+      "durationMs": 290,
+      "runtime": {
+        "reactVersion": "16.8.4",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 56,
+        "commits": 1,
+        "pageErrors": [
+          "Warning: Failed prop type: You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.\n    in input (at App.js:71)\n    in div (at App.js:67)\n    in App (at src/index.js:7)"
+        ],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 56,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 4
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 55,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "exact",
+        "runtimeFibers": 55,
+        "staticFibers": 55,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 55,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 55,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:28:41.941Z",
+      "failure": null
+    },
+    {
+      "id": "lucas-erkana-math-magician-react",
+      "revision": "cdf7061fa5092753c7064ef8de9ae50822d996be",
+      "framework": "spa",
+      "capturedAt": "2026-09-14T15:26:45.202Z",
+      "durationMs": 302,
+      "runtime": {
+        "reactVersion": "18.2.0",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 30,
+        "commits": 1,
+        "pageErrors": [],
+        "title": "React App"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 23,
+          "textCount": 5,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 8,
+          "unknownCount": 0,
+          "modulesLoaded": 8
+        },
+        "diagnostics": []
+      },
+      "report": {
+        "matchedFibers": 9,
+        "matchedText": 2,
+        "opaqueSubtrees": 5,
+        "opaqueSkippedFibers": 18,
+        "slotsMatched": 1,
+        "slotsUnmatched": 4,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <Routes> (opaque)",
+            "reason": "Routes from react-router-dom is not analyzed",
+            "head": "<Routes> [FunctionComponent]",
+            "skippedFibers": 8,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <Routes> (opaque)[1]",
+              "expected": "<Route> (opaque)",
+              "actual": "<end of children>"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"Quote\"",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"Calculator\"",
+              "actual": "<a> [HostComponent]"
+            }
+          },
+          {
+            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
+            "reason": "Link from react-router-dom is not analyzed",
+            "head": "<Link> [ForwardRef]",
+            "skippedFibers": 2,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
+              "expected": "\"Home\"",
+              "actual": "<a> [HostComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "status": "partial",
+        "runtimeFibers": 29,
+        "staticFibers": 22,
+        "coverage": 1,
+        "strictCoverage": 0.3793103448275862,
+        "divergence": null,
+        "stepsUsed": 59,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 22,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 8,
+          "wildcards": 0
+        },
+        "matchedState": {
+          "index": 0,
+          "conditions": []
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
+      "anchor": null,
+      "note": "runtime replayed from 2026-09-14T15:26:42.835Z",
+      "failure": null
     }
   ]
 }
