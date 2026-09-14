@@ -288,12 +288,14 @@ Proxy writes preserve failures from retrieving or calling the `set` trap. Trap c
 
 [Property-presence tests](../packages/bippy-analyzer/tests/property-presence.test.ts) keep conditional keys separate from present `undefined` values. `in` and `hasOwnProperty` retain the original guards. Explicit `undefined` shadows earlier values, and finite spread snapshots retain values and presence after the source changes. Whole-object joins no longer restore the original entries after deletion.
 
+[Proxy read tests](../packages/bippy-analyzer/tests/proxy-reads.test.ts) cover getter-backed trap lookup, handler receivers, null-trap fallback, and original receivers through nested delegation and ordinary object getters. Lookup failures stop later call arguments; explicit bindings keep their receiver.
+
 [Value-level checks](../packages/bippy-analyzer/tests/property-presence-values.test.ts) verify guards, snapshot isolation, conservative key enumeration, and nested-spread causes. Conditional entries do not hide unrelated getters and setters. Descriptor behavior, key order, object-key coercion, complete destructuring, optional deletion, and nonconfigurable-property behavior remain unverified. Preserved counterexamples expose these remaining gaps:
 
 - Getter-only write errors
 - Falsy proxy-set results in strict code
-- Getter-backed `get` trap lookup and handler receivers
 - `defineProperty` trap dispatch during ordinary proxy writes
+- Noncallable `get` traps and frozen-target read invariants
 
 An unconstrained text node can match a native snapshot without establishing the source-derived concrete outcomes.
 

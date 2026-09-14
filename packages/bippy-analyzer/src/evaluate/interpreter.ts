@@ -3832,20 +3832,21 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
     optional = false,
+    receiver?: StaticValue,
   ): StaticValue {
     const error = optional ? null : getNullishPropertyError(object, key, "read", location);
     if (error) return error;
     switch (object.kind) {
       case "branch":
         return this.continueValue(object, context, (alternative, alternativeContext) =>
-          this.getProperty(alternative, key, alternativeContext, location, optional),
+          this.getProperty(alternative, key, alternativeContext, location, optional, receiver),
         );
       case "object": {
         const accessor = getObjectAccessor(object, key);
         if (accessor) {
           return accessor.get
             ? this.callValue(accessor.get, [], context, location, {
-                thisValue: object,
+                thisValue: receiver ?? object,
               })
             : UNDEFINED_VALUE;
         }
@@ -4111,12 +4112,28 @@ export class Interpreter {
         }
         return unknownValue(`property "${key}" of ${describeValue(object)}`, location);
       }
-      case "proxy": {
-        const trap = getObjectProperty(object.handler, "get");
-        return trap.kind === "primitive" && trap.value === undefined
-          ? this.getProperty(object.target, key, context, location, optional)
-          : this.callValue(trap, [object.target, primitiveValue(key), object], context, location);
-      }
+      case "proxy":
+        return this.continueValue(
+          this.getProperty(object.handler, "get", context, location),
+          context,
+          (trap, trapContext) =>
+            isNullish(trap) === true
+              ? this.getProperty(
+                  object.target,
+                  key,
+                  trapContext,
+                  location,
+                  optional,
+                  receiver ?? object,
+                )
+              : this.callValue(
+                  trap,
+                  [object.target, primitiveValue(key), receiver ?? object],
+                  trapContext,
+                  location,
+                  { thisValue: object.handler },
+                ),
+        );
       case "unknown":
         if (object === CHAIN_SHORT_CIRCUIT || object.thrown) return object;
         if (isModeledOpaqueMethodName(key)) return { kind: "method", receiver: object, name: key };
