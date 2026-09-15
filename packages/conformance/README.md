@@ -81,6 +81,10 @@ Effect-event replays run eight cases twice with either root as the subject, both
 
 Keyed replacement creates a fresh cell, host, token and IDs. Before passive subscription transfer, the commit observer can still call the retired instance's event; neither its original wrapper nor a retained speculative wrapper can drive the replacement. Actual promise settlement is observed independently, and late settlement must produce no work. Native render-call rejection, saved-ID deletion observers, throwing reporters, final subscription cleanup and control-root isolation are checked. The abandonment path retains its real unchanged-tree rebasing commit. No production change was needed. These are pinned React 19 development publication-order checks, not a recommendation to retain speculative callbacks or a version-independent cross-component Effect Event ordering contract. A changed-props render heuristic survives this memoized replay because React reuses the previous props object; six existing composite change-detection tests detect that separate mutation. The replay itself detects the static-flags-as-render heuristic.
 
+Deferred-value replays run eight cases twice: either root, urgent/transition initial mount, and completion/abandonment. An outer initial preview commits before a suspended inner mount. Deferred work skips the inner initial value to avoid a waterfall; a separate control root mounts outside deferred work and actually commits that same inner preview. The transition scope is checked directly, not inferred from identical output. Initial suspended tokens are discarded; committed control tokens and host identity survive its preview update.
+
+Urgent updates commit new input props with the previous deferred hook state and memoized leaf DOM. Suspended alternates still resolve to the independently walked current tree. Completion advances the existing token/host/IDs; keyed replacement retires them and restarts the outer preview, even with old work pending. A subsequent nonurgent update commits without a stale intermediate view; another urgent update retains that latest value, not the initial value. Exact phases, layout/passive lifetimes, subscriptions, saved-ID deletion liveness, throwing observers/reporters and independently observed late gate settlement are checked. Abandoned/deleted gates cannot revive work. Source anchors are `ReactFiberHooks`' deferred mount/update paths, `ReactStartTransition` and upstream `ReactDeferredValue-test`. All 24 mutation checks are detected; no production change was needed. This is pinned React 19 development/Happy DOM behavior, not a browser paint or version-matrix guarantee.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -107,6 +111,7 @@ pnpm test --project conformance hidden-class-callback-replay
 pnpm test --project conformance activity-hydration-replay unmount-current-replay
 pnpm test --project conformance hoisted-resource-replay
 pnpm test --project conformance effect-event-replay
+pnpm test --project conformance deferred-value-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
