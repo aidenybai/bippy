@@ -24,6 +24,10 @@ interface RDTHookReplaceListener {
   (rdtHook: ReactDevToolsGlobalHook, target: ReactDevToolsTarget): void;
 }
 
+interface RDTHookReplaceSubscription {
+  listener: RDTHookReplaceListener;
+}
+
 export interface ReactDevToolsTarget {
   __REACT_DEVTOOLS_GLOBAL_HOOK__?: ReactDevToolsGlobalHook;
 }
@@ -94,7 +98,7 @@ export const _renderers = new Set<ReactRenderer>();
 
 const activeListenerTargets = new WeakMap<ActiveListener, Set<ReactDevToolsTarget>>();
 const rendererInjectSubscriptions = new Set<RendererInjectSubscription>();
-const rdtHookReplaceListeners = new Set<RDTHookReplaceListener>();
+const rdtHookReplaceSubscriptions = new Set<RDTHookReplaceSubscription>();
 const notifiedRenderersByTarget = new WeakMap<ReactDevToolsTarget, WeakSet<ReactRenderer>>();
 
 const addActiveListener = (listener: ActiveListener, target: ReactDevToolsTarget): void => {
@@ -129,8 +133,11 @@ const notifyRendererInjectListeners = (
   target: ReactDevToolsTarget,
   renderer: ReactRenderer,
 ): void => {
-  for (const subscription of rendererInjectSubscriptions) {
-    if (subscription.target === target) callListener(subscription.listener, subscription, renderer);
+  const subscriptionSnapshot = [...rendererInjectSubscriptions];
+  for (const subscription of subscriptionSnapshot) {
+    if (rendererInjectSubscriptions.has(subscription) && subscription.target === target) {
+      callListener(subscription.listener, subscription, renderer);
+    }
   }
 };
 
@@ -138,8 +145,11 @@ const notifyRDTHookReplaceListeners = (
   rdtHook: ReactDevToolsGlobalHook,
   target: ReactDevToolsTarget,
 ): void => {
-  for (const listener of rdtHookReplaceListeners) {
-    callListener(listener, undefined, rdtHook, target);
+  const subscriptionSnapshot = [...rdtHookReplaceSubscriptions];
+  for (const subscription of subscriptionSnapshot) {
+    if (rdtHookReplaceSubscriptions.has(subscription)) {
+      callListener(subscription.listener, undefined, rdtHook, target);
+    }
   }
 };
 
@@ -156,9 +166,10 @@ export const onRendererInject = (
 };
 
 export const onRDTHookReplace = (listener: RDTHookReplaceListener): Unsubscribe => {
-  rdtHookReplaceListeners.add(listener);
+  const subscription = { listener };
+  rdtHookReplaceSubscriptions.add(subscription);
   return createUnsubscribe(() => {
-    rdtHookReplaceListeners.delete(listener);
+    rdtHookReplaceSubscriptions.delete(subscription);
   });
 };
 
@@ -246,7 +257,7 @@ export const installRDTHook = (
             _renderers.add(renderer);
             nextRenderers.set(rendererId, renderer);
           });
-          if (ourRenderers.size > 0 || rdtHookReplaceListeners.size > 0) {
+          if (ourRenderers.size > 0 || rdtHookReplaceSubscriptions.size > 0) {
             patchRDTHook(undefined, target, () => notifyRDTHookReplaceListeners(newHook, target));
           } else {
             notifyRDTHookReplaceListeners(newHook, target);

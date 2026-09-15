@@ -85,6 +85,10 @@ Deferred-value replays run eight cases twice: either root, urgent/transition ini
 
 Urgent updates commit new input props with the previous deferred hook state and memoized leaf DOM. Suspended alternates still resolve to the independently walked current tree. Completion advances the existing token/host/IDs; keyed replacement retires them and restarts the outer preview, even with old work pending. A subsequent nonurgent update commits without a stale intermediate view; another urgent update retains that latest value, not the initial value. Exact phases, layout/passive lifetimes, subscriptions, saved-ID deletion liveness, throwing observers/reporters and independently observed late gate settlement are checked. Abandoned/deleted gates cannot revive work. Source anchors are `ReactFiberHooks`' deferred mount/update paths, `ReactStartTransition` and upstream `ReactDeferredValue-test`. All 24 mutation checks are detected; no production change was needed. This is pinned React 19 development/Happy DOM behavior, not a browser paint or version-matrix guarantee.
 
+Hook-membership replays extend that registration contract to renderer injection and hook replacement. Sixteen twice-run cases vary notification kind, sibling cancellation/re-registration, nested delivery and which duplicate registration is disposed first. Both loops previously revisited a self-renewing callback four times under the finite guard; replacement also collapsed duplicate callbacks into one cancellation entry. `rdt-hook.ts` now snapshots registration identities, rechecks membership before delivery and gives each replacement registration its own disposer.
+
+Exact traces preserve activation-before-injection versus replacement-before-activation ordering, nested replacement arguments even after the target points at the newer hook, numeric injection returns, renderer identity/registry readiness, per-target renderer deduplication, two independent duplicate registrations and idempotent cancellation. Throwing observer/reporters cannot prevent later delivery; the reporter mock's recorded outcome independently proves it threw. Disposed subscriptions receive no later events, and fixture-owned renderer entries are cleaned up. All sixteen cases failed before the fix; all 24 new mutation checks are detected. These are hook-protocol tests, not new browser or native scheduling guarantees. React source anchors are DevTools `hook.js`'s registration/emission/injection paths and `ReactFiberDevToolsHook.injectInternals`; React's outer injection catch cannot rescue a nonterminating listener loop.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -112,6 +116,7 @@ pnpm test --project conformance activity-hydration-replay unmount-current-replay
 pnpm test --project conformance hoisted-resource-replay
 pnpm test --project conformance effect-event-replay
 pnpm test --project conformance deferred-value-replay
+pnpm test --project conformance hook-membership-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
