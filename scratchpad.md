@@ -3598,6 +3598,13 @@ Checkpoint after final validation, optimize measured predicate-processing overhe
 - `c8009af7` removes the implicit `CI=1` override from dev servers while keeping installs noninteractive. Its individual change is now integrated after deterministic real-child tests, full validation and a separate new NLW capture. Existing saved captures remain old-environment evidence; broader native compiler environment propagation is still open.
 - These are individual changes from the pending tips, not reviews or merges of either complete worker branch.
 
+### Later visual supplement and scheduler-context control
+
+- `/tmp/bippy-visual-supplement-final-audit.json` records later visual review of all 175 decoded Datasheet GIF frames on 23 full-size sheets, its four favicon frames, four previously pending UI31 ICOs (eight displayed frames plus two byte-equal file references), and seven Unforget/Datasheet PNGs. All 347 scoped authored files, 246 production files and corpus hashes remain unchanged. This does not backdate pre-native review or establish current application behavior, clipboard correctness, playback timing, accessibility or full acceptance.
+- Datasheet’s authored animations depict three spreadsheet rows pasted into the grid and Active/First name filled down through row four. The original montage failed because its font was unavailable; its exit-one evidence and partial sheet remain. The successful append-based successor reused the existing 129 copy/paste frames and decoded the 46 expand-selection frames once, without font/configuration repair.
+- `/tmp/bippy-unforget-run-scope-scheduler-control.json` records six callbacks under installed Scheduler 0.23.2: the second plain callback inherited the first request’s `AsyncLocalStorage` context; explicitly bound callbacks and native `setImmediate` controls retained their registered contexts. This rules out relying on a wrapper alone for these callbacks, not all renderer-context designs. No allocator repair, new application startup, native capture or CLI replay occurred.
+- The visual helper’s initial `.animations` inventory query failed because the saved plan uses `.records`; the corrected query did not regenerate assets. Concurrent tests and staging were left untouched. The 500 audited acceptances remain incomplete; Mertiq’s additional notifier-setting permission is still pending. Nothing pushed.
+
 ## 20. Complete checked-in corpus ledger
 
 Snapshot of `packages/parser/corpus/results.json` at `3c2db5d8`; the local review fixes have not regenerated it. This table is historical evidence, not a fresh rerun. The manifest also contains 207 distinct repository URLs.
