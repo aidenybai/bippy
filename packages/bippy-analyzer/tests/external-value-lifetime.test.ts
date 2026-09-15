@@ -90,6 +90,30 @@ describe("external value lifetimes", () => {
     expectBranches(await render(await createRenderer(getProvider())), ["aside", "section"]);
   });
 
+  it("preserves carried predicates when a provider rebuilds a branch", async () => {
+    let carried: StaticValue | undefined;
+    const getProvider = () =>
+      createProvider(
+        () => {
+          const original = (carried ??= createFlag("carried"));
+          if (original.kind !== "branch") throw new Error("Expected a carried branch");
+          return branchValue(
+            original.alternatives,
+            original.reason,
+            original.location,
+            original.preferredIndex,
+            original.predicate,
+          );
+        },
+        () => createFlag("fresh"),
+      );
+    const initialRenderer = await createRenderer(getProvider());
+    expectBranches(await render(initialRenderer), ["aside", "section"]);
+    const derivedRenderer = initialRenderer.derive({ externalValues: getProvider() });
+    expectBranches(await render(derivedRenderer), ["aside", "section"]);
+    expectBranches(await render(await createRenderer(getProvider())), ["aside", "section"]);
+  });
+
   it("keeps equal-description inputs independent", async () => {
     const renderer = await createRenderer(
       createProvider(
