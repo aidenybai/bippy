@@ -313,6 +313,61 @@ describe("mount commits", () => {
 });
 
 describe("update commits", () => {
+  it.each([false, true])(
+    "mounts a new fallback after a dehydrated boundary, nested timeout %s",
+    (isNestedTimedOut) => {
+      const firstChild = createMockFiber();
+      const lastChild = createMockFiber();
+      const nestedPrimary = createMockFiber();
+      const nestedFallback = createMockFiber();
+      const nestedBoundary = createMockFiber({
+        tag: latestReactWorkTags.SuspenseComponent,
+        memoizedState: isNestedTimedOut ? {} : null,
+        sibling: lastChild,
+        child: createMockFiber({
+          tag: latestReactWorkTags.OffscreenComponent,
+          child: nestedPrimary,
+          sibling: isNestedTimedOut
+            ? createMockFiber({ tag: latestReactWorkTags.Fragment, child: nestedFallback })
+            : null,
+        }),
+      });
+      firstChild.sibling = nestedBoundary;
+      const nextBoundary = createMockFiber({
+        tag: latestReactWorkTags.SuspenseComponent,
+        memoizedState: { dehydrated: null },
+        child: createMockFiber({
+          tag: latestReactWorkTags.OffscreenComponent,
+          sibling: createMockFiber({ tag: latestReactWorkTags.Fragment, child: firstChild }),
+        }),
+      });
+      const previousBoundary = createMockFiber({
+        tag: latestReactWorkTags.SuspenseComponent,
+        memoizedState: { dehydrated: {} },
+        child: createMockFiber({ tag: latestReactWorkTags.DehydratedSuspenseComponent }),
+      });
+      const onRender = vi.fn();
+      commitUpdate(nextBoundary, previousBoundary, onRender);
+      const expectedFibers = [
+        nextBoundary,
+        firstChild,
+        nestedBoundary,
+        isNestedTimedOut ? nestedFallback : nestedPrimary,
+        lastChild,
+      ];
+      expect(onRender.mock.calls.map((call, index) => call[0] === expectedFibers[index])).toEqual(
+        expectedFibers.map(() => true),
+      );
+      expect(onRender.mock.calls.map((call) => call[1])).toEqual([
+        "update",
+        "mount",
+        "mount",
+        "mount",
+        "mount",
+      ]);
+    },
+  );
+
   it("should reconcile fallback sets when suspense stays timed out", () => {
     const nextFallbackSet = createMockFiber();
     const prevFallbackSet = createMockFiber();

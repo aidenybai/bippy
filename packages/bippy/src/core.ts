@@ -248,8 +248,15 @@ export const traverseFiber = ((
     while (currentFiber) {
       const selectedFiber = currentFiber;
       const selection = selector(selectedFiber);
-      if (isPromiseLike<boolean | void>(selection)) {
-        return Promise.resolve(selection).then((didSelectFiber) =>
+      const then =
+        selection !== null && (typeof selection === "object" || typeof selection === "function")
+          ? selection.then
+          : null;
+      if (typeof then === "function") {
+        return Promise.resolve<boolean | void>({
+          // oxlint-disable-next-line unicorn/no-thenable -- Assimilate the captured method without reading the accessor twice.
+          then: (resolve, reject) => Reflect.apply(then, selection, [resolve, reject]),
+        }).then((didSelectFiber) =>
           didSelectFiber === true ? selectedFiber : visit(getNextFiber(selectedFiber)),
         );
       }
@@ -260,12 +267,6 @@ export const traverseFiber = ((
   };
   return visit(fiber);
 }) as TraverseFiber;
-
-const isPromiseLike = <Result>(value: unknown): value is PromiseLike<Result> =>
-  (typeof value === "object" || typeof value === "function") &&
-  value !== null &&
-  "then" in value &&
-  typeof value.then === "function";
 
 /**
  * Returns `true` if the {@link Fiber} uses React Compiler's memo cache.
@@ -330,6 +331,7 @@ export const isInstrumentationActive = (target: ReactDevToolsTarget = globalThis
 export const _fiberRoots = new Set<FiberRoot>();
 const rootRendererIds = new WeakMap<FiberRoot, number>();
 const rootHooks = new WeakMap<FiberRoot, ReactDevToolsGlobalHook>();
+let currentUnmountingFiber: Fiber | null = null;
 
 /**
  * Returns the latest fiber (since it may be double-buffered).
@@ -338,7 +340,9 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
   const alternate = fiber.alternate;
   if (!alternate) return fiber;
   const currentFiber = getCurrentFiberFromRoot(fiber);
-  if (currentFiber) return currentFiber;
+  const isUnmountingPair = fiber === currentUnmountingFiber || alternate === currentUnmountingFiber;
+  if (currentFiber && (!isUnmountingPair || currentFiber === currentUnmountingFiber))
+    return currentFiber;
 
   let rootFiber = fiber;
   while (rootFiber.return) {
@@ -350,6 +354,7 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
     });
     if (latestFiber) return latestFiber;
   }
+  if (currentFiber) return currentFiber;
 
   if (alternate.actualStartTime && fiber.actualStartTime) {
     return alternate.actualStartTime > fiber.actualStartTime ? alternate : fiber;
@@ -413,14 +418,24 @@ const fiberIdFinalizationRegistry =
 const createFiberReference = (fiber: Fiber): FiberReference =>
   typeof WeakRef === "function" ? new WeakRef(fiber) : { deref: () => fiber };
 
-export const setFiberId = (fiber: Fiber, fiberId: number = nextFiberId++): void => {
+const getNextFiberId = (): number => {
+  if (!Number.isSafeInteger(nextFiberId)) throw new RangeError("Fiber ID space exhausted");
+  return nextFiberId++;
+};
+
+export const setFiberId = (fiber: Fiber, fiberId: number = getNextFiberId()): void => {
   const previousFiberId = fiberIdMap.get(fiber);
-  if (previousFiberId !== undefined && previousFiberId !== fiberId) {
+  if (
+    previousFiberId !== undefined &&
+    previousFiberId !== fiberId &&
+    fiberByIdMap.get(previousFiberId)?.deref() === fiber
+  ) {
     fiberByIdMap.delete(previousFiberId);
   }
   fiberIdMap.set(fiber, fiberId);
   fiberByIdMap.set(fiberId, createFiberReference(fiber));
-  fiberIdFinalizationRegistry?.register(fiber, fiberId);
+  if (previousFiberId !== undefined) fiberIdFinalizationRegistry?.unregister(fiber);
+  fiberIdFinalizationRegistry?.register(fiber, fiberId, fiber);
   if (Number.isSafeInteger(fiberId) && fiberId >= nextFiberId) {
     nextFiberId = fiberId + 1;
   }
@@ -430,10 +445,17 @@ export const getFiberId = (fiber: Fiber): number => {
   let currentFiberId = fiberIdMap.get(fiber);
   if (currentFiberId === undefined && fiber.alternate) {
     currentFiberId = fiberIdMap.get(fiber.alternate);
-    if (currentFiberId !== undefined) setFiberId(fiber, currentFiberId);
+    if (currentFiberId !== undefined) {
+      const assignedFiber = fiberByIdMap.get(currentFiberId)?.deref();
+      if (assignedFiber && assignedFiber !== fiber.alternate) {
+        fiberIdMap.set(fiber, currentFiberId);
+      } else {
+        setFiberId(fiber, currentFiberId);
+      }
+    }
   }
   if (currentFiberId === undefined) {
-    currentFiberId = nextFiberId++;
+    currentFiberId = getNextFiberId();
     setFiberId(fiber, currentFiberId);
   }
   return currentFiberId;
@@ -456,6 +478,7 @@ const releaseFiberId = (fiber: Fiber): void => {
     const fiberId = fiberIdMap.get(relatedFiber);
     if (fiberId !== undefined) fiberIds.add(fiberId);
     fiberIdMap.delete(relatedFiber);
+    fiberIdFinalizationRegistry?.unregister(relatedFiber);
   }
 
   for (const fiberId of fiberIds) {
@@ -532,10 +555,10 @@ const updateFiberTree = (
     if (wasTimedOut && isTimedOut) {
       const nextFallback = fiber.child?.sibling;
       const previousFallback = previousFiber.child?.sibling;
-      if (nextFallback && previousFallback) {
+      if (nextFallback) {
         pendingUpdates.push({
           fiber: nextFallback,
-          previousFiber: previousFallback,
+          previousFiber: previousFallback ?? null,
           traverseSiblings: false,
         });
       }
@@ -606,21 +629,23 @@ const isRootFiberMounted = (fiber: Fiber): boolean => {
  */
 export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: RenderHandler): void => {
   const fiber = "current" in root ? root.current : root;
+  const rootKey = "current" in root || !isFiberRoot(root.stateNode) ? root : root.stateNode;
 
-  let rootInstance = rootInstanceMap.get(root);
+  let rootInstance = rootInstanceMap.get(rootKey);
 
   if (!rootInstance) {
     rootInstance = { prevFiber: null };
-    rootInstanceMap.set(root, rootInstance);
+    rootInstanceMap.set(rootKey, rootInstance);
   }
 
   const { prevFiber } = rootInstance;
+  rootInstance.prevFiber = fiber;
   if (!fiber) {
     if (prevFiber) {
       unmountFiber(onRender, prevFiber);
     }
   } else if (prevFiber !== null) {
-    const wasMounted = isRootFiberMounted(prevFiber);
+    const wasMounted = isRootFiberMounted(fiber.alternate ?? prevFiber);
     const isMounted = isRootFiberMounted(fiber);
 
     if (!wasMounted && isMounted) {
@@ -633,8 +658,6 @@ export const traverseRenderedFibers = (root: Fiber | FiberRoot, onRender: Render
   } else {
     mountFiberTree(onRender, fiber, true);
   }
-
-  rootInstance.prevFiber = fiber;
 };
 
 export interface InstrumentationOptions {
@@ -690,10 +713,12 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       priority,
       didError,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onCommitFiberRoot === dispatchCommitFiberRoot;
       if (prevOnCommitFiberRoot) {
         callListener(prevOnCommitFiberRoot, rdtHook, rendererID, root, priority, didError);
       }
-      if (hookDispatchers.get(rdtHook)?.onCommitFiberRoot !== dispatchCommitFiberRoot) return;
+      if (!isCurrentDispatcher) return;
       setReactWorkTagsForFiber(root.current, rdtHook.renderers.get(rendererID));
       // Custom renderers and test harnesses commit roots without a memoizedState;
       // those must stay tracked, so only explicit unmount evidence removes a root.
@@ -706,9 +731,14 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
         rootRendererIds.set(root, rendererID);
         rootHooks.set(root, rdtHook);
       }
-      for (const { options, target } of instrumentationSubscriptions) {
-        if (target === hookTargets.get(rdtHook) && options.onCommitFiberRoot) {
-          callListener(options.onCommitFiberRoot, options, rendererID, root, priority, didError);
+      const subscriptionSnapshot = [...instrumentationSubscriptions];
+      for (const subscription of subscriptionSnapshot) {
+        const { options, target } = subscription;
+        if (instrumentationSubscriptions.has(subscription) && target === hookTargets.get(rdtHook)) {
+          callListener(
+            () => options.onCommitFiberRoot?.(rendererID, root, priority, didError),
+            undefined,
+          );
         }
       }
     };
@@ -725,21 +755,29 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       rendererID,
       fiber,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onCommitFiberUnmount === dispatchCommitFiberUnmount;
       setReactWorkTagsForFiber(fiber, rdtHook.renderers.get(rendererID));
-      if (prevOnCommitFiberUnmount) {
-        callListener(prevOnCommitFiberUnmount, rdtHook, rendererID, fiber);
-      }
-      if (hookDispatchers.get(rdtHook)?.onCommitFiberUnmount !== dispatchCommitFiberUnmount) {
-        return;
-      }
+      const previousUnmountingFiber = currentUnmountingFiber;
+      currentUnmountingFiber = fiber;
       try {
-        for (const { options, target } of instrumentationSubscriptions) {
-          if (target === hookTargets.get(rdtHook) && options.onCommitFiberUnmount) {
-            callListener(options.onCommitFiberUnmount, options, rendererID, fiber);
+        if (prevOnCommitFiberUnmount) {
+          callListener(prevOnCommitFiberUnmount, rdtHook, rendererID, fiber);
+        }
+        if (!isCurrentDispatcher) return;
+        const subscriptionSnapshot = [...instrumentationSubscriptions];
+        for (const subscription of subscriptionSnapshot) {
+          const { options, target } = subscription;
+          if (
+            instrumentationSubscriptions.has(subscription) &&
+            target === hookTargets.get(rdtHook)
+          ) {
+            callListener(() => options.onCommitFiberUnmount?.(rendererID, fiber), undefined);
           }
         }
       } finally {
-        releaseFiberId(fiber);
+        currentUnmountingFiber = previousUnmountingFiber;
+        if (isCurrentDispatcher) releaseFiberId(fiber);
       }
     };
     dispatchers.onCommitFiberUnmount = dispatchCommitFiberUnmount;
@@ -755,15 +793,17 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       rendererID,
       root,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot === dispatchPostCommitFiberRoot;
       if (prevOnPostCommitFiberRoot) {
         callListener(prevOnPostCommitFiberRoot, rdtHook, rendererID, root);
       }
-      if (hookDispatchers.get(rdtHook)?.onPostCommitFiberRoot !== dispatchPostCommitFiberRoot) {
-        return;
-      }
-      for (const { options, target } of instrumentationSubscriptions) {
-        if (target === hookTargets.get(rdtHook) && options.onPostCommitFiberRoot) {
-          callListener(options.onPostCommitFiberRoot, options, rendererID, root);
+      if (!isCurrentDispatcher) return;
+      const subscriptionSnapshot = [...instrumentationSubscriptions];
+      for (const subscription of subscriptionSnapshot) {
+        const { options, target } = subscription;
+        if (instrumentationSubscriptions.has(subscription) && target === hookTargets.get(rdtHook)) {
+          callListener(() => options.onPostCommitFiberRoot?.(rendererID, root), undefined);
         }
       }
     };
@@ -781,13 +821,17 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       root,
       children,
     ) => {
+      const isCurrentDispatcher =
+        hookDispatchers.get(rdtHook)?.onScheduleFiberRoot === dispatchScheduleFiberRoot;
       if (prevOnScheduleFiberRoot) {
         callListener(prevOnScheduleFiberRoot, rdtHook, rendererID, root, children);
       }
-      if (hookDispatchers.get(rdtHook)?.onScheduleFiberRoot !== dispatchScheduleFiberRoot) return;
-      for (const { options, target } of instrumentationSubscriptions) {
-        if (target === hookTargets.get(rdtHook) && options.onScheduleFiberRoot) {
-          callListener(options.onScheduleFiberRoot, options, rendererID, root, children);
+      if (!isCurrentDispatcher) return;
+      const subscriptionSnapshot = [...instrumentationSubscriptions];
+      for (const subscription of subscriptionSnapshot) {
+        const { options, target } = subscription;
+        if (instrumentationSubscriptions.has(subscription) && target === hookTargets.get(rdtHook)) {
+          callListener(() => options.onScheduleFiberRoot?.(rendererID, root, children), undefined);
         }
       }
     };
@@ -843,15 +887,20 @@ try {
  */
 export const instrument = (options: InstrumentationOptions): Unsubscribe => {
   const target = options.target ?? globalThis;
-  const rdtHook = getRDTHook(options.onActive, target);
+  const activeListener = options.onActive;
+  const onActive = activeListener ? () => activeListener() : undefined;
+  const existingHook = target.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (existingHook) wireHookEventDispatchers(existingHook, target);
+  const rdtHook = getRDTHook(undefined, target);
   rdtHook._instrumentationSource = options.name ?? BIPPY_INSTRUMENTATION_STRING;
 
   wireHookEventDispatchers(rdtHook, target);
   const subscription: InstrumentationSubscription = { options, target };
   instrumentationSubscriptions.add(subscription);
+  if (onActive) getRDTHook(onActive, target);
 
   return createUnsubscribe(() => {
-    if (options.onActive) removeActiveListener(options.onActive, target);
+    if (onActive) removeActiveListener(onActive, target);
     instrumentationSubscriptions.delete(subscription);
   });
 };
