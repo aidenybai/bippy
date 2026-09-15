@@ -28,6 +28,7 @@ export default defineConfig({
     dts: true,
     entry: {
       index: "./src/index.ts",
+      reconciler: "./src/reconciler/index.ts",
       source: "./src/source/index.ts",
       "install-hook-only": "./src/install-hook-only.ts",
     },
