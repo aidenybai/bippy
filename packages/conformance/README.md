@@ -77,6 +77,10 @@ Hoisted-resource replays run sixteen cases twice with three roots and two fresh 
 
 Exact traces cover native resource counts at deletion/ref callbacks, both ref contracts, current/alternate selection, phases, root registration order, target-scoped root lookup, and throwing observers/reporters. Resources have no host-fiber backlinks, so initial ref attachment can precede root-based discovery; shared-node lookup can also identify another owner. Neither is treated as a unique ref-owner oracle. Mutation testing caught a test-oracle flaw: calling `getFiberId` during deletion could reallocate a prematurely released ID. Observers now use saved IDs without allocation; the same early-release mutation then fails all sixteen cases. No production change was needed. These are pinned React 19 development inline-style resource semantics, not network stylesheet loading, browser CSS/paint, or permanent resource-cache lifetime guarantees.
 
+Effect-event replays run eight cases twice with either root as the subject, both sibling orders, and completion versus abandonment of a gated transition. Native hook-cell/payload references prove that a suspended render queued a new implementation without publishing it. An urgent parent revision bails out the memoized owner: its current fiber can change while the published closure and external subscription remain unchanged. An event-triggered count update then publishes new state. Exact traces distinguish closure values, Bippy ID lookup and an independent `root.current` walk through insertion/layout/passive effects and commit observers. In the pinned mutation-phase implementation, an earlier sibling's cleanup still sees the old closure, while the owner's effects and later sibling see the new closure before root-current swaps. Retained event wrappers need not have stable function identity across renders.
+
+Keyed replacement creates a fresh cell, host, token and IDs. Before passive subscription transfer, the commit observer can still call the retired instance's event; neither its original wrapper nor a retained speculative wrapper can drive the replacement. Actual promise settlement is observed independently, and late settlement must produce no work. Native render-call rejection, saved-ID deletion observers, throwing reporters, final subscription cleanup and control-root isolation are checked. The abandonment path retains its real unchanged-tree rebasing commit. No production change was needed. These are pinned React 19 development publication-order checks, not a recommendation to retain speculative callbacks or a version-independent cross-component Effect Event ordering contract. A changed-props render heuristic survives this memoized replay because React reuses the previous props object; six existing composite change-detection tests detect that separate mutation. The replay itself detects the static-flags-as-render heuristic.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -102,6 +106,7 @@ pnpm test --project conformance class-commit-replay
 pnpm test --project conformance hidden-class-callback-replay
 pnpm test --project conformance activity-hydration-replay unmount-current-replay
 pnpm test --project conformance hoisted-resource-replay
+pnpm test --project conformance effect-event-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
