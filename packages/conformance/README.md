@@ -73,6 +73,10 @@ Activity-hydration replays run four cases twice with real SSR, two independently
 
 The fallback update exposed a Bippy defect: during its subsequent deletion, return-pointer reflection selected the stale alternate (state 0), while an independent walk of `root.current` contained the notified fiber (state 1). Bailed-out fallback fragments can still point through the parent alternate that is being reused to remove the fallback. `core.ts` now tracks the currently notified unmount pair, including inherited hooks, and consults the root-current tree when reflection disagrees with it. This does not blindly prefer the notified alternate or make all lookups scan a root. Eight twice-run minimized cases cover crossed return paths, either ID assignment, nested unmounts, inactive notifications, throwing inherited/listener/reporting callbacks, and context restoration. After dispatch, valid-tree lookups must avoid descendant scans. Reverting the guard fails two live and six minimized cases. These are pinned React 19 development hydration checks, not streaming SSR or browser scheduling guarantees.
 
+Hoisted-resource replays run sixteen cases twice with three roots and two fresh ShadowRoot resource scopes, avoiding network loading and cross-replay cache reuse. Two logical style fibers share one DOM node/resource but retain distinct IDs; the same href in the other scope creates a different resource. Changed CSS props produce a committed update phase without rewriting the cached node's original text. Hiding disconnects refs/effects without releasing the resource, and its additional unchanged-tree background commit remains in the trace. Visible or hidden deletion retires fiber identity independently of the still-connected style node. Portal relocation remounts the style fiber while preserving its parent token and reusing either the same node or the destination scope's cached node. Emptying the destination's own root cannot retire a foreign portal's resource. After every owner unmounts, resource counts reach zero and host lookup returns null, but cached nodes remain; fresh mounts reuse those nodes with fresh fibers/IDs/tokens.
+
+Exact traces cover native resource counts at deletion/ref callbacks, both ref contracts, current/alternate selection, phases, root registration order, target-scoped root lookup, and throwing observers/reporters. Resources have no host-fiber backlinks, so initial ref attachment can precede root-based discovery; shared-node lookup can also identify another owner. Neither is treated as a unique ref-owner oracle. Mutation testing caught a test-oracle flaw: calling `getFiberId` during deletion could reallocate a prematurely released ID. Observers now use saved IDs without allocation; the same early-release mutation then fails all sixteen cases. No production change was needed. These are pinned React 19 development inline-style resource semantics, not network stylesheet loading, browser CSS/paint, or permanent resource-cache lifetime guarantees.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -97,6 +101,7 @@ pnpm test --project conformance dispatch-membership-replay dispatch-accessor-rep
 pnpm test --project conformance class-commit-replay
 pnpm test --project conformance hidden-class-callback-replay
 pnpm test --project conformance activity-hydration-replay unmount-current-replay
+pnpm test --project conformance hoisted-resource-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
