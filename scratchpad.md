@@ -2236,6 +2236,24 @@ A separate fresh-process model exactly matched the pre-native freeze, excluding 
 
 `/tmp/bippy-unforget-scoped-execution-final-audit.json` verifies authored files, installed manifest/publication hashes, corpus bytes and 246 production-source hashes. The npmrc and notifier marker remain unchanged. `DevServer.stop()` was awaited before the failed assertion; later bounded checks found no listeners on the authored ports or process cwd at the installed root. No pre-stop PID inventory exists, so exhaustive historical descendant cleanup remains unproven. Concurrent tests and historical corpus rows remain untouched. This is not full repository acceptance or 500 audited acceptances; nothing is pushed.
 
+### Five unimported UI31 candidates: complete text review and saved-capture replay
+
+The five remaining verified UI31 candidates—Mertiq, G-Nanda, Nidhi Upman, Huzefa Rana and Khalid—now have **35 completely displayed text chunks / 54,496 display characters / 47 new bodies**, plus 22 byte-equal UI30 text references. All 98 authored files remain unchanged, including five machine-audited locks. `/tmp/bippy-ui31-extra-source-reviewed.json` records this post-historical-native reading without backdating approval. Mertiq's empty choices, eager versus lazy dice initialization, the `ceil(random*6)` zero boundary, Nidhi's class defaults and uncancelled timer, Huzefa's CRA launcher/basename and Khalid's unmounted score game remain authored; no input, timer, dependency or source repair was supplied.
+
+`/tmp/bippy-ui31-extra-cli-v1` ran five isolated static-only CLI replays against the existing hash-verified captures. Each source-only complete model and rendered result matched its historical model, excluding only snapshot/commit capture timestamps; ten negative timestamp/statistic controls passed. Every CLI report matched its own raw saved-capture comparison using the CLI wildcard-ranking rule. **All five samples passed one assignment each**, with no incomplete samples, replay mismatches, budget exhaustion or recorded page errors. These are replays, not new independent captures.
+
+| Candidate                               | Report  | Strict coverage | Matched fibers | Opaque subtrees |
+| --------------------------------------- | ------- | --------------- | -------------- | --------------- |
+| `mertiq-rock-paper-scissors-game`       | exact   | 100%            | 15             | 0               |
+| `g-nanda-react-dice-game`               | exact   | 100%            | 42             | 0               |
+| `nidhiupman568-diceroll-using-react-js` | partial | 68.42%          | 12             | 2               |
+| `huzefarana-tenzi-dice-game`            | partial | 91.30%          | 40             | 1               |
+| `khalid1g-dice-game-with-react`         | exact   | 100%            | 6              | 0               |
+
+Ten before/after installation audits verified **7,664 installed manifest versions** against the retained lock/provenance checks. They did not reinstall packages, probe application runtimes or establish complete package-content/native integrity. After replay, 16 PNG/JPEG assets were displayed and four additional React logos matched them byte-for-byte; four ICO assets remain visually unreviewed. Khalid's authored screenshot is not a new browser capture, layout comparison or interaction proof. `/tmp/bippy-ui31-extra-final-audit.json` preserves these separate scopes.
+
+No application startup, independent recapture, installation or import occurred in this scope. Current native-launch configuration policy remains pending; the installation-only Unforget userconfig exception was not generalized. The corpus still contains the same 500 imports, and these five candidates remain outside it. Corpus bytes, 246 production-source hashes and concurrent test ownership are unchanged. This checkpoint does not establish full repository acceptance or 500 audited acceptances; nothing is pushed.
+
 ## Immediate continuation
 
 1. Review fixes are checkpointed at `80b8f278`, initial commit causes at `608d38ab`, guarded heap/read/N-way fixes at `c3b76b75`, predicate caching at `ac3d6a8c`, and replay claims at `985b78e0`. The guarded timer checkpoint `d9d6abc3` adds registration, cancellation, and task-only replay constraints. Architecture documentation is checkpointed at `a85cdf1e`. Promise/task journaling is checkpointed at `9562e79f`, adoption and cleanup ordering at `b845c6eb`, CRA macros/bundled compiler versions at `3a21a706`, incomplete replay membership at `0a0ce65a`, corpus option/child-environment handling at `d1c9d91b`, await microtask ordering at `200d4629`, corpus compiler environments at `c5da0c82`, and native Vite command-line modes at `2dbacfcc`. Nothing pushed.
