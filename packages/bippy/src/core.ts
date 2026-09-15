@@ -734,12 +734,11 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       const subscriptionSnapshot = [...instrumentationSubscriptions];
       for (const subscription of subscriptionSnapshot) {
         const { options, target } = subscription;
-        if (
-          instrumentationSubscriptions.has(subscription) &&
-          target === hookTargets.get(rdtHook) &&
-          options.onCommitFiberRoot
-        ) {
-          callListener(options.onCommitFiberRoot, options, rendererID, root, priority, didError);
+        if (instrumentationSubscriptions.has(subscription) && target === hookTargets.get(rdtHook)) {
+          callListener(
+            () => options.onCommitFiberRoot?.(rendererID, root, priority, didError),
+            undefined,
+          );
         }
       }
     };
@@ -771,10 +770,9 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
           const { options, target } = subscription;
           if (
             instrumentationSubscriptions.has(subscription) &&
-            target === hookTargets.get(rdtHook) &&
-            options.onCommitFiberUnmount
+            target === hookTargets.get(rdtHook)
           ) {
-            callListener(options.onCommitFiberUnmount, options, rendererID, fiber);
+            callListener(() => options.onCommitFiberUnmount?.(rendererID, fiber), undefined);
           }
         }
       } finally {
@@ -804,12 +802,8 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       const subscriptionSnapshot = [...instrumentationSubscriptions];
       for (const subscription of subscriptionSnapshot) {
         const { options, target } = subscription;
-        if (
-          instrumentationSubscriptions.has(subscription) &&
-          target === hookTargets.get(rdtHook) &&
-          options.onPostCommitFiberRoot
-        ) {
-          callListener(options.onPostCommitFiberRoot, options, rendererID, root);
+        if (instrumentationSubscriptions.has(subscription) && target === hookTargets.get(rdtHook)) {
+          callListener(() => options.onPostCommitFiberRoot?.(rendererID, root), undefined);
         }
       }
     };
@@ -836,12 +830,8 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       const subscriptionSnapshot = [...instrumentationSubscriptions];
       for (const subscription of subscriptionSnapshot) {
         const { options, target } = subscription;
-        if (
-          instrumentationSubscriptions.has(subscription) &&
-          target === hookTargets.get(rdtHook) &&
-          options.onScheduleFiberRoot
-        ) {
-          callListener(options.onScheduleFiberRoot, options, rendererID, root, children);
+        if (instrumentationSubscriptions.has(subscription) && target === hookTargets.get(rdtHook)) {
+          callListener(() => options.onScheduleFiberRoot?.(rendererID, root, children), undefined);
         }
       }
     };
