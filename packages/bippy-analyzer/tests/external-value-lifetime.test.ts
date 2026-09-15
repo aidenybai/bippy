@@ -19,7 +19,7 @@ writeFileSync(
 );
 writeFileSync(
   join(dependency, "index.d.ts"),
-  "export declare const carriedFlag: boolean; export declare const freshFlag: boolean;",
+  "export declare const unusedFlag: boolean; export declare const carriedFlag: boolean; export declare const freshFlag: boolean;",
 );
 writeFileSync(
   join(directory, "app.tsx"),
@@ -74,7 +74,38 @@ const createRenderer = (externalValues: ExternalValueProvider) =>
 const render = (renderer: Awaited<ReturnType<typeof createRenderer>>) =>
   renderer.renderComponent(join(directory, "app.tsx"));
 
+const getSnapshotContent = ({ capturedAt, ...snapshot }: StaticRenderResult["snapshot"]) =>
+  snapshot;
+
+const getRenderedContent = ({ snapshot, commits, ...rendered }: StaticRenderResult) => ({
+  ...rendered,
+  snapshot: getSnapshotContent(snapshot),
+  commits: commits.map(getSnapshotContent),
+});
+
 describe("external value lifetimes", () => {
+  it("preserves complete outputs when a provider caches unused exports", async () => {
+    const moduleExports = new Map<string, StaticValue>();
+    const provider: ExternalValueProvider = (specifier, importedName) => {
+      if (specifier !== "lifetime-flags") return null;
+      if (moduleExports.size === 0) {
+        for (const name of ["unusedFlag", "carriedFlag", "freshFlag"]) {
+          moduleExports.set(name, createFlag(name));
+        }
+      }
+      return moduleExports.get(importedName) ?? null;
+    };
+    const initialRenderer = await createRenderer(provider);
+    const initial = await render(initialRenderer);
+    const reused = await render(initialRenderer);
+    const independent = await render(await createRenderer(provider));
+    for (const result of [initial, reused, independent]) {
+      expectBranches(result, ["aside", "section"]);
+    }
+    expect(moduleExports.size).toBe(3);
+    expect(getRenderedContent(reused)).toEqual(getRenderedContent(initial));
+    expect(getRenderedContent(independent)).toEqual(getRenderedContent(initial));
+  });
   it("preserves a carried input independently of fresh inputs in later renderers", async () => {
     let carried: StaticValue | undefined;
     const getProvider = () =>
