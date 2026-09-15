@@ -204,6 +204,8 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v6
       - name: Install emulator runtime dependencies
         run: sudo apt-get update && sudo apt-get install --yes libpulse0
