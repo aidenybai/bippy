@@ -331,6 +331,7 @@ export const isInstrumentationActive = (target: ReactDevToolsTarget = globalThis
 export const _fiberRoots = new Set<FiberRoot>();
 const rootRendererIds = new WeakMap<FiberRoot, number>();
 const rootHooks = new WeakMap<FiberRoot, ReactDevToolsGlobalHook>();
+let currentUnmountingFiber: Fiber | null = null;
 
 /**
  * Returns the latest fiber (since it may be double-buffered).
@@ -339,7 +340,9 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
   const alternate = fiber.alternate;
   if (!alternate) return fiber;
   const currentFiber = getCurrentFiberFromRoot(fiber);
-  if (currentFiber) return currentFiber;
+  const isUnmountingPair = fiber === currentUnmountingFiber || alternate === currentUnmountingFiber;
+  if (currentFiber && (!isUnmountingPair || currentFiber === currentUnmountingFiber))
+    return currentFiber;
 
   let rootFiber = fiber;
   while (rootFiber.return) {
@@ -351,6 +354,7 @@ export const getLatestFiber = (fiber: Fiber): Fiber => {
     });
     if (latestFiber) return latestFiber;
   }
+  if (currentFiber) return currentFiber;
 
   if (alternate.actualStartTime && fiber.actualStartTime) {
     return alternate.actualStartTime > fiber.actualStartTime ? alternate : fiber;
@@ -755,11 +759,13 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
       const isCurrentDispatcher =
         hookDispatchers.get(rdtHook)?.onCommitFiberUnmount === dispatchCommitFiberUnmount;
       setReactWorkTagsForFiber(fiber, rdtHook.renderers.get(rendererID));
-      if (prevOnCommitFiberUnmount) {
-        callListener(prevOnCommitFiberUnmount, rdtHook, rendererID, fiber);
-      }
-      if (!isCurrentDispatcher) return;
+      const previousUnmountingFiber = currentUnmountingFiber;
+      currentUnmountingFiber = fiber;
       try {
+        if (prevOnCommitFiberUnmount) {
+          callListener(prevOnCommitFiberUnmount, rdtHook, rendererID, fiber);
+        }
+        if (!isCurrentDispatcher) return;
         const subscriptionSnapshot = [...instrumentationSubscriptions];
         for (const subscription of subscriptionSnapshot) {
           const { options, target } = subscription;
@@ -772,7 +778,8 @@ const setHookEventDispatchers = (rdtHook: ReactDevToolsGlobalHook): void => {
           }
         }
       } finally {
-        releaseFiberId(fiber);
+        currentUnmountingFiber = previousUnmountingFiber;
+        if (isCurrentDispatcher) releaseFiberId(fiber);
       }
     };
     dispatchers.onCommitFiberUnmount = dispatchCommitFiberUnmount;

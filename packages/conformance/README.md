@@ -67,6 +67,10 @@ Hidden-class callback replays run ten cases twice across two nested Activities: 
 
 The fixture also records a narrower pinned React behavior, not a callback-delivery guarantee: a hidden `PureComponent` callback-only bailout has the native Callback flag (64) but no performed-work/update/visibility flags. Its callback remains in the regular queue, is absent from the deferred batch, and is superseded by the next hidden update without firing in this schedule. React's mutation traversal mask excludes Callback, while hidden deferral runs in that traversal. The native queue/flag assertions distinguish this from a Bippy traversal omission. This is an observed React 19 development behavior, not a claimed upstream fix or version-independent contract.
 
+Activity-hydration replays run four cases twice with real SSR, two independently suspended Activities inside Suspense, and a client-only markup mismatch before the subject's suspended child. The subject's server DOM remains connected but hidden behind its fallback; its sibling's server DOM remains visible. Updating the fallback runs no primary bodies, resolving the sibling preserves its server host, and speculative Activity fibers must resolve to the committed dehydrated branch. Completing the mismatched boundary replaces its server subtree and reports the deferred recoverable error; deleting it while pending retires its boundaries and suppresses late work without reporting that abandoned error. Shell/control hosts, tokens and IDs remain unchanged. Exact commits, phases, error text, marker deletion, observer/reporter failures and ID release are checked.
+
+The fallback update exposed a Bippy defect: during its subsequent deletion, return-pointer reflection selected the stale alternate (state 0), while an independent walk of `root.current` contained the notified fiber (state 1). Bailed-out fallback fragments can still point through the parent alternate that is being reused to remove the fallback. `core.ts` now tracks the currently notified unmount pair, including inherited hooks, and consults the root-current tree when reflection disagrees with it. This does not blindly prefer the notified alternate or make all lookups scan a root. Eight twice-run minimized cases cover crossed return paths, either ID assignment, nested unmounts, inactive notifications, throwing inherited/listener/reporting callbacks, and context restoration. After dispatch, valid-tree lookups must avoid descendant scans. Reverting the guard fails two live and six minimized cases. These are pinned React 19 development hydration checks, not streaming SSR or browser scheduling guarantees.
+
 Replay one scenario from the repository root:
 
 ```sh
@@ -90,6 +94,7 @@ pnpm test --project conformance rejected-action-replay
 pnpm test --project conformance dispatch-membership-replay
 pnpm test --project conformance class-commit-replay
 pnpm test --project conformance hidden-class-callback-replay
+pnpm test --project conformance activity-hydration-replay unmount-current-replay
 ```
 
 Failures include the seed and operation/handoff index. Runner durations and stack paths are diagnostics, not expected outputs. The thenable-assimilation and in-flight dispatcher-replacement regressions use fixed case tables without generated inputs.
