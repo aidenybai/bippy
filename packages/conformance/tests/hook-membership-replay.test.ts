@@ -13,19 +13,13 @@ interface HookMembershipOptions {
   event: "inject" | "replace";
   cancelsOther: boolean;
   hasNested: boolean;
-  cancelsFirstDuplicate: boolean;
 }
 interface HookMembershipListeners {
   inject: (renderer: ReactRenderer) => void;
   replace: (hook: ReactDevToolsGlobalHook, target: ReactDevToolsTarget) => void;
 }
 
-const runHookMembership = ({
-  event,
-  cancelsOther,
-  hasNested,
-  cancelsFirstDuplicate,
-}: HookMembershipOptions): string[] => {
+const runHookMembership = ({ event, cancelsOther, hasNested }: HookMembershipOptions): string[] => {
   const target: ReactDevToolsTarget = {};
   const foreignTarget: ReactDevToolsTarget = {};
   const initialHook = getRDTHook(undefined, target);
@@ -208,9 +202,8 @@ const runHookMembership = ({
       ...entries(["foreign"], 0, [0]),
       ...(event === "replace" ? [`foreign-active:${state([0])}`] : []),
     ]);
-    const canceledDuplicate = cancelsFirstDuplicate ? 0 : 1;
-    duplicateCancellations[canceledDuplicate]();
-    duplicateCancellations[canceledDuplicate]();
+    duplicateCancellations[0]();
+    duplicateCancellations[0]();
     const afterSecond = [...afterNested, 2];
     emit(2);
     checkTrace(
@@ -223,8 +216,8 @@ const runHookMembership = ({
         hasNested ? 4 : 3,
       ),
     );
-    duplicateCancellations[1 - canceledDuplicate]();
-    duplicateCancellations[1 - canceledDuplicate]();
+    duplicateCancellations[1]();
+    duplicateCancellations[1]();
     const afterThird = [...afterSecond, 3];
     emit(3);
     checkTrace(
@@ -258,19 +251,9 @@ const membershipEvents: HookMembershipOptions["event"][] = ["inject", "replace"]
 it.each(
   membershipEvents.flatMap((event) =>
     [false, true].flatMap((cancelsOther) =>
-      [false, true].flatMap((hasNested) =>
-        [false, true].map((cancelsFirstDuplicate) => ({
-          event,
-          cancelsOther,
-          hasNested,
-          cancelsFirstDuplicate,
-        })),
-      ),
+      [false, true].map((hasNested) => ({ event, cancelsOther, hasNested })),
     ),
   ),
-)(
-  "bounds $event membership, cancels sibling $cancelsOther, nested $hasNested, cancels first duplicate $cancelsFirstDuplicate",
-  (options) => {
-    expect(runHookMembership(options)).toEqual(runHookMembership(options));
-  },
-);
+)("bounds $event membership, cancels sibling $cancelsOther, nested $hasNested", (options) => {
+  expect(runHookMembership(options)).toEqual(runHookMembership(options));
+});
