@@ -1,0 +1,149 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it } from "vite-plus/test";
+import { inspectClosure } from "../src/evaluate/closure-inspection.js";
+import { liftNativeClosure } from "../src/evaluate/native-closures.js";
+import { fromNativeValue } from "../src/evaluate/native-values.js";
+import { lookupScope } from "../src/evaluate/scope.js";
+import { formatPattern, getRenderPattern } from "../src/harness/index.js";
+import { createStaticRenderer, objectFromRecord } from "../src/index.js";
+import { listValue, unknownPrimitiveValue } from "../src/evaluate/values.js";
+
+const createCounter = (step: number, label: string) => {
+  let count = 0;
+  const unused = { label };
+  return () => {
+    count += step;
+    return `${label}:${count}${unused.label.length > 0 ? "" : "!"}`;
+  };
+};
+
+const createShadowed = (name: string) => {
+  const describeOuter = () => name;
+  {
+    const name = "inner";
+    return () => `${name}:${describeOuter()}`;
+  }
+};
+
+const lift = (callee: Function) =>
+  liftNativeClosure(callee, callee.name || "closure", (value, name) =>
+    fromNativeValue(value, name, null),
+  );
+
+describe("closure inspection", () => {
+  it("reads the variables a function closed over through the engine's [[Scopes]]", () => {
+    const captured = inspectClosure(createCounter(2, "hits"));
+    const byName = new Map(captured?.map((binding) => [binding.name, binding.value]));
+    expect(byName.get("count")).toBe(0);
+    expect(byName.get("step")).toBe(2);
+    expect(byName.get("label")).toBe("hits");
+    expect(byName.get("unused")).toEqual({ label: "hits" });
+  });
+
+  it("lists a shadowed name once, with the innermost scope's value", () => {
+    const captured = inspectClosure(createShadowed("outer"));
+    const names = captured?.map((binding) => binding.name);
+    expect(names?.filter((name) => name === "name")).toEqual(["name"]);
+    expect(names?.indexOf("name")).toBeLessThan(names?.indexOf("describeOuter") ?? -1);
+    expect(captured?.find((binding) => binding.name === "name")?.value).toBe("inner");
+  });
+
+  it("reports a function that captured nothing as an empty closure", () => {
+    expect(inspectClosure(Math.max)).toEqual([]);
+  });
+});
+
+describe("lifting native closures", () => {
+  it("evaluates a closure's source over the captured variables it references", () => {
+    const lifted = lift(createCounter(3, "runs"));
+    expect(lifted?.kind).toBe("function");
+    expect(lifted?.node.type).toBe("ArrowFunctionExpression");
+    expect(lookupScope(lifted!.scope, "count")).toEqual({ kind: "primitive", value: 0 });
+    expect(lookupScope(lifted!.scope, "step")).toEqual({ kind: "primitive", value: 3 });
+    expect(lookupScope(lifted!.scope, "label")).toEqual({ kind: "primitive", value: "runs" });
+    expect(lookupScope(lifted!.scope, "unused")?.kind).toBe("object");
+    expect(lookupScope(lifted!.scope, "createCounter")).toBeUndefined();
+  });
+
+  it("lifts each function once, so its captured objects keep one identity", () => {
+    const counter = createCounter(1, "once");
+    expect(lift(counter)).toBe(lift(counter));
+  });
+
+  it("leaves functions without readable source alone", () => {
+    expect(lift(Math.max)).toBeNull();
+    expect(lift(createCounter(1, "bound").bind(null))).toBeNull();
+    expect(lift(class Widget {})).toBeNull();
+    expect(lift(Function("return 1"))).not.toBeNull();
+  });
+
+  it("keeps a method's source parseable and a captured intrinsic canonical", () => {
+    const toString = Object.prototype.toString;
+    const holder = {
+      tag(value: unknown) {
+        return toString.call(value);
+      },
+    };
+    const lifted = lift(holder.tag);
+    expect(lifted?.node.type).toBe("FunctionExpression");
+    expect(lookupScope(lifted!.scope, "toString")).toEqual({
+      kind: "global",
+      name: "Object.prototype.toString",
+    });
+  });
+});
+
+const FILL_LOOP_SOURCE = `
+interface LoopProps {
+  items: string[];
+}
+
+const arrayMap = <T, R>(array: T[], iteratee: (item: T, index: number) => R): R[] => {
+  let index = -1;
+  const length = array == null ? 0 : array.length;
+  const result = Array(length);
+  while (++index < length) {
+    result[index] = iteratee(array[index], index);
+  }
+  return result;
+};
+
+export const Loop = ({ items }: LoopProps) => (
+  <ul>
+    {arrayMap(items, (item) => (
+      <li>{item}</li>
+    ))}
+  </ul>
+);
+`;
+
+describe("index writes into lists of unknown length", () => {
+  it("keeps the items a loop writes into Array(length) by index", async () => {
+    const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-analyzer-fill-loop-"));
+    writeFileSync(join(rootDirectory, "loop.tsx"), FILL_LOOP_SOURCE);
+    const renderer = await createStaticRenderer({ rootDirectory });
+    const result = await renderer.renderComponent(join(rootDirectory, "loop.tsx"), {
+      exportName: "Loop",
+      props: objectFromRecord({
+        items: listValue([
+          { kind: "repeat", item: unknownPrimitiveValue("string", "item"), location: null },
+        ]),
+      }),
+    });
+    expect(result.stats.unknownCount).toBe(0);
+    expect(formatPattern(getRenderPattern(result)).replaceAll(`${rootDirectory}/`, "")).toBe(
+      [
+        "<HostRoot>",
+        "  <Loop>",
+        "    <ul>",
+        "      *repeat(0..) @ loop.tsx:10:3",
+        "        ?branch(loop iterations are uncertain) @ loop.tsx:10:3",
+        "          |0 (preferred)",
+        "            <li>",
+        "          |1",
+      ].join("\n"),
+    );
+  });
+});
