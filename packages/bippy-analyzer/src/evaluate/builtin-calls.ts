@@ -2523,10 +2523,12 @@ export const evaluateBuiltinCall = (
       );
     }
     if (name === "bind") {
-      if (rebound.kind !== "method") return rebound;
       const boundArgs = args.slice(1);
-      return nativeFunction(`bound ${rebound.name}`, (callArgs, tools) =>
-        tools.call(rebound, [...boundArgs, ...callArgs]),
+      if (rebound.kind !== "method" && boundArgs.length === 0) return rebound;
+      const boundThis = rebound.kind === "method" ? undefined : first;
+      const boundName = rebound.kind === "react-api" ? rebound.api : rebound.name;
+      return nativeFunction(`bound ${boundName}`, (callArgs, tools) =>
+        tools.call(rebound, [...boundArgs, ...callArgs], boundThis),
       );
     }
   }
