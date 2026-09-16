@@ -8,10 +8,12 @@ import { fromNativeValue } from "../src/evaluate/native-values.js";
 import { lookupScope } from "../src/evaluate/scope.js";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer, objectFromRecord } from "../src/index.js";
+import type { StaticClassValue, StaticFunctionValue } from "../src/types.js";
 import {
   getFunctionPrototype,
   getObjectProperty,
   listValue,
+  objectValue,
   unknownPrimitiveValue,
 } from "../src/evaluate/values.js";
 
@@ -32,10 +34,34 @@ const createShadowed = (name: string) => {
   }
 };
 
+/** Stands for the interpreter's class definition: the thunk itself, marked as the class it would define. */
+const defineClassFromThunk = (thunk: StaticFunctionValue): StaticClassValue => {
+  const classNode = thunk.node.body;
+  if (classNode?.type !== "ClassExpression") throw new Error(`thunk returns ${classNode?.type}`);
+  return {
+    kind: "class",
+    node: classNode,
+    body: { members: [], superValue: null },
+    scope: thunk.scope,
+    module: thunk.module,
+    name: classNode.id?.name ?? null,
+    properties: objectValue(),
+  };
+};
+
 const lift = (callee: Function) =>
-  liftNativeClosure(callee, callee.name || "closure", (value, name) =>
-    fromNativeValue(value, name, null),
+  liftNativeClosure(
+    callee,
+    callee.name || "closure",
+    (value, name) => fromNativeValue(value, name, null),
+    defineClassFromThunk,
   );
+
+const liftFunction = (callee: Function): StaticFunctionValue => {
+  const value = lift(callee);
+  if (value?.kind !== "function") throw new Error(`lifted ${value?.kind ?? "nothing"}`);
+  return value;
+};
 
 describe("closure inspection", () => {
   it("reads the variables a function closed over through the engine's [[Scopes]]", () => {
@@ -62,14 +88,13 @@ describe("closure inspection", () => {
 
 describe("lifting native closures", () => {
   it("evaluates a closure's source over the captured variables it references", () => {
-    const lifted = lift(createCounter(3, "runs"));
-    expect(lifted?.kind).toBe("function");
-    expect(lifted?.node.type).toBe("ArrowFunctionExpression");
-    expect(lookupScope(lifted!.scope, "count")).toEqual({ kind: "primitive", value: 0 });
-    expect(lookupScope(lifted!.scope, "step")).toEqual({ kind: "primitive", value: 3 });
-    expect(lookupScope(lifted!.scope, "label")).toEqual({ kind: "primitive", value: "runs" });
-    expect(lookupScope(lifted!.scope, "unused")?.kind).toBe("object");
-    expect(lookupScope(lifted!.scope, "createCounter")).toBeUndefined();
+    const lifted = liftFunction(createCounter(3, "runs"));
+    expect(lifted.node.type).toBe("ArrowFunctionExpression");
+    expect(lookupScope(lifted.scope, "count")).toEqual({ kind: "primitive", value: 0 });
+    expect(lookupScope(lifted.scope, "step")).toEqual({ kind: "primitive", value: 3 });
+    expect(lookupScope(lifted.scope, "label")).toEqual({ kind: "primitive", value: "runs" });
+    expect(lookupScope(lifted.scope, "unused")?.kind).toBe("object");
+    expect(lookupScope(lifted.scope, "createCounter")).toBeUndefined();
   });
 
   it("lifts each function once, so its captured objects keep one identity", () => {
@@ -80,18 +105,32 @@ describe("lifting native closures", () => {
   it("leaves functions without readable source alone", () => {
     expect(lift(Math.max)).toBeNull();
     expect(lift(Math.max.bind(null, 1))).toBeNull();
-    expect(lift(class Widget {})).toBeNull();
     expect(lift(Function("return 1"))).not.toBeNull();
+  });
+
+  it("lifts a class through a thunk the interpreter defines it from, over its captured variables", () => {
+    const registry = new Map<string, number>();
+    class Widget {
+      static count = 0;
+      constructor(public name: string) {
+        registry.set(name, ++Widget.count);
+      }
+    }
+    const lifted = lift(Widget);
+    expect(lifted?.kind).toBe("class");
+    expect(lifted?.name).toBe("Widget");
+    expect(lookupScope(lifted!.scope, "registry")?.kind).toBe("native-object");
+    expect(lift(Widget)).toBe(lifted);
   });
 
   it("lifts a bound function as its target over the receiver and arguments bind fixed", () => {
     const greet = function (this: { prefix: string }, word: string, mark: string) {
       return `${this.prefix} ${word}${mark}`;
     };
-    const lifted = lift(greet.bind({ prefix: "hi" }, "there"));
-    expect(lifted?.node.type).toBe("FunctionExpression");
-    expect(lifted?.boundThis?.kind).toBe("object");
-    expect(lifted?.boundArgs).toEqual([{ kind: "primitive", value: "there" }]);
+    const lifted = liftFunction(greet.bind({ prefix: "hi" }, "there"));
+    expect(lifted.node.type).toBe("FunctionExpression");
+    expect(lifted.boundThis?.kind).toBe("object");
+    expect(lifted.boundArgs).toEqual([{ kind: "primitive", value: "there" }]);
   });
 
   it("lifts a constructor's prototype so its instances find their methods", () => {
@@ -101,8 +140,8 @@ describe("lifting native closures", () => {
     Counter.prototype.next = function (this: { count: number }) {
       return ++this.count;
     };
-    const lifted = lift(Counter);
-    const prototype = getFunctionPrototype(lifted!);
+    const lifted = liftFunction(Counter);
+    const prototype = getFunctionPrototype(lifted);
     if (prototype.kind !== "object") throw new Error(`prototype is ${prototype.kind}`);
     expect(getObjectProperty(prototype, "next").kind).toBe("native-function");
     expect(getObjectProperty(prototype, "constructor")).toBe(lifted);
@@ -115,9 +154,9 @@ describe("lifting native closures", () => {
         return toString.call(value);
       },
     };
-    const lifted = lift(holder.tag);
-    expect(lifted?.node.type).toBe("FunctionExpression");
-    expect(lookupScope(lifted!.scope, "toString")).toEqual({
+    const lifted = liftFunction(holder.tag);
+    expect(lifted.node.type).toBe("FunctionExpression");
+    expect(lookupScope(lifted.scope, "toString")).toEqual({
       kind: "global",
       name: "Object.prototype.toString",
     });
@@ -172,6 +211,72 @@ describe("index writes into lists of unknown length", () => {
         "          |0 (preferred)",
         "            <li>",
         "          |1",
+      ].join("\n"),
+    );
+  });
+});
+
+const PRICE_SOURCE = `
+interface PriceProps {
+  text: string;
+  Money: { parse(text: string): { describe(): string } };
+}
+
+export const Price = ({ text, Money }: PriceProps) => {
+  const price = Money.parse(text);
+  return (
+    <p>
+      {typeof price.describe}
+      {price.describe()}
+    </p>
+  );
+};
+`;
+
+const createMoneyClass = (): Function => {
+  const currency = "USD";
+  class Base {
+    kind = "credit";
+    describe() {
+      return `${this.kind} in ${currency}`;
+    }
+  }
+  return class Money extends Base {
+    constructor(public amount: number) {
+      super();
+      if (amount < 0) this.kind = "debt";
+    }
+    static parse(text: string) {
+      return new Money(Number(text));
+    }
+  };
+};
+
+describe("constructing lifted classes", () => {
+  it("defines a native class through the interpreter, with the class it extends", async () => {
+    const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-analyzer-lifted-class-"));
+    writeFileSync(join(rootDirectory, "price.tsx"), PRICE_SOURCE);
+    const renderer = await createStaticRenderer({ rootDirectory });
+    const result = await renderer.renderComponent(join(rootDirectory, "price.tsx"), {
+      exportName: "Price",
+      props: objectFromRecord({
+        text: unknownPrimitiveValue("string", "text"),
+        Money: fromNativeValue(createMoneyClass(), "Money", null),
+      }),
+    });
+    const pattern = formatPattern(getRenderPattern(result));
+    expect(result.stats.unknownCount).toBe(0);
+    expect(pattern).toBe(
+      [
+        "<HostRoot>",
+        "  <Price>",
+        "    <p>",
+        '      "function"',
+        "      ?branch(if (<boolean: < on dynamic values>)) @ native-closure:Money.parse.Money:6:4",
+        "        |0 (preferred)",
+        '          "debt in USD"',
+        "        |1",
+        '          "credit in USD"',
       ].join("\n"),
     );
   });

@@ -1,7 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { describeError } from "../errors.js";
 import type {
-  StaticFunctionValue,
   StaticListValue,
   StaticNativeFunctionValue,
   StaticNativeObjectValue,
@@ -24,7 +23,7 @@ import {
   getIntrinsicMemberGlobal,
   getNamedSymbolValue,
 } from "./host-globals.js";
-import { hasKnownKind, liftNativeClosure } from "./native-closures.js";
+import { hasKnownKind, type LiftedCallable, liftNativeClosure } from "./native-closures.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
 import {
@@ -404,9 +403,9 @@ const toNativeReceiver = (receiver: StaticValue, host: HostDocument | null): unk
     ? toNative(receiver, host)
     : UNCERTAIN;
 
-/** Whether the lifted function's first argument, a bound one included, is of known kind (see `hasKnownKind`). */
-const hasKnownSubject = (lifted: StaticFunctionValue, args: StaticValue[]): boolean => {
-  const subject = lifted.boundArgs?.[0] ?? args[0];
+/** Whether the lifted callable's first argument, a bound one included, is of known kind (see `hasKnownKind`). */
+const hasKnownSubject = (lifted: LiftedCallable, args: StaticValue[]): boolean => {
+  const subject = (lifted.kind === "function" ? lifted.boundArgs?.[0] : undefined) ?? args[0];
   return subject === undefined || hasKnownKind(subject);
 };
 
@@ -449,8 +448,11 @@ export const pureNativeFunction = (
     }
     const lifted =
       host === null
-        ? liftNativeClosure(callee, name, (value, valueName) =>
-            fromNativeValue(value, valueName, null),
+        ? liftNativeClosure(
+            callee,
+            name,
+            (value, valueName) => fromNativeValue(value, valueName, null),
+            (thunk) => tools.call(thunk, []),
           )
         : null;
     if (lifted !== null && hasKnownSubject(lifted, args)) {
@@ -470,11 +472,20 @@ export const pureNativeFunction = (
     call: (args, tools) => run(args, tools, false),
     construct: (args, tools) => run(args, tools, true),
     getOwnProperty: (key) =>
-      Object.prototype.propertyIsEnumerable.call(callee, key)
+      Object.hasOwn(callee, key) && !FUNCTION_INTRINSIC_KEYS.has(key)
         ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
         : undefined,
   };
 };
+
+/** Own properties every function has, which the interpreter answers itself rather than from a native's; a class's static methods, non-enumerable too, are its own. */
+const FUNCTION_INTRINSIC_KEYS: ReadonlySet<string> = new Set([
+  "length",
+  "name",
+  "prototype",
+  "arguments",
+  "caller",
+]);
 
 const isReactElementTag = (tag: unknown): boolean =>
   typeof tag === "symbol" &&
