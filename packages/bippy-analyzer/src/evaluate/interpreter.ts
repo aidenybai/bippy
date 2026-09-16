@@ -289,6 +289,7 @@ import {
   suspendOnPromise,
 } from "./promises.js";
 import { applyClockOperator, TimerQueue } from "./timers.js";
+import { isClockDateValue, toDatePrimitive } from "./clock-date.js";
 import { evaluateLoop } from "./loops.js";
 import {
   applyNarrowing,
@@ -6803,12 +6804,13 @@ const getCoercionHint = (
 };
 
 const isCoercibleOperand = (value: StaticValue): boolean =>
-  value.kind === "regexp" || value.kind === "native-object";
+  value.kind === "regexp" || value.kind === "native-object" || isClockDateValue(value);
 
-/** `ToPrimitive` of an object operand: `RegExp.prototype.toString`, or the native object's own conversion. */
+/** `ToPrimitive` of an object operand: `RegExp.prototype.toString`, a modeled date's time, or the native object's own conversion. */
 const toCoercedOperand = (value: StaticValue, hint: "default" | "number"): StaticValue => {
   if (value.kind === "regexp") return primitiveValue(regExpToString(value));
-  return value.kind === "native-object" ? toNativeObjectPrimitive(value, hint) : value;
+  if (value.kind === "native-object") return toNativeObjectPrimitive(value, hint);
+  return toDatePrimitive(value, hint) ?? value;
 };
 
 /** A value that is a number for sure, known or not. */

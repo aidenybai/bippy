@@ -59,7 +59,13 @@ import {
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
 import { callRequireContext } from "./require-context.js";
-import { createClockDateValue, isClockReading } from "./clock-date.js";
+import {
+  cloneDateValue,
+  createClockDateValue,
+  createUnknownDateValue,
+  isClockReading,
+  toDatePrimitive,
+} from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
@@ -184,6 +190,14 @@ import {
   thrownValue,
   unknownValue,
 } from "./values.js";
+
+/** An unknown number that is neither NaN nor infinite: a clock reading, or one the analysis bounded. */
+const isFiniteUnknownNumber = (value: StaticValue): boolean =>
+  value.kind === "unknown-primitive" &&
+  (value.clock !== undefined ||
+    (value.numberRange !== undefined &&
+      Number.isFinite(value.numberRange.min) &&
+      Number.isFinite(value.numberRange.max)));
 
 const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isNaN": Number.isNaN,
@@ -444,6 +458,8 @@ export const getBuiltinGlobal = (
 const toNumberValue = (value: StaticValue): StaticValue => {
   if (value.kind === "native-object")
     return toNumberValue(toNativeObjectPrimitive(value, "number"));
+  const dateTime = toDatePrimitive(value, "number");
+  if (dateTime !== null) return toNumberValue(dateTime);
   if (
     value.kind === "primitive" &&
     typeof value.value !== "bigint" &&
@@ -1037,8 +1053,12 @@ const callGlobal = (
     case "Date": {
       if (!isConstructor) break;
       if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
-      if (args.length === 1 && first !== undefined && isClockReading(first))
-        return createClockDateValue(first);
+      if (args.length !== 1 || first === undefined) break;
+      if (isClockReading(first)) return createClockDateValue(first);
+      const copy = cloneDateValue(first);
+      if (copy) return copy;
+      if (first.kind === "unknown-primitive" && first.primitiveType === "number")
+        return createUnknownDateValue(first);
       break;
     }
     case "Function":
@@ -1397,6 +1417,7 @@ const callGlobal = (
           name === "isNaN" ? Number.isNaN(number.value) : Number.isFinite(number.value),
         );
       }
+      if (isFiniteUnknownNumber(number)) return name === "isNaN" ? FALSE_VALUE : TRUE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
     case "Number.isNaN":
@@ -1407,6 +1428,8 @@ const callGlobal = (
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
       const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
+      if (name === "Number.isNaN" && isFiniteUnknownNumber(first)) return FALSE_VALUE;
+      if (name === "Number.isFinite" && isFiniteUnknownNumber(first)) return TRUE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
