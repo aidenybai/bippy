@@ -324,6 +324,7 @@ import {
   getClassPrototype,
   getSpreadEntries,
   getSymbolDescription,
+  getItemValue,
   getListItem,
   getListLength,
   getFunctionPrototype,
@@ -347,6 +348,7 @@ import {
   listValue,
   joinMappedAlternatives,
   mapValue,
+  mayBeIndexKey,
   distributeBinary,
   NULL_VALUE,
   SYMBOL_PROPERTY_KEY_PREFIX,
@@ -361,6 +363,7 @@ import {
   primitiveValue,
   regExpToString,
   setListItem,
+  setListItemAtUnknownIndex,
   setListLength,
   toIndexKey,
   spreadListItems,
@@ -3672,7 +3675,11 @@ export class Interpreter {
   private assignDynamicProperty(object: StaticValue, key: StaticValue, value: StaticValue): void {
     for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
       if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
-      else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
+      else if (alternative.kind === "list") {
+        if (alternative.isFrozen || !mayBeIndexKey(key)) continue;
+        this.recordHeapMutation(alternative);
+        setListItemAtUnknownIndex(alternative, value);
+      } else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
         setNativeObjectComposedMember(alternative, key, value);
       else if (alternative.kind === "unknown" || alternative.kind === "external")
         this.markEscaped(value);
@@ -3860,7 +3867,7 @@ export class Interpreter {
     if (error) return error;
     if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
-      const candidates = object.items.filter((item) => item.kind !== "repeat");
+      const candidates = object.items.map(getItemValue);
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
         : branchValue(candidates, "dynamic list index", location);
@@ -5787,13 +5794,19 @@ export class Interpreter {
   }
 
   /**
-   * Runs `run` once more from the state `runMaybe` left behind and discards
-   * everything it does, keeping only which bindings it would move again. A
-   * binding that still changes is loop-carried (a counter, an accumulator):
-   * after an unknown number of iterations it holds none of the enumerated
-   * alternatives in particular, so it widens to an unknown of its type.
+   * Runs `run` once from the current state and discards everything it does,
+   * keeping only which bindings it moved. A binding that changes is
+   * loop-carried (a counter, an accumulator): after an unknown number of
+   * iterations it holds none of the enumerated alternatives in particular, so
+   * it widens to an unknown of its type. With `isPrimitiveOnly`, a binding
+   * that does not keep one primitive type is left as it is.
    */
-  widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
+  widenLoopCarriedBindings(
+    scope: Scope,
+    run: () => void,
+    location: SourceLocation,
+    isPrimitiveOnly = false,
+  ): void {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
     const pendingDepth = this.pendingReturnJoins.length;
@@ -5808,7 +5821,7 @@ export class Interpreter {
       journal.endPath();
       this.removeHeapJournal(journal);
       restoreScopes(entrySnapshot);
-      widenMovedBindings(entrySnapshot, ranSnapshot, location);
+      widenMovedBindings(entrySnapshot, ranSnapshot, location, isPrimitiveOnly);
     }
   }
 
@@ -6575,6 +6588,7 @@ const widenMovedBindings = (
   entryPath: ScopeSnapshot[],
   ranPath: ScopeSnapshot[],
   location: SourceLocation,
+  isPrimitiveOnly: boolean,
 ): void => {
   entryPath.forEach((snapshot, scopeIndex) => {
     for (const [name, before] of snapshot.bindings) {
@@ -6582,7 +6596,9 @@ const widenMovedBindings = (
       if (after === undefined || after === before) continue;
       const joined = branchValue([before, after], "loop-carried value", location);
       if (countAlternatives(joined) === countAlternatives(before)) continue;
-      snapshot.scope.bindings.set(name, widenValue(joined, location));
+      const widened = widenValue(joined, location);
+      if (isPrimitiveOnly && widened.kind !== "unknown-primitive") continue;
+      snapshot.scope.bindings.set(name, widened);
     }
   });
 };

@@ -1994,18 +1994,34 @@ export const toIndexKey = (key: string): number | null => {
   return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
 };
 
+/** Whether a key the analysis cannot name may be an array index rather than a named property. */
+export const mayBeIndexKey = (key: StaticValue): boolean =>
+  key.kind === "unknown" ||
+  (key.kind === "unknown-primitive" &&
+    key.primitiveType !== "string" &&
+    key.primitiveType !== "boolean");
+
+/** The value an item stands for at any one position: a repeat's or optional's inner value, else the item itself. */
+export const getItemValue = (item: StaticValue): StaticValue =>
+  item.kind === "repeat" ? item.item : item.kind === "optional" ? item.value : item;
+
 /**
  * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
  * does. Past a partially known prefix the slot the write lands on is unknown, so
- * the indefinite tail becomes an unknown repeat.
+ * every position of the indefinite tail may now hold the written value, what it
+ * held before, or a hole the write left behind it.
  */
 export const setListItem = (list: StaticListValue, index: number, value: StaticValue): void => {
   const indefiniteIndex = list.items.findIndex(isIndefiniteItem);
   if (indefiniteIndex !== -1 && index >= indefiniteIndex) {
-    list.items.splice(
-      indefiniteIndex,
-      list.items.length - indefiniteIndex,
-      repeatItem(unknownValue("item of a partially known list written by index")),
+    const tail = list.items.splice(indefiniteIndex);
+    list.items.push(
+      repeatItem(
+        branchValue(
+          [value, ...tail.map(getItemValue), UNDEFINED_VALUE],
+          `item of a partially known list written at [${index}]`,
+        ),
+      ),
     );
     return;
   }
@@ -2015,6 +2031,24 @@ export const setListItem = (list: StaticListValue, index: number, value: StaticV
   }
   while (list.items.length < index) list.items.push(UNDEFINED_VALUE);
   list.items[index] = value;
+};
+
+/**
+ * `list[index] = value` for an index known only to be a number: any position
+ * may now hold the written value, and the list may have grown past its end.
+ */
+export const setListItemAtUnknownIndex = (list: StaticListValue, value: StaticValue): void => {
+  const min = list.items.reduce((total, item) => total + getItemCountRange(item).min, 0);
+  const item = branchValue(
+    [value, ...list.items.map(getItemValue), UNDEFINED_VALUE],
+    "item of a list written at a dynamic index",
+  );
+  list.items.splice(0, list.items.length, {
+    kind: "repeat",
+    item,
+    location: null,
+    count: { min, max: Number.POSITIVE_INFINITY },
+  });
 };
 
 /** `list.length = length`: truncates or extends with holes; an unknown length leaves every item uncertain. */
@@ -2168,7 +2202,18 @@ export const getListItem = (
         candidates.push(UNDEFINED_VALUE);
         return true;
       }
-      if (head.kind === "repeat") return false;
+      if (head.kind === "repeat") {
+        if (head.count !== undefined && head.count.min > remainingOffset) {
+          candidates.push(head.item);
+          return true;
+        }
+        candidates.push(
+          head.item,
+          ...remaining.slice(position + 1).map(getItemValue),
+          UNDEFINED_VALUE,
+        );
+        return true;
+      }
       if (head.kind === "optional") {
         const rest = remaining.slice(position + 1);
         return head.isAbsentPreferred

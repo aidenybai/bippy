@@ -1599,9 +1599,12 @@ const callGlobal = (
 
 const MAX_ARRAY_LIKE_LENGTH = 1_000;
 
+/** `Array(length)` for a length only known in range: holes to be written by index, so a list rather than a bare repeat. */
 const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
-    return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
+    return listValue([
+      { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange },
+    ]);
   if (length.kind === "branch")
     return mapValue(length, (alternative) => arrayOfLength(alternative, location));
   if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
@@ -1614,7 +1617,7 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
     );
   }
   if (length.value > MAX_ARRAY_LIKE_LENGTH)
-    return { kind: "repeat", item: UNDEFINED_VALUE, location };
+    return listValue([{ kind: "repeat", item: UNDEFINED_VALUE, location }]);
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
 };
 

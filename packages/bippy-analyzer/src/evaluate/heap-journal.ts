@@ -11,6 +11,7 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   getAllocationCount,
+  getItemValue,
   isIndefiniteItem,
   isSameValue,
   joinObjectEntries,
@@ -346,7 +347,9 @@ export class HeapJournal {
         );
         continue;
       }
-      const uncertainItems = isEveryPathAppending ? appendedItems.flat() : pathItems.flat();
+      const uncertainItems = (isEveryPathAppending ? appendedItems : pathItems)
+        .flat()
+        .map(getItemValue);
       list.items = isEveryPathAppending ? [...original.items] : [];
       if (uncertainItems.length > 0) {
         list.items.push({

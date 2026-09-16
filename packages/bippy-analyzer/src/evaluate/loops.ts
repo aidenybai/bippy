@@ -347,7 +347,9 @@ const unrollConditional = (
  * Evaluates the body once with every loop-controlled binding unknown. Used when
  * the iteration count is not statically known: the body's effects are joined
  * with the state in which it never ran, so assignments become branches and
- * pushed items become repeats.
+ * pushed items become repeats. A counter the test or update steps
+ * (`while (++index < length)`) is loop control like a declared one: the tail
+ * stands for any iteration, so it is unknown before the body runs.
  */
 const evaluateUncertainTail = (
   interpreter: Interpreter,
@@ -381,6 +383,12 @@ const evaluateUncertainTail = (
   const whileTestHolds = <Result>(run: () => Result): Result =>
     test ? interpreter.runWhenTruthy(test, loopContext, run) : run();
   const runTailBody = (): StatementOutcome => runBody(interpreter, statement.body, loopContext);
+  const stepControl = (): void => {
+    if (statement.type === "ForStatement" && statement.update)
+      interpreter.evaluateExpression(statement.update, loopContext);
+    if (test) interpreter.evaluateExpression(test, loopContext);
+  };
+  interpreter.widenLoopCarriedBindings(context.scope, stepControl, location, true);
   const outcome = interpreter.runMaybe(
     context.scope,
     () => whileTestHolds(runTailBody),
