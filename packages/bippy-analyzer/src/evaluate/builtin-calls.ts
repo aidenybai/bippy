@@ -189,6 +189,7 @@ import {
   spreadListItems,
   thrownValue,
   unknownValue,
+  widenLoopCarriedValue,
 } from "./values.js";
 
 /** An unknown number that is neither NaN nor infinite: a clock reading, or one the analysis bounded. */
@@ -2839,17 +2840,13 @@ export const evaluateBuiltinCall = (
       }
       case "reduce":
       case "reduceRight": {
-        if (
-          !isCallable(first) ||
-          receiver.kind !== "list" ||
-          receiver.items.some((item) => item.kind === "repeat")
-        ) {
+        if (!isCallable(first) || receiver.kind !== "list") {
           return unknownValue(`${name}()`, location);
         }
         const items = name === "reduce" ? receiver.items : [...receiver.items].reverse();
         let accumulator = args.length > 1 ? second : items[0];
         if (!accumulator) return unknownValue(`${name}() of an empty list`, location);
-        if (accumulator.kind === "optional") {
+        if (accumulator.kind === "optional" || accumulator.kind === "repeat") {
           return unknownValue(`${name}() of a list whose first item may be absent`, location);
         }
         const startIndex = args.length > 1 ? 0 : 1;
@@ -2860,7 +2857,7 @@ export const evaluateBuiltinCall = (
           const indexValue = isIndexKnown
             ? primitiveValue(sourceIndex)
             : unknownPrimitiveValue("number", "index");
-          if (item.kind !== "optional") {
+          if (item.kind !== "optional" && item.kind !== "repeat") {
             accumulator = callCallback(
               interpreter,
               first,
@@ -2870,6 +2867,22 @@ export const evaluateBuiltinCall = (
             continue;
           }
           isIndexKnown = false;
+          if (item.kind === "repeat") {
+            const reduced = callUncertainCallback(
+              interpreter,
+              first,
+              [accumulator, item.item, indexValue, receiver],
+              context,
+              true,
+            );
+            if (reduced !== accumulator) {
+              accumulator = widenLoopCarriedValue(
+                branchValue([reduced, accumulator], "repeated items", location),
+                location,
+              );
+            }
+            continue;
+          }
           const reduced = callUncertainCallback(
             interpreter,
             first,

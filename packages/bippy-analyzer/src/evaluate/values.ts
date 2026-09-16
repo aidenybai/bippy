@@ -2184,56 +2184,61 @@ const MAX_OPTIONAL_CANDIDATES = 8;
 
 /**
  * `items[index]` when some earlier items may be absent: each optional item
- * either occupies a position or does not, so the result is a branch over the
- * items that could land on `index`.
+ * either occupies a position or does not, so the result branches on its
+ * presence, under the decision that made it optional, over the items that
+ * could land on `index`.
  */
 export const getListItem = (
   items: StaticValue[],
   index: number,
   location: SourceLocation | null,
 ): StaticValue => {
-  const candidates: StaticValue[] = [];
-  const pick = (remaining: StaticValue[], offset: number): boolean => {
+  let candidateCount = 0;
+  const pick = (remaining: StaticValue[], offset: number): StaticValue | null => {
     let position = 0;
     let remainingOffset = offset;
-    while (candidates.length <= MAX_OPTIONAL_CANDIDATES) {
+    while (candidateCount <= MAX_OPTIONAL_CANDIDATES) {
       const head = remaining[position];
       if (head === undefined) {
-        candidates.push(UNDEFINED_VALUE);
-        return true;
+        candidateCount += 1;
+        return UNDEFINED_VALUE;
       }
       if (head.kind === "repeat") {
         if (head.count !== undefined && head.count.min > remainingOffset) {
-          candidates.push(head.item);
-          return true;
+          candidateCount += 1;
+          return head.item;
         }
-        candidates.push(
+        const candidates = [
           head.item,
           ...remaining.slice(position + 1).map(getItemValue),
           UNDEFINED_VALUE,
-        );
-        return true;
+        ];
+        candidateCount += candidates.length;
+        return branchValue(candidates, `item ${index} of a filtered list`, location);
       }
       if (head.kind === "optional") {
         const rest = remaining.slice(position + 1);
-        return head.isAbsentPreferred
-          ? pick(rest, remainingOffset) && pick([head.value, ...rest], remainingOffset)
-          : pick([head.value, ...rest], remainingOffset) && pick(rest, remainingOffset);
+        const present = pick([head.value, ...rest], remainingOffset);
+        const absent = present === null ? null : pick(rest, remainingOffset);
+        if (present === null || absent === null) return null;
+        return branchValue(
+          [present, absent],
+          head.reason,
+          head.location,
+          head.isAbsentPreferred ? 1 : 0,
+          head.predicate,
+        );
       }
       if (remainingOffset === 0) {
-        candidates.push(head);
-        return true;
+        candidateCount += 1;
+        return head;
       }
       position += 1;
       remainingOffset -= 1;
     }
-    return false;
+    return null;
   };
-  if (!pick(items, index)) {
-    return unknownValue(`index ${index} of a partially known list`, location);
-  }
-  if (candidates.length === 1) return candidates[0];
-  return branchValue(candidates, `item ${index} of a filtered list`, location);
+  return pick(items, index) ?? unknownValue(`index ${index} of a partially known list`, location);
 };
 
 const MAX_DESCRIPTION_DEPTH = 3;
