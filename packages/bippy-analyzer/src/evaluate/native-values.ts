@@ -15,7 +15,8 @@ import type { HostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
-import { getIntrinsicGlobal } from "./host-globals.js";
+import { getIntrinsicGlobal, getIntrinsicMemberGlobal } from "./host-globals.js";
+import { hasKnownKind, liftNativeClosure } from "./native-closures.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
 import {
@@ -52,8 +53,13 @@ const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
 const standIns = new WeakMap<StaticValue, object>();
 const standInValues = new WeakMap<object, StaticValue>();
 
+const STAND_IN_REFUSAL = "a function the analysis holds cannot run natively";
+
+/** Native code reached a function only the interpreter can run. */
+class StandInAccessError extends Error {}
+
 const refuseStandInAccess = (): never => {
-  throw new Error("a function the analysis holds cannot run natively");
+  throw new StandInAccessError(STAND_IN_REFUSAL);
 };
 
 const STAND_IN_HANDLER: ProxyHandler<() => void> = {
@@ -335,13 +341,21 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
-const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
+/** `call()`'s result, or null when native code reached a function only the interpreter can run. */
+const runNatively = (name: string, call: () => StaticValue): StaticValue | null => {
   try {
     return call();
   } catch (error) {
+    if (error instanceof StandInAccessError) return null;
     return unknownValue(`${name}() threw: ${describeError(error)}`);
   }
 };
+
+const refusedStandInAccess = (name: string): StaticValue =>
+  unknownValue(`${name}() threw: ${STAND_IN_REFUSAL}`);
+
+const guardNativeCall = (name: string, call: () => StaticValue): StaticValue =>
+  runNatively(name, call) ?? refusedStandInAccess(name);
 
 interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
@@ -369,9 +383,13 @@ const writeBackAppendedItems = (
 
 /**
  * `callee` as a function the interpreter may invoke: it runs natively once every
- * argument is known, and yields `onUncertain(args)` otherwise. Exceptions are
- * reported as unknowns rather than raised, since they would surface at runtime
- * as an error boundary the static tree cannot place.
+ * argument is known; otherwise, or when it calls back into a function only the
+ * interpreter can run, its own source is evaluated over the variables it
+ * captured (`liftNativeClosure`), and it yields `onUncertain(args)` when that
+ * source is unavailable. Exceptions are reported as unknowns rather than
+ * raised, since they would surface at runtime as an error boundary the static
+ * tree cannot place. Functions the host document owns are never lifted: its
+ * implementation is not the program's.
  */
 export const pureNativeFunction = (
   name: string,
@@ -384,15 +402,29 @@ export const pureNativeFunction = (
   name,
   call: (args, tools) => {
     const natives = toNativeArguments(args, host);
-    if (natives === null) {
-      for (const argument of args) tools.markEscaped(argument);
-      return onUncertain(args);
+    if (natives !== null) {
+      const result = runNatively(name, () => {
+        const result = fromNativeValue(
+          Reflect.apply(callee, thisValue, natives),
+          `${name}()`,
+          host,
+        );
+        writeBackAppendedItems(args, natives, name, host, tools);
+        return result;
+      });
+      if (result !== null) return result;
     }
-    return guardNativeCall(name, () => {
-      const result = fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
-      writeBackAppendedItems(args, natives, name, host, tools);
-      return result;
-    });
+    const lifted =
+      host === null && (args.length === 0 || hasKnownKind(args[0]))
+        ? liftNativeClosure(callee, name, (value, valueName) =>
+            fromNativeValue(value, valueName, null),
+          )
+        : null;
+    if (lifted !== null) {
+      return tools.call(lifted, args, fromNativeValue(thisValue, name, null));
+    }
+    for (const argument of args) tools.markEscaped(argument);
+    return natives === null ? onUncertain(args) : refusedStandInAccess(name);
   },
   getOwnProperty: (key) =>
     Object.prototype.propertyIsEnumerable.call(callee, key)
@@ -424,6 +456,8 @@ const liftObject = (
   ancestors: ReadonlySet<object>,
 ): StaticValue => {
   if (ancestors.has(value)) return unknownValue(`${name}: cyclic native value`);
+  const intrinsic = getIntrinsicMemberGlobal(value);
+  if (intrinsic) return intrinsic;
   const path = new Set(ancestors).add(value);
   if (Array.isArray(value)) {
     return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)));
@@ -483,6 +517,7 @@ const liftValue = (
     case "function":
       return (
         standInValues.get(value) ??
+        getIntrinsicMemberGlobal(value) ??
         pureNativeFunction(name, value, undefined, host, () =>
           unknownValue(`${name}() on dynamic arguments`),
         )
