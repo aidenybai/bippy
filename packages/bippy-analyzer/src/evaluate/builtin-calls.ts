@@ -156,6 +156,7 @@ import {
   getOwnEnumerableEntries as getModeledOwnEnumerableEntries,
   getOwnPropertyDescriptor,
   getKnownObjectSymbols,
+  getItemValue,
   getListLength,
   getObjectProperty,
   getPropertyName,
@@ -1429,8 +1430,10 @@ const callGlobal = (
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
       const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
-      if (name === "Number.isNaN" && isFiniteUnknownNumber(first)) return FALSE_VALUE;
-      if (name === "Number.isFinite" && isFiniteUnknownNumber(first)) return TRUE_VALUE;
+      if (isFiniteUnknownNumber(first)) {
+        if (name === "Number.isNaN") return FALSE_VALUE;
+        if (name === "Number.isFinite") return TRUE_VALUE;
+      }
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
@@ -2869,14 +2872,14 @@ export const evaluateBuiltinCall = (
             continue;
           }
           isIndexKnown = false;
+          const reduced = callUncertainCallback(
+            interpreter,
+            first,
+            [accumulator, getItemValue(item), indexValue, receiver],
+            context,
+            item.kind === "repeat",
+          );
           if (item.kind === "repeat") {
-            const reduced = callUncertainCallback(
-              interpreter,
-              first,
-              [accumulator, item.item, indexValue, receiver],
-              context,
-              true,
-            );
             if (reduced !== accumulator) {
               accumulator = widenLoopCarriedValue(
                 branchValue([reduced, accumulator], "repeated items", location),
@@ -2885,13 +2888,6 @@ export const evaluateBuiltinCall = (
             }
             continue;
           }
-          const reduced = callUncertainCallback(
-            interpreter,
-            first,
-            [accumulator, item.value, indexValue, receiver],
-            context,
-            false,
-          );
           accumulator = branchValue(
             [reduced, accumulator],
             item.reason,

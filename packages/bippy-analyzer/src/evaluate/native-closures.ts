@@ -5,6 +5,7 @@ import type {
   FunctionLikeNode,
   ModuleRecord,
   ParsedSourceFile,
+  Scope,
   StaticClassValue,
   StaticFunctionValue,
   StaticValue,
@@ -19,18 +20,12 @@ import { objectValue, setObjectProperty } from "./values.js";
 
 export type LiftedCallable = StaticFunctionValue | StaticClassValue;
 
-/**
- * A native function in the interpreter's terms: its source, which
- * `Function.prototype.toString` still has, closed over the variables V8 kept
- * for it. The engine reports what its debugger sees, so a function no source
- * file describes (`cva(...)`'s returned closure, a package's minified internals)
- * can be evaluated on symbolic arguments instead of running natively only on
- * known ones.
- */
-
-/** Native values in the interpreter's terms, as `fromNativeValue` lifts them. */
-export interface NativeValueLifter {
-  (value: unknown, name: string): StaticValue;
+/** What a lift needs from the interpreter. */
+export interface NativeLiftTools {
+  /** A native value in the interpreter's terms, as `fromNativeValue` lifts it. */
+  lift: (value: unknown, name: string) => StaticValue;
+  /** Evaluates a thunk the lift built, `() => class ...`, to the class it defines. */
+  defineClass: (thunk: StaticFunctionValue) => StaticValue;
 }
 
 const NATIVE_CODE_SOURCE = /\{\s*\[native code\]\s*\}\s*$/;
@@ -91,28 +86,29 @@ const collectSourceNames = (node: Node, source: NativeSource): void => {
 
 const getSourceText = (callee: Function): string => Function.prototype.toString.call(callee).trim();
 
+const parseNativeSource = (text: string, name: string): NativeSource | null => {
+  if (NATIVE_CODE_SOURCE.test(text)) return null;
+  const file = parseSourceText(`native-closure:${name}`, toProgramText(text), "js");
+  const node = file.errors.length === 0 ? findFunctionNode(file) : null;
+  if (node === null) return null;
+  const source: NativeSource = {
+    file,
+    node,
+    identifiers: new Set(),
+    hasSuper: false,
+    isClass: CLASS_SOURCE.test(text),
+  };
+  collectSourceNames(node, source);
+  return source;
+};
+
 const sources = new WeakMap<Function, NativeSource | null>();
 
 /** `callee`'s source parsed once; null for a function without one (native code, a bound function) or whose source does not parse. */
 export const getNativeSource = (callee: Function, name: string): NativeSource | null => {
   const cached = sources.get(callee);
   if (cached !== undefined) return cached;
-  const text = getSourceText(callee);
-  let source: NativeSource | null = null;
-  if (!NATIVE_CODE_SOURCE.test(text)) {
-    const file = parseSourceText(`native-closure:${name}`, toProgramText(text), "js");
-    const node = file.errors.length === 0 ? findFunctionNode(file) : null;
-    if (node !== null) {
-      source = {
-        file,
-        node,
-        identifiers: new Set(),
-        hasSuper: false,
-        isClass: CLASS_SOURCE.test(text),
-      };
-      collectSourceNames(node, source);
-    }
-  }
+  const source = parseNativeSource(getSourceText(callee), name);
   sources.set(callee, source);
   return source;
 };
@@ -177,117 +173,129 @@ export const hasKnownKind = (value: StaticValue): boolean => {
   }
 };
 
-/** Evaluates a thunk the lift built, `() => class ...`, to the class it defines. */
-export interface ClassThunkEvaluator {
-  (thunk: StaticFunctionValue): StaticValue;
-}
-
 const lifted = new WeakMap<Function, LiftedCallable | null>();
 
 /** A bound function as its target over the receiver and leading arguments `bind` fixed. */
 const liftBoundFunction = (
   callee: Function,
   name: string,
-  lift: NativeValueLifter,
-  defineClass: ClassThunkEvaluator,
+  tools: NativeLiftTools,
 ): StaticFunctionValue | null => {
   const bound = inspectBoundFunction(callee);
   if (bound === null) return null;
-  const target = liftNativeClosure(bound.target, name, lift, defineClass);
+  const target = liftNativeClosure(bound.target, name, tools);
   if (target === null || target.kind !== "function") return null;
   return {
     ...target,
-    boundThis: lift(bound.boundThis, `${name}.this`),
-    boundArgs: bound.boundArgs.map((argument, index) => lift(argument, `${name}[${index}]`)),
+    boundThis: tools.lift(bound.boundThis, `${name}.this`),
+    boundArgs: bound.boundArgs.map((argument, index) => tools.lift(argument, `${name}[${index}]`)),
   };
 };
 
 /**
  * A captured class as the interpreter's own, so a lifted class that extends
  * it inherits its members and `instanceof` decides against it; any other
- * captured value as `lift` reads it.
+ * captured value as `tools.lift` reads it.
  */
-const liftCaptured = (
-  value: unknown,
-  name: string,
-  lift: NativeValueLifter,
-  defineClass: ClassThunkEvaluator,
-): StaticValue =>
-  (isClassSource(value) ? liftNativeClosure(value, name, lift, defineClass) : null) ??
-  lift(value, name);
+const liftCaptured = (value: unknown, name: string, tools: NativeLiftTools): StaticValue =>
+  (isClassSource(value) ? liftNativeClosure(value, name, tools) : null) ?? tools.lift(value, name);
 
-const liftClosure = (
+/**
+ * The scope `callee`'s source resolves its free names in: the variables it
+ * captured and, for a class, the parent it extends (see `getHeritageName`).
+ */
+const createClosureScope = (
   callee: Function,
   name: string,
-  lift: NativeValueLifter,
-  defineClass: ClassThunkEvaluator,
-): LiftedCallable | null => {
-  const source = getNativeSource(callee, name);
-  if (source === null) return liftBoundFunction(callee, name, lift, defineClass);
-  const { file, node, isClass } = source;
-  if (source.hasSuper && !isClass) return null;
-  const captured = getCapturedBindings(callee, source);
-  if (captured === null) return null;
+  source: NativeSource,
+  captured: CapturedBinding[],
+  tools: NativeLiftTools,
+): Scope => {
   const scope = createScope(null);
   for (const binding of captured) {
     declareInScope(
       scope,
       binding.name,
-      liftCaptured(binding.value, `${name}.${binding.name}`, lift, defineClass),
+      liftCaptured(binding.value, `${name}.${binding.name}`, tools),
     );
   }
-  const heritage = isClass ? getHeritageName(node) : null;
+  const heritage = source.isClass ? getHeritageName(source.node) : null;
   if (heritage !== null && !scope.bindings.has(heritage)) {
     declareInScope(
       scope,
       heritage,
-      liftCaptured(Object.getPrototypeOf(callee), `${name}.${heritage}`, lift, defineClass),
+      liftCaptured(Object.getPrototypeOf(callee), `${name}.${heritage}`, tools),
     );
   }
+  return scope;
+};
+
+/** `callee.prototype`, lifted and made to name the function as its `constructor`, on the function's own properties. */
+const liftPrototype = (
+  callee: Function,
+  name: string,
+  functionValue: StaticFunctionValue,
+  tools: NativeLiftTools,
+): void => {
+  const prototype: unknown = Object.getOwnPropertyDescriptor(callee, "prototype")?.value;
+  if (typeof prototype !== "object" || prototype === null) return;
+  const liftedPrototype = tools.lift(prototype, `${name}.prototype`);
+  if (liftedPrototype.kind === "object") {
+    setObjectProperty(liftedPrototype, "constructor", functionValue);
+  }
+  setObjectProperty(functionValue.properties, "prototype", liftedPrototype);
+};
+
+const liftClosure = (
+  callee: Function,
+  name: string,
+  tools: NativeLiftTools,
+): LiftedCallable | null => {
+  const source = getNativeSource(callee, name);
+  if (source === null) return liftBoundFunction(callee, name, tools);
+  if (source.hasSuper && !source.isClass) return null;
+  const captured = getCapturedBindings(callee, source);
+  if (captured === null) return null;
   const functionValue: StaticFunctionValue = {
     kind: "function",
-    node,
-    scope,
-    module: createSyntheticModule(file),
+    node: source.node,
+    scope: createClosureScope(callee, name, source, captured, tools),
+    module: createSyntheticModule(source.file),
     thisValue: null,
     superBinding: null,
     name: callee.name || null,
     properties: objectValue(),
   };
-  if (isClass) {
-    const classValue = defineClass(functionValue);
+  if (source.isClass) {
+    const classValue = tools.defineClass(functionValue);
     return classValue.kind === "class" ? classValue : null;
   }
-  const prototype: unknown = Object.getOwnPropertyDescriptor(callee, "prototype")?.value;
-  if (typeof prototype === "object" && prototype !== null) {
-    const liftedPrototype = lift(prototype, `${name}.prototype`);
-    if (liftedPrototype.kind === "object") {
-      setObjectProperty(liftedPrototype, "constructor", functionValue);
-    }
-    setObjectProperty(functionValue.properties, "prototype", liftedPrototype);
-  }
+  liftPrototype(callee, name, functionValue, tools);
   return functionValue;
 };
 
 /**
- * `callee` as an interpreter function or class over its captured variables (a
- * bound function as its target over what `bind` fixed), or null when it has
- * no source or its closure cannot be read. One lift per function: the closure
- * is read once and its captured objects keep one identity across calls, as
- * they do natively, and a class is defined once so `instanceof` agrees across
- * the instances it constructs. A class reached again while it is being
- * defined (two classes naming each other) is left to `lift`.
+ * `callee` as an interpreter function or class: its source, which
+ * `Function.prototype.toString` still has, over the variables V8 kept for it
+ * (a bound function as its target over what `bind` fixed), so a function no
+ * source file describes (`cva(...)`'s returned closure, a package's minified
+ * internals) is evaluated on symbolic arguments instead of running natively
+ * only on known ones. Null when it has no source or its closure cannot be
+ * read. One lift per function: the closure is read once and its captured
+ * objects keep one identity across calls, as they do natively, and a class is
+ * defined once so `instanceof` agrees across the instances it constructs. A
+ * class reached again while it is being defined (two classes naming each
+ * other) is left to `tools.lift`.
  */
 export const liftNativeClosure = (
   callee: Function,
   name: string,
-  lift: NativeValueLifter,
-  defineClass: ClassThunkEvaluator,
+  tools: NativeLiftTools,
 ): LiftedCallable | null => {
   const cached = lifted.get(callee);
   if (cached !== undefined) return cached;
   lifted.set(callee, null);
-  const value = liftClosure(callee, name, lift, defineClass);
+  const value = liftClosure(callee, name, tools);
   lifted.set(callee, value);
   return value;
 };

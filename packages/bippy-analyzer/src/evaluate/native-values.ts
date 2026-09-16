@@ -71,13 +71,11 @@ const isStandIn = (value: Function): boolean => standInValues.has(value);
  */
 const loweredContainers = new WeakMap<object, StaticValue>();
 
-const STAND_IN_REFUSAL = "a function the analysis holds cannot run natively";
-
 /** Native code reached a function only the interpreter can run. */
 class StandInAccessError extends Error {}
 
 const refuseStandInAccess = (): never => {
-  throw new StandInAccessError(STAND_IN_REFUSAL);
+  throw new StandInAccessError("a function the analysis holds cannot run natively");
 };
 
 const STAND_IN_HANDLER: ProxyHandler<() => void> = {
@@ -368,21 +366,36 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
-/** `call()`'s result, or null when native code reached a function only the interpreter can run or `call` declined it. */
-const runNatively = (name: string, call: () => StaticValue | null): StaticValue | null => {
+/** Why a native run's result cannot stand: it reached a function only the interpreter can run, or it wrote into its arguments. */
+interface NativeRefusal {
+  refusal: string;
+}
+
+const MUTATED_ARGUMENTS: NativeRefusal = { refusal: "wrote into its arguments" };
+
+const isRefusal = (outcome: StaticValue | NativeRefusal): outcome is NativeRefusal =>
+  "refusal" in outcome;
+
+const refusedValue = (name: string, { refusal }: NativeRefusal): StaticValue =>
+  unknownValue(`${name}() ${refusal}`);
+
+/** `call()`'s outcome; an exception is reported as an unknown rather than raised, since it would surface at runtime as an error boundary the static tree cannot place. */
+const runNatively = (
+  name: string,
+  call: () => StaticValue | NativeRefusal,
+): StaticValue | NativeRefusal => {
   try {
     return call();
   } catch (error) {
-    if (error instanceof StandInAccessError) return null;
+    if (error instanceof StandInAccessError) return { refusal: `threw: ${error.message}` };
     return unknownValue(`${name}() threw: ${describeError(error)}`);
   }
 };
 
-const refusedStandInAccess = (name: string): StaticValue =>
-  unknownValue(`${name}() threw: ${STAND_IN_REFUSAL}`);
-
-const guardNativeCall = (name: string, call: () => StaticValue): StaticValue =>
-  runNatively(name, call) ?? refusedStandInAccess(name);
+const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
+  const outcome = runNatively(name, call);
+  return isRefusal(outcome) ? refusedValue(name, outcome) : outcome;
+};
 
 /**
  * Whether the call wrote into its arguments: their native copies no longer
@@ -395,6 +408,15 @@ const hasMutatedArguments = (
   natives: unknown[],
   host: HostDocument | null,
 ): boolean => !isDeepStrictEqual(natives, toNativeArguments(args, host));
+
+/** Own properties every function has, which the interpreter answers itself rather than from a native's; a class's static methods, non-enumerable too, are its own. */
+const FUNCTION_INTRINSIC_KEYS: ReadonlySet<string> = new Set([
+  "length",
+  "name",
+  "prototype",
+  "arguments",
+  "caller",
+]);
 
 interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
@@ -422,8 +444,6 @@ const hasKnownSubject = (lifted: LiftedCallable, args: StaticValue[]): boolean =
  * yields `onUncertain(args)` when that source is unavailable.
  * `thisValue` is the native receiver of a method read off a native object;
  * undefined for a function called on whatever receiver the program gives it.
- * Exceptions are reported as unknowns rather than raised, since they would
- * surface at runtime as an error boundary the static tree cannot place.
  * Functions the host document owns are never lifted: its implementation is not
  * the program's.
  */
@@ -441,25 +461,24 @@ export const pureNativeFunction = (
       (isConstruct || nativeReceiver !== UNCERTAIN) &&
       (host !== null || !readsEnvironment(callee, name, isStandIn));
     const natives = isRunnable ? toNativeArguments(args, host) : null;
-    let isMutating = false;
-    if (natives !== null) {
-      const result = runNatively(name, () => {
-        const returned: unknown = isConstruct
-          ? Reflect.construct(callee, natives)
-          : Reflect.apply(callee, nativeReceiver, natives);
-        isMutating = hasMutatedArguments(args, natives, host);
-        return isMutating ? null : fromNativeValue(returned, `${name}()`, host);
-      });
-      if (result !== null) return result;
-    }
+    const outcome =
+      natives === null
+        ? null
+        : runNatively(name, () => {
+            const returned: unknown = isConstruct
+              ? Reflect.construct(callee, natives)
+              : Reflect.apply(callee, nativeReceiver, natives);
+            return hasMutatedArguments(args, natives, host)
+              ? MUTATED_ARGUMENTS
+              : fromNativeValue(returned, `${name}()`, host);
+          });
+    if (outcome !== null && !isRefusal(outcome)) return outcome;
     const lifted =
       host === null
-        ? liftNativeClosure(
-            callee,
-            name,
-            (value, valueName) => fromNativeValue(value, valueName, null),
-            (thunk) => tools.call(thunk, []),
-          )
+        ? liftNativeClosure(callee, name, {
+            lift: (value, valueName) => fromNativeValue(value, valueName, null),
+            defineClass: (thunk) => tools.call(thunk, []),
+          })
         : null;
     if (lifted !== null && hasKnownSubject(lifted, args)) {
       return isConstruct
@@ -467,10 +486,7 @@ export const pureNativeFunction = (
         : tools.call(lifted, args, receiver ?? fromNativeValue(thisValue, name, null));
     }
     for (const argument of args) tools.markEscaped(argument);
-    if (natives === null) return onUncertain(args);
-    return isMutating
-      ? unknownValue(`${name}() wrote into its arguments`)
-      : refusedStandInAccess(name);
+    return outcome === null ? onUncertain(args) : refusedValue(name, outcome);
   };
   return {
     kind: "native-function",
@@ -483,15 +499,6 @@ export const pureNativeFunction = (
         : undefined,
   };
 };
-
-/** Own properties every function has, which the interpreter answers itself rather than from a native's; a class's static methods, non-enumerable too, are its own. */
-const FUNCTION_INTRINSIC_KEYS: ReadonlySet<string> = new Set([
-  "length",
-  "name",
-  "prototype",
-  "arguments",
-  "caller",
-]);
 
 const isReactElementTag = (tag: unknown): boolean =>
   typeof tag === "symbol" &&

@@ -50,12 +50,10 @@ const defineClassFromThunk = (thunk: StaticFunctionValue): StaticClassValue => {
 };
 
 const lift = (callee: Function) =>
-  liftNativeClosure(
-    callee,
-    callee.name || "closure",
-    (value, name) => fromNativeValue(value, name, null),
-    defineClassFromThunk,
-  );
+  liftNativeClosure(callee, callee.name || "closure", {
+    lift: (value, name) => fromNativeValue(value, name, null),
+    defineClass: defineClassFromThunk,
+  });
 
 const liftFunction = (callee: Function): StaticFunctionValue => {
   const value = lift(callee);

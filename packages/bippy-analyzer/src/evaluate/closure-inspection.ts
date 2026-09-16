@@ -1,14 +1,26 @@
 import inspector from "node:inspector";
 
-/**
- * The variables a function closed over, read through V8's `[[Scopes]]`
- * internal property: the debugger's view of a closure, which the language
- * itself never exposes. A session connected to its own thread answers `post`
- * before it returns, so the read is synchronous.
- */
+/** A variable a function closed over, by the name its source reads it under. */
 export interface CapturedBinding {
   name: string;
   value: unknown;
+}
+
+interface InspectorAnswer<Result> {
+  error: Error | null;
+  result: Result;
+}
+
+/** Reads a function's `[[Name]]` internal properties, which no language operation reads, while the session holds them. */
+interface InternalPropertiesReader<Result> {
+  (
+    activeSession: inspector.Session,
+    internals: Map<string, inspector.Runtime.RemoteObject>,
+  ): Result | null;
+}
+
+interface NameFilter {
+  (name: string): boolean;
 }
 
 const HOOK_KEY = Symbol.for("bippy-analyzer.closure-inspection");
@@ -45,15 +57,16 @@ const getSession = (): inspector.Session | null => {
   return session;
 };
 
+/** A session connected to its own thread answers before `post` returns, so the read is synchronous. */
 const post = <Result>(
   request: (callback: (error: Error | null, result: Result) => void) => void,
 ): Result => {
-  let outcome: { error: Error | null; result: Result } | null = null;
+  let answer: InspectorAnswer<Result> | null = null;
   request((error, result) => {
-    outcome = { error, result };
+    answer = { error, result };
   });
-  if (outcome === null) throw new Error("the inspector did not answer synchronously");
-  const { error, result } = outcome;
+  if (answer === null) throw new Error("the inspector did not answer synchronously");
+  const { error, result } = answer;
   if (error) throw error;
   return result;
 };
@@ -125,7 +138,6 @@ const getProperties = (
     activeSession.post("Runtime.getProperties", { objectId, ownProperties: true }, callback),
   );
 
-/** The engine's `[[Name]]` internal properties of an object, which no language operation reads. */
 const getInternalProperties = (
   activeSession: inspector.Session,
   objectId: string,
@@ -145,10 +157,7 @@ const releaseHandles = (activeSession: inspector.Session): void => {
 
 const inspectFunction = <Result>(
   callee: Function,
-  read: (
-    activeSession: inspector.Session,
-    internals: Map<string, inspector.Runtime.RemoteObject>,
-  ) => Result | null,
+  read: InternalPropertiesReader<Result>,
 ): Result | null => {
   const activeSession = getSession();
   if (activeSession === null) return null;
@@ -164,14 +173,16 @@ const inspectFunction = <Result>(
 };
 
 /**
- * Every variable `callee` captured that `isWanted` accepts, innermost scope
- * first; a name shadowed by an inner scope appears once. Null when the process
- * has no inspector or the read failed, so the caller cannot mistake an
- * unreadable closure for one that captured nothing.
+ * Every variable `callee` captured that `isWanted` accepts, read through V8's
+ * `[[Scopes]]`: the debugger's view of a closure, which the language itself
+ * never exposes. Innermost scope first; a name shadowed by an inner scope
+ * appears once. Null when the process has no inspector or the read failed, so
+ * the caller cannot mistake an unreadable closure for one that captured
+ * nothing.
  */
 export const inspectClosure = (
   callee: Function,
-  isWanted: (name: string) => boolean = () => true,
+  isWanted: NameFilter = () => true,
 ): CapturedBinding[] | null =>
   inspectFunction(callee, (activeSession, internals) => {
     const scopes = internals.get("[[Scopes]]")?.objectId;
