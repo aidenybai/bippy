@@ -9,7 +9,11 @@ import type {
   StaticFunctionValue,
   StaticValue,
 } from "../types.js";
-import { inspectBoundFunction, inspectClosure } from "./closure-inspection.js";
+import {
+  type CapturedBinding,
+  inspectBoundFunction,
+  inspectClosure,
+} from "./closure-inspection.js";
 import { createScope, declareInScope } from "./scope.js";
 import { objectValue, setObjectProperty } from "./values.js";
 
@@ -70,16 +74,69 @@ const getHeritageName = (thunk: FunctionLikeNode): string | null => {
     : null;
 };
 
-interface SourceNames {
+/** A native function's source, parsed: the function node and the names it may resolve from its closure. */
+export interface NativeSource {
+  file: ParsedSourceFile;
+  node: FunctionLikeNode;
   identifiers: Set<string>;
   hasSuper: boolean;
+  isClass: boolean;
 }
 
-const collectSourceNames = (node: Node, names: SourceNames): void => {
-  if (node.type === "Identifier") names.identifiers.add(node.name);
-  if (node.type === "Super") names.hasSuper = true;
-  forEachChildNode(node, (child) => collectSourceNames(child, names));
+const collectSourceNames = (node: Node, source: NativeSource): void => {
+  if (node.type === "Identifier") source.identifiers.add(node.name);
+  if (node.type === "Super") source.hasSuper = true;
+  forEachChildNode(node, (child) => collectSourceNames(child, source));
 };
+
+const getSourceText = (callee: Function): string => Function.prototype.toString.call(callee).trim();
+
+const sources = new WeakMap<Function, NativeSource | null>();
+
+/** `callee`'s source parsed once; null for a function without one (native code, a bound function) or whose source does not parse. */
+export const getNativeSource = (callee: Function, name: string): NativeSource | null => {
+  const cached = sources.get(callee);
+  if (cached !== undefined) return cached;
+  const text = getSourceText(callee);
+  let source: NativeSource | null = null;
+  if (!NATIVE_CODE_SOURCE.test(text)) {
+    const file = parseSourceText(`native-closure:${name}`, toProgramText(text), "js");
+    const node = file.errors.length === 0 ? findFunctionNode(file) : null;
+    if (node !== null) {
+      source = {
+        file,
+        node,
+        identifiers: new Set(),
+        hasSuper: false,
+        isClass: CLASS_SOURCE.test(text),
+      };
+      collectSourceNames(node, source);
+    }
+  }
+  sources.set(callee, source);
+  return source;
+};
+
+const capturedBindings = new WeakMap<Function, CapturedBinding[] | null>();
+
+/**
+ * The variables `callee` closed over that its source names, read once: the
+ * captured objects keep one identity across everything the analysis does with
+ * them, as they do natively. Null when the closure cannot be read.
+ */
+export const getCapturedBindings = (
+  callee: Function,
+  source: NativeSource,
+): CapturedBinding[] | null => {
+  const cached = capturedBindings.get(callee);
+  if (cached !== undefined) return cached;
+  const captured = inspectClosure(callee, (name) => source.identifiers.has(name));
+  capturedBindings.set(callee, captured);
+  return captured;
+};
+
+export const isClassSource = (value: unknown): value is Function =>
+  typeof value === "function" && CLASS_SOURCE.test(getSourceText(value));
 
 const createSyntheticModule = (file: ParsedSourceFile): ModuleRecord => ({
   filePath: file.filePath,
@@ -145,8 +202,6 @@ const liftBoundFunction = (
   };
 };
 
-const getSource = (callee: Function): string => Function.prototype.toString.call(callee).trim();
-
 /**
  * A captured class as the interpreter's own, so a lifted class that extends
  * it inherits its members and `instanceof` decides against it; any other
@@ -158,9 +213,8 @@ const liftCaptured = (
   lift: NativeValueLifter,
   defineClass: ClassThunkEvaluator,
 ): StaticValue =>
-  (typeof value === "function" && CLASS_SOURCE.test(getSource(value))
-    ? liftNativeClosure(value, name, lift, defineClass)
-    : null) ?? lift(value, name);
+  (isClassSource(value) ? liftNativeClosure(value, name, lift, defineClass) : null) ??
+  lift(value, name);
 
 const liftClosure = (
   callee: Function,
@@ -168,20 +222,14 @@ const liftClosure = (
   lift: NativeValueLifter,
   defineClass: ClassThunkEvaluator,
 ): LiftedCallable | null => {
-  const source = getSource(callee);
-  if (NATIVE_CODE_SOURCE.test(source)) return liftBoundFunction(callee, name, lift, defineClass);
-  const isClass = CLASS_SOURCE.test(source);
-  const file = parseSourceText(`native-closure:${name}`, toProgramText(source), "js");
-  const node = file.errors.length === 0 ? findFunctionNode(file) : null;
-  if (node === null) return null;
-  const names: SourceNames = { identifiers: new Set(), hasSuper: false };
-  collectSourceNames(node, names);
-  if (names.hasSuper && !isClass) return null;
-  const captured = inspectClosure(callee);
+  const source = getNativeSource(callee, name);
+  if (source === null) return liftBoundFunction(callee, name, lift, defineClass);
+  const { file, node, isClass } = source;
+  if (source.hasSuper && !isClass) return null;
+  const captured = getCapturedBindings(callee, source);
   if (captured === null) return null;
   const scope = createScope(null);
   for (const binding of captured) {
-    if (!names.identifiers.has(binding.name)) continue;
     declareInScope(
       scope,
       binding.name,

@@ -82,7 +82,11 @@ called function is lifted into the interpreter (`native-closures.ts`): its `toSt
 parsed and the variables it closed over are read through V8's `[[Scopes]]` via `node:inspector`
 (`closure-inspection.ts`, after `js-cloudpickle`), so `map(list, (item) => <Row/>)` yields `Row`
 fibers, `set` writes into the interpreter's `config`, and a `partial()`-built wrapper calls back
-into the program's function.
+into the program's function. A function that reads the clock or randomness, itself or through
+what it calls (`isToday`, `formatDistanceToNow`, `random`; `environment-reads.ts` scans the
+parsed source and follows the closure), is never run natively: evaluated from source over the
+interpreter's clock and `Math.random` models, its result depends on the wall clock as the
+runtime's does, instead of being a constant of the analysis's own time.
 
 ### Evaluation (`src/evaluate`)
 

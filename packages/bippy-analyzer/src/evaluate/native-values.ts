@@ -23,6 +23,7 @@ import {
   getIntrinsicMemberGlobal,
   getNamedSymbolValue,
 } from "./host-globals.js";
+import { readsEnvironment } from "./environment-reads.js";
 import { hasKnownKind, type LiftedCallable, liftNativeClosure } from "./native-closures.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
@@ -59,6 +60,8 @@ const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
  */
 const standIns = new WeakMap<StaticValue, object>();
 const standInValues = new WeakMap<object, StaticValue>();
+
+const isStandIn = (value: Function): boolean => standInValues.has(value);
 
 /**
  * The interpreter's containers by the native copies `toNative` made of them,
@@ -412,10 +415,11 @@ const hasKnownSubject = (lifted: LiftedCallable, args: StaticValue[]): boolean =
 /**
  * `callee` as a function the interpreter may invoke or construct: it runs
  * natively once every argument (and, for a method, the receiver) is known and
- * it leaves them as they were; otherwise, when it writes into an argument, or
- * when it calls back into a function only the interpreter can run, its own
- * source is evaluated over the variables it captured (`liftNativeClosure`),
- * and it yields `onUncertain(args)` when that source is unavailable.
+ * it leaves them as they were; otherwise, when it writes into an argument,
+ * when it calls back into a function only the interpreter can run, or when it
+ * reads the clock or randomness (`readsEnvironment`), its own source is
+ * evaluated over the variables it captured (`liftNativeClosure`), and it
+ * yields `onUncertain(args)` when that source is unavailable.
  * `thisValue` is the native receiver of a method read off a native object;
  * undefined for a function called on whatever receiver the program gives it.
  * Exceptions are reported as unknowns rather than raised, since they would
@@ -433,8 +437,10 @@ export const pureNativeFunction = (
   const run = (args: StaticValue[], tools: StubRenderTools, isConstruct: boolean): StaticValue => {
     const receiver = thisValue === undefined ? tools.thisValue : null;
     const nativeReceiver = receiver === null ? thisValue : toNativeReceiver(receiver, host);
-    const natives =
-      isConstruct || nativeReceiver !== UNCERTAIN ? toNativeArguments(args, host) : null;
+    const isRunnable =
+      (isConstruct || nativeReceiver !== UNCERTAIN) &&
+      (host !== null || !readsEnvironment(callee, name, isStandIn));
+    const natives = isRunnable ? toNativeArguments(args, host) : null;
     let isMutating = false;
     if (natives !== null) {
       const result = runNatively(name, () => {

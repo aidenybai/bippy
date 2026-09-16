@@ -164,12 +164,15 @@ const inspectFunction = <Result>(
 };
 
 /**
- * Every variable `callee` captured, innermost scope first; a name shadowed by
- * an inner scope appears once. Null when the process has no inspector or the
- * read failed, so the caller cannot mistake an unreadable closure for one that
- * captured nothing.
+ * Every variable `callee` captured that `isWanted` accepts, innermost scope
+ * first; a name shadowed by an inner scope appears once. Null when the process
+ * has no inspector or the read failed, so the caller cannot mistake an
+ * unreadable closure for one that captured nothing.
  */
-export const inspectClosure = (callee: Function): CapturedBinding[] | null =>
+export const inspectClosure = (
+  callee: Function,
+  isWanted: (name: string) => boolean = () => true,
+): CapturedBinding[] | null =>
   inspectFunction(callee, (activeSession, internals) => {
     const scopes = internals.get("[[Scopes]]")?.objectId;
     if (scopes === undefined) return [];
@@ -182,6 +185,7 @@ export const inspectClosure = (callee: Function): CapturedBinding[] | null =>
       for (const variable of getProperties(activeSession, scope.objectId).result) {
         if (variable.value === undefined || seen.has(variable.name)) continue;
         seen.add(variable.name);
+        if (!isWanted(variable.name)) continue;
         captured.push({
           name: variable.name,
           value: toLocalValue(activeSession, variable.value),
