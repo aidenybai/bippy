@@ -9,27 +9,26 @@ const fixtureDirectory = path.resolve(import.meta.dirname, "..");
 const vendorDirectory = path.join(fixtureDirectory, "public/vendor");
 const fixtureRequire = createRequire(path.join(fixtureDirectory, "package.json"));
 
+const UMD_BUILDS: ReadonlyMap<string, readonly string[]> = new Map([
+  ["react-18", ["react.development.js", "react.production.min.js"]],
+  ["react-dom-18", ["react-dom.development.js", "react-dom.production.min.js"]],
+]);
+
 mkdirSync(vendorDirectory, { recursive: true });
 
-const reactDirectory = path.dirname(fixtureRequire.resolve("react-18/package.json"));
-const reactDomDirectory = path.dirname(fixtureRequire.resolve("react-dom-18/package.json"));
-
-for (const umdFileName of ["react.development.js", "react.production.min.js"]) {
-  copyFileSync(
-    path.join(reactDirectory, "umd", umdFileName),
-    path.join(vendorDirectory, umdFileName),
-  );
-}
-for (const umdFileName of ["react-dom.development.js", "react-dom.production.min.js"]) {
-  copyFileSync(
-    path.join(reactDomDirectory, "umd", umdFileName),
-    path.join(vendorDirectory, umdFileName),
-  );
+for (const [packageName, umdFileNames] of UMD_BUILDS) {
+  const packageDirectory = path.dirname(fixtureRequire.resolve(`${packageName}/package.json`));
+  for (const umdFileName of umdFileNames) {
+    copyFileSync(
+      path.join(packageDirectory, "umd", umdFileName),
+      path.join(vendorDirectory, umdFileName),
+    );
+  }
 }
 
 await build({
   bundle: true,
-  entryPoints: [path.join(fixtureDirectory, "scripts/bippy-entry.js")],
+  entryPoints: [path.join(fixtureDirectory, "scripts/bippy-entry.ts")],
   format: "iife",
   globalName: "Bippy",
   outfile: path.join(vendorDirectory, "bippy.iife.js"),
