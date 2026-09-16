@@ -12,9 +12,9 @@ import type { MutableHeapValue } from "../evaluate/heap-journal.js";
 import { isUndecided } from "../evaluate/type-predicates.js";
 import type { StaticObjectValue, StaticValue, StubRenderTools } from "../types.js";
 
-// The static-value plumbing deep-merge helpers (lodash `merge`, `deepmerge`)
-// share: the containers they walk, their own enumerable keys, and journaled
-// member reads and writes.
+// The static-value plumbing of the modeled deep-merge helpers (lodash `merge`):
+// the containers they walk, their own enumerable keys, and journaled member
+// reads and writes.
 
 export const isPlainObjectValue = (value: StaticValue): value is StaticObjectValue =>
   value.kind === "object" && value.constructedBy === undefined && value.prototype === undefined;

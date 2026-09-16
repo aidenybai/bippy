@@ -74,12 +74,15 @@ imports, exports and top-level bindings, and resolves `(module, exportName)` acr
 re-exports, `export *` chains, barrels and cycles; ambiguous or missing exports are reported, not
 collapsed. External packages are opaque unless `resolveExternalPackages`/
 `externalPackageAllowList` opts them in, or a framework adapter models them. Pure packages
-(`clsx`, `lodash-es`, `date-fns`, …; `src/libraries/pure-packages.ts`) run natively on known
-arguments; on a symbolic argument, or when native code calls back into an interpreted function,
-the called function is lifted into the interpreter (`native-closures.ts`): its `toString` source
-is parsed and the variables it closed over are read through V8's `[[Scopes]]` via
-`node:inspector` (`closure-inspection.ts`, after `js-cloudpickle`), so `map(list, (item) => <Row/>)`
-yields `Row` fibers and a `partial()`-built wrapper calls back into the program's function.
+(`clsx`, `lodash-es`, `date-fns`, `deepmerge`, …; `src/libraries/pure-packages.ts`) run natively
+on known arguments, and a container the call hands back (`identity(config)`, an item of `sortBy`'s
+result) is the program's own; on a symbolic argument, when the call writes into an argument
+(`set(config, path, value)`), or when native code calls back into an interpreted function, the
+called function is lifted into the interpreter (`native-closures.ts`): its `toString` source is
+parsed and the variables it closed over are read through V8's `[[Scopes]]` via `node:inspector`
+(`closure-inspection.ts`, after `js-cloudpickle`), so `map(list, (item) => <Row/>)` yields `Row`
+fibers, `set` writes into the interpreter's `config`, and a `partial()`-built wrapper calls back
+into the program's function.
 
 ### Evaluation (`src/evaluate`)
 
