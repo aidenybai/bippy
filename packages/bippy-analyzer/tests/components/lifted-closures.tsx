@@ -1,5 +1,7 @@
 import { clsx } from "clsx";
-import { isEmpty, map, partial } from "lodash-es";
+import { format } from "date-fns";
+import { flow, isEmpty, map, partial } from "lodash-es";
+import numeral from "numeral";
 
 /** The wall clock decides the words: a list of strings whose count the static side does not know. */
 const words = new Date().toISOString().split("-");
@@ -31,8 +33,34 @@ const Words = () => (
   </section>
 );
 
+/** `flow` composes interpreted functions natively; the composition itself is lodash's source, called back into the interpreter. */
+const shout = flow(
+  (word: string) => word.toUpperCase(),
+  (word: string) => `${word}!`,
+);
+
+const stamp = Date.now();
+
+/**
+ * date-fns formats a date the clock decides from its own source; `numeral`'s
+ * constructor function is lifted with its prototype, so the instance it builds
+ * over an unknown count finds `format`.
+ */
+const Summary = () => (
+  <footer>
+    <time>{format(new Date(stamp), "yyyy")}</time>
+    <data>{numeral(words.length).format("0,0")}</data>
+    <b>{shout(words.join(""))}</b>
+  </footer>
+);
+
 export const isPartial = true;
 
 export default function LiftedClosures() {
-  return <Words />;
+  return (
+    <>
+      <Words />
+      <Summary />
+    </>
+  );
 }
