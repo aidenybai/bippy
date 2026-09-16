@@ -8,9 +8,9 @@ import type {
   StaticFunctionValue,
   StaticValue,
 } from "../types.js";
-import { inspectClosure } from "./closure-inspection.js";
+import { inspectBoundFunction, inspectClosure } from "./closure-inspection.js";
 import { createScope, declareInScope } from "./scope.js";
-import { objectValue } from "./values.js";
+import { objectValue, setObjectProperty } from "./values.js";
 
 /**
  * A native function in the interpreter's terms: its source, which
@@ -102,13 +102,30 @@ export const hasKnownKind = (value: StaticValue): boolean => {
 
 const lifted = new WeakMap<Function, StaticFunctionValue | null>();
 
+/** A bound function as its target over the receiver and leading arguments `bind` fixed. */
+const liftBoundFunction = (
+  callee: Function,
+  name: string,
+  lift: NativeValueLifter,
+): StaticFunctionValue | null => {
+  const bound = inspectBoundFunction(callee);
+  if (bound === null) return null;
+  const target = liftNativeClosure(bound.target, name, lift);
+  if (target === null) return null;
+  return {
+    ...target,
+    boundThis: lift(bound.boundThis, `${name}.this`),
+    boundArgs: bound.boundArgs.map((argument, index) => lift(argument, `${name}[${index}]`)),
+  };
+};
+
 const liftClosure = (
   callee: Function,
   name: string,
   lift: NativeValueLifter,
 ): StaticFunctionValue | null => {
   const source = Function.prototype.toString.call(callee);
-  if (NATIVE_CODE_SOURCE.test(source)) return null;
+  if (NATIVE_CODE_SOURCE.test(source)) return liftBoundFunction(callee, name, lift);
   const programText = toProgramText(source);
   if (programText === null) return null;
   const file = parseSourceText(`native-closure:${name}`, programText, "js");
@@ -124,7 +141,7 @@ const liftClosure = (
     if (!names.identifiers.has(binding.name)) continue;
     declareInScope(scope, binding.name, lift(binding.value, `${name}.${binding.name}`));
   }
-  return {
+  const functionValue: StaticFunctionValue = {
     kind: "function",
     node,
     scope,
@@ -134,12 +151,21 @@ const liftClosure = (
     name: callee.name || null,
     properties: objectValue(),
   };
+  const prototype: unknown = Object.getOwnPropertyDescriptor(callee, "prototype")?.value;
+  if (typeof prototype === "object" && prototype !== null) {
+    const liftedPrototype = lift(prototype, `${name}.prototype`);
+    if (liftedPrototype.kind === "object") {
+      setObjectProperty(liftedPrototype, "constructor", functionValue);
+    }
+    setObjectProperty(functionValue.properties, "prototype", liftedPrototype);
+  }
+  return functionValue;
 };
 
 /**
- * `callee` as an interpreter function over its captured variables, or null
- * when it has no source (native and bound functions), is a class, or its
- * closure cannot be read. One lift per function: the closure is read once and
+ * `callee` as an interpreter function over its captured variables (a bound
+ * function as its target over what `bind` fixed), or null when it has no
+ * source, is a class, or its closure cannot be read. One lift per function: the closure is read once and
  * its captured objects keep one identity across calls, as they do natively.
  */
 export const liftNativeClosure = (

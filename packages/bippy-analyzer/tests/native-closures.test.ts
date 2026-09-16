@@ -8,7 +8,12 @@ import { fromNativeValue } from "../src/evaluate/native-values.js";
 import { lookupScope } from "../src/evaluate/scope.js";
 import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer, objectFromRecord } from "../src/index.js";
-import { listValue, unknownPrimitiveValue } from "../src/evaluate/values.js";
+import {
+  getFunctionPrototype,
+  getObjectProperty,
+  listValue,
+  unknownPrimitiveValue,
+} from "../src/evaluate/values.js";
 
 const createCounter = (step: number, label: string) => {
   let count = 0;
@@ -74,9 +79,33 @@ describe("lifting native closures", () => {
 
   it("leaves functions without readable source alone", () => {
     expect(lift(Math.max)).toBeNull();
-    expect(lift(createCounter(1, "bound").bind(null))).toBeNull();
+    expect(lift(Math.max.bind(null, 1))).toBeNull();
     expect(lift(class Widget {})).toBeNull();
     expect(lift(Function("return 1"))).not.toBeNull();
+  });
+
+  it("lifts a bound function as its target over the receiver and arguments bind fixed", () => {
+    const greet = function (this: { prefix: string }, word: string, mark: string) {
+      return `${this.prefix} ${word}${mark}`;
+    };
+    const lifted = lift(greet.bind({ prefix: "hi" }, "there"));
+    expect(lifted?.node.type).toBe("FunctionExpression");
+    expect(lifted?.boundThis?.kind).toBe("object");
+    expect(lifted?.boundArgs).toEqual([{ kind: "primitive", value: "there" }]);
+  });
+
+  it("lifts a constructor's prototype so its instances find their methods", () => {
+    function Counter(this: { count: number }, start: number) {
+      this.count = start;
+    }
+    Counter.prototype.next = function (this: { count: number }) {
+      return ++this.count;
+    };
+    const lifted = lift(Counter);
+    const prototype = getFunctionPrototype(lifted!);
+    if (prototype.kind !== "object") throw new Error(`prototype is ${prototype.kind}`);
+    expect(getObjectProperty(prototype, "next").kind).toBe("native-function");
+    expect(getObjectProperty(prototype, "constructor")).toBe(lifted);
   });
 
   it("keeps a method's source parseable and a captured intrinsic canonical", () => {

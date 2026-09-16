@@ -1,5 +1,5 @@
 import { createContext, runInContext } from "node:vm";
-import type { StaticValue, UnknownPrimitiveType } from "../types.js";
+import type { StaticSymbolValue, StaticValue, UnknownPrimitiveType } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostValueKind } from "../host/realm-table.js";
@@ -146,6 +146,16 @@ export const getIntrinsicMemberGlobal = (shared: object): StaticValue | null => 
   const language = getLanguageCounterpart(shared);
   const path = language === null ? undefined : getLanguageObjects().paths.get(language);
   return path === undefined ? null : { kind: "global", name: path };
+};
+
+/** A symbol as the program names it: by its registry key or its well-known path (`Symbol.iterator`); null for a `Symbol(description)` this process allocated. */
+export const getNamedSymbolValue = (symbol: symbol): StaticSymbolValue | null => {
+  const registryKey = Symbol.keyFor(symbol);
+  if (registryKey !== undefined) return { kind: "symbol", key: registryKey };
+  const wellKnownName = Object.getOwnPropertyNames(Symbol).find(
+    (name) => Reflect.get(Symbol, name) === symbol,
+  );
+  return wellKnownName === undefined ? null : { kind: "symbol", key: `Symbol.${wellKnownName}` };
 };
 
 /** The language global that is the `constructor` of a native prototype (`Array` for `Array.prototype`); null when the prototype is not an intrinsic's. */

@@ -2357,3 +2357,23 @@ export const describeElementType = (type: StaticElementType): string => {
       return type.displayName ?? "unknown";
   }
 };
+
+const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  if (value.kind !== "primitive") return null;
+  const type = typeof value.value;
+  return type === "string" || type === "number" || type === "boolean" ? type : null;
+};
+
+/** A value after an unknown number of iterations changed it: an unknown of its primitive type when the alternatives share one, unknown otherwise. */
+export const widenLoopCarriedValue = (
+  value: StaticValue,
+  location: SourceLocation | null,
+): StaticValue => {
+  const alternatives = value.kind === "branch" ? value.alternatives : [value];
+  const types = new Set(alternatives.map(getPrimitiveType));
+  const [type] = types;
+  return types.size === 1 && type
+    ? unknownPrimitiveValue(type, "loop-carried value")
+    : unknownValue("loop-carried value", location);
+};

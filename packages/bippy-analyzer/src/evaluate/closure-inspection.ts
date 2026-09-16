@@ -94,7 +94,7 @@ const readUnserializable = (remote: inspector.Runtime.RemoteObject): unknown => 
   }
 };
 
-/** The live local value a remote handle refers to, pulled back through the same global hook. */
+/** The live local value a remote handle refers to, pulled back through the same global hook; strict, so a symbol is not boxed as `this`. */
 const toLocalValue = (
   activeSession: inspector.Session,
   remote: inspector.Runtime.RemoteObject,
@@ -109,7 +109,7 @@ const toLocalValue = (
       "Runtime.callFunctionOn",
       {
         objectId: remote.objectId,
-        functionDeclaration: `function () { ${HOOK_EXPRESSION} = this; }`,
+        functionDeclaration: `function () { "use strict"; ${HOOK_EXPRESSION} = this; }`,
       },
       callback,
     ),
@@ -125,11 +125,42 @@ const getProperties = (
     activeSession.post("Runtime.getProperties", { objectId, ownProperties: true }, callback),
   );
 
+/** The engine's `[[Name]]` internal properties of an object, which no language operation reads. */
+const getInternalProperties = (
+  activeSession: inspector.Session,
+  objectId: string,
+): Map<string, inspector.Runtime.RemoteObject> =>
+  new Map(
+    (getProperties(activeSession, objectId).internalProperties ?? []).flatMap((property) =>
+      property.value === undefined ? [] : [[property.name, property.value]],
+    ),
+  );
+
 const getScopeKind = (scope: inspector.Runtime.RemoteObject): string =>
   (scope.description ?? "").split(/[\s(]/, 1)[0].toLowerCase();
 
 const releaseHandles = (activeSession: inspector.Session): void => {
   activeSession.post("Runtime.releaseObjectGroup", { objectGroup: OBJECT_GROUP }, () => {});
+};
+
+const inspectFunction = <Result>(
+  callee: Function,
+  read: (
+    activeSession: inspector.Session,
+    internals: Map<string, inspector.Runtime.RemoteObject>,
+  ) => Result | null,
+): Result | null => {
+  const activeSession = getSession();
+  if (activeSession === null) return null;
+  try {
+    const remote = toRemoteObject(activeSession, callee);
+    if (remote.objectId === undefined) return null;
+    return read(activeSession, getInternalProperties(activeSession, remote.objectId));
+  } catch {
+    return null;
+  } finally {
+    releaseHandles(activeSession);
+  }
 };
 
 /**
@@ -138,15 +169,9 @@ const releaseHandles = (activeSession: inspector.Session): void => {
  * read failed, so the caller cannot mistake an unreadable closure for one that
  * captured nothing.
  */
-export const inspectClosure = (callee: Function): CapturedBinding[] | null => {
-  const activeSession = getSession();
-  if (activeSession === null) return null;
-  try {
-    const remote = toRemoteObject(activeSession, callee);
-    if (remote.objectId === undefined) return null;
-    const scopes = getProperties(activeSession, remote.objectId).internalProperties?.find(
-      (property) => property.name === "[[Scopes]]",
-    )?.value?.objectId;
+export const inspectClosure = (callee: Function): CapturedBinding[] | null =>
+  inspectFunction(callee, (activeSession, internals) => {
+    const scopes = internals.get("[[Scopes]]")?.objectId;
     if (scopes === undefined) return [];
     const seen = new Set<string>();
     const captured: CapturedBinding[] = [];
@@ -164,9 +189,34 @@ export const inspectClosure = (callee: Function): CapturedBinding[] | null => {
       }
     }
     return captured;
-  } catch {
-    return null;
-  } finally {
-    releaseHandles(activeSession);
-  }
-};
+  });
+
+/** What `Function.prototype.bind` combined into a bound function, which has no source of its own. */
+export interface BoundFunctionParts {
+  target: Function;
+  boundThis: unknown;
+  boundArgs: unknown[];
+}
+
+/**
+ * The function, receiver and leading arguments a bound function stands for,
+ * read through V8's `[[TargetFunction]]`, `[[BoundThis]]` and `[[BoundArgs]]`.
+ * Null for a function that is not bound, or when the read failed.
+ */
+export const inspectBoundFunction = (callee: Function): BoundFunctionParts | null =>
+  inspectFunction(callee, (activeSession, internals) => {
+    const target = internals.get("[[TargetFunction]]");
+    if (target === undefined) return null;
+    const targetValue = toLocalValue(activeSession, target);
+    if (typeof targetValue !== "function") return null;
+    const readInternal = (name: string): unknown => {
+      const internal = internals.get(name);
+      return internal === undefined ? undefined : toLocalValue(activeSession, internal);
+    };
+    const boundArgs = readInternal("[[BoundArgs]]");
+    return {
+      target: targetValue,
+      boundThis: readInternal("[[BoundThis]]"),
+      boundArgs: Array.isArray(boundArgs) ? boundArgs : [],
+    };
+  });

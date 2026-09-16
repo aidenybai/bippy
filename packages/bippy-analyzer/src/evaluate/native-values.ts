@@ -1,5 +1,6 @@
 import { describeError } from "../errors.js";
 import type {
+  StaticFunctionValue,
   StaticListValue,
   StaticNativeFunctionValue,
   StaticNativeObjectValue,
@@ -14,8 +15,14 @@ import type { HostDocument } from "../host/host-document.js";
 import type { HostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
 import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
+import { isClockDateValue } from "./clock-date.js";
+import { getCollectionKind } from "./collections.js";
 import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
-import { getIntrinsicGlobal, getIntrinsicMemberGlobal } from "./host-globals.js";
+import {
+  getIntrinsicGlobal,
+  getIntrinsicMemberGlobal,
+  getNamedSymbolValue,
+} from "./host-globals.js";
 import { hasKnownKind, liftNativeClosure } from "./native-closures.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
@@ -288,6 +295,13 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
     }
     case "object": {
       if (isUrlValue(value)) return toNativeUrl(value) ?? UNCERTAIN;
+      if (
+        value.constructedBy ||
+        value.prototype ||
+        isClockDateValue(value) ||
+        getCollectionKind(value) !== null
+      )
+        return UNCERTAIN;
       const keys = getKnownObjectKeys(value);
       if (keys === null) return UNCERTAIN;
       const record: Record<string, unknown> = {};
@@ -361,6 +375,18 @@ interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
+/** The receiver a native run gets: a value it stands for exactly; a modeled object would reach it as a copy, so the call is lifted instead. */
+const toNativeReceiver = (receiver: StaticValue, host: HostDocument | null): unknown =>
+  receiver.kind === "primitive" || receiver.kind === "native-object" || receiver.kind === "global"
+    ? toNative(receiver, host)
+    : UNCERTAIN;
+
+/** Whether the lifted function's first argument, a bound one included, is of known kind (see `hasKnownKind`). */
+const hasKnownSubject = (lifted: StaticFunctionValue, args: StaticValue[]): boolean => {
+  const subject = lifted.boundArgs?.[0] ?? args[0];
+  return subject === undefined || hasKnownKind(subject);
+};
+
 /** Items a callee appended to an array argument (`pathToRegexp(path, keys)`), written back to the list it stood for. */
 const writeBackAppendedItems = (
   args: StaticValue[],
@@ -382,14 +408,17 @@ const writeBackAppendedItems = (
 };
 
 /**
- * `callee` as a function the interpreter may invoke: it runs natively once every
- * argument is known; otherwise, or when it calls back into a function only the
- * interpreter can run, its own source is evaluated over the variables it
- * captured (`liftNativeClosure`), and it yields `onUncertain(args)` when that
- * source is unavailable. Exceptions are reported as unknowns rather than
- * raised, since they would surface at runtime as an error boundary the static
- * tree cannot place. Functions the host document owns are never lifted: its
- * implementation is not the program's.
+ * `callee` as a function the interpreter may invoke or construct: it runs
+ * natively once every argument (and, for a method, the receiver) is known;
+ * otherwise, or when it calls back into a function only the interpreter can
+ * run, its own source is evaluated over the variables it captured
+ * (`liftNativeClosure`), and it yields `onUncertain(args)` when that source is
+ * unavailable. `thisValue` is the native receiver of a method read off a native
+ * object; undefined for a function called on whatever receiver the program
+ * gives it. Exceptions are reported as unknowns rather than raised, since they
+ * would surface at runtime as an error boundary the static tree cannot place.
+ * Functions the host document owns are never lifted: its implementation is not
+ * the program's.
  */
 export const pureNativeFunction = (
   name: string,
@@ -397,15 +426,18 @@ export const pureNativeFunction = (
   thisValue: unknown,
   host: HostDocument | null,
   onUncertain: NativeCallFallback,
-): StaticNativeFunctionValue => ({
-  kind: "native-function",
-  name,
-  call: (args, tools) => {
-    const natives = toNativeArguments(args, host);
+): StaticNativeFunctionValue => {
+  const run = (args: StaticValue[], tools: StubRenderTools, isConstruct: boolean): StaticValue => {
+    const receiver = thisValue === undefined ? tools.thisValue : null;
+    const nativeReceiver = receiver === null ? thisValue : toNativeReceiver(receiver, host);
+    const natives =
+      isConstruct || nativeReceiver !== UNCERTAIN ? toNativeArguments(args, host) : null;
     if (natives !== null) {
       const result = runNatively(name, () => {
         const result = fromNativeValue(
-          Reflect.apply(callee, thisValue, natives),
+          isConstruct
+            ? Reflect.construct(callee, natives)
+            : Reflect.apply(callee, nativeReceiver, natives),
           `${name}()`,
           host,
         );
@@ -415,22 +447,30 @@ export const pureNativeFunction = (
       if (result !== null) return result;
     }
     const lifted =
-      host === null && (args.length === 0 || hasKnownKind(args[0]))
+      host === null
         ? liftNativeClosure(callee, name, (value, valueName) =>
             fromNativeValue(value, valueName, null),
           )
         : null;
-    if (lifted !== null) {
-      return tools.call(lifted, args, fromNativeValue(thisValue, name, null));
+    if (lifted !== null && hasKnownSubject(lifted, args)) {
+      return isConstruct
+        ? tools.construct(lifted, args)
+        : tools.call(lifted, args, receiver ?? fromNativeValue(thisValue, name, null));
     }
     for (const argument of args) tools.markEscaped(argument);
     return natives === null ? onUncertain(args) : refusedStandInAccess(name);
-  },
-  getOwnProperty: (key) =>
-    Object.prototype.propertyIsEnumerable.call(callee, key)
-      ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
-      : undefined,
-});
+  };
+  return {
+    kind: "native-function",
+    name,
+    call: (args, tools) => run(args, tools, false),
+    construct: (args, tools) => run(args, tools, true),
+    getOwnProperty: (key) =>
+      Object.prototype.propertyIsEnumerable.call(callee, key)
+        ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
+        : undefined,
+  };
+};
 
 const isReactElementTag = (tag: unknown): boolean =>
   typeof tag === "symbol" &&
@@ -513,7 +553,7 @@ const liftValue = (
     case "undefined":
       return primitiveValue(value);
     case "symbol":
-      return unknownValue(`${name}: symbol from native code`);
+      return getNamedSymbolValue(value) ?? unknownValue(`${name}: symbol from native code`);
     case "function":
       return (
         standInValues.get(value) ??

@@ -137,11 +137,11 @@ import type {
   StaticPrimitive,
   StaticUnknownPrimitiveValue,
   StaticValue,
+  StubRenderTools,
   TaskBinder,
   StyledComponentsTransformOptions,
   SuperBinding,
   TopLevelBinding,
-  UnknownPrimitiveType,
 } from "../types.js";
 import {
   INTRINSIC_PROTOTYPE_NAMES,
@@ -372,6 +372,7 @@ import {
   unknownPrimitiveValue,
   thrownValue,
   unknownValue,
+  widenLoopCarriedValue,
 } from "./values.js";
 import {
   createPathPredicate,
@@ -4550,34 +4551,7 @@ export class Interpreter {
           origin: "derived",
         };
       case "native-function":
-        return callee.call(args, {
-          readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
-          hooks: null,
-          callAwaited: (callee, calleeArgs) =>
-            this.callAwaited(callee, calleeArgs, context, location),
-          call: (callee, calleeArgs, thisValue) =>
-            this.callValue(callee, calleeArgs, context, location, {
-              thisValue,
-            }),
-          callDeferred: (callee, calleeArgs) =>
-            this.callDeferred(callee, calleeArgs, context, location),
-          captured: (captured, name) => this.captured(captured, name),
-          markEscaped: (value) => this.markEscaped(value),
-          queueMicrotask: (task) => this.queueMicrotask(task, context, location),
-          bindTask: (task) => this.bindTask(task, context, location),
-          runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
-          isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
-          setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
-          materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
-          project: this.project,
-          recordStateMutation: (state) => this.recordStateMutation(state),
-          realm: this.getRealm(context.environment),
-          pushItems: (list, items) => this.pushItems(list, items),
-          setItem: (list, index, value) => this.setItem(list, index, value),
-          nameHint: options.nameHint ?? null,
-          templateArgumentNames: options.templateArgumentNames ?? null,
-          environment: context.environment,
-        });
+        return callee.call(args, this.createNativeCallTools(context, location, options));
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
       case "proxy": {
@@ -4779,6 +4753,41 @@ export class Interpreter {
     return binding.construct(args);
   }
 
+  /** The tools a modeled function gets for the call `options` describe. */
+  private createNativeCallTools(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    options: CallValueOptions,
+  ): StubRenderTools {
+    return {
+      readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
+      hooks: null,
+      callAwaited: (callee, calleeArgs) => this.callAwaited(callee, calleeArgs, context, location),
+      call: (callee, calleeArgs, thisValue) =>
+        this.callValue(callee, calleeArgs, context, location, { thisValue }),
+      construct: (callee, calleeArgs) => this.construct(callee, calleeArgs, context, location),
+      thisValue: options.thisValue ?? null,
+      callDeferred: (callee, calleeArgs) =>
+        this.callDeferred(callee, calleeArgs, context, location),
+      captured: (captured, name) => this.captured(captured, name),
+      markEscaped: (value) => this.markEscaped(value),
+      queueMicrotask: (task) => this.queueMicrotask(task, context, location),
+      bindTask: (task) => this.bindTask(task, context, location),
+      runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
+      isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
+      setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+      materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
+      project: this.project,
+      recordStateMutation: (state) => this.recordStateMutation(state),
+      realm: this.getRealm(context.environment),
+      pushItems: (list, items) => this.pushItems(list, items),
+      setItem: (list, index, value) => this.setItem(list, index, value),
+      nameHint: options.nameHint ?? null,
+      templateArgumentNames: options.templateArgumentNames ?? null,
+      environment: context.environment,
+    };
+  }
+
   construct(
     callee: StaticValue,
     args: StaticValue[],
@@ -4788,7 +4797,11 @@ export class Interpreter {
     if (callee.kind === "global") {
       return evaluateBuiltinCall(this, callee, args, context, location, true);
     }
-    if (callee.kind === "native-function") return this.callValue(callee, args, context, location);
+    if (callee.kind === "native-function") {
+      return callee.construct
+        ? callee.construct(args, this.createNativeCallTools(context, location, {}))
+        : this.callValue(callee, args, context, location);
+    }
     if (callee.kind === "class") return constructClassInstance(this, callee, args, context);
     if (callee.kind === "function")
       return this.constructWithFunction(callee, args, context, location);
@@ -6596,7 +6609,7 @@ const widenMovedBindings = (
       if (after === undefined || after === before) continue;
       const joined = branchValue([before, after], "loop-carried value", location);
       if (countAlternatives(joined) === countAlternatives(before)) continue;
-      const widened = widenValue(joined, location);
+      const widened = widenLoopCarriedValue(joined, location);
       if (isPrimitiveOnly && widened.kind !== "unknown-primitive") continue;
       snapshot.scope.bindings.set(name, widened);
     }
@@ -6637,22 +6650,6 @@ const WRAPPER_SYMBOL_KEYS = {
   "forward-ref": "react.forward_ref",
   lazy: "react.lazy",
 } as const;
-
-const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
-  if (value.kind === "unknown-primitive") return value.primitiveType;
-  if (value.kind !== "primitive") return null;
-  const type = typeof value.value;
-  return type === "string" || type === "number" || type === "boolean" ? type : null;
-};
-
-const widenValue = (value: StaticValue, location: SourceLocation): StaticValue => {
-  const alternatives = value.kind === "branch" ? value.alternatives : [value];
-  const types = new Set(alternatives.map(getPrimitiveType));
-  const [type] = types;
-  return types.size === 1 && type
-    ? unknownPrimitiveValue(type, "loop-carried value")
-    : unknownValue("loop-carried value", location);
-};
 
 /**
  * `a && b` / `a || b` whose two outcomes are interchangeable uncertain values

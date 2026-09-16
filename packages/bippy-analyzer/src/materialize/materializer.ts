@@ -1760,6 +1760,11 @@ export class Materializer {
         if (callee.kind === "native-function") return callee.call(args, tools);
         return unknownValue(`call of ${describeValue(callee)}`, location);
       },
+      construct: (callee, args) =>
+        callee.kind === "function"
+          ? this.interpreter.construct(callee, args, this.moduleContext(callee, context), location)
+          : unknownValue(`new ${describeValue(callee)}`, location),
+      thisValue: null,
       callDeferred: (callee, args) =>
         callee.kind === "function"
           ? this.interpreter.callDeferred(
