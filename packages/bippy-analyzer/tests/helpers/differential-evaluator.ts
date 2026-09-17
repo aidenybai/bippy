@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
+import { inspect } from "node:util";
 import { expect } from "vite-plus/test";
 import { UNDEFINED_VALUE, describeValue } from "../../src/evaluate/values.js";
 import { createStaticRenderer } from "../../src/index.js";
@@ -17,6 +18,16 @@ export interface DifferentialCase {
 interface DifferentialFailure extends DifferentialCase {
   expected: unknown;
   actual: string;
+}
+
+export class DifferentialMismatch extends Error {
+  readonly actual: DifferentialFailure[];
+
+  constructor(failures: DifferentialFailure[]) {
+    super(`Native/analyzer mismatch:\n${inspect(failures, { depth: null, colors: false })}`);
+    this.name = "DifferentialMismatch";
+    this.actual = failures;
+  }
 }
 
 const evaluateCases = async (cases: DifferentialCase[], prelude = ""): Promise<StaticValue[]> => {
@@ -60,7 +71,17 @@ export const checkDifferentialCases = async (cases: DifferentialCase[]): Promise
       failures.push({ ...cases[index], expected: expected[index], actual: describeValue(result) });
     }
   }
-  expect(failures).toEqual([]);
+  if (failures.length) throw new DifferentialMismatch(failures);
+};
+
+export const checkKnownDifferentialWitnesses = async (
+  cases: DifferentialFailure[],
+): Promise<void> => {
+  const failure: unknown = await checkDifferentialCases(cases).catch(
+    (error: unknown) => error,
+  );
+  expect(failure).toBeInstanceOf(DifferentialMismatch);
+  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual(cases);
 };
 
 export const checkSymbolicCases = async (cases: DifferentialCase[]): Promise<void> => {
