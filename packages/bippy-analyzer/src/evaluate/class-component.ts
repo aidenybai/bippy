@@ -1,4 +1,5 @@
-import type { Class, ClassElement, ParamPattern } from "oxc-parser";
+import type { Class, ClassElement, Expression, ParamPattern } from "oxc-parser";
+import type { HostRealm } from "../host/host-realm.js";
 import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
 import type {
   ClassBody,
@@ -7,6 +8,7 @@ import type {
   ClassMember,
   ComponentDefinition,
   ReactApi,
+  RenderEnvironment,
   StaticClassValue,
   StaticFunctionValue,
   StaticNativeFunctionValue,
@@ -15,7 +17,7 @@ import type {
   StaticValue,
   SuperBinding,
 } from "../types.js";
-import type { EvaluationContext } from "./context.js";
+import type { EvaluationContext, FunctionCaller, FunctionFactory } from "./context.js";
 import { createErrorValue } from "./errors.js";
 import {
   applyPendingState,
@@ -27,7 +29,6 @@ import {
   type HookFrame,
   type StateCell,
 } from "./hooks.js";
-import type { Interpreter } from "./interpreter.js";
 import { toPropertyKey } from "./primitive-shapes.js";
 import { setPrototypeOwner } from "./prototype-owners.js";
 import { providedContextValue } from "./react-context.js";
@@ -55,6 +56,32 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "./values.js";
+
+export interface ClassMemberEvaluator extends FunctionFactory {
+  evaluateExpression: (
+    node: Expression,
+    context: EvaluationContext,
+    nameHint?: string | null,
+  ) => StaticValue;
+  continueValue: (
+    value: StaticValue,
+    context: EvaluationContext,
+    proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
+  ) => StaticValue;
+}
+
+export interface ClassEvaluator extends ClassMemberEvaluator, FunctionCaller {
+  readonly assumeOuterProviders: boolean;
+  readonly pendingSuperBindings: WeakMap<StaticObjectValue, SuperBinding>;
+  getThisValue: (context: EvaluationContext, location: SourceLocation | null) => StaticValue;
+  getRealm: (environment: RenderEnvironment | null) => HostRealm;
+  getConstructorResult: (
+    returned: StaticValue,
+    instance: StaticObjectValue,
+    realm: HostRealm,
+  ) => StaticValue;
+  recordHeapMutation: (target: StaticObjectValue) => void;
+}
 
 const MAX_INHERITANCE_DEPTH = 8;
 
@@ -88,7 +115,7 @@ const getClassMember = (element: ClassElement, key: string | null): ClassMember 
 };
 
 export const evaluateClassMembers = (
-  interpreter: Interpreter,
+  evaluator: ClassMemberEvaluator,
   node: Class,
   context: EvaluationContext,
   proceed: ClassMembersContinuation,
@@ -107,9 +134,9 @@ export const evaluateClassMembers = (
       if (element.type === "TSIndexSignature") continue;
       let key: string | null;
       if (element.computed && element.key.type !== "PrivateIdentifier") {
-        const evaluated = interpreter.evaluateExpression(element.key, memberContext);
+        const evaluated = evaluator.evaluateExpression(element.key, memberContext);
         if (evaluated.kind === "branch" || getThrowCertainty(evaluated) !== "never") {
-          return interpreter.continueValue(evaluated, memberContext, (value, keyContext) => {
+          return evaluator.continueValue(evaluated, memberContext, (value, keyContext) => {
             const nextMembers = [...members];
             const member = getClassMember(element, toPropertyKey(value));
             if (member) nextMembers.push(member);
@@ -180,7 +207,7 @@ const methodContextFor = (
 });
 
 const bindMethods = (
-  interpreter: Interpreter,
+  evaluator: FunctionFactory,
   classValue: StaticClassValue,
   target: StaticObjectValue,
   methodContext: EvaluationContext,
@@ -195,7 +222,7 @@ const bindMethods = (
     target.entries.push(entry);
   }
   const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
-    const functionValue = interpreter.createFunctionValue(
+    const functionValue = evaluator.createFunctionValue(
       member.functionNode,
       methodContext,
       name,
@@ -233,14 +260,14 @@ const bindMethods = (
 };
 
 export const getSuperObject = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue => {
   const parent = context.superBinding?.parent;
   if (!parent) return unknownValue("super outside a derived class", location);
-  return interpreter.continueValue(
-    interpreter.getThisValue(context, location),
+  return evaluator.continueValue(
+    evaluator.getThisValue(context, location),
     context,
     (thisValue) => {
       if (parent.kind !== "class" || thisValue.kind === "class") return parent;
@@ -248,7 +275,7 @@ export const getSuperObject = (
       const seen = new Set<string>();
       for (const current of collectClassChain(parent)) {
         const methodContext = methodContextFor(current, context, thisValue);
-        const members = bindMethods(interpreter, current, prototype, methodContext, seen);
+        const members = bindMethods(evaluator, current, prototype, methodContext, seen);
         for (const getter of members.getters) {
           prototype.entries.push(
             accessorEntry(
@@ -278,7 +305,7 @@ const getPrototypeAssignments = (classValue: StaticClassValue): StaticObjectEntr
 };
 
 export const getClassPrototypeObject = (
-  interpreter: Interpreter,
+  evaluator: FunctionFactory,
   classValue: StaticClassValue,
   context: EvaluationContext,
 ): StaticObjectValue => {
@@ -292,7 +319,7 @@ export const getClassPrototypeObject = (
   const seen = new Set<string>();
   for (const current of collectClassChain(classValue)) {
     const methodContext = methodContextFor(current, context, prototype);
-    const members = bindMethods(interpreter, current, prototype, methodContext, seen);
+    const members = bindMethods(evaluator, current, prototype, methodContext, seen);
     for (const getter of members.getters) {
       prototype.entries.push(
         accessorEntry(getter.key, { get: getter.functionValue, set: null }, null),
@@ -451,7 +478,7 @@ export const getMaskedLegacyContext = (
  * (`emptyContextObject` once `disableLegacyContext`).
  */
 const readClassContext = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   classValue: StaticClassValue,
   legacyContext: StaticValue | null,
   context: EvaluationContext,
@@ -459,7 +486,7 @@ const readClassContext = (
   const contextType = getStaticProperty(classValue, "contextType");
   if (contextType?.kind === "context") {
     return providedContextValue(
-      interpreter.assumeOuterProviders,
+      evaluator.assumeOuterProviders,
       contextType.context,
       context.readContext(contextType.context),
       null,
@@ -475,7 +502,7 @@ const readClassContext = (
 
 /** `processChildContext`: `Object.assign({}, parentContext, instance.getChildContext())` for a class declaring `childContextTypes`. */
 const getChildLegacyContext = (
-  interpreter: Interpreter,
+  evaluator: FunctionCaller,
   classValue: StaticClassValue,
   instance: StaticObjectValue,
   parentContext: StaticValue | null,
@@ -490,7 +517,7 @@ const getChildLegacyContext = (
     { kind: "spread", value: parentContext },
     {
       kind: "spread",
-      value: interpreter.callFunction(getChildContext, [], context, { thisValue: instance }),
+      value: evaluator.callFunction(getChildContext, [], context, { thisValue: instance }),
     },
   ]);
 };
@@ -504,7 +531,7 @@ const getChildLegacyContext = (
  * exactly like a hook update would.
  */
 const mountClassInstance = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   classValue: StaticClassValue,
   props: StaticValue,
   instanceContext: StaticValue,
@@ -518,7 +545,7 @@ const mountClassInstance = (
     refs: objectFromRecord({}),
   });
   const initialized = initializeInstance(
-    interpreter,
+    evaluator,
     classValue,
     instance,
     [props, instanceContext],
@@ -620,7 +647,7 @@ const lifecycleEffect = (
  * declines, so an undecided answer renders as a forced update would.
  */
 const shouldClassUpdate = (
-  interpreter: Interpreter,
+  evaluator: FunctionCaller,
   instance: StaticObjectValue,
   props: StaticValue,
   state: StaticValue,
@@ -629,7 +656,7 @@ const shouldClassUpdate = (
 ): boolean => {
   const shouldComponentUpdate = getInstanceMethod(instance, "shouldComponentUpdate");
   if (!shouldComponentUpdate) return true;
-  const decision = interpreter.callFunction(
+  const decision = evaluator.callFunction(
     shouldComponentUpdate,
     [props, state, instanceContext],
     context,
@@ -663,7 +690,7 @@ export const unmountClassInstance = (frame: HookFrame, call: EffectCall): void =
  * null where React no longer threads one (`disableLegacyContext`).
  */
 export const renderClassComponent = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   classValue: StaticClassValue,
   props: StaticValue,
   legacyContext: StaticValue | null,
@@ -671,23 +698,23 @@ export const renderClassComponent = (
   caughtError: StaticValue | null = null,
 ): ClassRender => {
   const frame = context.hooks ?? createHookFrame();
-  const instanceContext = readClassContext(interpreter, classValue, legacyContext, context);
+  const instanceContext = readClassContext(evaluator, classValue, legacyContext, context);
   let record = classInstances.get(frame);
   if (record) {
     const { stateCell } = record;
     nextStateCell(frame, stateCell.name, () => stateCell.initial);
     setObjectProperty(record.instance, "context", instanceContext);
   } else {
-    record = mountClassInstance(interpreter, classValue, props, instanceContext, context, frame);
+    record = mountClassInstance(evaluator, classValue, props, instanceContext, context, frame);
     classInstances.set(frame, record);
   }
   let childLegacyContext = legacyContext;
-  const rendered = interpreter.continueValue(record.construction, context, (constructed) => {
+  const rendered = evaluator.continueValue(record.construction, context, (constructed) => {
     if (constructed.kind === "unknown") return constructed;
     if (constructed !== record.instance)
       return unknownValue("React class constructor replacement varies by path");
     const result = renderClassInstance(
-      interpreter,
+      evaluator,
       classValue,
       record,
       props,
@@ -704,7 +731,7 @@ export const renderClassComponent = (
 };
 
 const renderClassInstance = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   classValue: StaticClassValue,
   record: ClassInstanceRecord,
   props: StaticValue,
@@ -720,7 +747,7 @@ const renderClassInstance = (
   if (deriveStateFromProps) {
     state = mergeState(
       state,
-      interpreter.callFunction(deriveStateFromProps, [props, state], context, {
+      evaluator.callFunction(deriveStateFromProps, [props, state], context, {
         thisValue: UNDEFINED_VALUE,
       }),
     );
@@ -730,7 +757,7 @@ const renderClassInstance = (
       getInstanceMethod(instance, "componentWillMount");
     if (willMount) {
       setObjectProperty(instance, "state", state);
-      interpreter.callFunction(willMount, [], context, { thisValue: instance });
+      evaluator.callFunction(willMount, [], context, { thisValue: instance });
       applyPendingState(stateCell);
       state = stateCell.current;
     }
@@ -740,7 +767,7 @@ const renderClassInstance = (
     if (!deriveStateFromError) return { rendered: NULL_VALUE, childLegacyContext: legacyContext };
     state = mergeState(
       state,
-      interpreter.callFunction(deriveStateFromError, [caughtError], context, {
+      evaluator.callFunction(deriveStateFromError, [caughtError], context, {
         thisValue: UNDEFINED_VALUE,
       }),
     );
@@ -749,7 +776,7 @@ const renderClassInstance = (
     record.isMounted &&
     !caughtError &&
     record.rendered !== null &&
-    !shouldClassUpdate(interpreter, instance, props, state, instanceContext, context);
+    !shouldClassUpdate(evaluator, instance, props, state, instanceContext, context);
   setObjectProperty(instance, "props", props);
   stateCell.current = state;
   setObjectProperty(instance, "state", state);
@@ -770,9 +797,9 @@ const renderClassInstance = (
       childLegacyContext: legacyContext,
     };
   }
-  record.rendered = interpreter.callFunction(render, [], context, { thisValue: instance });
+  record.rendered = evaluator.callFunction(render, [], context, { thisValue: instance });
   record.childLegacyContext = getChildLegacyContext(
-    interpreter,
+    evaluator,
     classValue,
     instance,
     legacyContext,
@@ -783,18 +810,18 @@ const renderClassInstance = (
 
 /** `new Class(...args)`: the instance as it is right after construction. */
 export const constructClassInstance = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   classValue: StaticClassValue,
   args: StaticValue[],
   context: EvaluationContext,
 ): StaticValue => {
   const instance = objectFromRecord({});
-  const initialized = initializeInstance(interpreter, classValue, instance, args, context);
+  const initialized = initializeInstance(evaluator, classValue, instance, args, context);
   const baseValue = initialized.chain[initialized.chain.length - 1].body.superValue;
   if (!baseValue || baseValue.kind === "class") return initialized.value;
   return mapValue(initialized.value, (constructed) => {
     if (constructed.kind === "object" && constructed.constructedBy === classValue) {
-      interpreter.recordHeapMutation(constructed);
+      evaluator.recordHeapMutation(constructed);
       constructed.entries.unshift({
         kind: "spread",
         value: unknownValue(`members inherited from ${describeValue(baseValue)}`),
@@ -816,7 +843,7 @@ interface ClassLayer {
 }
 
 const initializeFields = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   layer: ClassLayer,
   instance: StaticObjectValue,
 ): StaticValue => {
@@ -829,14 +856,14 @@ const initializeFields = (
         scope: createScope(layer.current.scope),
       };
       const value = field.value
-        ? interpreter.evaluateExpression(field.value, fieldContext, field.key)
+        ? evaluator.evaluateExpression(field.value, fieldContext, field.key)
         : UNDEFINED_VALUE;
       const setField = (resolved: StaticValue) => {
-        interpreter.recordHeapMutation(instance);
+        evaluator.recordHeapMutation(instance);
         setObjectProperty(instance, field.key, resolved);
       };
       if (getThrowCertainty(value) !== "never") {
-        return interpreter.continueValue(value, fieldContext, (resolved) => {
+        return evaluator.continueValue(value, fieldContext, (resolved) => {
           setField(resolved);
           return initializeFrom(index + 1);
         });
@@ -849,7 +876,7 @@ const initializeFields = (
 };
 
 const constructLayer = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   layers: ClassLayer[],
   index: number,
   args: StaticValue[],
@@ -873,7 +900,7 @@ const constructLayer = (
     );
   const getParentState = () => getObjectProperty(construction, "hasConstructedParent");
   const getThisValue = (): StaticValue =>
-    interpreter.continueValue(getParentState(), context, (hasConstructedParent) =>
+    evaluator.continueValue(getParentState(), context, (hasConstructedParent) =>
       getTruthiness(hasConstructedParent) === true
         ? getObjectProperty(construction, "thisValue")
         : getConstructionError(
@@ -882,9 +909,9 @@ const constructLayer = (
           ),
     );
   const constructParent = (superArgs: StaticValue[]): StaticValue =>
-    interpreter.continueValue(
+    evaluator.continueValue(
       constructLayer(
-        interpreter,
+        evaluator,
         layers,
         index + 1,
         superArgs,
@@ -892,13 +919,13 @@ const constructLayer = (
       ),
       context,
       (parentInstance) =>
-        interpreter.continueValue(getParentState(), context, (hasConstructedParent) => {
+        evaluator.continueValue(getParentState(), context, (hasConstructedParent) => {
           if (getTruthiness(hasConstructedParent) === true)
             return getConstructionError(
               "ReferenceError",
               "Super constructor may only be called once",
             );
-          interpreter.recordHeapMutation(construction);
+          evaluator.recordHeapMutation(construction);
           setObjectProperty(construction, "hasConstructedParent", TRUE_VALUE);
           const thisValue =
             parentInstance.kind === "object"
@@ -906,8 +933,8 @@ const constructLayer = (
               : unknownValue("derived constructor replacement is not a known object");
           setObjectProperty(construction, "thisValue", thisValue);
           if (thisValue.kind !== "object") return thisValue;
-          return interpreter.continueValue(
-            initializeFields(interpreter, layer, thisValue),
+          return evaluator.continueValue(
+            initializeFields(evaluator, layer, thisValue),
             context,
             () => thisValue,
           );
@@ -916,8 +943,8 @@ const constructLayer = (
   const finishConstructor = (returned: StaticValue): StaticValue => {
     if (returned.kind === "unknown")
       return unknownValue(`class constructor result: ${returned.reason}`, returned.location);
-    const realm = interpreter.getRealm(context.environment);
-    const result = interpreter.getConstructorResult(returned, instance, realm);
+    const realm = evaluator.getRealm(context.environment);
+    const result = evaluator.getConstructorResult(returned, instance, realm);
     if (!isDerived || result !== instance || returned === instance) return result;
     const returnType = getTypeofValue(returned, realm);
     if (returnType.kind === "primitive" && returnType.value !== "undefined")
@@ -934,33 +961,33 @@ const constructLayer = (
       getThisValue: isDerived && isNativeClass ? getThisValue : undefined,
       parent: layer.current.body.superValue,
     };
-    const outerSuperBinding = interpreter.pendingSuperBindings.get(instance);
-    interpreter.pendingSuperBindings.set(instance, superBinding);
+    const outerSuperBinding = evaluator.pendingSuperBindings.get(instance);
+    evaluator.pendingSuperBindings.set(instance, superBinding);
     let returned: StaticValue;
     try {
-      returned = interpreter.callFunction(
+      returned = evaluator.callFunction(
         { ...layer.members.constructor, superBinding },
         args,
         { ...context, superBinding },
         { thisValue: instance },
       );
     } finally {
-      if (outerSuperBinding) interpreter.pendingSuperBindings.set(instance, outerSuperBinding);
-      else interpreter.pendingSuperBindings.delete(instance);
+      if (outerSuperBinding) evaluator.pendingSuperBindings.set(instance, outerSuperBinding);
+      else evaluator.pendingSuperBindings.delete(instance);
     }
-    return interpreter.continueValue(returned, context, finishConstructor);
+    return evaluator.continueValue(returned, context, finishConstructor);
   };
   return isDerived
     ? callConstructor()
-    : interpreter.continueValue(
-        initializeFields(interpreter, layer, instance),
+    : evaluator.continueValue(
+        initializeFields(evaluator, layer, instance),
         context,
         callConstructor,
       );
 };
 
 const initializeInstance = (
-  interpreter: Interpreter,
+  evaluator: ClassEvaluator,
   classValue: StaticClassValue,
   instance: StaticObjectValue,
   args: StaticValue[],
@@ -975,7 +1002,7 @@ const initializeInstance = (
     return {
       current,
       methodContext,
-      members: bindMethods(interpreter, current, instance, methodContext, seen),
+      members: bindMethods(evaluator, current, instance, methodContext, seen),
     };
   });
   for (const { members } of layers) {
@@ -985,5 +1012,5 @@ const initializeInstance = (
       );
     }
   }
-  return { chain, value: constructLayer(interpreter, layers, 0, args, instance) };
+  return { chain, value: constructLayer(evaluator, layers, 0, args, instance) };
 };

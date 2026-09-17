@@ -72,7 +72,7 @@ const createServedResponse = (
  * the page receives it. Any other request is network the analysis cannot see.
  */
 export const callFetch = (
-  project: ProjectContext,
+  project: Pick<ProjectContext, "readServedAsset">,
   args: StaticValue[],
   location: SourceLocation | null,
 ): StaticValue => {

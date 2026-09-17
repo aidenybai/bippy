@@ -1,8 +1,11 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticObjectValue, StaticValue } from "../types.js";
-import type { Interpreter } from "./interpreter.js";
 import { nativeFunction } from "./stubs.js";
 import { UNDEFINED_VALUE, objectFromRecord, unknownValue } from "./values.js";
+
+export interface DomObserverEvaluator {
+  markEscaped: (value: StaticValue) => void;
+}
 
 const OBSERVER_CONSTRUCTOR_NAMES = new Set([
   "MutationObserver",
@@ -20,12 +23,12 @@ export const isDomObserverName = (name: string): boolean => OBSERVER_CONSTRUCTOR
  * enumerate; the observer object itself and its methods are certain.
  */
 export const createDomObserver = (
-  interpreter: Interpreter,
+  evaluator: DomObserverEvaluator,
   name: string,
   callback: StaticValue | undefined,
   location: SourceLocation | null,
 ): StaticObjectValue => {
-  if (callback) interpreter.markEscaped(callback);
+  if (callback) evaluator.markEscaped(callback);
   const noop = (methodName: string): StaticValue =>
     nativeFunction(methodName, () => UNDEFINED_VALUE);
   return objectFromRecord({

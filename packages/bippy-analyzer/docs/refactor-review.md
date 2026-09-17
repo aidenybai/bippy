@@ -96,3 +96,19 @@ A normalized emitted-body audit matched 114 of 117 new or changed upstream runti
 **Merged structure verdict:** the scoped ownership boundaries remain intact; the acknowledged value/predicate and legacy type coupling remain.
 
 **Merged behavior verdict:** no merge-induced regression found in these checks. Upstream semantic changes are preserved, including the five confirmed JSON improvements. The expanded dirty-worktree suite is not all green because its five preserved divergence assertions now describe fixed upstream behavior. No new browser-corpus capture or exhaustive compatibility claim is made.
+
+## Post-rebase contract cleanup
+
+The five stale JSON assertions now require native agreement. The JSON campaigns retain their remaining concrete divergence witnesses; those witnesses are not counted as semantic agreement. Only the helper additions required to report and check those witnesses are published. Other pre-existing differential-test changes remain in the working tree.
+
+Builtin dispatch, class evaluation, module-import helpers, and event/resource helpers now consume operation contracts instead of the concrete interpreter. Class prototype construction requires only a function factory; class lifecycle helpers use narrower caller contracts where possible. Builtin dispatch still has a broad set of responsibilities, and module initialization still belongs to the interpreter. No adapter objects or scheduling changes were introduced.
+
+- All eleven modified existing source modules have equivalent emitted runtime code after normalizing the evaluator parameter rename and formatting. The new module-evaluator module contains only types. This is a structural comparison, not exhaustive behavioral proof.
+- Eight new standalone contract tests cover builtin dispatch, callback receivers, mutation journaling, source-function construction, prototype caching, pending-super cleanup, and class-instance reuse. Architecture checks now include the decoupled helpers.
+- An isolated checkout containing only the publishable changes passed **301 test files**, with **4,459 passing tests**, 42 expected failures, and two skipped tests. Its frozen offline install, build, and repository typecheck passed.
+- The full working tree, including the remaining user tests, passed **424 test files**, with **10,389 passing tests**, four expected failures, and two skipped tests. Both full-suite runs used default parallelism and a canonicalized `TMPDIR`.
+- Build, repository typecheck, realm-table verification, changed-source lint, and whitespace checks passed. React class construction and derived-state handling were inspected in the existing React source checkout.
+
+**Structure:** the scoped coordinator dependencies are removed, but builtin dispatch remains broad and the previously acknowledged cycles remain.
+
+**Compatibility:** the cleanup introduces no intended runtime changes. Passing tests, including known-divergence tests, do not certify compatibility with the 500-repository corpus. No corpus recapture was performed for this cleanup.

@@ -129,6 +129,15 @@ export interface FunctionCallOptions {
   awaited?: boolean;
 }
 
+export interface FunctionFactory {
+  createFunctionValue: (
+    node: FunctionLikeNode,
+    context: EvaluationContext,
+    nameHint: string | null,
+    isMethod?: boolean,
+  ) => StaticValue;
+}
+
 export interface ValueCaller {
   callValue: (
     callee: StaticValue,

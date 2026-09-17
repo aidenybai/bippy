@@ -1,7 +1,12 @@
 import type { HostDocument } from "../host/host-document.js";
+import type { GuardContext } from "../symbolic/guards.js";
 import type { HostRealm } from "../host/host-realm.js";
 import type { SourceLocation } from "../parse/source-types.js";
 import type {
+  JournaledState,
+  ProjectContext,
+  ReactApi,
+  RenderEnvironment,
   StaticAccessor,
   StaticElementValue,
   StaticFunctionValue,
@@ -15,6 +20,7 @@ import type {
 } from "../types.js";
 import { createAbortController } from "./abort-controller.js";
 import {
+  type ArrayMethodEvaluator,
   arrayOfLength,
   callArrayMethod,
   groupItems,
@@ -37,19 +43,26 @@ import {
 } from "./clock-date.js";
 import { parseSerializedJson, stringifyJsonValue } from "./json-values.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
-import type { EvaluationContext } from "./context.js";
+import type { EvaluationContext, FunctionCaller, FunctionFactory } from "./context.js";
+import type { MutableHeapValue } from "./heap-journal.js";
+import type { ModuleEvaluator } from "./module-evaluator.js";
+import type { TimerQueue } from "./timers.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import { createErrorValue, isErrorConstructorName } from "./errors.js";
-import { callEventTargetMethod } from "./event-listeners.js";
+import { callEventTargetMethod, type EventListenerEvaluator } from "./event-listeners.js";
 import { callFetch } from "./fetch.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
 import { getHostGlobal, getLanguageMethodResult, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
 import { createImageElement, type ImageLoadHost } from "./image-loading.js";
 import { callImportMetaGlob } from "./import-glob.js";
-import { callIndexedDbMethod, isIndexedDbName, type IndexedDbHost } from "./indexed-db.js";
+import {
+  callIndexedDbMethod,
+  isIndexedDbName,
+  type IndexedDbHost,
+  type createIndexedDbFactory,
+} from "./indexed-db.js";
 import { getBuiltinPrototypeName, getPrototypeWitness, isPrototypeOf } from "./instance-of.js";
-import type { Interpreter } from "./interpreter.js";
 import { createNumberFormat } from "./intl-format.js";
 import { getLanguageObject, toLanguagePropertyKey } from "./language-intrinsics.js";
 import { mediaQueryListValue } from "./media-query.js";
@@ -91,7 +104,7 @@ import {
 import { isBaseClassPrototype, isClassPrototype } from "./prototype-owners.js";
 import { callRequireContext } from "./require-context.js";
 import { memoizeScalarOperation } from "./scalar-memo.js";
-import { callHistoryMethod, isHistoryName } from "./session-history.js";
+import { callHistoryMethod, isHistoryName, type SessionHistory } from "./session-history.js";
 import {
   callNumberMethod,
   callRegExpMethod,
@@ -160,7 +173,97 @@ import {
   unknownValue,
 } from "./values.js";
 import { callWebCryptoMethod, isWebCryptoName } from "./web-crypto.js";
-import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
+import { callStorageMethod, getStorageAreaName, type StorageAreas } from "./web-storage.js";
+
+export interface BuiltinEvaluator
+  extends
+    ArrayMethodEvaluator,
+    FunctionCaller,
+    FunctionFactory,
+    ModuleEvaluator,
+    EventListenerEvaluator {
+  readonly project: Pick<ProjectContext, "readServedAsset">;
+  readonly origin: string | null;
+  readonly history: SessionHistory;
+  readonly indexedDb: ReturnType<typeof createIndexedDbFactory>;
+  readonly storageAreas: StorageAreas;
+  readonly timers: TimerQueue;
+  getRealm: (environment: RenderEnvironment | null) => HostRealm;
+  recordHeapMutation: (target: MutableHeapValue) => void;
+  assignOwnProperty: (
+    target: StaticObjectValue,
+    key: string,
+    value: StaticValue,
+    accessor?: StaticAccessor,
+  ) => void;
+  assignProperty: (
+    target: StaticValue,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ) => StaticValue;
+  setReactApiProperty: (
+    api: ReactApi,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ) => void;
+  setGlobalMember: (
+    target: StaticGlobalValue,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+  ) => void;
+  materializeNamespace: (value: StaticValue, environment: RenderEnvironment | null) => StaticValue;
+  constructSuper: (
+    instance: StaticValue,
+    callee: StaticValue,
+    args: StaticValue[],
+  ) => StaticValue | null;
+  construct: (
+    callee: StaticValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ) => StaticValue;
+  callDeferred: (
+    callee: StaticValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ) => StaticValue;
+  runIntervalTicks: (
+    callback: StaticValue,
+    handle: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    isDeferred: boolean,
+    callbackArguments?: StaticValue[],
+  ) => void;
+  runTimerTask: (
+    handle: StaticValue,
+    context: EvaluationContext | null,
+    location: SourceLocation | null,
+    task: () => void,
+  ) => void;
+  queueMicrotask: (
+    task: () => void,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ) => void;
+  bindTask: <Arguments extends unknown[]>(
+    task: (...args: Arguments) => void,
+    context: EvaluationContext | null,
+    location: SourceLocation | null,
+  ) => (...args: Arguments) => void;
+  runTaskWithCause: (
+    cause: GuardContext,
+    task: () => void,
+    context?: EvaluationContext | null,
+    location?: SourceLocation | null,
+  ) => void;
+  recordStateMutation: (state: JournaledState<unknown>) => void;
+}
 
 /** An unknown number that is neither NaN nor infinite: a clock reading, or one the analysis bounded. */
 const isFiniteUnknownNumber = (value: StaticValue): boolean =>
@@ -323,7 +426,7 @@ const getElementRefDescriptor = (
 
 /** Function properties hold values only, so an accessor defined on one is read once. */
 const readDescriptorValue = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   target: StaticValue,
   descriptor: StaticObjectValue,
   key: string,
@@ -333,7 +436,7 @@ const readDescriptorValue = (
   const keys = getKnownObjectKeys(descriptor);
   if (keys?.includes("value")) return getObjectProperty(descriptor, "value");
   if (keys?.includes("get")) {
-    return interpreter.callValue(getObjectProperty(descriptor, "get"), [], context, location, {
+    return evaluator.callValue(getObjectProperty(descriptor, "get"), [], context, location, {
       thisValue: target,
     });
   }
@@ -346,7 +449,7 @@ const isEnumerableDescriptor = (descriptor: StaticObjectValue): boolean =>
 
 /** `Object.defineProperty`; a function's `name` is what fibers display. */
 const defineOwnProperty = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   target: StaticValue,
   key: string,
   descriptor: StaticObjectValue,
@@ -354,7 +457,7 @@ const defineOwnProperty = (
   location: SourceLocation | null,
 ): void => {
   const isEnumerable = isEnumerableDescriptor(descriptor);
-  if (target.kind === "object" || target.kind === "list") interpreter.recordHeapMutation(target);
+  if (target.kind === "object" || target.kind === "list") evaluator.recordHeapMutation(target);
   if (target.kind === "object") {
     const accessor = getDescriptorAccessor(descriptor);
     const entry: StaticPropertyEntry = accessor
@@ -362,12 +465,12 @@ const defineOwnProperty = (
       : {
           kind: "property",
           key,
-          value: readDescriptorValue(interpreter, target, descriptor, key, context, location),
+          value: readDescriptorValue(evaluator, target, descriptor, key, context, location),
         };
     target.entries.push({ ...entry, isEnumerable });
     return;
   }
-  const value = readDescriptorValue(interpreter, target, descriptor, key, context, location);
+  const value = readDescriptorValue(evaluator, target, descriptor, key, context, location);
   switch (target.kind) {
     case "function":
     case "class":
@@ -376,13 +479,13 @@ const defineOwnProperty = (
           target.name = value.value;
         return;
       }
-      interpreter.assignOwnProperty(target.properties, key, value);
+      evaluator.assignOwnProperty(target.properties, key, value);
       return;
     case "react-api":
-      interpreter.setReactApiProperty(target.api, key, value, context);
+      evaluator.setReactApiProperty(target.api, key, value, context);
       return;
     case "global":
-      interpreter.setGlobalMember(target, key, value, context);
+      evaluator.setGlobalMember(target, key, value, context);
       return;
     case "list": {
       if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
@@ -397,7 +500,7 @@ const defineOwnProperty = (
 };
 
 const defineOwnProperties = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   target: StaticValue,
   descriptors: StaticObjectValue,
   context: EvaluationContext,
@@ -406,7 +509,7 @@ const defineOwnProperties = (
   for (const key of getKnownObjectKeys(descriptors) ?? []) {
     const descriptor = getObjectProperty(descriptors, key);
     if (descriptor.kind === "object") {
-      defineOwnProperty(interpreter, target, key, descriptor, context, location);
+      defineOwnProperty(evaluator, target, key, descriptor, context, location);
     }
   }
 };
@@ -450,7 +553,7 @@ const getFunctionOwnNames = (callable: StaticFunctionValue): string[] | null => 
 };
 
 const getFunctionOwnPropertyDescriptor = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   callable: StaticFunctionValue,
   key: string,
   context: EvaluationContext,
@@ -461,7 +564,7 @@ const getFunctionOwnPropertyDescriptor = (
   if (!ownNames.includes(key)) return UNDEFINED_VALUE;
   const isIntrinsic = isIntrinsicFunctionKey(callable, key);
   return objectFromRecord({
-    value: interpreter.getProperty(callable, key, context, location),
+    value: evaluator.getProperty(callable, key, context, location),
     writable: primitiveValue(key === "prototype" || !isIntrinsic),
     enumerable: primitiveValue(!isIntrinsic),
     configurable: primitiveValue(key !== "prototype"),
@@ -469,7 +572,7 @@ const getFunctionOwnPropertyDescriptor = (
 };
 
 const getOwnPropertyDescriptors = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   target: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
@@ -481,7 +584,7 @@ const getOwnPropertyDescriptors = (
       names.map((key) => ({
         kind: "property",
         key,
-        value: getFunctionOwnPropertyDescriptor(interpreter, target, key, context, location),
+        value: getFunctionOwnPropertyDescriptor(evaluator, target, key, context, location),
       })),
     );
   }
@@ -641,7 +744,7 @@ const PROTOTYPE_SEGMENT = ".prototype.";
 
 /** A builtin invoked through `Function.prototype`, as compiled helpers do: `Object.assign.apply(this, args)`, `Object.prototype.hasOwnProperty.call(o, k)`. */
 const callInvokedGlobal = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   name: string,
   args: StaticValue[],
   context: EvaluationContext,
@@ -680,7 +783,7 @@ const callInvokedGlobal = (
         : second.kind === "list"
           ? second.items
           : [unknownValue("apply arguments", location)];
-  return interpreter.callValue(callee, calleeArgs, context, location);
+  return evaluator.callValue(callee, calleeArgs, context, location);
 };
 
 /** `window.addEventListener` splits into the global object and `addEventListener`; `history.pushState` into `history` and `pushState`. */
@@ -693,23 +796,15 @@ const splitGlobalName = (name: string): [receiver: StaticValue, memberName: stri
 
 /** Methods of host objects whose state the interpreter models: listeners, media queries, hot modules, history and storage. */
 const callHostObjectMethod = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   receiver: StaticGlobalValue,
   name: string,
   args: StaticValue[],
   context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue | null => {
-  const realm = interpreter.getRealm(context.environment);
-  const listened = callEventTargetMethod(
-    interpreter,
-    realm,
-    receiver,
-    name,
-    args,
-    context,
-    location,
-  );
+  const realm = evaluator.getRealm(context.environment);
+  const listened = callEventTargetMethod(evaluator, realm, receiver, name, args, context, location);
   if (listened) return listened;
   if (realm.isGlobalAlias(receiver.name) && name === "matchMedia")
     return mediaQueryListValue(args[0]);
@@ -717,17 +812,17 @@ const callHostObjectMethod = (
   if (hotModuleResult) return hotModuleResult;
   if (isHistoryName(receiver.name))
     return callHistoryMethod(
-      interpreter.history,
-      interpreter.origin,
+      evaluator.history,
+      evaluator.origin,
       name,
       args,
       location,
-      (listener) => interpreter.markEscaped(listener),
+      (listener) => evaluator.markEscaped(listener),
     );
   if (isIndexedDbName(receiver.name))
     return callIndexedDbMethod(
-      indexedDbHost(interpreter, context, location),
-      interpreter.indexedDb,
+      indexedDbHost(evaluator, context, location),
+      evaluator.indexedDb,
       name,
       args,
     );
@@ -736,14 +831,14 @@ const callHostObjectMethod = (
       receiver.name,
       name,
       args,
-      (list) => interpreter.recordHeapMutation(list),
+      (list) => evaluator.recordHeapMutation(list),
       location,
     );
   const storageAreaName = getStorageAreaName(receiver.name);
   return storageAreaName === null
     ? null
     : callStorageMethod(
-        interpreter.storageAreas[storageAreaName],
+        evaluator.storageAreas[storageAreaName],
         storageAreaName,
         name,
         args,
@@ -796,7 +891,7 @@ const INSPECTING_GLOBALS = new Set([
 ]);
 
 const callGlobal = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   name: string,
   args: StaticValue[],
   context: EvaluationContext,
@@ -804,24 +899,24 @@ const callGlobal = (
   isConstructor: boolean,
 ): StaticValue => {
   if (!isConstructor) {
-    const invoked = callInvokedGlobal(interpreter, name, args, context, location);
+    const invoked = callInvokedGlobal(evaluator, name, args, context, location);
     if (invoked) return invoked;
     const [receiver, memberName] = splitGlobalName(name);
     const hostResult =
       receiver.kind === "global"
-        ? callHostObjectMethod(interpreter, receiver, memberName, args, context, location)
+        ? callHostObjectMethod(evaluator, receiver, memberName, args, context, location)
         : null;
     if (hostResult) return hostResult;
     const [inspected, ...rest] = args;
     if (inspected?.kind === "branch" && INSPECTING_GLOBALS.has(name)) {
       return mapValue(inspected, (alternative) =>
-        callGlobal(interpreter, name, [alternative, ...rest], context, location, false),
+        callGlobal(evaluator, name, [alternative, ...rest], context, location, false),
       );
     }
   }
   if (isErrorConstructorName(name)) return createErrorValue(name, args, location);
-  if (name === "import.meta.glob") return callImportMetaGlob(interpreter, args, context, location);
-  if (name === "require.context") return callRequireContext(interpreter, args, context, location);
+  if (name === "import.meta.glob") return callImportMetaGlob(evaluator, args, context, location);
+  if (name === "require.context") return callRequireContext(evaluator, args, context, location);
   if (isStringCodecName(name)) return callStringCodec(name, args, location);
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
@@ -842,19 +937,19 @@ const callGlobal = (
   if (isConstructor && name === "TextEncoder") return createTextEncoder();
   if (isConstructor && name === "TextDecoder") return createTextDecoder(first, location);
   if (isConstructor && isDomObserverName(name))
-    return createDomObserver(interpreter, name, first, location);
+    return createDomObserver(evaluator, name, first, location);
   if (isConstructor && isNativeConstructorName(name) && (name !== "Date" || args.length > 0)) {
     const constructed = constructNativeObject(name, args);
     if (constructed) return constructed;
   }
-  if (isConstructor && isHostNodeConstructorName(name) && interpreter.hostDocument) {
-    const node = constructHostNode(interpreter.hostDocument, name, args);
+  if (isConstructor && isHostNodeConstructorName(name) && evaluator.hostDocument) {
+    const node = constructHostNode(evaluator.hostDocument, name, args);
     if (node) return node;
   }
   switch (name) {
     case "Date": {
       if (!isConstructor) break;
-      if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
+      if (args.length === 0) return createClockDateValue(evaluator.timers.readClock("new Date"));
       if (args.length !== 1 || first === undefined) break;
       if (isClockReading(first)) return createClockDateValue(first);
       const copy = cloneDateValue(first);
@@ -864,7 +959,7 @@ const callGlobal = (
       break;
     }
     case "Function":
-      return constructFunctionFromSource(interpreter, args, location);
+      return constructFunctionFromSource(evaluator, args, location);
     case "Object":
       return first ? toObjectValue(first, location) : objectValue([]);
     case "String":
@@ -883,7 +978,7 @@ const callGlobal = (
     case "WeakSet":
       return createCollectionValue(
         name,
-        first && interpreter.resolveIterable(first, context, location),
+        first && evaluator.resolveIterable(first, context, location),
         location,
       );
     case "URLSearchParams":
@@ -893,15 +988,15 @@ const callGlobal = (
     case "URL":
       return createUrlValue(args, location);
     case "AbortController":
-      if (isConstructor) return createAbortController(interpreter, location);
+      if (isConstructor) return createAbortController(evaluator, location);
       break;
     case "Image":
       if (isConstructor)
-        return createImageElement(imageLoadHost(interpreter, context, location), args);
+        return createImageElement(imageLoadHost(evaluator, context, location), args);
       break;
     case "fetch":
       if (isConstructor) break;
-      return callFetch(interpreter.project, args, location);
+      return callFetch(evaluator.project, args, location);
     case "Blob":
       if (isConstructor) return createBlobValue(args, location);
       break;
@@ -922,7 +1017,7 @@ const callGlobal = (
         ? { kind: "proxy", target: first, handler: second }
         : unknownValue("Proxy without a static handler", location);
     case "Promise":
-      return createPromiseValue(first, promiseTools(interpreter, context, location), location);
+      return createPromiseValue(first, promiseTools(evaluator, context, location), location);
     case "Symbol":
       if (isConstructor) break;
       if (!first || (first.kind === "primitive" && first.value === undefined))
@@ -942,7 +1037,7 @@ const callGlobal = (
       );
     case "Promise.all":
       return first?.kind === "list"
-        ? combinePromises(first.items, promiseTools(interpreter, context, location), location)
+        ? combinePromises(first.items, promiseTools(evaluator, context, location), location)
         : unknownValue("Promise.all", location);
     case "Array.isArray": {
       const verdict = first ? isArrayValue(first) : false;
@@ -952,7 +1047,7 @@ const callGlobal = (
     }
     case "Array.from": {
       return mapValue(first ?? UNDEFINED_VALUE, (candidate) => {
-        const source = iterableOrArrayLike(interpreter, candidate, context, location);
+        const source = iterableOrArrayLike(evaluator, candidate, context, location);
         if (!source || (source.kind === "primitive" && typeof source.value !== "string")) {
           return unknownValue("Array.from of a non-iterable", location);
         }
@@ -961,9 +1056,7 @@ const callGlobal = (
             iterable.kind === "list" || iterable.kind === "repeat"
               ? iterable
               : listValue(spreadListItems(iterable, location));
-          return isCallable(second)
-            ? mapList(interpreter, items, second, context, location)
-            : items;
+          return isCallable(second) ? mapList(evaluator, items, second, context, location) : items;
         });
       });
     }
@@ -976,10 +1069,10 @@ const callGlobal = (
     case "Uint32Array.from":
     case "Float32Array.from":
     case "Float64Array.from": {
-      const source = first && iterableOrArrayLike(interpreter, first, context, location);
+      const source = first && iterableOrArrayLike(evaluator, first, context, location);
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
       const mapped = isCallable(second)
-        ? mapList(interpreter, source, second, context, location)
+        ? mapList(evaluator, source, second, context, location)
         : source;
       return mapped.kind === "list"
         ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
@@ -1018,10 +1111,7 @@ const callGlobal = (
         if (name === "Object.values") return listValue(ownEntries.map(([, value]) => value));
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
-      const target = interpreter.materializeNamespace(
-        first ?? UNDEFINED_VALUE,
-        context.environment,
-      );
+      const target = evaluator.materializeNamespace(first ?? UNDEFINED_VALUE, context.environment);
       return getOwnEnumerableEntries(target)
         ? inspect(target)
         : mapValue(distributeObjectBranches(target), inspect);
@@ -1036,18 +1126,13 @@ const callGlobal = (
         for (const source of args.slice(1)) {
           if (source.kind !== "object") continue;
           for (const key of getKnownObjectKeys(source) ?? []) {
-            target = interpreter.assignProperty(
-              target,
-              key,
-              getObjectProperty(source, key),
-              context,
-            );
+            target = evaluator.assignProperty(target, key, getObjectProperty(source, key), context);
           }
         }
         return target;
       }
       if (first?.kind === "object") {
-        interpreter.recordHeapMutation(first);
+        evaluator.recordHeapMutation(first);
         for (const source of args.slice(1)) assignOwnEntries(first, source);
         return first;
       }
@@ -1081,7 +1166,7 @@ const callGlobal = (
       if (first?.kind === "object" && first.prototype) return first.prototype;
       if (first?.kind === "object" && first.hasNullPrototype) return NULL_VALUE;
       if (first?.kind === "object" && first.constructedBy)
-        return getClassPrototypeObject(interpreter, first.constructedBy, context);
+        return getClassPrototypeObject(evaluator, first.constructedBy, context);
       if (first?.kind === "object" && (isBaseClassPrototype(first) || !isClassPrototype(first)))
         return { kind: "global", name: "Object.prototype" };
       return getWitnessedPrototype(first, name, location);
@@ -1110,7 +1195,7 @@ const callGlobal = (
       if (first?.kind === "element" && key === "ref")
         return getElementRefDescriptor(first, location);
       if (first?.kind === "function" && key !== null)
-        return getFunctionOwnPropertyDescriptor(interpreter, first, key, context, location);
+        return getFunctionOwnPropertyDescriptor(evaluator, first, key, context, location);
       if (first?.kind !== "object" || key === null)
         return unknownValue(`${name} on a dynamic target`, location);
       return (
@@ -1137,14 +1222,14 @@ const callGlobal = (
               ? { ...objectValue(), prototype: intrinsicPrototype }
               : { ...objectValue(), hasNullPrototype: isNull };
         if (second?.kind === "object") {
-          defineOwnProperties(interpreter, created, second, context, location);
+          defineOwnProperties(evaluator, created, second, context, location);
         }
         return created;
       });
     }
     case "Reflect.get":
       return first && second?.kind === "primitive"
-        ? interpreter.getProperty(first, String(second.value), context, location)
+        ? evaluator.getProperty(first, String(second.value), context, location)
         : unknownValue("Reflect.get with a dynamic key", location);
     case "Reflect.has":
       return (
@@ -1159,7 +1244,7 @@ const callGlobal = (
           ? applied.items
           : null;
       return appliedArguments
-        ? interpreter.callValue(first, appliedArguments, context, location, {
+        ? evaluator.callValue(first, appliedArguments, context, location, {
             thisValue: second ?? null,
           })
         : unknownValue("Reflect.apply with dynamic arguments", location);
@@ -1173,13 +1258,12 @@ const callGlobal = (
         return unknownValue("Reflect.construct with dynamic arguments", location);
       }
       const superConstructed =
-        context.thisValue &&
-        interpreter.constructSuper(context.thisValue, first, constructArguments);
+        context.thisValue && evaluator.constructSuper(context.thisValue, first, constructArguments);
       if (superConstructed) return superConstructed;
       if (newTarget && newTarget !== first) {
         return unknownValue("Reflect.construct with a foreign new.target", location);
       }
-      return interpreter.construct(first, constructArguments, context, location);
+      return evaluator.construct(first, constructArguments, context, location);
     }
     case "Object.defineProperty": {
       const descriptor = args[2];
@@ -1187,22 +1271,22 @@ const callGlobal = (
       if (!first || key === null || descriptor?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      defineOwnProperty(interpreter, first, key, descriptor, context, location);
+      defineOwnProperty(evaluator, first, key, descriptor, context, location);
       return first;
     }
     case "Object.getOwnPropertyDescriptors":
       return first
-        ? getOwnPropertyDescriptors(interpreter, first, context, location)
+        ? getOwnPropertyDescriptors(evaluator, first, context, location)
         : unknownValue(`${name} without a target`, location);
     case "Object.defineProperties": {
       if (!first || second?.kind !== "object") {
         return first ?? unknownValue("Object.defineProperties on a dynamic target", location);
       }
-      defineOwnProperties(interpreter, first, second, context, location);
+      defineOwnProperties(evaluator, first, second, context, location);
       return first;
     }
     case "Object.fromEntries": {
-      const entries = first && interpreter.resolveIterable(first, context, location);
+      const entries = first && evaluator.resolveIterable(first, context, location);
       if (entries?.kind === "list" && !entries.items.some((item) => item.kind === "repeat")) {
         return objectValue(
           entries.items.map(
@@ -1216,7 +1300,7 @@ const callGlobal = (
     case "Object.groupBy":
     case "Map.groupBy":
       return first && isCallable(second)
-        ? groupItems(interpreter, name, first, second, context, location)
+        ? groupItems(evaluator, name, first, second, context, location)
         : unknownValue(`${name} without a callback`, location);
     case "parseInt":
     case "Number.parseInt":
@@ -1250,7 +1334,7 @@ const callGlobal = (
     case "Number.isSafeInteger": {
       if (first === undefined) return FALSE_VALUE;
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
-      const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
+      const typeofFirst = getTypeofValue(first, evaluator.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
       if (isFiniteUnknownNumber(first)) {
         if (name === "Number.isNaN") return FALSE_VALUE;
@@ -1295,9 +1379,9 @@ const callGlobal = (
       );
     case "queueMicrotask":
       if (first) {
-        const handle = interpreter.timers.createHandle("queueMicrotask");
-        interpreter.timers.queueMicrotask(
-          scheduledTask(interpreter, first, context, location, handle),
+        const handle = evaluator.timers.createHandle("queueMicrotask");
+        evaluator.timers.queueMicrotask(
+          scheduledTask(evaluator, first, context, location, handle),
           handle,
         );
       }
@@ -1306,15 +1390,15 @@ const callGlobal = (
     case "setImmediate":
     case "requestAnimationFrame":
     case "requestIdleCallback": {
-      const handle = interpreter.timers.createHandle(name);
+      const handle = evaluator.timers.createHandle(name);
       if (first) {
-        const delayMs = interpreter.timers.getSettledDelay(second);
-        if (delayMs === null) interpreter.markEscaped(first);
+        const delayMs = evaluator.timers.getSettledDelay(second);
+        if (delayMs === null) evaluator.markEscaped(first);
         else {
-          interpreter.timers.schedule(
+          evaluator.timers.schedule(
             handle,
             scheduledTask(
-              interpreter,
+              evaluator,
               first,
               context,
               location,
@@ -1328,16 +1412,16 @@ const callGlobal = (
       return handle;
     }
     case "setInterval": {
-      const handle = interpreter.timers.createHandle(name);
+      const handle = evaluator.timers.createHandle(name);
       if (first) {
-        const delayMs = interpreter.timers.getSettledDelay(second);
-        const isDeferred = interpreter.timers.isDeferred;
-        if (delayMs === null) interpreter.markEscaped(first);
+        const delayMs = evaluator.timers.getSettledDelay(second);
+        const isDeferred = evaluator.timers.isDeferred;
+        if (delayMs === null) evaluator.markEscaped(first);
         else {
-          interpreter.timers.schedule(
+          evaluator.timers.schedule(
             handle,
             () =>
-              interpreter.runIntervalTicks(
+              evaluator.runIntervalTicks(
                 first,
                 handle,
                 context,
@@ -1356,9 +1440,9 @@ const callGlobal = (
     case "cancelAnimationFrame":
     case "cancelIdleCallback":
       if (first?.kind === "branch") {
-        return interpreter.callAlternatives(first, context, (alternative, alternativeContext) =>
+        return evaluator.callAlternatives(first, context, (alternative, alternativeContext) =>
           callGlobal(
-            interpreter,
+            evaluator,
             name,
             [alternative, ...args.slice(1)],
             alternativeContext,
@@ -1367,11 +1451,11 @@ const callGlobal = (
           ),
         );
       }
-      interpreter.timers.clear(first);
+      evaluator.timers.clear(first);
       return UNDEFINED_VALUE;
     case "Date.now":
     case "performance.now":
-      return interpreter.timers.readClock(name);
+      return evaluator.timers.readClock(name);
     case "console.log":
     case "console.warn":
     case "console.error":
@@ -1420,14 +1504,7 @@ const callGlobal = (
       args.every(isNumericMathArgument)
     ) {
       return mapValue(args[branchIndex], (alternative) =>
-        callGlobal(
-          interpreter,
-          name,
-          args.with(branchIndex, alternative),
-          context,
-          location,
-          false,
-        ),
+        callGlobal(evaluator, name, args.with(branchIndex, alternative), context, location, false),
       );
     }
     const natives = toNativeArguments(args, null);
@@ -1448,17 +1525,17 @@ const callGlobal = (
 
 /** A task queued from a continuation of unknown timing runs at an unknown time too. */
 const scheduledTask = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   callback: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
   handle: StaticValue,
   callbackArguments: StaticValue[] = [],
 ): (() => void) => {
-  const task = interpreter.timers.isDeferred
-    ? () => interpreter.callDeferred(callback, callbackArguments, context, location)
-    : () => interpreter.callValue(callback, callbackArguments, context, location);
-  return () => interpreter.runTimerTask(handle, context, location, task);
+  const task = evaluator.timers.isDeferred
+    ? () => evaluator.callDeferred(callback, callbackArguments, context, location)
+    : () => evaluator.callValue(callback, callbackArguments, context, location);
+  return () => evaluator.runTimerTask(handle, context, location, task);
 };
 
 const fallbackMethodResult = (
@@ -1478,54 +1555,54 @@ const fallbackMethodResult = (
 
 /** Browser events fire in later tasks; from a deferred continuation they stay deferred. */
 const scheduleTask = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   description: string,
 ): ((task: () => void) => void) => {
-  const isDeferred = interpreter.timers.isDeferred;
+  const isDeferred = evaluator.timers.isDeferred;
   return (task) =>
-    interpreter.timers.schedule(
-      interpreter.timers.createHandle(description),
-      isDeferred ? () => interpreter.timers.runDeferred(task) : task,
+    evaluator.timers.schedule(
+      evaluator.timers.createHandle(description),
+      isDeferred ? () => evaluator.timers.runDeferred(task) : task,
     );
 };
 
 const indexedDbHost = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   context: EvaluationContext,
   location: SourceLocation | null,
 ): IndexedDbHost => ({
-  schedule: scheduleTask(interpreter, "IndexedDB request"),
-  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
-  setProperty: (object, key, value) => interpreter.assignOwnProperty(object, key, value),
+  schedule: scheduleTask(evaluator, "IndexedDB request"),
+  call: (callee, callArgs) => evaluator.callValue(callee, callArgs, context, location),
+  setProperty: (object, key, value) => evaluator.assignOwnProperty(object, key, value),
   location,
 });
 
 const imageLoadHost = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   context: EvaluationContext,
   location: SourceLocation | null,
 ): ImageLoadHost => ({
-  schedule: scheduleTask(interpreter, "image load"),
-  queueMicrotask: (task) => interpreter.timers.queueMicrotask(task),
-  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
+  schedule: scheduleTask(evaluator, "image load"),
+  queueMicrotask: (task) => evaluator.timers.queueMicrotask(task),
+  call: (callee, callArgs) => evaluator.callValue(callee, callArgs, context, location),
   setProperty: (object, key, value, accessor) =>
-    interpreter.assignOwnProperty(object, key, value, accessor),
-  markEscaped: (value) => interpreter.markEscaped(value),
-  readServedAsset: (url) => interpreter.project.readServedAsset(url),
+    evaluator.assignOwnProperty(object, key, value, accessor),
+  markEscaped: (value) => evaluator.markEscaped(value),
+  readServedAsset: (url) => evaluator.project.readServedAsset(url),
 });
 
 export const promiseTools = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   context: EvaluationContext,
   location: SourceLocation | null,
 ): PromiseTools => ({
-  call: (callee, callArgs) => interpreter.callValue(callee, callArgs, context, location),
-  callDeferred: (callee, callArgs) => interpreter.callDeferred(callee, callArgs, context, location),
-  markEscaped: (value) => interpreter.markEscaped(value),
-  queueMicrotask: (task) => interpreter.queueMicrotask(task, context, location),
-  bindTask: (task) => interpreter.bindTask(task, context, location),
-  runTask: (cause, task) => interpreter.runTaskWithCause(cause, task, context, location),
-  recordStateMutation: (state) => interpreter.recordStateMutation(state),
+  call: (callee, callArgs) => evaluator.callValue(callee, callArgs, context, location),
+  callDeferred: (callee, callArgs) => evaluator.callDeferred(callee, callArgs, context, location),
+  markEscaped: (value) => evaluator.markEscaped(value),
+  queueMicrotask: (task) => evaluator.queueMicrotask(task, context, location),
+  bindTask: (task) => evaluator.bindTask(task, context, location),
+  runTask: (cause, task) => evaluator.runTaskWithCause(cause, task, context, location),
+  recordStateMutation: (state) => evaluator.recordStateMutation(state),
 });
 
 /**
@@ -1535,7 +1612,7 @@ export const promiseTools = (
  * treated as an already-fulfilled thenable.
  */
 const callPromiseMethod = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   receiver: StaticValue,
   name: string,
   args: StaticValue[],
@@ -1551,20 +1628,20 @@ const callPromiseMethod = (
   };
   const modeled = getModeledPromise(receiver);
   if (modeled) {
-    return chainPromise(modeled, handlers, promiseTools(interpreter, context, location), location);
+    return chainPromise(modeled, handlers, promiseTools(evaluator, context, location), location);
   }
   if (receiver.kind === "unknown" || receiver.kind === "external") {
     if (handlers.onFulfilled)
-      return interpreter.callDeferred(handlers.onFulfilled, [receiver], context, location);
+      return evaluator.callDeferred(handlers.onFulfilled, [receiver], context, location);
     for (const handler of [handlers.onRejected, handlers.onFinally]) {
-      if (handler) interpreter.markEscaped(handler);
+      if (handler) evaluator.markEscaped(handler);
     }
     return receiver;
   }
   if (handlers.onFulfilled)
-    return interpreter.callValue(handlers.onFulfilled, [receiver], context, location);
+    return evaluator.callValue(handlers.onFulfilled, [receiver], context, location);
   if (handlers.onFinally) {
-    const result = interpreter.callValue(handlers.onFinally, [], context, location);
+    const result = evaluator.callValue(handlers.onFinally, [], context, location);
     if (isThrownOutcome(result)) return result;
   }
   return receiver;
@@ -1581,7 +1658,7 @@ const isNumericMathArgument = (value: StaticValue): boolean => {
 };
 
 export const evaluateBuiltinCall = (
-  interpreter: Interpreter,
+  evaluator: BuiltinEvaluator,
   callee: Extract<StaticValue, { kind: "method" | "global" }>,
   args: StaticValue[],
   context: EvaluationContext,
@@ -1589,13 +1666,13 @@ export const evaluateBuiltinCall = (
   isConstructor = false,
 ): StaticValue => {
   if (callee.kind === "global")
-    return callGlobal(interpreter, callee.name, args, context, location, isConstructor);
+    return callGlobal(evaluator, callee.name, args, context, location, isConstructor);
   const { receiver, name } = callee;
   const boundArguments = bindCallbackThisArg(name, args);
   const [first, second] = boundArguments;
 
   if (isPromiseMethodName(name))
-    return callPromiseMethod(interpreter, receiver, name, args, context, location);
+    return callPromiseMethod(evaluator, receiver, name, args, context, location);
 
   if (name === "toString" && args.length === 0) {
     const sourceText = getFunctionText(receiver);
@@ -1619,11 +1696,11 @@ export const evaluateBuiltinCall = (
       };
     }
     if (name === "call")
-      return interpreter.callFunction(receiver, args.slice(1), context, {
+      return evaluator.callFunction(receiver, args.slice(1), context, {
         thisValue: first ?? null,
       });
     if (name === "apply") {
-      return interpreter.callFunction(
+      return evaluator.callFunction(
         receiver,
         second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
         context,
@@ -1639,11 +1716,11 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "global")
-    return callGlobal(interpreter, `${receiver.name}.${name}`, args, context, location, false);
+    return callGlobal(evaluator, `${receiver.name}.${name}`, args, context, location, false);
 
   const listened = callEventTargetMethod(
-    interpreter,
-    interpreter.getRealm(context.environment),
+    evaluator,
+    evaluator.getRealm(context.environment),
     receiver,
     name,
     args,
@@ -1672,9 +1749,9 @@ export const evaluateBuiltinCall = (
       receiver.kind === "method" && first !== undefined
         ? { kind: "method", receiver: first, name: receiver.name }
         : receiver;
-    if (name === "call") return interpreter.callValue(rebound, args.slice(1), context, location);
+    if (name === "call") return evaluator.callValue(rebound, args.slice(1), context, location);
     if (name === "apply") {
-      return interpreter.callValue(
+      return evaluator.callValue(
         rebound,
         second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
         context,
@@ -1697,7 +1774,7 @@ export const evaluateBuiltinCall = (
     if (branchIndex !== -1 && args.filter((argument) => argument.kind === "branch").length === 1) {
       return mapValue(args[branchIndex], (alternative) =>
         evaluateBuiltinCall(
-          interpreter,
+          evaluator,
           callee,
           args.with(branchIndex, alternative),
           context,
@@ -1708,7 +1785,7 @@ export const evaluateBuiltinCall = (
     }
     const computed =
       typeof receiver.value === "string"
-        ? callStringMethod(interpreter, receiver.value, name, args, context)
+        ? callStringMethod(evaluator, receiver.value, name, args, context)
         : typeof receiver.value === "number" ||
             typeof receiver.value === "boolean" ||
             typeof receiver.value === "bigint"
@@ -1735,7 +1812,7 @@ export const evaluateBuiltinCall = (
   }
 
   const arrayResult = callArrayMethod(
-    interpreter,
+    evaluator,
     receiver,
     name,
     args,

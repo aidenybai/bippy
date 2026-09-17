@@ -1,6 +1,5 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticObjectValue, StaticValue } from "../types.js";
-import type { Interpreter } from "./interpreter.js";
 import { nativeFunction } from "./stubs.js";
 import {
   FALSE_VALUE,
@@ -14,6 +13,11 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+export interface AbortControllerEvaluator {
+  assignOwnProperty: (target: StaticObjectValue, key: string, value: StaticValue) => void;
+  markEscaped: (value: StaticValue) => void;
+}
 
 const abortWitnesses = new WeakMap<StaticObjectValue, AbortController | AbortSignal>();
 
@@ -32,7 +36,7 @@ const isAborted = (signal: StaticObjectValue): boolean =>
  * at any time, so its signal state and listeners become uncertain.
  */
 export const createAbortController = (
-  interpreter: Interpreter,
+  evaluator: AbortControllerEvaluator,
   location: SourceLocation | null,
 ): StaticObjectValue => {
   const listeners: StaticValue[] = [];
@@ -91,10 +95,10 @@ export const createAbortController = (
     onEscape: () => {
       if (isAborted(signal)) return;
       const reason = "signal of an escaped AbortController";
-      interpreter.assignOwnProperty(signal, "aborted", unknownPrimitiveValue("boolean", reason));
-      interpreter.assignOwnProperty(signal, "reason", unknownValue(reason, location));
-      for (const listener of listeners.splice(0)) interpreter.markEscaped(listener);
-      interpreter.markEscaped(getObjectProperty(signal, "onabort"));
+      evaluator.assignOwnProperty(signal, "aborted", unknownPrimitiveValue("boolean", reason));
+      evaluator.assignOwnProperty(signal, "reason", unknownValue(reason, location));
+      for (const listener of listeners.splice(0)) evaluator.markEscaped(listener);
+      evaluator.markEscaped(getObjectProperty(signal, "onabort"));
     },
   };
   const controller = objectFromRecord({ signal, abort });

@@ -5,7 +5,7 @@ import type { StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
 import { withRelativePrefix } from "./import-glob.js";
-import type { Interpreter } from "./interpreter.js";
+import type { ModuleEvaluator } from "./module-evaluator.js";
 import { nativeFunction } from "./stubs.js";
 import {
   describeValue,
@@ -82,7 +82,7 @@ const listAlternativeRequests = (request: string, extensions: readonly string[])
 };
 
 export const callRequireContext = (
-  interpreter: Interpreter,
+  evaluator: Pick<ModuleEvaluator, "graph" | "importModule">,
   args: StaticValue[],
   context: EvaluationContext,
   location: SourceLocation | null,
@@ -100,7 +100,7 @@ export const callRequireContext = (
     const specifier = withRelativePrefix(path.relative(importerDirectory, file));
     for (const alternative of listAlternativeRequests(
       request,
-      interpreter.graph.resolver.extensions,
+      evaluator.graph.resolver.extensions,
     )) {
       if (options.requestPattern.test(alternative) && !specifiersByRequest.has(alternative))
         specifiersByRequest.set(alternative, specifier);
@@ -143,7 +143,7 @@ export const callRequireContext = (
     name: "webpackContext",
     call: ([request]) =>
       resolveRequest(request, (specifier) =>
-        interpreter.importModule(specifier, context, location, true),
+        evaluator.importModule(specifier, context, location, true),
       ),
     getOwnProperty: (key) => ownProperties[key],
   };

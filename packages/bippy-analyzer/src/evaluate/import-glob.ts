@@ -4,7 +4,7 @@ import { isModuleRecord } from "../graph/module-graph.js";
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticObjectValue, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
-import type { Interpreter } from "./interpreter.js";
+import type { ModuleEvaluator } from "./module-evaluator.js";
 import { resolvedPromiseValue } from "./promises.js";
 import { nativeFunction } from "./stubs.js";
 import { describeValue, getObjectProperty, objectValue, unknownValue } from "./values.js";
@@ -148,7 +148,7 @@ const listImportGlobFiles = (
 };
 
 export const callImportMetaGlob = (
-  interpreter: Interpreter,
+  evaluator: Pick<ModuleEvaluator, "graph" | "importModule" | "getProperty">,
   args: StaticValue[],
   context: EvaluationContext,
   location: SourceLocation | null,
@@ -163,11 +163,11 @@ export const callImportMetaGlob = (
     patterns,
     options,
     context.module.filePath,
-    interpreter.graph.resolver.rootDirectory,
+    evaluator.graph.resolver.rootDirectory,
   );
   if (typeof files === "string") return unknownValue(`import.meta.glob with ${files}`, location);
   const unloadable = files.find((file) => {
-    const target = interpreter.graph.resolveImportedModule(file.specifier, context.module);
+    const target = evaluator.graph.resolveImportedModule(file.specifier, context.module);
     return !isModuleRecord(target) && target.kind === "internal";
   });
   if (unloadable) {
@@ -177,10 +177,10 @@ export const callImportMetaGlob = (
     );
   }
   const importFile = (file: ImportGlobFile): StaticValue => {
-    const namespace = interpreter.importModule(file.specifier, context, location, false);
+    const namespace = evaluator.importModule(file.specifier, context, location, false);
     return options.importedName === null
       ? namespace
-      : interpreter.getProperty(namespace, options.importedName, context, location);
+      : evaluator.getProperty(namespace, options.importedName, context, location);
   };
   return objectValue(
     files.map((file) => ({

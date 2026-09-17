@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticValue } from "../types.js";
-import type { Interpreter } from "./interpreter.js";
+import type { ModuleEvaluator } from "./module-evaluator.js";
 import { describeValue, unknownValue } from "./values.js";
 
 const SYNTHETIC_MODULE_DIRECTORY = "/<function-constructor>";
@@ -17,7 +17,7 @@ const readSourceArgument = (value: StaticValue): string | null => {
  * interpreted like any other source (`this` there is the global object).
  */
 export const constructFunctionFromSource = (
-  interpreter: Interpreter,
+  evaluator: Pick<ModuleEvaluator, "graph" | "evaluateModuleExport">,
   args: StaticValue[],
   location: SourceLocation | null,
 ): StaticValue => {
@@ -29,8 +29,8 @@ export const constructFunctionFromSource = (
   const parameters = sources.slice(0, -1).join(", ");
   const sourceText = `module.exports = function anonymous(${parameters}\n) {\n${body}\n};`;
   const filePath = `${SYNTHETIC_MODULE_DIRECTORY}/${createHash("sha1").update(sourceText).digest("hex")}.js`;
-  const module = interpreter.graph.addVirtualModule(filePath, sourceText);
+  const module = evaluator.graph.addVirtualModule(filePath, sourceText);
   return module
-    ? interpreter.evaluateModuleExport(module, "default")
+    ? evaluator.evaluateModuleExport(module, "default")
     : unknownValue(`Function() body does not parse: ${body}`, location);
 };

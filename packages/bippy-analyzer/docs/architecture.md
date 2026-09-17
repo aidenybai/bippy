@@ -70,6 +70,7 @@ The renderer coordinates source loading, evaluation, materialization, and captur
 | `evaluate/operators.ts`           | Unary/binary value operations and comparison derivation                                             |
 | `evaluate/value-typeof.ts`        | Modeled JavaScript `typeof`                                                                         |
 | `evaluate/method-signatures.ts`   | Host-declared method classification and callback receiver binding                                   |
+| `evaluate/module-evaluator.ts`    | Module operations consumed by source-function construction and bundler import helpers               |
 | `evaluate/array-methods.ts`       | Array construction, callbacks, searches, and mutations                                              |
 | `evaluate/callbacks.ts`           | Callback invocation and conditional/repeated callback execution shared by arrays and React children |
 | `evaluate/react-calls.ts`         | React API dispatch, wrappers, lazy loading, and root registration                                   |
@@ -82,6 +83,8 @@ The renderer coordinates source loading, evaluation, materialization, and captur
 | `render/types.ts`                 | Render configuration, captured results, and replay decisions                                        |
 
 `Interpreter` still coordinates evaluation and owns run state. `builtin-calls.ts` dispatches builtins and retains global and host-call handling. Neither is a foundation for its extracted subsystems: loops, array methods, and string methods accept explicit operation interfaces rather than the concrete interpreter. No adapter objects or forwarding classes are needed; the interpreter satisfies those interfaces directly.
+
+Builtin and class evaluation also consume explicit contracts. Prototype construction requires only a function factory; class construction keeps its existing pending-super registry and cache lifetimes. Builtin dispatch composes array, function, module, and event operations without access to interpreter-private state. Abort, observer, event, resource-loading, and module-import helpers declare their own requirements. These contracts make dependencies explicit; they do not move module initialization out of the interpreter or make builtin dispatch a small subsystem.
 
 React dispatch composes hook, callback, module-export, element-factory, and root-registration operations. Its subsystems do not import the dispatcher or interpreter. Hooks receive only their call, branch, diagnostic, provider-policy, and microtask operations. Children mapping shares conditional callback execution with arrays, not array-method semantics. Class components and materialization use provider lookup directly rather than importing the React API dispatcher.
 

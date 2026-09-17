@@ -2,12 +2,19 @@ import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticNativeObjectValue, StaticValue } from "../types.js";
-import type { EvaluationContext } from "./context.js";
-import type { Interpreter } from "./interpreter.js";
+import type { EvaluationContext, ValueCaller } from "./context.js";
+import type { TimerQueue } from "./timers.js";
 import { EVENT_LISTENER_METHODS, fromNativeValue, toNativeArguments } from "./native-values.js";
 import { registerResourceListener } from "./resource-loading.js";
-import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
+import { HISTORY_TRAVERSAL_EVENTS, type SessionHistory } from "./session-history.js";
 import { isNullish, primitiveValue, UNDEFINED_VALUE } from "./values.js";
+
+export interface EventListenerEvaluator extends ValueCaller {
+  readonly hostDocument: HostDocument | null;
+  readonly history: Pick<SessionHistory, "traversalListeners">;
+  readonly timers: Pick<TimerQueue, "isDeferred" | "enqueue" | "runDeferred">;
+  markEscaped: (value: StaticValue) => void;
+}
 
 /**
  * Event interfaces only an input device dispatches (lib.dom's `UIEvent` family
@@ -138,7 +145,7 @@ const nativeListeners = new WeakMap<
 >();
 
 const attachNativeListener = (
-  interpreter: Interpreter,
+  evaluator: EventListenerEvaluator,
   target: NativeEventTarget,
   type: string,
   listener: StaticValue,
@@ -157,12 +164,12 @@ const attachNativeListener = (
   }
   if (byType.has(type)) return;
   const dispatch = (event: object): void => {
-    interpreter.callValue(
+    evaluator.callValue(
       listener,
-      [fromNativeValue(event, `${type} event`, interpreter.hostDocument)],
+      [fromNativeValue(event, `${type} event`, evaluator.hostDocument)],
       context,
       location,
-      { thisValue: fromNativeValue(target, `${type} event target`, interpreter.hostDocument) },
+      { thisValue: fromNativeValue(target, `${type} event target`, evaluator.hostDocument) },
     );
   };
   let isScheduled = false;
@@ -173,11 +180,11 @@ const attachNativeListener = (
     }
     if (isScheduled) return;
     isScheduled = true;
-    const isDeferred = interpreter.timers.isDeferred;
-    interpreter.timers.enqueue(() => {
+    const isDeferred = evaluator.timers.isDeferred;
+    evaluator.timers.enqueue(() => {
       isScheduled = false;
       if (byType.get(type) !== native) return;
-      if (isDeferred) interpreter.timers.runDeferred(() => dispatch(event));
+      if (isDeferred) evaluator.timers.runDeferred(() => dispatch(event));
       else dispatch(event);
     });
   };
@@ -237,7 +244,7 @@ const isHistoryTraversalListener = (
   HISTORY_TRAVERSAL_EVENTS.has(type.value);
 
 const updateListener = (
-  interpreter: Interpreter,
+  evaluator: EventListenerEvaluator,
   realm: HostRealm,
   receiver: StaticValue,
   type: StaticValue | undefined,
@@ -247,31 +254,31 @@ const updateListener = (
   location: SourceLocation | null,
 ): void => {
   if (isHistoryTraversalListener(realm, receiver, type)) {
-    if (isRegistration) interpreter.history.traversalListeners.add(listener);
-    else interpreter.history.traversalListeners.delete(listener);
+    if (isRegistration) evaluator.history.traversalListeners.add(listener);
+    else evaluator.history.traversalListeners.delete(listener);
     return;
   }
-  const target = toNativeEventTarget(receiver, interpreter.hostDocument);
+  const target = toNativeEventTarget(receiver, evaluator.hostDocument);
   const typeName = type?.kind === "primitive" && typeof type.value === "string" ? type.value : null;
   if (
     receiver.kind === "native-object" &&
     typeName !== null &&
-    registerResourceListener(interpreter, receiver, typeName, listener, isRegistration)
+    registerResourceListener(evaluator, receiver, typeName, listener, isRegistration)
   ) {
     return;
   }
   if (isRegistration && isEventBeforeCapture(realm, receiver, type))
-    interpreter.markEscaped(listener);
+    evaluator.markEscaped(listener);
   if (target && typeName !== null) {
     if (isRegistration) {
-      attachNativeListener(interpreter, target, typeName, listener, context, location);
+      attachNativeListener(evaluator, target, typeName, listener, context, location);
     } else detachNativeListener(target, typeName, listener);
   }
 };
 
 /** Listener registration on `window`/`document`/DOM nodes/`MediaQueryList`; only listeners that may fire before capture escape. */
 export const callEventTargetMethod = (
-  interpreter: Interpreter,
+  evaluator: EventListenerEvaluator,
   realm: HostRealm,
   receiver: StaticValue,
   name: string,
@@ -283,7 +290,7 @@ export const callEventTargetMethod = (
   const [type, listener] = args;
   if (!listener) return UNDEFINED_VALUE;
   const isRegistration = name === "addEventListener" || name === "addListener";
-  updateListener(interpreter, realm, receiver, type, listener, isRegistration, context, location);
+  updateListener(evaluator, realm, receiver, type, listener, isRegistration, context, location);
   return UNDEFINED_VALUE;
 };
 
@@ -295,7 +302,7 @@ const eventHandlerProperties = new WeakMap<object, Map<string, StaticValue>>();
  * handler set before, or unregisters that one for a nullish value.
  */
 export const assignEventHandlerProperty = (
-  interpreter: Interpreter,
+  evaluator: EventListenerEvaluator,
   realm: HostRealm,
   receiver: StaticNativeObjectValue,
   key: string,
@@ -311,12 +318,12 @@ export const assignEventHandlerProperty = (
     eventHandlerProperties.set(receiver.value, handlers);
   }
   const previous = handlers.get(match[1]);
-  if (previous) updateListener(interpreter, realm, receiver, type, previous, false, context, null);
+  if (previous) updateListener(evaluator, realm, receiver, type, previous, false, context, null);
   if (isNullish(value) === true) {
     handlers.delete(match[1]);
   } else {
     handlers.set(match[1], value);
-    updateListener(interpreter, realm, receiver, type, value, true, context, null);
+    updateListener(evaluator, realm, receiver, type, value, true, context, null);
   }
   return true;
 };

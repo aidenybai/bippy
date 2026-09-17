@@ -23,7 +23,17 @@ const dependencies = getSourceFiles(sourceDirectory).flatMap((filePath) =>
   getModuleDependencies(sourceDirectory, filePath, readFileSync(filePath, "utf8")),
 );
 const evaluationModules = new Set([
+  "evaluate/abort-controller.ts",
   "evaluate/array-methods.ts",
+  "evaluate/builtin-calls.ts",
+  "evaluate/class-component.ts",
+  "evaluate/dom-observers.ts",
+  "evaluate/event-listeners.ts",
+  "evaluate/function-constructor.ts",
+  "evaluate/import-glob.ts",
+  "evaluate/module-evaluator.ts",
+  "evaluate/require-context.ts",
+  "evaluate/resource-loading.ts",
   "evaluate/callbacks.ts",
   "evaluate/collection-values.ts",
   "evaluate/closure-inspection.ts",

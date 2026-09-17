@@ -1,8 +1,26 @@
 import path from "node:path";
-import type { StaticNativeObjectValue, StaticValue } from "../types.js";
-import type { EvaluationContext } from "./context.js";
-import type { Interpreter } from "./interpreter.js";
 import { isNullish, objectFromRecord, primitiveValue } from "./values.js";
+import type { ProjectContext, StaticNativeObjectValue, StaticValue } from "../types.js";
+import type { EvaluationContext, ValueCaller } from "./context.js";
+import type { TimerQueue } from "./timers.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { HostDocument } from "../host/host-document.js";
+
+export interface ResourceElementHost {
+  readonly hostDocument: HostDocument | null;
+}
+
+export interface ResourceLoadEvaluator extends ResourceElementHost, ValueCaller {
+  readonly project: Pick<ProjectContext, "findServedFile">;
+  readonly timers: Pick<TimerQueue, "isDeferred" | "enqueue">;
+  markEscaped: (value: StaticValue) => void;
+  callDeferred: (
+    callee: StaticValue,
+    args: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ) => StaticValue;
+}
 
 type ResourceEventType = "load" | "error";
 
@@ -38,8 +56,10 @@ const IMAGE_EXTENSIONS = new Set([
 const isResourceEventType = (type: string): type is ResourceEventType =>
   type === "load" || type === "error";
 
-const isImageElement = (interpreter: Interpreter, element: StaticNativeObjectValue): boolean =>
-  interpreter.hostDocument?.isInstanceOf(element.value, "HTMLImageElement") === true;
+const isImageElement = (
+  interpreter: ResourceElementHost,
+  element: StaticNativeObjectValue,
+): boolean => interpreter.hostDocument?.isInstanceOf(element.value, "HTMLImageElement") === true;
 
 const hasSource = (element: object): boolean => {
   const source: unknown = Reflect.get(element, "src");
@@ -52,7 +72,10 @@ const hasSource = (element: object): boolean => {
  * served file of another kind fails to decode. Null for anything else (the
  * network, a proxy, a URL the analysis cannot read), whose outcome stays open.
  */
-const decideImageOutcome = (interpreter: Interpreter, url: string): ResourceEventType | null => {
+const decideImageOutcome = (
+  interpreter: ResourceLoadEvaluator,
+  url: string,
+): ResourceEventType | null => {
   if (url.startsWith("data:")) return url.startsWith("data:image/") ? "load" : "error";
   const filePath = interpreter.project.findServedFile(url);
   if (filePath === null) return null;
@@ -60,7 +83,7 @@ const decideImageOutcome = (interpreter: Interpreter, url: string): ResourceEven
 };
 
 const getImageLoadState = (
-  interpreter: Interpreter,
+  interpreter: ResourceElementHost,
   element: StaticNativeObjectValue,
 ): ImageLoadState | null => {
   const existing = imageLoadStates.get(element.value);
@@ -81,7 +104,7 @@ const getImageLoadState = (
  * otherwise the listeners may run at any point and escape.
  */
 export const startImageLoad = (
-  interpreter: Interpreter,
+  interpreter: ResourceLoadEvaluator,
   element: StaticNativeObjectValue,
   key: string,
   value: StaticValue,
@@ -129,7 +152,7 @@ export const startImageLoad = (
  * event, or an image whose fetch the analysis could not follow.
  */
 export const registerResourceListener = (
-  interpreter: Interpreter,
+  interpreter: ResourceElementHost,
   receiver: StaticNativeObjectValue,
   type: string,
   listener: StaticValue,
