@@ -1,3 +1,4 @@
+import { element } from "../evaluate/stubs.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -20,7 +21,6 @@ import type {
   StaticPrimitive,
   StaticValue,
 } from "../types.js";
-import { element } from "../evaluate/stubs.js";
 
 // `<Meta>` and `<Links>` in React Router framework mode
 // (`lib/dom/ssr/components`): both turn the matched routes' `meta()` / `links()`

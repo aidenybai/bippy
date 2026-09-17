@@ -1,9 +1,10 @@
 import { getFibersAbsentInReact } from "../react/element-shape.js";
-import type { StaticRenderResult } from "../types.js";
+import type { StaticRenderResult } from "../render/types.js";
 import type { ComparisonOptions, ComparisonReport } from "./compare.js";
 import { formatComparisonReport } from "./format-report.js";
 import { computeGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
 import { findSnapshotFiber, type RuntimeFiberSnapshot, type RuntimeSnapshot } from "./snapshot.js";
+import type { StateReplaySummary } from "./state-replay.js";
 import {
   DEFAULT_STATE_SPACE_BUDGET,
   enumerateStateSpace,
@@ -17,12 +18,11 @@ import {
 } from "./state-space.js";
 import {
   flattenPatternFibers,
-  getSnapshotRootChildren,
   getRenderCommits,
+  getSnapshotRootChildren,
   type PatternFiber,
   type PatternNode,
 } from "./static-pattern.js";
-import type { StateReplaySummary } from "./state-replay.js";
 import { buildSymbolicTree } from "./symbolic-tree.js";
 
 export interface StaticStateSpaceOptions {

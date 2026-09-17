@@ -1,3 +1,4 @@
+import { element, hostElement, omitProps, stubElement } from "../evaluate/stubs.js";
 import {
   NULL_VALUE,
   branchValue,
@@ -15,7 +16,6 @@ import type {
   StaticValue,
   StubComponent,
 } from "../types.js";
-import { element, hostElement, omitProps, stubElement } from "../evaluate/stubs.js";
 
 import { isVersionAtLeast } from "../libraries/installed-version.js";
 

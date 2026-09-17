@@ -12,9 +12,10 @@ import {
   unknownValue,
 } from "../evaluate/values.js";
 import { isClientModule } from "../graph/module-record.js";
+import type { ModuleRecord } from "../graph/module-types.js";
 import { isVersionAtLeast } from "../libraries/installed-version.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type { ModuleRecord, StaticObjectValue, StaticValue } from "../types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import { classifySegment, findRouteFile, listSubdirectories } from "./route-files.js";
 
 export interface NextMetadataLayer {

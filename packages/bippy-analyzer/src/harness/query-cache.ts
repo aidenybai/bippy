@@ -1,13 +1,13 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
 import { dateCapture, hashKey, isPlainObject, isRecord, opaqueCapture } from "../observations.js";
-import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 import type {
   CapturedMutation,
   CapturedQuery,
   CapturedQueryCaches,
   CapturedValue,
 } from "../types.js";
+import { type ExportIndex, NO_EXPORTS } from "./module-exports.js";
 
 interface QueryLike {
   queryHash: string;

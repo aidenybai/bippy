@@ -1,14 +1,15 @@
+import { buildSync } from "esbuild";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { buildSync } from "esbuild";
 import { expect, it } from "vite-plus/test";
 import { ModuleGraph } from "../src/graph/module-graph.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
+import type { ResolvedSymbol } from "../src/graph/module-types.js";
 import { SourceFileCache } from "../src/parse/parse-source-file.js";
-import type { ResolvedSymbol, SourceTransform } from "../src/types.js";
+import type { SourceTransform } from "../src/parse/source-types.js";
 
 interface UnavailableModuleCase {
   name: string;

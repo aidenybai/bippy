@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import type { SourceLocation, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticValue } from "../types.js";
 import type { Interpreter } from "./interpreter.js";
 import { describeValue, unknownValue } from "./values.js";
 

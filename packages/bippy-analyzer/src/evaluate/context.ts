@@ -1,16 +1,17 @@
+import type { ModuleRecord } from "../graph/module-types.js";
+import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
 import type {
   ContextDefinition,
   ElementOwner,
-  FunctionLikeNode,
-  ModuleRecord,
   RenderEnvironment,
   Scope,
-  StaticValue,
+  StaticFunctionValue,
   StaticObjectValue,
+  StaticValue,
   SuperBinding,
 } from "../types.js";
-import type { HookFrame } from "./hooks.js";
-import type { StatementOutcome } from "./interpreter.js";
+import type { StatementOutcome } from "./completion.js";
+import type { HookFrame, StateCell } from "./hooks.js";
 import type { AsyncCall } from "./promises.js";
 
 /** The value the nearest provider of a context supplies at the position being evaluated, or null without one. */
@@ -80,6 +81,25 @@ export interface EvaluationContext {
   owner: ElementOwner | null;
 }
 
+export interface StatementContinuation {
+  (context: EvaluationContext): StatementOutcome;
+}
+
+export interface StatementValueContinuation {
+  (value: StaticValue, context: EvaluationContext): StatementOutcome;
+}
+
+export interface ValueCallOptions {
+  thisValue?: StaticValue | null;
+  nameHint?: string | null;
+  templateArgumentNames?: Array<string | null>;
+}
+
+export interface ConditionalEvaluationOptions {
+  predicate?: string;
+  unconditionalUpdates?: ReadonlySet<StateCell>;
+}
+
 export const withScope = (context: EvaluationContext, scope: Scope): EvaluationContext => ({
   ...context,
   scope,
@@ -101,3 +121,29 @@ export const withOutcomeHandler = (
         },
       }
     : context;
+
+export interface FunctionCallOptions {
+  thisValue?: StaticValue | null;
+  callStack?: CallFrame[];
+  /** The caller awaits the result (route `lazy`, server components), so an async body is evaluated with `await x` as `x`. */
+  awaited?: boolean;
+}
+
+export interface ValueCaller {
+  callValue: (
+    callee: StaticValue,
+    argumentsList: StaticValue[],
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    options?: ValueCallOptions,
+  ) => StaticValue;
+}
+
+export interface FunctionCaller extends ValueCaller {
+  callFunction: (
+    callback: StaticFunctionValue,
+    argumentsList: StaticValue[],
+    context: EvaluationContext,
+    options?: FunctionCallOptions,
+  ) => StaticValue;
+}

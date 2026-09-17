@@ -1,12 +1,7 @@
-import type {
-  JournaledState,
-  SourceLocation,
-  StaticObjectValue,
-  StaticValue,
-  StubRenderTools,
-} from "../types.js";
-import { nativeFunction } from "./stubs.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { JournaledState, StaticObjectValue, StaticValue, StubRenderTools } from "../types.js";
 import { createErrorValue } from "./errors.js";
+import { nativeFunction } from "./stubs.js";
 import { getThrowCertainty } from "./thrown.js";
 import {
   FALSE_VALUE,

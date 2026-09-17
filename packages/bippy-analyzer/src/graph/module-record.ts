@@ -13,20 +13,17 @@ import type {
   VariableDeclaration,
 } from "oxc-parser";
 import { decideInlinedNodeEnvTest, DEV_SERVER_MODE } from "../evaluate/bundler-globals.js";
-import {
-  getTypeScriptDeclarationName,
-  type TypeScriptDeclaration,
-} from "../evaluate/typescript-declarations.js";
 import { getPatternNames, getVariableDeclaration, unwrapExpression } from "../parse/ast-walk.js";
+import type { ParsedSourceFile, TypeScriptDeclaration } from "../parse/source-types.js";
+import { getTypeScriptDeclarationName } from "../parse/typescript-declarations.js";
 import type {
   ExportEntry,
   ImportBinding,
   ImportedName,
   ModuleRecord,
-  ParsedSourceFile,
   ReExportAll,
   TopLevelBinding,
-} from "../types.js";
+} from "./module-types.js";
 
 /** A function expression with a block body, as UMD/IIFE module wrappers are. */
 interface BlockFunction {

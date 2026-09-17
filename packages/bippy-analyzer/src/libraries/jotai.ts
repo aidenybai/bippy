@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -11,11 +12,10 @@ import {
   objectFromRecord,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type {
+  LibraryRun,
   LibraryValueProvider,
   ModeledExports,
-  LibraryRun,
   StaticObjectValue,
   StaticValue,
   StubRenderTools,

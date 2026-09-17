@@ -1,4 +1,4 @@
-import { areGuardsSatisfiable } from "../harness/guard-solver.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   combineGuardContexts,
@@ -6,7 +6,7 @@ import {
   type Guard,
   type GuardContext,
   orGuard,
-} from "../harness/symbolic-tree.js";
+} from "../symbolic/guards.js";
 
 interface GuardedRunner {
   <Result>(cause: GuardContext, run: () => Result): Result;

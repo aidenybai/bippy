@@ -1,18 +1,18 @@
 import { hasNamedProperty } from "../evaluate/has-property.js";
 import type { MutableHeapValue } from "../evaluate/heap-journal.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   decidedBooleanValue,
   getKnownEnumerableOwnKeys,
   getObjectProperty,
   getTruthiness,
   hasDefiniteItems,
+  isCallable,
   listValue,
   objectValue,
   primitiveValue,
   unknownValue,
-  isCallable,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
   StaticNativeFunctionValue,

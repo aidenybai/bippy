@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
+import type { FrameworkKind } from "../frameworks/framework-profile.js";
 import type { ComparisonOptions, ComparisonReport } from "../harness/compare.js";
 import type { StateReplaySummary } from "../harness/state-replay.js";
 import type { StateSpaceSummary } from "../harness/state-space.js";
-import type { JsonValue, StaticRenderStats } from "../types.js";
-import type { FrameworkKind } from "../frameworks/framework-profile.js";
+import type { StaticRenderStats } from "../render/types.js";
+import type { JsonValue } from "../types.js";
 
 // A corpus entry pins a real React repository at a revision so the static
 // renderer can be validated against the tree its dev server actually commits.

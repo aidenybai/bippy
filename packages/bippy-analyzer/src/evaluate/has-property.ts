@@ -13,8 +13,8 @@ import type {
   StaticValue,
 } from "../types.js";
 import { createErrorValue } from "./errors.js";
-import { getLanguageCounterpart, toLanguagePropertyKey } from "./host-globals.js";
 import { getPrototypeWitness } from "./instance-of.js";
+import { getLanguageCounterpart, toLanguagePropertyKey } from "./language-intrinsics.js";
 import { hasNativeObjectMember } from "./native-values.js";
 import { isFunctionText, toPropertyKey } from "./primitive-shapes.js";
 import {
@@ -22,15 +22,15 @@ import {
   FALSE_VALUE,
   getKnownObjectOwnNames,
   getListLength,
-  getStubOwnDisplayName,
-  mapValue,
-  hasDefiniteItems,
   getOwnPropertyPresence,
+  getStubOwnDisplayName,
   getTruthiness,
+  hasDefiniteItems,
   isIndefiniteItem,
-  TRUE_VALUE,
+  mapValue,
   primitiveValue,
   thrownValue,
+  TRUE_VALUE,
   unknownPrimitiveValue,
 } from "./values.js";
 

@@ -1,4 +1,5 @@
 import semver from "semver";
+import { element, nativeFunction, omitProps, stubValue } from "../evaluate/stubs.js";
 import {
   FALSE_VALUE,
   NULL_VALUE,
@@ -26,12 +27,11 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, nativeFunction, omitProps, stubValue } from "../evaluate/stubs.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,
-  LibraryValueProvider,
   LibraryRun,
+  LibraryValueProvider,
   ReactApi,
   StaticObjectEntry,
   StaticObjectValue,

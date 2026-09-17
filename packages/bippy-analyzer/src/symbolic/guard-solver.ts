@@ -8,7 +8,7 @@ import {
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
-} from "./symbolic-tree.js";
+} from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
 // over JavaScript values, and a set of atoms about one variable (its truthiness,

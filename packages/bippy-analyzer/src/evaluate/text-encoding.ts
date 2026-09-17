@@ -1,6 +1,7 @@
-import { nativeFunction } from "./stubs.js";
-import type { SourceLocation, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
+import { nativeFunction } from "./stubs.js";
 import { bytesValue, getKnownBytes } from "./typed-arrays.js";
 import {
   objectFromRecord,

@@ -9,13 +9,12 @@ import {
   describeError,
   parseWithSchema,
 } from "../errors.js";
-import type { FrameworkRenderer } from "../frameworks/render-framework.js";
-import { createCorpusEntryRenderer } from "./render-entry.js";
 import {
   dropInjectedFibers,
   unwrapTransparentRuntimeFiber,
 } from "../frameworks/framework-profile.js";
 import { getFrameworkProfile } from "../frameworks/profiles.js";
+import type { FrameworkRenderer } from "../frameworks/render-framework.js";
 import { BrowserCapturer, type BrowserCaptureResult } from "../harness/capture-browser.js";
 import {
   compareStaticToRuntime,
@@ -24,16 +23,17 @@ import {
   type StaticStateSpaceOptions,
 } from "../harness/compare-render.js";
 import { rankWildcards } from "../harness/format-report.js";
-import { replayEnumeratedStates, replayStateSpace } from "../harness/state-replay.js";
 import {
   countSnapshotFibers,
   formatRuntimeSnapshot,
   readSnapshot,
   type RuntimeFiberSnapshot,
 } from "../harness/snapshot.js";
+import { replayEnumeratedStates, replayStateSpace } from "../harness/state-replay.js";
 import { formatPattern, getRenderPattern } from "../harness/static-pattern.js";
 import { readObservationsJson } from "../observations.js";
-import type { Diagnostic, StaticRenderResult } from "../types.js";
+import type { Diagnostic } from "../parse/source-types.js";
+import type { StaticRenderResult } from "../render/types.js";
 import { DevServer, runCommand } from "./dev-server.js";
 import {
   getSettleMs,
@@ -42,6 +42,7 @@ import {
   type CorpusRuntimeSummary,
   type DiagnosticCount,
 } from "./manifest.js";
+import { createCorpusEntryRenderer } from "./render-entry.js";
 
 interface RunEntryOptions {
   corpusDirectory: string;

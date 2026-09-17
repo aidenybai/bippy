@@ -1,9 +1,10 @@
-import type { SourceLocation, StaticNativeObjectValue, StaticValue } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticNativeObjectValue, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
-import { fromNativeValue, toNativeArguments } from "./native-values.js";
+import { EVENT_LISTENER_METHODS, fromNativeValue, toNativeArguments } from "./native-values.js";
 import { registerResourceListener } from "./resource-loading.js";
 import { HISTORY_TRAVERSAL_EVENTS } from "./session-history.js";
 import { isNullish, primitiveValue, UNDEFINED_VALUE } from "./values.js";
@@ -195,13 +196,6 @@ const detachNativeListener = (
   byType.delete(type);
   target.removeEventListener(type, native);
 };
-
-export const EVENT_LISTENER_METHODS = new Set([
-  "addEventListener",
-  "removeEventListener",
-  "addListener",
-  "removeListener",
-]);
 
 const isEventTarget = (realm: HostRealm, receiver: StaticValue): boolean =>
   isNativeEventTarget(receiver) ||

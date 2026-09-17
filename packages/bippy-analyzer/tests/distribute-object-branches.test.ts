@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { StaticValue } from "../src/types.js";
 import {
   branchValue,
   distributeObjectBranches,
@@ -8,6 +7,7 @@ import {
   primitiveValue,
   toJsonValue,
 } from "../src/evaluate/values.js";
+import type { StaticValue } from "../src/types.js";
 
 const text = (value: string) => primitiveValue(value);
 

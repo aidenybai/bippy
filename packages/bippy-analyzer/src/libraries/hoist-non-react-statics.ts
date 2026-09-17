@@ -1,15 +1,15 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
-  getObjectProperty,
   getKnownOwnKeys,
-  hasOwnKey,
+  getObjectProperty,
   getTruthiness,
+  hasOwnKey,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
-  StaticValue,
   StaticObjectValue,
+  StaticValue,
   StubRenderTools,
 } from "../types.js";
 

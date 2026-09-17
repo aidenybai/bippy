@@ -1,4 +1,3 @@
-import { NULL_VALUE, UNDEFINED_VALUE, getObjectProperty, objectFromRecord } from "./values.js";
 import type {
   StaticElementType,
   StaticElementValue,
@@ -7,6 +6,7 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
+import { NULL_VALUE, UNDEFINED_VALUE, getObjectProperty, objectFromRecord } from "./values.js";
 
 // Building blocks for framework models: values a framework's package exports
 // resolve to so the static side can stand in for code it does not analyze.

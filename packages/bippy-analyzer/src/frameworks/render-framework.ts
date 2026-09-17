@@ -1,9 +1,13 @@
 import { FrameworkTargetError } from "../errors.js";
+import { readInstalledVersion } from "../libraries/installed-version.js";
 import { createStaticRenderer, type StaticRenderer } from "../render/static-renderer.js";
-import type { PinnedDecisions, StaticRenderResult, StaticRendererOptions } from "../types.js";
+import type {
+  PinnedDecisions,
+  StaticRendererOptions,
+  StaticRenderResult,
+} from "../render/types.js";
 import type { FrameworkKind } from "./framework-profile.js";
 import { renderNextAppRoute } from "./next-app-router.js";
-import { readInstalledVersion } from "../libraries/installed-version.js";
 import { createNextModel } from "./next-externals.js";
 import { renderNextPagesRoute } from "./next-pages-router.js";
 import {

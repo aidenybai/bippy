@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { element, nativeFunction, stubElement, stubValue } from "../evaluate/stubs.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -13,15 +14,14 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, nativeFunction, stubElement, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   CapturedLinguiCatalog,
   CapturedValue,
   ContextDefinition,
+  LibraryRun,
   LibraryValueProvider,
   MacroJsxChild,
-  LibraryRun,
   StaticElementValue,
   StaticObjectEntry,
   StaticObjectValue,

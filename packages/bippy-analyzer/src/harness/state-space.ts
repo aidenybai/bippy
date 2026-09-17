@@ -1,4 +1,17 @@
 import { StateSpaceError } from "../errors.js";
+import type {
+  PinnedBranchDecision,
+  PinnedDecisions,
+  PinnedRepeatDecision,
+} from "../render/types.js";
+import { areGuardsSatisfiable, GuardSolver } from "../symbolic/guard-solver.js";
+import {
+  combineGuardContexts,
+  constantGuard,
+  orGuard,
+  type Guard,
+  type GuardContext,
+} from "../symbolic/guards.js";
 import {
   matchPatternToRuntime,
   type ComparisonDivergence,
@@ -9,8 +22,6 @@ import {
   type MatchDecision,
   type PatternMatch,
 } from "./compare.js";
-import type { PinnedBranchDecision, PinnedDecisions, PinnedRepeatDecision } from "../types.js";
-import type { RuntimeFiberSnapshot } from "./snapshot.js";
 import {
   branchCondition,
   conditionValue,
@@ -21,17 +32,12 @@ import {
   type CommitStateSpace,
   type GuardCluster,
 } from "./enumerate-states.js";
-import { areGuardsSatisfiable, GuardSolver } from "./guard-solver.js";
-import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
 import type { GuardCoverage } from "./guard-coverage.js";
+import type { RuntimeFiberSnapshot } from "./snapshot.js";
+import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
 import {
   buildSymbolicTree,
-  combineGuardContexts,
-  constantGuard,
   decisionGuard,
-  type Guard,
-  type GuardContext,
-  orGuard,
   type SymbolicTree,
   type SymbolicTreeStats,
 } from "./symbolic-tree.js";

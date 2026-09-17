@@ -5,7 +5,7 @@ import {
   matchStateSpace,
   type StateCondition,
 } from "../src/harness/state-space.js";
-import { equalsGuard, type SymbolicVariable } from "../src/harness/symbolic-tree.js";
+import { equalsGuard, type SymbolicVariable } from "../src/symbolic/guards.js";
 import {
   anonymousRepeat,
   choiceBranch,

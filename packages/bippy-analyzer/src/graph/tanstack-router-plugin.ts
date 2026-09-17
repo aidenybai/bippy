@@ -1,11 +1,12 @@
-import { readFileSync } from "node:fs";
 import type { Expression, Node, Program } from "@oxc-project/types";
+import { readFileSync } from "node:fs";
 import { parseSync } from "oxc-parser";
 import { parseWithSchema } from "../errors.js";
 import { getInstalledModules } from "../libraries/installed-modules.js";
 import { forEachChildNode, isStringLiteralNode, unwrapExpression } from "../parse/ast-walk.js";
 import { getSourceLanguage } from "../parse/parse-source-file.js";
-import type { JsonValue, SourceTransform } from "../types.js";
+import type { SourceTransform } from "../parse/source-types.js";
+import type { JsonValue } from "../types.js";
 import type { ViteConfigLocation } from "./vite-config.js";
 import { applyTransformHooks, loadWithoutDom, vitePluginsSchema } from "./vite-plugins.js";
 

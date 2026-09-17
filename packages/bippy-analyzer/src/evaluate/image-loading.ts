@@ -1,4 +1,3 @@
-import { nativeFunction } from "./stubs.js";
 import type { StaticAccessor, StaticObjectValue, StaticValue } from "../types.js";
 import {
   createEventTarget,
@@ -6,6 +5,7 @@ import {
   type EventDispatchHost,
   type EventTargetModel,
 } from "./event-target-model.js";
+import { nativeFunction } from "./stubs.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,

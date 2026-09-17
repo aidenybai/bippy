@@ -1,5 +1,5 @@
 import type { Comment } from "oxc-parser";
-import type { JsxPragma } from "../types.js";
+import type { JsxPragma } from "./source-types.js";
 
 // `@babel/plugin-transform-react-jsx`'s annotation patterns: any comment in the file, last one wins.
 const RUNTIME_PATTERN = /^\s*\*?\s*@jsxRuntime\s+(\S+)\s*$/m;

@@ -1,13 +1,12 @@
 import type { Class, ClassElement, ParamPattern } from "oxc-parser";
+import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
 import type {
   ClassBody,
   ClassFieldMember,
   ClassFunctionMember,
   ClassMember,
   ComponentDefinition,
-  FunctionLikeNode,
   ReactApi,
-  SourceLocation,
   StaticClassValue,
   StaticFunctionValue,
   StaticNativeFunctionValue,
@@ -16,24 +15,25 @@ import type {
   StaticValue,
   SuperBinding,
 } from "../types.js";
-import { getTypeofValue } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
-import { getThrowCertainty, withoutThrows } from "./thrown.js";
 import {
   applyPendingState,
   createHookFrame,
   escapeStateCell,
-  type EffectCall,
-  type HookFrame,
   nextStateCell,
   queueStateUpdate,
+  type EffectCall,
+  type HookFrame,
   type StateCell,
 } from "./hooks.js";
 import type { Interpreter } from "./interpreter.js";
 import { toPropertyKey } from "./primitive-shapes.js";
-import { providedContextValue } from "./react-calls.js";
+import { setPrototypeOwner } from "./prototype-owners.js";
+import { providedContextValue } from "./react-context.js";
 import { createScope } from "./scope.js";
+import { getThrowCertainty, withoutThrows } from "./thrown.js";
+import { getTypeofValue } from "./value-typeof.js";
 import {
   accessorEntry,
   describeValue,
@@ -44,14 +44,14 @@ import {
   getTruthiness,
   isCallable,
   isNullish,
+  mapValue,
   NULL_VALUE,
   objectFromRecord,
-  mapValue,
   objectValue,
   primitiveValue,
   setObjectProperty,
-  TRUE_VALUE,
   thrownValue,
+  TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownValue,
 } from "./values.js";
@@ -266,7 +266,7 @@ export const getSuperObject = (
 
 /** Keyed by the evaluated class body, which a class value and the component definition derived from it share. */
 const classPrototypes = new WeakMap<ClassBody, StaticObjectValue>();
-const prototypeOwners = new WeakMap<StaticObjectValue, StaticClassValue>();
+
 /** How many entries each `Class.prototype` held once its own members were bound; later ones were assigned onto it. */
 const prototypeMemberCounts = new WeakMap<StaticObjectValue, number>();
 
@@ -276,16 +276,6 @@ const getPrototypeAssignments = (classValue: StaticClassValue): StaticObjectEntr
   const memberCount = prototype && prototypeMemberCounts.get(prototype);
   return prototype && memberCount !== undefined ? prototype.entries.slice(memberCount) : [];
 };
-
-/** The class whose `.prototype` this object is, or null for any other object. */
-export const getPrototypeOwner = (value: StaticObjectValue): StaticClassValue | null =>
-  prototypeOwners.get(value) ?? null;
-
-/** `Object.getPrototypeOf(Base.prototype)` is `Object.prototype` when `Base` has no `extends` clause. */
-export const isBaseClassPrototype = (value: StaticObjectValue): boolean =>
-  getPrototypeOwner(value)?.body.superValue === null;
-
-export const isClassPrototype = (value: StaticObjectValue): boolean => prototypeOwners.has(value);
 
 export const getClassPrototypeObject = (
   interpreter: Interpreter,
@@ -298,7 +288,7 @@ export const getClassPrototypeObject = (
   const prototype = objectFromRecord({ constructor: classValue });
   if (superValue?.kind === "class") prototype.constructedBy = superValue;
   classPrototypes.set(classValue.body, prototype);
-  prototypeOwners.set(prototype, classValue);
+  setPrototypeOwner(prototype, classValue);
   const seen = new Set<string>();
   for (const current of collectClassChain(classValue)) {
     const methodContext = methodContextFor(current, context, prototype);
@@ -469,7 +459,7 @@ const readClassContext = (
   const contextType = getStaticProperty(classValue, "contextType");
   if (contextType?.kind === "context") {
     return providedContextValue(
-      interpreter,
+      interpreter.assumeOuterProviders,
       contextType.context,
       context.readContext(contextType.context),
       null,

@@ -34,6 +34,11 @@ interface SymbolicVariable {
 }
 ```
 
+Inputs and guards are defined in `src/symbolic/guards.ts`, below both evaluation
+and the harness. Their schemas and serialization live in
+`src/symbolic/serialization.ts`; the tree and fiber-pattern schemas remain in
+the harness.
+
 A **guard** is a boolean formula over symbolic variables:
 
 ```
@@ -113,7 +118,7 @@ interface StaticStateSpace {
 Decisions are grouped into **clusters**: two decisions are in one cluster when
 they mention a common input (before any iteration scope) or one nests inside
 the other. Each cluster is enumerated on its own under a finite-domain solver
-(`guard-solver.ts`): a decision's side is only taken when its guard is jointly
+(`src/symbolic/guard-solver.ts`): a decision's side is only taken when its guard is jointly
 satisfiable with the guards already taken on this path, so contradictory
 combinations never exist rather than being enumerated and filtered.
 `stateCount` is the product of the cluster sizes; whole states are only

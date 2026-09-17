@@ -1,9 +1,10 @@
 import path from "node:path";
 import { createFrameworkRenderer, type FrameworkRenderer } from "../frameworks/render-framework.js";
-import type { RuntimeObservations, StaticRenderResult, StaticRendererOptions } from "../types.js";
+import type { StaticRenderResult, StaticRendererOptions } from "../render/types.js";
+import type { RuntimeObservations } from "../types.js";
+import { getDevServerEnvironment } from "./dev-server.js";
 import { getSettleMs, type CorpusEntry } from "./manifest.js";
 import { readProcessEnvironment, runWithProcessEnvironment } from "./process-environment.js";
-import { getDevServerEnvironment } from "./dev-server.js";
 
 const rendererOptionsForEntry = (
   entry: CorpusEntry,

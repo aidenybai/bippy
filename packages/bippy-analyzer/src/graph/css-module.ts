@@ -5,7 +5,8 @@ import {
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
 } from "../evaluate/values.js";
-import type { ImportedName, StaticValue } from "../types.js";
+import type { StaticValue } from "../types.js";
+import type { ImportedName } from "./module-types.js";
 
 const CSS_MODULE_PATH = /\.module\.(css|pcss|postcss|scss|sass|less|styl|stylus)$/;
 /** Vite's `CSS_LANGS_RE`: files its own css plugin serves. */

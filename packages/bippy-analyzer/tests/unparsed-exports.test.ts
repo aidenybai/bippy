@@ -1,16 +1,16 @@
+import { buildSync } from "esbuild";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire, wrap } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { Script } from "node:vm";
-import { buildSync } from "esbuild";
 import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vite-plus/test";
 import { ModuleGraph } from "../src/graph/module-graph.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
 import { parseSourceText, SourceFileCache } from "../src/parse/parse-source-file.js";
-import type { SourceTransform } from "../src/types.js";
+import type { SourceTransform } from "../src/parse/source-types.js";
 
 interface ParserCase {
   name: string;

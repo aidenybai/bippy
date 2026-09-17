@@ -1,6 +1,7 @@
-import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
-import { nativeFunction } from "./stubs.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import type { Interpreter } from "./interpreter.js";
+import { nativeFunction } from "./stubs.js";
 import { UNDEFINED_VALUE, objectFromRecord, unknownValue } from "./values.js";
 
 const OBSERVER_CONSTRUCTOR_NAMES = new Set([

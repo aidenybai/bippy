@@ -1,3 +1,4 @@
+import { formatGuard, formatVariable, type InputVariable } from "../symbolic/guards.js";
 import type { ComparisonDivergence, ComparisonReport, WildcardAbsorption } from "./compare.js";
 import { enumerateClusters, type GuardCluster } from "./enumerate-states.js";
 import { formatGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
@@ -11,12 +12,7 @@ import {
   type StaticState,
 } from "./state-space.js";
 import { formatRepeatBounds, type PatternNode } from "./static-pattern.js";
-import {
-  formatGuard,
-  formatVariable,
-  type InputVariable,
-  type SymbolicTree,
-} from "./symbolic-tree.js";
+import type { SymbolicTree } from "./symbolic-tree.js";
 
 const percent = (value: number): string => `${(value * 100).toFixed(1)}%`;
 

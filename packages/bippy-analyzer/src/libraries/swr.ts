@@ -1,3 +1,5 @@
+import { recordInputSource } from "../evaluate/predicates.js";
+import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   booleanValue,
   branchValue,
@@ -15,8 +17,6 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { recordInputSource } from "../evaluate/predicates.js";
-import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import type {
   CapturedSwrEntry,
   ContextDefinition,

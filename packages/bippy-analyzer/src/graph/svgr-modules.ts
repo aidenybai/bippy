@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getInstalledModules } from "../libraries/installed-modules.js";
-import type { JsonValue, ProjectContext, SourceTransform, TransformedSource } from "../types.js";
+import type { SourceTransform, TransformedSource } from "../parse/source-types.js";
+import type { JsonValue, ProjectContext } from "../types.js";
 import { readInstalledPackage } from "./installed-package.js";
 import type { ModuleResolver } from "./module-resolver.js";
 

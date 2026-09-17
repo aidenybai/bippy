@@ -1,6 +1,6 @@
+import type { SourceLocation } from "../parse/source-types.js";
 import type {
   JournaledState,
-  SourceLocation,
   StaticObjectValue,
   StaticValue,
   StringComposition,
@@ -9,8 +9,8 @@ import type {
 } from "../types.js";
 import { createGeneratorValue, getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
-import { getSearchParamsItems } from "./url-search-params.js";
 import { getTruthinessPredicate } from "./predicates.js";
+import { getSearchParamsItems } from "./url-search-params.js";
 import {
   accessorEntry,
   branchValue,

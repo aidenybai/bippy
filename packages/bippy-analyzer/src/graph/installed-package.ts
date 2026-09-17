@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { readPackageManifest } from "../package-manifest.js";
-import type { InstalledPackage, ModuleResolution } from "../types.js";
+import type { InstalledPackage } from "../types.js";
 import { isInstalledFor } from "./install-root.js";
 import type { ModuleResolver } from "./module-resolver.js";
+import type { ModuleResolution } from "./module-types.js";
 
 const resolvedFilePath = (rootDirectory: string, resolution: ModuleResolution): string | null =>
   resolution.kind === "external" &&

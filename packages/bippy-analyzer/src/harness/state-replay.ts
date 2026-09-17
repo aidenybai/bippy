@@ -1,4 +1,12 @@
-import type { PinnedDecisions, StaticRenderResult } from "../types.js";
+import type { PinnedDecisions, StaticRenderResult } from "../render/types.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import { choiceGuard, negateGuard, type Guard } from "../symbolic/guards.js";
+import {
+  enumerateStaticStates,
+  type CompareRenderResult,
+  type StaticRenderStateSpace,
+  type StaticStateSpaceOptions,
+} from "./compare-render.js";
 import {
   describePatternNode,
   matchPatternToRuntime,
@@ -7,22 +15,7 @@ import {
   type ComparisonReport,
   type ComparisonStatus,
 } from "./compare.js";
-import {
-  enumerateStaticStates,
-  type CompareRenderResult,
-  type StaticRenderStateSpace,
-  type StaticStateSpaceOptions,
-} from "./compare-render.js";
 import type { RuntimeFiberSnapshot } from "./snapshot.js";
-import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
-import { areGuardsSatisfiable } from "./guard-solver.js";
-import {
-  choiceGuard,
-  COMMIT_VARIABLE,
-  decisionGuard,
-  negateGuard,
-  type Guard,
-} from "./symbolic-tree.js";
 import {
   getPinnedPattern,
   pinDecisions,
@@ -31,6 +24,8 @@ import {
   type StaticState,
   type StaticStateSpace,
 } from "./state-space.js";
+import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
+import { COMMIT_VARIABLE, decisionGuard } from "./symbolic-tree.js";
 
 // The enumeration derives every state from one render in which all
 // alternatives were materialized together, so module state, refs and effects

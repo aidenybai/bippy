@@ -1,3 +1,5 @@
+import { recordInputSource } from "../evaluate/predicates.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   booleanValue,
   branchValue,
@@ -21,8 +23,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { recordInputSource } from "../evaluate/predicates.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import { hashKey } from "../observations.js";
 import type {
   CapturedMutation,

@@ -1,3 +1,5 @@
+import { formatSourceLocation } from "../parse/source-location.js";
+import type { SourceLocation } from "../parse/source-types.js";
 import {
   andGuard,
   compareGuard,
@@ -9,10 +11,7 @@ import {
   inSetGuard,
   negateGuard,
   orGuard,
-  parseSymbolicPredicate,
   predicateGuards,
-  serializeSymbolicCardinality,
-  serializeSymbolicPredicate,
   truthyGuard,
   type CompareOperator,
   type Guard,
@@ -20,10 +19,14 @@ import {
   type InputSourceKind,
   type InputVariable,
   type SymbolicVariable,
-} from "../harness/symbolic-tree.js";
-import { formatSourceLocation } from "../parse/source-location.js";
-import type { SourceLocation, StaticBranchValue, StaticValue } from "../types.js";
-import { UNDEFINED_VALUE, branchValue, describeValue, getTruthiness } from "./values.js";
+} from "../symbolic/guards.js";
+import {
+  parseSymbolicPredicate,
+  serializeSymbolicCardinality,
+  serializeSymbolicPredicate,
+} from "../symbolic/serialization.js";
+import type { StaticBranchValue, StaticValue } from "../types.js";
+import { branchValue, describeValue, getTruthiness, UNDEFINED_VALUE } from "./values.js";
 
 // A branch predicate is the guard that picks an alternative, written over the
 // inputs the interpreter could not see. Values derived from an input (its

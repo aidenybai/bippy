@@ -6,15 +6,15 @@ import type {
   Node,
   ParamPattern,
 } from "oxc-parser";
+import type { ModuleRecord } from "../graph/module-types.js";
+import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
+import type { FunctionLikeNode } from "../parse/source-types.js";
 import type {
-  FunctionLikeNode,
-  ModuleRecord,
   StaticFunctionValue,
   StaticNativeFunctionValue,
   StaticPrimitiveValue,
   StaticValue,
 } from "../types.js";
-import { forEachChildNode, isFunctionLikeNode } from "../parse/ast-walk.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
 import { isUserDrivenEventHandlerProp } from "./event-listeners.js";
 import { findOwningScope } from "./scope.js";

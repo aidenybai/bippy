@@ -3,7 +3,7 @@ import { isBuiltin } from "node:module";
 import path from "node:path";
 import { ResolverFactory, type ResolveResult } from "oxc-resolver";
 import { z } from "zod";
-import type { ModuleResolution } from "../types.js";
+import type { ModuleResolution } from "./module-types.js";
 
 export interface ModuleResolverOptions {
   /** Path alias config; a sibling `jsconfig.json` stands in when this file does not exist. */

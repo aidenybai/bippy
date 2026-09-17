@@ -1,13 +1,13 @@
+import type { MutableHeapValue } from "../evaluate/heap-journal.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
+  isCallable,
+  isUndefinedValue,
   listValue,
   primitiveValue,
   UNDEFINED_VALUE,
   unknownValue,
-  isCallable,
-  isUndefinedValue,
 } from "../evaluate/values.js";
-import type { MutableHeapValue } from "../evaluate/heap-journal.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type { StaticValue, StubRenderTools } from "../types.js";
 import {
   cloneContainer,

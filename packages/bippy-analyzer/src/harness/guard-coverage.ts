@@ -1,10 +1,7 @@
 import { z } from "zod";
-import { areGuardsSatisfiable } from "./guard-solver.js";
-import type { StateCondition } from "./state-space.js";
-import { scopeRepeatIteration, type PatternNode, type PatternRepeat } from "./static-pattern.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
 import {
   andGuard,
-  COMMIT_INPUT,
   compareGuard,
   constantGuard,
   equalsGuard,
@@ -12,8 +9,10 @@ import {
   isSameGuard,
   orGuard,
   type Guard,
-  type SymbolicTree,
-} from "./symbolic-tree.js";
+} from "../symbolic/guards.js";
+import type { StateCondition } from "./state-space.js";
+import { scopeRepeatIteration, type PatternNode, type PatternRepeat } from "./static-pattern.js";
+import { COMMIT_INPUT, type SymbolicTree } from "./symbolic-tree.js";
 
 // Guard coverage is the symbolic counterpart of fiber coverage: not how many
 // fibers a capture matched, but which side of every guard some capture took.

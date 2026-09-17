@@ -1,3 +1,5 @@
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type {
   Argument,
   ArrayExpression,
@@ -35,24 +37,27 @@ import type {
   TemplateLiteral,
   TryStatement,
   UnaryExpression,
-  UnaryOperator,
   UpdateExpression,
   VariableDeclaration,
   VariableDeclarator,
 } from "oxc-parser";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { ParserError } from "../errors.js";
 import { getAssetModuleValue, isAssetImport } from "../graph/asset-module.js";
 import { getCssModuleValue, isCssModulePath } from "../graph/css-module.js";
 import { getEsbuildDeclarationName } from "../graph/esbuild-symbol-names.js";
 import { getTransformedRuntimeSpecifier } from "../graph/helper-packages.js";
-import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
+import { hasExportedName, isClientModule } from "../graph/module-record.js";
 import { getPackageNameFromSpecifier, isInsideNodeModules } from "../graph/module-resolver.js";
-import { nativeFunction } from "./stubs.js";
-import { isStrictCode } from "./strict-code.js";
-import { GlobalProperties, type GlobalPropertyState } from "./global-properties.js";
+import type {
+  ImportedName,
+  ModuleRecord,
+  ResolvedSymbol,
+  TopLevelBinding,
+} from "../graph/module-types.js";
+import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
+import type { HostDocument } from "../host/host-document.js";
+import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { getLibraryValue, isModeledLibraryExport } from "../libraries/index.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
@@ -67,95 +72,89 @@ import {
   unwrapExpression,
 } from "../parse/ast-walk.js";
 import { getSourceLocation } from "../parse/source-location.js";
+import type { Diagnostic, FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
+import { getTypeScriptDeclarationName } from "../parse/typescript-declarations.js";
 import {
   CONTEXT_OWN_KEYS,
-  FUNCTION_OWN_KEYS,
-  getStubOwnKeys,
-  REACT_ELEMENT_OWN_KEYS,
-  WRAPPER_OWN_KEYS,
   doesStrictModeDoubleInvokeHookFactories,
+  FUNCTION_OWN_KEYS,
   getReactElementSymbolKey,
+  getStubOwnKeys,
   hasLegacyContext,
+  REACT_ELEMENT_OWN_KEYS,
   REACT_ELEMENT_SYMBOL_KEYS,
+  WRAPPER_OWN_KEYS,
 } from "../react/element-shape.js";
+import { splitElementKey, toClientReference } from "../react/element-type.js";
 import {
-  splitElementKey,
-  toClientReference,
-  toElementKey,
-  toElementType,
-} from "../react/element-type.js";
-import {
-  getExternalMember,
   getReactApiTypeof,
   isClientOnlyReactApi,
   isReactLikePackage,
-  REACT_MEMO_CACHE_SENTINEL_KEY,
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
 import {
-  getCompilerHelper,
-  getInlineCompilerHelper,
-  getInlineHelperFunction,
-  isEsModuleLike,
-} from "./compiler-helpers.js";
-import { createErrorValue } from "./errors.js";
+  andGuard,
+  constantGuard,
+  type Guard,
+  type GuardContext,
+  negateGuard,
+  orGuard,
+} from "../symbolic/guards.js";
+import { parseSymbolicPredicate, serializeSymbolicPredicate } from "../symbolic/serialization.js";
 import type {
-  ClassBody,
-  Diagnostic,
-  ExternalValueProvider,
-  FunctionLikeNode,
-  ImportedName,
-  JournaledState,
   CapturedExportReference,
   CapturedPageState,
   CapturedValue,
-  JsonValue,
+  ClassBody,
   CompilerDefine,
-  ViteClientEnvironment,
-  ModuleRecord,
+  ExternalValueProvider,
+  JournaledState,
+  JsonValue,
   LibraryRun,
-  ProjectContext,
   ProcessEnvironment,
+  ProjectContext,
   ReactApi,
   RenderEnvironment,
-  ResolvedSymbol,
   Scope,
-  SourceLocation,
+  StaticAccessor,
   StaticBranchValue,
   StaticClassValue,
   StaticElementType,
-  StaticElementValue,
   StaticFunctionValue,
   StaticGlobalValue,
-  StaticAccessor,
   StaticListValue,
   StaticNamespaceValue,
   StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticObjectValue,
-  StaticPrimitive,
-  StaticUnknownPrimitiveValue,
   StaticValue,
-  TaskBinder,
   StyledComponentsTransformOptions,
   SuperBinding,
-  TopLevelBinding,
-  UnknownPrimitiveType,
+  TaskBinder,
+  ViteClientEnvironment,
 } from "../types.js";
 import {
-  INTRINSIC_PROTOTYPE_NAMES,
   evaluateBuiltinCall,
-  promiseTools,
   getBuiltinGlobal,
-  getGlobalTypeof,
-  getTypeofValue,
-  isModeledOpaqueMethodName,
-  isPromiseMethodName,
+  INTRINSIC_PROTOTYPE_NAMES,
+  promiseTools,
 } from "./builtin-calls.js";
 import {
-  evaluateClassMembers,
+  BUNDLER_INJECTED_NAMES,
+  DEV_SERVER_MODE,
+  getInlinedNodeEnv,
+  isBundlerUndeclaredName,
+  isEnvironmentObject,
+  isUnsettableDefineName,
+  isWebpackBundled,
+  isWebpackRequireName,
+  NODE_ENV_DEFINES,
+} from "./bundler-globals.js";
+import {
   constructClassInstance,
+  evaluateClassMembers,
   getClassLength,
   getClassPrototypeObject,
   getComponentProperty,
@@ -163,109 +162,44 @@ import {
   getReactBasePrototype,
   getStaticProperty,
   getSuperObject,
-  hasKnownStaticChain,
   getValueParams,
+  hasKnownStaticChain,
   isReactComponentBase,
 } from "./class-component.js";
 import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
-import { createGeneratorValue } from "./generators.js";
-import { getDocumentBaseUri, getPageLocationMember } from "./page-location.js";
-import { hasExportedName, isClientModule } from "../graph/module-record.js";
-import type { HostDocument } from "../host/host-document.js";
-import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
-import {
-  type SessionHistory,
-  createSessionHistory,
-  getHistoryMember,
-  isHistoryName,
-} from "./session-history.js";
-import {
-  BUNDLER_INJECTED_NAMES,
-  DEV_SERVER_MODE,
-  isBundlerUndeclaredName,
-  isWebpackBundled,
-  getInlinedNodeEnv,
-  NODE_ENV_DEFINES,
-  isEnvironmentObject,
-  isUnsettableDefineName,
-  isWebpackRequireName,
-} from "./bundler-globals.js";
-import {
-  hasFunctionTextProperty,
-  hasIntrinsicMember,
-  hasProperty,
-  OBJECT_PROTOTYPE_METHODS,
-  OBJECT_PROTOTYPE_OWN_NAMES,
-} from "./has-property.js";
-import { getBuiltinWitness, getPrototypeWitness, isInstanceOf } from "./instance-of.js";
-import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
-import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
-import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
-import {
-  GLOBAL_OBJECT_VALUE,
-  getLanguageObject,
-  getPrimitiveWitness,
-  getPrototypeConstructorGlobal,
-} from "./host-globals.js";
-import {
-  applyNumberRangeOperator,
-  compareNumberRanges,
-  concatenateStrings,
-  getShapedStringCharacter,
-  getShapedStringLength,
-  isFunctionText,
-  mayEqualPropertyKey,
-  toPropertyKey,
-  toStringValue,
-} from "./primitive-shapes.js";
-import {
-  getCaughtValue,
-  forgetThrowCertainty,
-  getThrowCertainty,
-  getThrowCondition,
-  getThrownOperand,
-  getThrownPaths,
-  withoutThrows,
-} from "./thrown.js";
-import { assignEventHandlerProperty } from "./event-listeners.js";
-import { startImageLoad } from "./resource-loading.js";
-import {
-  deleteNativeObjectComposedMember,
-  deleteNativeObjectMember,
-  getHostDocumentExpando,
-  getNativeObjectComposedMember,
-  getExactLanguageObject,
-  getNativeObjectMember,
-  hasHostDocumentMember,
-  setHostDocumentMember,
-  setNativeObjectComposedMember,
-  setNativeObjectMember,
-  toNativeObjectPrimitive,
-} from "./native-values.js";
-import {
-  HeapJournal,
-  IN_PROGRESS,
-  type ModuleValues,
-  type MutableHeapValue,
-} from "./heap-journal.js";
-import {
-  type StorageAreas,
-  createStorageAreas,
-  getStorageAreaName,
-  getStorageLength,
-} from "./web-storage.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import {
-  collectStyledDisplayNames,
-  DEFAULT_STYLED_COMPONENTS_TRANSFORM,
-  STYLED_COMPONENTS_MACRO_SPECIFIER,
-} from "./styled-components-transform.js";
-import type { CallFrame, ContextReader, EvaluationContext, StepBudget } from "./context.js";
-import type { StateCell } from "./hooks.js";
-import { NO_PROVIDERS, withOutcomeHandler, withScope, withoutSuspension } from "./context.js";
-import { decodeJsxEntities } from "./jsx-entities.js";
-import { cleanJsxText } from "./jsx-text.js";
-import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
+  getCompilerHelper,
+  getInlineCompilerHelper,
+  getInlineHelperFunction,
+  isEsModuleLike,
+} from "./compiler-helpers.js";
+import {
+  COMPLETES,
+  getCompletionValue,
+  getPreferredOutcome,
+  isPureCompletion,
+  isPureReturn,
+  jumpOutcome,
+  mergeOutcomes,
+  outcomeToReturnValue,
+  returnOutcome,
+  type StatementOutcome,
+  SUSPENDED,
+} from "./completion.js";
+import type {
+  CallFrame,
+  ConditionalEvaluationOptions,
+  ContextReader,
+  EvaluationContext,
+  FunctionCallOptions,
+  StatementContinuation,
+  StatementValueContinuation,
+  StepBudget,
+  ValueCallOptions,
+} from "./context.js";
+import { NO_PROVIDERS, withOutcomeHandler, withoutSuspension, withScope } from "./context.js";
+import { createErrorValue } from "./errors.js";
 import { EscapeMemo } from "./escape-memo.js";
 import {
   type EscapedMutation,
@@ -278,18 +212,34 @@ import {
   isClosureLocal,
   resolveAccessPath,
 } from "./escapes.js";
+import { assignEventHandlerProperty } from "./event-listeners.js";
+import { createGeneratorValue } from "./generators.js";
+import { GlobalProperties, type GlobalPropertyState } from "./global-properties.js";
 import {
-  type AsyncCall,
-  awaitedValue,
-  escapedPromiseValue,
-  getModeledPromise,
-  getAwaitPromise,
-  isAwaitDeferred,
-  resolvedPromiseValue,
-  suspendOnPromise,
-} from "./promises.js";
-import { applyClockOperator, TimerQueue } from "./timers.js";
+  hasFunctionTextProperty,
+  hasIntrinsicMember,
+  hasProperty,
+  OBJECT_PROTOTYPE_METHODS,
+  OBJECT_PROTOTYPE_OWN_NAMES,
+} from "./has-property.js";
+import {
+  HeapJournal,
+  IN_PROGRESS,
+  type ModuleValues,
+  type MutableHeapValue,
+} from "./heap-journal.js";
+import type { StateCell } from "./hooks.js";
+import { getPrimitiveWitness, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
+import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
+import { decodeJsxEntities } from "./jsx-entities.js";
+import { cleanJsxText } from "./jsx-text.js";
+import { getPrototypeConstructorGlobal } from "./language-intrinsics.js";
+import type { LoopBodyEvaluation } from "./loops.js";
 import { evaluateLoop } from "./loops.js";
+import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
+import { isModeledOpaqueMethodName, isPromiseMethodName } from "./method-signatures.js";
+import { MutationLog } from "./mutation-log.js";
 import {
   applyNarrowing,
   getDiscriminantTargets,
@@ -300,100 +250,150 @@ import {
   type TestNarrowing,
   withNarrowedTarget,
 } from "./narrowing.js";
-import { evaluateReactApiCall } from "./react-calls.js";
-import { RootRenderState } from "./root-render.js";
-import { MutationLog } from "./mutation-log.js";
-import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
 import {
-  evaluateTypeScriptDeclaration,
-  getTypeScriptDeclarationName,
-} from "./typescript-declarations.js";
-import {
-  accessorEntry,
-  areValuesEquivalent,
-  branchValue,
-  CHAIN_SHORT_CIRCUIT,
-  compareIdentity,
-  completeChain,
-  componentReference,
-  countAlternatives,
-  describeValue,
-  FALSE_VALUE,
-  falsyCounterpart,
-  truthyCounterpart,
-  getClassPrototype,
-  getSpreadEntries,
-  getSymbolDescription,
-  getListItem,
-  getListLength,
-  getFunctionPrototype,
-  getKnownObjectOwnNames,
-  getObjectAccessor,
-  getObjectProperty,
-  getOwnPropertyPresence,
-  getKnownOwnKeys,
-  setObjectProperty,
-  getPreferredTruthiness,
-  getStubDisplayName,
-  getStubOwnDisplayName,
-  getStubOwnName,
-  getAllocationCount,
-  getTruthiness,
-  hasDefiniteItems,
-  isNullish,
-  isCallable,
-  isSymbolPropertyKey,
-  ITERATOR_PROPERTY_KEY,
-  listValue,
-  joinMappedAlternatives,
-  mapValue,
-  distributeBinary,
-  NULL_VALUE,
-  SYMBOL_PROPERTY_KEY_PREFIX,
-  capturedValue,
-  isJsonRecord,
-  jsonValue,
-  objectFromRecord,
-  objectValue,
-  deleteObjectProperty,
-  omitRestKeys,
-  partialJsonValue,
-  primitiveValue,
-  regExpToString,
-  setListItem,
-  setListLength,
-  toIndexKey,
-  spreadListItems,
-  TRUE_VALUE,
-  UNDEFINED_VALUE,
-  unknownPrimitiveValue,
-  thrownValue,
-  unknownValue,
-} from "./values.js";
+  deleteNativeObjectComposedMember,
+  deleteNativeObjectMember,
+  getHostDocumentExpando,
+  getNativeObjectComposedMember,
+  getNativeObjectMember,
+  hasHostDocumentMember,
+  setHostDocumentMember,
+  setNativeObjectComposedMember,
+  setNativeObjectMember,
+} from "./native-values.js";
+import { applyBinaryOperator, applyUnaryOperator, logicalOutcome } from "./operators.js";
+import { getDocumentBaseUri, getPageLocationMember } from "./page-location.js";
 import {
   createPathPredicate,
   getAlternativeGuards,
   getBranchPredicate,
-  guardedPredicate,
   getPresencePredicate,
   getTruthinessPredicate,
+  guardedPredicate,
   recordDerivation,
-  recordNegation,
   recordRefinement,
 } from "./predicates.js";
 import {
-  andGuard,
-  constantGuard,
-  negateGuard,
-  orGuard,
-  parseSymbolicPredicate,
-  serializeSymbolicPredicate,
-  type GuardContext,
-  type CompareOperator,
-  type Guard,
-  type GuardLiteral,
-} from "../harness/symbolic-tree.js";
-import { areGuardsSatisfiable } from "../harness/guard-solver.js";
+  getShapedStringCharacter,
+  getShapedStringLength,
+  isFunctionText,
+  mayEqualPropertyKey,
+  toPropertyKey,
+} from "./primitive-shapes.js";
+import {
+  type AsyncCall,
+  awaitedValue,
+  escapedPromiseValue,
+  getAwaitPromise,
+  getModeledPromise,
+  isAwaitDeferred,
+  resolvedPromiseValue,
+  suspendOnPromise,
+} from "./promises.js";
+import { evaluateReactApiCall } from "./react-calls.js";
+import { createStaticElement } from "./react-elements.js";
+import { startImageLoad } from "./resource-loading.js";
+import { RootRenderState } from "./root-render.js";
+import {
+  getClosureScopes,
+  joinScopes,
+  restoreScopes,
+  type ScopeSnapshot,
+  snapshotScopes,
+  widenMovedBindings,
+} from "./scope-journal.js";
+import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
+import {
+  createSessionHistory,
+  getHistoryMember,
+  isHistoryName,
+  type SessionHistory,
+} from "./session-history.js";
+import { isStrictCode } from "./strict-code.js";
+import { nativeFunction } from "./stubs.js";
+import {
+  collectStyledDisplayNames,
+  DEFAULT_STYLED_COMPONENTS_TRANSFORM,
+  STYLED_COMPONENTS_MACRO_SPECIFIER,
+} from "./styled-components-transform.js";
+import {
+  forgetThrowCertainty,
+  getCaughtValue,
+  getThrowCertainty,
+  getThrowCondition,
+  getThrownOperand,
+  getThrownPaths,
+  withoutThrows,
+} from "./thrown.js";
+import { TimerQueue } from "./timers.js";
+import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
+import { evaluateTypeScriptDeclaration } from "./typescript-declarations.js";
+import { getTypeofValue } from "./value-typeof.js";
+import {
+  accessorEntry,
+  areValuesEquivalent,
+  branchValue,
+  capturedValue,
+  CHAIN_SHORT_CIRCUIT,
+  completeChain,
+  componentReference,
+  deleteObjectProperty,
+  describeValue,
+  FALSE_VALUE,
+  falsyCounterpart,
+  getAllocationCount,
+  getClassPrototype,
+  getExternalMember,
+  getFunctionPrototype,
+  getKnownObjectOwnNames,
+  getKnownOwnKeys,
+  getListItem,
+  getListLength,
+  getObjectAccessor,
+  getObjectProperty,
+  getOwnPropertyPresence,
+  getPreferredTruthiness,
+  getSpreadEntries,
+  getStubDisplayName,
+  getStubOwnDisplayName,
+  getStubOwnName,
+  getSymbolDescription,
+  getTruthiness,
+  isCallable,
+  isJsonRecord,
+  isNullish,
+  isSymbolPropertyKey,
+  ITERATOR_PROPERTY_KEY,
+  joinMappedAlternatives,
+  jsonValue,
+  listValue,
+  mapValue,
+  NULL_VALUE,
+  objectFromRecord,
+  objectValue,
+  omitRestKeys,
+  partialJsonValue,
+  primitiveValue,
+  setListItem,
+  setListLength,
+  setObjectProperty,
+  spreadListItems,
+  SYMBOL_PROPERTY_KEY_PREFIX,
+  thrownValue,
+  toIndexKey,
+  TRUE_VALUE,
+  truthyCounterpart,
+  UNDEFINED_VALUE,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
+import { getWebCryptoMember, isWebCryptoName } from "./web-crypto.js";
+import {
+  createStorageAreas,
+  getStorageAreaName,
+  getStorageLength,
+  type StorageAreas,
+} from "./web-storage.js";
 
 export interface InterpreterOptions {
   viteEnvironment?: ViteClientEnvironment;
@@ -473,17 +473,6 @@ interface JsxFactory {
 
 const REACT_FRAGMENT: StaticValue = { kind: "react-api", api: "Fragment" };
 
-interface CallValueOptions {
-  thisValue?: StaticValue | null;
-  nameHint?: string | null;
-  templateArgumentNames?: Array<string | null>;
-}
-
-interface MaybeRunOptions {
-  predicate?: string;
-  unconditionalUpdates?: ReadonlySet<StateCell>;
-}
-
 type DestructuringPattern = BindingPattern | AssignmentTargetMaybeDefault;
 
 interface PatternLeafAssigner {
@@ -531,15 +520,23 @@ const getModulePathName = (name: string, filePath: string): StaticValue | null =
 const ESBUILD_TRANSFORMED_FILE = /\.(m?ts|[jt]sx)$/;
 
 const DEFAULT_MAX_CALL_DEPTH = 128;
+
 const DEFAULT_MAX_FORK_DEPTH = 5;
+
 const DEFAULT_MAX_STEPS = 2_000_000;
+
 const MAX_FORKED_REENTRIES = 1;
+
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
 const MAX_INTERVAL_TICKS = 1_000;
+
 const MAX_ITERATOR_STEPS = 256;
+
 const USE_STRICT_DIRECTIVE = "use strict";
+
 const FS_URL_PREFIX = "/@fs/";
+
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
 
 const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "caller"]);
@@ -623,50 +620,6 @@ const getIntrinsicConstructor = (object: StaticObjectValue): StaticValue | null 
   return witness === null ? null : getPrototypeConstructorGlobal(Object.getPrototypeOf(witness));
 };
 
-export type LoopJump = "break" | "continue";
-
-/**
- * Result of evaluating a statement list. `returned` collects the values of every
- * path that returned; `mayComplete` is set when at least one path fell through
- * to the end of the list.
- */
-export interface StatementOutcome {
-  returned: StaticValue | null;
-  mayComplete: boolean;
-  completion?: StaticValue;
-  /** Set when some path left the enclosing loop early; labeled jumps are `uncertain`. */
-  jump: LoopJump | "uncertain" | null;
-  /** The list stopped at an `await` of a pending promise; its rest runs once that settles. */
-  isSuspended: boolean;
-}
-
-export const COMPLETES: StatementOutcome = {
-  returned: null,
-  mayComplete: true,
-  jump: null,
-  isSuspended: false,
-};
-
-const SUSPENDED: StatementOutcome = {
-  returned: null,
-  mayComplete: false,
-  jump: null,
-  isSuspended: true,
-};
-
-const jumpOutcome = (jump: LoopJump, label: string | null): StatementOutcome => ({
-  returned: null,
-  mayComplete: false,
-  jump: label === null ? jump : "uncertain",
-  isSuspended: false,
-});
-
-const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
-  const jumps = outcomes.map((outcome) => outcome.jump).filter((jump) => jump !== null);
-  if (jumps.length === 0) return null;
-  return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
-};
-
 interface PropertyAssignmentOptions {
   receiver?: StaticValue;
   isStrict?: boolean;
@@ -685,19 +638,6 @@ interface ArgumentsContinuation {
   (args: StaticValue[], context: EvaluationContext): StaticValue;
 }
 
-interface StatementContinuation {
-  (context: EvaluationContext): StatementOutcome;
-}
-
-interface StatementValueContinuation {
-  (value: StaticValue, context: EvaluationContext): StatementOutcome;
-}
-
-interface LoopBodyEvaluation {
-  outcome: StatementOutcome;
-  isContinued: boolean;
-}
-
 /** A fork whose returning paths still await the state the surviving paths end in. */
 interface PendingReturnJoin {
   journal: HeapJournal;
@@ -708,98 +648,6 @@ interface PendingReturnJoin {
 }
 
 const completeBlock: StatementContinuation = () => COMPLETES;
-
-export const returnOutcome = (value: StaticValue): StatementOutcome => ({
-  returned: value,
-  mayComplete: false,
-  jump: null,
-  isSuspended: false,
-});
-
-const getCompletionValue = (outcome: StatementOutcome): StaticValue => {
-  if (!outcome.mayComplete) return FALSE_VALUE;
-  if (outcome.returned === null && outcome.jump === null) return TRUE_VALUE;
-  return outcome.completion ?? unknownPrimitiveValue("boolean", "statement may complete");
-};
-
-const outcomeToReturnValue = (
-  outcome: StatementOutcome,
-  location: SourceLocation | null,
-): StaticValue => {
-  if (!outcome.returned) return UNDEFINED_VALUE;
-  if (!outcome.mayComplete) return outcome.returned;
-  return branchValue(
-    [outcome.returned, UNDEFINED_VALUE],
-    "function may fall through without returning",
-    location,
-    0,
-    getTruthinessPredicate(getCompletionValue(outcome), true),
-  );
-};
-
-const isThrowingOutcome = (outcome: StatementOutcome): boolean =>
-  outcome.returned !== null && getThrowCertainty(outcome.returned) === "always";
-
-const isPureReturn = (outcome: StatementOutcome): boolean =>
-  outcome.returned !== null && !outcome.mayComplete && outcome.jump === null;
-
-const isPureCompletion = (outcome: StatementOutcome): boolean =>
-  outcome.returned === null && outcome.mayComplete && outcome.jump === null;
-
-/** A path that certainly throws is never what a rendered tree took; prefer the first path that may produce a value. */
-const getPreferredOutcome = (outcomes: StatementOutcome[], preferredOutcome: number): number => {
-  const preferred = outcomes[preferredOutcome];
-  if (!preferred || !isThrowingOutcome(preferred)) return preferredOutcome;
-  const survivor = outcomes.findIndex((outcome) => !isThrowingOutcome(outcome));
-  return survivor === -1 ? preferredOutcome : survivor;
-};
-
-/**
- * `preferredBranch` is the index of the outcome the code is expected to take;
- * when that path completes without returning, the fall-through (last) outcome
- * is what it would return.
- */
-export const mergeOutcomes = (
-  outcomes: StatementOutcome[],
-  reason: string,
-  location: SourceLocation | null,
-  preferredBranch = 0,
-  predicate: string | null = null,
-): StatementOutcome => {
-  const returnedValues: StaticValue[] = [];
-  let preferredIndex = 0;
-  const preferredOutcome = getPreferredOutcome(outcomes, preferredBranch);
-  const isFallThroughPreferred = !outcomes[preferredOutcome]?.returned;
-  outcomes.forEach((outcome, index) => {
-    if (!outcome.returned) return;
-    if (index === preferredOutcome || (isFallThroughPreferred && index === outcomes.length - 1)) {
-      preferredIndex = returnedValues.length;
-    }
-    returnedValues.push(outcome.returned);
-  });
-  return {
-    returned:
-      returnedValues.length > 0
-        ? branchValue(
-            returnedValues,
-            reason,
-            location,
-            preferredIndex,
-            returnedValues.length === outcomes.length ? predicate : null,
-          )
-        : null,
-    mayComplete: outcomes.some((outcome) => outcome.mayComplete),
-    completion: branchValue(
-      outcomes.map(getCompletionValue),
-      reason,
-      location,
-      preferredOutcome,
-      predicate,
-    ),
-    jump: mergeJumps(outcomes),
-    isSuspended: outcomes.some((outcome) => outcome.isSuspended),
-  };
-};
 
 /** A counter or flag threaded through a recursion; it only bounds a walk whose data the analysis cannot see. */
 const isSameTypePrimitive = (previous: StaticValue, next: StaticValue): boolean =>
@@ -900,7 +748,7 @@ const getNullishPropertyError = (
 
 const getCallReceiver = (
   functionValue: StaticFunctionValue,
-  options: CallOptions,
+  options: FunctionCallOptions,
 ): StaticValue | null =>
   functionValue.node.type === "ArrowFunctionExpression"
     ? functionValue.thisValue
@@ -975,13 +823,6 @@ const markEscapedMutation = (value: StaticValue, mutation: EscapedMutation): voi
     value: branchValue([current, unknownValue(reason)], reason),
   });
 };
-
-interface CallOptions {
-  thisValue?: StaticValue | null;
-  callStack?: CallFrame[];
-  /** The caller awaits the result (route `lazy`, server components), so an async body is evaluated with `await x` as `x`. */
-  awaited?: boolean;
-}
 
 export class Interpreter {
   readonly graph: ModuleGraph;
@@ -4497,7 +4338,7 @@ export class Interpreter {
     args: StaticValue[],
     context: EvaluationContext,
     location: SourceLocation | null,
-    options: CallValueOptions = {},
+    options: ValueCallOptions = {},
   ): StaticValue {
     const throwingArgumentIndex = args.findIndex(
       (argument) => getThrowCertainty(argument) !== "never",
@@ -5035,7 +4876,7 @@ export class Interpreter {
     functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
-    options: CallOptions = {},
+    options: FunctionCallOptions = {},
   ): StaticValue {
     const callStack = options.callStack ?? context.callStack;
     const location = this.locate(functionValue.module, functionValue.node);
@@ -5101,7 +4942,7 @@ export class Interpreter {
     functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
-    options: CallOptions,
+    options: FunctionCallOptions,
   ): StaticValue {
     const yields: StaticValue[] = [];
     this.generatorYields.push(yields);
@@ -5119,7 +4960,7 @@ export class Interpreter {
     functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
     context: EvaluationContext,
-    options: CallOptions,
+    options: FunctionCallOptions,
     asyncCall: AsyncCall | null,
   ): StaticValue {
     const location = this.locate(functionValue.module, functionValue.node);
@@ -5777,7 +5618,7 @@ export class Interpreter {
     location: SourceLocation | null,
     isLikelyRun = true,
     isRepeated = false,
-    options?: MaybeRunOptions,
+    options?: ConditionalEvaluationOptions,
   ): Result {
     const predicate = options?.predicate ?? createPathPredicate(reason, location);
     const entrySnapshot = snapshotScopes(scope);
@@ -6342,36 +6183,7 @@ export class Interpreter {
     nameHint: string | null,
     context: EvaluationContext,
   ): StaticValue {
-    if (children.length === 1) {
-      props.entries.push({
-        kind: "property",
-        key: "children",
-        value: children[0],
-      });
-    } else if (children.length > 1) {
-      props.entries.push({
-        kind: "property",
-        key: "children",
-        value: listValue(children),
-      });
-    }
-    const element = (
-      elementType: StaticValue,
-      elementKey: StaticValue | null,
-    ): StaticElementValue => ({
-      kind: "element",
-      type: toElementType(elementType, nameHint),
-      key: toElementKey(elementKey),
-      props,
-      location,
-      environment: context.environment,
-      owner: context.owner,
-    });
-    return mapValue(type, (elementType) =>
-      key?.kind === "branch"
-        ? mapValue(key, (alternative) => element(elementType, alternative))
-        : element(elementType, key),
-    );
+    return createStaticElement(type, props, key, children, location, nameHint, context);
   }
 
   private evaluateJsxElement(node: JSXElement, context: EvaluationContext): StaticValue {
@@ -6537,39 +6349,6 @@ export class Interpreter {
   }
 }
 
-interface ScopeSnapshot {
-  scope: Scope;
-  bindings: Map<string, StaticValue>;
-}
-
-const snapshotScopes = (scope: Scope | null): ScopeSnapshot[] => {
-  const snapshots: ScopeSnapshot[] = [];
-  let current: Scope | null = scope;
-  while (current && current.parent) {
-    snapshots.push({ scope: current, bindings: new Map(current.bindings) });
-    current = current.parent;
-  }
-  return snapshots;
-};
-
-/** The scopes the running activation closed over; `null` outside any call, where every scope outlives the path. */
-const getClosureScopes = (context: EvaluationContext): Set<Scope> | null => {
-  const frame = context.callStack.at(-1);
-  if (!frame) return null;
-  const scopes = new Set<Scope>();
-  for (let current: Scope | null = frame.scope; current; current = current.parent) {
-    scopes.add(current);
-  }
-  return scopes;
-};
-
-const restoreScopes = (snapshots: ScopeSnapshot[]): void => {
-  for (const snapshot of snapshots) {
-    snapshot.scope.bindings.clear();
-    for (const [name, value] of snapshot.bindings) snapshot.scope.bindings.set(name, value);
-  }
-};
-
 /**
  * The name a declaration gives its initializer: the bound identifier, or for
  * `const [value, setValue] = useState()` the first element, as React DevTools
@@ -6582,238 +6361,11 @@ const getDeclaredNameHint = (id: BindingPattern): string | null => {
   return first?.type === "Identifier" ? first.name : null;
 };
 
-const widenMovedBindings = (
-  entryPath: ScopeSnapshot[],
-  ranPath: ScopeSnapshot[],
-  location: SourceLocation,
-): void => {
-  entryPath.forEach((snapshot, scopeIndex) => {
-    for (const [name, before] of snapshot.bindings) {
-      const after = ranPath[scopeIndex].bindings.get(name);
-      if (after === undefined || after === before) continue;
-      const joined = branchValue([before, after], "loop-carried value", location);
-      if (countAlternatives(joined) === countAlternatives(before)) continue;
-      snapshot.scope.bindings.set(name, widenValue(joined, location));
-    }
-  });
-};
-
-const joinScopes = (
-  paths: ScopeSnapshot[][],
-  reason: string,
-  location: SourceLocation | null,
-  preferredPath: number,
-  predicate: string | null,
-): void => {
-  const [firstPath, ...otherPaths] = paths;
-  firstPath.forEach((snapshot, scopeIndex) => {
-    const siblings = otherPaths.map((path) => path[scopeIndex].bindings);
-    const names = new Set([
-      ...snapshot.bindings.keys(),
-      ...siblings.flatMap((bindings) => [...bindings.keys()]),
-    ]);
-    snapshot.scope.bindings.clear();
-    for (const name of names) {
-      const values = [snapshot.bindings, ...siblings].map(
-        (bindings) => bindings.get(name) ?? UNDEFINED_VALUE,
-      );
-      snapshot.scope.bindings.set(
-        name,
-        values.every((value) => value === values[0])
-          ? values[0]
-          : branchValue(values, reason, location, preferredPath, predicate),
-      );
-    }
-  });
-};
-
 const WRAPPER_SYMBOL_KEYS = {
   memo: "react.memo",
   "forward-ref": "react.forward_ref",
   lazy: "react.lazy",
 } as const;
-
-const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
-  if (value.kind === "unknown-primitive") return value.primitiveType;
-  if (value.kind !== "primitive") return null;
-  const type = typeof value.value;
-  return type === "string" || type === "number" || type === "boolean" ? type : null;
-};
-
-const widenValue = (value: StaticValue, location: SourceLocation): StaticValue => {
-  const alternatives = value.kind === "branch" ? value.alternatives : [value];
-  const types = new Set(alternatives.map(getPrimitiveType));
-  const [type] = types;
-  return types.size === 1 && type
-    ? unknownPrimitiveValue(type, "loop-carried value")
-    : unknownValue("loop-carried value", location);
-};
-
-/**
- * `a && b` / `a || b` whose two outcomes are interchangeable uncertain values
- * joins to one of them; a copy keeps the truth of the whole expression as a
- * formula over both operands instead of claiming it equals one of them.
- */
-const logicalOutcome = (
-  joined: StaticValue,
-  operator: "&&" | "||",
-  left: StaticValue,
-  right: StaticValue,
-): StaticValue => {
-  if (joined.kind !== "unknown-primitive" && (joined.kind !== "unknown" || joined.thrown)) {
-    return joined;
-  }
-  return recordDerivation({ ...joined }, { kind: "logical", operator, left, right });
-};
-
-const applyUnaryOperator = (
-  operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
-  argument: StaticValue,
-): StaticValue => {
-  if (getThrownOperand([argument])) return argument;
-  if (operator !== "!" && isCoercibleOperand(argument)) {
-    return applyUnaryOperator(operator, toCoercedOperand(argument, "number"));
-  }
-  switch (operator) {
-    case "!": {
-      const truthiness = getTruthiness(argument);
-      if (truthiness === null) {
-        return recordNegation(unknownPrimitiveValue("boolean", "negation of unknown"), argument);
-      }
-      return truthiness ? FALSE_VALUE : TRUE_VALUE;
-    }
-    case "-":
-      if (argument.kind === "primitive" && typeof argument.value === "number")
-        return primitiveValue(-argument.value);
-      return unknownPrimitiveValue("number", "unary minus");
-    case "+":
-      if (argument.kind === "primitive" && typeof argument.value !== "bigint")
-        return primitiveValue(Number(argument.value));
-      return unknownPrimitiveValue("number", "unary plus");
-    case "~":
-      if (argument.kind === "primitive" && typeof argument.value === "number")
-        return primitiveValue(~argument.value);
-      return unknownPrimitiveValue("number", "bitwise not");
-  }
-};
-
-const applyBinaryOperator = (
-  operator: string,
-  left: StaticValue,
-  right: StaticValue,
-  realm: HostRealm | null = null,
-): StaticValue => {
-  if (operator === "+" && (hasDefiniteItems(left) || hasDefiniteItems(right))) {
-    return applyBinaryOperator(
-      operator,
-      hasDefiniteItems(left) ? toStringValue(left) : left,
-      hasDefiniteItems(right) ? toStringValue(right) : right,
-      realm,
-    );
-  }
-  const distributed = distributeBinary(left, right, (leftAlternative, rightAlternative) =>
-    applyBinaryOperator(operator, leftAlternative, rightAlternative, realm),
-  );
-  if (distributed) return distributed;
-  const thrownOperand = getThrownOperand([left, right]);
-  if (thrownOperand) return thrownOperand;
-  const coercionHint = getCoercionHint(operator, left, right);
-  if (coercionHint !== null && (isCoercibleOperand(left) || isCoercibleOperand(right))) {
-    return applyBinaryOperator(
-      operator,
-      toCoercedOperand(left, coercionHint),
-      toCoercedOperand(right, coercionHint),
-      realm,
-    );
-  }
-  if (left.kind === "primitive" && right.kind === "primitive") {
-    const computed = computeBinary(operator, left.value, right.value);
-    if (computed !== undefined) return computed;
-  }
-  const equality = compareEquality(operator, left, right, realm);
-  if (equality) return equality;
-  if (operator === "instanceof") {
-    const isInstance = isInstanceOf(left, right, realm);
-    if (isInstance !== null) return primitiveValue(isInstance);
-  }
-  const timed = applyClockOperator(operator, left, right);
-  if (timed) return timed;
-  const ordered =
-    compareNumberRanges(operator, left, right) ?? applyNumberRangeOperator(operator, left, right);
-  if (ordered) return ordered;
-  switch (operator) {
-    case "==":
-    case "!=":
-    case "===":
-    case "!==":
-    case "<":
-    case "<=":
-    case ">":
-    case ">=":
-      return deriveComparison(
-        operator,
-        left,
-        right,
-        unknownPrimitiveValue("boolean", `${operator} on dynamic values`),
-      );
-    case "instanceof":
-    case "in":
-      return unknownPrimitiveValue("boolean", `${operator} on dynamic values`);
-    case "+": {
-      const isString =
-        (left.kind === "primitive" && typeof left.value === "string") ||
-        (right.kind === "primitive" && typeof right.value === "string") ||
-        (left.kind === "unknown-primitive" && left.primitiveType === "string") ||
-        (right.kind === "unknown-primitive" && right.primitiveType === "string");
-      if (isString) return concatenateStrings(left, right);
-      return isNumberValue(left) && isNumberValue(right)
-        ? unknownPrimitiveValue("number", "+ on dynamic values")
-        : unknownPrimitiveValue("any", "+ on dynamic values");
-    }
-    default:
-      return unknownPrimitiveValue("number", `${operator} on dynamic values`);
-  }
-};
-
-/**
- * The `ToPrimitive` hint an operator applies to an object operand; null for
- * operators that compare objects by identity (and `==` between two objects).
- */
-const getCoercionHint = (
-  operator: string,
-  left: StaticValue,
-  right: StaticValue,
-): "default" | "number" | null => {
-  switch (operator) {
-    case "+":
-      return "default";
-    case "==":
-    case "!=":
-      return left.kind === "primitive" || right.kind === "primitive" ? "default" : null;
-    case "===":
-    case "!==":
-    case "instanceof":
-    case "in":
-      return null;
-    default:
-      return "number";
-  }
-};
-
-const isCoercibleOperand = (value: StaticValue): boolean =>
-  value.kind === "regexp" || value.kind === "native-object";
-
-/** `ToPrimitive` of an object operand: `RegExp.prototype.toString`, or the native object's own conversion. */
-const toCoercedOperand = (value: StaticValue, hint: "default" | "number"): StaticValue => {
-  if (value.kind === "regexp") return primitiveValue(regExpToString(value));
-  return value.kind === "native-object" ? toNativeObjectPrimitive(value, hint) : value;
-};
-
-/** A value that is a number for sure, known or not. */
-const isNumberValue = (value: StaticValue): boolean =>
-  value.kind === "primitive"
-    ? typeof value.value === "number"
-    : value.kind === "unknown-primitive" && value.primitiveType === "number";
 
 /** React's dev `displayName` setter on `memo`/`forwardRef` also names an anonymous inner function. */
 const nameAnonymousInner = (
@@ -6827,234 +6379,4 @@ const nameAnonymousInner = (
     return;
   inner.name = displayName;
   setObjectProperty(inner.properties, "displayName", primitiveValue(displayName));
-};
-
-const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
-
-const OBJECT_VALUE_KINDS: ReadonlySet<StaticValue["kind"]> = new Set([
-  "element",
-  "list",
-  "object",
-  "function",
-  "class",
-  "regexp",
-  "context",
-  "react-api",
-  "namespace",
-  "native-object",
-  "method",
-  "native-function",
-  "proxy",
-]);
-
-const COMPARE_OPERATORS: Partial<Record<string, CompareOperator>> = {
-  "<": "<",
-  "<=": "<=",
-  ">": ">",
-  ">=": ">=",
-};
-
-const MIRRORED_COMPARISONS: Record<CompareOperator, CompareOperator> = {
-  "<": ">",
-  "<=": ">=",
-  ">": "<",
-  ">=": "<=",
-};
-
-/** Guards are serialized as JSON, where only finite numbers survive. */
-const isGuardLiteral = (value: StaticPrimitive): value is GuardLiteral =>
-  typeof value !== "bigint" &&
-  value !== undefined &&
-  (typeof value !== "number" || Number.isFinite(value));
-
-/** Records an undecided comparison of a dynamic operand against a literal as a guard over that operand. */
-const deriveComparison = (
-  operator: string,
-  left: StaticValue,
-  right: StaticValue,
-  result: StaticUnknownPrimitiveValue,
-): StaticValue => {
-  const isMirrored = right.kind !== "primitive";
-  const [operand, literalSide] = isMirrored ? [right, left] : [left, right];
-  if (literalSide.kind !== "primitive") return result;
-  const literal = literalSide.value;
-  if (EQUALITY_OPERATORS.has(operator)) {
-    if (literal !== undefined && !isGuardLiteral(literal)) return result;
-    return recordDerivation(result, {
-      kind: "equality",
-      operand,
-      literal,
-      isStrict: operator === "===" || operator === "!==",
-      isNegated: operator === "!==" || operator === "!=",
-    });
-  }
-  const compareOperator = COMPARE_OPERATORS[operator];
-  if (compareOperator === undefined || typeof literal !== "number" || !Number.isFinite(literal)) {
-    return result;
-  }
-  return recordDerivation(result, {
-    kind: "comparison",
-    operand,
-    operator: isMirrored ? MIRRORED_COMPARISONS[compareOperator] : compareOperator,
-    literal,
-  });
-};
-
-/** Loose equality only differs from identity when both sides can coerce; null, undefined and symbols never do. */
-const mayCoerce = (value: StaticValue): boolean =>
-  value.kind === "primitive"
-    ? value.value !== null && value.value !== undefined
-    : value.kind !== "symbol";
-
-/** Whether a value is an object (a global like `Date` is one once the host fixes its `typeof`). */
-const isObjectValue = (value: StaticValue, realm: HostRealm | null): boolean => {
-  if (OBJECT_VALUE_KINDS.has(value.kind)) return true;
-  if (realm === null || value.kind === "primitive") return false;
-  const typeofValue = getTypeofValue(value, realm);
-  return (
-    typeofValue.kind === "primitive" &&
-    (typeofValue.value === "object" || typeofValue.value === "function")
-  );
-};
-
-/** Two objects compare by identity under `==` as well: coercion needs a primitive operand. */
-const mayCoerceTogether = (
-  left: StaticValue,
-  right: StaticValue,
-  realm: HostRealm | null,
-): boolean =>
-  mayCoerce(left) &&
-  mayCoerce(right) &&
-  !(isObjectValue(left, realm) && isObjectValue(right, realm));
-
-/** `"" == Date`, `Object("a") == "a"`: what loosely comparing a primitive to a language object yields in this process, which implements the same language. */
-const compareLanguageObjectLoosely = (left: StaticValue, right: StaticValue): boolean | null => {
-  if (right.kind !== "primitive") return null;
-  const object: unknown =
-    left.kind === "global"
-      ? getLanguageObject(left.name)
-      : left.kind === "native-object"
-        ? getExactLanguageObject(left)
-        : null;
-  // eslint-disable-next-line eqeqeq
-  return object === null ? null : object == right.value;
-};
-
-/**
- * React's memo cache sentinel never reaches application values, so comparing
- * it against anything the interpreter cannot see is still a definite answer.
- */
-/** Whether a host global equals `undefined`/`null`, once the host fixes its `typeof`. */
-const compareGlobalToNullish = (
-  global: StaticValue,
-  other: StaticValue,
-  realm: HostRealm | null,
-): boolean | null => {
-  if (realm === null || global.kind !== "global" || other.kind !== "primitive") return null;
-  if (other.value !== undefined && other.value !== null) return null;
-  const globalTypeof = getGlobalTypeof(global.name, realm);
-  if (globalTypeof === null) return null;
-  return globalTypeof === "undefined" ? other.value === undefined : false;
-};
-
-const compareEquality = (
-  operator: string,
-  left: StaticValue,
-  right: StaticValue,
-  realm: HostRealm | null,
-): StaticValue | null => {
-  if (!EQUALITY_OPERATORS.has(operator)) return null;
-  const isStrict = operator === "===" || operator === "!==";
-  let isEqual =
-    compareIdentity(left, right) ??
-    compareGlobalToNullish(left, right, realm) ??
-    compareGlobalToNullish(right, left, realm);
-  if (isEqual === false && !isStrict && mayCoerceTogether(left, right, realm)) {
-    isEqual =
-      compareLanguageObjectLoosely(left, right) ?? compareLanguageObjectLoosely(right, left);
-  }
-  if (isEqual === null) {
-    const isSentinel = (value: StaticValue): boolean =>
-      value.kind === "symbol" && value.key === REACT_MEMO_CACHE_SENTINEL_KEY;
-    if (!isSentinel(left) && !isSentinel(right)) return null;
-    isEqual = false;
-  }
-  return primitiveValue(operator === "===" || operator === "==" ? isEqual : !isEqual);
-};
-
-const computeBinary = (
-  operator: string,
-  left: StaticPrimitive,
-  right: StaticPrimitive,
-): StaticValue | undefined => {
-  switch (operator) {
-    case "===":
-      return primitiveValue(left === right);
-    case "!==":
-      return primitiveValue(left !== right);
-    case "==":
-      // eslint-disable-next-line eqeqeq
-      return primitiveValue(left == right);
-    case "!=":
-      // eslint-disable-next-line eqeqeq
-      return primitiveValue(left != right);
-    default:
-      break;
-  }
-  if (typeof left === "bigint" || typeof right === "bigint") return undefined;
-  if (typeof left === "string" || typeof right === "string") {
-    if (operator === "+") return primitiveValue(String(left) + String(right));
-  }
-  if (typeof left === "string" && typeof right === "string") {
-    switch (operator) {
-      case "<":
-        return primitiveValue(left < right);
-      case "<=":
-        return primitiveValue(left <= right);
-      case ">":
-        return primitiveValue(left > right);
-      case ">=":
-        return primitiveValue(left >= right);
-      default:
-        break;
-    }
-  }
-  const leftNumber = Number(left);
-  const rightNumber = Number(right);
-  switch (operator) {
-    case "+":
-      return primitiveValue(leftNumber + rightNumber);
-    case "-":
-      return primitiveValue(leftNumber - rightNumber);
-    case "*":
-      return primitiveValue(leftNumber * rightNumber);
-    case "/":
-      return primitiveValue(leftNumber / rightNumber);
-    case "%":
-      return primitiveValue(leftNumber % rightNumber);
-    case "**":
-      return primitiveValue(leftNumber ** rightNumber);
-    case "<":
-      return primitiveValue(leftNumber < rightNumber);
-    case "<=":
-      return primitiveValue(leftNumber <= rightNumber);
-    case ">":
-      return primitiveValue(leftNumber > rightNumber);
-    case ">=":
-      return primitiveValue(leftNumber >= rightNumber);
-    case "&":
-      return primitiveValue(leftNumber & rightNumber);
-    case "|":
-      return primitiveValue(leftNumber | rightNumber);
-    case "^":
-      return primitiveValue(leftNumber ^ rightNumber);
-    case "<<":
-      return primitiveValue(leftNumber << rightNumber);
-    case ">>":
-      return primitiveValue(leftNumber >> rightNumber);
-    case ">>>":
-      return primitiveValue(leftNumber >>> rightNumber);
-    default:
-      return undefined;
-  }
 };

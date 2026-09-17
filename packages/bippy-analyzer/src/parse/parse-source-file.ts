@@ -1,17 +1,17 @@
 import { readFileSync, statSync } from "node:fs";
 import { extname } from "node:path";
-import { parseSync } from "oxc-parser";
 import type { Comment } from "oxc-parser";
+import { parseSync } from "oxc-parser";
+import type { ProjectJsxOptions } from "../graph/jsx-compiler-options.js";
+import { isInsideNodeModules } from "../graph/module-resolver.js";
+import { readJsxPragma } from "./jsx-pragma.js";
 import type {
   JsxPragma,
   ParsedSourceFile,
   SourceLanguage,
   SourceTransform,
   TransformedSource,
-} from "../types.js";
-import type { ProjectJsxOptions } from "../graph/jsx-compiler-options.js";
-import { isInsideNodeModules } from "../graph/module-resolver.js";
-import { readJsxPragma } from "./jsx-pragma.js";
+} from "./source-types.js";
 
 const EXTENSION_TO_LANG: Record<string, SourceLanguage> = {
   ".js": "jsx",

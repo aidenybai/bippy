@@ -1,4 +1,3 @@
-import { visitorKeys } from "oxc-parser";
 import type {
   Argument,
   AwaitExpression,
@@ -11,7 +10,8 @@ import type {
   StringLiteral,
   VariableDeclaration,
 } from "oxc-parser";
-import type { FunctionLikeNode } from "../types.js";
+import { visitorKeys } from "oxc-parser";
+import type { FunctionLikeNode } from "./source-types.js";
 
 interface ChildNodeVisitor {
   (child: Node, key: string, index: number): void;

@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   FALSE_VALUE,
   TRUE_VALUE,
@@ -9,7 +10,6 @@ import {
   objectValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
   StaticListValue,

@@ -1,6 +1,7 @@
-import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
-import { nativeFunction } from "./stubs.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import { resolvedPromiseValue } from "./promises.js";
+import { nativeFunction } from "./stubs.js";
 import {
   getObjectProperty,
   isKnownString,

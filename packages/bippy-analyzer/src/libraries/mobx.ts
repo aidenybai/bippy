@@ -1,3 +1,4 @@
+import { lazyProperties, nativeFunction, noopFunction, stubValue } from "../evaluate/stubs.js";
 import {
   FALSE_VALUE,
   UNDEFINED_VALUE,
@@ -7,7 +8,6 @@ import {
   objectFromRecord,
   primitiveValue,
 } from "../evaluate/values.js";
-import { lazyProperties, nativeFunction, noopFunction, stubValue } from "../evaluate/stubs.js";
 import type {
   ExternalValueProvider,
   ModeledExports,

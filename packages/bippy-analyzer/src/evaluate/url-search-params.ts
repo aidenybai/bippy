@@ -1,4 +1,5 @@
-import type { SourceLocation, StaticObjectValue, StaticValue, StubRenderTools } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue, StubRenderTools } from "../types.js";
 import {
   accessorEntry,
   getKnownObjectKeys,

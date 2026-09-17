@@ -1,6 +1,13 @@
 import semver from "semver";
 import { resolvedPromiseValue } from "../evaluate/promises.js";
 import {
+  element,
+  lazyProperties,
+  nativeFunction,
+  omitProps,
+  stubValue,
+} from "../evaluate/stubs.js";
+import {
   FALSE_VALUE,
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -19,13 +26,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import {
-  element,
-  lazyProperties,
-  nativeFunction,
-  omitProps,
-  stubValue,
-} from "../evaluate/stubs.js";
 import type {
   ContextDefinition,
   ExternalValueProvider,

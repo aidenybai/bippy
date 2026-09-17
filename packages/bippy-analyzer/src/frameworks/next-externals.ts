@@ -1,5 +1,14 @@
-import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { STYLED_JSX_SPECIFIER } from "../evaluate/interpreter.js";
+import {
+  element,
+  emptyStub,
+  hostElement,
+  nativeFunction,
+  omitProps,
+  passthroughStub,
+  stubElement,
+  stubValue,
+} from "../evaluate/stubs.js";
 import { createSearchParamsValue } from "../evaluate/url-search-params.js";
 import {
   NULL_VALUE,
@@ -8,14 +17,17 @@ import {
   describeValue,
   getObjectProperty,
   getTruthiness,
-  mapValue,
   isKnownString,
   listValue,
+  mapValue,
   objectFromRecord,
   primitiveValue,
   thrownValue,
   unknownValue,
 } from "../evaluate/values.js";
+import { isVersionAtLeast } from "../libraries/installed-version.js";
+import { createNextIntlModel, type NextIntlModel } from "../libraries/next-intl.js";
+import { toElementType } from "../react/element-type.js";
 import type {
   CapturedRequest,
   ContextDefinition,
@@ -28,20 +40,8 @@ import type {
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag } from "../work-tags.js";
 import type { FrameworkKind } from "./framework-profile.js";
-import { toElementType } from "../react/element-type.js";
 import { legacyImageStub } from "./next-legacy-image.js";
-import { createNextIntlModel, type NextIntlModel } from "../libraries/next-intl.js";
 import { nextRequestValue } from "./next-request.js";
-import {
-  element,
-  emptyStub,
-  hostElement,
-  nativeFunction,
-  omitProps,
-  passthroughStub,
-  stubElement,
-  stubValue,
-} from "../evaluate/stubs.js";
 
 // Static stand-ins for the `next/*` client surface. Shapes follow the fiber
 // trees the real components commit: `next/link` in the App Router (15.3+) is

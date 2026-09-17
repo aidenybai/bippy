@@ -1,8 +1,8 @@
 import { join } from "node:path";
 import { expect, it } from "vite-plus/test";
-import { Interpreter } from "../src/evaluate/interpreter.js";
 import { GlobalProperties } from "../src/evaluate/global-properties.js";
 import { HeapJournal } from "../src/evaluate/heap-journal.js";
+import { Interpreter } from "../src/evaluate/interpreter.js";
 import { createPathPredicate } from "../src/evaluate/predicates.js";
 import {
   describeValue,

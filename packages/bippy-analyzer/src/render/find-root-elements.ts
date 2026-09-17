@@ -6,8 +6,8 @@ import type {
   Node,
   Statement,
 } from "oxc-parser";
+import type { ModuleRecord } from "../graph/module-types.js";
 import { forEachChildNode, unwrapExpression } from "../parse/ast-walk.js";
-import type { ModuleRecord } from "../types.js";
 
 type EnclosingFunction = Function | ArrowFunctionExpression;
 

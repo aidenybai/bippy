@@ -1,6 +1,13 @@
 import semver from "semver";
 import { evaluateMediaQuery } from "../evaluate/media-query.js";
 import {
+  element,
+  emptyStub,
+  nativeFunction,
+  passthroughStub,
+  stubValue,
+} from "../evaluate/stubs.js";
+import {
   NULL_VALUE,
   UNDEFINED_VALUE,
   branchValue,
@@ -14,13 +21,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import {
-  element,
-  emptyStub,
-  nativeFunction,
-  passthroughStub,
-  stubValue,
-} from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,

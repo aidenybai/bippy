@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   branchValue,
   getObjectProperty,
@@ -8,7 +9,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type { ExternalValueProvider, StaticValue } from "../types.js";
 
 // `new Jed({domain, locale_data})` looks translations up in

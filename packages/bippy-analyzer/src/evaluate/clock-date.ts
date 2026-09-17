@@ -1,5 +1,5 @@
 import type { NumberRange, StaticObjectValue, StaticValue } from "../types.js";
-import { rangedNumberValue } from "./primitive-shapes.js";
+import { rangedNumberValue } from "./number-ranges.js";
 import { objectFromRecord, objectValue, unknownPrimitiveValue } from "./values.js";
 
 const clockDates = new WeakSet<StaticObjectValue>();

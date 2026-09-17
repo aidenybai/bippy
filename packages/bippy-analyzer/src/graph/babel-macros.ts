@@ -4,7 +4,8 @@ import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
 import { getDefaultExport, getInstalledModules } from "../libraries/installed-modules.js";
 import { getSourceLanguage } from "../parse/parse-source-file.js";
-import type { ModuleBundler, ProcessEnvironment, SourceTransform } from "../types.js";
+import type { SourceTransform } from "../parse/source-types.js";
+import type { ModuleBundler, ProcessEnvironment } from "../types.js";
 import { functionSchema, loadWithoutDom, runWithoutDom } from "./vite-plugins.js";
 
 const babelSchema = z.object({ transformSync: functionSchema });

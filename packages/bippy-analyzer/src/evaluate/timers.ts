@@ -1,12 +1,7 @@
-import type {
-  ClockReading,
-  ClockTask,
-  JournaledState,
-  SourceLocation,
-  StaticValue,
-} from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { ClockReading, ClockTask, JournaledState, StaticValue } from "../types.js";
+import { rangedNumberValue } from "./number-ranges.js";
 import { recordInputSource } from "./predicates.js";
-import { rangedNumberValue } from "./primitive-shapes.js";
 import { branchValue, FALSE_VALUE, getTruthiness, primitiveValue, TRUE_VALUE } from "./values.js";
 
 const getHandleIdentity = (handle: StaticValue): object =>

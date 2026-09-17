@@ -1,4 +1,12 @@
+import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
+import { isPurePackage } from "../libraries/pure-packages.js";
 import { getSourceLanguage, SourceFileCache } from "../parse/parse-source-file.js";
+import { isAssetImport, isUrlImport } from "./asset-module.js";
+import { readAssetModuleSource } from "./asset-modules.js";
+import { isCssModulePath } from "./css-module.js";
+import { isCompilerHelperPackage } from "./helper-packages.js";
+import { createModuleRecord, hasExportedName, isClientModule } from "./module-record.js";
+import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
 import type {
   BuiltinModuleResolution,
   ExternalModuleResolution,
@@ -8,15 +16,7 @@ import type {
   ModuleResolution,
   ResolvedSymbol,
   UnresolvedSymbol,
-} from "../types.js";
-import { isModeledLibraryExport, isModeledLibraryPackage } from "../libraries/index.js";
-import { isPurePackage } from "../libraries/pure-packages.js";
-import { isAssetImport, isUrlImport } from "./asset-module.js";
-import { readAssetModuleSource } from "./asset-modules.js";
-import { isCssModulePath } from "./css-module.js";
-import { isCompilerHelperPackage } from "./helper-packages.js";
-import { createModuleRecord, hasExportedName, isClientModule } from "./module-record.js";
-import { isInlineLoaderRequest, ModuleResolver } from "./module-resolver.js";
+} from "./module-types.js";
 
 interface ExportNameSet {
   names: string[];

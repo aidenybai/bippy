@@ -1,4 +1,5 @@
-import type { CapturedPageState, SourceLocation, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { CapturedPageState, StaticValue } from "../types.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,

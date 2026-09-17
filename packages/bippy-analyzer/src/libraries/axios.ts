@@ -5,6 +5,7 @@ import {
   getModeledPromise,
   resolvedPromiseValue,
 } from "../evaluate/promises.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   FALSE_VALUE,
   getObjectProperty,
@@ -19,10 +20,9 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type {
-  LibraryValueProvider,
   LibraryRun,
+  LibraryValueProvider,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,

@@ -1,4 +1,8 @@
 import { describeError } from "../errors.js";
+import type { HostDocument } from "../host/host-document.js";
+import type { HostRealm } from "../host/host-realm.js";
+import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
+import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
 import type {
   StaticListValue,
   StaticNativeFunctionValue,
@@ -9,13 +13,10 @@ import type {
   StringComposition,
   StubRenderTools,
 } from "../types.js";
+import { primitiveValue, UNDEFINED_VALUE } from "./values.js";
+
+import { getIntrinsicGlobal } from "./language-intrinsics.js";
 import { element, nativeFunction } from "./stubs.js";
-import type { HostDocument } from "../host/host-document.js";
-import type { HostRealm } from "../host/host-realm.js";
-import { GLOBAL_INTERFACE_NAME, type HostMember } from "../host/realm-table.js";
-import { REACT_ELEMENT_SYMBOL_KEYS } from "../react/element-shape.js";
-import { EVENT_LISTENER_METHODS } from "./event-listeners.js";
-import { getIntrinsicGlobal } from "./host-globals.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
 import {
@@ -29,11 +30,16 @@ import {
   mayOverlapCompositions,
   nativeObjectValue,
   objectValue,
-  primitiveValue,
-  UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+export const EVENT_LISTENER_METHODS = new Set([
+  "addEventListener",
+  "removeEventListener",
+  "addListener",
+  "removeListener",
+]);
 
 const UNCERTAIN = Symbol("uncertain");
 
@@ -50,6 +56,7 @@ const expandoProperties = new WeakMap<object, Map<string, StaticValue>>();
  * call that depends on the function's behavior stays uncertain.
  */
 const standIns = new WeakMap<StaticValue, object>();
+
 const standInValues = new WeakMap<object, StaticValue>();
 
 const refuseStandInAccess = (): never => {

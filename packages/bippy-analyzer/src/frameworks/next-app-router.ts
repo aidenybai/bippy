@@ -8,8 +8,10 @@ import {
   primitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
+import type { ModuleRecord } from "../graph/module-types.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type { ModuleRecord, StaticObjectValue, StaticRenderResult, StaticValue } from "../types.js";
+import type { StaticRenderResult } from "../render/types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, readNextVendoredReactPackages } from "./next-config.js";
 import type { NextModel } from "./next-externals.js";
 import { renderNextMetadata, usesNextMetadataTree } from "./next-metadata.js";

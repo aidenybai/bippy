@@ -1,3 +1,5 @@
+import type { MutableHeapValue } from "../evaluate/heap-journal.js";
+import { isUndecided } from "../evaluate/type-predicates.js";
 import {
   getKnownObjectKeys,
   getObjectAccessor,
@@ -8,8 +10,6 @@ import {
   toIndexKey,
   UNDEFINED_VALUE,
 } from "../evaluate/values.js";
-import type { MutableHeapValue } from "../evaluate/heap-journal.js";
-import { isUndecided } from "../evaluate/type-predicates.js";
 import type { StaticObjectValue, StaticValue, StubRenderTools } from "../types.js";
 
 // The static-value plumbing deep-merge helpers (lodash `merge`, `deepmerge`)

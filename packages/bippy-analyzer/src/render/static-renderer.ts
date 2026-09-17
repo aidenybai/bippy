@@ -1,21 +1,22 @@
-import { ParserError, describeError } from "../errors.js";
 import { realpathSync } from "node:fs";
 import path from "node:path";
+import { ParserError, describeError } from "../errors.js";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
 import { MAX_TIMER_TASKS } from "../evaluate/timers.js";
 import { objectValue, unknownValue } from "../evaluate/values.js";
+import { createBabelMacrosTransform } from "../graph/babel-macros.js";
+import { readProjectJsxOptions } from "../graph/jsx-compiler-options.js";
+import { ModuleGraph } from "../graph/module-graph.js";
+import { ModuleResolver } from "../graph/module-resolver.js";
 import {
   detectModuleBundler,
   detectModuleTranspiler,
   readDocumentShell,
 } from "../graph/module-transpiler.js";
-import { readProjectJsxOptions } from "../graph/jsx-compiler-options.js";
-import { ModuleGraph } from "../graph/module-graph.js";
-import { ModuleResolver } from "../graph/module-resolver.js";
+import type { ModuleRecord } from "../graph/module-types.js";
 import { createProjectContext } from "../graph/project-context.js";
 import { createSvgrSourceTransform } from "../graph/svgr-modules.js";
-import { createBabelMacrosTransform } from "../graph/babel-macros.js";
 import { createTanStackRouterTransform } from "../graph/tanstack-router-plugin.js";
 import {
   createViteAssetTransform,
@@ -34,23 +35,19 @@ import {
 } from "../materialize/react-runtime.js";
 import type { RendererHost } from "../materialize/renderer-host.js";
 import { SourceFileCache } from "../parse/parse-source-file.js";
+import type { Diagnostic, SourceTransform } from "../parse/source-types.js";
 import { toElementType } from "../react/element-type.js";
 import type {
-  Diagnostic,
   ExternalValueProvider,
-  ModuleRecord,
-  PinnedDecisions,
   ProjectContext,
-  SourceTransform,
   StaticObjectValue,
-  StaticRenderResult,
-  StaticRendererOptions,
   StaticValue,
   ViteClientEnvironment,
 } from "../types.js";
 import { createDomHost } from "./dom-host.js";
 import { findRootRenderCalls } from "./find-root-elements.js";
 import { computeRenderStats } from "./render-stats.js";
+import type { PinnedDecisions, StaticRenderResult, StaticRendererOptions } from "./types.js";
 
 export interface RenderComponentOptions {
   exportName?: string;

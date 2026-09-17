@@ -1,7 +1,8 @@
-import { getTypeofValue } from "../evaluate/builtin-calls.js";
-import { isBaseClassPrototype, isClassPrototype } from "../evaluate/class-component.js";
 import { hasNamedProperty } from "../evaluate/has-property.js";
+import { isBaseClassPrototype, isClassPrototype } from "../evaluate/prototype-owners.js";
+import { nativeFunction } from "../evaluate/stubs.js";
 import { isArrayValue } from "../evaluate/type-predicates.js";
+import { getTypeofValue } from "../evaluate/value-typeof.js";
 import {
   compareDeeply,
   decidedBooleanValue,
@@ -12,7 +13,6 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type { HostRealm } from "../host/host-realm.js";
 import type {
   ExternalValueProvider,

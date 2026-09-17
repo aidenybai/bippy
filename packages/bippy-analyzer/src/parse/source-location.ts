@@ -1,5 +1,5 @@
 import type { Span } from "oxc-parser";
-import type { ParsedSourceFile, SourceLocation } from "../types.js";
+import type { ParsedSourceFile, SourceLocation } from "./source-types.js";
 
 const findLineIndex = (lineStarts: number[], offset: number): number => {
   let low = 0;

@@ -1,4 +1,5 @@
-import type { SourceLocation, StaticListValue, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticListValue, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
 import {
   UNDEFINED_VALUE,

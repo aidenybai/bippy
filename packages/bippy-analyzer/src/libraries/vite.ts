@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   getKnownObjectKeys,
   getObjectProperty,
@@ -9,7 +10,6 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, StaticValue } from "../types.js";
 
 // Vite's config helpers, as `vite.config.*` imports them: `defineConfig`

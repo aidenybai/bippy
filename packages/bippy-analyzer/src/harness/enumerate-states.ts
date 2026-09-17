@@ -1,4 +1,5 @@
-import { areGuardsSatisfiable, GuardSolver } from "./guard-solver.js";
+import { areGuardsSatisfiable, GuardSolver } from "../symbolic/guard-solver.js";
+import { collectGuardVariables, constantGuard, type Guard } from "../symbolic/guards.js";
 import type {
   BranchCondition,
   OmittedRepeatStates,
@@ -17,11 +18,8 @@ import {
   type PatternRepeat,
 } from "./static-pattern.js";
 import {
-  collectGuardVariables,
   COMMIT_INPUT_ID,
-  constantGuard,
   decisionGuard,
-  type Guard,
   type SymbolicCommit,
   type SymbolicTree,
 } from "./symbolic-tree.js";

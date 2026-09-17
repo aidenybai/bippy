@@ -1,10 +1,11 @@
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import type { SourceLocation, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
-import type { Interpreter } from "./interpreter.js";
 import { createErrorValue } from "./errors.js";
 import { withRelativePrefix } from "./import-glob.js";
+import type { Interpreter } from "./interpreter.js";
 import { nativeFunction } from "./stubs.js";
 import {
   describeValue,

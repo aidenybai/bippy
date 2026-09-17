@@ -1,4 +1,12 @@
 import {
+  element,
+  lazyProperties,
+  nativeFunction,
+  noopFunction,
+  passthroughStub,
+  stubValue,
+} from "../evaluate/stubs.js";
+import {
   branchValue,
   FALSE_VALUE,
   getKnownObjectKeys,
@@ -15,14 +23,6 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import {
-  element,
-  lazyProperties,
-  nativeFunction,
-  noopFunction,
-  passthroughStub,
-  stubValue,
-} from "../evaluate/stubs.js";
 import type {
   CapturedValue,
   ContextDefinition,

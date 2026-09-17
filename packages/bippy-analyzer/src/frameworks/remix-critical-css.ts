@@ -1,5 +1,5 @@
 import { isModuleRecord, type ModuleGraph } from "../graph/module-graph.js";
-import type { ModuleRecord } from "../types.js";
+import type { ModuleRecord } from "../graph/module-types.js";
 
 // `@remix-run/dev`'s Vite plugin (`vite/styles.ts`) inlines, as critical CSS,
 // every side-effect stylesheet reachable from the client entry and the matched

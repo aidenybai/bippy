@@ -1,5 +1,5 @@
+import type { ModuleRecord } from "../graph/module-types.js";
 import type {
-  ModuleRecord,
   Scope,
   StaticFunctionValue,
   StaticListValue,

@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   TRUE_VALUE,
   UNDEFINED_VALUE,
@@ -11,7 +12,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
   StaticObjectEntry,

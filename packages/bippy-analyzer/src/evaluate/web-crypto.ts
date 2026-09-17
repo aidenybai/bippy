@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import type { SourceLocation, StaticListValue, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticListValue, StaticValue } from "../types.js";
 import { resolvedPromiseValue } from "./promises.js";
 import {
   binaryValue,

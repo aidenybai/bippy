@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   compareIdentity,
   compareShallowly,
@@ -13,8 +14,6 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
-import { subscribeToExternalStore } from "./use-sync-external-store.js";
 import type {
   ExternalValueProvider,
   StaticObjectEntry,
@@ -22,6 +21,7 @@ import type {
   StaticValue,
   StubRenderTools,
 } from "../types.js";
+import { subscribeToExternalStore } from "./use-sync-external-store.js";
 
 // TanStack Store is alien-signals underneath: a push/pull graph of linked
 // dependency nodes whose propagation dominates any render that touches a

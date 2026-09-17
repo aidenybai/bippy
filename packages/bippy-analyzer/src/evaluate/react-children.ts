@@ -1,19 +1,26 @@
-import type { SourceLocation, StaticElementValue, StaticValue } from "../types.js";
-import type { EvaluationContext } from "./context.js";
-import type { Interpreter } from "./interpreter.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticElementValue, StaticNativeFunctionValue, StaticValue } from "../types.js";
+import { callUncertainCallback, type CallbackEvaluator } from "./callbacks.js";
+import type { EvaluationContext, ValueCaller } from "./context.js";
 import { getFlightDeferralPredicate } from "./predicates.js";
 import {
   branchValue,
-  type CallableValue,
+  isCallable,
   isNullish,
   listValue,
   mapValue,
+  NULL_VALUE,
+  optionalValue,
   primitiveValue,
+  unknownPrimitiveValue,
+  unknownValue,
+  type CallableValue,
 } from "./values.js";
 
 /** Mirrors react/src/ReactChildren.js: `mapIntoArray` flattens nested arrays and assigns `.0`, `.1:0`, `$key/…` keys. */
 
 const SEPARATOR = ".";
+
 const SUBSEPARATOR = ":";
 
 const escapeKey = (key: string): string =>
@@ -158,7 +165,7 @@ const flightDeferralAlternatives = (
 
 /** `React.Children.map(children, callback, thisArg)`; null when the children shape is not statically known. */
 export const mapChildrenExactly = (
-  interpreter: Interpreter,
+  evaluator: ValueCaller,
   children: StaticValue,
   callback: CallableValue,
   thisArg: StaticValue | undefined,
@@ -170,7 +177,7 @@ export const mapChildrenExactly = (
   const mapped: StaticValue[] = [];
   const array: StaticValue[] = [];
   mapIntoArray(array, children, "", "", NOTHING_DEFERRED, (child) => {
-    const result = interpreter.callValue(
+    const result = evaluator.callValue(
       callback,
       [child ?? primitiveValue(null), primitiveValue(mapped.length)],
       context,
@@ -204,4 +211,118 @@ export const countChildrenExactly = (children: StaticValue): number | null => {
   if (isNullish(children) === true) return 0;
   if (!isStaticallyShaped(children)) return null;
   return mapIntoArray([], children, "", "", NOTHING_DEFERRED, () => primitiveValue(null));
+};
+
+const IDENTITY_MAPPER: StaticNativeFunctionValue = {
+  kind: "native-function",
+  name: "toArray",
+  call: ([child = NULL_VALUE]) => child,
+};
+
+/** Children whose shape is uncertain (repeats, branches, unknowns) are mapped item-wise without React's flattening or keys. */
+const mapUncertainChildren = (
+  evaluator: CallbackEvaluator,
+  children: StaticValue,
+  callback: CallableValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (children.kind === "list") {
+    return listValue(
+      children.items.map((item, index) =>
+        item.kind === "repeat"
+          ? {
+              kind: "repeat",
+              item: callUncertainCallback(
+                evaluator,
+                callback,
+                [item.item, unknownPrimitiveValue("number", "index")],
+                context,
+                true,
+              ),
+              location: item.location,
+            }
+          : evaluator.callValue(callback, [item, primitiveValue(index)], context, null),
+      ),
+    );
+  }
+  if (children.kind === "repeat") {
+    return {
+      kind: "repeat",
+      item: callUncertainCallback(
+        evaluator,
+        callback,
+        [children.item, unknownPrimitiveValue("number", "index")],
+        context,
+        true,
+      ),
+      location: children.location,
+    };
+  }
+  const uncertainContext = { ...context, uncertainDepth: context.uncertainDepth + 1 };
+  if (children.kind === "branch") {
+    return mapValue(children, (alternative) =>
+      mapChildren(evaluator, alternative, callback, undefined, uncertainContext, location),
+    );
+  }
+  if (children.kind === "optional") {
+    return optionalValue(
+      mapChildren(evaluator, children.value, callback, undefined, uncertainContext, location),
+      children.reason,
+      children.location,
+      children.isAbsentPreferred,
+      children.predicate,
+    );
+  }
+  return {
+    kind: "repeat",
+    item: evaluator.callValue(
+      callback,
+      [unknownValue("child"), unknownPrimitiveValue("number", "index")],
+      context,
+      null,
+    ),
+    location: null,
+  };
+};
+
+export const childrenToArray = (
+  evaluator: ValueCaller,
+  children: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (isNullish(children) === true) return listValue([]);
+  const mapped = mapChildrenExactly(
+    evaluator,
+    children,
+    IDENTITY_MAPPER,
+    undefined,
+    context,
+    location,
+  );
+  if (mapped) return mapped;
+  if (children.kind === "list" || children.kind === "repeat") return children;
+  if (children.kind === "element" || children.kind === "primitive") return listValue([children]);
+  return children;
+};
+
+export const countChildren = (children: StaticValue): StaticValue => {
+  const count = countChildrenExactly(children);
+  return count === null ? unknownPrimitiveValue("number", "Children.count") : primitiveValue(count);
+};
+
+export const mapChildren = (
+  evaluator: CallbackEvaluator,
+  children: StaticValue | undefined,
+  callback: StaticValue | undefined,
+  thisArg: StaticValue | undefined,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (!children || !isCallable(callback)) return unknownValue("Children.map with dynamic callback");
+  return (
+    mapChildrenExactly(evaluator, children, callback, thisArg, context, location) ??
+    mapUncertainChildren(evaluator, children, callback, context, location)
+  );
 };

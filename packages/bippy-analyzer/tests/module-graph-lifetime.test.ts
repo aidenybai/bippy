@@ -10,11 +10,11 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { createStaticRenderer } from "../src/index.js";
 import { ModuleGraph } from "../src/graph/module-graph.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
+import { createStaticRenderer } from "../src/index.js";
 import { SourceFileCache } from "../src/parse/parse-source-file.js";
-import type { SourceTransform } from "../src/types.js";
+import type { SourceTransform } from "../src/parse/source-types.js";
 
 const withProject = async (check: (directory: string) => void | Promise<void>): Promise<void> => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-graph-lifetime-"));

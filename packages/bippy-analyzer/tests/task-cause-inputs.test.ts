@@ -10,7 +10,8 @@ import {
 import { branchValue, FALSE_VALUE, TRUE_VALUE, unknownValue } from "../src/evaluate/values.js";
 import { enumerateStaticStates } from "../src/harness/compare-render.js";
 import { createStaticRenderer } from "../src/render/static-renderer.js";
-import type { ExternalValueProvider, StaticRenderResult } from "../src/types.js";
+import type { StaticRenderResult } from "../src/render/types.js";
+import type { ExternalValueProvider } from "../src/types.js";
 
 interface RecordedRender {
   rendered: StaticRenderResult;

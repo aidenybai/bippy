@@ -12,8 +12,8 @@ import {
   primitiveValue,
   UNDEFINED_VALUE,
 } from "../src/evaluate/values.js";
-import { createStaticRenderer } from "../src/index.js";
 import { enumerateStaticStates } from "../src/harness/compare-render.js";
+import { createStaticRenderer } from "../src/index.js";
 import { listComponentFixtures, runComponentFixture } from "./helpers/component-runner.js";
 import { getConcretePatternText } from "./helpers/concrete-pattern-text.js";
 

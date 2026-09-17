@@ -1,3 +1,4 @@
+import type { Class } from "oxc-parser";
 import type { HostDocument } from "../host/host-document.js";
 import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
 import {
@@ -5,28 +6,29 @@ import {
   getCapturedExportReference,
   getOpaqueCaptureDescription,
 } from "../observations.js";
-import type { Class } from "oxc-parser";
+import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
+import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
+import { getReactApiTypeof, isReactLikePackage, resolveReactApi } from "../react/react-api.js";
 import type {
   CapturedExportReference,
   CapturedValue,
-  FunctionLikeNode,
   JsonValue,
   NumberRange,
   Scope,
-  SourceLocation,
   StaticAccessor,
   StaticBranchValue,
   StaticClassValue,
   StaticElementType,
+  StaticExternalValue,
   StaticFunctionValue,
   StaticListValue,
   StaticNativeObjectValue,
   StaticObjectEntry,
-  StaticPropertyEntry,
   StaticObjectValue,
   StaticOptionalValue,
   StaticPrimitive,
   StaticPrimitiveValue,
+  StaticPropertyEntry,
   StaticRegExpValue,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
@@ -36,8 +38,6 @@ import type {
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
-import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
-import { getExternalMember, getReactApiTypeof } from "../react/react-api.js";
 import {
   composeFlattenedPredicate,
   getBranchPredicate,
@@ -47,14 +47,38 @@ import {
   recordDerivation,
 } from "./predicates.js";
 
+/** A member read off an external binding: a React API for React-like packages, otherwise an opaque derived value. */
+export const getExternalMember = (object: StaticExternalValue, key: string): StaticValue => {
+  if (
+    isReactLikePackage(object.packageName) &&
+    (object.importedName === "*" || object.importedName === "default")
+  ) {
+    const api = resolveReactApi(object.packageName, key);
+    if (api) return { kind: "react-api", api };
+  }
+  return recordDerivation(
+    {
+      kind: "external",
+      packageName: object.packageName,
+      specifier: object.specifier,
+      importedName: `${object.importedName}.${key}`,
+      origin: "derived",
+    },
+    { kind: "property", object, key },
+  );
+};
+
 export const isKnownString = (
   value: StaticValue,
 ): value is StaticPrimitiveValue & { value: string } =>
   value.kind === "primitive" && typeof value.value === "string";
 
 export const UNDEFINED_VALUE: StaticPrimitiveValue = { kind: "primitive", value: undefined };
+
 export const NULL_VALUE: StaticPrimitiveValue = { kind: "primitive", value: null };
+
 export const TRUE_VALUE: StaticPrimitiveValue = { kind: "primitive", value: true };
+
 export const FALSE_VALUE: StaticPrimitiveValue = { kind: "primitive", value: false };
 
 export const primitiveValue = (value: StaticPrimitive): StaticPrimitiveValue => ({
@@ -1125,6 +1149,7 @@ const compareIdentityAcross = (alternatives: StaticValue[], other: StaticValue):
 };
 
 const INTRINSIC_GLOBAL_NAME = /^[A-Z]\w*(\.prototype)?$/;
+
 const isIntrinsicGlobalName = (name: string): boolean => INTRINSIC_GLOBAL_NAME.test(name);
 
 /** The document or global object, which native code hands back as this global rather than as a native object. */

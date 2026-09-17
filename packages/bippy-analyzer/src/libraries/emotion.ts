@@ -1,4 +1,6 @@
 import isPropValid from "@emotion/is-prop-valid";
+import { hasProperty } from "../evaluate/has-property.js";
+import { element, emptyStub, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,
@@ -16,8 +18,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { hasProperty } from "../evaluate/has-property.js";
-import { element, emptyStub, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import { createFunctionComponentDefinition, toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,

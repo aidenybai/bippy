@@ -1,3 +1,4 @@
+import { element, nativeFunction, passthroughStub, stubValue } from "../evaluate/stubs.js";
 import {
   UNDEFINED_VALUE,
   describeValue,
@@ -8,11 +9,10 @@ import {
   primitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, nativeFunction, passthroughStub, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
-  LibraryValueProvider,
   LibraryRun,
+  LibraryValueProvider,
   StaticElementType,
   StaticObjectEntry,
   StaticObjectValue,

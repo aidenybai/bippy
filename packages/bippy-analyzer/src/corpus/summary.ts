@@ -15,7 +15,7 @@ import type {
   StateSpaceSummary,
 } from "../harness/state-space.js";
 import { symbolicTreeStatsSchema, type SymbolicTreeStats } from "../harness/symbolic-tree.js";
-import type { StaticRenderStats } from "../types.js";
+import type { StaticRenderStats } from "../render/types.js";
 import type {
   CorpusResult,
   CorpusRuntimeSummary,

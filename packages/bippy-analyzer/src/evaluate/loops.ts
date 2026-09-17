@@ -1,33 +1,93 @@
 import type {
+  AssignmentTarget,
+  BindingPattern,
   DoWhileStatement,
+  Expression,
   ForInStatement,
   ForOfStatement,
   ForStatement,
   ForStatementLeft,
+  Span,
   Statement,
+  VariableDeclaration,
   WhileStatement,
 } from "oxc-parser";
-import type { SourceLocation, StaticOptionalValue, StaticValue } from "../types.js";
-import type { EvaluationContext } from "./context.js";
+import type { ModuleRecord } from "../graph/module-types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { Scope, StaticOptionalValue, StaticValue } from "../types.js";
+import { COMPLETES, mergeOutcomes, returnOutcome, type StatementOutcome } from "./completion.js";
+import type {
+  ConditionalEvaluationOptions,
+  EvaluationContext,
+  StatementContinuation,
+  StatementValueContinuation,
+} from "./context.js";
 import { withScope } from "./context.js";
-import {
-  COMPLETES,
-  type Interpreter,
-  mergeOutcomes,
-  returnOutcome,
-  type StatementOutcome,
-} from "./interpreter.js";
 import { createScope } from "./scope.js";
 import { getThrowCertainty } from "./thrown.js";
 import {
   UNDEFINED_VALUE,
-  getOwnEnumerableEntries,
   getObjectProperty,
+  getOwnEnumerableEntries,
   getTruthiness,
   primitiveValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+export interface LoopBodyEvaluation {
+  outcome: StatementOutcome;
+  isContinued: boolean;
+}
+
+export interface LoopEvaluator {
+  locate: (module: ModuleRecord, span: Span) => SourceLocation;
+  evaluateExpression: (node: Expression, context: EvaluationContext) => StaticValue;
+  evaluateBlock: (
+    statements: Statement[],
+    context: EvaluationContext,
+    createChildScope: boolean,
+    continuation?: StatementContinuation,
+  ) => StatementOutcome;
+  evaluateLoopBody: (
+    body: Statement,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+  ) => LoopBodyEvaluation;
+  continueStatementValue: (
+    value: StaticValue,
+    context: EvaluationContext,
+    proceed: StatementValueContinuation,
+    location: SourceLocation,
+  ) => StatementOutcome;
+  bindDeclarator: (
+    kind: VariableDeclaration["kind"],
+    pattern: BindingPattern,
+    value: StaticValue,
+    context: EvaluationContext,
+  ) => void;
+  assignTarget: (target: AssignmentTarget, value: StaticValue, context: EvaluationContext) => void;
+  resolveIterable: (
+    value: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation,
+  ) => StaticValue;
+  runMaybe: <Result>(
+    scope: Scope | null,
+    run: () => Result,
+    reason: string,
+    location: SourceLocation | null,
+    isLikelyRun?: boolean,
+    isRepeated?: boolean,
+    options?: ConditionalEvaluationOptions,
+  ) => Result;
+  runWhenTruthy: <Result>(
+    test: Expression,
+    context: EvaluationContext,
+    run: () => Result,
+  ) => Result;
+  widenLoopCarriedBindings: (scope: Scope, run: () => void, location: SourceLocation) => void;
+}
 
 type LoopStatement =
   | ForOfStatement
@@ -61,17 +121,17 @@ const exactCompletion = (outcomes: StatementOutcome[]): UnrollResult => ({
 });
 
 const bindLoopLeft = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   left: ForStatementLeft,
   value: StaticValue,
   context: EvaluationContext,
 ): void => {
   if (left.type === "VariableDeclaration") {
     for (const declarator of left.declarations)
-      interpreter.bindDeclarator(left.kind, declarator.id, value, context);
+      evaluator.bindDeclarator(left.kind, declarator.id, value, context);
     return;
   }
-  interpreter.assignTarget(left, value, context);
+  evaluator.assignTarget(left, value, context);
 };
 
 const ENUMERATION_TRAPS = ["ownKeys", "getOwnPropertyDescriptor"];
@@ -96,16 +156,16 @@ const isPositionalItem = (item: StaticValue): boolean =>
   item.kind !== "repeat" && item.kind !== "branch";
 
 const iterationValues = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: ForOfStatement | ForInStatement,
   right: StaticValue,
   context: EvaluationContext,
 ): IterationItems | null => {
   if (statement.type === "ForOfStatement") {
-    const iterated = interpreter.resolveIterable(
+    const iterated = evaluator.resolveIterable(
       right,
       context,
-      interpreter.locate(context.module, statement.right),
+      evaluator.locate(context.module, statement.right),
     );
     if (iterated.kind === "list") {
       const positionalCount = iterated.items.findIndex((item) => !isPositionalItem(item));
@@ -128,10 +188,10 @@ const iterationValues = (
 };
 
 const runBody = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   body: Statement,
   context: EvaluationContext,
-): StatementOutcome => interpreter.evaluateBlock([body], context, true);
+): StatementOutcome => evaluator.evaluateBlock([body], context, true);
 
 /**
  * Runs one concrete iteration. A definite `continue` or completion moves on, a
@@ -159,38 +219,34 @@ const advanceIteration = (
 };
 
 const createForEachContext = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: ForOfStatement | ForInStatement,
   value: StaticValue,
   context: EvaluationContext,
 ): EvaluationContext => {
   const iterationContext = withScope(context, createScope(context.scope));
-  bindLoopLeft(interpreter, statement.left, value, iterationContext);
+  bindLoopLeft(evaluator, statement.left, value, iterationContext);
   return iterationContext;
 };
 
 const runForEachIteration = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: ForOfStatement | ForInStatement,
   value: StaticValue,
   context: EvaluationContext,
 ): StatementOutcome =>
-  runBody(
-    interpreter,
-    statement.body,
-    createForEachContext(interpreter, statement, value, context),
-  );
+  runBody(evaluator, statement.body, createForEachContext(evaluator, statement, value, context));
 
 /** An item present on some paths only runs its iteration on those paths, so the loop may skip it. */
 const runOptionalIteration = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: ForOfStatement | ForInStatement,
   item: StaticOptionalValue,
   context: EvaluationContext,
 ): StatementOutcome => {
-  const outcome = interpreter.runMaybe(
+  const outcome = evaluator.runMaybe(
     context.scope,
-    () => runForEachIteration(interpreter, statement, item.value, context),
+    () => runForEachIteration(evaluator, statement, item.value, context),
     item.reason,
     item.location,
     !item.isAbsentPreferred,
@@ -201,13 +257,13 @@ const runOptionalIteration = (
 };
 
 const unrollForEach = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: ForOfStatement | ForInStatement,
   right: StaticValue,
   context: EvaluationContext,
   location: SourceLocation,
 ): UnrollResult | null => {
-  const iteration = iterationValues(interpreter, statement, right, context);
+  const iteration = iterationValues(evaluator, statement, right, context);
   if (!iteration) return null;
   const collectFrom = (start: number, iterationContext: EvaluationContext): UnrollResult => {
     const outcomes: StatementOutcome[] = [];
@@ -216,15 +272,15 @@ const unrollForEach = (
       const evaluation =
         item.kind === "optional"
           ? {
-              outcome: runOptionalIteration(interpreter, statement, item, iterationContext),
+              outcome: runOptionalIteration(evaluator, statement, item, iterationContext),
               isContinued: false,
             }
-          : interpreter.evaluateLoopBody(
+          : evaluator.evaluateLoopBody(
               statement.body,
-              createForEachContext(interpreter, statement, item, iterationContext),
+              createForEachContext(evaluator, statement, item, iterationContext),
               (pathContext) =>
                 finishUnrolling(
-                  interpreter,
+                  evaluator,
                   statement,
                   collectFrom(index + 1, withScope(pathContext, iterationContext.scope)),
                   pathContext,
@@ -242,7 +298,7 @@ const unrollForEach = (
 };
 
 const unrollConditional = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: ForStatement | WhileStatement | DoWhileStatement,
   context: EvaluationContext,
   location: SourceLocation,
@@ -254,12 +310,12 @@ const unrollConditional = (
     iterationContext: EvaluationContext,
     completion: StaticValue = UNDEFINED_VALUE,
   ): StatementOutcome =>
-    interpreter.continueStatementValue(
+    evaluator.continueStatementValue(
       completion,
       iterationContext,
       (_value, pathContext) =>
         finishUnrolling(
-          interpreter,
+          evaluator,
           statement,
           collectFrom(iteration, pathContext),
           pathContext,
@@ -278,17 +334,17 @@ const unrollConditional = (
         const tested =
           iteration === startIteration && completedTest !== null
             ? completedTest
-            : interpreter.evaluateExpression(test, iterationContext);
+            : evaluator.evaluateExpression(test, iterationContext);
         if (getThrowCertainty(tested) !== "never") {
           return completeUnrolling(
             [
               ...outcomes,
-              interpreter.continueStatementValue(
+              evaluator.continueStatementValue(
                 tested,
                 iterationContext,
                 (value, pathContext) =>
                   finishUnrolling(
-                    interpreter,
+                    evaluator,
                     statement,
                     collectFrom(iteration, pathContext, value),
                     pathContext,
@@ -305,13 +361,13 @@ const unrollConditional = (
           return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
         if (truthiness === false) return exactCompletion(outcomes);
       }
-      const evaluation = interpreter.evaluateLoopBody(
+      const evaluation = evaluator.evaluateLoopBody(
         statement.body,
         iterationContext,
         (pathContext) => {
           const updated =
             statement.type === "ForStatement" && statement.update
-              ? interpreter.evaluateExpression(statement.update, pathContext)
+              ? evaluator.evaluateExpression(statement.update, pathContext)
               : UNDEFINED_VALUE;
           return resumeFrom(iteration + 1, pathContext, updated);
         },
@@ -321,7 +377,7 @@ const unrollConditional = (
       const step = advanceIteration(evaluation.outcome, outcomes);
       if (step !== "next") return step;
       if (statement.type === "ForStatement" && statement.update) {
-        const updated = interpreter.evaluateExpression(statement.update, iterationContext);
+        const updated = evaluator.evaluateExpression(statement.update, iterationContext);
         if (getThrowCertainty(updated) !== "never")
           return completeUnrolling(
             [...outcomes, resumeFrom(iteration + 1, iterationContext, updated)],
@@ -334,10 +390,10 @@ const unrollConditional = (
   if (statement.type === "ForStatement" && statement.init) {
     const initialized =
       statement.init.type === "VariableDeclaration"
-        ? interpreter.evaluateBlock([statement.init], loopContext, false, (pathContext) =>
+        ? evaluator.evaluateBlock([statement.init], loopContext, false, (pathContext) =>
             resumeFrom(0, pathContext),
           )
-        : resumeFrom(0, loopContext, interpreter.evaluateExpression(statement.init, loopContext));
+        : resumeFrom(0, loopContext, evaluator.evaluateExpression(statement.init, loopContext));
     return completeUnrolling([initialized], location);
   }
   return collectFrom(0, loopContext);
@@ -350,7 +406,7 @@ const unrollConditional = (
  * pushed items become repeats.
  */
 const evaluateUncertainTail = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: LoopStatement,
   context: EvaluationContext,
   location: SourceLocation,
@@ -364,10 +420,10 @@ const evaluateUncertainTail = (
       statement.type === "ForInStatement"
         ? unknownPrimitiveValue("string", "loop key")
         : unknownValue("loop variable", location);
-    bindLoopLeft(interpreter, statement.left, value, loopContext);
+    bindLoopLeft(evaluator, statement.left, value, loopContext);
   } else if (statement.type === "ForStatement" && statement.init?.type === "VariableDeclaration") {
     for (const declarator of statement.init.declarations) {
-      interpreter.bindDeclarator(
+      evaluator.bindDeclarator(
         statement.init.kind,
         declarator.id,
         declarator.init?.type === "Literal" && typeof declarator.init.value === "number"
@@ -379,9 +435,9 @@ const evaluateUncertainTail = (
   }
   const test = "test" in statement ? statement.test : null;
   const whileTestHolds = <Result>(run: () => Result): Result =>
-    test ? interpreter.runWhenTruthy(test, loopContext, run) : run();
-  const runTailBody = (): StatementOutcome => runBody(interpreter, statement.body, loopContext);
-  const outcome = interpreter.runMaybe(
+    test ? evaluator.runWhenTruthy(test, loopContext, run) : run();
+  const runTailBody = (): StatementOutcome => runBody(evaluator, statement.body, loopContext);
+  const outcome = evaluator.runMaybe(
     context.scope,
     () => whileTestHolds(runTailBody),
     "loop iterations are uncertain",
@@ -389,19 +445,19 @@ const evaluateUncertainTail = (
     true,
     true,
   );
-  whileTestHolds(() => interpreter.widenLoopCarriedBindings(context.scope, runTailBody, location));
+  whileTestHolds(() => evaluator.widenLoopCarriedBindings(context.scope, runTailBody, location));
   return { ...outcome, mayComplete: true, jump: null };
 };
 
 const finishUnrolling = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: LoopStatement,
   unrolled: UnrollResult | null,
   context: EvaluationContext,
   location: SourceLocation,
 ): StatementOutcome => {
   if (unrolled?.kind === "exact") return unrolled.outcome;
-  const tail = evaluateUncertainTail(interpreter, statement, context, location);
+  const tail = evaluateUncertainTail(evaluator, statement, context, location);
   return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
 };
 
@@ -412,21 +468,21 @@ const finishUnrolling = (
  * iterations collapse into a single uncertain evaluation.
  */
 export const evaluateLoop = (
-  interpreter: Interpreter,
+  evaluator: LoopEvaluator,
   statement: LoopStatement,
   context: EvaluationContext,
   location: SourceLocation,
 ): StatementOutcome => {
   if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
-    const right = interpreter.evaluateExpression(statement.right, context);
-    return interpreter.continueStatementValue(
+    const right = evaluator.evaluateExpression(statement.right, context);
+    return evaluator.continueStatementValue(
       right,
       context,
       (value, pathContext) =>
         finishUnrolling(
-          interpreter,
+          evaluator,
           statement,
-          unrollForEach(interpreter, statement, value, pathContext, location),
+          unrollForEach(evaluator, statement, value, pathContext, location),
           pathContext,
           location,
         ),
@@ -434,9 +490,9 @@ export const evaluateLoop = (
     );
   }
   return finishUnrolling(
-    interpreter,
+    evaluator,
     statement,
-    unrollConditional(interpreter, statement, context, location),
+    unrollConditional(evaluator, statement, context, location),
     context,
     location,
   );

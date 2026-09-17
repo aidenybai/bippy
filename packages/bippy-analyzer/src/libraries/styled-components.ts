@@ -1,3 +1,4 @@
+import { element, lazyProperties, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   UNDEFINED_VALUE,
   branchValue,
@@ -11,7 +12,6 @@ import {
   primitiveValue,
   unknownPrimitiveValue,
 } from "../evaluate/values.js";
-import { element, lazyProperties, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   ContextDefinition,

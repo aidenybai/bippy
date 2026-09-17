@@ -1,5 +1,5 @@
-import { nativeFunction } from "./stubs.js";
 import type { StaticObjectValue, StaticValue } from "../types.js";
+import { nativeFunction } from "./stubs.js";
 import {
   getObjectProperty,
   isNullish,

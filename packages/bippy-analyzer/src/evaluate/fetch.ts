@@ -1,8 +1,9 @@
-import type { ProjectContext, SourceLocation, StaticValue } from "../types.js";
-import { nativeFunction } from "./stubs.js";
-import { recordInputSource } from "./predicates.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { ProjectContext, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
+import { recordInputSource } from "./predicates.js";
 import { resolvedPromiseValue } from "./promises.js";
+import { nativeFunction } from "./stubs.js";
 import {
   FALSE_VALUE,
   TRUE_VALUE,

@@ -1,15 +1,10 @@
 import type { Expression, Node } from "oxc-parser";
-import type {
-  FunctionLikeNode,
-  StaticNativeFunctionValue,
-  StaticValue,
-  StubRenderTools,
-} from "../types.js";
-import { nativeFunction } from "./stubs.js";
 import { isBabelRuntimePackage, isCompilerHelperPackage } from "../graph/helper-packages.js";
 import { hasExportedName } from "../graph/module-record.js";
 import { isFunctionLikeExpression } from "../parse/ast-walk.js";
-import { getBuiltinGlobal, getTypeofValue } from "./builtin-calls.js";
+import type { FunctionLikeNode } from "../parse/source-types.js";
+import type { StaticNativeFunctionValue, StaticValue, StubRenderTools } from "../types.js";
+import { getBuiltinGlobal } from "./builtin-calls.js";
 import { getCollectionItems } from "./collections.js";
 import {
   chainPromise,
@@ -18,7 +13,9 @@ import {
   isPossiblyUnsettled,
 } from "./promises.js";
 import { regeneratorRuntime } from "./regenerator.js";
+import { nativeFunction } from "./stubs.js";
 import { getThrowCertainty } from "./thrown.js";
+import { getTypeofValue } from "./value-typeof.js";
 import {
   createSymbolValue,
   describeValue,

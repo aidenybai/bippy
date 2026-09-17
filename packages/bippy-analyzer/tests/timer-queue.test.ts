@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { HeapJournal } from "../src/evaluate/heap-journal.js";
+import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
 import { TimerQueue } from "../src/evaluate/timers.js";
-import { getAlternativeGuards, createPathPredicate } from "../src/evaluate/predicates.js";
 import {
   areValuesEquivalent,
   branchValue,

@@ -1,19 +1,19 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import {
+  compareStaticToRuntime,
+  enumerateStaticStates,
+  formatCompareRenderResult,
+} from "../src/harness/index.js";
+import {
   chooseReplaySample,
   joinDecisionAssignments,
   replayEnumeratedStates,
   replayStateSpace,
 } from "../src/harness/state-replay.js";
-import {
-  compareStaticToRuntime,
-  enumerateStaticStates,
-  formatCompareRenderResult,
-} from "../src/harness/index.js";
 import { enumerateStateSpace, getPinnedPattern, pinDecisions } from "../src/harness/state-space.js";
-import { constantGuard } from "../src/harness/symbolic-tree.js";
 import type { PatternFiber, PatternNode } from "../src/harness/static-pattern.js";
+import { constantGuard } from "../src/symbolic/guards.js";
 import {
   COMPONENTS_DIRECTORY,
   createComponentRenderer,

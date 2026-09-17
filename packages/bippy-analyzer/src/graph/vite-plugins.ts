@@ -1,9 +1,9 @@
 import path from "node:path";
 import { z } from "zod";
 import { parseWithSchema } from "../errors.js";
-import { isEngineGlobal } from "../evaluate/host-globals.js";
+import { isEngineGlobal } from "../evaluate/language-intrinsics.js";
 import { loadHostRealm } from "../host/host-realm.js";
-import type { SourceLanguage, TransformedSource } from "../types.js";
+import type { SourceLanguage, TransformedSource } from "../parse/source-types.js";
 
 export const functionSchema = z.custom<(...args: unknown[]) => unknown>(
   (value) => typeof value === "function",

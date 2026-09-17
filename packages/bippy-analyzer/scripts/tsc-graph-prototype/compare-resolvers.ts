@@ -3,7 +3,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import ts from "typescript";
 import { ModuleResolver } from "../../src/graph/module-resolver.js";
-import type { ModuleResolution } from "../../src/types.js";
+import type { ModuleResolution } from "../../src/graph/module-types.js";
 import { formatMs, loadCorpusTargets } from "./corpus-target.js";
 import { isNodeModulesFile, loadTsconfig, timeSync } from "./program.js";
 

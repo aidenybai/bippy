@@ -1,5 +1,6 @@
 import { objectFromRecord, UNDEFINED_VALUE } from "../evaluate/values.js";
-import type { ImportedName, ProjectContext, StaticValue } from "../types.js";
+import type { ProjectContext, StaticValue } from "../types.js";
+import type { ImportedName } from "./module-types.js";
 
 /** Vite's `KNOWN_ASSET_TYPES`: files whose default import is the URL they are served at. */
 const ASSET_PATH =

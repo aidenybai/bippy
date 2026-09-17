@@ -7,7 +7,8 @@ import { branchValue, FALSE_VALUE, TRUE_VALUE, unknownValue } from "../src/evalu
 import { enumerateStaticStates } from "../src/harness/compare-render.js";
 import type { PatternNode } from "../src/harness/static-pattern.js";
 import { createStaticRenderer } from "../src/render/static-renderer.js";
-import type { ExternalValueProvider, StaticRenderResult, StaticValue } from "../src/types.js";
+import type { StaticRenderResult } from "../src/render/types.js";
+import type { ExternalValueProvider, StaticValue } from "../src/types.js";
 
 const directory = mkdtempSync(join(tmpdir(), "bippy-external-value-lifetime-"));
 const dependency = join(directory, "node_modules", "lifetime-flags");

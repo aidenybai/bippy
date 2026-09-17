@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Class } from "oxc-parser";
 import type { ComponentClass, ComponentType, Context, ExoticComponent, ReactNode } from "react";
+import { ComponentKindError } from "../errors.js";
 import {
   getComponentProperty,
   getMaskedLegacyContext,
@@ -10,27 +11,6 @@ import {
 } from "../evaluate/class-component.js";
 import type { EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
-import { getRepeatCardinality } from "../evaluate/predicates.js";
-import { ComponentKindError } from "../errors.js";
-import { areGuardsSatisfiable } from "../harness/guard-solver.js";
-import {
-  andGuard,
-  collectGuardVariables,
-  combineGuardContexts,
-  compareGuard,
-  constantGuard,
-  ELEMENT_SEGMENT,
-  type GuardContext,
-  normalizePredicate,
-  negateGuard,
-  orGuard,
-  parseSymbolicCardinality,
-  parseSymbolicPredicate,
-  predicateGuards,
-  serializeSymbolicPredicate,
-} from "../harness/symbolic-tree.js";
-import { CommitCauses } from "./commit-causes.js";
-import { providedContextValue } from "../evaluate/react-calls.js";
 import {
   beginHookPass,
   commitEffects,
@@ -44,7 +24,9 @@ import {
   unmountAllEffects,
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
+import { getRepeatCardinality } from "../evaluate/predicates.js";
 import { getModeledPromise, type ModeledPromise, onPromiseSettled } from "../evaluate/promises.js";
+import { providedContextValue } from "../evaluate/react-context.js";
 import {
   describeThrow,
   findThrown,
@@ -62,24 +44,42 @@ import {
   getStubDisplayName,
   isSameValue,
   mapValue,
+  nativeObjectValue,
   NULL_VALUE,
   objectFromRecord,
   omitObjectKeys,
   unknownValue,
-  nativeObjectValue,
 } from "../evaluate/values.js";
-import { formatSourceLocation } from "../parse/source-location.js";
 import { isClientModule } from "../graph/module-record.js";
+import { formatSourceLocation } from "../parse/source-location.js";
+import type { SourceLocation } from "../parse/source-types.js";
 import { getFunctionComponent } from "../react/element-type.js";
+import type { PinnedBranchDecision, PinnedDecisions } from "../render/types.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import {
+  andGuard,
+  collectGuardVariables,
+  combineGuardContexts,
+  compareGuard,
+  constantGuard,
+  ELEMENT_SEGMENT,
+  type GuardContext,
+  negateGuard,
+  normalizePredicate,
+  orGuard,
+  predicateGuards,
+} from "../symbolic/guards.js";
+import {
+  parseSymbolicCardinality,
+  parseSymbolicPredicate,
+  serializeSymbolicPredicate,
+} from "../symbolic/serialization.js";
 import type {
   ComponentDefinition,
-  ElementOwner,
   ContextDefinition,
-  PinnedBranchDecision,
-  PinnedDecisions,
+  ElementOwner,
   RenderEnvironment,
   Scope,
-  SourceLocation,
   StaticBranchValue,
   StaticClassValue,
   StaticElementType,
@@ -95,6 +95,7 @@ import type {
   WrapperElementType,
 } from "../types.js";
 import { ClassComponentTag, ForwardRefTag, type WorkTag } from "../work-tags.js";
+import { CommitCauses } from "./commit-causes.js";
 import {
   AlternativeMarker,
   BranchMarker,
@@ -1216,7 +1217,7 @@ export class Materializer {
     location: SourceLocation | null,
   ): ReactNode {
     const contextValue = definition
-      ? providedContextValue(this.interpreter, definition, provided, location)
+      ? providedContextValue(this.interpreter.assumeOuterProviders, definition, provided, location)
       : unknownValue("context value from an unresolved context");
     if (children.kind === "native-function") {
       return this.toNode(
@@ -1594,7 +1595,7 @@ export class Materializer {
                 return type.renderArguments
                   ? type.renderArguments(props, ref, (definition) =>
                       providedContextValue(
-                        this.interpreter,
+                        this.interpreter.assumeOuterProviders,
                         definition,
                         this.readContext(definition),
                         input.location,
@@ -1748,7 +1749,12 @@ export class Materializer {
   ): StubRenderTools {
     const tools: StubRenderTools = {
       readContext: (definition) =>
-        providedContextValue(this.interpreter, definition, this.readContext(definition), location),
+        providedContextValue(
+          this.interpreter.assumeOuterProviders,
+          definition,
+          this.readContext(definition),
+          location,
+        ),
       hooks,
       callAwaited: (callee, args) => this.callAwaited(callee, args, context, location),
       call: (callee, args, thisValue) => {

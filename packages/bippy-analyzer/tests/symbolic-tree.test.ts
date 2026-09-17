@@ -4,7 +4,6 @@ import { enumerateStaticStates } from "../src/harness/compare-render.js";
 import { enumerateStates } from "../src/harness/enumerate-states.js";
 import { formatSymbolicTree } from "../src/harness/format-report.js";
 import { computeGuardCoverage } from "../src/harness/guard-coverage.js";
-import { evaluateGuard, solveGuards, toWitnessModel } from "../src/harness/guard-solver.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import {
   enumerateStateSpace,
@@ -12,6 +11,10 @@ import {
   type StateCondition,
 } from "../src/harness/state-space.js";
 import type { PatternNode } from "../src/harness/static-pattern.js";
+import { parseSymbolicTree } from "../src/harness/symbolic-tree.js";
+import { planWitnesses, witnessPlanSchema } from "../src/harness/witness-plan.js";
+import { createStaticRenderer } from "../src/index.js";
+import { evaluateGuard, solveGuards, toWitnessModel } from "../src/symbolic/guard-solver.js";
 import {
   andGuard,
   compareGuard,
@@ -20,14 +23,11 @@ import {
   formatGuard,
   negateGuard,
   orGuard,
-  parseSymbolicTree,
   truthyGuard,
   type Guard,
   type InputVariable,
   type SymbolicVariable,
-} from "../src/harness/symbolic-tree.js";
-import { planWitnesses, witnessPlanSchema } from "../src/harness/witness-plan.js";
-import { createStaticRenderer } from "../src/index.js";
+} from "../src/symbolic/guards.js";
 import { COMPONENTS_DIRECTORY } from "./helpers/component-runner.js";
 import { guardedBranch, input, patternHost } from "./helpers/pattern-builders.js";
 

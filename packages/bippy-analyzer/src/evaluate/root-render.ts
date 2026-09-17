@@ -1,4 +1,5 @@
-import type { JournaledState, SourceLocation, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { JournaledState, StaticValue } from "../types.js";
 import { UNDEFINED_VALUE, branchValue, getAllocationCount } from "./values.js";
 
 /** Journaled root element so an entry that mounts different trees on different paths keeps one alternative per path. */

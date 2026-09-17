@@ -1,12 +1,8 @@
-import { nativeFunction } from "./stubs.js";
-import type {
-  SourceLocation,
-  StaticObjectEntry,
-  StaticObjectValue,
-  StaticValue,
-} from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectEntry, StaticObjectValue, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
 import { createEventTarget, dispatchEvent, type EventTargetModel } from "./event-target-model.js";
+import { nativeFunction } from "./stubs.js";
 import {
   NULL_VALUE,
   UNDEFINED_VALUE,

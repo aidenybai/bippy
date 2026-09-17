@@ -1,6 +1,6 @@
 import { MarkerDecisionError } from "../errors.js";
 import { KEY_PLACEHOLDER, MARKER_NAMES } from "../materialize/markers.js";
-import type { StaticRenderResult } from "../types.js";
+import type { StaticRenderResult } from "../render/types.js";
 import {
   collectGuardVariables,
   constantGuard,
@@ -12,13 +12,12 @@ import {
   type InputVariable,
   mapGuardVariables,
   normalizePredicate,
-  parseSymbolicCardinality,
-  parseSymbolicPredicate,
   predicateGuards,
   type SymbolicCardinality,
   type SymbolicPredicate,
   type SymbolicVariable,
-} from "./symbolic-tree.js";
+} from "../symbolic/guards.js";
+import { parseSymbolicCardinality, parseSymbolicPredicate } from "../symbolic/serialization.js";
 import type {
   RuntimeFiberSnapshot,
   RuntimeSnapshot,

@@ -1,12 +1,3 @@
-import type {
-  ComponentDefinition,
-  ReactApi,
-  StaticElementType,
-  StaticFunctionValue,
-  StaticObjectEntry,
-  StaticObjectValue,
-  StaticValue,
-} from "../types.js";
 import {
   getObjectProperty,
   getTruthiness,
@@ -16,6 +7,15 @@ import {
   primitiveValue,
   UNDEFINED_VALUE,
 } from "../evaluate/values.js";
+import type {
+  ComponentDefinition,
+  ReactApi,
+  StaticElementType,
+  StaticFunctionValue,
+  StaticObjectEntry,
+  StaticObjectValue,
+  StaticValue,
+} from "../types.js";
 
 export interface SplitElementProps {
   entries: StaticObjectEntry[];

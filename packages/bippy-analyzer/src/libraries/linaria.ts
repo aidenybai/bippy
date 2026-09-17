@@ -1,4 +1,5 @@
 import isPropValid from "@emotion/is-prop-valid";
+import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   UNDEFINED_VALUE,
   getObjectProperty,
@@ -10,7 +11,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import { toElementType } from "../react/element-type.js";
 import type {
   LibraryValueProvider,

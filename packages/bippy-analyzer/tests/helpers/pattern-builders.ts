@@ -4,11 +4,7 @@ import type {
   PatternNode,
   PatternRepeat,
 } from "../../src/harness/static-pattern.js";
-import {
-  predicateGuards,
-  type Guard,
-  type InputVariable,
-} from "../../src/harness/symbolic-tree.js";
+import { predicateGuards, type Guard, type InputVariable } from "../../src/symbolic/guards.js";
 
 export const patternHost = (name: string, children: PatternNode[] = []): PatternFiber => ({
   kind: "fiber",

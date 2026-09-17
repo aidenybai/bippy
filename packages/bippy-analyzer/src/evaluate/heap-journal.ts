@@ -1,6 +1,6 @@
+import type { SourceLocation } from "../parse/source-types.js";
 import type {
   JournaledState,
-  SourceLocation,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,

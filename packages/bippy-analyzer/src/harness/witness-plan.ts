@@ -1,22 +1,21 @@
 import { z } from "zod";
-import { collectGuardSides, type GuardSide } from "./guard-coverage.js";
 import {
   evaluateGuard,
   solveGuards,
   toWitnessModel,
   type VariableWitness,
   type WitnessValue,
-} from "./guard-solver.js";
+} from "../symbolic/guard-solver.js";
 import {
   andGuard,
   formatGuard,
   formatVariable,
-  inputVariableSchema,
-  symbolicVariableSchema,
   type InputVariable,
-  type SymbolicTree,
   type SymbolicVariable,
-} from "./symbolic-tree.js";
+} from "../symbolic/guards.js";
+import { inputVariableSchema, symbolicVariableSchema } from "../symbolic/serialization.js";
+import { collectGuardSides, type GuardSide } from "./guard-coverage.js";
+import type { SymbolicTree } from "./symbolic-tree.js";
 
 // A witness plan is the input to targeted runtime runs: each witness is one
 // assignment of the symbolic inputs (a response body, a viewport, a storage

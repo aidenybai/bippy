@@ -50,6 +50,52 @@ The parser represents these conditions with guards, which are Boolean formulas o
 
 The state space is the set of trees that this model describes. A bounded list of states is a query result, not a replacement for the model.
 
+## Engine module boundaries
+
+The renderer coordinates source loading, evaluation, materialization, and capture. Evaluation subsystems depend on the operations they need, not on that coordinator.
+
+| Module                            | Owns                                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `parse/source-types.ts`           | Source locations, parsed files, transforms, and AST declaration types                               |
+| `graph/module-types.ts`           | Import/export records, bindings, and resolution results                                             |
+| `symbolic/guards.ts`              | Symbolic inputs, predicates, and guard operations                                                   |
+| `symbolic/serialization.ts`       | Guard and predicate schemas and serialization                                                       |
+| `symbolic/guard-solver.ts`        | Constraint solving, independent of React trees                                                      |
+| `evaluate/completion.ts`          | Statement completion, returns, jumps, and outcome joins                                             |
+| `evaluate/scope-journal.ts`       | Scope snapshots, restoration, joining, and loop widening                                            |
+| `evaluate/number-ranges.ts`       | Numeric interval construction, comparison, arithmetic, and rounding                                 |
+| `evaluate/language-intrinsics.ts` | The isolated language realm, intrinsic identities, and canonical global paths                       |
+| `evaluate/prototype-owners.ts`    | Weak prototype-to-class ownership metadata, without class evaluation                                |
+| `evaluate/operators.ts`           | Unary/binary value operations and comparison derivation                                             |
+| `evaluate/value-typeof.ts`        | Modeled JavaScript `typeof`                                                                         |
+| `evaluate/method-signatures.ts`   | Host-declared method classification and callback receiver binding                                   |
+| `evaluate/array-methods.ts`       | Array construction, callbacks, searches, and mutations                                              |
+| `evaluate/callbacks.ts`           | Callback invocation and conditional/repeated callback execution shared by arrays and React children |
+| `evaluate/react-calls.ts`         | React API dispatch, wrappers, lazy loading, and root registration                                   |
+| `evaluate/react-hooks.ts`         | Hook calls, reducer processing, external-store reads, and effect registration                       |
+| `evaluate/hooks.ts`               | Per-instance hook cells, pending updates, memoization, and effect lifecycle                         |
+| `evaluate/react-children.ts`      | Exact and uncertain child traversal, keys, and Flight deferral alternatives                         |
+| `evaluate/react-elements.ts`      | Element props, keys, cloning, and construction without evaluation state                             |
+| `evaluate/react-context.ts`       | Default and outer-provider value selection                                                          |
+| `evaluate/string-methods.ts`      | String, number-formatting, and regular-expression methods                                           |
+| `render/types.ts`                 | Render configuration, captured results, and replay decisions                                        |
+
+`Interpreter` still coordinates evaluation and owns run state. `builtin-calls.ts` dispatches builtins and retains global and host-call handling. Neither is a foundation for its extracted subsystems: loops, array methods, and string methods accept explicit operation interfaces rather than the concrete interpreter. No adapter objects or forwarding classes are needed; the interpreter satisfies those interfaces directly.
+
+React dispatch composes hook, callback, module-export, element-factory, and root-registration operations. Its subsystems do not import the dispatcher or interpreter. Hooks receive only their call, branch, diagnostic, provider-policy, and microtask operations. Children mapping shares conditional callback execution with arrays, not array-method semantics. Class components and materialization use provider lookup directly rather than importing the React API dispatcher.
+
+Element construction needs only ownership and render-environment metadata. The public `Interpreter.createElement` method delegates to that implementation; API dispatch continues calling the supplied element factory so overrides remain effective. Direct subsystem tests exercise hooks, child traversal, element operations, and API dispatch without constructing an interpreter.
+
+The harness owns fiber patterns, symbolic trees, comparison, enumeration, and replay. Both it and evaluation use the lower-level symbolic modules. The public package entry points continue exporting the relocated public types and guard utilities.
+
+[Architecture tests](../tests/architecture.test.ts) enforce these import boundaries, including type-only dependencies. They also inspect the entire source graph for runtime cycles, including paths through unlisted modules, re-exports, literal dynamic imports, and package self-imports. [Negative-control tests](../tests/module-dependencies.test.ts) exercise the dependency reader and cycle detector.
+
+The only permitted runtime cycle is `evaluate/values.ts` ↔ `evaluate/predicates.ts`: branch construction and truthiness use predicate information, while predicates inspect and construct branch values. This remains a coupled value-model subsystem, not an acyclic foundation. Type-only cycles also remain in the legacy engine. The tests do not claim to resolve imports whose specifiers are computed at runtime.
+
+React API recognition no longer records value derivations; external member construction belongs to evaluation. Numeric ranges no longer import prototype inspection, and prototype ownership no longer requires class evaluation. Native member classification and language intrinsics no longer import event-listener execution. These boundaries remove concrete dependency cycles rather than just shorten files.
+
+These boundaries do not change predicate allocation, async scheduling, branch semantics, budgets, or known compatibility gaps. In particular, scope-journal extraction does not change the lifetime of symbolic inputs. The [refactor review](./refactor-review.md) records the checks, corrected findings, and remaining limits.
+
 ## Analysis phases
 
 [`StaticRenderer`](../src/render/static-renderer.ts) manages source preparation and model rendering. The comparison code then converts recorded fibers into a symbolic model and checks application captures against it.

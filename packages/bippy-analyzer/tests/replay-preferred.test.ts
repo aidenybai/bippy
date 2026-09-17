@@ -3,7 +3,12 @@ import { expect, it } from "vite-plus/test";
 import { compareStaticToRuntime, enumerateStaticStates } from "../src/harness/compare-render.js";
 import { replayEnumeratedStates, replayStateSpace } from "../src/harness/state-replay.js";
 import { enumerateStateSpace } from "../src/harness/state-space.js";
-import { constantGuard, negateGuard, truthyGuard } from "../src/harness/symbolic-tree.js";
+import { constantGuard, negateGuard, truthyGuard } from "../src/symbolic/guards.js";
+import {
+  COMPONENTS_DIRECTORY,
+  createComponentRenderer,
+  runComponentFixture,
+} from "./helpers/component-runner.js";
 import {
   anonymousRepeat,
   choiceBranch,
@@ -11,11 +16,6 @@ import {
   input,
   patternHost,
 } from "./helpers/pattern-builders.js";
-import {
-  COMPONENTS_DIRECTORY,
-  createComponentRenderer,
-  runComponentFixture,
-} from "./helpers/component-runner.js";
 
 const getOutsideComparison = async (filename = "basic-host.tsx") => {
   const filePath = join(COMPONENTS_DIRECTORY, filename);

@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { EvaluationContext } from "../evaluate/context.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
+import { element, stubElement } from "../evaluate/stubs.js";
 import {
   FALSE_VALUE,
   branchValue,
@@ -14,13 +15,14 @@ import {
   toBooleanValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { toElementType } from "../react/element-type.js";
 import { hasExportedName } from "../graph/module-record.js";
+import type { ModuleRecord } from "../graph/module-types.js";
+import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
-import type { ModuleRecord, StaticRenderResult, StaticValue } from "../types.js";
+import type { StaticRenderResult } from "../render/types.js";
+import type { StaticValue } from "../types.js";
 import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import { DEFAULT_DOCUMENT_STUB, type NextModel } from "./next-externals.js";
-import { element, stubElement } from "../evaluate/stubs.js";
 import {
   type DynamicSegment,
   classifySegment,

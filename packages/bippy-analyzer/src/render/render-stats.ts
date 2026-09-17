@@ -1,6 +1,6 @@
-import { MARKER_NAMES } from "../materialize/markers.js";
 import type { RuntimeFiberSnapshot, RuntimeSnapshot } from "../harness/snapshot.js";
-import type { StaticRenderStats } from "../types.js";
+import { MARKER_NAMES } from "../materialize/markers.js";
+import type { StaticRenderStats } from "./types.js";
 
 /** Counts what React actually committed, so the numbers describe the captured tree rather than materialization work. */
 export const computeRenderStats = (

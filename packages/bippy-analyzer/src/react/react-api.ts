@@ -1,8 +1,9 @@
-import { recordDerivation } from "../evaluate/predicates.js";
-import type { ReactApi, StaticExternalValue, StaticValue } from "../types.js";
+import type { ReactApi, StaticValue } from "../types.js";
 
 const REACT_PACKAGES = new Set(["react", "preact/compat"]);
+
 const REACT_DOM_PACKAGES = new Set(["react-dom", "preact/compat"]);
+
 const COMPILER_RUNTIME_SPECIFIERS = new Set(["react/compiler-runtime", "react-compiler-runtime"]);
 
 /** `Symbol.for` key of the value `useMemoCache` fills a fresh cache with. */
@@ -106,6 +107,7 @@ const CHILDREN_API_NAMES: ReadonlySet<string> = new Set<ReactApi>([
 ]);
 
 const UNSTABLE_PREFIX = "unstable_";
+
 const EXPERIMENTAL_PREFIX = "experimental_";
 
 const normalizeApiName = (name: string): string => {
@@ -150,27 +152,6 @@ export const getReactApiTypeof = (api: ReactApi): string => {
 
 export const isReactLikePackage = (packageName: string): boolean =>
   REACT_PACKAGES.has(packageName) || REACT_DOM_PACKAGES.has(packageName);
-
-/** A member read off an external binding: a React API for React-like packages, otherwise an opaque derived value. */
-export const getExternalMember = (object: StaticExternalValue, key: string): StaticValue => {
-  if (
-    isReactLikePackage(object.packageName) &&
-    (object.importedName === "*" || object.importedName === "default")
-  ) {
-    const api = resolveReactApi(object.packageName, key);
-    if (api) return { kind: "react-api", api };
-  }
-  return recordDerivation(
-    {
-      kind: "external",
-      packageName: object.packageName,
-      specifier: object.specifier,
-      importedName: `${object.importedName}.${key}`,
-      origin: "derived",
-    },
-    { kind: "property", object, key },
-  );
-};
 
 export const resolveReactApiMember = (api: ReactApi, memberName: string): StaticValue | null => {
   if (api !== "Children") return null;

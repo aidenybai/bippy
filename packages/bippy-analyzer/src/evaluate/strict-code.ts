@@ -1,6 +1,6 @@
 import type { Node, Statement } from "oxc-parser";
+import type { ModuleRecord } from "../graph/module-types.js";
 import { forEachChildNode } from "../parse/ast-walk.js";
-import type { ModuleRecord } from "../types.js";
 
 const strictRegions = new WeakMap<ModuleRecord, Node[]>();
 

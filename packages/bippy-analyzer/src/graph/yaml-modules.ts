@@ -1,5 +1,5 @@
 import { getInstalledModules } from "../libraries/installed-modules.js";
-import type { SourceTransform, TransformedSource } from "../types.js";
+import type { SourceTransform, TransformedSource } from "../parse/source-types.js";
 
 const YAML_LOADER_PACKAGE = "yaml-loader";
 const YAML_EXTENSIONS = [".yaml", ".yml"];

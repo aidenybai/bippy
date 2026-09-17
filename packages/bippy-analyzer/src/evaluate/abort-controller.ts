@@ -1,6 +1,7 @@
-import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
-import { nativeFunction } from "./stubs.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import type { Interpreter } from "./interpreter.js";
+import { nativeFunction } from "./stubs.js";
 import {
   FALSE_VALUE,
   NULL_VALUE,

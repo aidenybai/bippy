@@ -1,3 +1,4 @@
+import { nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   branchValue,
   getObjectProperty,
@@ -11,7 +12,6 @@ import {
   UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction, stubValue } from "../evaluate/stubs.js";
 import type {
   LibraryValueProvider,
   ModeledExports,

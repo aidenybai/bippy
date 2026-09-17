@@ -1,4 +1,5 @@
-import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import { createErrorValue } from "./errors.js";
 import {
   createSearchParamsValue,

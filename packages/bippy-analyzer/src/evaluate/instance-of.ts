@@ -1,15 +1,15 @@
-import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
 import { EVALUATOR_HOST_PLATFORM, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME } from "../host/realm-table.js";
+import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../types.js";
 import { getAbortWitness } from "./abort-controller.js";
 import { isBlobValue } from "./blob.js";
-import { getPrototypeOwner } from "./class-component.js";
 import { isClockDateValue } from "./clock-date.js";
 import { getCollectionKind } from "./collections.js";
 import { getErrorWitness } from "./errors.js";
-import { isObjectLike } from "./host-globals.js";
+import { isObjectLike } from "./language-intrinsics.js";
 import { isNativeInstanceOf } from "./native-values.js";
 import { getModeledPromise } from "./promises.js";
+import { getPrototypeOwner } from "./prototype-owners.js";
 import { getBinaryWitness } from "./typed-arrays.js";
 import { isSearchParamsValue } from "./url-search-params.js";
 import { isUrlValue } from "./url.js";

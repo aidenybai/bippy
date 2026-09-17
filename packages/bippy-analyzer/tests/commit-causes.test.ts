@@ -2,9 +2,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { enumerateStaticStates } from "../src/harness/compare-render.js";
 import { collectGuardSides } from "../src/harness/guard-coverage.js";
-import { areGuardsSatisfiable } from "../src/harness/guard-solver.js";
 import { joinDecisionAssignments } from "../src/harness/state-replay.js";
 import { enumerateStateSpace, matchStateSpace } from "../src/harness/state-space.js";
+import { CommitCauses } from "../src/materialize/commit-causes.js";
+import { areGuardsSatisfiable } from "../src/symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
@@ -13,8 +14,7 @@ import {
   truthyGuard,
   type Guard,
   type GuardContext,
-} from "../src/harness/symbolic-tree.js";
-import { CommitCauses } from "../src/materialize/commit-causes.js";
+} from "../src/symbolic/guards.js";
 import { COMPONENTS_DIRECTORY, createComponentRenderer } from "./helpers/component-runner.js";
 import { guardedBranch, input, patternHost } from "./helpers/pattern-builders.js";
 

@@ -1,5 +1,5 @@
 import { expect, it } from "vite-plus/test";
-import { COMPLETES, mergeOutcomes, returnOutcome } from "../src/evaluate/interpreter.js";
+import { COMPLETES, mergeOutcomes, returnOutcome } from "../src/evaluate/completion.js";
 import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
 import { getCaughtValue, getThrownPaths, withoutThrows } from "../src/evaluate/thrown.js";
 import {

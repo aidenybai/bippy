@@ -1,5 +1,17 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import type { Interpreter } from "../evaluate/interpreter.js";
+import { recordInputSource } from "../evaluate/predicates.js";
+import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
+import {
+  element,
+  emptyStub,
+  hostElement,
+  nativeFunction,
+  omitProps,
+  stubValue,
+} from "../evaluate/stubs.js";
+import { createSearchParamsValue, getSearchParamsString } from "../evaluate/url-search-params.js";
 import {
   FALSE_VALUE,
   NULL_VALUE,
@@ -20,19 +32,27 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { recordInputSource } from "../evaluate/predicates.js";
-import { createSearchParamsValue, getSearchParamsString } from "../evaluate/url-search-params.js";
+import type { ModuleRecord } from "../graph/module-types.js";
+import { getInstalledModules } from "../libraries/installed-modules.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
+import type { StaticRenderer } from "../render/static-renderer.js";
+import type { StaticRenderResult } from "../render/types.js";
+import type {
+  CapturedRouterState,
+  ContextDefinition,
+  ExternalValueProvider,
+  StaticElementValue,
+  StaticListValue,
+  StaticObjectEntry,
+  StaticObjectValue,
+  StaticValue,
+  StubComponent,
+  StubRenderTools,
+} from "../types.js";
+import { ForwardRefTag } from "../work-tags.js";
 import { FS_ROUTES_PACKAGE, readFsRoutes } from "./fs-routes.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
-import { importsCriticalCss } from "./remix-critical-css.js";
-import { type ObservedRouterState, observeRouterState } from "./react-router-observed.js";
-import {
-  FLAT_ROUTES_PACKAGE,
-  ROUTES_OPTION_ADAPTER_PACKAGE,
-  readFlatRoutes,
-} from "./remix-flat-routes.js";
 import {
   type FrameworkDocument,
   dedupeLinkDescriptors,
@@ -40,34 +60,14 @@ import {
   renderMetaDescriptors,
   renderRemixLinkDescriptors,
 } from "./react-router-document.js";
-import type { Interpreter } from "../evaluate/interpreter.js";
-import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
-import { getInstalledModules } from "../libraries/installed-modules.js";
-import type { StaticRenderer } from "../render/static-renderer.js";
-import type {
-  CapturedRouterState,
-  ContextDefinition,
-  ExternalValueProvider,
-  ModuleRecord,
-  StaticElementValue,
-  StaticListValue,
-  StaticObjectEntry,
-  StaticObjectValue,
-  StaticRenderResult,
-  StaticValue,
-  StubComponent,
-  StubRenderTools,
-} from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
-import { findRouteFile, routeIdFromFile, splitPathname } from "./route-files.js";
+import { type ObservedRouterState, observeRouterState } from "./react-router-observed.js";
+import { importsCriticalCss } from "./remix-critical-css.js";
 import {
-  element,
-  emptyStub,
-  hostElement,
-  nativeFunction,
-  omitProps,
-  stubValue,
-} from "../evaluate/stubs.js";
+  FLAT_ROUTES_PACKAGE,
+  ROUTES_OPTION_ADAPTER_PACKAGE,
+  readFlatRoutes,
+} from "./remix-flat-routes.js";
+import { findRouteFile, routeIdFromFile, splitPathname } from "./route-files.js";
 
 const SCROLL_RESTORATION_PROPS: ReadonlySet<string> = new Set(["getKey", "storageKey"]);
 

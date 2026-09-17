@@ -1,3 +1,4 @@
+import { nativeFunction } from "../evaluate/stubs.js";
 import {
   FALSE_VALUE,
   NULL_VALUE,
@@ -9,7 +10,6 @@ import {
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
-import { nativeFunction } from "../evaluate/stubs.js";
 import type { CapturedRequest, StaticValue } from "../types.js";
 
 // Static stand-in for `next/headers` (next@16). `headers()` reads the request as

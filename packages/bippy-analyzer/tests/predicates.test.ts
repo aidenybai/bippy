@@ -12,7 +12,8 @@ import {
   primitiveValue,
   unknownValue,
 } from "../src/evaluate/values.js";
-import { andGuard, parseSymbolicPredicate, predicateGuards } from "../src/harness/symbolic-tree.js";
+import { andGuard, predicateGuards } from "../src/symbolic/guards.js";
+import { parseSymbolicPredicate } from "../src/symbolic/serialization.js";
 
 describe("truthiness predicates", () => {
   it("names a negation as the opposite side of its operand", () => {

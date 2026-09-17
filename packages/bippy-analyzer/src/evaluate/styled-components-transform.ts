@@ -6,8 +6,9 @@ import type {
   ObjectExpression,
   TaggedTemplateExpression,
 } from "oxc-parser";
+import type { ModuleRecord } from "../graph/module-types.js";
 import { forEachChildNode } from "../parse/ast-walk.js";
-import type { ModuleRecord, StyledComponentsTransformOptions } from "../types.js";
+import type { StyledComponentsTransformOptions } from "../types.js";
 
 export const STYLED_COMPONENTS_MACRO_SPECIFIER = "styled-components/macro";
 

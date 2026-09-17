@@ -1,11 +1,12 @@
 import path from "node:path";
 import { globSync } from "tinyglobby";
-import type { SourceLocation, StaticObjectValue, StaticValue } from "../types.js";
+import { isModuleRecord } from "../graph/module-graph.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import type { Interpreter } from "./interpreter.js";
-import { nativeFunction } from "./stubs.js";
-import { isModuleRecord } from "../graph/module-graph.js";
 import { resolvedPromiseValue } from "./promises.js";
+import { nativeFunction } from "./stubs.js";
 import { describeValue, getObjectProperty, objectValue, unknownValue } from "./values.js";
 
 interface ImportGlobOptions {
