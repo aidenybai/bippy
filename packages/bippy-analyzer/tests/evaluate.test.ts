@@ -74,7 +74,7 @@ export const lengthAssignmentTruncates = () => {
   return list;
 };
 
-export const indexAssignmentPastRepeatIsDropped = () => {
+export const indexAssignmentPastRepeatJoins = () => {
   const list = [0, ...items];
   list[0] = 9;
   list[1] = 8;
@@ -350,13 +350,13 @@ describe("list mutation and uncertain loops", () => {
       "indexAssignmentAppends",
       "indexAssignmentFillsHoles",
       "lengthAssignmentTruncates",
-      "indexAssignmentPastRepeatIsDropped",
+      "indexAssignmentPastRepeatJoins",
     ]);
     expect(results).toEqual({
       indexAssignmentAppends: "[3, 20]",
       indexAssignmentFillsHoles: "[1, undefined, undefined, 4]",
       lengthAssignmentTruncates: "[1]",
-      indexAssignmentPastRepeatIsDropped: "[9, repeat(unknown)]",
+      indexAssignmentPastRepeatJoins: "[9, repeat(branch(… | … | …))]",
     });
   });
 

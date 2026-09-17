@@ -73,7 +73,20 @@ symlinks) are external even when not under `node_modules`. `ModuleGraph` records
 imports, exports and top-level bindings, and resolves `(module, exportName)` across explicit
 re-exports, `export *` chains, barrels and cycles; ambiguous or missing exports are reported, not
 collapsed. External packages are opaque unless `resolveExternalPackages`/
-`externalPackageAllowList` opts them in, or a framework adapter models them.
+`externalPackageAllowList` opts them in, or a framework adapter models them. Pure packages
+(`clsx`, `lodash-es`, `date-fns`, `deepmerge`, …; `src/libraries/pure-packages.ts`) run natively
+on known arguments, and a container the call hands back (`identity(config)`, an item of `sortBy`'s
+result) is the program's own; on a symbolic argument, when the call writes into an argument
+(`set(config, path, value)`), or when native code calls back into an interpreted function, the
+called function is lifted into the interpreter (`native-closures.ts`): its `toString` source is
+parsed and the variables it closed over are read through V8's `[[Scopes]]` via `node:inspector`
+(`closure-inspection.ts`, after `js-cloudpickle`), so `map(list, (item) => <Row/>)` yields `Row`
+fibers, `set` writes into the interpreter's `config`, and a `partial()`-built wrapper calls back
+into the program's function. A function that reads the clock or randomness, itself or through
+what it calls (`isToday`, `formatDistanceToNow`, `random`; `environment-reads.ts` scans the
+parsed source and follows the closure), is never run natively: evaluated from source over the
+interpreter's clock and `Math.random` models, its result depends on the wall clock as the
+runtime's does, instead of being a constant of the analysis's own time.
 
 ### Evaluation (`src/evaluate`)
 

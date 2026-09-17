@@ -70,6 +70,241 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/bippy-analyzer:
+    dependencies:
+      '@emotion/is-prop-valid':
+        specifier: ^1.4.0
+        version: 1.4.0
+      bippy:
+        specifier: workspace:*
+        version: link:../bippy
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+      mrmime:
+        specifier: ^2.0.1
+        version: 2.0.1
+      oxc-parser:
+        specifier: ^0.148.0
+        version: 0.148.0
+      oxc-resolver:
+        specifier: ^11.24.2
+        version: 11.24.2
+      playwright:
+        specifier: ^1.63.0
+        version: 1.63.0
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
+      tinyglobby:
+        specifier: 0.2.17
+        version: 0.2.17
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@babel/core':
+        specifier: 7.29.7
+        version: 7.29.7
+      '@babel/runtime':
+        specifier: ^7.29.7
+        version: 7.29.7
+      '@emotion/core':
+        specifier: 10.3.1
+        version: 10.3.1(react@19.3.0)
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@19.3.0)(react@19.3.0)
+      '@emotion/styled':
+        specifier: 11.14.0
+        version: 11.14.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0)
+      '@linaria/core':
+        specifier: 6.3.0
+        version: 6.3.0
+      '@linaria/react':
+        specifier: 6.3.0
+        version: 6.3.0(react@19.3.0)
+      '@lingui/core':
+        specifier: 5.6.0
+        version: 5.6.0(babel-plugin-macros@3.1.0)
+      '@lingui/react':
+        specifier: 5.6.0
+        version: 5.6.0(babel-plugin-macros@3.1.0)(react@19.3.0)
+      '@mui/material':
+        specifier: 5.16.14
+        version: 5.16.14(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@radix-ui/react-tabs':
+        specifier: 1.1.21
+        version: 1.1.21(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@reduxjs/toolkit':
+        specifier: 2.12.0
+        version: 2.12.0(react-redux@9.3.0(@types/react@19.3.0)(react@19.3.0)(redux@5.0.1))(react@19.3.0)
+      '@stylexjs/babel-plugin':
+        specifier: 0.18.3
+        version: 0.18.3
+      '@stylexjs/stylex':
+        specifier: 0.18.3
+        version: 0.18.3
+      '@svgr/core':
+        specifier: 8.1.0
+        version: 8.1.0(typescript@5.9.3)
+      '@svgr/plugin-jsx':
+        specifier: 8.1.0
+        version: 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))
+      '@svgr/plugin-svgo':
+        specifier: 8.1.0
+        version: 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))(typescript@5.9.3)
+      '@svgr/webpack':
+        specifier: 8.1.0
+        version: 8.1.0(typescript@5.9.3)
+      '@tanstack/react-query':
+        specifier: 5.101.4
+        version: 5.101.4(react@19.3.0)
+      '@tanstack/react-router':
+        specifier: 1.170.18
+        version: 1.170.18(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-store':
+        specifier: 0.7.0
+        version: 0.7.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/router-plugin':
+        specifier: 1.168.23
+        version: 1.168.23(@rsbuild/core@2.1.13)(@rspack/core@2.1.10(@swc/helpers@0.5.23))(@tanstack/react-router@1.170.18(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(esbuild@0.28.2)(rolldown@1.2.4)(rollup@4.62.4)
+      '@types/babel__core':
+        specifier: 7.20.5
+        version: 7.20.5
+      '@types/hoist-non-react-statics':
+        specifier: 3.3.6
+        version: 3.3.6
+      '@types/lodash-es':
+        specifier: 4.17.12
+        version: 4.17.12
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
+      '@types/numeral':
+        specifier: 2.0.5
+        version: 2.0.5
+      '@types/react':
+        specifier: ^19.2.18
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.2.4
+        version: 19.3.0(@types/react@19.3.0)
+      '@types/semver':
+        specifier: ^7.8.0
+        version: 7.8.0
+      array.prototype.foreach:
+        specifier: 1.0.7
+        version: 1.0.7
+      babel-plugin-macros:
+        specifier: 3.1.0
+        version: 3.1.0
+      clsx:
+        specifier: 2.1.1
+        version: 2.1.1
+      date-fns:
+        specifier: 4.4.0
+        version: 4.4.0
+      deepmerge:
+        specifier: 4.3.1
+        version: 4.3.1
+      fake-indexeddb:
+        specifier: 6.2.4
+        version: 6.2.4
+      happy-dom:
+        specifier: ^20.11.6
+        version: 20.11.6
+      hasown:
+        specifier: 2.0.4
+        version: 2.0.4
+      hoist-non-react-statics:
+        specifier: 3.3.2
+        version: 3.3.2
+      kea:
+        specifier: 3.1.7
+        version: 3.1.7(react@19.3.0)
+      kea-loaders:
+        specifier: 3.1.1
+        version: 3.1.1(kea@3.1.7(react@19.3.0))
+      lodash-es:
+        specifier: 4.17.21
+        version: 4.17.21
+      match-sorter:
+        specifier: 8.0.0
+        version: 8.0.0
+      mobx:
+        specifier: 6.12.0
+        version: 6.12.0
+      mobx-react:
+        specifier: 9.1.1
+        version: 9.1.1(mobx@6.12.0)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      mobx-react-lite:
+        specifier: 4.1.0
+        version: 4.1.0(mobx@6.12.0)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      numeral:
+        specifier: 2.0.6
+        version: 2.0.6
+      object.entries:
+        specifier: 1.1.9
+        version: 1.1.9
+      path-to-regexp:
+        specifier: 1.9.0
+        version: 1.9.0
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      react-hook-form:
+        specifier: 7.62.0
+        version: 7.62.0(react@19.3.0)
+      react-native:
+        specifier: 0.81.5
+        version: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
+      react-redux:
+        specifier: 9.3.0
+        version: 9.3.0(@types/react@19.3.0)(react@19.3.0)(redux@5.0.1)
+      react-router:
+        specifier: 8.3.0
+        version: 8.3.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react-router-dom-v5:
+        specifier: npm:react-router-dom@5.3.4
+        version: react-router-dom@5.3.4(react@19.3.0)
+      redux:
+        specifier: 5.0.1
+        version: 5.0.1
+      redux-persist:
+        specifier: 6.0.0
+        version: 6.0.0(react@19.3.0)(redux@5.0.1)
+      string.prototype.trim:
+        specifier: 1.2.11
+        version: 1.2.11
+      styled-components:
+        specifier: 6.5.3
+        version: 6.5.3(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      styled-components-v4:
+        specifier: npm:styled-components@4.4.1
+        version: styled-components@4.4.1(@babel/core@7.29.7)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      swr:
+        specifier: 2.5.1
+        version: 2.5.1(react@19.3.0)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.23.12
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      use-sync-external-store:
+        specifier: 1.6.0
+        version: 1.6.0(react@19.3.0)
+      vite-plugin-svgr:
+        specifier: 5.2.0
+        version: 5.2.0(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(rollup@4.62.4)(typescript@5.9.3)
+      vite-plus:
+        specifier: latest
+        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+
   packages/conformance:
     devDependencies:
       '@babel/core':
@@ -429,6 +664,9 @@ importers:
       ts-jest:
         specifier: latest
         version: 29.4.12(@babel/core@7.29.7)(@jest/transform@30.5.1)(@jest/types@30.5.1)(babel-jest@30.5.1(@babel/core@7.29.7))(esbuild@0.28.2)(jest-util@30.5.1)(jest@30.5.1(@types/node@20.19.43)(babel-plugin-macros@3.1.0))(typescript@5.9.3)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.23.12
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1063,6 +1301,9 @@ importers:
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12
+      tsx:
+        specifier: ^4.21.0
+        version: 4.23.12
       vite:
         specifier: ^7.3.4
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1255,235 +1496,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  packages/bippy-analyzer:
-    dependencies:
-      '@emotion/is-prop-valid':
-        specifier: ^1.4.0
-        version: 1.4.0
-      bippy:
-        specifier: workspace:*
-        version: link:../bippy
-      esbuild:
-        specifier: ^0.28.2
-        version: 0.28.2
-      mrmime:
-        specifier: ^2.0.1
-        version: 2.0.1
-      oxc-parser:
-        specifier: ^0.148.0
-        version: 0.148.0
-      oxc-resolver:
-        specifier: ^11.24.2
-        version: 11.24.2
-      playwright:
-        specifier: ^1.63.0
-        version: 1.63.0
-      semver:
-        specifier: ^7.8.5
-        version: 7.8.5
-      tinyglobby:
-        specifier: 0.2.17
-        version: 0.2.17
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@babel/core':
-        specifier: 7.29.7
-        version: 7.29.7
-      '@babel/runtime':
-        specifier: ^7.29.7
-        version: 7.29.7
-      '@emotion/core':
-        specifier: 10.3.1
-        version: 10.3.1(react@19.3.0)
-      '@emotion/react':
-        specifier: 11.14.0
-        version: 11.14.0(@types/react@19.3.0)(react@19.3.0)
-      '@emotion/styled':
-        specifier: 11.14.0
-        version: 11.14.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0)
-      '@linaria/core':
-        specifier: 6.3.0
-        version: 6.3.0
-      '@linaria/react':
-        specifier: 6.3.0
-        version: 6.3.0(react@19.3.0)
-      '@lingui/core':
-        specifier: 5.6.0
-        version: 5.6.0(babel-plugin-macros@3.1.0)
-      '@lingui/react':
-        specifier: 5.6.0
-        version: 5.6.0(babel-plugin-macros@3.1.0)(react@19.3.0)
-      '@mui/material':
-        specifier: 5.16.14
-        version: 5.16.14(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@radix-ui/react-tabs':
-        specifier: 1.1.21
-        version: 1.1.21(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@reduxjs/toolkit':
-        specifier: 2.12.0
-        version: 2.12.0(react-redux@9.3.0(@types/react@19.3.0)(react@19.3.0)(redux@5.0.1))(react@19.3.0)
-      '@stylexjs/babel-plugin':
-        specifier: 0.18.3
-        version: 0.18.3
-      '@stylexjs/stylex':
-        specifier: 0.18.3
-        version: 0.18.3
-      '@svgr/core':
-        specifier: 8.1.0
-        version: 8.1.0(typescript@5.9.3)
-      '@svgr/plugin-jsx':
-        specifier: 8.1.0
-        version: 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))
-      '@svgr/plugin-svgo':
-        specifier: 8.1.0
-        version: 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))(typescript@5.9.3)
-      '@svgr/webpack':
-        specifier: 8.1.0
-        version: 8.1.0(typescript@5.9.3)
-      '@tanstack/react-query':
-        specifier: 5.101.4
-        version: 5.101.4(react@19.3.0)
-      '@tanstack/react-router':
-        specifier: 1.170.18
-        version: 1.170.18(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@tanstack/react-store':
-        specifier: 0.7.0
-        version: 0.7.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@tanstack/router-plugin':
-        specifier: 1.168.23
-        version: 1.168.23(@rsbuild/core@2.1.13)(@rspack/core@2.1.10(@swc/helpers@0.5.23))(@tanstack/react-router@1.170.18(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(esbuild@0.28.2)(rolldown@1.2.4)(rollup@4.62.4)
-      '@types/babel__core':
-        specifier: 7.20.5
-        version: 7.20.5
-      '@types/hoist-non-react-statics':
-        specifier: 3.3.6
-        version: 3.3.6
-      '@types/lodash-es':
-        specifier: 4.17.12
-        version: 4.17.12
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      '@types/numeral':
-        specifier: 2.0.5
-        version: 2.0.5
-      '@types/react':
-        specifier: ^19.2.18
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.2.4
-        version: 19.3.0(@types/react@19.3.0)
-      '@types/semver':
-        specifier: ^7.8.0
-        version: 7.8.0
-      array.prototype.foreach:
-        specifier: 1.0.7
-        version: 1.0.7
-      babel-plugin-macros:
-        specifier: 3.1.0
-        version: 3.1.0
-      deepmerge:
-        specifier: 4.3.1
-        version: 4.3.1
-      fake-indexeddb:
-        specifier: 6.2.4
-        version: 6.2.4
-      happy-dom:
-        specifier: ^20.11.6
-        version: 20.11.6
-      hasown:
-        specifier: 2.0.4
-        version: 2.0.4
-      hoist-non-react-statics:
-        specifier: 3.3.2
-        version: 3.3.2
-      kea:
-        specifier: 3.1.7
-        version: 3.1.7(react@19.3.0)
-      kea-loaders:
-        specifier: 3.1.1
-        version: 3.1.1(kea@3.1.7(react@19.3.0))
-      lodash-es:
-        specifier: 4.17.21
-        version: 4.17.21
-      match-sorter:
-        specifier: 8.0.0
-        version: 8.0.0
-      mobx:
-        specifier: 6.12.0
-        version: 6.12.0
-      mobx-react:
-        specifier: 9.1.1
-        version: 9.1.1(mobx@6.12.0)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
-      mobx-react-lite:
-        specifier: 4.1.0
-        version: 4.1.0(mobx@6.12.0)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
-      numeral:
-        specifier: 2.0.6
-        version: 2.0.6
-      object.entries:
-        specifier: 1.1.9
-        version: 1.1.9
-      path-to-regexp:
-        specifier: 1.9.0
-        version: 1.9.0
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      react-hook-form:
-        specifier: 7.62.0
-        version: 7.62.0(react@19.3.0)
-      react-native:
-        specifier: 0.81.5
-        version: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
-      react-redux:
-        specifier: 9.3.0
-        version: 9.3.0(@types/react@19.3.0)(react@19.3.0)(redux@5.0.1)
-      react-router:
-        specifier: 8.3.0
-        version: 8.3.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      react-router-dom-v5:
-        specifier: npm:react-router-dom@5.3.4
-        version: react-router-dom@5.3.4(react@19.3.0)
-      redux:
-        specifier: 5.0.1
-        version: 5.0.1
-      redux-persist:
-        specifier: 6.0.0
-        version: 6.0.0(react@19.3.0)(redux@5.0.1)
-      string.prototype.trim:
-        specifier: 1.2.11
-        version: 1.2.11
-      styled-components:
-        specifier: 6.5.3
-        version: 6.5.3(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
-      styled-components-v4:
-        specifier: npm:styled-components@4.4.1
-        version: styled-components@4.4.1(@babel/core@7.29.7)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      swr:
-        specifier: 2.5.1
-        version: 2.5.1(react@19.3.0)
-      tsx:
-        specifier: ^4.21.0
-        version: 4.23.12
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      use-sync-external-store:
-        specifier: 1.6.0
-        version: 1.6.0(react@19.3.0)
-      vite-plugin-svgr:
-        specifier: 5.2.0
-        version: 5.2.0(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(rollup@4.62.4)(typescript@5.9.3)
-      vite-plus:
-        specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
 
   packages/vite-playground:
     dependencies:

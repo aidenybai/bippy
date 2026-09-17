@@ -59,7 +59,13 @@ import {
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { callImportMetaGlob } from "./import-glob.js";
 import { callRequireContext } from "./require-context.js";
-import { createClockDateValue, isClockReading } from "./clock-date.js";
+import {
+  cloneDateValue,
+  createClockDateValue,
+  createUnknownDateValue,
+  isClockReading,
+  toDatePrimitive,
+} from "./clock-date.js";
 import { createBlobValue } from "./blob.js";
 import { callEventTargetMethod } from "./event-listeners.js";
 import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
@@ -150,6 +156,7 @@ import {
   getOwnEnumerableEntries as getModeledOwnEnumerableEntries,
   getOwnPropertyDescriptor,
   getKnownObjectSymbols,
+  getItemValue,
   getListLength,
   getObjectProperty,
   getPropertyName,
@@ -183,7 +190,16 @@ import {
   spreadListItems,
   thrownValue,
   unknownValue,
+  widenLoopCarriedValue,
 } from "./values.js";
+
+/** An unknown number that is neither NaN nor infinite: a clock reading, or one the analysis bounded. */
+const isFiniteUnknownNumber = (value: StaticValue): boolean =>
+  value.kind === "unknown-primitive" &&
+  (value.clock !== undefined ||
+    (value.numberRange !== undefined &&
+      Number.isFinite(value.numberRange.min) &&
+      Number.isFinite(value.numberRange.max)));
 
 const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isNaN": Number.isNaN,
@@ -444,6 +460,8 @@ export const getBuiltinGlobal = (
 const toNumberValue = (value: StaticValue): StaticValue => {
   if (value.kind === "native-object")
     return toNumberValue(toNativeObjectPrimitive(value, "number"));
+  const dateTime = toDatePrimitive(value, "number");
+  if (dateTime !== null) return toNumberValue(dateTime);
   if (
     value.kind === "primitive" &&
     typeof value.value !== "bigint" &&
@@ -1037,8 +1055,12 @@ const callGlobal = (
     case "Date": {
       if (!isConstructor) break;
       if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
-      if (args.length === 1 && first !== undefined && isClockReading(first))
-        return createClockDateValue(first);
+      if (args.length !== 1 || first === undefined) break;
+      if (isClockReading(first)) return createClockDateValue(first);
+      const copy = cloneDateValue(first);
+      if (copy) return copy;
+      if (first.kind === "unknown-primitive" && first.primitiveType === "number")
+        return createUnknownDateValue(first);
       break;
     }
     case "Function":
@@ -1397,6 +1419,7 @@ const callGlobal = (
           name === "isNaN" ? Number.isNaN(number.value) : Number.isFinite(number.value),
         );
       }
+      if (isFiniteUnknownNumber(number)) return name === "isNaN" ? FALSE_VALUE : TRUE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
     case "Number.isNaN":
@@ -1407,6 +1430,10 @@ const callGlobal = (
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
       const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
+      if (isFiniteUnknownNumber(first)) {
+        if (name === "Number.isNaN") return FALSE_VALUE;
+        if (name === "Number.isFinite") return TRUE_VALUE;
+      }
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
@@ -1599,9 +1626,12 @@ const callGlobal = (
 
 const MAX_ARRAY_LIKE_LENGTH = 1_000;
 
+/** `Array(length)` for a length only known in range: holes to be written by index, so a list rather than a bare repeat. */
 const arrayOfLength = (length: StaticValue, location: SourceLocation | null): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
-    return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
+    return listValue([
+      { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange },
+    ]);
   if (length.kind === "branch")
     return mapValue(length, (alternative) => arrayOfLength(alternative, location));
   if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
@@ -1614,7 +1644,7 @@ const arrayOfLength = (length: StaticValue, location: SourceLocation | null): St
     );
   }
   if (length.value > MAX_ARRAY_LIKE_LENGTH)
-    return { kind: "repeat", item: UNDEFINED_VALUE, location };
+    return listValue([{ kind: "repeat", item: UNDEFINED_VALUE, location }]);
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
 };
 
@@ -2496,10 +2526,12 @@ export const evaluateBuiltinCall = (
       );
     }
     if (name === "bind") {
-      if (rebound.kind !== "method") return rebound;
       const boundArgs = args.slice(1);
-      return nativeFunction(`bound ${rebound.name}`, (callArgs, tools) =>
-        tools.call(rebound, [...boundArgs, ...callArgs]),
+      if (rebound.kind !== "method" && boundArgs.length === 0) return rebound;
+      const boundThis = rebound.kind === "method" ? undefined : first;
+      const boundName = rebound.kind === "react-api" ? rebound.api : rebound.name;
+      return nativeFunction(`bound ${boundName}`, (callArgs, tools) =>
+        tools.call(rebound, [...boundArgs, ...callArgs], boundThis),
       );
     }
   }
@@ -2813,17 +2845,13 @@ export const evaluateBuiltinCall = (
       }
       case "reduce":
       case "reduceRight": {
-        if (
-          !isCallable(first) ||
-          receiver.kind !== "list" ||
-          receiver.items.some((item) => item.kind === "repeat")
-        ) {
+        if (!isCallable(first) || receiver.kind !== "list") {
           return unknownValue(`${name}()`, location);
         }
         const items = name === "reduce" ? receiver.items : [...receiver.items].reverse();
         let accumulator = args.length > 1 ? second : items[0];
         if (!accumulator) return unknownValue(`${name}() of an empty list`, location);
-        if (accumulator.kind === "optional") {
+        if (accumulator.kind === "optional" || accumulator.kind === "repeat") {
           return unknownValue(`${name}() of a list whose first item may be absent`, location);
         }
         const startIndex = args.length > 1 ? 0 : 1;
@@ -2834,7 +2862,7 @@ export const evaluateBuiltinCall = (
           const indexValue = isIndexKnown
             ? primitiveValue(sourceIndex)
             : unknownPrimitiveValue("number", "index");
-          if (item.kind !== "optional") {
+          if (item.kind !== "optional" && item.kind !== "repeat") {
             accumulator = callCallback(
               interpreter,
               first,
@@ -2847,10 +2875,19 @@ export const evaluateBuiltinCall = (
           const reduced = callUncertainCallback(
             interpreter,
             first,
-            [accumulator, item.value, indexValue, receiver],
+            [accumulator, getItemValue(item), indexValue, receiver],
             context,
-            false,
+            item.kind === "repeat",
           );
+          if (item.kind === "repeat") {
+            if (reduced !== accumulator) {
+              accumulator = widenLoopCarriedValue(
+                branchValue([reduced, accumulator], "repeated items", location),
+                location,
+              );
+            }
+            continue;
+          }
           accumulator = branchValue(
             [reduced, accumulator],
             item.reason,

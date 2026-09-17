@@ -11,8 +11,11 @@ import {
 // Packages whose exports are pure functions of their arguments (formatting,
 // parsing, class-name joining): the project's own installed copy runs on known
 // inputs, so the output is the runtime's, not a model of it. A call with an
-// uncertain argument stays opaque, exactly as an unmodeled external call.
-// Exports that read the clock, randomness or module state are excluded.
+// uncertain argument is evaluated from the export's own source where that is
+// possible, and stays opaque otherwise, exactly as an unmodeled external call.
+// An export that reads the clock or randomness is found by `readsEnvironment`
+// and only ever evaluated from source; one that reads or writes module state
+// (a locale, a counter) is excluded here.
 
 const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "@emotion/hash",
@@ -20,6 +23,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "classnames",
   "clsx",
   "date-fns",
+  "deepmerge",
   "gray-matter",
   "hasown",
   "lodash",
@@ -62,13 +66,8 @@ const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([
   "delay",
   "memoize",
   "mixin",
-  "now",
   "once",
-  "random",
   "runInContext",
-  "sample",
-  "sampleSize",
-  "shuffle",
   "throttle",
   "uniqueId",
 ]);

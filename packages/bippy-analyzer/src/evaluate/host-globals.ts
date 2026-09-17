@@ -1,5 +1,5 @@
 import { createContext, runInContext } from "node:vm";
-import type { StaticValue, UnknownPrimitiveType } from "../types.js";
+import type { StaticSymbolValue, StaticValue, UnknownPrimitiveType } from "../types.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { GLOBAL_INTERFACE_NAME, type HostValueKind } from "../host/realm-table.js";
@@ -51,39 +51,58 @@ const LANGUAGE_GLOBAL: object = runInContext("globalThis", createContext());
 
 const MAX_LANGUAGE_OBJECT_DEPTH = 4;
 
+interface LanguageObjects {
+  /** This process's intrinsic to the language realm's counterpart. */
+  counterparts: Map<object, object>;
+  /** A language object to the dotted path it was first reached by; objects reached only through symbol keys have none. */
+  paths: Map<object, string>;
+}
+
 const collectLanguageObjects = (
   shared: unknown,
   language: unknown,
-  objects: Map<object, object>,
+  path: string | null,
+  objects: LanguageObjects,
   depth: number,
 ): void => {
-  if (!isObjectLike(shared) || !isObjectLike(language) || objects.has(shared) || depth === 0)
+  if (
+    !isObjectLike(shared) ||
+    !isObjectLike(language) ||
+    objects.counterparts.has(shared) ||
+    depth === 0
+  )
     return;
-  objects.set(shared, language);
+  objects.counterparts.set(shared, language);
+  if (path !== null) objects.paths.set(language, path);
   for (const key of Reflect.ownKeys(language)) {
     const languageMember = Object.getOwnPropertyDescriptor(language, key)?.value;
     const sharedMember = Object.getOwnPropertyDescriptor(shared, key)?.value;
-    collectLanguageObjects(sharedMember, languageMember, objects, depth - 1);
+    const memberPath = path !== null && typeof key === "string" ? `${path}.${key}` : null;
+    collectLanguageObjects(sharedMember, languageMember, memberPath, objects, depth - 1);
   }
 };
 
-let languageObjects: Map<object, object> | null = null;
+let languageObjects: LanguageObjects | null = null;
 
-/** The language realm's counterpart of one of this process's intrinsics (`Symbol`, `Array.prototype`); null for any other object. */
-export const getLanguageCounterpart = (shared: object): object | null => {
+const getLanguageObjects = (): LanguageObjects => {
   if (languageObjects === null) {
-    languageObjects = new Map();
+    languageObjects = { counterparts: new Map(), paths: new Map() };
     for (const name of loadHostRealm("ecmascript").getGlobalNames()) {
       collectLanguageObjects(
         Reflect.get(globalThis, name),
         Reflect.get(LANGUAGE_GLOBAL, name),
+        name,
         languageObjects,
         MAX_LANGUAGE_OBJECT_DEPTH,
       );
     }
   }
-  return languageObjects.get(shared) ?? null;
+  return languageObjects;
 };
+
+/** The language realm's counterpart of one of this process's intrinsics (`Symbol`, `Array.prototype`); null for any other object. */
+export const getLanguageCounterpart = (shared: object): object | null =>
+  getLanguageObjects().counterparts.get(shared) ?? null;
 
 /** Whether the engine itself provides a global of this name; `WebAssembly` is one TypeScript declares only for hosts. */
 export const isEngineGlobal = (name: string): boolean => Object.hasOwn(LANGUAGE_GLOBAL, name);
@@ -114,6 +133,29 @@ const getCanonicalLanguageGlobal = (value: object): StaticValue | null => {
 export const getIntrinsicGlobal = (shared: object): StaticValue | null => {
   const language = getLanguageCounterpart(shared);
   return language === null ? null : getCanonicalLanguageGlobal(language);
+};
+
+/**
+ * One of this process's intrinsics by a dotted global path, members included
+ * (`Object.prototype.toString` for a captured `nativeObjectToString`), so a
+ * later `.call(value)` is the language's; null for any other object.
+ */
+export const getIntrinsicMemberGlobal = (shared: object): StaticValue | null => {
+  const canonical = getIntrinsicGlobal(shared);
+  if (canonical !== null) return canonical;
+  const language = getLanguageCounterpart(shared);
+  const path = language === null ? undefined : getLanguageObjects().paths.get(language);
+  return path === undefined ? null : { kind: "global", name: path };
+};
+
+/** A symbol as the program names it: by its registry key or its well-known path (`Symbol.iterator`); null for a `Symbol(description)` this process allocated. */
+export const getNamedSymbolValue = (symbol: symbol): StaticSymbolValue | null => {
+  const registryKey = Symbol.keyFor(symbol);
+  if (registryKey !== undefined) return { kind: "symbol", key: registryKey };
+  const wellKnownName = Object.getOwnPropertyNames(Symbol).find(
+    (name) => Reflect.get(Symbol, name) === symbol,
+  );
+  return wellKnownName === undefined ? null : { kind: "symbol", key: `Symbol.${wellKnownName}` };
 };
 
 /** The language global that is the `constructor` of a native prototype (`Array` for `Array.prototype`); null when the prototype is not an intrinsic's. */
