@@ -47,7 +47,7 @@ export const quoteUnknownString = (
   const composition = text.composition ?? { prefix: "", source: text, suffix: "" };
   return {
     ...unknownPrimitiveValue("string", "JSON.stringify"),
-    stringShape: { prefix: '"', length: null },
+    stringShape: { prefix: '"', minLength: (text.stringShape?.minLength ?? 0) + 2, length: null },
     composition: {
       ...composition,
       prefix: `"${composition.prefix}`,

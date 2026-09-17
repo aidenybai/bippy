@@ -3,6 +3,7 @@ import type { HostRealm } from "../host/host-realm.js";
 import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
 import type { CompareOperator, GuardLiteral } from "../symbolic/guards.js";
 import type { StaticPrimitive, StaticUnknownPrimitiveValue, StaticValue } from "../types.js";
+import { isClockDateValue, toDatePrimitive } from "./clock-date.js";
 import { isInstanceOf } from "./instance-of.js";
 import { getLanguageObject } from "./language-intrinsics.js";
 import { getExactLanguageObject, toNativeObjectPrimitive } from "./native-values.js";
@@ -176,12 +177,13 @@ const getCoercionHint = (
 };
 
 const isCoercibleOperand = (value: StaticValue): boolean =>
-  value.kind === "regexp" || value.kind === "native-object";
+  value.kind === "regexp" || value.kind === "native-object" || isClockDateValue(value);
 
-/** `ToPrimitive` of an object operand: `RegExp.prototype.toString`, or the native object's own conversion. */
+/** `ToPrimitive` of an object operand: `RegExp.prototype.toString`, a modeled date's time, or the native object's own conversion. */
 const toCoercedOperand = (value: StaticValue, hint: "default" | "number"): StaticValue => {
   if (value.kind === "regexp") return primitiveValue(regExpToString(value));
-  return value.kind === "native-object" ? toNativeObjectPrimitive(value, hint) : value;
+  if (value.kind === "native-object") return toNativeObjectPrimitive(value, hint);
+  return toDatePrimitive(value, hint) ?? value;
 };
 
 /** A value that is a number for sure, known or not. */

@@ -28,7 +28,14 @@ import {
   type EnvironmentLookup,
 } from "./bundler-globals.js";
 import { getClassPrototypeObject } from "./class-component.js";
-import { createClockDateValue, isClockReading } from "./clock-date.js";
+import {
+  cloneDateValue,
+  createClockDateValue,
+  createUnknownDateValue,
+  isClockReading,
+  toDatePrimitive,
+} from "./clock-date.js";
+import { parseSerializedJson, stringifyJsonValue } from "./json-values.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
 import type { EvaluationContext } from "./context.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
@@ -68,7 +75,6 @@ import {
   callShapedPrimitiveMethod,
   getFunctionText,
   isFunctionText,
-  quoteUnknownString,
   toPropertyKey,
   toStringValue,
 } from "./primitive-shapes.js";
@@ -148,7 +154,6 @@ import {
   spreadListItems,
   thrownValue,
   toBooleanValue,
-  toJsonValue,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -156,6 +161,14 @@ import {
 } from "./values.js";
 import { callWebCryptoMethod, isWebCryptoName } from "./web-crypto.js";
 import { callStorageMethod, getStorageAreaName } from "./web-storage.js";
+
+/** An unknown number that is neither NaN nor infinite: a clock reading, or one the analysis bounded. */
+const isFiniteUnknownNumber = (value: StaticValue): boolean =>
+  value.kind === "unknown-primitive" &&
+  (value.clock !== undefined ||
+    (value.numberRange !== undefined &&
+      Number.isFinite(value.numberRange.min) &&
+      Number.isFinite(value.numberRange.max)));
 
 const NUMBER_PREDICATES: Record<string, (value: StaticPrimitive) => boolean> = {
   "Number.isNaN": Number.isNaN,
@@ -244,6 +257,8 @@ export const getBuiltinGlobal = (
 const toNumberValue = (value: StaticValue): StaticValue => {
   if (value.kind === "native-object")
     return toNumberValue(toNativeObjectPrimitive(value, "number"));
+  const dateTime = toDatePrimitive(value, "number");
+  if (dateTime !== null) return toNumberValue(dateTime);
   if (
     value.kind === "primitive" &&
     typeof value.value !== "bigint" &&
@@ -777,6 +792,7 @@ const INSPECTING_GLOBALS = new Set([
   "Number.isInteger",
   "Number.isSafeInteger",
   "JSON.stringify",
+  "JSON.parse",
 ]);
 
 const callGlobal = (
@@ -839,8 +855,12 @@ const callGlobal = (
     case "Date": {
       if (!isConstructor) break;
       if (args.length === 0) return createClockDateValue(interpreter.timers.readClock("new Date"));
-      if (args.length === 1 && first !== undefined && isClockReading(first))
-        return createClockDateValue(first);
+      if (args.length !== 1 || first === undefined) break;
+      if (isClockReading(first)) return createClockDateValue(first);
+      const copy = cloneDateValue(first);
+      if (copy) return copy;
+      if (first.kind === "unknown-primitive" && first.primitiveType === "number")
+        return createUnknownDateValue(first);
       break;
     }
     case "Function":
@@ -1221,6 +1241,7 @@ const callGlobal = (
           name === "isNaN" ? Number.isNaN(number.value) : Number.isFinite(number.value),
         );
       }
+      if (isFiniteUnknownNumber(number)) return name === "isNaN" ? FALSE_VALUE : TRUE_VALUE;
       return unknownPrimitiveValue("boolean", name);
     }
     case "Number.isNaN":
@@ -1231,22 +1252,22 @@ const callGlobal = (
       if (first.kind === "primitive") return primitiveValue(NUMBER_PREDICATES[name](first.value));
       const typeofFirst = getTypeofValue(first, interpreter.getRealm(context.environment));
       if (typeofFirst.kind === "primitive" && typeofFirst.value !== "number") return FALSE_VALUE;
+      if (isFiniteUnknownNumber(first)) {
+        if (name === "Number.isNaN") return FALSE_VALUE;
+        if (name === "Number.isFinite") return TRUE_VALUE;
+      }
       return unknownPrimitiveValue("boolean", name);
     }
     case "JSON.stringify": {
       if (!first || args.length !== 1) return unknownPrimitiveValue("string", "JSON.stringify");
-      return mapValue(distributeObjectBranches(first), (alternative) => {
-        if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string") {
-          return quoteUnknownString(alternative);
-        }
-        const json = toJsonValue(alternative);
-        return json === undefined
-          ? unknownPrimitiveValue("string", "JSON.stringify")
-          : primitiveValue(JSON.stringify(json));
-      });
+      return stringifyJsonValue(first, location);
     }
     case "JSON.parse": {
       const text = first ?? UNDEFINED_VALUE;
+      if (second === undefined || (second.kind === "primitive" && second.value === undefined)) {
+        const parsed = parseSerializedJson(text);
+        if (parsed !== null) return parsed;
+      }
       if (
         text.kind === "primitive" &&
         (second === undefined || (second.kind === "primitive" && second.value === undefined))
@@ -1661,10 +1682,12 @@ export const evaluateBuiltinCall = (
       );
     }
     if (name === "bind") {
-      if (rebound.kind !== "method") return rebound;
       const boundArgs = args.slice(1);
-      return nativeFunction(`bound ${rebound.name}`, (callArgs, tools) =>
-        tools.call(rebound, [...boundArgs, ...callArgs]),
+      if (rebound.kind !== "method" && boundArgs.length === 0) return rebound;
+      const boundThis = rebound.kind === "method" ? undefined : first;
+      const boundName = rebound.kind === "react-api" ? rebound.api : rebound.name;
+      return nativeFunction(`bound ${boundName}`, (callArgs, tools) =>
+        tools.call(rebound, [...boundArgs, ...callArgs], boundThis),
       );
     }
   }

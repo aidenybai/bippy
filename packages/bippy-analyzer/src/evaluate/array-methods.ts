@@ -30,6 +30,7 @@ import {
   createSymbolValue,
   describeValue,
   FALSE_VALUE,
+  getItemValue,
   getListLength,
   getObjectProperty,
   getPreferredTruthiness,
@@ -51,6 +52,7 @@ import {
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
   unknownValue,
+  widenLoopCarriedValue,
   type CallableValue,
 } from "./values.js";
 
@@ -120,7 +122,9 @@ export const arrayOfLength = (
   location: SourceLocation | null,
 ): StaticValue => {
   if (length.kind === "unknown-primitive" && length.primitiveType === "number")
-    return { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange };
+    return listValue([
+      { kind: "repeat", item: UNDEFINED_VALUE, location, count: length.numberRange },
+    ]);
   if (length.kind === "branch")
     return mapValue(length, (alternative) => arrayOfLength(alternative, location));
   if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
@@ -133,7 +137,7 @@ export const arrayOfLength = (
     );
   }
   if (length.value > MAX_ARRAY_LIKE_LENGTH)
-    return { kind: "repeat", item: UNDEFINED_VALUE, location };
+    return listValue([{ kind: "repeat", item: UNDEFINED_VALUE, location }]);
   return listValue(Array.from({ length: length.value }, () => UNDEFINED_VALUE));
 };
 
@@ -762,17 +766,13 @@ export const callArrayMethod = (
       }
       case "reduce":
       case "reduceRight": {
-        if (
-          !isCallable(first) ||
-          receiver.kind !== "list" ||
-          receiver.items.some((item) => item.kind === "repeat")
-        ) {
+        if (!isCallable(first) || receiver.kind !== "list") {
           return unknownValue(`${name}()`, location);
         }
         const items = name === "reduce" ? receiver.items : [...receiver.items].reverse();
         let accumulator = args.length > 1 ? second : items[0];
         if (!accumulator) return unknownValue(`${name}() of an empty list`, location);
-        if (accumulator.kind === "optional") {
+        if (accumulator.kind === "optional" || accumulator.kind === "repeat") {
           return unknownValue(`${name}() of a list whose first item may be absent`, location);
         }
         const startIndex = args.length > 1 ? 0 : 1;
@@ -783,7 +783,7 @@ export const callArrayMethod = (
           const indexValue = isIndexKnown
             ? primitiveValue(sourceIndex)
             : unknownPrimitiveValue("number", "index");
-          if (item.kind !== "optional") {
+          if (item.kind !== "optional" && item.kind !== "repeat") {
             accumulator = callCallback(
               evaluator,
               first,
@@ -796,10 +796,19 @@ export const callArrayMethod = (
           const reduced = callUncertainCallback(
             evaluator,
             first,
-            [accumulator, item.value, indexValue, receiver],
+            [accumulator, getItemValue(item), indexValue, receiver],
             context,
-            false,
+            item.kind === "repeat",
           );
+          if (item.kind === "repeat") {
+            if (reduced !== accumulator) {
+              accumulator = widenLoopCarriedValue(
+                branchValue([reduced, accumulator], "repeated items", location),
+                location,
+              );
+            }
+            continue;
+          }
           accumulator = branchValue(
             [reduced, accumulator],
             item.reason,

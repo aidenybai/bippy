@@ -69,3 +69,30 @@ No additional blocking issue was found. No engine or test changes were made duri
 - The dependency reader checks statically named dependencies, not imports whose specifiers are computed at runtime.
 - Passing differential tests includes tests that preserve known divergences. Snapshot/model agreement and runtime fixture matching are bounded evidence, not exhaustive semantic proof.
 - Browser corpus recapture, broad performance benchmarking, and semantic compatibility fixes were not part of this checkpoint.
+
+## Upstream merge revalidation
+
+The evidence above describes the structural refactor at `15f990ad`, before merging upstream `4047a1a9` and `d384b848`. Those upstream commits intentionally change behavior: symbolic JSON round trips, native closure interpretation, modeled dates, and uncertain collection/loop handling. The merged engine is therefore not claimed to be behavior-identical to the pre-refactor baseline.
+
+### Resolution and structure
+
+- Intrinsic-member lookup and named-symbol handling remain in `language-intrinsics.ts`, rather than restoring their old location in host-global dispatch.
+- Array allocation/reduction, date coercion, and scope widening changes were applied in `array-methods.ts`, `operators.ts`, and `scope-journal.ts`. Loop evaluation retains its narrow operation contract, including the new primitive-only widening option.
+- Upstream native conversion needs collection classification. The existing weak collection registry now lives in `collection-values.ts`, avoiding a native-conversion/collection-iteration runtime cycle. It remains one module-level registry; collection instances and registration timing are unchanged.
+- Upstream's removal of the deepmerge-specific model is retained. Deepmerge uses the upstream native-closure path instead.
+- Corpus configuration changes are retained alongside the local corpus entries. Historical upstream capture evidence was merged, not freshly reproduced.
+- Whole-engine architecture tests still permit only the value/predicate runtime cycle. The new closure, JSON, and collection metadata modules are included in coordinator-boundary checks.
+
+A normalized emitted-body audit matched 114 of 117 new or changed upstream runtime declarations to their merged implementations, including relocated declarations. The three exceptions were inspected: builtin global dispatch retains the local symbol-registry and `Object.hasOwn` implementations; builtin method dispatch retains the reviewed array delegation; materializer tools retain the provider-policy boolean boundary. This comparison is not a proof of initialization-order or behavioral equivalence.
+
+### Validation
+
+- Final tracked repository suite, at default parallelism: **269 files passed**, two skipped; **4,156 tests passed**, 42 expected failures, two skipped. This includes ten added integration checks for collection identity, intrinsic/symbol recognition, and upstream JSON behavior.
+- A separate full-suite run with unchanged copies of all 135 pre-existing modified/untracked test files: **10,094 tests passed**, four expected failures, two skipped, and **five failures**. This run preceded the ten added integration checks. All five failures are assertions that known JSON divergences still exist; the corresponding programs now agree with native JavaScript.
+- The five assertions fail identically against an isolated checkout of upstream `d384b848`: undefined JSON roots, omitted function-valued object properties, null array entries for functions/symbols, bigint serialization errors, and finite JSON parse branches. Five positive integration checks pass against both upstream and the merged engine.
+- The user's differential assertions were not edited, skipped, or committed. All 135 original file hashes were verified unchanged after the copied-test campaign. These stale divergence expectations remain in the user's working tree.
+- Repository typecheck, build, realm-table verification, architecture tests, formatting, lint, and whitespace checks passed. An initial isolated-worktree test run lacked core Bippy's build output and failed eleven namespace subprocess tests; building core Bippy resolved those failures without changing their assertions.
+
+**Merged structure verdict:** the scoped ownership boundaries remain intact; the acknowledged value/predicate and legacy type coupling remain.
+
+**Merged behavior verdict:** no merge-induced regression found in these checks. Upstream semantic changes are preserved, including the five confirmed JSON improvements. The expanded dirty-worktree suite is not all green because its five preserved divergence assertions now describe fixed upstream behavior. No new browser-corpus capture or exhaustive compatibility claim is made.

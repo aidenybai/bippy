@@ -86,7 +86,12 @@ export interface LoopEvaluator {
     context: EvaluationContext,
     run: () => Result,
   ) => Result;
-  widenLoopCarriedBindings: (scope: Scope, run: () => void, location: SourceLocation) => void;
+  widenLoopCarriedBindings: (
+    scope: Scope,
+    run: () => void,
+    location: SourceLocation,
+    isPrimitiveOnly?: boolean,
+  ) => void;
 }
 
 type LoopStatement =
@@ -403,7 +408,9 @@ const unrollConditional = (
  * Evaluates the body once with every loop-controlled binding unknown. Used when
  * the iteration count is not statically known: the body's effects are joined
  * with the state in which it never ran, so assignments become branches and
- * pushed items become repeats.
+ * pushed items become repeats. A counter the test or update steps
+ * (`while (++index < length)`) is loop control like a declared one: the tail
+ * stands for any iteration, so it is unknown before the body runs.
  */
 const evaluateUncertainTail = (
   evaluator: LoopEvaluator,
@@ -437,6 +444,12 @@ const evaluateUncertainTail = (
   const whileTestHolds = <Result>(run: () => Result): Result =>
     test ? evaluator.runWhenTruthy(test, loopContext, run) : run();
   const runTailBody = (): StatementOutcome => runBody(evaluator, statement.body, loopContext);
+  const stepControl = (): void => {
+    if (statement.type === "ForStatement" && statement.update)
+      evaluator.evaluateExpression(statement.update, loopContext);
+    if (test) evaluator.evaluateExpression(test, loopContext);
+  };
+  evaluator.widenLoopCarriedBindings(context.scope, stepControl, location, true);
   const outcome = evaluator.runMaybe(
     context.scope,
     () => whileTestHolds(runTailBody),

@@ -4,7 +4,7 @@ import type { StaticClassValue, StaticFunctionValue, StaticValue } from "../type
 import { getAbortWitness } from "./abort-controller.js";
 import { isBlobValue } from "./blob.js";
 import { isClockDateValue } from "./clock-date.js";
-import { getCollectionKind } from "./collections.js";
+import { getCollectionKind } from "./collection-values.js";
 import { getErrorWitness } from "./errors.js";
 import { isObjectLike } from "./language-intrinsics.js";
 import { isNativeInstanceOf } from "./native-values.js";

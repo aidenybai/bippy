@@ -130,6 +130,7 @@ import type {
   StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
+  StubRenderTools,
   StyledComponentsTransformOptions,
   SuperBinding,
   TaskBinder,
@@ -347,6 +348,7 @@ import {
   getFunctionPrototype,
   getKnownObjectOwnNames,
   getKnownOwnKeys,
+  getItemValue,
   getListItem,
   getListLength,
   getObjectAccessor,
@@ -368,6 +370,7 @@ import {
   jsonValue,
   listValue,
   mapValue,
+  mayBeIndexKey,
   NULL_VALUE,
   objectFromRecord,
   objectValue,
@@ -375,6 +378,7 @@ import {
   partialJsonValue,
   primitiveValue,
   setListItem,
+  setListItemAtUnknownIndex,
   setListLength,
   setObjectProperty,
   spreadListItems,
@@ -3524,7 +3528,11 @@ export class Interpreter {
   private assignDynamicProperty(object: StaticValue, key: StaticValue, value: StaticValue): void {
     for (const alternative of object.kind === "branch" ? object.alternatives : [object]) {
       if (alternative.kind === "object") this.assignDynamicEntry(alternative, key, value);
-      else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
+      else if (alternative.kind === "list") {
+        if (alternative.isFrozen || !mayBeIndexKey(key)) continue;
+        this.recordHeapMutation(alternative);
+        setListItemAtUnknownIndex(alternative, value);
+      } else if (alternative.kind === "native-object" && key.kind === "unknown-primitive")
         setNativeObjectComposedMember(alternative, key, value);
       else if (alternative.kind === "unknown" || alternative.kind === "external")
         this.markEscaped(value);
@@ -3712,7 +3720,7 @@ export class Interpreter {
     if (error) return error;
     if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
-      const candidates = object.items.filter((item) => item.kind !== "repeat");
+      const candidates = object.items.map(getItemValue);
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
         : branchValue(candidates, "dynamic list index", location);
@@ -4395,34 +4403,7 @@ export class Interpreter {
           origin: "derived",
         };
       case "native-function":
-        return callee.call(args, {
-          readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
-          hooks: null,
-          callAwaited: (callee, calleeArgs) =>
-            this.callAwaited(callee, calleeArgs, context, location),
-          call: (callee, calleeArgs, thisValue) =>
-            this.callValue(callee, calleeArgs, context, location, {
-              thisValue,
-            }),
-          callDeferred: (callee, calleeArgs) =>
-            this.callDeferred(callee, calleeArgs, context, location),
-          captured: (captured, name) => this.captured(captured, name),
-          markEscaped: (value) => this.markEscaped(value),
-          queueMicrotask: (task) => this.queueMicrotask(task, context, location),
-          bindTask: (task) => this.bindTask(task, context, location),
-          runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
-          isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
-          setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
-          materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
-          project: this.project,
-          recordStateMutation: (state) => this.recordStateMutation(state),
-          realm: this.getRealm(context.environment),
-          pushItems: (list, items) => this.pushItems(list, items),
-          setItem: (list, index, value) => this.setItem(list, index, value),
-          nameHint: options.nameHint ?? null,
-          templateArgumentNames: options.templateArgumentNames ?? null,
-          environment: context.environment,
-        });
+        return callee.call(args, this.createNativeCallTools(context, location, options));
       case "class":
         return unknownValue(`class ${callee.name ?? ""} called without new`, location);
       case "proxy": {
@@ -4624,6 +4605,41 @@ export class Interpreter {
     return binding.construct(args);
   }
 
+  /** The tools a modeled function gets for the call `options` describe. */
+  private createNativeCallTools(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    options: ValueCallOptions,
+  ): StubRenderTools {
+    return {
+      readContext: (definition) => context.readContext(definition) ?? definition.defaultValue,
+      hooks: null,
+      callAwaited: (callee, calleeArgs) => this.callAwaited(callee, calleeArgs, context, location),
+      call: (callee, calleeArgs, thisValue) =>
+        this.callValue(callee, calleeArgs, context, location, { thisValue }),
+      construct: (callee, calleeArgs) => this.construct(callee, calleeArgs, context, location),
+      thisValue: options.thisValue ?? null,
+      callDeferred: (callee, calleeArgs) =>
+        this.callDeferred(callee, calleeArgs, context, location),
+      captured: (captured, name) => this.captured(captured, name),
+      markEscaped: (value) => this.markEscaped(value),
+      queueMicrotask: (task) => this.queueMicrotask(task, context, location),
+      bindTask: (task) => this.bindTask(task, context, location),
+      runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
+      isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
+      setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
+      materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
+      project: this.project,
+      recordStateMutation: (state) => this.recordStateMutation(state),
+      realm: this.getRealm(context.environment),
+      pushItems: (list, items) => this.pushItems(list, items),
+      setItem: (list, index, value) => this.setItem(list, index, value),
+      nameHint: options.nameHint ?? null,
+      templateArgumentNames: options.templateArgumentNames ?? null,
+      environment: context.environment,
+    };
+  }
+
   construct(
     callee: StaticValue,
     args: StaticValue[],
@@ -4633,7 +4649,11 @@ export class Interpreter {
     if (callee.kind === "global") {
       return evaluateBuiltinCall(this, callee, args, context, location, true);
     }
-    if (callee.kind === "native-function") return this.callValue(callee, args, context, location);
+    if (callee.kind === "native-function") {
+      return callee.construct
+        ? callee.construct(args, this.createNativeCallTools(context, location, {}))
+        : this.callValue(callee, args, context, location);
+    }
     if (callee.kind === "class") return constructClassInstance(this, callee, args, context);
     if (callee.kind === "function")
       return this.constructWithFunction(callee, args, context, location);
@@ -5639,13 +5659,19 @@ export class Interpreter {
   }
 
   /**
-   * Runs `run` once more from the state `runMaybe` left behind and discards
-   * everything it does, keeping only which bindings it would move again. A
-   * binding that still changes is loop-carried (a counter, an accumulator):
-   * after an unknown number of iterations it holds none of the enumerated
-   * alternatives in particular, so it widens to an unknown of its type.
+   * Runs `run` once from the current state and discards everything it does,
+   * keeping only which bindings it moved. A binding that changes is
+   * loop-carried (a counter, an accumulator): after an unknown number of
+   * iterations it holds none of the enumerated alternatives in particular, so
+   * it widens to an unknown of its type. With `isPrimitiveOnly`, a binding
+   * that does not keep one primitive type is left as it is.
    */
-  widenLoopCarriedBindings(scope: Scope, run: () => void, location: SourceLocation): void {
+  widenLoopCarriedBindings(
+    scope: Scope,
+    run: () => void,
+    location: SourceLocation,
+    isPrimitiveOnly = false,
+  ): void {
     const entrySnapshot = snapshotScopes(scope);
     const journal = new HeapJournal();
     const pendingDepth = this.pendingReturnJoins.length;
@@ -5660,7 +5686,7 @@ export class Interpreter {
       journal.endPath();
       this.removeHeapJournal(journal);
       restoreScopes(entrySnapshot);
-      widenMovedBindings(entrySnapshot, ranSnapshot, location);
+      widenMovedBindings(entrySnapshot, ranSnapshot, location, isPrimitiveOnly);
     }
   }
 

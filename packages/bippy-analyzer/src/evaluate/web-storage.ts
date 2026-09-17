@@ -1,6 +1,7 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type { CapturedPageState, StaticValue } from "../types.js";
 import { recordInputSource } from "./predicates.js";
+import { toStringValue } from "./primitive-shapes.js";
 import { NULL_VALUE, UNDEFINED_VALUE, primitiveValue, unknownValue } from "./values.js";
 
 /**
@@ -10,7 +11,7 @@ import { NULL_VALUE, UNDEFINED_VALUE, primitiveValue, unknownValue } from "./val
  */
 export interface StorageArea {
   /** `null` marks a key whose stored string the analysis could not compute. */
-  readonly entries: Map<string, string | null>;
+  readonly entries: Map<string, string | StaticValue | null>;
   hasUnknownKeys: boolean;
 }
 
@@ -69,11 +70,15 @@ export const callStorageMethod = (
       if (key === null) return describe("with a dynamic key");
       const stored = area.entries.get(key);
       if (stored === null) return describe(`of "${key}" after a dynamic write`);
-      return stored === undefined ? NULL_VALUE : primitiveValue(stored);
+      return stored === undefined
+        ? NULL_VALUE
+        : typeof stored === "string"
+          ? primitiveValue(stored)
+          : stored;
     }
     case "setItem": {
       if (key === null) area.hasUnknownKeys = true;
-      else area.entries.set(key, toStorageString(second));
+      else area.entries.set(key, toStringValue(second ?? UNDEFINED_VALUE));
       return UNDEFINED_VALUE;
     }
     case "removeItem": {

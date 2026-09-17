@@ -196,6 +196,10 @@ export interface StubRenderTools {
   callAwaited: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** Calls `callee` with `thisValue` as its receiver, as `callee.call(thisValue, ...args)` would. */
   call: (callee: StaticValue, args: StaticValue[], thisValue?: StaticValue) => StaticValue;
+  /** Constructs with `callee`, as `new callee(...args)` would. */
+  construct: (callee: StaticValue, args: StaticValue[]) => StaticValue;
+  /** The receiver of the call (`receiver.method()`); null for a call with none. */
+  thisValue: StaticValue | null;
   /** Calls a continuation of a promise that settles outside the analysis: it runs at an unknown time, so what it updates may or may not have changed by the captured commit. */
   callDeferred: (callee: StaticValue, args: StaticValue[]) => StaticValue;
   /** A value recorded from the running page, with references to the project's module exports evaluated. */
@@ -809,6 +813,8 @@ export interface StaticNativeFunctionValue {
   kind: "native-function";
   name: string;
   call: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
+  /** `new` on the function; absent when it constructs nothing the analysis models. */
+  construct?: (args: StaticValue[], tools: StubRenderTools) => StaticValue;
   /**
    * Invoked when the value flows into code the evaluator does not follow: with
    * the arguments of the call that code makes where the escape walk sees the

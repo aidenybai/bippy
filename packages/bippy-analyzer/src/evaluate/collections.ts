@@ -7,6 +7,7 @@ import type {
   StubRenderTools,
   UnknownPrimitiveType,
 } from "../types.js";
+import { collectionsByValue, type CollectionKind } from "./collection-values.js";
 import { createGeneratorValue, getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getTruthinessPredicate } from "./predicates.js";
@@ -47,8 +48,6 @@ interface CollectionState {
   readonly writeCount: number;
   readonly isExternallyMutable: boolean;
 }
-
-type CollectionKind = "Map" | "Set" | "WeakMap" | "WeakSet";
 
 const isKeyed = (kind: CollectionKind): boolean => kind === "Map" || kind === "WeakMap";
 
@@ -454,8 +453,6 @@ const seedCollection = (
   return true;
 };
 
-const collectionsByValue = new WeakMap<StaticObjectValue, StaticCollection>();
-
 /** `keys()`, `values()` and `entries()` hand out an iterator (`next()`, iterable), not an array. */
 const iteratorOver = (items: StaticValue): StaticValue =>
   items.kind === "list" ? createGeneratorValue(items.items, UNDEFINED_VALUE) : items;
@@ -468,9 +465,6 @@ export const getCollectionItems = (value: StaticValue): StaticValue | null => {
   if (collection.kind === "WeakMap" || collection.kind === "WeakSet") return null;
   return collection.iterate();
 };
-
-export const getCollectionKind = (value: StaticObjectValue): CollectionKind | null =>
-  collectionsByValue.get(value)?.kind ?? null;
 
 export const markCollectionExternallyMutable = (value: StaticObjectValue): boolean => {
   const collection = collectionsByValue.get(value);

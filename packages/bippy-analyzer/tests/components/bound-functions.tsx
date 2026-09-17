@@ -1,3 +1,5 @@
+import { clsx } from "clsx";
+
 class Registry {
   entries: Map<string, number>;
 
@@ -36,6 +38,7 @@ const toList = function (this: unknown) {
 const flattened = ([] as number[]).concat.apply([], [[1], [2, 3]]);
 const shout = "".toUpperCase.call("abc");
 const firstOf = [].at.bind(["x", "y"], 0);
+const withBase = clsx.bind(null, "base");
 
 const collect = function (this: unknown, ...values: number[]) {
   return (
@@ -78,6 +81,9 @@ export default function BoundFunctions() {
       </li>
       <li>
         {firstOf()} <em>ok</em>
+      </li>
+      <li>
+        {withBase("more", { on: true })} <em>ok</em>
       </li>
       <li>
         {collect(4, 5, 6)} <em>ok</em>

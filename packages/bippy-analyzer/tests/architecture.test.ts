@@ -25,6 +25,11 @@ const dependencies = getSourceFiles(sourceDirectory).flatMap((filePath) =>
 const evaluationModules = new Set([
   "evaluate/array-methods.ts",
   "evaluate/callbacks.ts",
+  "evaluate/collection-values.ts",
+  "evaluate/closure-inspection.ts",
+  "evaluate/environment-reads.ts",
+  "evaluate/json-values.ts",
+  "evaluate/native-closures.ts",
   "evaluate/completion.ts",
   "evaluate/context.ts",
   "evaluate/loops.ts",

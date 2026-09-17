@@ -11,6 +11,7 @@ import {
   UNDEFINED_VALUE,
   branchValue,
   getAllocationCount,
+  getItemValue,
   isIndefiniteItem,
   isSameValue,
   joinObjectEntries,
@@ -346,15 +347,34 @@ export class HeapJournal {
         );
         continue;
       }
-      const uncertainItems = isEveryPathAppending ? appendedItems.flat() : pathItems.flat();
+      const uncertainItems = (isEveryPathAppending ? appendedItems : pathItems)
+        .flat()
+        .map(getItemValue);
       list.items = isEveryPathAppending ? [...original.items] : [];
-      if (uncertainItems.length > 0) {
-        list.items.push({
-          kind: "repeat",
-          item: branchValue(uncertainItems, reason, location),
-          location,
-        });
-      }
+      if (uncertainItems.length > 0)
+        appendRepeatedItems(list.items, uncertainItems, reason, location);
     }
   }
 }
+
+/**
+ * Appends items present any number of times over. A trailing repeat absorbs
+ * them, so a loop appending on every iteration does not grow the list by one
+ * repeat per iteration it is unrolled for.
+ */
+const appendRepeatedItems = (
+  items: StaticValue[],
+  appended: StaticValue[],
+  reason: string,
+  location: SourceLocation | null,
+): void => {
+  const last = items[items.length - 1];
+  if (last?.kind === "repeat") {
+    items[items.length - 1] = {
+      ...last,
+      item: branchValue([last.item, ...appended], reason, location),
+    };
+    return;
+  }
+  items.push({ kind: "repeat", item: branchValue(appended, reason, location), location });
+};

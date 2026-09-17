@@ -10,24 +10,28 @@ import {
   getSourceMap,
 } from "bippy/source";
 
+interface GeneratedPosition {
+  line: number;
+  column: number;
+}
+
 const fixtureDirectory = resolve(import.meta.dirname, "../../fixtures/expo-app");
 const bundleUrl = "app://react-native/index.bundle";
 const sourceMapUrl = "app://react-native/index.map";
 
-const getGeneratedPosition = (bundleContent, marker) => {
+const getGeneratedPosition = (bundleContent: string, marker: string): GeneratedPosition => {
   const markerIndex = bundleContent.indexOf(marker);
   assert.notEqual(markerIndex, -1, `Metro bundle did not contain ${marker}`);
-  const contentBeforeMarker = bundleContent.slice(0, markerIndex);
-  const generatedLines = contentBeforeMarker.split("\n");
+  const generatedLines = bundleContent.slice(0, markerIndex).split("\n");
   return {
-    column: generatedLines.at(-1).length,
+    column: generatedLines[generatedLines.length - 1].length,
     line: generatedLines.length,
   };
 };
 
 test("symbolicates a real minified Metro production artifact", async () => {
-  const requestedUrls = [];
-  const sourceFetch = async (url) => {
+  const requestedUrls: string[] = [];
+  const sourceFetch = async (url: string): Promise<Response> => {
     requestedUrls.push(url);
     if (url !== bundleUrl && url !== sourceMapUrl) {
       throw new Error(`Unexpected source request: ${url}`);
@@ -51,7 +55,7 @@ test("symbolicates a real minified Metro production artifact", async () => {
   assert.ok(appSource);
   assert.match(appSource.fileName ?? "", /\/src\/App\.tsx$/);
   assert.match(
-    getSourceContentFromSourceMap(sourceMap, appSource.fileName) ?? "",
+    getSourceContentFromSourceMap(sourceMap, appSource.fileName ?? "") ?? "",
     /const TestChild/,
   );
 
@@ -60,11 +64,11 @@ test("symbolicates a real minified Metro production artifact", async () => {
   assert.ok(skiaSource);
   assert.match(skiaSource.fileName ?? "", /\/src\/skia-probe\.tsx$/);
   assert.match(
-    getSourceContentFromSourceMap(sourceMap, skiaSource.fileName) ?? "",
+    getSourceContentFromSourceMap(sourceMap, skiaSource.fileName ?? "") ?? "",
     /const SkiaMemoLeaf/,
   );
 
   const skiaComponentSource = getSourceFromSourceMapByFunctionName(sourceMap, "SkiaMemoLeaf");
   assert.match(skiaComponentSource?.fileName ?? "", /\/src\/skia-probe\.tsx$/);
-  assert.ok(skiaComponentSource?.lineNumber > 0);
+  assert.ok((skiaComponentSource?.lineNumber ?? 0) > 0);
 });

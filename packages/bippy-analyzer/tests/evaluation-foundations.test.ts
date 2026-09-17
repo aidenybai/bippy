@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
+import { getCollectionKind, type CollectionKind } from "../src/evaluate/collection-values.js";
+import { createCollectionValue } from "../src/evaluate/collections.js";
 import {
   getIntrinsicGlobal,
+  getIntrinsicMemberGlobal,
   getLanguageCounterpart,
   getLanguageObject,
+  getNamedSymbolValue,
   getPrototypeConstructorGlobal,
   isEngineGlobal,
   readLanguageValue,
@@ -90,6 +94,27 @@ describe("language intrinsics", () => {
     expect(getIntrinsicGlobal(class ApplicationClass {})).toBeNull();
   });
 
+  it("recognizes captured intrinsic members and named symbols", () => {
+    expect(getIntrinsicMemberGlobal(Object.prototype.toString)).toEqual({
+      kind: "global",
+      name: "Object.prototype.toString",
+    });
+    expect(getIntrinsicMemberGlobal(Array.prototype)).toEqual({
+      kind: "global",
+      name: "Array.prototype",
+    });
+    expect(getIntrinsicMemberGlobal(() => undefined)).toBeNull();
+    expect(getNamedSymbolValue(Symbol.iterator)).toEqual({
+      kind: "symbol",
+      key: "Symbol.iterator",
+    });
+    expect(getNamedSymbolValue(Symbol.for("bippy.merge"))).toEqual({
+      kind: "symbol",
+      key: "bippy.merge",
+    });
+    expect(getNamedSymbolValue(Symbol("bippy.merge"))).toBeNull();
+  });
+
   it("reads language constants and symbol keys without host-document access", () => {
     expect(readLanguageValue("Math.PI")).toEqual(primitiveValue(Math.PI));
     expect(readLanguageValue("Array.prototype.constructor")).toEqual({
@@ -102,6 +127,19 @@ describe("language intrinsics", () => {
     expect(isEngineGlobal("Array")).toBe(true);
     expect(isEngineGlobal("document")).toBe(false);
   });
+});
+
+describe("collection identity", () => {
+  it.each(["Map", "Set", "WeakMap", "WeakSet"] satisfies CollectionKind[])(
+    "recognizes modeled %s values without treating plain objects as collections",
+    (kind) => {
+      const value = createCollectionValue(kind, undefined, null);
+      expect(value.kind).toBe("object");
+      if (value.kind !== "object") throw new Error("Expected a modeled collection");
+      expect(getCollectionKind(value)).toBe(kind);
+      expect(getCollectionKind(objectValue(value.entries))).toBeNull();
+    },
+  );
 });
 
 describe("numeric range operations", () => {

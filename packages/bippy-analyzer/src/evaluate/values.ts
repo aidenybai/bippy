@@ -2033,18 +2033,34 @@ export const toIndexKey = (key: string): number | null => {
   return Number.isInteger(index) && index >= 0 && String(index) === key ? index : null;
 };
 
+/** Whether a key the analysis cannot name may be an array index rather than a named property. */
+export const mayBeIndexKey = (key: StaticValue): boolean =>
+  key.kind === "unknown" ||
+  (key.kind === "unknown-primitive" &&
+    key.primitiveType !== "string" &&
+    key.primitiveType !== "boolean");
+
+/** The value an item stands for at any one position: a repeat's or optional's inner value, else the item itself. */
+export const getItemValue = (item: StaticValue): StaticValue =>
+  item.kind === "repeat" ? item.item : item.kind === "optional" ? item.value : item;
+
 /**
  * `list[index] = value`: fills holes up to `index` with `undefined` like JavaScript
  * does. Past a partially known prefix the slot the write lands on is unknown, so
- * the indefinite tail becomes an unknown repeat.
+ * every position of the indefinite tail may now hold the written value, what it
+ * held before, or a hole the write left behind it.
  */
 export const setListItem = (list: StaticListValue, index: number, value: StaticValue): void => {
   const indefiniteIndex = list.items.findIndex(isIndefiniteItem);
   if (indefiniteIndex !== -1 && index >= indefiniteIndex) {
-    list.items.splice(
-      indefiniteIndex,
-      list.items.length - indefiniteIndex,
-      repeatItem(unknownValue("item of a partially known list written by index")),
+    const tail = list.items.splice(indefiniteIndex);
+    list.items.push(
+      repeatItem(
+        branchValue(
+          [value, ...tail.map(getItemValue), UNDEFINED_VALUE],
+          `item of a partially known list written at [${index}]`,
+        ),
+      ),
     );
     return;
   }
@@ -2054,6 +2070,24 @@ export const setListItem = (list: StaticListValue, index: number, value: StaticV
   }
   while (list.items.length < index) list.items.push(UNDEFINED_VALUE);
   list.items[index] = value;
+};
+
+/**
+ * `list[index] = value` for an index known only to be a number: any position
+ * may now hold the written value, and the list may have grown past its end.
+ */
+export const setListItemAtUnknownIndex = (list: StaticListValue, value: StaticValue): void => {
+  const min = list.items.reduce((total, item) => total + getItemCountRange(item).min, 0);
+  const item = branchValue(
+    [value, ...list.items.map(getItemValue), UNDEFINED_VALUE],
+    "item of a list written at a dynamic index",
+  );
+  list.items.splice(0, list.items.length, {
+    kind: "repeat",
+    item,
+    location: null,
+    count: { min, max: Number.POSITIVE_INFINITY },
+  });
 };
 
 /** `list.length = length`: truncates or extends with holes; an unknown length leaves every item uncertain. */
@@ -2189,45 +2223,61 @@ const MAX_OPTIONAL_CANDIDATES = 8;
 
 /**
  * `items[index]` when some earlier items may be absent: each optional item
- * either occupies a position or does not, so the result is a branch over the
- * items that could land on `index`.
+ * either occupies a position or does not, so the result branches on its
+ * presence, under the decision that made it optional, over the items that
+ * could land on `index`.
  */
 export const getListItem = (
   items: StaticValue[],
   index: number,
   location: SourceLocation | null,
 ): StaticValue => {
-  const candidates: StaticValue[] = [];
-  const pick = (remaining: StaticValue[], offset: number): boolean => {
+  let candidateCount = 0;
+  const pick = (remaining: StaticValue[], offset: number): StaticValue | null => {
     let position = 0;
     let remainingOffset = offset;
-    while (candidates.length <= MAX_OPTIONAL_CANDIDATES) {
+    while (candidateCount <= MAX_OPTIONAL_CANDIDATES) {
       const head = remaining[position];
       if (head === undefined) {
-        candidates.push(UNDEFINED_VALUE);
-        return true;
+        candidateCount += 1;
+        return UNDEFINED_VALUE;
       }
-      if (head.kind === "repeat") return false;
+      if (head.kind === "repeat") {
+        if (head.count !== undefined && head.count.min > remainingOffset) {
+          candidateCount += 1;
+          return head.item;
+        }
+        const candidates = [
+          head.item,
+          ...remaining.slice(position + 1).map(getItemValue),
+          UNDEFINED_VALUE,
+        ];
+        candidateCount += candidates.length;
+        return branchValue(candidates, `item ${index} of a filtered list`, location);
+      }
       if (head.kind === "optional") {
         const rest = remaining.slice(position + 1);
-        return head.isAbsentPreferred
-          ? pick(rest, remainingOffset) && pick([head.value, ...rest], remainingOffset)
-          : pick([head.value, ...rest], remainingOffset) && pick(rest, remainingOffset);
+        const present = pick([head.value, ...rest], remainingOffset);
+        const absent = present === null ? null : pick(rest, remainingOffset);
+        if (present === null || absent === null) return null;
+        return branchValue(
+          [present, absent],
+          head.reason,
+          head.location,
+          head.isAbsentPreferred ? 1 : 0,
+          head.predicate,
+        );
       }
       if (remainingOffset === 0) {
-        candidates.push(head);
-        return true;
+        candidateCount += 1;
+        return head;
       }
       position += 1;
       remainingOffset -= 1;
     }
-    return false;
+    return null;
   };
-  if (!pick(items, index)) {
-    return unknownValue(`index ${index} of a partially known list`, location);
-  }
-  if (candidates.length === 1) return candidates[0];
-  return branchValue(candidates, `item ${index} of a filtered list`, location);
+  return pick(items, index) ?? unknownValue(`index ${index} of a partially known list`, location);
 };
 
 const MAX_DESCRIPTION_DEPTH = 3;
@@ -2350,4 +2400,24 @@ export const describeElementType = (type: StaticElementType): string => {
     case "unknown":
       return type.displayName ?? "unknown";
   }
+};
+
+const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
+  if (value.kind === "unknown-primitive") return value.primitiveType;
+  if (value.kind !== "primitive") return null;
+  const type = typeof value.value;
+  return type === "string" || type === "number" || type === "boolean" ? type : null;
+};
+
+/** A value after an unknown number of iterations changed it: an unknown of its primitive type when the alternatives share one, unknown otherwise. */
+export const widenLoopCarriedValue = (
+  value: StaticValue,
+  location: SourceLocation | null,
+): StaticValue => {
+  const alternatives = value.kind === "branch" ? value.alternatives : [value];
+  const types = new Set(alternatives.map(getPrimitiveType));
+  const [type] = types;
+  return types.size === 1 && type
+    ? unknownPrimitiveValue(type, "loop-carried value")
+    : unknownValue("loop-carried value", location);
 };

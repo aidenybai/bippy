@@ -1,12 +1,11 @@
 import type { SourceLocation } from "../parse/source-types.js";
-import type { Scope, StaticValue, UnknownPrimitiveType } from "../types.js";
+import type { Scope, StaticValue } from "../types.js";
 import type { EvaluationContext } from "./context.js";
 import {
   branchValue,
   countAlternatives,
   UNDEFINED_VALUE,
-  unknownPrimitiveValue,
-  unknownValue,
+  widenLoopCarriedValue,
 } from "./values.js";
 
 export interface ScopeSnapshot {
@@ -46,6 +45,7 @@ export const widenMovedBindings = (
   entryPath: ScopeSnapshot[],
   ranPath: ScopeSnapshot[],
   location: SourceLocation,
+  isPrimitiveOnly: boolean,
 ): void => {
   entryPath.forEach((snapshot, scopeIndex) => {
     for (const [name, before] of snapshot.bindings) {
@@ -53,7 +53,9 @@ export const widenMovedBindings = (
       if (after === undefined || after === before) continue;
       const joined = branchValue([before, after], "loop-carried value", location);
       if (countAlternatives(joined) === countAlternatives(before)) continue;
-      snapshot.scope.bindings.set(name, widenValue(joined, location));
+      const widened = widenLoopCarriedValue(joined, location);
+      if (isPrimitiveOnly && widened.kind !== "unknown-primitive") continue;
+      snapshot.scope.bindings.set(name, widened);
     }
   });
 };
@@ -85,20 +87,4 @@ export const joinScopes = (
       );
     }
   });
-};
-
-const getPrimitiveType = (value: StaticValue): UnknownPrimitiveType | null => {
-  if (value.kind === "unknown-primitive") return value.primitiveType;
-  if (value.kind !== "primitive") return null;
-  const type = typeof value.value;
-  return type === "string" || type === "number" || type === "boolean" ? type : null;
-};
-
-const widenValue = (value: StaticValue, location: SourceLocation): StaticValue => {
-  const alternatives = value.kind === "branch" ? value.alternatives : [value];
-  const types = new Set(alternatives.map(getPrimitiveType));
-  const [type] = types;
-  return types.size === 1 && type
-    ? unknownPrimitiveValue(type, "loop-carried value")
-    : unknownValue("loop-carried value", location);
 };

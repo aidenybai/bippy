@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { describeError } from "../errors.js";
 import type { HostDocument } from "../host/host-document.js";
 import type { HostRealm } from "../host/host-realm.js";
@@ -15,7 +16,15 @@ import type {
 } from "../types.js";
 import { primitiveValue, UNDEFINED_VALUE } from "./values.js";
 
-import { getIntrinsicGlobal } from "./language-intrinsics.js";
+import { isClockDateValue } from "./clock-date.js";
+import { getCollectionKind } from "./collection-values.js";
+import { readsEnvironment } from "./environment-reads.js";
+import {
+  getIntrinsicGlobal,
+  getIntrinsicMemberGlobal,
+  getNamedSymbolValue,
+} from "./language-intrinsics.js";
+import { hasKnownKind, type LiftedCallable, liftNativeClosure } from "./native-closures.js";
 import { element, nativeFunction } from "./stubs.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
@@ -59,8 +68,21 @@ const standIns = new WeakMap<StaticValue, object>();
 
 const standInValues = new WeakMap<object, StaticValue>();
 
+const isStandIn = (value: Function): boolean => standInValues.has(value);
+
+/**
+ * The interpreter's containers by the native copies `toNative` made of them,
+ * so a copy native code hands back (`identity(config)`, an item of `sortBy`'s
+ * result, a value read out of a `Map` it was stored in) is the container it
+ * stood for, not a second one with the same contents.
+ */
+const loweredContainers = new WeakMap<object, StaticValue>();
+
+/** Native code reached a function only the interpreter can run. */
+class StandInAccessError extends Error {}
+
 const refuseStandInAccess = (): never => {
-  throw new Error("a function the analysis holds cannot run natively");
+  throw new StandInAccessError("a function the analysis holds cannot run natively");
 };
 
 const STAND_IN_HANDLER: ProxyHandler<() => void> = {
@@ -285,10 +307,18 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
         if (native === UNCERTAIN) return UNCERTAIN;
         items.push(native);
       }
+      loweredContainers.set(items, value);
       return items;
     }
     case "object": {
       if (isUrlValue(value)) return toNativeUrl(value) ?? UNCERTAIN;
+      if (
+        value.constructedBy ||
+        value.prototype ||
+        isClockDateValue(value) ||
+        getCollectionKind(value) !== null
+      )
+        return UNCERTAIN;
       const keys = getKnownObjectKeys(value);
       if (keys === null) return UNCERTAIN;
       const record: Record<string, unknown> = {};
@@ -297,6 +327,7 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
         if (native === UNCERTAIN) return UNCERTAIN;
         record[key] = native;
       }
+      loweredContainers.set(record, value);
       return record;
     }
     case "regexp":
@@ -342,43 +373,86 @@ const isPlainObject = (value: object): boolean => {
   return prototype === Object.prototype || prototype === null;
 };
 
-const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
+/** Why a native run's result cannot stand: it reached a function only the interpreter can run, or it wrote into its arguments. */
+interface NativeRefusal {
+  refusal: string;
+}
+
+const MUTATED_ARGUMENTS: NativeRefusal = { refusal: "wrote into its arguments" };
+
+const isRefusal = (outcome: StaticValue | NativeRefusal): outcome is NativeRefusal =>
+  "refusal" in outcome;
+
+const refusedValue = (name: string, { refusal }: NativeRefusal): StaticValue =>
+  unknownValue(`${name}() ${refusal}`);
+
+/** `call()`'s outcome; an exception is reported as an unknown rather than raised, since it would surface at runtime as an error boundary the static tree cannot place. */
+const runNatively = (
+  name: string,
+  call: () => StaticValue | NativeRefusal,
+): StaticValue | NativeRefusal => {
   try {
     return call();
   } catch (error) {
+    if (error instanceof StandInAccessError) return { refusal: `threw: ${error.message}` };
     return unknownValue(`${name}() threw: ${describeError(error)}`);
   }
 };
+
+const guardNativeCall = (name: string, call: () => StaticValue): StaticValue => {
+  const outcome = runNatively(name, call);
+  return isRefusal(outcome) ? refusedValue(name, outcome) : outcome;
+};
+
+/**
+ * Whether the call wrote into its arguments: their native copies no longer
+ * match what the values they were lowered from hold (`set(config, path, v)`,
+ * `pathToRegexp(path, keys)`). The interpreter's heap saw none of it, so the
+ * call is evaluated over that heap instead.
+ */
+const hasMutatedArguments = (
+  args: StaticValue[],
+  natives: unknown[],
+  host: HostDocument | null,
+): boolean => !isDeepStrictEqual(natives, toNativeArguments(args, host));
+
+/** Own properties every function has, which the interpreter answers itself rather than from a native's; a class's static methods, non-enumerable too, are its own. */
+const FUNCTION_INTRINSIC_KEYS: ReadonlySet<string> = new Set([
+  "length",
+  "name",
+  "prototype",
+  "arguments",
+  "caller",
+]);
 
 interface NativeCallFallback {
   (args: StaticValue[]): StaticValue;
 }
 
-/** Items a callee appended to an array argument (`pathToRegexp(path, keys)`), written back to the list it stood for. */
-const writeBackAppendedItems = (
-  args: StaticValue[],
-  natives: unknown[],
-  name: string,
-  host: HostDocument | null,
-  tools: StubRenderTools,
-): void => {
-  args.forEach((argument, index) => {
-    const native = natives[index];
-    if (argument.kind !== "list" || !Array.isArray(native)) return;
-    const appended = native
-      .slice(argument.items.length)
-      .map((item, offset) =>
-        fromNativeValue(item, `${name}()[${argument.items.length + offset}]`, host),
-      );
-    if (appended.length > 0) tools.pushItems(argument, appended);
-  });
+/** The receiver a native run gets: a value it stands for exactly; a modeled object would reach it as a copy, so the call is lifted instead. */
+const toNativeReceiver = (receiver: StaticValue, host: HostDocument | null): unknown =>
+  receiver.kind === "primitive" || receiver.kind === "native-object" || receiver.kind === "global"
+    ? toNative(receiver, host)
+    : UNCERTAIN;
+
+/** Whether the lifted callable's first argument, a bound one included, is of known kind (see `hasKnownKind`). */
+const hasKnownSubject = (lifted: LiftedCallable, args: StaticValue[]): boolean => {
+  const subject = (lifted.kind === "function" ? lifted.boundArgs?.[0] : undefined) ?? args[0];
+  return subject === undefined || hasKnownKind(subject);
 };
 
 /**
- * `callee` as a function the interpreter may invoke: it runs natively once every
- * argument is known, and yields `onUncertain(args)` otherwise. Exceptions are
- * reported as unknowns rather than raised, since they would surface at runtime
- * as an error boundary the static tree cannot place.
+ * `callee` as a function the interpreter may invoke or construct: it runs
+ * natively once every argument (and, for a method, the receiver) is known and
+ * it leaves them as they were; otherwise, when it writes into an argument,
+ * when it calls back into a function only the interpreter can run, or when it
+ * reads the clock or randomness (`readsEnvironment`), its own source is
+ * evaluated over the variables it captured (`liftNativeClosure`), and it
+ * yields `onUncertain(args)` when that source is unavailable.
+ * `thisValue` is the native receiver of a method read off a native object;
+ * undefined for a function called on whatever receiver the program gives it.
+ * Functions the host document owns are never lifted: its implementation is not
+ * the program's.
  */
 export const pureNativeFunction = (
   name: string,
@@ -386,26 +460,52 @@ export const pureNativeFunction = (
   thisValue: unknown,
   host: HostDocument | null,
   onUncertain: NativeCallFallback,
-): StaticNativeFunctionValue => ({
-  kind: "native-function",
-  name,
-  call: (args, tools) => {
-    const natives = toNativeArguments(args, host);
-    if (natives === null) {
-      for (const argument of args) tools.markEscaped(argument);
-      return onUncertain(args);
+): StaticNativeFunctionValue => {
+  const run = (args: StaticValue[], tools: StubRenderTools, isConstruct: boolean): StaticValue => {
+    const receiver = thisValue === undefined ? tools.thisValue : null;
+    const nativeReceiver = receiver === null ? thisValue : toNativeReceiver(receiver, host);
+    const isRunnable =
+      (isConstruct || nativeReceiver !== UNCERTAIN) &&
+      (host !== null || !readsEnvironment(callee, name, isStandIn));
+    const natives = isRunnable ? toNativeArguments(args, host) : null;
+    const outcome =
+      natives === null
+        ? null
+        : runNatively(name, () => {
+            const returned: unknown = isConstruct
+              ? Reflect.construct(callee, natives)
+              : Reflect.apply(callee, nativeReceiver, natives);
+            return hasMutatedArguments(args, natives, host)
+              ? MUTATED_ARGUMENTS
+              : fromNativeValue(returned, `${name}()`, host);
+          });
+    if (outcome !== null && !isRefusal(outcome)) return outcome;
+    const lifted =
+      host === null
+        ? liftNativeClosure(callee, name, {
+            lift: (value, valueName) => fromNativeValue(value, valueName, null),
+            defineClass: (thunk) => tools.call(thunk, []),
+          })
+        : null;
+    if (lifted !== null && hasKnownSubject(lifted, args)) {
+      return isConstruct
+        ? tools.construct(lifted, args)
+        : tools.call(lifted, args, receiver ?? fromNativeValue(thisValue, name, null));
     }
-    return guardNativeCall(name, () => {
-      const result = fromNativeValue(Reflect.apply(callee, thisValue, natives), `${name}()`, host);
-      writeBackAppendedItems(args, natives, name, host, tools);
-      return result;
-    });
-  },
-  getOwnProperty: (key) =>
-    Object.prototype.propertyIsEnumerable.call(callee, key)
-      ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
-      : undefined,
-});
+    for (const argument of args) tools.markEscaped(argument);
+    return outcome === null ? onUncertain(args) : refusedValue(name, outcome);
+  };
+  return {
+    kind: "native-function",
+    name,
+    call: (args, tools) => run(args, tools, false),
+    construct: (args, tools) => run(args, tools, true),
+    getOwnProperty: (key) =>
+      Object.hasOwn(callee, key) && !FUNCTION_INTRINSIC_KEYS.has(key)
+        ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
+        : undefined,
+  };
+};
 
 const isReactElementTag = (tag: unknown): boolean =>
   typeof tag === "symbol" &&
@@ -430,7 +530,11 @@ const liftObject = (
   host: HostDocument | null,
   ancestors: ReadonlySet<object>,
 ): StaticValue => {
+  const lowered = loweredContainers.get(value);
+  if (lowered) return lowered;
   if (ancestors.has(value)) return unknownValue(`${name}: cyclic native value`);
+  const intrinsic = getIntrinsicMemberGlobal(value);
+  if (intrinsic) return intrinsic;
   const path = new Set(ancestors).add(value);
   if (Array.isArray(value)) {
     return listValue(value.map((item, index) => liftValue(item, `${name}[${index}]`, host, path)));
@@ -486,10 +590,11 @@ const liftValue = (
     case "undefined":
       return primitiveValue(value);
     case "symbol":
-      return unknownValue(`${name}: symbol from native code`);
+      return getNamedSymbolValue(value) ?? unknownValue(`${name}: symbol from native code`);
     case "function":
       return (
         standInValues.get(value) ??
+        getIntrinsicMemberGlobal(value) ??
         pureNativeFunction(name, value, undefined, host, () =>
           unknownValue(`${name}() on dynamic arguments`),
         )
