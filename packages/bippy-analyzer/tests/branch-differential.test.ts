@@ -1,26 +1,35 @@
 import { it } from "vite-plus/test";
-import { checkSymbolicCases, createSeededRandom, differentialSeeds, type DifferentialCase } from "./helpers/differential-evaluator.js";
+import {
+  checkSymbolicCases,
+  checkKnownSymbolicCases,
+  createSeededRandom,
+  differentialSeeds,
+  type DifferentialCase,
+} from "./helpers/differential-evaluator.js";
 
-it.each(differentialSeeds)("matches all four native executions of correlated branches, seed %i", async (seed) => {
-  const getRandom = createSeededRandom(seed);
-  const cases: DifferentialCase[] = [];
-  for (let index = 0; index < 40; index++) {
-    const initial = getRandom(10);
-    const increment = 1 + getRandom(10);
-    const multiplier = 2 + getRandom(4);
-    cases.push({
-      name: `seed=${seed}/case=${index}`,
-      body: `
+it.each(differentialSeeds)(
+  "matches all four native executions of correlated branches, seed %i",
+  async (seed) => {
+    const getRandom = createSeededRandom(seed);
+    const cases: DifferentialCase[] = [];
+    for (let index = 0; index < 40; index++) {
+      const initial = getRandom(10);
+      const increment = 1 + getRandom(10);
+      const multiplier = 2 + getRandom(4);
+      cases.push({
+        name: `seed=${seed}/case=${index}`,
+        body: `
         const left = { value: ${initial} };
         const right = { value: ${initial + 1} };
         const target = first ? left : right;
         target.value = second ? ${increment} : ${multiplier};
         return left.value + ':' + right.value;
       `,
-    });
-  }
-  await checkSymbolicCases(cases);
-});
+      });
+    }
+    await checkSymbolicCases(cases);
+  },
+);
 
 it.each([
   {
@@ -37,7 +46,7 @@ it.each([
   },
 ])("$name", async (testCase) => checkSymbolicCases([testCase]));
 
-it.fails.each([
+it.each([
   {
     name: "arithmetic retains the predicates connecting values and labels",
     body: `const state = { value: 2 }; if (first) state.value += 3; else state.value -= 3; return (second ? state.value * 5 : state.value + 5) + ':' + (first ? 'A' : 'B') + ':' + (second ? 'C' : 'D');`,
@@ -46,4 +55,4 @@ it.fails.each([
     name: "a finalizer preserves the correlation between its write and the return value",
     body: `const state = { value: 0 }; const run = () => { try { if (first) throw 'stop'; return second ? 'left' : 'right'; } finally { state.value = second ? 7 : 8; } }; let result; try { result = run(); } catch (error) { result = 'caught'; } return result + ':' + state.value;`,
   },
-])("known precision gap: $name", (testCase) => checkSymbolicCases([testCase]));
+])("known precision gap: $name", (testCase) => checkKnownSymbolicCases([testCase]));
