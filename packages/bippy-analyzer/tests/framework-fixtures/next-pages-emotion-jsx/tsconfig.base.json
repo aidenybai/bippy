@@ -1,0 +1,7 @@
+{
+  // Shared by every app in the workspace: the css prop compiles through Emotion.
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "@emotion/react"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "entry": "src/index.ts",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Entry with no root render of its own: a side-effect import schedules a timer whose callback runs an async bootstrap that awaits device setup before it creates the root."
+}

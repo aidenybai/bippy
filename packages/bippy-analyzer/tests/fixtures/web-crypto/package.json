@@ -1,0 +1,5 @@
+{
+  "name": "fixture-web-crypto",
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,20 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["@lingui/core", "@lingui/react"],
+  "notes": "The active Lingui catalog observed at runtime is replayed into the static render: translated, interpolated and tagged messages resolve exactly, and a missing entry falls back to the source message as i18n._ does.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "lingui": {
+      "locale": "de",
+      "messages": {
+        "greeting": ["Hallo ", ["name"], "!"],
+        "docs": "Lies die <0>Dokumentation</0> oder <1/>",
+        "intro": ["Willkommen zurück, ", ["0"], "."],
+        "footer": "Fußzeile",
+        "empty": ""
+      }
+    }
+  }
+}

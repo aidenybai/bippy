@@ -1,0 +1,5 @@
+{
+  "skipRuntime": true,
+  "externalPackages": ["environment-branch"],
+  "notes": "Dedicated tests and independent CLI captures control mode and NODE_ENV and verify native resolved client environment values without user plugins."
+}

@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/settings/profile",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Routes declared as JSX and converted with createRoutesFromElements: fragments are flattened, nested <Route> children become child routes, implicit ids come from the tree path, and paths read from an imported constant object."
+}

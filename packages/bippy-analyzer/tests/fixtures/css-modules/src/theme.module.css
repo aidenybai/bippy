@@ -1,0 +1,14 @@
+/* Values the stylesheet publishes to scripts (ICSS `:export`). */
+:export {
+  accentColor: #2196f3;
+  compactRows: 3;
+}
+
+.card {
+  color: var(--text);
+}
+
+.card .row,
+.row--active {
+  display: flex;
+}

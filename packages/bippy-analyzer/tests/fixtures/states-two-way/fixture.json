@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 2,
+  "expectOmitted": false,
+  "notes": "A flag from an opaque package selects one of two subtrees; both are enumerated as states and the runtime must equal exactly one of them."
+}

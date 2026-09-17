@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/about",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "useRoutes() over a route object list held in another module, with a pathless layout route rendering an Outlet."
+}

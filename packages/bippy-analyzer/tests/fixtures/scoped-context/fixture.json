@@ -1,0 +1,6 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["@radix-ui/*"],
+  "notes": "Radix scoped contexts as Tabs composes them over RovingFocusGroup and Collection: `const [createContext, createScope] = createContextScope(...)` runs at module load and appends to a module-level list of default contexts, so those declarations must be evaluated in source order when the module initializes, not lazily on first import. `Tabs.Content` is left out: `Presence` hands its reducer dispatch to an `animationend` listener, so its state escapes and stays a residual branch."
+}
