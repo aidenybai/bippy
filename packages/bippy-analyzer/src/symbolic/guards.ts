@@ -89,7 +89,15 @@ export interface GuardOr {
 interface GuardSequence {
   kind: "and" | "or";
   chunks: Guard[];
-  operandsByHash: Map<number, Guard[]> | null;
+  operands: GuardIndex | null;
+}
+
+interface GuardIndex {
+  hash: number;
+  priority: number;
+  guards: Guard[];
+  left: GuardIndex | null;
+  right: GuardIndex | null;
 }
 
 export type Guard =
@@ -221,10 +229,6 @@ const getGuardHash = (guard: Guard): number => {
   return hash;
 };
 
-const hasSameGuard = (guardsByHash: Map<number, Guard[]>, guard: Guard): boolean =>
-  guardsByHash.get(getGuardHash(guard))?.some((candidate) => isSameGuard(candidate, guard)) ??
-  false;
-
 const guardSizeCache = new WeakMap<Guard, number>();
 const guardSequenceCache = new WeakMap<Guard, GuardSequence>();
 
@@ -248,38 +252,93 @@ const createGuardGroup = (kind: "and" | "or", operands: Guard[]): Guard => {
   return guard;
 };
 
-const addGuardByHash = (guardsByHash: Map<number, Guard[]>, guard: Guard): void => {
-  const hash = getGuardHash(guard);
-  const matching = guardsByHash.get(hash);
-  if (matching === undefined) guardsByHash.set(hash, [guard]);
-  else matching.push(guard);
+const getGuardPriority = (hash: number): number => {
+  let priority = hash + 0x9e_37_79_b9;
+  priority = Math.imul(priority ^ (priority >>> 16), 0x21_f0_aa_ad);
+  priority = Math.imul(priority ^ (priority >>> 15), 0x73_5a_2d_97);
+  return (priority ^ (priority >>> 15)) >>> 0;
 };
 
-const collectGuardOperandsByHash = (
+const getIndexedGuards = (index: GuardIndex | null, hash: number): Guard[] | null => {
+  let current = index;
+  while (current !== null) {
+    if (hash === current.hash) return current.guards;
+    current = hash < current.hash ? current.left : current.right;
+  }
+  return null;
+};
+
+const hasSameGuard = (index: GuardIndex | null, guard: Guard): boolean =>
+  getIndexedGuards(index, getGuardHash(guard))?.some((candidate) =>
+    isSameGuard(candidate, guard),
+  ) ?? false;
+
+const rotateGuardIndexRight = (index: GuardIndex): GuardIndex => {
+  const root = index.left;
+  if (root === null) return index;
+  return {
+    ...root,
+    right: {
+      ...index,
+      left: root.right,
+    },
+  };
+};
+
+const rotateGuardIndexLeft = (index: GuardIndex): GuardIndex => {
+  const root = index.right;
+  if (root === null) return index;
+  return {
+    ...root,
+    left: {
+      ...index,
+      right: root.left,
+    },
+  };
+};
+
+const insertGuardIndex = (
+  index: GuardIndex | null,
+  hash: number,
+  guard: Guard,
+): GuardIndex => {
+  if (index === null) {
+    return {
+      hash,
+      priority: getGuardPriority(hash),
+      guards: [guard],
+      left: null,
+      right: null,
+    };
+  }
+  if (hash === index.hash) return { ...index, guards: [...index.guards, guard] };
+  if (hash < index.hash) {
+    const next = { ...index, left: insertGuardIndex(index.left, hash, guard) };
+    return next.left !== null && next.left.priority < next.priority
+      ? rotateGuardIndexRight(next)
+      : next;
+  }
+  const next = { ...index, right: insertGuardIndex(index.right, hash, guard) };
+  return next.right !== null && next.right.priority < next.priority
+    ? rotateGuardIndexLeft(next)
+    : next;
+};
+
+const addGuardToIndex = (index: GuardIndex | null, guard: Guard): GuardIndex =>
+  insertGuardIndex(index, getGuardHash(guard), guard);
+
+const collectGuardOperands = (
   kind: "and" | "or",
   guard: Guard,
-  guardsByHash: Map<number, Guard[]>,
-): void => {
+  index: GuardIndex | null,
+): GuardIndex => {
   if (guard.kind === kind) {
     for (const operand of guard.operands) {
-      collectGuardOperandsByHash(kind, operand, guardsByHash);
+      index = collectGuardOperands(kind, operand, index);
     }
-    return;
+    return index;
   }
-  addGuardByHash(guardsByHash, guard);
-};
-
-const takeGuardOperandsByHash = (sequence: GuardSequence): Map<number, Guard[]> => {
-  if (sequence.operandsByHash !== null) {
-    const operandsByHash = sequence.operandsByHash;
-    sequence.operandsByHash = null;
-    return operandsByHash;
-  }
-  const operandsByHash = new Map<number, Guard[]>();
-  for (const chunk of sequence.chunks) {
-    collectGuardOperandsByHash(sequence.kind, chunk, operandsByHash);
-  }
-  return operandsByHash;
+  return addGuardToIndex(index, guard);
 };
 
 const appendGuardChunk = (kind: "and" | "or", chunks: Guard[], operand: Guard): void => {
@@ -305,18 +364,21 @@ const appendGuard = (
   const sequence =
     cachedSequence?.kind === kind
       ? cachedSequence
-      : { kind, chunks: [base], operandsByHash: null };
-  const operandsByHash = takeGuardOperandsByHash(sequence);
-  if (hasSameGuard(operandsByHash, operand)) {
-    sequence.operandsByHash = operandsByHash;
-    return base;
-  }
-  if (hasSameGuard(operandsByHash, negateGuard(operand))) return constantGuard(absorbing);
-  addGuardByHash(operandsByHash, operand);
+      : {
+          kind,
+          chunks: [base],
+          operands: collectGuardOperands(kind, base, null),
+        };
+  if (hasSameGuard(sequence.operands, operand)) return base;
+  if (hasSameGuard(sequence.operands, negateGuard(operand))) return constantGuard(absorbing);
   const chunks = [...sequence.chunks];
   appendGuardChunk(kind, chunks, operand);
   const guard = chunks.length === 1 ? chunks[0] : createGuardGroup(kind, chunks);
-  guardSequenceCache.set(guard, { kind, chunks, operandsByHash });
+  guardSequenceCache.set(guard, {
+    kind,
+    chunks,
+    operands: addGuardToIndex(sequence.operands, operand),
+  });
   return guard;
 };
 
@@ -326,7 +388,7 @@ const combineGuardList = (
   absorbing: boolean,
 ): Guard => {
   const unique: Guard[] = [];
-  const operandsByHash = new Map<number, Guard[]>();
+  let indexedOperands: GuardIndex | null = null;
   let isAbsorbed = false;
   const add = (operand: Guard): void => {
     if (isAbsorbed) return;
@@ -338,13 +400,13 @@ const combineGuardList = (
       isAbsorbed = operand.value === absorbing;
       return;
     }
-    if (hasSameGuard(operandsByHash, operand)) return;
-    if (hasSameGuard(operandsByHash, negateGuard(operand))) {
+    if (hasSameGuard(indexedOperands, operand)) return;
+    if (hasSameGuard(indexedOperands, negateGuard(operand))) {
       isAbsorbed = true;
       return;
     }
     unique.push(operand);
-    addGuardByHash(operandsByHash, operand);
+    indexedOperands = addGuardToIndex(indexedOperands, operand);
   };
   for (const operand of operands) add(operand);
   if (isAbsorbed) return constantGuard(absorbing);
@@ -354,7 +416,7 @@ const combineGuardList = (
   guardSequenceCache.set(guard, {
     kind,
     chunks: [guard],
-    operandsByHash,
+    operands: indexedOperands,
   });
   return guard;
 };
