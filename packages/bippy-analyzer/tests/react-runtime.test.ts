@@ -36,6 +36,24 @@ module.exports = {
 };
 `;
 
+const PREACT_CONTEXT_REACT_STUB = `
+module.exports = {
+  version: "17.0.2",
+  createElement: () => null,
+  createContext: (defaultValue) => ({ _id: "__cC0", _defaultValue: defaultValue }),
+  Component: class Component {},
+  useState: (initial) => [initial, () => {}],
+  act: (callback) => callback(),
+  __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
+    ReactCurrentDispatcher: {
+      current: {
+        readContext: (context) => ({})[context._id].props.value,
+      },
+    },
+  },
+};
+`;
+
 const REACT_DOM_STUB = `module.exports = { version: ${JSON.stringify(STUB_REACT_VERSION)}, createPortal: () => null };`;
 
 const LEGACY_REACT_DOM_STUB = `
@@ -134,6 +152,19 @@ describe("loadReactRuntime", () => {
     await expect(
       loadReactRuntime({ resolver: new ModuleResolver({ rootDirectory }), rootDirectory }),
     ).rejects.toThrow(ReactRuntimeError);
+  });
+
+  it("reads a Preact context default without a mounted provider", async () => {
+    const rootDirectory = createRootDirectory();
+    writePackage(rootDirectory, "react", PREACT_CONTEXT_REACT_STUB);
+    writePackage(rootDirectory, "react-dom", REACT_DOM_STUB, {
+      "client.js": REACT_DOM_CLIENT_STUB,
+    });
+    const runtime = await loadReactRuntime({
+      resolver: new ModuleResolver({ rootDirectory }),
+      rootDirectory,
+    });
+    expect(runtime.readContext(runtime.react.createContext("fallback"))).toBe("fallback");
   });
 
   it("materializes with the app's React when react, react-dom and react-dom/client all resolve from it", async () => {

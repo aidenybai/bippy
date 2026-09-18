@@ -226,6 +226,21 @@ const getRootVNode = (vnode: object): object => {
   return root;
 };
 
+export const snapshotPreactContainer = (
+  container: object,
+  reactVersion: string,
+): RuntimeSnapshot | null => {
+  const root = getAliasedProperty(container, "_children", "__k");
+  if (!isObject(root)) return null;
+  return {
+    reactVersion,
+    rendererName: "preact",
+    buildType: "development",
+    roots: [getRootSnapshot(root, getVNodeType(root))],
+    capturedAt: new Date().toISOString(),
+  };
+};
+
 const getMountedRoots = (target: object): MountedPreactRoot[] => {
   const document = getProperty(target, "document");
   if (!isObject(document)) return [];

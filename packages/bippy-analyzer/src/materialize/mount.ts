@@ -3,6 +3,7 @@ import { describeError } from "../errors.js";
 import { MAX_TIMER_TASKS, type TimerQueue } from "../evaluate/timers.js";
 import { createCommitRecorder } from "../harness/commit-recorder.js";
 import { getRootContainer } from "../harness/runtime-snapshot.js";
+import { snapshotPreactContainer } from "../harness/preact-recorder.js";
 import type { RuntimeSnapshot } from "../harness/snapshot.js";
 import type { ReactRuntime } from "./react-runtime.js";
 import type { RendererHost } from "./renderer-host.js";
@@ -74,9 +75,14 @@ export const mountNode = async (
     } catch (error) {
       uncaughtErrors.push(error);
     }
+    const reactSnapshot = recorder.snapshot();
+    const preactSnapshot = snapshotPreactContainer(container, runtime.version);
+    const snapshot =
+      reactSnapshot.roots.length > 0 ? reactSnapshot : (preactSnapshot ?? reactSnapshot);
+    const commits = recorder.commits();
     return {
-      snapshot: recorder.snapshot(),
-      commits: recorder.commits(),
+      snapshot,
+      commits: commits.length > 0 || preactSnapshot === null ? commits : [preactSnapshot],
       uncaughtErrors,
       caughtErrors,
     };

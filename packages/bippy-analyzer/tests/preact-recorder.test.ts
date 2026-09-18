@@ -1,5 +1,9 @@
 import { expect, it } from "vite-plus/test";
-import { installPreactRecorder } from "../src/harness/preact-recorder.js";
+import { h, render } from "preact";
+import {
+  installPreactRecorder,
+  snapshotPreactContainer,
+} from "../src/harness/preact-recorder.js";
 
 interface TestPreactOptions {
   _commit?: (...args: unknown[]) => void;
@@ -105,4 +109,35 @@ it("recovers a Preact root mounted before DevTools attach", () => {
     props: { container: "main" },
     children: [{ tag: "HostComponent", name: "p", props: { children: "ready" } }],
   });
+});
+
+it("snapshots a native Preact container after rendering", () => {
+  const container = document.createElement("div");
+  const App = () => h("section", { title: "native" }, "ready");
+  render(h(App, {}), container);
+  try {
+    expect(snapshotPreactContainer(container, "10.29.8")).toMatchObject({
+      rendererName: "preact",
+      roots: [
+        {
+          tag: "HostRoot",
+          children: [
+            {
+              tag: "FunctionComponent",
+              name: "App",
+              children: [
+                {
+                  tag: "HostComponent",
+                  name: "section",
+                  props: { title: "native", children: "ready" },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  } finally {
+    render(null, container);
+  }
 });
