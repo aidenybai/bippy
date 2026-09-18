@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -8,10 +8,7 @@ const Home = () => {
   return <main />;
 };
 
-const Login = () => {
-  const location = useLocation();
-  return <aside>{location.pathname === "/login" ? "login-location" : "wrong-location"}</aside>;
-};
+const Login = () => <aside />;
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
