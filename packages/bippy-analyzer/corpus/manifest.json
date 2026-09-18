@@ -8821,6 +8821,7 @@
           "@remix-run/router",
           "use-sync-external-store",
           "use-sync-external-store/*",
+          "@tanstack/react-query",
           "lucide-react",
           "@radix-ui/*"
         ]
