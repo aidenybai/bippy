@@ -707,6 +707,36 @@ describe("next pages router", () => {
     expect(tree).not.toContain("?");
   });
 
+  it("provides captured next-translate namespaces to the static page", async () => {
+    const { tree, errors } = await render(
+      "next-pages",
+      { framework: "next-pages", route: "/translated" },
+      [],
+      {
+        globals: {
+          __NEXT_DATA__: {
+            props: {
+              pageProps: {
+                __lang: "en",
+                __namespaces: {
+                  common: {
+                    hello: "Hello, {{name}}",
+                    rich: "Welcome, <strong>{{name}}</strong>",
+                  },
+                },
+              },
+            },
+          },
+        },
+        queries: [],
+      },
+    );
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<p>\n\s+"Hello, Ada"/);
+    expect(tree).toMatch(/<Trans>\n\s+<strong>\n\s+"Ada"/);
+    expect(tree).not.toContain("common:");
+  });
+
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);

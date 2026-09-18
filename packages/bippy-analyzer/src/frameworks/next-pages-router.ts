@@ -17,6 +17,7 @@ import {
 } from "../evaluate/values.js";
 import { hasExportedName } from "../graph/module-record.js";
 import type { ModuleRecord } from "../graph/module-types.js";
+import { provideNextTranslations } from "../libraries/next-translate.js";
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult } from "../render/types.js";
@@ -271,9 +272,8 @@ export const renderNextPagesRoute = (
     const appPath = findRouteFile(pagesDirectory, "_app");
     const appModule = appPath ? renderer.loadModule(appPath) : null;
     const isStrictMode = readReactStrictMode(renderer, interpreter);
-    if (!appModule) {
-      return withReactStrictMode(
-        interpreter.createElement(
+    const appTree = !appModule
+      ? interpreter.createElement(
           pageComponent,
           objectValue([{ kind: "spread", value: pageProps }]),
           null,
@@ -281,31 +281,25 @@ export const renderNextPagesRoute = (
           null,
           pageName,
           pageContext,
-        ),
-        isStrictMode,
-      );
-    }
-    const appComponent = interpreter.evaluateModuleExport(appModule, "default");
-    return withReactStrictMode(
-      interpreter.createElement(
-        appComponent,
-        objectValue([
-          { kind: "spread", value: appProps },
-          {
-            kind: "property",
-            key: "Component",
-            value: componentReference(toElementType(pageComponent, pageName)),
-          },
-          { kind: "property", key: "router", value: router },
-        ]),
-        null,
-        [],
-        null,
-        "App",
-        interpreter.createModuleContext(appModule),
-      ),
-      isStrictMode,
-    );
+        )
+      : interpreter.createElement(
+          interpreter.evaluateModuleExport(appModule, "default"),
+          objectValue([
+            { kind: "spread", value: appProps },
+            {
+              kind: "property",
+              key: "Component",
+              value: componentReference(toElementType(pageComponent, pageName)),
+            },
+            { kind: "property", key: "router", value: router },
+          ]),
+          null,
+          [],
+          null,
+          "App",
+          interpreter.createModuleContext(appModule),
+        );
+    return withReactStrictMode(provideNextTranslations(pageProps, appTree), isStrictMode);
   };
   return renderer.renderWith(produce, { document });
 };

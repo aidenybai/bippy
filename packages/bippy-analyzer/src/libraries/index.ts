@@ -33,6 +33,11 @@ import {
   MOBX_REACT_PACKAGES,
   mobxValue,
 } from "./mobx.js";
+import {
+  NEXT_TRANSLATE_MODELED_EXPORTS,
+  NEXT_TRANSLATE_PACKAGES,
+  nextTranslateValue,
+} from "./next-translate.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
@@ -134,6 +139,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: MOBX_REACT_PACKAGES,
     getValue: mobxValue,
     modeledExports: MOBX_REACT_MODELED_EXPORTS,
+  },
+  {
+    packages: NEXT_TRANSLATE_PACKAGES,
+    getValue: nextTranslateValue,
+    modeledExports: NEXT_TRANSLATE_MODELED_EXPORTS,
   },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
   { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
