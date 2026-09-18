@@ -14,7 +14,12 @@ import type { PatternNode } from "../src/harness/static-pattern.js";
 import { parseSymbolicTree } from "../src/harness/symbolic-tree.js";
 import { planWitnesses, witnessPlanSchema } from "../src/harness/witness-plan.js";
 import { createStaticRenderer } from "../src/index.js";
-import { evaluateGuard, solveGuards, toWitnessModel } from "../src/symbolic/guard-solver.js";
+import {
+  areGuardsSatisfiable,
+  evaluateGuard,
+  solveGuards,
+  toWitnessModel,
+} from "../src/symbolic/guard-solver.js";
 import {
   andGuard,
   compareGuard,
@@ -162,6 +167,17 @@ describe("symbolic tree: guard algebra", () => {
       equalsGuard(variable(`#${index}`), index),
     );
     expect(solveGuards(guards)).toHaveLength(guards.length);
+  }, 2_000);
+
+  it("checks repeated extensions without rescanning independent base guards", () => {
+    const base = andGuard(
+      Array.from({ length: 2_000 }, (_, index) => equalsGuard(variable(`#base-${index}`), index)),
+    );
+    for (let index = 0; index < 2_000; index++) {
+      expect(
+        areGuardsSatisfiable([base, equalsGuard(variable(`#candidate-${index}`), index)]),
+      ).toBe(true);
+    }
   }, 2_000);
 
   it("decides a test whose branch is truthy exactly when it is taken", async () => {

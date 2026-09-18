@@ -441,13 +441,18 @@ interface GuardComponent {
   guards: Guard[];
 }
 
+interface GuardAnalysis {
+  componentByKey: Map<string, GuardComponent>;
+  isSatisfiable: boolean;
+}
+
 /**
  * Conjuncts partitioned by the variables they mention: atoms are decided per
  * variable, so a disjunction only interacts with the conjuncts sharing one of
  * its variables and each component is solved on its own instead of splitting
  * every disjunction against every other.
  */
-const independentComponents = (guards: Guard[]): Guard[][] => {
+const independentComponents = (guards: Guard[]): GuardComponent[] => {
   const components = new Map<number, GuardComponent>();
   const componentByKey = new Map<string, GuardComponent>();
   let nextComponentId = 0;
@@ -472,14 +477,14 @@ const independentComponents = (guards: Guard[]): Guard[][] => {
     components.set(merged.id, merged);
     for (const key of merged.keys) componentByKey.set(key, merged);
   }
-  return [...components.values()].map((component) => component.guards);
+  return [...components.values()];
 };
 
 /** A witness assignment satisfying every guard, or null when they contradict. */
 export const solveGuards = (guards: Guard[]): VariableWitness[] | null => {
   const witnesses: VariableWitness[] = [];
   for (const component of independentComponents(guards)) {
-    const model = findModel(component, []);
+    const model = findModel(component.guards, []);
     if (model === null) return null;
     witnesses.push(...model);
   }
@@ -549,7 +554,46 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
   }
 };
 
-export const areGuardsSatisfiable = (guards: Guard[]): boolean => solveGuards(guards) !== null;
+const guardAnalysisCache = new WeakMap<Guard, GuardAnalysis>();
+
+const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
+  const cached = guardAnalysisCache.get(guard);
+  if (cached !== undefined) return cached;
+  const components = independentComponents([guard]);
+  const componentByKey = new Map<string, GuardComponent>();
+  let isSatisfiable = true;
+  for (const component of components) {
+    for (const key of component.keys) componentByKey.set(key, component);
+    if (isSatisfiable && findModel(component.guards, []) === null) isSatisfiable = false;
+  }
+  const analysis = { componentByKey, isSatisfiable };
+  guardAnalysisCache.set(guard, analysis);
+  return analysis;
+};
+
+const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
+  const baseAnalysis = getGuardAnalysis(base);
+  if (!baseAnalysis.isSatisfiable) return false;
+  const overlappingComponents = new Set<GuardComponent>();
+  for (const key of collectProjectionKeys(candidate, new Set())) {
+    const component = baseAnalysis.componentByKey.get(key);
+    if (component !== undefined) overlappingComponents.add(component);
+  }
+  if (overlappingComponents.size === 0) return getGuardAnalysis(candidate).isSatisfiable;
+  return (
+    solveGuards([
+      ...[...overlappingComponents].flatMap((component) => component.guards),
+      candidate,
+    ]) !== null
+  );
+};
+
+export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
+  if (guards.length === 0) return true;
+  if (guards.length === 1) return getGuardAnalysis(guards[0]).isSatisfiable;
+  if (guards.length === 2) return areGuardPairSatisfiable(guards[0], guards[1]);
+  return solveGuards(guards) !== null;
+};
 
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
 export class GuardSolver {
