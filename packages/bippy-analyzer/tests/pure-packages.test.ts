@@ -19,6 +19,7 @@ export const Merge = () => <div className={twMerge("base", className)} />;
     );
     const renderer = await createStaticRenderer({ rootDirectory });
     const result = await renderer.renderComponent(filePath, { exportName: "Merge" });
+    expect(result.stats.unknownCount).toBe(0);
     expect(result.diagnostics).not.toContainEqual(
       expect.objectContaining({ code: "budget-exhausted" }),
     );

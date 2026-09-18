@@ -460,6 +460,7 @@ export const pureNativeFunction = (
   thisValue: unknown,
   host: HostDocument | null,
   onUncertain: NativeCallFallback,
+  isSourceLiftEnabled = true,
 ): StaticNativeFunctionValue => {
   const run = (args: StaticValue[], tools: StubRenderTools, isConstruct: boolean): StaticValue => {
     const receiver = thisValue === undefined ? tools.thisValue : null;
@@ -481,7 +482,7 @@ export const pureNativeFunction = (
           });
     if (outcome !== null && !isRefusal(outcome)) return outcome;
     const lifted =
-      host === null
+      host === null && isSourceLiftEnabled
         ? liftNativeClosure(callee, name, {
             lift: (value, valueName) => fromNativeValue(value, valueName, null),
             defineClass: (thunk) => tools.call(thunk, []),
