@@ -157,6 +157,13 @@ describe("symbolic tree: guard algebra", () => {
     });
   }, 2_000);
 
+  it("solves large independent guard sets without quadratic partition scans", () => {
+    const guards = Array.from({ length: 20_000 }, (_, index) =>
+      equalsGuard(variable(`#${index}`), index),
+    );
+    expect(solveGuards(guards)).toHaveLength(guards.length);
+  }, 2_000);
+
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
     const space = await renderFixture("narrowed-opaque-portal-root.tsx");
     expect(space.tree.inputs).toHaveLength(0);

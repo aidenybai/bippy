@@ -436,6 +436,7 @@ const collectProjectionKeys = (guard: Guard, keys: Set<string>): Set<string> => 
 };
 
 interface GuardComponent {
+  id: number;
   keys: Set<string>;
   guards: Guard[];
 }
@@ -447,22 +448,31 @@ interface GuardComponent {
  * every disjunction against every other.
  */
 const independentComponents = (guards: Guard[]): Guard[][] => {
-  const components: GuardComponent[] = [];
+  const components = new Map<number, GuardComponent>();
+  const componentByKey = new Map<string, GuardComponent>();
+  let nextComponentId = 0;
   for (const guard of conjuncts(guards)) {
+    const keys = collectProjectionKeys(guard, new Set());
+    const overlappingComponents = new Set<GuardComponent>();
+    for (const key of keys) {
+      const component = componentByKey.get(key);
+      if (component !== undefined) overlappingComponents.add(component);
+    }
     const merged: GuardComponent = {
-      keys: collectProjectionKeys(guard, new Set()),
+      id: nextComponentId++,
+      keys,
       guards: [guard],
     };
-    for (let index = components.length - 1; index >= 0; index--) {
-      const component = components[index];
-      if (![...component.keys].some((key) => merged.keys.has(key))) continue;
+    const orderedComponents = [...overlappingComponents].sort((left, right) => right.id - left.id);
+    for (const component of orderedComponents) {
       for (const key of component.keys) merged.keys.add(key);
       merged.guards.push(...component.guards);
-      components.splice(index, 1);
+      components.delete(component.id);
     }
-    components.push(merged);
+    components.set(merged.id, merged);
+    for (const key of merged.keys) componentByKey.set(key, merged);
   }
-  return components.map((component) => component.guards);
+  return [...components.values()].map((component) => component.guards);
 };
 
 /** A witness assignment satisfying every guard, or null when they contradict. */
