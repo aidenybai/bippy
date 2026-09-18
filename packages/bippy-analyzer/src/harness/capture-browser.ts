@@ -206,6 +206,8 @@ export class BrowserCapturer {
     try {
       await context.addInitScript(inject);
       const page = await context.newPage();
+      // HACK: Keep Chromium's synthetic pointer origin from creating a mount-time hover.
+      await page.mouse.move(-1, -1);
       page.on("pageerror", (error) => pageErrors.push(error.message));
       page.on("console", (message) => {
         if (message.type() === "error") pageErrors.push(message.text());
