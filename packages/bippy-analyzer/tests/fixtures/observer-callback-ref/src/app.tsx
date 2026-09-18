@@ -3,29 +3,10 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
-
-const useCallbackRef = <Arguments extends unknown[]>(
-  callback: ((...args: Arguments) => void) | undefined,
-): ((...args: Arguments) => void) => {
-  const callbackRef = useRef(callback);
-  useEffect(() => {
-    callbackRef.current = callback;
-  });
-  // HACK: Mirror Babel's temporary alias for an optional callback-ref call.
-  return useMemo(
-    () => (...args: Arguments) => {
-      let currentCallback;
-      return (currentCallback = callbackRef.current) === undefined
-        ? undefined
-        : currentCallback.call(callbackRef, ...args);
-    },
-    [],
-  );
-};
+import { useCallbackRef } from "./use-callback-ref";
 
 const useDebounceCallback = (callback: () => void, delay: number): (() => void) => {
   const handleCallback = useCallbackRef(callback);
