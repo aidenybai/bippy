@@ -1,4 +1,4 @@
-import { element, hostElement, nativeFunction, stubValue } from "../evaluate/stubs.js";
+import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   UNDEFINED_VALUE,
   getObjectProperty,
@@ -24,16 +24,6 @@ export const NEXT_TRANSLATE_MODELED_EXPORTS: ModeledExports = {
   "next-translate/Trans": ["default"],
   "next-translate/useTranslation": ["default"],
 };
-
-interface TranslationNode {
-  children: TranslationChild[];
-  name: string | null;
-}
-
-interface TranslationChild {
-  node?: TranslationNode;
-  text?: string;
-}
 
 const NEXT_TRANSLATE_CONTEXT: ContextDefinition = {
   name: "NextTranslationContext",
@@ -101,59 +91,72 @@ const getTranslation = (
   return text === null ? UNDEFINED_VALUE : interpolate(text, variables);
 };
 
-const parseTranslation = (text: string): TranslationNode => {
-  const root: TranslationNode = { name: null, children: [] };
-  const stack = [root];
-  const tagPattern = /<\/?([A-Za-z0-9_-]+)>/g;
-  let offset = 0;
-  for (let match = tagPattern.exec(text); match; match = tagPattern.exec(text)) {
-    const parent = stack[stack.length - 1];
-    if (match.index > offset) parent.children.push({ text: text.slice(offset, match.index) });
-    if (match[0].startsWith("</")) {
-      if (stack.length > 1) stack.pop();
-    } else {
-      const node: TranslationNode = { name: match[1], children: [] };
-      parent.children.push({ node });
-      stack.push(node);
-    }
-    offset = match.index + match[0].length;
-  }
-  const parent = stack[stack.length - 1];
-  if (offset < text.length) parent.children.push({ text: text.slice(offset) });
-  return root;
-};
-
-const withChildren = (template: StaticElementValue, children: StaticValue): StaticElementValue =>
+const withChildren = (
+  template: StaticElementValue,
+  children: StaticValue,
+  key: number,
+): StaticElementValue =>
   element(
     template.type,
     objectValue([
-      ...template.props.entries,
+      ...template.props.entries.filter(
+        (entry) => entry.kind !== "property" || entry.key !== "children",
+      ),
       { kind: "property", key: "children", value: children },
     ]),
-    template.key,
+    primitiveValue(key),
   );
 
-const renderTranslationNode = (
-  node: TranslationNode,
-  components: StaticValue,
-): StaticValue => {
-  const renderedChildren = node.children.map((child) =>
-    child.node
-      ? renderTranslationNode(child.node, components)
-      : primitiveValue(child.text ?? ""),
-  );
-  const children =
-    renderedChildren.length === 0
-      ? UNDEFINED_VALUE
-      : renderedChildren.length === 1
-        ? renderedChildren[0]
-        : listValue(renderedChildren);
-  if (node.name === null) return children;
-  const component =
-    components.kind === "object" ? getObjectProperty(components, node.name) : UNDEFINED_VALUE;
-  return component.kind === "element"
-    ? withChildren(component, children)
-    : hostElement(node.name, { children });
+const getTranslationComponent = (components: StaticValue, name: string): StaticValue => {
+  if (components.kind === "object") return getObjectProperty(components, name);
+  if (components.kind !== "list" || !/^\d+$/.test(name)) return UNDEFINED_VALUE;
+  return components.items[Number.parseInt(name, 10)] ?? UNDEFINED_VALUE;
+};
+
+const renderFormattedElements = (text: string, components: StaticValue): StaticValue => {
+  const tagPattern = /<(\w+) *>(.*?)<\/\1 *>|<(\w+) *\/>/g;
+  const normalizedText = text.replace(/(?:\r\n|\r|\n)/g, "");
+  const rendered: StaticValue[] = [];
+  let offset = 0;
+  let key = 0;
+  for (
+    let match = tagPattern.exec(normalizedText);
+    match;
+    match = tagPattern.exec(normalizedText)
+  ) {
+    if (match.index > offset)
+      rendered.push(primitiveValue(normalizedText.slice(offset, match.index)));
+    const name = match[1] ?? match[3];
+    const template = getTranslationComponent(components, name);
+    const childText = match[2] ?? "";
+    const children =
+      childText.length > 0
+        ? renderFormattedElements(childText, components)
+        : template.kind === "element"
+          ? getObjectProperty(template.props, "children")
+          : UNDEFINED_VALUE;
+    const component =
+      template.kind === "element"
+        ? template
+        : element({ kind: "fragment" }, objectValue());
+    rendered.push(withChildren(component, children, key));
+    key++;
+    offset = match.index + match[0].length;
+  }
+  if (rendered.length === 0) return primitiveValue(normalizedText);
+  if (offset < normalizedText.length)
+    rendered.push(primitiveValue(normalizedText.slice(offset)));
+  return listValue(rendered);
+};
+
+const renderTranslation = (text: string, components: StaticValue): StaticValue => {
+  if (
+    components.kind !== "object" &&
+    (components.kind !== "list" || components.items.length === 0)
+  ) {
+    return primitiveValue(text);
+  }
+  return renderFormattedElements(text, components);
 };
 
 const renderTrans = (props: StaticObjectValue, context: StaticValue): StaticValue => {
@@ -167,7 +170,7 @@ const renderTrans = (props: StaticObjectValue, context: StaticValue): StaticValu
   const fallback = getObjectProperty(props, "defaultTrans");
   const text = getString(isUndefinedValue(translation) ? fallback : translation);
   if (text === null) return primitiveValue(i18nKey);
-  return renderTranslationNode(parseTranslation(text), getObjectProperty(props, "components"));
+  return renderTranslation(text, getObjectProperty(props, "components"));
 };
 
 const TRANS_STUB: StubComponent = {

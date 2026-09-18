@@ -11,6 +11,7 @@ const Translated = () => {
         values={{ name: "Ada" }}
         components={{ strong: <strong /> }}
       />
+      <Trans i18nKey="common:literal" components={{ code: <code /> }} />
     </main>
   );
 };

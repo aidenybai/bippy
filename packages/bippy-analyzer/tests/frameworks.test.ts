@@ -734,6 +734,7 @@ describe("next pages router", () => {
                   common: {
                     hello: "Hello, {{name}}",
                     rich: "Welcome, <strong>{{name}}</strong>",
+                    literal: "HTML tag: <code><title></code>",
                   },
                 },
               },
@@ -747,6 +748,8 @@ describe("next pages router", () => {
     expect(findRuntimeFiber(result.snapshot.roots, "p")?.props.children).toBe("Hello, Ada");
     expect(tree).toMatch(/<Trans>\n\s+"Welcome, "\n\s+<strong>/);
     expect(findRuntimeFiber(result.snapshot.roots, "strong")?.props.children).toBe("Ada");
+    expect(findRuntimeFiber(result.snapshot.roots, "code")?.props.children).toBe("<title>");
+    expect(tree).not.toContain("<title>");
     expect(tree).not.toContain("common:");
   });
 
