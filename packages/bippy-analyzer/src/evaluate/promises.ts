@@ -7,7 +7,7 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { createErrorValue } from "./errors.js";
-import { getAlternativeGuards } from "./predicates.js";
+import { createPathPredicate, getAlternativeGuards } from "./predicates.js";
 import {
   branchValue,
   listValue,
@@ -181,7 +181,23 @@ export const suspendOnPromise = (
         if (returned) settlePromise(result, returned, runTools);
       },
       escape: (escapeTools) => {
-        resume(unknownValue("promise settled outside the analysis", location), true);
+        resume(
+          branchValue(
+            [
+              unknownValue("promise fulfilled outside the analysis", location),
+              thrownValue(
+                "promise rejected outside the analysis",
+                unknownValue("promise rejection reason", location),
+                location,
+              ),
+            ],
+            "promise settled outside the analysis",
+            location,
+            0,
+            createPathPredicate("whether the promise fulfilled or rejected", location),
+          ),
+          true,
+        );
         escapePromise(result, escapeTools);
       },
     },

@@ -76,6 +76,33 @@ export default function Items() {
 }
 `;
 
+const AXIOS_ASYNC_SOURCE = `
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+const Status = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        await axios.get("/status");
+      } catch {
+        setError("failed");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    check();
+  }, []);
+  if (isLoading) return <p>loading</p>;
+  if (error) return <p>failed</p>;
+  return <p>ready</p>;
+};
+
+export default Status;
+`;
+
 const OPAQUE_RENDER_PROP_SOURCE = `
 import { Highlight } from "prism-react-renderer";
 
@@ -251,6 +278,11 @@ describe("library models", () => {
         "              <span>",
       ].join("\n"),
     );
+  });
+
+  it("enumerates fulfillment and rejection through async try/catch/finally", async () => {
+    const tree = await renderSource(AXIOS_ASYNC_SOURCE);
+    expect(tree.match(/<p>/g)).toHaveLength(3);
   });
 
   it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {
