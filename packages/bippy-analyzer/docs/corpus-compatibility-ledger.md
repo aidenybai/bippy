@@ -251,6 +251,18 @@ fibers match, strict coverage is 100%, there are no opaque or wildcard matches, 
 assignments pass replay. The initial menu capture does not establish head mutation, timer, audio, or
 gameplay behavior beyond the observed commits.
 
+## Legacy React Redux provider
+
+`palgorhythm-todotshooks@da94857ad1fb5a7fe58b323bb7f5b30768568c20` was freshly installed and
+captured at `/` under its manifest environment on 2026-09-18. The baseline stopped at the
+`react-redux@7.1.0` class `Provider`, producing zero strict coverage and an unbounded repeat behind the
+opaque subtree. Analyzing the installed React Redux source exposes the original empty store rather
+than inventing todo data or invoking the authored fetch button.
+
+Replaying the same fresh capture is exact in seven steps: six fibers and one text node match, strict
+coverage is 100%, no opaque or wildcard match remains, and the single unconditional assignment
+passes replay. This initial empty-store result does not establish fetch or populated-list behavior.
+
 ## Legacy React Router class fibers
 
 React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component
