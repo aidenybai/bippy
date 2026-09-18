@@ -516,9 +516,7 @@ const matchOwnPath = (
       params[name.slice(1)] = decodeURIComponent(current);
       score += DYNAMIC_SEGMENT_SCORE;
       cursor += 1;
-    } else if (
-      isCaseSensitive ? name === current : name.toLowerCase() === current.toLowerCase()
-    ) {
+    } else if (isCaseSensitive ? name === current : name.toLowerCase() === current.toLowerCase()) {
       score += STATIC_SEGMENT_SCORE;
       cursor += 1;
     } else if (!optional) {
@@ -1450,10 +1448,7 @@ const matchLegacyStaticPath = (
   const insensitiveMatch = matchOwnPath(routePath, splitPathname(pathname), false);
   const sensitiveMatch = matchOwnPath(routePath, splitPathname(pathname), true);
   const ownMatch = isSensitive === true ? sensitiveMatch : insensitiveMatch;
-  if (
-    isSensitive === null &&
-    (insensitiveMatch === null) !== (sensitiveMatch === null)
-  ) {
+  if (isSensitive === null && (insensitiveMatch === null) !== (sensitiveMatch === null)) {
     return {
       isMatch: null,
       match: createLegacyMatch(primitiveValue(routePath), pathname, insensitiveMatch),
@@ -1484,11 +1479,7 @@ const matchLegacyStaticPath = (
     };
   }
   const strict = getTruthiness(getObjectProperty(props, "strict"));
-  if (
-    strict !== false &&
-    routePath !== "/" &&
-    routePath.endsWith("/") !== pathname.endsWith("/")
-  ) {
+  if (strict !== false && routePath !== "/" && routePath.endsWith("/") !== pathname.endsWith("/")) {
     return {
       isMatch: strict === true ? false : null,
       match: createLegacyMatch(primitiveValue(routePath), pathname, ownMatch),
@@ -1583,17 +1574,12 @@ const renderLegacySwitch = (props: StaticObjectValue, tools: StubRenderTools): S
     const selected = withLegacyComputedMatch(child, result.match);
     if (result.isMatch === true) return selected;
     const remaining = select(index + 1);
-    return result.isMatch === false
-      ? remaining
-      : branchValue([selected, remaining], result.reason);
+    return result.isMatch === false ? remaining : branchValue([selected, remaining], result.reason);
   };
   return select(0);
 };
 
-const createLegacyRouteProps = (
-  tools: StubRenderTools,
-  match: StaticValue,
-): StaticObjectValue =>
+const createLegacyRouteProps = (tools: StubRenderTools, match: StaticValue): StaticObjectValue =>
   objectFromRecord({
     history: unknownValue("react-router v5 history"),
     location: readRouterLocation(tools, UNDEFINED_VALUE),

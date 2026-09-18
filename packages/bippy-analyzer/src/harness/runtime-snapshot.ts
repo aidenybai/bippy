@@ -150,19 +150,13 @@ const getFiberName = (fiber: Fiber, tag: SnapshotWorkTag): string | null => {
 };
 
 const hasDirectText = (tag: SnapshotWorkTag, memoizedProps: unknown): boolean => {
-  if (
-    tag !== "HostComponent" &&
-    tag !== "HostHoistable" &&
-    tag !== "HostSingleton"
-  ) {
+  if (tag !== "HostComponent" && tag !== "HostHoistable" && tag !== "HostSingleton") {
     return false;
   }
   if (typeof memoizedProps !== "object" || memoizedProps === null) return false;
   const children: unknown = Object(memoizedProps).children;
   return (
-    typeof children === "string" ||
-    typeof children === "number" ||
-    typeof children === "bigint"
+    typeof children === "string" || typeof children === "number" || typeof children === "bigint"
   );
 };
 
@@ -187,7 +181,11 @@ const snapshotFiber = (
     props:
       tag === "HostText"
         ? {}
-        : snapshotProps(fiber.memoizedProps, isMarkerName(name), hasDirectText(tag, fiber.memoizedProps)),
+        : snapshotProps(
+            fiber.memoizedProps,
+            isMarkerName(name),
+            hasDirectText(tag, fiber.memoizedProps),
+          ),
     children,
   };
 };

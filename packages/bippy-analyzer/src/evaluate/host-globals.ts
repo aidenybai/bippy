@@ -1,10 +1,6 @@
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
-import {
-  GLOBAL_INTERFACE_NAME,
-  type HostType,
-  type HostValueKind,
-} from "../host/realm-table.js";
+import { GLOBAL_INTERFACE_NAME, type HostType, type HostValueKind } from "../host/realm-table.js";
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticObjectValue, StaticValue, UnknownPrimitiveType } from "../types.js";
 import { readLanguageValue } from "./language-intrinsics.js";
