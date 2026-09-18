@@ -192,6 +192,17 @@ describe("next app router", () => {
     expect(tree).toMatch(/<section>\n\s+<h1>\n\s+<Counter>/);
   });
 
+  it("renders modeled server-compatible libraries through Flight", async () => {
+    const { tree, errors } = await render("next-app", {
+      framework: "next-app",
+      route: "/markdown",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<main>\n\s+<p> key="p-0"\n\s+"Server "\n\s+<strong> key="strong-0"\n\s+<ClientMarkdown>\n\s+<Markdown>\n\s+<p> key="p-0"\n\s+"Client "\n\s+<strong> key="strong-0"$/,
+    );
+  });
+
   it("renders forwardRef/memo wrappers created by server code on the server", async () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
     expect(errors).toEqual([]);

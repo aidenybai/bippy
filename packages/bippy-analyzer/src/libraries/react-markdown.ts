@@ -86,6 +86,7 @@ const renderMarkdown = (props: StaticObjectValue): StaticValue => {
 
 const MARKDOWN_STUB: StubComponent = {
   displayName: "Markdown",
+  isServerComponent: true,
   render: renderMarkdown,
 };
 
