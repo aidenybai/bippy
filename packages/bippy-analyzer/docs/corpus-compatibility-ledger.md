@@ -130,8 +130,26 @@ and JSX spread copy the known own enumerable entries of the resulting native obj
 | `abhigk-color-generator-reactjs@682a1acbe88d54ef140ebfd7f1646967ffa820b4` | `/`, `http://127.0.0.1:55069/`, manifest environment. Fresh native React 16.13.1 development capture, 135 fibers and 23 commits. Before: partial in 157 steps, 84% strict coverage, 21 wildcard-absorbed text fibers, an unbounded 21-item repeat, and three incomplete replays.                   | Execute concrete `values.js` calls and preserve native-object own entries through spread. Fresh native capture and static rerun: exact in 134 steps, 100% strict coverage, 0 wildcards, 0 repeats, and one replayed assignment with no mismatch.                                       | This verifies the initial palette only. Twenty-one alternate commit guards remain possible rather than natively witnessed; form submission, invalid colors, clipboard behavior, and complete interactions remain unverified.                    |
 | `annanft-colorgenerator-react@0a615a57c81d150a3bc1e1545eafaf5535114613`   | `/`, `http://127.0.0.1:55082/`, manifest environment. Fresh native React 18.2.0 development capture, 139 fibers and one commit. After the engine correction alone: partial in 137 steps, 99% strict coverage, no wildcard or repeat, with two runtime fibers inside the external `ToastContainer`. | Analyze the installed `react-toastify` source through the manifest's package-source boundary. A second fresh capture under unchanged application conditions is exact in 138 steps with 100% strict coverage, no opaque or wildcard node, and one replayed assignment with no mismatch. | This verifies the initial palette and empty toast container only. The dynamic `nanoid` key is intentionally not assigned a concrete identity; toast publication, form submission, random identity, and complete interactions remain unverified. |
 
-The other 38 repositories still require fresh post-fix corpus runs before the
-artifact-wide gain can be claimed.
+A fresh post-fix batch covered the other 38 pinned repositories under their manifest routes and
+environments. The first pass produced 27 exact results, ten results whose only matching-tree
+opacity came from installed UI packages, and one CRA startup failure. The scoped package-source
+boundary then produced exact results for the Chakra `Grid`, six empty Toastify containers, two
+React Icons applications, and the Material UI form. Expanding Material UI initially exposed an
+Emotion 11.6 contradiction: its browser build prepends a null-returning `Noop` fiber, while the
+version model omitted that fiber. The corrected version matrix and a fresh native rerun changed
+that five-step mismatch to exact in 206 steps.
+
+The failed CRA lock declared `chokidar@3.5.1` as an optional Watchpack dependency but encoded
+platform-specific `fsevents` as required, so npm pruned both available Watchpack implementations on
+Linux after compiling successfully. Installing that exact declared watcher into an isolated runtime
+prefix leaves the source and frozen application tree unchanged. A fresh capture is exact in 281
+steps after React Icons source analysis.
+
+Final cluster result: 39 of 40 repositories are exact with 100% strict coverage. The remaining
+`ernest96-react-monocrhome-color-generator` row also has 100% strict coverage with no opacity or
+wildcard, but remains truncated: its color-picker interaction and escaped state setter produce 48
+assignments, an unbounded palette repeat, and eight incomplete sampled replays. This cluster-wide
+strict result does not resolve that state-space omission or establish interaction completeness.
 
 ## Legacy React Router class fibers
 
