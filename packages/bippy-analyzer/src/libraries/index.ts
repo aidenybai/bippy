@@ -14,6 +14,11 @@ import {
   HOIST_NON_REACT_STATICS_PACKAGES,
   hoistNonReactStaticsValue,
 } from "./hoist-non-react-statics.js";
+import {
+  HAST_JSX_RUNTIME_MODELED_EXPORTS,
+  HAST_JSX_RUNTIME_PACKAGES,
+  hastJsxRuntimeValue,
+} from "./hast-util-to-jsx-runtime.js";
 import { IMMER_PACKAGES, immerValue } from "./immer.js";
 import { I18NEXT_MODELED_EXPORTS, I18NEXT_PACKAGES, i18nextValue } from "./i18next.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
@@ -96,6 +101,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: FRAMER_MOTION_PACKAGES,
     getValue: framerMotionValue,
     modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
+  },
+  {
+    packages: HAST_JSX_RUNTIME_PACKAGES,
+    getValue: hastJsxRuntimeValue,
+    modeledExports: HAST_JSX_RUNTIME_MODELED_EXPORTS,
   },
   { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
   { packages: IMMER_PACKAGES, getValue: immerValue },
