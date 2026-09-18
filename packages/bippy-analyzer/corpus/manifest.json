@@ -8612,7 +8612,14 @@
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
         "entry": "src/main.tsx",
-        "externalPackageAllowList": ["react-redux"]
+        "externalPackageAllowList": [
+          "@dnd-kit/core",
+          "@dnd-kit/sortable",
+          "@dnd-kit/utilities",
+          "@radix-ui/*",
+          "lucide-react",
+          "react-redux"
+        ]
       },
       "notes": "Keep original declared Yarn1.22.22, SWC TypeScript decorators, usm-redux controller, Dexie IndexedDB initialization/autosave, Tiptap, Radix, PWA and NODE_ENV-dependent base. Development uses /, not the production /notes/ path. Do not publish, generate notes, import data or edit original decorators. Retain the sparse partial comparison and incomplete replay, original IndexedDB initialization/autosave and all 30226 omissions. Source policy does not establish rich-editor or decorator completeness; no note or database data is fabricated. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 839893134 identifies a distinct non-fork repository."
     },
