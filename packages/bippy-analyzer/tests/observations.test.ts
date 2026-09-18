@@ -66,9 +66,7 @@ describe("runtime observations", () => {
     expect(getOpaqueCaptureDescription({ $bippyOpaque: "Date", extra: 1 })).toBeNull();
     expect(getOpaqueCaptureDescription({ name: "x" })).toBeNull();
     expect(
-      getCapturedPromiseOutcome(
-        promiseCapture({ status: "fulfilled", value: { name: "Ada" } }),
-      ),
+      getCapturedPromiseOutcome(promiseCapture({ status: "fulfilled", value: { name: "Ada" } })),
     ).toEqual({ status: "fulfilled", value: { name: "Ada" } });
   });
 

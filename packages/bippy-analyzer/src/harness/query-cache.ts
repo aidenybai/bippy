@@ -52,9 +52,7 @@ const captureTrackedPromise = (
     exports,
     seen,
   );
-  return promiseCapture(
-    settledValue === undefined ? { status } : { status, value: settledValue },
-  );
+  return promiseCapture(settledValue === undefined ? { status } : { status, value: settledValue });
 };
 
 /**

@@ -183,9 +183,7 @@ export const promiseCapture = (outcome: CapturedPromiseOutcome): CapturedValue =
   [PROMISE_CAPTURE_KEY]: outcome,
 });
 
-export const getCapturedPromiseOutcome = (
-  value: CapturedValue,
-): CapturedPromiseOutcome | null => {
+export const getCapturedPromiseOutcome = (value: CapturedValue): CapturedPromiseOutcome | null => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   if (Object.keys(value).length !== 1) return null;
   const outcome = capturedPromiseOutcomeSchema.safeParse(value[PROMISE_CAPTURE_KEY]);
