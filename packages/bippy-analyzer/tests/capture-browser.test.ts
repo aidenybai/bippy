@@ -7,6 +7,7 @@ import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 
 const collectText = (fiber: RuntimeFiberSnapshot): string[] => [
   ...(fiber.text === null ? [] : [fiber.text]),
+  ...(typeof fiber.props.children === "string" ? [fiber.props.children] : []),
   ...fiber.children.flatMap(collectText),
 ];
 
