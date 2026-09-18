@@ -224,6 +224,20 @@ Ant Design subtrees leave it at 11.11% strict coverage. A transitive Ant Design 
 exposed `rc-field-form`, `rc-motion`, and `rc-util` wildcards and replay contradictions; that incomplete
 override is not retained.
 
+## Storybook react-docgen display names
+
+`react-data-table-component@3c080557be7723f6815a7dc9555f21df1164c11f` uses Storybook 7 with
+`react-docgen-typescript`. Its webpack plugin assigns `displayName` only to discovered exported
+components. The native tree therefore names the exported `ResponsiveWrapper`, while internal styled
+bindings remain `styled.div`; applying the styled-components Babel transform to every binding invented
+names such as `HeaderStyle` and immediately contradicted the native capture.
+
+The regression covers both an exported and an internal styled component under the Storybook compiler
+configuration. React's reconciler at `71f725593739d2cb5866a282a1075d581831722f` reads a forward ref's
+outer `displayName` before deriving a wrapped name. Replaying the fresh pinned capture after modeling
+the docgen export assignment is exact in 310 steps: all 310 runtime fibers match, strict coverage is
+100%, there are no opaque or wildcard matches, and the single replayed assignment passes.
+
 ## Legacy React Router class fibers
 
 React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component
