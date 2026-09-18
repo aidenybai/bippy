@@ -117,6 +117,53 @@ export default function App() {
 `,
 };
 
+const PURE_CLASS_INSTANCE_PROJECT: Record<string, string> = {
+  "node_modules/values.js/package.json": JSON.stringify({
+    name: "values.js",
+    version: "2.0.0",
+    main: "index.cjs",
+  }),
+  "node_modules/values.js/index.cjs": `
+class Color {
+  constructor(rgb, weight) {
+    this.rgb = rgb;
+    this.weight = weight;
+  }
+
+  get hex() {
+    return "4747a4";
+  }
+}
+
+class Values {
+  all() {
+    return [new Color([71, 71, 164], 100)];
+  }
+}
+
+module.exports = Values;
+`,
+  "app.tsx": `
+import Values from "values.js";
+
+interface SwatchProps {
+  hexColor: string;
+  weight: number;
+}
+
+const Swatch = ({ hexColor, weight }: SwatchProps) => <p>{weight}% {hexColor}</p>;
+const colors = new Values("#4747a4").all(10);
+
+export default () => (
+  <section>
+    {colors.map((color) => (
+      <Swatch {...color} hexColor={color.hex} />
+    ))}
+  </section>
+);
+`,
+};
+
 const renderProject = async (
   files: Record<string, string>,
   entryFileName: string,
@@ -170,6 +217,18 @@ describe("library models", () => {
     expect(isPurePackage("lodash.debounce")).toBe(false);
     expect(isPurePackage("lodash.uniqueid")).toBe(false);
     expect(isPurePackage("lodash-webpack-plugin")).toBe(false);
+  });
+
+  it("preserves enumerable fields from pure package class instances", async () => {
+    expect(await renderProject(PURE_CLASS_INSTANCE_PROJECT, "app.tsx")).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <section>",
+        "      <Swatch>",
+        "        <p>",
+      ].join("\n"),
+    );
   });
 
   it("keeps an Axios response pending so the request's outcomes stay enumerated", async () => {
