@@ -1156,7 +1156,10 @@
           "@headless-tree/core",
           "@headless-tree/react",
           "@radix-ui/*",
-          "@tanstack/react-query"
+          "@tanstack/react-query",
+          "next-seo",
+          "react-joyride",
+          "sonner"
         ]
       },
       "notes": "Teable's backend (`nest start --webpackPath ./webpack.dev.js -w`) embeds the Next.js app and reads `apps/nextjs-app/.env.development{,.local}`; the setup script writes the `.local` override with the corpus PostgreSQL URL, generates both Prisma clients, deploys both schemas and runs `pnpm build:packages` (the workspace packages export `dist/`)."
