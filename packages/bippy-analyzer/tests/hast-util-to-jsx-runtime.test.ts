@@ -25,12 +25,10 @@ export const MarkdownCard = () => <Markdown>{"Hello **world**."}</Markdown>;
     expect(formatPattern(getRenderPattern(result))).toBe(`<HostRoot>
   <MarkdownCard>
     <Markdown>
-      <Fragment>
-        <p> key="p-0"
-          "Hello "
-          <strong> key="strong-0"
-            "world"
-          "."`);
+      <p> key="p-0"
+        "Hello "
+        <strong> key="strong-0"
+        "."`);
     expect(result.stats.unknownCount).toBe(0);
   } finally {
     rmSync(rootDirectory, { recursive: true, force: true });
