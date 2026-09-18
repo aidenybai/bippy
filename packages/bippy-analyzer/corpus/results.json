@@ -91527,8 +91527,8 @@
       "id": "react-data-table-component",
       "revision": "3c080557be7723f6815a7dc9555f21df1164c11f",
       "framework": "spa",
-      "capturedAt": "2026-09-09T06:58:54.492Z",
-      "durationMs": 450,
+      "capturedAt": "2026-09-18T17:19:27.718Z",
+      "durationMs": 827,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -91536,159 +91536,57 @@
         "roots": 1,
         "fibers": 314,
         "commits": 2,
-        "pageErrors": [],
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        ],
         "title": "sorting-basic--basic"
       },
       "static": {
         "stats": {
-          "fiberCount": 103,
-          "textCount": 16,
-          "branchCount": 2,
+          "fiberCount": 312,
+          "textCount": 0,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 34,
-          "unknownCount": 1,
-          "modulesLoaded": 50
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 51
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 42,
+        "matchedFibers": 310,
         "matchedText": 0,
-        "opaqueSubtrees": 34,
-        "opaqueSkippedFibers": 67,
-        "slotsMatched": 24,
-        "slotsUnmatched": 9,
-        "opaqueRenamed": 1,
-        "unmatchedSlots": [
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <Header> [FunctionComponent] > <HeaderStyle> (opaque) > <Title> (opaque)",
-            "reason": "default.div`` from styled-components is not analyzed",
-            "head": "<styled.div> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <Header> [FunctionComponent] > <HeaderStyle> (opaque) > <Title> (opaque)[0]",
-              "expected": "\"Movie List\"",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"3\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <ColumnText> (opaque)",
-            "reason": "default.div`` from styled-components is not analyzed",
-            "head": "<styled.div> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"3\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <ColumnText> (opaque)[0]",
-              "expected": "\"Year\"",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"3\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <NativeSortIcon> [FunctionComponent] > <Icon> (opaque)",
-            "reason": "default.span`` from styled-components is not analyzed",
-            "head": "<styled.span> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"3\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <NativeSortIcon> [FunctionComponent] > <Icon> (opaque)[0]",
-              "expected": "\"▲\"",
-              "actual": "<span> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"2\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <ColumnText> (opaque)",
-            "reason": "default.div`` from styled-components is not analyzed",
-            "head": "<styled.div> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"2\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <ColumnText> (opaque)[0]",
-              "expected": "\"Director\"",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"2\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <NativeSortIcon> [FunctionComponent] > <Icon> (opaque)",
-            "reason": "default.span`` from styled-components is not analyzed",
-            "head": "<styled.span> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"2\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <NativeSortIcon> [FunctionComponent] > <Icon> (opaque)[0]",
-              "expected": "\"▲\"",
-              "actual": "<span> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"1\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <ColumnText> (opaque)",
-            "reason": "default.div`` from styled-components is not analyzed",
-            "head": "<styled.div> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"1\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <ColumnText> (opaque)[0]",
-              "expected": "\"Title\"",
-              "actual": "<div> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"1\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <NativeSortIcon> [FunctionComponent] > <Icon> (opaque)",
-            "reason": "default.span`` from styled-components is not analyzed",
-            "head": "<styled.span> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Head> (opaque) > <HeadRow> (opaque) > <Fragment> [Fragment] > <TableCol> key=\"1\" [MemoComponent] > <TableCol> [FunctionComponent] > <ColumnStyled> (opaque) > <ColumnSortable> (opaque) > <NativeSortIcon> [FunctionComponent] > <Icon> (opaque)[0]",
-              "expected": "\"▲\"",
-              "actual": "<span> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <div> [HostComponent] > <Pagination> [SimpleMemoComponent] > <PaginationWrapper> (opaque) > <Fragment> [Fragment] > <RowLabel> (opaque)",
-            "reason": "default()`` from styled-components is not analyzed",
-            "head": "<Styled(styled.span)> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <div> [HostComponent] > <Pagination> [SimpleMemoComponent] > <PaginationWrapper> (opaque) > <Fragment> [Fragment] > <RowLabel> (opaque)[0]",
-              "expected": "\"Rows per page:\"",
-              "actual": "<span> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <div> [HostComponent] > <Pagination> [SimpleMemoComponent] > <PaginationWrapper> (opaque) > <Range> (opaque)",
-            "reason": "default()`` from styled-components is not analyzed",
-            "head": "<Styled(styled.span)> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <div> [HostComponent] > <Pagination> [SimpleMemoComponent] > <PaginationWrapper> (opaque) > <Range> (opaque)[0]",
-              "expected": "\"1-146 of 146\"",
-              "actual": "<span> [HostComponent]"
-            }
-          }
-        ],
-        "wildcardAbsorbedFibers": 201,
-        "wildcards": [
-          {
-            "path": "root > <DataTable> [SimpleMemoComponent] > <ThemeProvider> (opaque) > <ResponsiveWrapper> (opaque) > <Wrapper> (opaque) > <Table> (opaque) > <Body> (opaque)",
-            "reason": "call of slice with dynamic bounds",
-            "absorbedFibers": 201,
-            "heads": [
-              "<div> [HostComponent]"
-            ]
-          }
-        ],
-        "branchesResolved": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
+        "status": "exact",
         "runtimeFibers": 310,
-        "staticFibers": 86,
+        "staticFibers": 310,
         "coverage": 1,
-        "strictCoverage": 0.13548387096774195,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 23267,
+        "stepsUsed": 310,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 9,
-        "stateCount": 0,
+        "states": 1,
+        "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 0,
+          "nodes": 310,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
@@ -91697,22 +91595,8 @@
           "wildcards": 0
         },
         "matchedState": {
-          "index": null,
-          "conditions": [
-            {
-              "kind": "transition",
-              "commit": 1,
-              "commitCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "branch#1",
-              "reason": "if (branch(true | <boolean>))",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/react-data-table-component/src/DataTable/ContextMenu.tsx:44:2",
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            }
-          ]
+          "index": 0,
+          "conditions": []
         },
         "closestState": null,
         "omitted": null,
@@ -91723,9 +91607,17 @@
           "unreachable": 0
         }
       },
-      "stateReplay": null,
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
       "anchor": "DataTable",
-      "note": "runtime replayed from 2026-09-08T09:47:39.134Z",
+      "note": "runtime replayed from 2026-09-18T13:05:34.112Z",
       "failure": null
     },
     {
@@ -318390,9 +318282,9 @@
     {
       "id": "scdjango-todo-list-react",
       "revision": "0c9c61bce9e095320a9fbaf5283aee9cd5c062e2",
-      "framework": "spa",
-      "capturedAt": "2026-09-14T14:52:19.382Z",
-      "durationMs": 444,
+      "framework": "react-router",
+      "capturedAt": "2026-09-18T17:19:27.266Z",
+      "durationMs": 2186,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -318407,80 +318299,93 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 11,
+          "fiberCount": 35,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 9,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 19
+          "modulesLoaded": 20
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 1,
+        "matchedFibers": 31,
         "matchedText": 0,
-        "opaqueSubtrees": 3,
-        "opaqueSkippedFibers": 34,
-        "slotsMatched": 2,
-        "slotsUnmatched": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
-          {
-            "path": "root > <Provider> (opaque) > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <Routes> (opaque)",
-            "reason": "Routes from react-router-dom is not analyzed",
-            "head": "<Routes> [FunctionComponent]",
-            "skippedFibers": 28,
-            "divergence": {
-              "path": "root > <Provider> (opaque) > <BrowserRouter> (opaque) > <App> [FunctionComponent] > <Routes> (opaque)[1]",
-              "expected": "<Route> (opaque)",
-              "actual": "<end of children>"
-            }
-          }
-        ],
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "status": "partial",
-        "runtimeFibers": 35,
-        "staticFibers": 10,
+        "transparentFibers": 4,
+        "status": "exact",
+        "runtimeFibers": 31,
+        "staticFibers": 31,
         "coverage": 1,
-        "strictCoverage": 0.02857142857142857,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 986,
+        "stepsUsed": 31,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 1,
-        "stateCount": 1,
+        "states": 2,
+        "stateCount": 2,
         "clusters": 0,
         "tree": {
-          "nodes": 10,
-          "inputs": 0,
-          "guards": 0,
+          "nodes": 66,
+          "inputs": 1,
+          "guards": 2,
           "branches": 0,
           "repeats": 0,
-          "opaque": 9,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
-          "index": 0,
-          "conditions": []
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
         },
         "closestState": null,
         "omitted": null,
         "coverage": {
-          "sides": [],
-          "witnessed": 0,
-          "possible": 0,
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
           "unreachable": 0
         }
       },
       "stateReplay": {
         "verification": "sample-passed",
-        "states": 1,
+        "states": 2,
         "assignments": 1,
         "replayed": 1,
         "maxReplayed": 16,
@@ -318488,7 +318393,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T14:52:16.620Z",
+      "note": "runtime replayed from 2026-09-18T12:22:27.700Z",
       "failure": null
     },
     {
@@ -320497,8 +320402,8 @@
       "id": "palgorhythm-todotshooks",
       "revision": "da94857ad1fb5a7fe58b323bb7f5b30768568c20",
       "framework": "spa",
-      "capturedAt": "2026-09-14T14:57:08.935Z",
-      "durationMs": 285,
+      "capturedAt": "2026-09-18T17:19:26.962Z",
+      "durationMs": 1078,
       "runtime": {
         "reactVersion": "16.8.6",
         "rendererName": "react-dom",
@@ -320511,163 +320416,76 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 9,
+          "fiberCount": 8,
           "textCount": 1,
           "branchCount": 0,
-          "repeatCount": 1,
-          "opaqueCount": 1,
-          "unknownCount": 1,
-          "modulesLoaded": 7
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 29
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "matchedFibers": 0,
-        "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 7,
+        "matchedFibers": 6,
+        "matchedText": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
-        "slotsUnmatched": 1,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
-          {
-            "path": "root > <Provider> (opaque)",
-            "reason": "Provider from react-redux is not analyzed",
-            "head": "<Provider> [ClassComponent]",
-            "skippedFibers": 7,
-            "divergence": {
-              "path": "root > <Provider> (opaque) > <App> [FunctionComponent] > <div> [HostComponent][1]",
-              "expected": "<button> [HostComponent]",
-              "actual": "<Fragment> [Fragment]"
-            }
-          }
-        ],
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 7,
-        "staticFibers": 6,
-        "coverage": 0,
-        "strictCoverage": 0,
+        "staticFibers": 7,
+        "coverage": 1,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 13,
+        "stepsUsed": 7,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 3,
-        "stateCount": 3,
-        "clusters": 1,
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
         "tree": {
-          "nodes": 8,
-          "inputs": 1,
-          "guards": 1,
+          "nodes": 7,
+          "inputs": 0,
+          "guards": 0,
           "branches": 0,
-          "repeats": 1,
-          "opaque": 1,
-          "wildcards": 1
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
         },
         "matchedState": {
-          "index": null,
+          "index": 0,
           "conditions": []
         },
         "closestState": null,
-        "omitted": {
-          "total": 1,
-          "omissions": [
-            {
-              "kind": "repeat",
-              "variable": "len(#1)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            }
-          ]
-        },
+        "omitted": null,
         "coverage": {
-          "sides": [
-            {
-              "kind": "repeat",
-              "variable": "len(#1)",
-              "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
-              "side": 0,
-              "guard": "eq(len(#1), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#1)",
-              "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
-              "side": 1,
-              "guard": "len(#1) > 0",
-              "status": "possible"
-            }
-          ],
+          "sides": [],
           "witnessed": 0,
-          "possible": 2,
+          "possible": 0,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "verification": "sample-incomplete",
-        "states": 3,
-        "assignments": 3,
-        "replayed": 3,
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
         "maxReplayed": 16,
         "mismatched": [],
-        "incomplete": [
-          {
-            "stateIndices": [
-              1
-            ],
-            "conditions": [
-              {
-                "kind": "repeat",
-                "variable": "len(#1)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
-                "count": 1
-              }
-            ],
-            "unresolvedClaimCommits": [
-              0
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              2
-            ],
-            "conditions": [
-              {
-                "kind": "repeat",
-                "variable": "len(#1)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/palgorhythm-todotshooks/src/components/App.tsx:21:20",
-                "count": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              0
-            ],
-            "isReplayConcrete": false
-          }
-        ],
-        "matchedOutsideEnumeration": {
-          "conditions": [],
-          "verification": "passed"
-        }
+        "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T14:57:06.721Z",
+      "note": "runtime replayed from 2026-09-18T13:40:26.412Z",
       "failure": null
     },
     {
@@ -322014,8 +321832,8 @@
       "id": "heysagnik-todoist",
       "revision": "06a1e8b55de66a7721776c005e0c4f87e03bce57",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:11:20.790Z",
-      "durationMs": 19303,
+      "capturedAt": "2026-09-18T17:19:27.246Z",
+      "durationMs": 67668,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -322028,165 +321846,67 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 108,
-          "textCount": 21,
+          "fiberCount": 208,
+          "textCount": 4,
           "branchCount": 1,
           "repeatCount": 0,
-          "opaqueCount": 36,
+          "opaqueCount": 0,
           "unknownCount": 1,
-          "modulesLoaded": 14
+          "modulesLoaded": 427
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 42,
+        "matchedFibers": 199,
         "matchedText": 4,
-        "opaqueSubtrees": 36,
-        "opaqueSkippedFibers": 155,
-        "slotsMatched": 18,
-        "slotsUnmatched": 8,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
-            "reason": "StatNumber from @chakra-ui/react is not analyzed",
-            "head": "<StatNumber> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)[0]",
-              "expected": "\"0 times\"",
-              "actual": "<Styled(dd)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
-            "reason": "StatLabel from @chakra-ui/react is not analyzed",
-            "head": "<StatLabel> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
-              "expected": "\"Edited\"",
-              "actual": "<Styled(dt)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
-            "reason": "StatNumber from @chakra-ui/react is not analyzed",
-            "head": "<StatNumber> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)[0]",
-              "expected": "\"0 items\"",
-              "actual": "<Styled(dd)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
-            "reason": "StatLabel from @chakra-ui/react is not analyzed",
-            "head": "<StatLabel> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
-              "expected": "\"Completed\"",
-              "actual": "<Styled(dt)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
-            "reason": "StatNumber from @chakra-ui/react is not analyzed",
-            "head": "<StatNumber> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)[0]",
-              "expected": "\"0 items\"",
-              "actual": "<Styled(dd)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
-            "reason": "StatLabel from @chakra-ui/react is not analyzed",
-            "head": "<StatLabel> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
-              "expected": "\"Added\"",
-              "actual": "<Styled(dt)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)",
-            "reason": "StatLabel from @chakra-ui/react is not analyzed",
-            "head": "<StatLabel> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatLabel> (opaque)[0]",
-              "expected": "\"Active Session\"",
-              "actual": "<Styled(dt)> [ForwardRef]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Container> (opaque) > <Wrapper> [FunctionComponent] > <Box> (opaque) > <Heading> (opaque)",
-            "reason": "Heading from @chakra-ui/react is not analyzed",
-            "head": "<Heading> [ForwardRef]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Container> (opaque) > <Wrapper> [FunctionComponent] > <Box> (opaque) > <Heading> (opaque)[0]",
-              "expected": "\"✅Todoist\"",
-              "actual": "<Styled(h2)> [ForwardRef]"
-            }
-          }
-        ],
-        "wildcardAbsorbedFibers": 2,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ChakraProvider> (opaque) > <Stats> [FunctionComponent] > <Container> (opaque) > <StatGroup> (opaque) > <StatBox> [FunctionComponent] > <MotionComponent> [ForwardRef] > <ContextProvider> [ContextProvider] > <Stat> (opaque) > <StatNumber> (opaque)",
-            "reason": "updated state of productiveTime",
-            "absorbedFibers": 2,
-            "heads": [
-              "<Styled(dd)> [ForwardRef]"
-            ]
-          }
-        ],
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 203,
-        "staticFibers": 91,
+        "staticFibers": 203,
         "coverage": 1,
-        "strictCoverage": 0.22660098522167488,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 10555,
+        "stepsUsed": 204,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 11,
-        "stateCount": 11,
-        "clusters": 2,
+        "states": 4,
+        "stateCount": 4,
+        "clusters": 1,
         "tree": {
-          "nodes": 193,
+          "nodes": 612,
           "inputs": 7,
-          "guards": 13,
-          "branches": 2,
+          "guards": 5,
+          "branches": 1,
           "repeats": 0,
-          "opaque": 72,
+          "opaque": 0,
           "wildcards": 1
         },
         "matchedState": {
-          "index": 10,
+          "index": 2,
           "conditions": [
             {
               "kind": "transition",
-              "commit": 1,
-              "commitCount": 2
+              "commit": 2,
+              "commitCount": 3
             },
             {
               "kind": "state-update",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "variable": "or(and(eq(choice(#1), 0), or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \")), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 0)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 1)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 2)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), not(or(eq(choice(#6), 0), eq(choice(#6), 1), eq(choice(#6), 2))))) | not(eq(choice(#1), 0))",
               "reason": "state setter escapes to code that is not evaluated",
               "location": null,
-              "alternativeIndex": 5,
-              "alternativeCount": 6
+              "alternativeIndex": 0,
+              "alternativeCount": 2
             }
           ]
         },
@@ -322204,48 +321924,12 @@
               "status": "possible"
             },
             {
-              "kind": "branch",
-              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-              "side": 0,
-              "guard": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
               "side": 1,
-              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-              "side": 2,
-              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-              "side": 3,
-              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-              "reason": "if (branch(<boolean> | false))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-              "side": 4,
-              "guard": "and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
+              "guard": "eq(choice(commit), 1)",
               "status": "possible"
             },
             {
@@ -322253,222 +321937,67 @@
               "variable": "commit",
               "reason": "committed render",
               "location": null,
-              "side": 1,
-              "guard": "eq(choice(commit), 1)",
+              "side": 2,
+              "guard": "eq(choice(commit), 2)",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "variable": "or(and(eq(choice(#1), 0), or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \")), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 0)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 1)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 2)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), not(or(eq(choice(#6), 0), eq(choice(#6), 1), eq(choice(#6), 2))))) | not(eq(choice(#1), 0))",
               "reason": "state setter escapes to code that is not evaluated",
               "location": null,
               "side": 0,
-              "guard": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))",
-              "status": "possible"
+              "guard": "or(and(eq(choice(#1), 0), or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \")), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 0)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 1)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 2)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), not(or(eq(choice(#6), 0), eq(choice(#6), 1), eq(choice(#6), 2)))))",
+              "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
+              "variable": "or(and(eq(choice(#1), 0), or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \")), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 0)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 1)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 2)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), not(or(eq(choice(#6), 0), eq(choice(#6), 1), eq(choice(#6), 2))))) | not(eq(choice(#1), 0))",
               "reason": "state setter escapes to code that is not evaluated",
               "location": null,
               "side": 1,
-              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0))",
+              "guard": "not(eq(choice(#1), 0))",
               "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "side": 2,
-              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "side": 3,
-              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "side": 4,
-              "guard": "and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "side": 5,
-              "guard": "not(eq(choice(#6), 0))",
-              "status": "witnessed"
             }
           ],
           "witnessed": 2,
-          "possible": 11,
+          "possible": 3,
           "unreachable": 0
         }
       },
       "stateReplay": {
         "verification": "sample-incomplete",
-        "states": 11,
-        "assignments": 10,
-        "replayed": 10,
+        "states": 4,
+        "assignments": 2,
+        "replayed": 2,
         "maxReplayed": 16,
         "mismatched": [],
         "incomplete": [
           {
             "stateIndices": [
               0,
-              10
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-                "reason": "if (branch(<boolean> | false))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-                "alternativeIndex": 0,
-                "alternativeCount": 5
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 5,
-                "alternativeCount": 6
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
               1,
-              10
+              3
             ],
             "conditions": [
               {
-                "kind": "branch",
-                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-                "reason": "if (branch(<boolean> | false))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
+                "kind": "state-update",
+                "variable": "or(and(eq(choice(#1), 0), or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \")), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 0)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 1)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), eq(choice(#6), 2)), and(eq(choice(#1), 0), not(and(or(and(eq(#2, 0), eq(#3, 0), eq(#4, 0)), and(eq(#2, 0), eq(#3, 0), not(eq(#4, 0))), and(eq(#2, 0), not(eq(#3, 0)))), eq(#5, \"1 \"))), not(or(eq(choice(#6), 0), eq(choice(#6), 1), eq(choice(#6), 2))))) | not(eq(choice(#1), 0))",
+                "reason": "state setter escapes to code that is not evaluated",
+                "location": null,
                 "alternativeIndex": 1,
-                "alternativeCount": 5
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 5,
-                "alternativeCount": 6
+                "alternativeCount": 2
               }
             ],
             "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              2,
-              10
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-                "reason": "if (branch(<boolean> | false))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-                "alternativeIndex": 2,
-                "alternativeCount": 5
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 5,
-                "alternativeCount": 6
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              3,
-              10
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-                "reason": "if (branch(<boolean> | false))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-                "alternativeIndex": 3,
-                "alternativeCount": 5
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 5,
-                "alternativeCount": 6
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              4,
-              10
-            ],
-            "conditions": [
-              {
-                "kind": "branch",
-                "variable": "and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2))))",
-                "reason": "if (branch(<boolean> | false))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-three/heysagnik-todoist/src/utils.ts:26:3",
-                "alternativeIndex": 4,
-                "alternativeCount": 5
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(eq(choice(#6), 0), or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \")) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 0)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 1)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), eq(choice(#5), 2)) | and(eq(choice(#6), 0), not(and(or(and(eq(#1, 0), eq(#2, 0), eq(#3, 0)), and(eq(#1, 0), eq(#2, 0), not(eq(#3, 0))), and(eq(#1, 0), not(eq(#2, 0)))), eq(#4, \"1 \"))), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2)))) | not(eq(choice(#6), 0))",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 5,
-                "alternativeCount": 6
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
+              2
             ],
             "isReplayConcrete": false
           }
         ]
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:10:38.557Z",
+      "note": "runtime replayed from 2026-09-18T11:58:52.939Z",
       "failure": null
     },
     {
@@ -327650,8 +327179,8 @@
       "id": "runtimeterror10-club-animals",
       "revision": "4c2519e31e269f929e0f437b1cb56673b0f6d57b",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:57:32.325Z",
-      "durationMs": 314,
+      "capturedAt": "2026-09-18T17:19:27.654Z",
+      "durationMs": 1518,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -327666,49 +327195,37 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 66,
+          "fiberCount": 67,
           "textCount": 0,
           "branchCount": 1,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 27
+          "modulesLoaded": 29
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 33,
+        "matchedFibers": 36,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
-        "slotsUnmatched": 1,
-        "opaqueRenamed": 1,
-        "unmatchedSlots": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Helmet> (opaque)",
-            "reason": "Helmet from react-helmet is not analyzed",
-            "head": "<HelmetWrapper> [ClassComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <Helmet> (opaque)[0]",
-              "expected": "<title> [HostComponent]",
-              "actual": "<SideEffect(NullComponent)> [ClassComponent]"
-            }
-          }
-        ],
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 36,
-        "staticFibers": 35,
+        "staticFibers": 36,
         "coverage": 1,
-        "strictCoverage": 0.9166666666666666,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 39,
+        "stepsUsed": 38,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -327716,12 +327233,12 @@
         "stateCount": 3,
         "clusters": 1,
         "tree": {
-          "nodes": 95,
+          "nodes": 97,
           "inputs": 2,
           "guards": 4,
           "branches": 1,
           "repeats": 0,
-          "opaque": 2,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -327736,7 +327253,7 @@
               "kind": "state-update",
               "variable": "eq(choice(#1), 0)",
               "reason": "conditional on branch(true | false)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eight/runtimeterror10-club-animals/src/App.js:47:8",
+              "location": "/tmp/helmet-corpus/runtimeterror10-club-animals/src/App.js:47:8",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -327768,7 +327285,7 @@
               "kind": "branch",
               "variable": "eq(choice(#1), 0)",
               "reason": "conditional on branch(true | false)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eight/runtimeterror10-club-animals/src/App.js:47:8",
+              "location": "/tmp/helmet-corpus/runtimeterror10-club-animals/src/App.js:47:8",
               "side": 0,
               "guard": "eq(choice(#1), 0)",
               "status": "possible"
@@ -327777,7 +327294,7 @@
               "kind": "branch",
               "variable": "eq(choice(#1), 0)",
               "reason": "conditional on branch(true | false)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eight/runtimeterror10-club-animals/src/App.js:47:8",
+              "location": "/tmp/helmet-corpus/runtimeterror10-club-animals/src/App.js:47:8",
               "side": 1,
               "guard": "not(eq(choice(#1), 0))",
               "status": "witnessed"
@@ -327798,7 +327315,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:57:30.149Z",
+      "note": "runtime replayed from 2026-09-18T13:28:33.603Z",
       "failure": null
     },
     {
@@ -349287,8 +348804,8 @@
       "id": "asmajalal-web-task-react-tic-tac-toe",
       "revision": "5710d6f467a7b5b9353292557b6f83e88650fd91",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:07:51.840Z",
-      "durationMs": 300,
+      "capturedAt": "2026-09-18T17:18:57.691Z",
+      "durationMs": 782,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -349305,17 +348822,17 @@
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 4
+          "modulesLoaded": 295
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 58,
+        "matchedFibers": 59,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -349325,11 +348842,11 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 59,
         "staticFibers": 59,
         "coverage": 1,
-        "strictCoverage": 0.9830508474576272,
+        "strictCoverage": 1,
         "divergence": null,
         "stepsUsed": 59,
         "budgetExhausted": false
@@ -349344,7 +348861,7 @@
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -349370,7 +348887,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:07:49.647Z",
+      "note": "runtime replayed from 2026-09-18T13:43:39.329Z",
       "failure": null
     },
     {
