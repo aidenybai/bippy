@@ -13,6 +13,7 @@ import type {
   CapturedRouterState,
   CapturedSwrEntry,
   CapturedValue,
+  JsonValue,
   RuntimeObservations,
 } from "./types.js";
 
@@ -179,9 +180,11 @@ export const getCapturedDate = (value: CapturedValue): Date | null => {
   return new Date(typeof time === "number" ? time : Number.NaN);
 };
 
-export const promiseCapture = (outcome: CapturedPromiseOutcome): CapturedValue => ({
-  [PROMISE_CAPTURE_KEY]: outcome,
-});
+export const promiseCapture = (outcome: CapturedPromiseOutcome): CapturedValue => {
+  const capturedOutcome: Record<string, JsonValue> = { status: outcome.status };
+  if (outcome.value !== undefined) capturedOutcome.value = outcome.value;
+  return { [PROMISE_CAPTURE_KEY]: capturedOutcome };
+};
 
 export const getCapturedPromiseOutcome = (value: CapturedValue): CapturedPromiseOutcome | null => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
