@@ -11,9 +11,19 @@ const Match = ({ location }: { location: { pathname: string } }) => {
   );
 };
 const EmptyChildrenFallback = () => <footer />;
-const InheritedMatch = ({ match }: { match: { params: { identifier: string } } }) => (
-  <output>{match.params.identifier}</output>
-);
+const InheritedMatch = () => {
+  const params = useParams<{ identifier: string }>();
+  return <output>{params.identifier}</output>;
+};
+const NestedMatch = () => {
+  const params = useParams<{ identifier: string }>();
+  return (
+    <>
+      <span>{params.identifier}</span>
+      <Route component={InheritedMatch} />
+    </>
+  );
+};
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
@@ -25,7 +35,7 @@ createRoot(document.getElementById("root")!).render(
     <Route
       location={{ pathname: "/nested/42", search: "", hash: "", state: null }}
       path="/nested/:identifier"
-      render={() => <Route render={InheritedMatch} />}
+      component={NestedMatch}
     />
   </BrowserRouter>,
 );
