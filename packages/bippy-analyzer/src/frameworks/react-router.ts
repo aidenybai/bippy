@@ -419,7 +419,7 @@ const readRouteElements = (
   const routes: RouteRecord[] = [];
   flattenChildren(value).forEach((item, index) => {
     const treePath = [...parentPath, index];
-    if (item.kind === "element" && item.type.kind === "stub" && item.type.stub === ROUTE_STUB) {
+    if (item.kind === "element" && item.type.kind === "stub" && isRouteStub(item.type.stub)) {
       const props = item.props;
       const content = readRouteContent(props, getObjectProperty(props, "lazy"), resolveLazy);
       const routePath = readRoutePath(props);
@@ -744,10 +744,21 @@ const readParentMatch = (tools: StubRenderTools): ParentMatch | null => {
   return { params: inherited, pathnameBase };
 };
 
-const ROUTE_STUB: StubComponent = {
+const createRouteStub = (
+  tag: typeof ClassComponentTag | typeof FunctionComponentTag,
+): StubComponent => ({
   displayName: "Route",
+  tag,
   render: () => NULL_VALUE,
-};
+});
+
+const FUNCTION_ROUTE_STUB = createRouteStub(FunctionComponentTag);
+const CLASS_ROUTE_STUB = createRouteStub(ClassComponentTag);
+const isRouteStub = (stub: StubComponent): boolean =>
+  stub === FUNCTION_ROUTE_STUB || stub === CLASS_ROUTE_STUB;
+const getRouteStub = (
+  tag: typeof ClassComponentTag | typeof FunctionComponentTag,
+): StubComponent => (tag === ClassComponentTag ? CLASS_ROUTE_STUB : FUNCTION_ROUTE_STUB);
 
 /** `useOutlet`: a truthy outlet renders inside an `OutletContext` provider; a null one renders as is. */
 const outletValue = (tools: StubRenderTools, context: StaticValue): StaticValue => {
@@ -1183,7 +1194,7 @@ const routeObjectsFromElements = (
       );
       return;
     }
-    if (item.kind !== "element" || item.type.kind !== "stub" || item.type.stub !== ROUTE_STUB) {
+    if (item.kind !== "element" || item.type.kind !== "stub" || !isRouteStub(item.type.stub)) {
       routes.push(item);
       return;
     }
@@ -1993,7 +2004,7 @@ export const createReactRouterModel = (
           );
         });
       case "Route":
-        return stubValue(ROUTE_STUB);
+        return stubValue(getRouteStub(getRouterComponentTag(specifier)));
       case "Outlet":
         return stubValue(OUTLET_STUB);
       case "Link":

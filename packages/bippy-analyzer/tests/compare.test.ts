@@ -95,6 +95,15 @@ const captureNativeTree = (element: ReactNode): RuntimeFiberSnapshot[] => {
   }
 };
 
+const findRuntimeFiberTags = (
+  fibers: RuntimeFiberSnapshot[],
+  name: string,
+): RuntimeFiberSnapshot["tag"][] =>
+  fibers.flatMap((fiber) => [
+    ...(fiber.name === name ? [fiber.tag] : []),
+    ...findRuntimeFiberTags(fiber.children, name),
+  ]);
+
 const createNativeOpaqueTree = (): ReactNode =>
   createElement(
     NativeVendorRoot,
@@ -113,19 +122,25 @@ const createNativeOpaqueTree = (): ReactNode =>
   );
 
 describe("comparePatternToRuntime", () => {
-  it("captures react-router v5 BrowserRouter as a class component", () => {
+  it("captures react-router v5 router components as classes", () => {
     const legacyRouterModule: unknown = harnessRequire("react-router-dom-v5");
     if (typeof legacyRouterModule !== "object" || legacyRouterModule === null) {
       throw new Error("react-router-dom-v5 did not load");
     }
     const LegacyBrowserRouter = Object(legacyRouterModule).BrowserRouter;
-    if (typeof LegacyBrowserRouter !== "function") {
-      throw new Error("react-router-dom-v5 does not export BrowserRouter");
+    const LegacyRoute = Object(legacyRouterModule).Route;
+    if (typeof LegacyBrowserRouter !== "function" || typeof LegacyRoute !== "function") {
+      throw new Error("react-router-dom-v5 does not export BrowserRouter and Route");
     }
     const runtime = captureNativeTree(
-      createElement(LegacyBrowserRouter, null, createElement("main")),
+      createElement(
+        LegacyBrowserRouter,
+        null,
+        createElement(LegacyRoute, { path: "/" }, createElement("main")),
+      ),
     );
-    expect(runtime[0]).toMatchObject({ name: "BrowserRouter", tag: "ClassComponent" });
+    expect(findRuntimeFiberTags(runtime, "BrowserRouter")).toEqual(["ClassComponent"]);
+    expect(findRuntimeFiberTags(runtime, "Route")).toEqual(["ClassComponent"]);
   });
 
   it("finds text passed through an opaque component into a direct-text host", () => {

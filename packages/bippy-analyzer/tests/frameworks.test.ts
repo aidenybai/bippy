@@ -1068,6 +1068,7 @@ describe("react router component versions", () => {
       { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
     );
     expect(findFiberTags(getRenderPattern(result), "BrowserRouter")).toEqual([expectedTag]);
+    expect(findFiberTags(getRenderPattern(result), "Route")).toEqual([expectedTag]);
   });
 });
 
