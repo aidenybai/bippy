@@ -1150,6 +1150,9 @@
           "next-i18next",
           "react-i18next",
           "@teable/*",
+          "@dnd-kit/core",
+          "@dnd-kit/sortable",
+          "@dnd-kit/utilities",
           "@radix-ui/*",
           "@tanstack/react-query"
         ]
