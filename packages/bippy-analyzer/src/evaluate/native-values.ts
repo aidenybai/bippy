@@ -724,8 +724,15 @@ export const setNativeObjectMember = (
   if (isLayoutMember(object, key)) return;
   if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
     const native = toNative(value, object.host);
-    if (native !== UNCERTAIN) Reflect.set(object.value, key, native);
-    else if (!LAYOUT_MEMBERS.has(key)) uncertainNativeObjects.add(object.value);
+    if (native !== UNCERTAIN) {
+      try {
+        Reflect.set(object.value, key, native);
+      } catch {
+        uncertainNativeObjects.add(object.value);
+      }
+    } else if (!LAYOUT_MEMBERS.has(key)) {
+      uncertainNativeObjects.add(object.value);
+    }
     return;
   }
   let expandos = expandoProperties.get(object.value);
