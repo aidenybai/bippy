@@ -9470,7 +9470,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@radix-ui/react-tooltip", "@tanstack/react-query", "sonner"]
       },
       "notes": "Original source, startup, data, scripts and npm lock retained. Pinned Node22.16/npm10.9.2/pnpm10.12.1 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through Vite configuration; no application configuration values are invented. Original public LandingPage, null auth state, Navbar and query/tooltip/toast providers. No backend supplied: useApi hardcodes localhost:3001 and is only used on other routes. No registration/auth or navigation. Partial landing-page/router/toast boundary has 16.9% strict coverage. No login/register or localhost API interaction. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 1029076441 identifies a distinct non-fork repository."
     },
