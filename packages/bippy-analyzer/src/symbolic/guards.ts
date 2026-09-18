@@ -324,6 +324,11 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
   let combined: Guard | null = null;
   const add = (operand: Guard): void => {
     if (combined?.kind === "constant" && combined.value === absorbing) return;
+    if (combined === null && (operand.kind !== kind || guardSequenceCache.has(operand))) {
+      if (operand.kind !== "constant") combined = operand;
+      else if (operand.value === absorbing) combined = constantGuard(absorbing);
+      return;
+    }
     if (operand.kind === kind) {
       for (const nested of operand.operands) add(nested);
       return;
