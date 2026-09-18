@@ -210,6 +210,11 @@ export interface StubRenderTools {
   queueMicrotask: (task: () => void) => void;
   bindTask: TaskBinder;
   runTask: (cause: GuardContext, task: () => void) => void;
+  runTaskAlternatives: (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
+  ) => void;
   /** True while the caller runs at an unknown time relative to the captured commit (past an `await` the analysis cannot see settle, or in such a promise's continuation): the state it updates escapes. */
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */

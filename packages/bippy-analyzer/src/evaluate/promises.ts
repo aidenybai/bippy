@@ -7,7 +7,7 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { createErrorValue } from "./errors.js";
-import { createPathPredicate, getAlternativeGuards } from "./predicates.js";
+import { getAlternativeGuards } from "./predicates.js";
 import {
   branchValue,
   listValue,
@@ -27,6 +27,7 @@ export interface PromiseTools extends Pick<
   | "queueMicrotask"
   | "bindTask"
   | "runTask"
+  | "runTaskAlternatives"
   | "recordStateMutation"
 > {}
 
@@ -181,6 +182,7 @@ export const suspendOnPromise = (
         if (returned) settlePromise(result, returned, runTools);
       },
       escape: (escapeTools) => {
+        const reason = "promise settled outside the analysis";
         const outcome = branchValue(
           [
             unknownValue("promise fulfilled outside the analysis", location),
@@ -190,22 +192,22 @@ export const suspendOnPromise = (
               location,
             ),
           ],
-          "promise settled outside the analysis",
+          reason,
           location,
-          0,
-          createPathPredicate("whether the promise fulfilled or rejected", location),
         );
         if (outcome.kind === "branch") {
           const alternatives = getAlternativeGuards(outcome);
           if (alternatives) {
-            outcome.alternatives.forEach((alternative, index) =>
-              escapeTools.runTask(
-                {
-                  guard: alternatives.guards[index],
-                  inputs: [...alternatives.inputs],
-                },
-                () => resume(alternative, true),
-              ),
+            escapeTools.runTaskAlternatives(
+              alternatives.guards.map((guard) => ({
+                guard,
+                inputs: [...alternatives.inputs],
+              })),
+              (index) => {
+                const alternative = outcome.alternatives[index];
+                if (alternative) resume(alternative, true);
+              },
+              reason,
             );
           } else {
             resume(outcome, true);

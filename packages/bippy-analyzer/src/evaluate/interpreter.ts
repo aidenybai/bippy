@@ -2322,6 +2322,48 @@ export class Interpreter {
     });
   };
 
+  runTaskAlternatives = (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
+    context: EvaluationContext | null = null,
+    location: SourceLocation | null = null,
+  ): void => {
+    const parentGuard = this.guard;
+    const alternatives = causes.flatMap((cause, index) => {
+      const guard = andGuard([parentGuard, cause.guard]);
+      return this.isTaskPossible(guard) ? [{ cause, guard, index }] : [];
+    });
+    if (alternatives.length === 0) return;
+    if (alternatives.length === 1) {
+      const [alternative] = alternatives;
+      if (alternative) this.runWithGuard(alternative.guard, () => task(alternative.index));
+      return;
+    }
+    const scope = context?.scope ?? null;
+    const entrySnapshot = snapshotScopes(scope);
+    const pathSnapshots: ScopeSnapshot[][] = [];
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    alternatives.forEach((alternative, alternativeIndex) => {
+      if (alternativeIndex > 0) restoreScopes(entrySnapshot);
+      this.runWithGuard(alternative.guard, () => task(alternative.index));
+      pathSnapshots.push(snapshotScopes(scope));
+      journal.endPath();
+    });
+    this.removeHeapJournal(journal);
+    const predicate = guardedPredicate(
+      alternatives.map((alternative) => alternative.cause.guard),
+      alternatives.map((alternative) => alternative.cause.inputs),
+    );
+    const preferredPath = Math.max(
+      0,
+      alternatives.findIndex((alternative) => alternative.index === 0),
+    );
+    journal.join(reason, location, preferredPath, predicate);
+    joinScopes(pathSnapshots, reason, location, preferredPath, predicate);
+  };
+
   bindContinuationWithCause: TaskBinder = (task) => {
     const cause = { guard: this.guard, inputs: [] };
     return (...args) => this.runTaskWithCause(cause, () => task(...args));

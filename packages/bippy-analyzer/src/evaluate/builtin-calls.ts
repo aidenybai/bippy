@@ -267,6 +267,13 @@ export interface BuiltinEvaluator
     context?: EvaluationContext | null,
     location?: SourceLocation | null,
   ) => void;
+  runTaskAlternatives: (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
+    context?: EvaluationContext | null,
+    location?: SourceLocation | null,
+  ) => void;
   recordStateMutation: (state: JournaledState<unknown>) => void;
 }
 
@@ -1612,6 +1619,8 @@ export const promiseTools = (
   queueMicrotask: (task) => evaluator.queueMicrotask(task, context, location),
   bindTask: (task) => evaluator.bindTask(task, context, location),
   runTask: (cause, task) => evaluator.runTaskWithCause(cause, task, context, location),
+  runTaskAlternatives: (causes, task, reason) =>
+    evaluator.runTaskAlternatives(causes, task, reason, context, location),
   recordStateMutation: (state) => evaluator.recordStateMutation(state),
 });
 
