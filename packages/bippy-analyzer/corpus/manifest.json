@@ -8849,13 +8849,7 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx",
-        "externalPackageAllowList": [
-          "@radix-ui/react-context",
-          "@radix-ui/react-tooltip",
-          "@tanstack/react-query",
-          "sonner"
-        ]
+        "entry": "src/main.tsx"
       },
       "notes": "Preserve original pnpm lock and onlyBuiltDependencies approvals, MSW startup gated by import.meta.env.DEV, original fixture handlers, inline pre-paint settings script, locale synchronization, registry routes, PWA and regex Vite alias. Audit original worker before capture; do not edit source aliases, seed custom settings or choose a scenario. Retain the sparse partial 1726-fiber, 62-commit capture and passing sampled replay. Preserve original DEV-gated MSW initialization, tracked worker/fixtures, inline settings, query/store bridge and index navigation. No scenario, API response or settings input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1283503075 identifies a distinct non-fork repository."
     },
@@ -8880,11 +8874,7 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/main.tsx",
-        "externalPackageAllowList": [
-          "@tanstack/react-query",
-          "react-redux"
-        ]
+        "entry": "src/main.tsx"
       },
       "notes": "Preserve frozen Yarn, Husky install, Redux Persist, Suspense, QueryClient, styled-components6 RC, SVGR and i18next backend. Audit original guest/API/environment behavior before capture; do not invent API configuration, repair the RC library or supply login state. Before native capture, explicitly pin only the outer Corepack pnpm launcher to11.20.0; keep the original inner Node16.20.2/pnpm8.15.9/npm8.19.4 or Yarn1.22.22. The earlier no-CI runtime probe failed because pnpm11.25.0 dlx inserted an ESM --import loader that Node16 rejects. Preserve that failure, the successful original install and original source/locks; do not set CI, add OpenSSL flags or change the app's package manager. Retain the original partial 201-fiber SignIn capture and passing sampled replay. Preserve authored form defaults without submission, absent optional backend configuration, token-storage guest state, Redux Persist, translation resources and styled-components RC. No authenticated/backend behavior is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 418894965 identifies a distinct non-fork repository."
     },
