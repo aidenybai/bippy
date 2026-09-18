@@ -43,6 +43,7 @@ interface I18nextInstanceState {
   fallbackLanguage: StaticValue;
   defaultNamespace: StaticValue;
   keySeparator: string | null;
+  resourceProperties: WeakMap<StaticObjectValue, ReadonlyMap<string, StaticValue> | null>;
 }
 
 interface I18nextModel {
@@ -97,7 +98,34 @@ const getLanguageCandidates = (
 const getNamespaceCandidates = (namespace: StaticValue): StaticValue[] =>
   namespace.kind === "list" ? namespace.items : [namespace];
 
-const getNestedValue = (root: StaticValue, segments: readonly string[]): StaticValue => {
+const getResourceProperty = (
+  state: I18nextInstanceState,
+  object: StaticObjectValue,
+  key: string,
+): StaticValue => {
+  let properties = state.resourceProperties.get(object);
+  if (properties === undefined) {
+    if (object.entries.every((entry) => entry.kind === "property" && entry.accessor === undefined)) {
+      const knownProperties = new Map<string, StaticValue>();
+      for (const entry of object.entries) {
+        if (entry.kind === "property") knownProperties.set(entry.key, entry.value);
+      }
+      properties = knownProperties;
+    } else {
+      properties = null;
+    }
+    state.resourceProperties.set(object, properties);
+  }
+  return properties === null
+    ? getObjectProperty(object, key)
+    : (properties.get(key) ?? UNDEFINED_VALUE);
+};
+
+const getNestedValue = (
+  state: I18nextInstanceState,
+  root: StaticValue,
+  segments: readonly string[],
+): StaticValue => {
   let value = root;
   for (const segment of segments) {
     if (value.kind !== "object") {
@@ -105,7 +133,7 @@ const getNestedValue = (root: StaticValue, segments: readonly string[]): StaticV
         ? UNDEFINED_VALUE
         : unknownPrimitiveValue("string", "translation from a dynamic resource catalog");
     }
-    value = getObjectProperty(value, segment);
+    value = getResourceProperty(state, value, segment);
   }
   return value;
 };
@@ -187,7 +215,7 @@ const getTranslation = (
       for (const keyCandidate of keyCandidates) {
         const segments =
           state.keySeparator === null ? [keyCandidate] : keyCandidate.split(state.keySeparator);
-        const value = getNestedValue(state.resources, [
+        const value = getNestedValue(state, state.resources, [
           languageCandidate.value,
           namespaceCandidate.value,
           ...segments,
@@ -211,6 +239,7 @@ const createI18nextInstance = (): StaticObjectValue => {
     fallbackLanguage: primitiveValue("dev"),
     defaultNamespace: primitiveValue("translation"),
     keySeparator: ".",
+    resourceProperties: new WeakMap(),
   };
   let instance = objectFromRecord({});
   const translate = (
