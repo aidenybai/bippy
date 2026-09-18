@@ -1,26 +1,34 @@
 import { it } from "vite-plus/test";
-import { checkSymbolicCases, createSeededRandom, differentialSeeds, type DifferentialCase } from "./helpers/differential-evaluator.js";
+import {
+  checkSymbolicCases,
+  createSeededRandom,
+  differentialSeeds,
+  type DifferentialCase,
+} from "./helpers/differential-evaluator.js";
 
-it.each(differentialSeeds)("matches all four native executions of correlated branches, seed %i", async (seed) => {
-  const getRandom = createSeededRandom(seed);
-  const cases: DifferentialCase[] = [];
-  for (let index = 0; index < 40; index++) {
-    const initial = getRandom(10);
-    const increment = 1 + getRandom(10);
-    const multiplier = 2 + getRandom(4);
-    cases.push({
-      name: `seed=${seed}/case=${index}`,
-      body: `
+it.each(differentialSeeds)(
+  "matches all four native executions of correlated branches, seed %i",
+  async (seed) => {
+    const getRandom = createSeededRandom(seed);
+    const cases: DifferentialCase[] = [];
+    for (let index = 0; index < 40; index++) {
+      const initial = getRandom(10);
+      const increment = 1 + getRandom(10);
+      const multiplier = 2 + getRandom(4);
+      cases.push({
+        name: `seed=${seed}/case=${index}`,
+        body: `
         const left = { value: ${initial} };
         const right = { value: ${initial + 1} };
         const target = first ? left : right;
         target.value = second ? ${increment} : ${multiplier};
         return left.value + ':' + right.value;
       `,
-    });
-  }
-  await checkSymbolicCases(cases);
-});
+      });
+    }
+    await checkSymbolicCases(cases);
+  },
+);
 
 it.each([
   {

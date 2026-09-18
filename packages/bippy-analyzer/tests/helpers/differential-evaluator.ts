@@ -34,7 +34,13 @@ const evaluateCases = async (cases: DifferentialCase[], prelude = ""): Promise<S
   const directory = mkdtempSync(join(tmpdir(), "bippy-differential-"));
   try {
     const entryPath = join(directory, "program.ts");
-    writeFileSync(entryPath, prelude + cases.map(({ body }, index) => `export const probe${index} = () => {\n${body}\n};`).join("\n"));
+    writeFileSync(
+      entryPath,
+      prelude +
+        cases
+          .map(({ body }, index) => `export const probe${index} = () => {\n${body}\n};`)
+          .join("\n"),
+    );
     const renderer = await createStaticRenderer({ rootDirectory: directory, maxSteps: 5_000_000 });
     const actual: StaticValue[] = [];
     await renderer.renderWith((interpreter) => {
@@ -46,7 +52,9 @@ const evaluateCases = async (cases: DifferentialCase[], prelude = ""): Promise<S
         try {
           actual.push(interpreter.callValue(exported, [], context, null));
         } catch (error) {
-          throw new Error(`Analyzer crashed: ${cases[index].name}\n${cases[index].body}`, { cause: error });
+          throw new Error(`Analyzer crashed: ${cases[index].name}\n${cases[index].body}`, {
+            cause: error,
+          });
         }
       }
       return UNDEFINED_VALUE;
@@ -77,9 +85,7 @@ export const checkDifferentialCases = async (cases: DifferentialCase[]): Promise
 export const checkKnownDifferentialWitnesses = async (
   cases: DifferentialFailure[],
 ): Promise<void> => {
-  const failure: unknown = await checkDifferentialCases(cases).catch(
-    (error: unknown) => error,
-  );
+  const failure: unknown = await checkDifferentialCases(cases).catch((error: unknown) => error);
   expect(failure).toBeInstanceOf(DifferentialMismatch);
   if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual(cases);
 };
@@ -88,11 +94,19 @@ export const checkSymbolicCases = async (cases: DifferentialCase[]): Promise<voi
   const directory = mkdtempSync(join(tmpdir(), "bippy-symbolic-differential-"));
   try {
     const entryPath = join(directory, "program.ts");
-    writeFileSync(entryPath, "declare const first: boolean; declare const second: boolean;\n" + cases.map(({ body }, index) => `export const probe${index} = () => {\n${body}\n};`).join("\n"));
+    writeFileSync(
+      entryPath,
+      "declare const first: boolean; declare const second: boolean;\n" +
+        cases
+          .map(({ body }, index) => `export const probe${index} = () => {\n${body}\n};`)
+          .join("\n"),
+    );
     const renderer = await createStaticRenderer({ rootDirectory: directory });
     for (let index = 0; index < cases.length; index++) {
       const testCase = cases[index];
-      const expected = [false, true].flatMap((first) => [false, true].map((second) => evaluateNative(testCase.body, { first, second })));
+      const expected = [false, true].flatMap((first) =>
+        [false, true].map((second) => evaluateNative(testCase.body, { first, second })),
+      );
       const result = await renderer.renderWith((interpreter) => {
         const module = renderer.loadModule(entryPath);
         if (!module) throw new Error("Could not load symbolic differential programs");

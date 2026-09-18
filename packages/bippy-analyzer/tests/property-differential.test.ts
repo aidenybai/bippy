@@ -1,20 +1,27 @@
 import { describe, it } from "vite-plus/test";
-import { checkDifferentialCases, createSeededRandom, differentialSeeds, type DifferentialCase } from "./helpers/differential-evaluator.js";
+import {
+  checkDifferentialCases,
+  createSeededRandom,
+  differentialSeeds,
+  type DifferentialCase,
+} from "./helpers/differential-evaluator.js";
 
-it.each(differentialSeeds)("preserves cached assignment references, coercion and throw order, seed %i", async (seed) => {
-  const getRandom = createSeededRandom(seed);
-  const operators = ["=", "+=", "-=", "*=", "&&=", "||=", "??="];
-  const inputs = ["undefined", "null", "false", "0", "1", "''", "'old'"];
-  const failures = ["none", "B", "K", "G", "R", "S"];
-  const cases: DifferentialCase[] = [];
-  for (let index = 0; index < 120; index++) {
-    const operator = operators[getRandom(operators.length)];
-    const initial = inputs[getRandom(inputs.length)];
-    const failure = failures[getRandom(failures.length)];
-    const reassign = getRandom(2) === 0;
-    cases.push({
-      name: `seed=${seed}/case=${index}`,
-      body: `
+it.each(differentialSeeds)(
+  "preserves cached assignment references, coercion and throw order, seed %i",
+  async (seed) => {
+    const getRandom = createSeededRandom(seed);
+    const operators = ["=", "+=", "-=", "*=", "&&=", "||=", "??="];
+    const inputs = ["undefined", "null", "false", "0", "1", "''", "'old'"];
+    const failures = ["none", "B", "K", "G", "R", "S"];
+    const cases: DifferentialCase[] = [];
+    for (let index = 0; index < 120; index++) {
+      const operator = operators[getRandom(operators.length)];
+      const initial = inputs[getRandom(inputs.length)];
+      const failure = failures[getRandom(failures.length)];
+      const reassign = getRandom(2) === 0;
+      cases.push({
+        name: `seed=${seed}/case=${index}`,
+        body: `
         let trace = '';
         let stored = ${initial};
         const mark = (phase) => { trace += phase; if (phase === '${failure}') throw phase; };
@@ -32,10 +39,11 @@ it.each(differentialSeeds)("preserves cached assignment references, coercion and
         catch (error) { outcome = 'caught:' + error; }
         return String(outcome) + '|' + trace + '|' + String(stored) + '|' + replacement.value + '|' + (holder === original);
       `,
-    });
-  }
-  await checkDifferentialCases(cases);
-});
+      });
+    }
+    await checkDifferentialCases(cases);
+  },
+);
 
 interface PropertyCase extends DifferentialCase {
   knownDivergence: boolean;
@@ -54,7 +62,9 @@ const createOptionalCases = (): PropertyCase[] => {
     ]) {
       cases.push({
         name: `${receiver}/${expression}`,
-        knownDivergence: (receiver !== "object" && expression === "(target?.method)(argument())") || (receiver === "object" && expression === "delete target?.[key()]"),
+        knownDivergence:
+          (receiver !== "object" && expression === "(target?.method)(argument())") ||
+          (receiver === "object" && expression === "delete target?.[key()]"),
         body: `
           let trace = '';
           const object = { value: 4, method: (value) => { trace += 'M'; return value; } };
@@ -77,7 +87,8 @@ const createDestructuringCases = (): PropertyCase[] => {
     for (const failure of ["none", "G", "D", "H"]) {
       cases.push({
         name: `${value}/${failure}`,
-        knownDivergence: failure === "G" || value === "null" || (value === "undefined" && failure === "D"),
+        knownDivergence:
+          failure === "G" || value === "null" || (value === "undefined" && failure === "D"),
         body: `
           let trace = '';
           const mark = (phase) => { trace += phase; if (phase === '${failure}') throw phase; };
@@ -98,6 +109,11 @@ describe.each([
   { name: "optional chain boundaries", cases: createOptionalCases() },
   { name: "destructuring default and getter order", cases: createDestructuringCases() },
 ])("$name", ({ cases }) => {
-  it.each(cases.filter((testCase) => !testCase.knownDivergence))("$name", (testCase) => checkDifferentialCases([testCase]));
-  it.fails.each(cases.filter((testCase) => testCase.knownDivergence))("known divergence: $name", (testCase) => checkDifferentialCases([testCase]));
+  it.each(cases.filter((testCase) => !testCase.knownDivergence))("$name", (testCase) =>
+    checkDifferentialCases([testCase]),
+  );
+  it.fails.each(cases.filter((testCase) => testCase.knownDivergence))(
+    "known divergence: $name",
+    (testCase) => checkDifferentialCases([testCase]),
+  );
 });
