@@ -203,6 +203,15 @@ describe("next app router", () => {
     );
   });
 
+  it("keeps modeled client-only providers in the Flight tree", async () => {
+    const { tree, errors } = await render("next-app", {
+      framework: "next-app",
+      route: "/session",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<SessionProvider>\n\s+<ContextProvider>\n\s+<main>$/);
+  });
+
   it("renders forwardRef/memo wrappers created by server code on the server", async () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
     expect(errors).toEqual([]);

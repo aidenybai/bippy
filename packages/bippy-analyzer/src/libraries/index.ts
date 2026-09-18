@@ -34,6 +34,11 @@ import {
   mobxValue,
 } from "./mobx.js";
 import {
+  NEXT_AUTH_MODELED_EXPORTS,
+  NEXT_AUTH_PACKAGES,
+  nextAuthValue,
+} from "./next-auth.js";
+import {
   NEXT_TRANSLATE_MODELED_EXPORTS,
   NEXT_TRANSLATE_PACKAGES,
   nextTranslateValue,
@@ -139,6 +144,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: MOBX_REACT_PACKAGES,
     getValue: mobxValue,
     modeledExports: MOBX_REACT_MODELED_EXPORTS,
+  },
+  {
+    packages: NEXT_AUTH_PACKAGES,
+    getValue: nextAuthValue,
+    modeledExports: NEXT_AUTH_MODELED_EXPORTS,
   },
   {
     packages: NEXT_TRANSLATE_PACKAGES,
