@@ -103,3 +103,26 @@ correction.
 
 All three fresh results replay every enumerated assignment with no contradiction. These are
 initial-page captures only; they do not exercise interactions or prove exhaustive behavior.
+
+## Legacy React Router class fibers
+
+React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component
+function's prototype has `isReactComponent`. React Router 5.3.4 defines `BrowserRouter`,
+`HashRouter`, `MemoryRouter`, and `Router` as `React.Component` classes; React Router 6 and later
+define the modeled router components as functions.
+
+The versioned regression uses the installed package version and real React materialization. Before
+the correction it captured `BrowserRouter@5.3.4` as `FunctionComponent`; the native
+`react-router-dom@5.3.4` oracle captured `ClassComponent`.
+
+`mural@e9d4a5bf80dfdb90e8831dfebdfbfdb57bf76ff0` was run at `/` on
+`http://127.0.0.1:54376/` with its manifest environment and default comparison budget. The
+historical result stopped after 28 steps at an expected `BrowserRouter` function versus the native
+class. A fresh React 17.0.2 development capture at `2026-09-18T00:26:45.234Z` has 151 fibers, 5
+commits, and the same 7 DNS resource errors. With the correction, comparison passes the class
+fiber and stops after 29 steps at the next independent mismatch: `Container` still shows
+`Loading`, while native behavior has fired the authored one-second timer and mounted
+`BrowserRouter`. Both decision assignments replay without contradiction.
+
+The repository remains a mismatch. The class-fiber correction does not establish timer settling,
+remote resource behavior, interactions, or whole-state-space coverage.
