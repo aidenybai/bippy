@@ -1778,6 +1778,17 @@ const createRouterHookValues = (
           const contextualNavigate = tools.readContext(NAVIGATION_CONTEXT);
           return isCallable(contextualNavigate) ? contextualNavigate : navigate;
         });
+      case "useHistory":
+        return nativeFunction(importedName, (_args, tools) => {
+          const contextualNavigate = tools.readContext(NAVIGATION_CONTEXT);
+          const changeLocation = isCallable(contextualNavigate) ? contextualNavigate : navigate;
+          return objectFromRecord({
+            action: primitiveValue("POP"),
+            location: readRouterLocation(tools, location),
+            push: changeLocation,
+            replace: changeLocation,
+          });
+        });
       case "useNavigationType":
         return nativeFunction(importedName, () => primitiveValue("POP"));
       case "useInRouterContext":
