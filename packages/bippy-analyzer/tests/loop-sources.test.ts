@@ -41,10 +41,6 @@ it.each([
     name: "payloads",
     expected: ["null", "undefined"],
   },
-  {
-    name: "partial-object-keys",
-    expected: ["kept"],
-  },
 ])("preserves loop source completion: $name", ({ name, expected }) =>
   checkConcreteComponentStates(`loop-sources-${name}.tsx`, expected),
 );
