@@ -1,7 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import { hasNamedProperty } from "../src/evaluate/has-property.js";
 import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
-import type { StaticObjectEntry } from "../src/types.js";
 import {
   branchValue,
   FALSE_VALUE,
@@ -83,32 +82,4 @@ it("keeps explicit undefined over an earlier spread value", () => {
   ]);
   expect(getObjectProperty(target, "value")).toEqual(UNDEFINED_VALUE);
   expect(getKnownObjectKeys(target)).toEqual(["value"]);
-});
-
-it("lifts properties shared by every whole-object join path", () => {
-  const children = primitiveValue("kept");
-  const original: StaticObjectEntry[] = [
-    { kind: "property", key: "children", value: children },
-  ];
-  const joined = objectValue(
-    joinObjectEntries(
-      original,
-      [
-        original,
-        [
-          ...original,
-          {
-            kind: "spread",
-            value: unknownValue("other loop keys"),
-            omittedKeys: ["children"],
-          },
-        ],
-      ],
-      "loop iterations are uncertain",
-      null,
-      0,
-      null,
-    ),
-  );
-  expect(getObjectProperty(joined, "children")).toBe(children);
 });

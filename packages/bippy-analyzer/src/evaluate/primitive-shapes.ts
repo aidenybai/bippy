@@ -423,7 +423,6 @@ export const getShapedStringLength = (receiver: StaticUnknownPrimitiveValue): St
 /** Whether a dynamic property key may read as `name`: an unknown string of another prefix or length, or a number, never does. */
 export const mayEqualPropertyKey = (key: StaticValue, name: string): boolean => {
   if (key.kind !== "unknown-primitive") return true;
-  if (key.excludedStrings?.includes(name)) return false;
   if (key.primitiveType === "number") return String(Number(name)) === name;
   if (key.primitiveType !== "string" || !key.stringShape) return true;
   const { prefix, length } = key.stringShape;
