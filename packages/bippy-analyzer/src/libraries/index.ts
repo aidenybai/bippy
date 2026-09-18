@@ -54,6 +54,11 @@ import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SCHEDULER_PACKAGES, schedulerValue } from "./scheduler.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
+import {
+  STYLETRON_REACT_MODELED_EXPORTS,
+  STYLETRON_REACT_PACKAGES,
+  styletronReactValue,
+} from "./styletron-react.js";
 import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
 import {
   TANSTACK_QUERY_MODELED_EXPORTS,
@@ -128,6 +133,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: SCHEDULER_PACKAGES, getValue: schedulerValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
+  {
+    packages: STYLETRON_REACT_PACKAGES,
+    getValue: styletronReactValue,
+    modeledExports: STYLETRON_REACT_MODELED_EXPORTS,
+  },
   { packages: STYLEX_PACKAGES, getValue: stylexValue },
   { packages: SWR_PACKAGES, getValue: swrValue },
   {

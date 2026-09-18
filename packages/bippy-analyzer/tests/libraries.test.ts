@@ -195,6 +195,36 @@ export default () => (
 `,
 };
 
+const STYLETRON_PROJECT: Record<string, string> = {
+  "node_modules/styletron-react/package.json": JSON.stringify({
+    name: "styletron-react",
+    version: "6.1.0",
+    main: "index.js",
+  }),
+  "node_modules/styletron-react/index.js": "exports.createStyled = () => null;\n",
+  "app.tsx": `
+import { createContext, forwardRef } from "react";
+import { createStyled } from "styletron-react";
+
+const ThemeContext = createContext({});
+const wrapper = (StyledComponent) =>
+  forwardRef((props, ref) => (
+    <ThemeContext.Consumer>
+      {(theme) => <StyledComponent {...props} ref={ref} $theme={theme} />}
+    </ThemeContext.Consumer>
+  ));
+const styled = createStyled({ wrapper });
+const Icon = styled("svg", {});
+Icon.displayName = "Icon";
+
+export default () => (
+  <Icon viewBox="0 0 24 24">
+    <path />
+  </Icon>
+);
+`,
+};
+
 const renderProject = async (
   files: Record<string, string>,
   entryFileName: string,
@@ -261,6 +291,20 @@ describe("library models", () => {
         '          "100"',
         '          "% "',
         '          "4747a4"',
+      ].join("\n"),
+    );
+  });
+
+  it("preserves Styletron wrapper fibers and forwarded children", async () => {
+    expect(await renderProject(STYLETRON_PROJECT, "app.tsx")).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <Icon>",
+        "      <ContextConsumer>",
+        "        <ForwardRef>",
+        "          <svg>",
+        "            <path>",
       ].join("\n"),
     );
   });
