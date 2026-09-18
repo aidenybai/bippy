@@ -797,15 +797,13 @@ export const joinObjectEntries = (
     );
   const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
   if (joinedKeys === null) {
+    const originalKeys = getGuaranteedObjectEnumerableKeys(objectValue(original));
     const guaranteedPathKeys = pathObjects.map(
       (pathObject) => new Set(getGuaranteedObjectEnumerableKeys(pathObject)),
     );
-    const [firstPathKeys] = guaranteedPathKeys;
-    const commonKeys = firstPathKeys
-      ? [...firstPathKeys].filter((key) =>
-          guaranteedPathKeys.every((pathKeys) => pathKeys.has(key)),
-        )
-      : [];
+    const commonKeys = originalKeys.filter((key) =>
+      guaranteedPathKeys.every((pathKeys) => pathKeys.has(key)),
+    );
     const omitted = new Set(commonKeys);
     return [
       {
