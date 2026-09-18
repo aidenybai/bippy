@@ -1134,7 +1134,12 @@ describe("react router component versions", () => {
     const pattern = getRenderPattern(result);
     const tree = formatPattern(pattern);
     expect(findFiberTags(pattern, "Switch")).toEqual(["ClassComponent"]);
-    expect(findFiberTags(pattern, "Route")).toEqual(["ClassComponent"]);
+    expect(findFiberTags(pattern, "Route")).toEqual([
+      "ClassComponent",
+      "ClassComponent",
+      "ClassComponent",
+      "ClassComponent",
+    ]);
     expect(tree).toContain("<Match>");
     expect(tree).toContain("<main>");
     expect(tree).toContain('"settings"');
