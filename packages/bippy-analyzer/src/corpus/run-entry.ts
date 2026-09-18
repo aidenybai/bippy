@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -52,6 +52,11 @@ interface RunEntryOptions {
   skipInstall?: boolean;
   staticOnly?: boolean;
   log?: (message: string) => void;
+}
+
+interface CompilerDefinesModule {
+  filePath: string;
+  url: string;
 }
 
 const INSTALL_TIMEOUT_MS = 30 * 60_000;
@@ -170,6 +175,22 @@ const summarizeRuntime = (capture: BrowserCaptureResult): CorpusRuntimeSummary =
 const capturePath = (outputDirectory: string, entry: CorpusEntry): string =>
   path.join(outputDirectory, `${entry.id}.capture.json`);
 
+const writeCompilerDefinesModule = (
+  entry: CorpusEntry,
+  cloneDirectory: string,
+): CompilerDefinesModule | null => {
+  if (!entry.capturedDefines?.length) return null;
+  const filePath = path.join(cloneDirectory, ".bippy-analyzer-compiler-defines.mjs");
+  const properties = entry.capturedDefines
+    .map((name) => `  ${JSON.stringify(name)}: (${name}),`)
+    .join("\n");
+  writeFileSync(filePath, `export default {\n${properties}\n};\n`);
+  return {
+    filePath,
+    url: new URL(`/@fs/${filePath}`, entry.url).href,
+  };
+};
+
 // Captures written before observations were grouped kept `globals` at the top level.
 const savedCaptureSchema = z.object({
   revision: z.string(),
@@ -222,6 +243,7 @@ const captureLive = async (
     await ensureInstalled(entry, cloneDirectory, options.scriptsDirectory, logPath, log);
   }
   log(`dev server: ${entry.dev}`);
+  const compilerDefinesModule = writeCompilerDefinesModule(entry, cloneDirectory);
   const server = new DevServer({
     command: entry.dev,
     cwd: path.join(cloneDirectory, entry.workingDirectory),
@@ -241,9 +263,11 @@ const captureLive = async (
         ...getFrameworkProfile(entry.framework).capturedGlobals,
         ...(entry.capturedGlobals ?? []),
       ],
+      compilerDefinesUrl: compilerDefinesModule?.url,
     });
   } finally {
     await server.stop();
+    if (compilerDefinesModule) rmSync(compilerDefinesModule.filePath, { force: true });
   }
 };
 

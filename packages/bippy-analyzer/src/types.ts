@@ -501,6 +501,8 @@ export interface CapturedRequest {
 export interface RuntimeObservations {
   /** `window` properties recorded whole (bootstrap payloads); nested objects are complete, so unlisted keys are `undefined`. */
   globals: Record<string, CapturedValue>;
+  /** Bundler compile-time expressions recorded from the running dev server. */
+  compilerDefines?: Record<string, CapturedValue>;
   queries: CapturedQuery[];
   /** Absent in captures that predate mutation recording, which then stays uncertain. */
   mutations?: CapturedMutation[];

@@ -21,7 +21,10 @@ const rendererOptionsForEntry = (
     externalPackageAllowList: entry.static.externalPackageAllowList,
     bootstrap: entry.static.bootstrap,
     globals: entry.static.globals,
-    defines: entry.static.defines,
+    defines: {
+      ...observations?.compilerDefines,
+      ...entry.static.defines,
+    },
     svgr: entry.static.svgr,
     environment: readProcessEnvironment(entry, rootDirectory),
     devCommand: entry.dev,

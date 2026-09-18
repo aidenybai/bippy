@@ -19,6 +19,7 @@ export interface BrowserCaptureOptions {
   headless?: boolean;
   /** `window` properties to record once the page has settled (bootstrap payloads the server injects or the page fetches). */
   globals?: string[];
+  compilerDefinesUrl?: string;
   onConsole?: (type: string, text: string) => void;
 }
 
@@ -113,17 +114,25 @@ const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
   return json === null ? null : parseSnapshot(json);
 };
 
-const readObservations = async (page: Page, names: string[]): Promise<RuntimeObservations> => {
-  const json = await page.evaluate(async (globalNames) => {
+const readObservations = async (
+  page: Page,
+  globalNames: string[],
+  compilerDefinesUrl?: string,
+): Promise<RuntimeObservations> => {
+  const json = await page.evaluate(async (options) => {
     const globals: Partial<HarnessGlobals> = Object(globalThis);
     const observed: RuntimeObservations = {
       queries: [],
       ...(await globals.__BIPPY_PARSER_OBSERVATIONS__?.()),
-      globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(globalNames)) ?? {},
+      globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(options.globalNames)) ?? {},
       page: globals.__BIPPY_PARSER_PAGE__?.(),
     };
+    if (options.compilerDefinesUrl) {
+      const compilerDefines: unknown = (await import(options.compilerDefinesUrl)).default;
+      observed.compilerDefines = Object(compilerDefines);
+    }
     return JSON.stringify(observed);
-  }, names);
+  }, { globalNames, compilerDefinesUrl });
   return readObservationsJson(JSON.parse(json), `${page.url()} observations`);
 };
 
@@ -222,7 +231,11 @@ export class BrowserCapturer {
         const overlay = await readDevServerOverlay(page);
         if (overlay) pageErrors.push(overlay);
       }
-      const observations = await readObservations(page, options.globals ?? []);
+      const observations = await readObservations(
+        page,
+        options.globals ?? [],
+        options.compilerDefinesUrl,
+      );
       if (requestHeaders) observations.request = { headers: requestHeaders };
       return { snapshot, commits, pageErrors, title: await page.title(), observations };
     } finally {

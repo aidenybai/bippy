@@ -143,6 +143,7 @@ const capturedRequestSchema: z.ZodType<CapturedRequest> = z.object({
 
 const observationsSchema: z.ZodType<RuntimeObservations, unknown> = z.object({
   globals: capturedValueRecordSchema.default({}),
+  compilerDefines: capturedValueRecordSchema.optional(),
   queries: z.array(capturedQuerySchema).default([]),
   mutations: z.array(capturedMutationSchema).optional(),
   lingui: capturedLinguiCatalogSchema.optional(),

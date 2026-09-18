@@ -72,6 +72,8 @@ export interface CorpusEntry {
   settleMs?: number;
   /** `window` properties recorded from the settled page and handed to the static render as `globals` (bootstrap payloads the page fetched). */
   capturedGlobals?: string[];
+  /** Bundler expressions evaluated through the running dev server and replayed as static defines. */
+  capturedDefines?: string[];
   static: CorpusStaticTarget;
   compare?: ComparisonOptions;
   notes?: string;
@@ -175,6 +177,7 @@ const entrySchema: z.ZodType<CorpusEntry> = z.strictObject({
   waitForSelector: z.string().optional(),
   settleMs: z.number().optional(),
   capturedGlobals: z.array(z.string()).optional(),
+  capturedDefines: z.array(z.string()).optional(),
   static: staticTargetSchema,
   compare: comparisonOptionsSchema.optional(),
   notes: z.string().optional(),

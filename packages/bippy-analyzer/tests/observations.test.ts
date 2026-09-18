@@ -104,6 +104,12 @@ describe("runtime observations", () => {
     expect(
       readObservationsJson({ globals: {}, queries: [], mutations: [mutation] }, source),
     ).toEqual({ globals: {}, queries: [], mutations: [mutation] });
+    expect(
+      readObservationsJson(
+        { globals: {}, compilerDefines: { BUILD_TIME: "captured" }, queries: [] },
+        source,
+      ),
+    ).toEqual({ globals: {}, compilerDefines: { BUILD_TIME: "captured" }, queries: [] });
     const page = { cookie: "", localStorage: {}, sessionStorage: {} };
     const browser = {
       ...page,

@@ -2689,6 +2689,7 @@
       "install": "pnpm install --ignore-workspace",
       "dev": "pnpm dev --port 5173 --strictPort --no-open",
       "url": "http://localhost:5173/",
+      "capturedDefines": ["BUILD_TIME"],
       "static": {
         "rootDirectory": ".",
         "aliases": {
