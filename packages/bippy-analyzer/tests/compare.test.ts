@@ -1,5 +1,9 @@
+import { act, createElement, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime, matchPatternToRuntime } from "../src/harness/compare.js";
+import { createCommitRecorder } from "../src/harness/commit-recorder.js";
+import { getRootContainer } from "../src/harness/runtime-snapshot.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import type {
   PatternBranch,
@@ -9,6 +13,10 @@ import type {
   PatternWildcard,
 } from "../src/harness/static-pattern.js";
 import { anonymousRepeat, choiceBranch } from "./helpers/pattern-builders.js";
+
+interface NativeWrapperProps {
+  children?: ReactNode;
+}
 
 const runtimeFiber = (
   name: string,
@@ -55,7 +63,68 @@ const patternWildcard: PatternWildcard = {
   isTruncated: false,
 };
 
+const NativeBridge = ({ children }: NativeWrapperProps) => createElement("section", null, children);
+const NativeVendorRoot = ({ children }: NativeWrapperProps) =>
+  createElement(NativeBridge, null, children);
+const NativeGrid = ({ children }: NativeWrapperProps) => createElement("main", null, children);
+const NativeColumn = ({ children }: NativeWrapperProps) => createElement("article", null, children);
+const NativeCard = ({ children }: NativeWrapperProps) => createElement("div", null, children);
+const NativeGeneratedEditor = () => createElement("textarea");
+
+const captureNativeOpaqueTree = async (): Promise<RuntimeFiberSnapshot[]> => {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const recorder = createCommitRecorder({
+    rootFilter: (root) => getRootContainer(root) === container,
+  });
+  const root = createRoot(container);
+  try {
+    await act(async () => {
+      root.render(
+        createElement(
+          NativeVendorRoot,
+          null,
+          createElement(
+            NativeGrid,
+            null,
+            ...Array.from({ length: 12 }, (_, columnIndex) =>
+              createElement(
+                NativeColumn,
+                { key: columnIndex },
+                createElement(NativeCard, null, createElement(NativeGeneratedEditor)),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+    return recorder.snapshot().roots.flatMap((snapshotRoot) => snapshotRoot.children);
+  } finally {
+    await act(async () => root.unmount());
+    recorder.dispose();
+    container.remove();
+  }
+};
+
 describe("comparePatternToRuntime", () => {
+  it("finds nested opaque slots without exhausting the comparison budget", async () => {
+    const runtime = await captureNativeOpaqueTree();
+    const column = patternFiber("NativeColumn", [
+      opaqueFiber("NativeCard", [opaqueFiber("Editor", [])]),
+    ]);
+    const patterns = [
+      opaqueFiber("NativeVendorRoot", [
+        opaqueFiber(
+          "NativeGrid",
+          Array.from({ length: 12 }, () => column),
+        ),
+      ]),
+    ];
+    const result = matchPatternToRuntime(patterns, runtime, { maxSteps: 2_000 });
+    expect(result.report.budgetExhausted).toBe(false);
+    expect(result.report.status).toBe("partial");
+  });
+
   it("matches wide independent decisions without consuming the call stack", () => {
     const patterns = Array.from({ length: 5_000 }, (_value, index) =>
       branch(`wide-${index}`, [patternHost("b")], [patternHost("i")]),
