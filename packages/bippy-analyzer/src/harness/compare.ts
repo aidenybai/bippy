@@ -889,13 +889,7 @@ class Matcher {
       queue.push(...siblings);
     }
     const patternHead = pattern.passedChildren[0];
-    if (patternHead?.kind === "fiber") {
-      candidates.sort(
-        (left, right) =>
-          Number(this.headMatches(patternHead, right.siblings[right.start])) -
-          Number(this.headMatches(patternHead, left.siblings[left.start])),
-      );
-    } else if (patternHead?.kind === "opaque" && patternHead.runtimeNames !== null) {
+    if (patternHead?.kind === "opaque" && patternHead.runtimeNames !== null) {
       candidates.sort(
         (left, right) =>
           Number(this.opaqueNameAgrees(patternHead, right.siblings[right.start])) -
