@@ -554,11 +554,16 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
   }
 };
 
-const guardAnalysisCache = new WeakMap<Guard, GuardAnalysis>();
+const MAX_CACHED_GUARD_ANALYSES = 16;
+const guardAnalysisCache = new Map<Guard, GuardAnalysis>();
 
 const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   const cached = guardAnalysisCache.get(guard);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) {
+    guardAnalysisCache.delete(guard);
+    guardAnalysisCache.set(guard, cached);
+    return cached;
+  }
   const components = independentComponents([guard]);
   const componentByKey = new Map<string, GuardComponent>();
   let isSatisfiable = true;
@@ -568,6 +573,10 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   }
   const analysis = { componentByKey, isSatisfiable };
   guardAnalysisCache.set(guard, analysis);
+  if (guardAnalysisCache.size > MAX_CACHED_GUARD_ANALYSES) {
+    const oldest = guardAnalysisCache.keys().next();
+    if (!oldest.done) guardAnalysisCache.delete(oldest.value);
+  }
   return analysis;
 };
 
@@ -579,7 +588,7 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
     const component = baseAnalysis.componentByKey.get(key);
     if (component !== undefined) overlappingComponents.add(component);
   }
-  if (overlappingComponents.size === 0) return getGuardAnalysis(candidate).isSatisfiable;
+  if (overlappingComponents.size === 0) return solveGuards([candidate]) !== null;
   return (
     solveGuards([
       ...[...overlappingComponents].flatMap((component) => component.guards),

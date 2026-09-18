@@ -161,52 +161,32 @@ export const negateGuard = (guard: Guard): Guard => {
   return { kind: "not", operand: guard };
 };
 
-const variableKeyCache = new WeakMap<SymbolicVariable, string>();
-const guardKeyCache = new WeakMap<Guard, string>();
-
-const getVariableKey = (variable: SymbolicVariable): string => {
-  const cached = variableKeyCache.get(variable);
-  if (cached !== undefined) return cached;
-  const key = JSON.stringify([variable.input, variable.path, variable.measure]);
-  variableKeyCache.set(variable, key);
-  return key;
-};
+const getVariableKey = (variable: SymbolicVariable): string =>
+  JSON.stringify([variable.input, variable.path, variable.measure]);
 
 const getGuardKey = (guard: Guard): string => {
-  const cached = guardKeyCache.get(guard);
-  if (cached !== undefined) return cached;
-  let key: string;
   switch (guard.kind) {
     case "constant":
-      key = JSON.stringify([guard.kind, guard.value]);
-      break;
+      return JSON.stringify([guard.kind, guard.value]);
     case "truthy":
-      key = JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
-      break;
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
     case "eq":
-      key = JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
-      break;
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
     case "compare":
-      key = JSON.stringify([
+      return JSON.stringify([
         guard.kind,
         getVariableKey(guard.variable),
         guard.operator,
         guard.value,
       ]);
-      break;
     case "in-set":
-      key = JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
-      break;
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
     case "not":
-      key = JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
-      break;
+      return JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
     case "and":
     case "or":
-      key = JSON.stringify([guard.kind, guard.operands.map(getGuardKey)]);
-      break;
+      return JSON.stringify([guard.kind, guard.operands.map(getGuardKey)]);
   }
-  guardKeyCache.set(guard, key);
-  return key;
 };
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
