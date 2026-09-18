@@ -847,14 +847,7 @@ class Matcher {
     );
   }
 
-  private isSettledSlotMatch(
-    pattern: PatternOpaque,
-    actual: RuntimeFiberSnapshot,
-    { tally }: SlotMatch,
-  ): boolean {
-    const head = pattern.passedChildren[0];
-    if (head?.kind === "fiber" || head?.kind === "text") return true;
-    if (head?.kind === "opaque" && this.opaqueNameAgrees(head, actual)) return true;
+  private isSettledSlotMatch({ tally }: SlotMatch): boolean {
     return tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
   }
 
@@ -896,7 +889,13 @@ class Matcher {
       queue.push(...siblings);
     }
     const patternHead = pattern.passedChildren[0];
-    if (patternHead?.kind === "opaque" && patternHead.runtimeNames !== null) {
+    if (patternHead?.kind === "fiber") {
+      candidates.sort(
+        (left, right) =>
+          Number(this.headMatches(patternHead, right.siblings[right.start])) -
+          Number(this.headMatches(patternHead, left.siblings[left.start])),
+      );
+    } else if (patternHead?.kind === "opaque" && patternHead.runtimeNames !== null) {
       candidates.sort(
         (left, right) =>
           Number(this.opaqueNameAgrees(patternHead, right.siblings[right.start])) -
@@ -911,7 +910,7 @@ class Matcher {
         this.attempt(() => this.matchSlotAt(pattern, siblings, start, path)),
       );
       if (result) {
-        if (this.isSettledSlotMatch(pattern, siblings[start], result)) {
+        if (this.isSettledSlotMatch(result)) {
           return { match: result, divergence: null };
         }
         if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;

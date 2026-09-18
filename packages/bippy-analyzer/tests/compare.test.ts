@@ -73,7 +73,7 @@ const NativeVendorRoot = ({ children }: NativeWrapperProps) =>
 const NativeGrid = ({ children }: NativeWrapperProps) => createElement("main", null, children);
 const NativeColumn = ({ children }: NativeWrapperProps) => createElement("article", null, children);
 const NativeCard = ({ children }: NativeWrapperProps) => createElement("div", null, children);
-const NativeGeneratedEditor = () => createElement("textarea");
+const Editor = () => createElement("textarea");
 const NativeText = ({ children }: NativeWrapperProps) => createElement("p", null, children);
 const NativeLegacyMiss = () => createElement("aside");
 const NativeLegacyMatch = () => createElement("main");
@@ -117,7 +117,7 @@ const createNativeOpaqueTree = (): ReactNode =>
         createElement(
           NativeColumn,
           { key: columnIndex },
-          createElement(NativeCard, null, createElement(NativeGeneratedEditor)),
+          createElement(NativeCard, null, createElement(Editor)),
         ),
       ),
     ),
@@ -177,7 +177,7 @@ describe("comparePatternToRuntime", () => {
   it("finds nested opaque slots without exhausting the comparison budget", () => {
     const runtime = captureNativeTree(createNativeOpaqueTree());
     const column = patternFiber("NativeColumn", [
-      opaqueFiber("NativeCard", [opaqueFiber("Editor", [])]),
+      patternHost("article", [opaqueFiber("NativeCard", [opaqueFiber("Editor", [])])]),
     ]);
     const patterns = [
       opaqueFiber("NativeVendorRoot", [
@@ -190,6 +190,7 @@ describe("comparePatternToRuntime", () => {
     const result = matchPatternToRuntime(patterns, runtime, { maxSteps: 100 });
     expect(result.report.budgetExhausted).toBe(false);
     expect(result.report.status).toBe("partial");
+    expect(result.report.slotsUnmatched).toBe(0);
   });
 
   it("matches wide independent decisions without consuming the call stack", () => {
