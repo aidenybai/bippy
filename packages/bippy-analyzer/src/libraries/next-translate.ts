@@ -39,6 +39,7 @@ const NEXT_TRANSLATE_CONTEXT: ContextDefinition = {
   name: "NextTranslationContext",
   displayName: "NextTranslationContext",
   defaultValue: UNDEFINED_VALUE,
+  location: null,
 };
 
 const getString = (value: StaticValue): string | null =>
@@ -93,6 +94,7 @@ const getTranslation = (
 ): StaticValue => {
   if (context.kind !== "object") return UNDEFINED_VALUE;
   const namespaces = getObjectProperty(context, "namespaces");
+  if (namespaces.kind !== "object") return UNDEFINED_VALUE;
   const resource = getNestedProperty(getObjectProperty(namespaces, namespace), key);
   const selected = getPluralValue(resource, variables);
   const text = getString(selected);
