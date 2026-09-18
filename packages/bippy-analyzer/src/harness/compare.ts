@@ -248,6 +248,11 @@ interface SlotSearchResult {
   divergence: ComparisonDivergence | null;
 }
 
+interface SlotCandidate {
+  siblings: RuntimeFiberSnapshot[];
+  start: number;
+}
+
 interface FurthestSlotDivergence {
   progress: number;
   divergence: ComparisonDivergence;
@@ -864,27 +869,37 @@ class Matcher {
     path: string[],
   ): Work<SlotSearchResult> {
     const queue: RuntimeFiberSnapshot[] = [actual];
+    const candidates: SlotCandidate[] = [];
+    for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
+      const siblings = queue[queueIndex].children;
+      for (let start = 0; start < siblings.length; start++) candidates.push({ siblings, start });
+      queue.push(...siblings);
+    }
+    const patternHead = pattern.passedChildren[0];
+    if (patternHead?.kind === "opaque" && patternHead.runtimeNames !== null) {
+      candidates.sort(
+        (left, right) =>
+          Number(this.opaqueNameAgrees(patternHead, right.siblings[right.start])) -
+          Number(this.opaqueNameAgrees(patternHead, left.siblings[left.start])),
+      );
+    }
     let best: FurthestSlotDivergence | null = null;
     let bestMatch: SlotMatch | null = null;
-    for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-      const fiber = queue[queueIndex];
-      for (let start = 0; start < fiber.children.length; start++) {
-        const { result, failure } = yield* WorkStack.wait(
-          this.attempt(() => this.matchSlotAt(pattern, fiber.children, start, path)),
-        );
-        if (result) {
-          if (this.isSettledSlotMatch(pattern, fiber.children[start], result)) {
-            return { match: result, divergence: null };
-          }
-          if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
-          continue;
+    for (const { siblings, start } of candidates) {
+      const { result, failure } = yield* WorkStack.wait(
+        this.attempt(() => this.matchSlotAt(pattern, siblings, start, path)),
+      );
+      if (result) {
+        if (this.isSettledSlotMatch(pattern, siblings[start], result)) {
+          return { match: result, divergence: null };
         }
-        const startPosition = this.positions.start.get(fiber.children[start]) ?? 0;
-        if (failure && (!best || failure.position - startPosition > best.progress)) {
-          best = { progress: failure.position - startPosition, divergence: failure.divergence };
-        }
+        if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
+        continue;
       }
-      queue.push(...fiber.children);
+      const startPosition = this.positions.start.get(siblings[start]) ?? 0;
+      if (failure && (!best || failure.position - startPosition > best.progress)) {
+        best = { progress: failure.position - startPosition, divergence: failure.divergence };
+      }
     }
     if (bestMatch) return { match: bestMatch, divergence: null };
     // Passed children that evaluate to nothing (all-empty branches) leave no
