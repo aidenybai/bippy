@@ -2,19 +2,19 @@
 
 ## Artifact baseline
 
-Recomputed at analyzer commit `af063a8c` from the current
+Recomputed at analyzer commit `d1ab64fa` from the current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 
 - Manifest entries: 500
 - Result rows: 500; missing rows: 0; manifest revision mismatches: 0
-- Membership: 340 exact, 98 partial, 25 truncated, 18 mismatch, 7 unresolved
-- Strict coverage: 367 rows at 100%, 95 between 0% and 100%, 26 at 0%, and 12
-  without a report. Of the 367 rows at 100%, 27 remain partial or truncated.
-- Explicit uncertainty: 96 rows with opaque or wildcard matching
-- Incompleteness: 75 rows with state-space omissions; 4 budget-exhausted comparisons
-- Replay: 8 contradiction rows, 42 incomplete rows, 141 rows without replay evidence
-- Native evidence: 18 live-result rows, 470 saved-capture replay rows, 12 rows without a native
+- Membership: 343 exact, 94 partial, 26 truncated, 18 mismatch, 7 unresolved
+- Strict coverage: 371 rows at 100%, 91 between 0% and 100%, 26 at 0%, and 12
+  without a report. Of the 371 rows at 100%, 28 remain partial or truncated.
+- Explicit uncertainty: 92 rows with opaque or wildcard matching
+- Incompleteness: 74 rows with state-space omissions; 4 budget-exhausted comparisons
+- Replay: 8 contradiction rows, 41 incomplete rows, 141 rows without replay evidence
+- Native evidence: 21 live-result rows, 467 saved-capture replay rows, 12 rows without a native
   report
 - Recorded environment/install failures: 0. The artifact gives no failure provenance for the 12
   static-only rows, so this is not evidence that their native setup succeeded.
@@ -47,7 +47,7 @@ The 12 rows without native reports are `api-platform-admin`, `commerce`, `conten
 
 ### Incomplete replay outputs
 
-The 80 rows are:
+The 79 rows are:
 
 `abdanzamzam-rgb-color-generator`, `abhigk-color-generator-reactjs`,
 `adeshinababatunde-color-generator`, `agusprats-colorgenerator`,
@@ -70,7 +70,7 @@ The 80 rows are:
 `mermaid-reactflow`, `mirayavandiepen-drag-track`, `mlimad-color-generator`,
 `multimart-react-ecommerce`, `muzi59418-creator-personal-dashboard-template`,
 `nadiamartel-color-generator`, `nahuel61920-color-generator`, `next-ecommerce-shopco`,
-`nhungbi-react-hangman`, `nithya98-react-color-generator`, `nostackdevv-react-noteapp`,
+`nhungbi-react-hangman`, `nithya98-react-color-generator`,
 `obrm-color-generator`, `odiriteddie-color-generator-react`, `p32929-notes`,
 `palgorhythm-todotshooks`, `pktcodes-color-generator-react-project`,
 `pktcodes-color-generator-react-project-v2`, `pncsoares-hangman`,
@@ -413,3 +413,16 @@ captures replay at 100% strict coverage with no opaque or wildcard match. Four a
 `darkbits018-stopwatch-react` retains two unbounded authored lists and incomplete escaped timer
 states. `hetpatel4065-dice-app` is exact for the native initial tree, but five unwitnessed Font
 Awesome source assignments remain replay-incomplete.
+
+## Legacy UI package boundaries
+
+Fresh pinned captures resolve four more initial trees without opaque or wildcard matching.
+`svendotdev-fm-tip-calculator` now uses its declared TypeScript path mapping and exact Yarn lock;
+`epranka-descent-app` analyzes its installed Cleave React wrapper; and
+`nostackdevv-react-noteapp` analyzes its Bootstrap, React Overlays, and Font Awesome wrappers. All
+three are exact with one passing replay assignment.
+
+`hanzalahwaheed-react-notes-app` analyzes its two React Icons and reaches 100% strict coverage. It
+remains truncated: the authored storage-derived notes list is unbounded, and two non-native list
+assignments remain replay-incomplete. No note data or interaction was invented to hide that
+limitation.

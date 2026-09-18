@@ -268275,8 +268275,8 @@
       "id": "svendotdev-fm-tip-calculator",
       "revision": "867d08a1b25ea539ec0ae50a12042aec6d46e797",
       "framework": "spa",
-      "capturedAt": "2026-09-12T18:44:48.876Z",
-      "durationMs": 327,
+      "capturedAt": "2026-09-18T20:29:03.781Z",
+      "durationMs": 16632,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -268289,21 +268289,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 9,
-          "textCount": 0,
+          "fiberCount": 67,
+          "textCount": 4,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 3
+          "modulesLoaded": 12
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 6,
-        "matchedText": 0,
-        "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 60,
+        "matchedFibers": 62,
+        "matchedText": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -268313,13 +268313,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 66,
-        "staticFibers": 8,
+        "staticFibers": 66,
         "coverage": 1,
-        "strictCoverage": 0.09090909090909091,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 8,
+        "stepsUsed": 66,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -268327,12 +268327,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 8,
+          "nodes": 66,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 2,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -268358,7 +268358,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-12T18:20:58.047Z",
+      "note": null,
       "failure": null
     },
     {
@@ -322874,8 +322874,8 @@
       "id": "hanzalahwaheed-react-notes-app",
       "revision": "41caa5fcaaafb3e189b4cb7276711af8050225fc",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:20:58.439Z",
-      "durationMs": 327,
+      "capturedAt": "2026-09-18T20:29:03.768Z",
+      "durationMs": 8735,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -322890,21 +322890,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 66,
+          "fiberCount": 114,
           "textCount": 2,
           "branchCount": 1,
           "repeatCount": 1,
-          "opaqueCount": 7,
+          "opaqueCount": 0,
           "unknownCount": 2,
-          "modulesLoaded": 7
+          "modulesLoaded": 12
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 45,
+        "matchedFibers": 92,
         "matchedText": 2,
-        "opaqueSubtrees": 6,
-        "opaqueSkippedFibers": 47,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -322914,13 +322914,13 @@
         "branchesResolved": 1,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "truncated",
         "runtimeFibers": 94,
-        "staticFibers": 53,
+        "staticFibers": 94,
         "coverage": 1,
-        "strictCoverage": 0.5,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 57,
+        "stepsUsed": 98,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -322928,12 +322928,12 @@
         "stateCount": 5,
         "clusters": 1,
         "tree": {
-          "nodes": 116,
+          "nodes": 205,
           "inputs": 2,
           "guards": 5,
           "branches": 1,
           "repeats": 1,
-          "opaque": 13,
+          "opaque": 0,
           "wildcards": 2
         },
         "matchedState": {
@@ -322948,7 +322948,7 @@
               "kind": "branch",
               "variable": "truthy(#1)",
               "reason": "if (unknown(JSON.parse))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/App.js:42:5",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -322961,7 +322961,7 @@
             {
               "kind": "repeat",
               "variable": "len(#1)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -322992,7 +322992,7 @@
               "kind": "branch",
               "variable": "truthy(#1)",
               "reason": "if (unknown(JSON.parse))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/App.js:42:5",
               "side": 0,
               "guard": "truthy(#1)",
               "status": "possible"
@@ -323001,7 +323001,7 @@
               "kind": "repeat",
               "variable": "len(#1)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
               "side": 0,
               "guard": "eq(len(#1), 0)",
               "status": "possible"
@@ -323010,7 +323010,7 @@
               "kind": "repeat",
               "variable": "len(#1)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
               "side": 1,
               "guard": "len(#1) > 0",
               "status": "possible"
@@ -323019,7 +323019,7 @@
               "kind": "branch",
               "variable": "truthy(#1)",
               "reason": "if (unknown(JSON.parse))",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/App.js:42:5",
               "side": 1,
               "guard": "not(truthy(#1))",
               "status": "witnessed"
@@ -323048,14 +323048,14 @@
                 "kind": "branch",
                 "variable": "truthy(#1)",
                 "reason": "if (unknown(JSON.parse))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/App.js:42:5",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#1)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
                 "count": 1
               }
             ],
@@ -323074,14 +323074,14 @@
                 "kind": "branch",
                 "variable": "truthy(#1)",
                 "reason": "if (unknown(JSON.parse))",
-                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/App.js:42:5",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/App.js:42:5",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#1)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-nine/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hanzalahwaheed-react-notes-app/src/components/NotesList.js:7:14",
                 "count": 2
               }
             ],
@@ -323093,7 +323093,7 @@
         ]
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:20:56.256Z",
+      "note": null,
       "failure": null
     },
     {
@@ -324426,8 +324426,8 @@
       "id": "nostackdevv-react-noteapp",
       "revision": "67d2dbbdbdb528cab9db47dfd54185b7af58e5be",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:31:44.141Z",
-      "durationMs": 305,
+      "capturedAt": "2026-09-18T20:30:25.687Z",
+      "durationMs": 754,
       "runtime": {
         "reactVersion": "16.10.2",
         "rendererName": "react-dom",
@@ -324440,227 +324440,76 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 43,
-          "textCount": 5,
-          "branchCount": 1,
-          "repeatCount": 1,
-          "opaqueCount": 18,
-          "unknownCount": 2,
-          "modulesLoaded": 7
+          "fiberCount": 17,
+          "textCount": 0,
+          "branchCount": 0,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 0,
+          "modulesLoaded": 138
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "matchedFibers": 8,
+        "matchedFibers": 16,
         "matchedText": 0,
-        "opaqueSubtrees": 4,
-        "opaqueSkippedFibers": 8,
-        "slotsMatched": 3,
-        "slotsUnmatched": 1,
-        "opaqueRenamed": 1,
-        "unmatchedSlots": [
-          {
-            "path": "root > <App> [ClassComponent] > <div> [HostComponent] > <Navbar> [ClassComponent] > <nav> [HostComponent] > <AddNote> [ClassComponent] > <Modal> (opaque) > <Form> (opaque)",
-            "reason": "Form from react-bootstrap is not analyzed",
-            "head": "<ContextProvider> [ContextProvider]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <App> [ClassComponent] > <div> [HostComponent] > <Navbar> [ClassComponent] > <nav> [HostComponent] > <AddNote> [ClassComponent] > <Modal> (opaque) > <Form> (opaque)[1]",
-              "expected": "<Modal.Body> (opaque)",
-              "actual": "<end of children>"
-            }
-          }
-        ],
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 1,
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 16,
-        "staticFibers": 36,
+        "staticFibers": 16,
         "coverage": 1,
-        "strictCoverage": 0.5,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 30,
+        "stepsUsed": 16,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 5,
-        "stateCount": 5,
-        "clusters": 1,
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
         "tree": {
-          "nodes": 69,
-          "inputs": 3,
-          "guards": 5,
-          "branches": 1,
-          "repeats": 1,
-          "opaque": 34,
-          "wildcards": 2
+          "nodes": 16,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 0
         },
         "matchedState": {
-          "index": 1,
-          "conditions": [
-            {
-              "kind": "transition",
-              "commit": 1,
-              "commitCount": 2
-            },
-            {
-              "kind": "state-update",
-              "variable": "choice(#1)",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "alternativeIndex": 0,
-              "alternativeCount": 2
-            }
-          ]
+          "index": 0,
+          "conditions": []
         },
         "closestState": null,
-        "omitted": {
-          "total": 1,
-          "omissions": [
-            {
-              "kind": "repeat",
-              "variable": "len(#2.notes)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
-              "countsAbove": 2,
-              "max": null,
-              "conditions": []
-            }
-          ]
-        },
+        "omitted": null,
         "coverage": {
-          "sides": [
-            {
-              "kind": "commit",
-              "variable": "commit",
-              "reason": "committed render",
-              "location": null,
-              "side": 0,
-              "guard": "eq(choice(commit), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "commit",
-              "variable": "commit",
-              "reason": "committed render",
-              "location": null,
-              "side": 1,
-              "guard": "eq(choice(commit), 1)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(#1)",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "side": 0,
-              "guard": "eq(choice(#1), 0)",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "choice(#1)",
-              "reason": "state setter escapes to code that is not evaluated",
-              "location": null,
-              "side": 1,
-              "guard": "not(eq(choice(#1), 0))",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#2.notes)",
-              "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
-              "side": 0,
-              "guard": "eq(len(#2.notes), 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "repeat",
-              "variable": "len(#2.notes)",
-              "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
-              "side": 1,
-              "guard": "len(#2.notes) > 0",
-              "status": "possible"
-            }
-          ],
-          "witnessed": 2,
-          "possible": 4,
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "verification": "sample-incomplete",
-        "states": 5,
-        "assignments": 4,
-        "replayed": 4,
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
         "maxReplayed": 16,
         "mismatched": [],
-        "incomplete": [
-          {
-            "stateIndices": [
-              0,
-              3
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.notes)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
-                "count": 1
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              4
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.notes)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-nine/nostackdevv-react-noteapp/src/components/Notes.js:7:7",
-                "count": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          }
-        ]
+        "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:31:41.891Z",
+      "note": "runtime replayed from 2026-09-18T20:29:24.715Z",
       "failure": null
     },
     {
@@ -327446,8 +327295,8 @@
       "id": "epranka-descent-app",
       "revision": "b4eb0109020d266b431cc2c62b0482426c3bcf04",
       "framework": "spa",
-      "capturedAt": "2026-09-14T16:27:51.481Z",
-      "durationMs": 403,
+      "capturedAt": "2026-09-18T20:29:25.464Z",
+      "durationMs": 5215,
       "runtime": {
         "reactVersion": "16.14.0",
         "rendererName": "react-dom",
@@ -327460,21 +327309,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 80,
+          "fiberCount": 89,
           "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 9,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 7
+          "modulesLoaded": 9
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 68,
+        "matchedFibers": 86,
         "matchedText": 2,
-        "opaqueSubtrees": 9,
-        "opaqueSkippedFibers": 18,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -327484,13 +327333,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 88,
-        "staticFibers": 79,
+        "staticFibers": 88,
         "coverage": 1,
-        "strictCoverage": 0.7954545454545454,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 79,
+        "stepsUsed": 88,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -327498,12 +327347,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 79,
+          "nodes": 88,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 9,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -327529,7 +327378,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T16:27:48.898Z",
+      "note": null,
       "failure": null
     },
     {
