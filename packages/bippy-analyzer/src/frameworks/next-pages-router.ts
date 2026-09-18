@@ -20,7 +20,7 @@ import type { ModuleRecord } from "../graph/module-types.js";
 import { toElementType } from "../react/element-type.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 import type { StaticRenderResult } from "../render/types.js";
-import type { StaticValue } from "../types.js";
+import type { StaticObjectValue, StaticValue } from "../types.js";
 import { applyNextCompilerOptions, evaluateNextConfig } from "./next-config.js";
 import { DEFAULT_DOCUMENT_STUB, type NextModel } from "./next-externals.js";
 import {
@@ -185,7 +185,7 @@ const readAppProps = (
 const readDocumentProps = (
   renderer: StaticRenderer,
   interpreter: Interpreter,
-): StaticValue => {
+): StaticObjectValue => {
   const capturedNextData = renderer.options.observations?.globals?.[NEXT_DATA_GLOBAL];
   return objectFromRecord({
     __NEXT_DATA__:
