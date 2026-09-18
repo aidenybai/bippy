@@ -53,7 +53,10 @@ const getFunctionName = (value: Function): string | null => {
 };
 
 const getContext = (value: Function): object | null => {
-  const context = getAliasedProperty(value, "_contextRef", "__l");
+  const context =
+    getAliasedProperty(value, "_contextRef", "__l") ??
+    getProperty(value, "__") ??
+    getProperty(value, "contextType");
   return (typeof context === "object" && context !== null) || typeof context === "function"
     ? context
     : null;
