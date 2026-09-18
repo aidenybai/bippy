@@ -161,6 +161,34 @@ export const negateGuard = (guard: Guard): Guard => {
   return { kind: "not", operand: guard };
 };
 
+const getVariableKey = (variable: SymbolicVariable): string =>
+  JSON.stringify([variable.input, variable.path, variable.measure]);
+
+const getGuardKey = (guard: Guard): string => {
+  switch (guard.kind) {
+    case "constant":
+      return JSON.stringify([guard.kind, guard.value]);
+    case "truthy":
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
+    case "eq":
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
+    case "compare":
+      return JSON.stringify([
+        guard.kind,
+        getVariableKey(guard.variable),
+        guard.operator,
+        guard.value,
+      ]);
+    case "in-set":
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
+    case "not":
+      return JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
+    case "and":
+    case "or":
+      return JSON.stringify([guard.kind, guard.operands.map(getGuardKey)]);
+  }
+};
+
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   const flattened = operands.flatMap((operand) =>
     operand.kind === kind ? operand.operands : [operand],
@@ -168,12 +196,15 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
   if (flattened.some((operand) => operand.kind === "constant" && operand.value === absorbing))
     return constantGuard(absorbing);
   const remaining: Guard[] = [];
+  const remainingKeys = new Set<string>();
   for (const operand of flattened) {
     if (operand.kind === "constant") continue;
-    if (remaining.some((kept) => isSameGuard(kept, operand))) continue;
+    const key = getGuardKey(operand);
+    if (remainingKeys.has(key)) continue;
     const complement = negateGuard(operand);
-    if (remaining.some((kept) => isSameGuard(kept, complement))) return constantGuard(absorbing);
+    if (remainingKeys.has(getGuardKey(complement))) return constantGuard(absorbing);
     remaining.push(operand);
+    remainingKeys.add(key);
   }
   if (remaining.length === 0) return constantGuard(!absorbing);
   return remaining.length === 1 ? remaining[0] : { kind, operands: remaining };
