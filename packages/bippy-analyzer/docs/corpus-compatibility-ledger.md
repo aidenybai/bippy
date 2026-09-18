@@ -2,29 +2,28 @@
 
 ## Artifact baseline
 
-Recomputed at analyzer commit `6682ba8f6fab1259387c18115471087b1157024e` from the current
+Recomputed at analyzer commit `39c4235c99a74394712869ba0f8a7c113a2dbbc9` from the current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 
 - Manifest entries: 500
 - Result rows: 500; missing rows: 0; manifest revision mismatches: 0
-- Membership: 329 exact, 109 partial, 23 truncated, 20 mismatch, 7 unresolved
-- Strict coverage: 354 rows at 100%, 106 between 0% and 100%, 28 at 0%, and 12
-  without a report. Of the 354 rows at 100%, 25 remain partial or truncated.
+- Membership: 330 exact, 109 partial, 23 truncated, 19 mismatch, 7 unresolved
+- Strict coverage: 355 rows at 100%, 106 between 0% and 100%, 27 at 0%, and 12
+  without a report. Of the 355 rows at 100%, 25 remain partial or truncated.
 - Explicit uncertainty: 107 rows with opaque or wildcard matching
 - Incompleteness: 75 rows with state-space omissions; 4 budget-exhausted comparisons
 - Replay: 8 contradiction rows, 41 incomplete rows, 142 rows without replay evidence
-- Native evidence: 15 live-result rows, 473 saved-capture replay rows, 12 rows without a native
+- Native evidence: 16 live-result rows, 472 saved-capture replay rows, 12 rows without a native
   report
 - Recorded environment/install failures: 0. The artifact gives no failure provenance for the 12
   static-only rows, so this is not evidence that their native setup succeeded.
 
-The 20 native mismatches are `actual`, `blocknote`, `clip`, `ens-app-v3`,
+The 19 native mismatches are `actual`, `blocknote`, `clip`, `ens-app-v3`,
 `gabrielwr-react-retirement-calculator`, `guohub8080-mtkit`, `heroicons-dev`,
-`logicmason5-many-short-games-using-reactjs`, `museeks`, `novel`, `openai-translator`,
-`phar-converter`, `quocbao19982009-todo-app`, `remix-blocks`, `rendy278-kanban-board`,
-`shivankacker-type`, `standardnotes`, `taxepfa-taxepfa-github-io`, `teable`, and
-`theonlyrasheed-color-generator`.
+`logicmason5-many-short-games-using-reactjs`, `museeks`, `novel`, `phar-converter`,
+`quocbao19982009-todo-app`, `remix-blocks`, `rendy278-kanban-board`, `shivankacker-type`,
+`standardnotes`, `taxepfa-taxepfa-github-io`, `teable`, and `theonlyrasheed-color-generator`.
 
 The 4 exhausted comparisons are `ens-app-v3`, `gabrielwr-react-retirement-calculator`,
 `rendy278-kanban-board`, and `taxepfa-taxepfa-github-io`.
@@ -372,3 +371,17 @@ diagnostics and all 180 wildcards, reducing the symbolic tree from 478 nodes wit
 474 nodes with none. Its one assignment replays without contradiction. Teable remains an honest
 mismatch: the native auto scrollbar mounted one additional Radix `ForwardRef` below `Presence`,
 and `NextSeo`, Sonner, and React Joyride still account for three opaque static nodes.
+
+## Runtime compiler defines
+
+`openai-translator@3536d2869175a5211a88523a44183d9fc9136fda` defines `BUILD_TIME` from
+`new Date().toISOString()` in its Vite config. Loading that config independently for the dev server
+and static renderer necessarily produced different strings, so the otherwise concrete trees
+diverged at the rendered build timestamp.
+
+The corpus manifest now names compiler expressions that require runtime capture. A temporary module
+served through the same dev server evaluates those expressions under the active bundler
+configuration, records their JSON values with the native observations, and gives those values
+precedence over the later static config load. A fresh native capture at
+`2026-09-18T19:38:01.867Z` is exact in 498 steps with 100% strict coverage, no opaque or wildcard
+node, and all six sampled assignments replaying without contradiction.

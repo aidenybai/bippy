@@ -73202,8 +73202,8 @@
       "id": "openai-translator",
       "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
       "framework": "react-router",
-      "capturedAt": "2026-09-18T19:21:06.698Z",
-      "durationMs": 29367,
+      "capturedAt": "2026-09-18T19:38:01.867Z",
+      "durationMs": 32015,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -73227,8 +73227,8 @@
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 0,
-        "matchedText": 0,
+        "matchedFibers": 487,
+        "matchedText": 7,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
@@ -73237,20 +73237,16 @@
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 0,
+        "branchesResolved": 3,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "status": "mismatch",
-        "runtimeFibers": 498,
+        "transparentFibers": 4,
+        "status": "exact",
+        "runtimeFibers": 494,
         "staticFibers": 513,
-        "coverage": 0,
-        "strictCoverage": 0,
-        "divergence": {
-          "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent][1]",
-          "expected": "\"2026-09-18T19:21:07.267Z\"",
-          "actual": "\"2026-09-18T19:14:58.330Z\""
-        },
-        "stepsUsed": 27,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 498,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -73266,15 +73262,41 @@
           "opaque": 0,
           "wildcards": 0
         },
-        "matchedState": null,
-        "closestState": {
-          "index": 3,
-          "divergence": {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent][1]",
-            "expected": "\"2026-09-18T19:21:07.267Z\"",
-            "actual": "\"2026-09-18T19:14:58.330Z\""
-          }
+        "matchedState": {
+          "index": 6,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(truthy(#6))))), truthy(#6))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/pages/Translator.tsx:204:20",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(truthy(#1), truthy(#2))",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#3), 0)), truthy(#4))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:54:8",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            }
+          ]
         },
+        "closestState": null,
         "omitted": null,
         "coverage": {
           "sides": [
@@ -73294,7 +73316,7 @@
               "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
               "side": 0,
               "guard": "or(and(eq(choice(commit), 0), or(truthy(#1), truthy(#2))), and(eq(choice(commit), 1), or(truthy(#1), truthy(#2))))",
-              "status": "possible"
+              "status": "witnessed"
             },
             {
               "kind": "branch",
@@ -73312,7 +73334,7 @@
               "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:54:8",
               "side": 1,
               "guard": "or(and(eq(choice(commit), 0), or(truthy(#1), truthy(#2)), not(and(not(eq(choice(#3), 0)), truthy(#4)))), and(eq(choice(commit), 1), or(truthy(#1), truthy(#2)), not(and(not(eq(choice(#3), 0)), truthy(#4)))))",
-              "status": "possible"
+              "status": "witnessed"
             },
             {
               "kind": "branch",
@@ -73330,7 +73352,7 @@
               "location": null,
               "side": 1,
               "guard": "eq(choice(commit), 1)",
-              "status": "possible"
+              "status": "witnessed"
             },
             {
               "kind": "branch",
@@ -73348,11 +73370,11 @@
               "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/pages/Translator.tsx:211:18",
               "side": 1,
               "guard": "and(eq(choice(commit), 1), not(and(not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(truthy(#6))))), truthy(#6))))",
-              "status": "possible"
+              "status": "witnessed"
             }
           ],
-          "witnessed": 0,
-          "possible": 8,
+          "witnessed": 4,
+          "possible": 4,
           "unreachable": 0
         }
       },
@@ -73366,7 +73388,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-18T19:15:04.422Z",
+      "note": null,
       "failure": null
     },
     {
