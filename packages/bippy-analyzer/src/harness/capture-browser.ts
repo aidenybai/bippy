@@ -217,6 +217,7 @@ export class BrowserCapturer {
         waitUntil: "domcontentloaded",
         timeout: timeoutMs,
       });
+      await page.mouse.move(-1, -1);
       const requestHeaders = (await response?.request().allHeaders()) ?? null;
       if (options.waitForSelector) {
         await page.waitForSelector(options.waitForSelector, { timeout: timeoutMs });
@@ -225,6 +226,7 @@ export class BrowserCapturer {
       if (commits === 0) {
         // HACK: a cold Vite server can 504 ("Outdated Optimize Dep") the first visit and never mount.
         await page.reload({ waitUntil: "domcontentloaded", timeout: timeoutMs });
+        await page.mouse.move(-1, -1);
         commits = await waitForQuietCommits(page, settleMs, timeoutMs);
       }
       const snapshot = await readSnapshot(page);
