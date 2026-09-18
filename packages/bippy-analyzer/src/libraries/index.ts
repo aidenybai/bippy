@@ -41,6 +41,11 @@ import {
   reactInlineSvgValue,
 } from "./react-inlinesvg.js";
 import {
+  REACT_MARKDOWN_MODELED_EXPORTS,
+  REACT_MARKDOWN_PACKAGES,
+  reactMarkdownValue,
+} from "./react-markdown.js";
+import {
   REACT_LIFECYCLES_COMPAT_PACKAGES,
   reactLifecyclesCompatValue,
 } from "./react-lifecycles-compat.js";
@@ -136,6 +141,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: REACT_INLINESVG_PACKAGES,
     getValue: reactInlineSvgValue,
     modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
+  },
+  {
+    packages: REACT_MARKDOWN_PACKAGES,
+    getValue: reactMarkdownValue,
+    modeledExports: REACT_MARKDOWN_MODELED_EXPORTS,
   },
   { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },

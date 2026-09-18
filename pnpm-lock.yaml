@@ -283,6 +283,12 @@ importers:
       redux-persist:
         specifier: 6.0.0
         version: 6.0.0(react@19.3.0)(redux@5.0.1)
+      remark-parse:
+        specifier: ^11.0.0
+        version: 11.0.0
+      remark-rehype:
+        specifier: ^11.1.2
+        version: 11.1.2
       string.prototype.trim:
         specifier: 1.2.11
         version: 1.2.11
@@ -301,6 +307,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      unified:
+        specifier: ^11.0.5
+        version: 11.0.5
       use-sync-external-store:
         specifier: 1.6.0
         version: 1.6.0(react@19.3.0)

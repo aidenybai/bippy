@@ -22,7 +22,7 @@ export const HAST_JSX_RUNTIME_MODELED_EXPORTS: ModeledExports = {
   "hast-util-to-jsx-runtime": ["toJsxRuntime"],
 };
 
-interface HastJsxRuntimeState {
+export interface HastJsxRuntimeOptions {
   components: StaticValue;
   fragment: StaticValue;
   passKeys: boolean;
@@ -53,7 +53,7 @@ const getChildKeyName = (child: StaticValue): string | null => {
 
 const getElementChildren = (
   node: StaticObjectValue,
-  state: HastJsxRuntimeState,
+  state: HastJsxRuntimeOptions,
 ): StaticValue => {
   const children = getChildren(node);
   if (children === null) return unknownValue("dynamic hast children");
@@ -78,7 +78,7 @@ const getElementProps = (
   node: StaticObjectValue,
   children: StaticValue,
   isCustomComponent: boolean,
-  state: HastJsxRuntimeState,
+  state: HastJsxRuntimeOptions,
 ): StaticObjectValue => {
   const properties = getObjectProperty(node, "properties");
   const entries: StaticObjectEntry[] =
@@ -95,7 +95,7 @@ const getElementProps = (
 const renderNode = (
   value: StaticValue,
   key: string | null,
-  state: HastJsxRuntimeState,
+  state: HastJsxRuntimeOptions,
 ): StaticValue => {
   if (value.kind !== "object") return unknownValue("dynamic hast node");
   const nodeType = getString(getObjectProperty(value, "type"));
@@ -129,14 +129,17 @@ const toJsxRuntime = ([tree, options]: StaticValue[]): StaticValue => {
   if (tree?.kind !== "object" || options?.kind !== "object") {
     return unknownValue("dynamic hast JSX runtime input");
   }
-  const state: HastJsxRuntimeState = {
+  const state: HastJsxRuntimeOptions = {
     components: getObjectProperty(options, "components"),
     fragment: getObjectProperty(options, "Fragment"),
     passKeys: getBoolean(getObjectProperty(options, "passKeys"), true),
     passNode: getBoolean(getObjectProperty(options, "passNode"), false),
   };
-  return renderNode(tree, null, state);
+  return renderHast(tree, state);
 };
+
+export const renderHast = (tree: StaticValue, options: HastJsxRuntimeOptions): StaticValue =>
+  renderNode(tree, null, options);
 
 export const hastJsxRuntimeValue: LibraryValueProvider = (specifier, importedName) =>
   specifier === "hast-util-to-jsx-runtime" && importedName === "toJsxRuntime"
