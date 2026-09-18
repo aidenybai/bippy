@@ -95,3 +95,10 @@ it("applies a Navigate redirect after its effect commits", async () => {
   expect(tree).toContain("<aside>");
   expect(tree).not.toContain("<Navigate>");
 });
+
+it("settles guarded redirects that converge on opposite routes", async () => {
+  const { result, tree } = await render("/guarded", "src/imperative-navigation.tsx");
+  expect(result.diagnostics).toEqual([]);
+  expect(tree).toContain("<Login>");
+  expect(tree).toContain("<Private>");
+});
