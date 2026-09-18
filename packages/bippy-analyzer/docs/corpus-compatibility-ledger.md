@@ -236,6 +236,25 @@ Ant Design subtrees leave it at 11.11% strict coverage. A transitive Ant Design 
 exposed `rc-field-form`, `rc-motion`, and `rc-util` wildcards and replay contradictions; that incomplete
 override is not retained.
 
+## Settled React Router Await data
+
+`remix-fastify@c69fe3491774b636dd148b409c916006588e37e7` returns a delayed Promise from its
+index loader and renders the fulfillment through React Router's `<Await>`. The manifest initially
+failed under current pnpm because it resolved and added `react-router-dom` at the monorepo root while
+`react-router` belongs to the declared playground workspace. Resolving and installing the matching
+package from that workspace restores the pinned native route without changing application source.
+
+React Router 7.12.0 annotates a settled tracked Promise with `_data` or `_error`. React's Suspense
+implementation attaches a ping listener to the thrown wakeable and retries its boundary after
+settlement. The capture now preserves that settled Promise state, and the router model replays its
+recorded fulfillment or rejection through `<Await>` instead of replacing the child with a wildcard.
+The native regression covers a fulfilled loader Promise independently of the corpus.
+
+Fresh capture `2026-09-18T17:49:10.806Z` and saved-capture replay are exact in 114 steps: all 106
+fibers and eight text nodes match, strict coverage is 100%, there are no opaque or wildcard matches,
+and the single replayed assignment passes. The initial anonymous-session route does not establish
+form submission or rejected-loader behavior.
+
 ## Storybook react-docgen display names
 
 `react-data-table-component@3c080557be7723f6815a7dc9555f21df1164c11f` uses Storybook 7 with

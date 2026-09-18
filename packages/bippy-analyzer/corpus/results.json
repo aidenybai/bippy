@@ -134631,8 +134631,8 @@
       "id": "remix-fastify",
       "revision": "c69fe3491774b636dd148b409c916006588e37e7",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T07:26:53.789Z",
-      "durationMs": 416,
+      "capturedAt": "2026-09-18T17:51:11.248Z",
+      "durationMs": 1358,
       "runtime": {
         "reactVersion": "19.2.0",
         "rendererName": "react-dom",
@@ -134645,91 +134645,101 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 125,
-          "textCount": 7,
-          "branchCount": 1,
+          "fiberCount": 120,
+          "textCount": 8,
+          "branchCount": 0,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
-          "modulesLoaded": 17
+          "unknownCount": 0,
+          "modulesLoaded": 18
         },
         "diagnostics": []
       },
       "report": {
-        "status": "partial",
+        "status": "exact",
         "matchedFibers": 106,
-        "matchedText": 7,
+        "matchedText": 8,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 1,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <HydratedRouter> [FunctionComponent] > <RouterProvider> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <App> [FunctionComponent] > <html> [HostSingleton] > <body> [HostSingleton] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Layout> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Outlet> [FunctionComponent] > <ContextProvider> [ContextProvider] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <Index> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <Await> [FunctionComponent] > <Await> [ContextProvider] > <ResolveAwait> [FunctionComponent] > <h2> [HostComponent]",
-            "reason": "react-router: <Await> resolve settles only at runtime",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"Anonymous\""
-            ]
-          }
-        ],
-        "branchesResolved": 1,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 17,
         "runtimeFibers": 114,
-        "staticFibers": 113,
+        "staticFibers": 114,
         "coverage": 1,
-        "strictCoverage": 0.9912280701754386,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 117,
+        "stepsUsed": 114,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 4,
-        "stateCount": 0,
+        "states": 2,
+        "stateCount": 2,
         "clusters": 0,
         "tree": {
-          "nodes": 0,
-          "inputs": 0,
-          "guards": 0,
+          "nodes": 236,
+          "inputs": 1,
+          "guards": 2,
           "branches": 0,
           "repeats": 0,
           "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
-          "index": 2,
+          "index": 1,
           "conditions": [
             {
               "kind": "transition",
               "commit": 1,
               "commitCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "branch#1",
-              "reason": "react-router: <Await> resolves or rejects only at runtime",
-              "location": null,
-              "alternativeIndex": 0,
-              "alternativeCount": 2
             }
           ]
         },
         "closestState": null,
         "omitted": null,
         "coverage": {
-          "sides": [],
-          "witnessed": 0,
-          "possible": 0,
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
           "unreachable": 0
         }
       },
-      "stateReplay": null,
+      "stateReplay": {
+        "verification": "sample-passed",
+        "incomplete": [],
+        "states": 2,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T08:05:41.562Z",
+      "note": "runtime replayed from 2026-09-18T17:49:10.806Z",
       "failure": null
     },
     {
