@@ -4,13 +4,7 @@ import type { Interpreter } from "../evaluate/interpreter.js";
 import { recordInputSource } from "../evaluate/predicates.js";
 import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
 import { countChildrenExactly } from "../evaluate/react-children.js";
-import {
-  element,
-  hostElement,
-  nativeFunction,
-  omitProps,
-  stubValue,
-} from "../evaluate/stubs.js";
+import { element, hostElement, nativeFunction, omitProps, stubValue } from "../evaluate/stubs.js";
 import { createSearchParamsValue, getSearchParamsString } from "../evaluate/url-search-params.js";
 import {
   FALSE_VALUE,
