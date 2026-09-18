@@ -57,6 +57,7 @@ const createBuiltinEvaluator = (overrides: Partial<BuiltinEvaluator> = {}): Buil
   queueMicrotask: unexpectedOperation,
   bindTask: unexpectedOperation,
   runTaskWithCause: unexpectedOperation,
+  runTaskAlternatives: unexpectedOperation,
   recordStateMutation: unexpectedOperation,
   ...overrides,
 });

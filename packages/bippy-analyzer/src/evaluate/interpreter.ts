@@ -4700,6 +4700,8 @@ export class Interpreter {
       queueMicrotask: (task) => this.queueMicrotask(task, context, location),
       bindTask: (task) => this.bindTask(task, context, location),
       runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
+      runTaskAlternatives: (causes, task, reason) =>
+        this.runTaskAlternatives(causes, task, reason, context, location),
       isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
       setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
       materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
