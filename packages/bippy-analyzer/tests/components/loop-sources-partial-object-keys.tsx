@@ -1,11 +1,7 @@
-import { createElement, type ReactNode } from "react";
+import { createElement } from "react";
 
 interface DynamicProps {
   [key: string]: unknown;
-}
-
-interface ElementProps extends DynamicProps {
-  children: ReactNode;
 }
 
 const copyProps = (source: DynamicProps): DynamicProps => {
@@ -17,8 +13,8 @@ const copyProps = (source: DynamicProps): DynamicProps => {
 };
 
 const App = () => {
-  const dynamicProps: DynamicProps = Reflect.get(globalThis, "__bippyPartialProps") ?? {};
-  const props: ElementProps = {
+  const dynamicProps = Math.random() > 0.5 ? { id: "first" } : { className: "second" };
+  const props = {
     ...dynamicProps,
     children: createElement("text", null, "kept"),
   };
