@@ -777,15 +777,6 @@ export const joinObjectEntries = (
   predicate: string | null,
 ): StaticObjectEntry[] => {
   const pathObjects = pathEntries.map((entries) => objectValue(entries));
-  const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
-  if (joinedKeys === null) {
-    return [
-      {
-        kind: "spread",
-        value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
-      },
-    ];
-  }
   const joinedEntry = (key: string): StaticObjectEntry =>
     getPropertyEntry(
       key,
@@ -804,6 +795,32 @@ export const joinObjectEntries = (
         predicate,
       ),
     );
+  const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
+  if (joinedKeys === null) {
+    const guaranteedPathKeys = pathObjects.map(
+      (pathObject) => new Set(getGuaranteedObjectEnumerableKeys(pathObject)),
+    );
+    const [firstPathKeys] = guaranteedPathKeys;
+    const commonKeys = firstPathKeys
+      ? [...firstPathKeys].filter((key) =>
+          guaranteedPathKeys.every((pathKeys) => pathKeys.has(key)),
+        )
+      : [];
+    const omitted = new Set(commonKeys);
+    return [
+      {
+        kind: "spread",
+        value: branchValue(
+          pathObjects.map((pathObject) => omitObjectKeys(pathObject, omitted)),
+          reason,
+          location,
+          preferredIndex,
+          predicate,
+        ),
+      },
+      ...commonKeys.map(joinedEntry),
+    ];
+  }
   const lastSpreadIndex = original.findLastIndex((entry) => entry.kind === "spread");
   const placedKeys = new Set<string>();
   const entries = original.map((entry, index) => {
@@ -905,17 +922,19 @@ const omitObjectKeysShared = (
       else entries.push(entry);
       continue;
     }
-    const rest = omitSpreadKeys(entry.value, omitted, results, omitOpaqueSpread);
-    if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
-      results.set(object, rest);
-      return rest;
-    }
-    if (rest === entry.value) {
+    const spreadOmittedKeys = new Set([...(entry.omittedKeys ?? []), ...omitted]);
+    const rest = omitSpreadKeys(entry.value, spreadOmittedKeys, results, omitOpaqueSpread);
+    const omittedKeys = [...spreadOmittedKeys];
+    if (
+      rest === entry.value &&
+      omittedKeys.length === (entry.omittedKeys?.length ?? 0) &&
+      omittedKeys.every((key) => entry.omittedKeys?.includes(key))
+    ) {
       entries.push(entry);
       continue;
     }
     isChanged = true;
-    entries.push({ kind: "spread", value: rest });
+    entries.push({ kind: "spread", value: rest, omittedKeys });
   }
   const result = isChanged ? objectValue(entries) : object;
   results.set(object, result);
