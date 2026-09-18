@@ -33,11 +33,7 @@ import {
   MOBX_REACT_PACKAGES,
   mobxValue,
 } from "./mobx.js";
-import {
-  NEXT_AUTH_MODELED_EXPORTS,
-  NEXT_AUTH_PACKAGES,
-  nextAuthValue,
-} from "./next-auth.js";
+import { NEXT_AUTH_MODELED_EXPORTS, NEXT_AUTH_PACKAGES, nextAuthValue } from "./next-auth.js";
 import {
   NEXT_TRANSLATE_MODELED_EXPORTS,
   NEXT_TRANSLATE_PACKAGES,
@@ -94,6 +90,7 @@ import {
   useSyncExternalStoreValue,
 } from "./use-sync-external-store.js";
 import { VITE_PACKAGES, viteValue } from "./vite.js";
+import { ZUSTAND_MODELED_EXPORTS, ZUSTAND_PACKAGES, zustandValue } from "./zustand.js";
 
 // Libraries the harness models instead of analyzing: their runtime output
 // depends on a build-time transform (macros) or on data only present at runtime,
@@ -195,6 +192,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: UNPLUGIN_AUTO_IMPORT_PACKAGES, getValue: unpluginAutoImportValue },
   { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
   { packages: VITE_PACKAGES, getValue: viteValue },
+  {
+    packages: ZUSTAND_PACKAGES,
+    getValue: zustandValue,
+    modeledExports: ZUSTAND_MODELED_EXPORTS,
+  },
 ];
 
 const MODELED_PACKAGES: ReadonlySet<string> = new Set(

@@ -119,6 +119,67 @@ export default () => (
 );
 `;
 
+const ZUSTAND_SOURCE = `
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
+import { useEffect } from "react";
+
+interface CounterState {
+  count: number;
+  label: string;
+  increment: () => void;
+}
+
+const useCounter = create<CounterState>()(
+  subscribeWithSelector((set) => ({
+    count: 2,
+    label: "ready",
+    increment: () => set((state) => ({ count: state.count + 1 })),
+  })),
+);
+
+useCounter.getState().increment();
+
+export default () => {
+  const selection = useCounter(
+    useShallow((state) => ({ count: state.count, label: state.label })),
+  );
+  useEffect(() => useCounter.getState().increment(), []);
+  return <main>{selection.label}<strong />{selection.count}<span /></main>;
+};
+`;
+
+const ZUSTAND_MIDDLEWARE_SOURCE = `
+import { create } from "zustand";
+import { redux } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+
+const useImmerStore = create(
+  immer((set) => ({
+    count: 1,
+    increment: () => set((state) => {
+      state.count += 1;
+    }),
+  })),
+);
+useImmerStore.getState().increment();
+
+const useReduxStore = create(
+  redux((state, action) => ({ count: state.count + action.amount }), { count: 3 }),
+);
+useReduxStore.getState().dispatch({ type: "increment", amount: 2 });
+
+export default () => (
+  <main>
+    {useImmerStore.getState().count}
+    <strong />
+    {useReduxStore.getState().count}
+    <span />
+  </main>
+);
+`;
+
 const AUTO_IMPORT_PROJECT: Record<string, string> = {
   "vite.config.ts": `
 import autoImport from "unplugin-auto-import/vite";
@@ -342,6 +403,34 @@ describe("library models", () => {
         "  <default>",
         "    <section>",
         "      <Highlight> (opaque: Highlight from prism-react-renderer is not analyzed)",
+      ].join("\n"),
+    );
+  });
+
+  it("reads concrete initial and updated state from Zustand stores", async () => {
+    expect(await renderSource(ZUSTAND_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <main>",
+        '      "ready"',
+        "      <strong>",
+        '      "4"',
+        "      <span>",
+      ].join("\n"),
+    );
+  });
+
+  it("applies Zustand Immer and Redux middleware updates", async () => {
+    expect(await renderSource(ZUSTAND_MIDDLEWARE_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <main>",
+        '      "2"',
+        "      <strong>",
+        '      "5"',
+        "      <span>",
       ].join("\n"),
     );
   });
