@@ -212,6 +212,47 @@ describe("index writes into lists of unknown length", () => {
       ].join("\n"),
     );
   });
+
+  it("keeps uncertain reverse-index reads inside list bounds", async () => {
+    const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-analyzer-reverse-loop-"));
+    writeFileSync(
+      join(rootDirectory, "stream.tsx"),
+      `
+interface Item {
+  id: string;
+}
+
+interface StreamProps {
+  items: Item[];
+}
+
+export const Stream = ({ items }: StreamProps) => {
+  const collected: Item[] = [];
+  for (let index = items.length - 1; index >= 0; index--) {
+    const item = items[index];
+    collected.unshift({ id: item.id });
+  }
+  return <>{collected.map((item) => <span key={item.id} />)}</>;
+};
+`,
+    );
+    const renderer = await createStaticRenderer({ rootDirectory });
+    const result = await renderer.renderComponent(join(rootDirectory, "stream.tsx"), {
+      exportName: "Stream",
+      props: objectFromRecord({
+        items: listValue([
+          {
+            kind: "repeat",
+            item: objectFromRecord({ id: unknownPrimitiveValue("string", "item id") }),
+            location: null,
+          },
+        ]),
+      }),
+    });
+    expect(result.diagnostics).not.toContainEqual(
+      expect.objectContaining({ code: "render-error" }),
+    );
+  });
 });
 
 const PRICE_SOURCE = `
