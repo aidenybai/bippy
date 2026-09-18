@@ -1152,6 +1152,23 @@ describe("react router component versions", () => {
     expect(tree).not.toContain("<Miss>");
     expect(tree).not.toContain("<aside>");
   });
+
+  it("applies a v5 Redirect after its lifecycle commits", async () => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      "5.3.4",
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-redirect.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const tree = formatPattern(getRenderPattern(result));
+    expect(result.diagnostics).toEqual([]);
+    expect(tree).toContain("<Dashboard>");
+    expect(tree).toContain("<main>");
+    expect(tree).not.toContain("<Redirect>");
+  });
 });
 
 describe("react router framework mode with react-router-auto-routes", () => {
