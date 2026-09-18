@@ -34,10 +34,11 @@ const Relay = () => {
 const HostPromiseBeforeTimer = () => {
   const [isReady, setReady] = useState(false);
   useEffect(() => {
-    new FontFace("fixture-font", "url(data:font/woff2;base64,d09GMgABAAAAAA==)")
-      .load()
-      .then(() => undefined)
-      .catch(() => undefined);
+    const load =
+      typeof FontFace === "undefined"
+        ? Promise.resolve()
+        : new FontFace("fixture-font", "url(data:font/woff2;base64,d09GMgABAAAAAA==)").load();
+    load.then(() => undefined).catch(() => undefined);
     const timeout = setTimeout(() => setReady(true), 10);
     return () => clearTimeout(timeout);
   }, []);
