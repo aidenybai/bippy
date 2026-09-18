@@ -16,12 +16,26 @@ import type {
   ContextDefinition,
   LibraryRun,
   LibraryValueProvider,
+  ModeledExports,
   StaticObjectValue,
   StaticValue,
   StubComponent,
 } from "../types.js";
 
 export const I18NEXT_PACKAGES = ["i18next", "react-i18next"];
+export const I18NEXT_MODELED_EXPORTS: ModeledExports = {
+  i18next: [
+    "default",
+    "i18next",
+    "createInstance",
+    "t",
+    "getFixedT",
+    "use",
+    "init",
+    "changeLanguage",
+  ],
+  "react-i18next": ["initReactI18next", "I18nextProvider", "useTranslation", "getI18n"],
+};
 
 interface I18nextInstanceState {
   resources: StaticValue;
@@ -145,11 +159,11 @@ const getTranslation = (
     key = `${keyPrefix.value}${state.keySeparator ?? "."}${key}`;
   }
   const optionCount = getOption(options, "count");
+  const optionKeySeparator = getOption(options, "keySeparator");
   const keyCandidates =
-    typeof getOption(options, "keySeparator").value === "boolean" &&
-    getOption(options, "keySeparator").value === false
+    optionKeySeparator.kind === "primitive" && optionKeySeparator.value === false
       ? [key]
-      : typeof optionCount.value === "number"
+      : optionCount.kind === "primitive" && typeof optionCount.value === "number"
         ? [
             `${key}_${optionCount.value === 0 ? "zero" : optionCount.value === 1 ? "one" : "other"}`,
             key,
@@ -190,18 +204,20 @@ const createI18nextInstance = (): StaticObjectValue => {
   let instance = objectFromRecord({});
   const translate = (
     key: StaticValue,
-    options = UNDEFINED_VALUE,
-    fixedLanguage = UNDEFINED_VALUE,
-    fixedNamespace = UNDEFINED_VALUE,
-    keyPrefix = UNDEFINED_VALUE,
+    options: StaticValue | undefined = undefined,
+    fixedLanguage: StaticValue | undefined = undefined,
+    fixedNamespace: StaticValue | undefined = undefined,
+    keyPrefix: StaticValue | undefined = undefined,
   ): StaticValue =>
     getTranslation(
       state,
       key,
-      isKnownString(options) ? objectFromRecord({ defaultValue: options }) : options,
-      fixedLanguage,
-      fixedNamespace,
-      keyPrefix,
+      isKnownString(options)
+        ? objectFromRecord({ defaultValue: options })
+        : (options ?? UNDEFINED_VALUE),
+      fixedLanguage ?? UNDEFINED_VALUE,
+      fixedNamespace ?? UNDEFINED_VALUE,
+      keyPrefix ?? UNDEFINED_VALUE,
     );
   const t = nativeFunction("t", ([key = UNDEFINED_VALUE, options]) => translate(key, options));
   instance = objectFromRecord({
@@ -279,19 +295,30 @@ const createI18nextModel = (): I18nextModel => {
         }),
       ),
   };
-  const useTranslation = nativeFunction("useTranslation", ([namespace], tools) => {
+  const useTranslation = nativeFunction("useTranslation", ([namespace, options], tools) => {
     const context = tools.readContext(I18NEXT_CONTEXT);
     const contextualInstance =
       context.kind === "object" ? getObjectProperty(context, "i18n") : UNDEFINED_VALUE;
-    const activeInstance = isUndefinedValue(contextualInstance)
-      ? globalInstance
-      : contextualInstance;
+    const optionInstance = options ? getOption(options, "i18n") : UNDEFINED_VALUE;
+    const activeInstance = !isUndefinedValue(optionInstance)
+      ? optionInstance
+      : isUndefinedValue(contextualInstance)
+        ? globalInstance
+        : contextualInstance;
     const contextNamespace =
       context.kind === "object" ? getObjectProperty(context, "defaultNS") : UNDEFINED_VALUE;
-    const activeNamespace = namespace ?? contextNamespace;
+    const activeNamespace = namespace ?? contextNamespace ?? UNDEFINED_VALUE;
     const fixedT = getObjectProperty(activeInstance, "getFixedT");
-    const t = tools.call(fixedT, [UNDEFINED_VALUE, activeNamespace]);
-    return objectFromRecord({ t, i18n: activeInstance, ready: TRUE_VALUE });
+    const keyPrefix = options ? getOption(options, "keyPrefix") : UNDEFINED_VALUE;
+    const t = tools.call(fixedT, [UNDEFINED_VALUE, activeNamespace, keyPrefix]);
+    return objectFromRecord({
+      0: t,
+      1: activeInstance,
+      2: TRUE_VALUE,
+      t,
+      i18n: activeInstance,
+      ready: TRUE_VALUE,
+    });
   });
   const reactPlugin = objectFromRecord({
     type: primitiveValue("3rdParty"),

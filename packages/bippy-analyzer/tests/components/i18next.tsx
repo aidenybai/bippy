@@ -38,12 +38,18 @@ const Actions = () => {
   );
 };
 
+const ArrayAction = () => {
+  const [translate] = useTranslation("translation", { keyPrefix: "actions" });
+  return <em>{translate("next")}</em>;
+};
+
 const fixedTranslation = scoped.getFixedT("en", "translation", "actions");
 
 const I18next = () => (
   <I18nextProvider i18n={scoped}>
     <section>
       <Actions />
+      <ArrayAction />
       <span>{fixedTranslation("next")}</span>
       <strong>{i18next.t("auth.signIn")}</strong>
     </section>
