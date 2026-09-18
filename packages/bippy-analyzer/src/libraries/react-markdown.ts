@@ -2,7 +2,7 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
-import { unified } from "unified";
+import { type Processor, unified } from "unified";
 import { fromNativeValue } from "../evaluate/native-values.js";
 import { getObjectProperty, isUndefinedValue, unknownValue } from "../evaluate/values.js";
 import { stubValue } from "../evaluate/stubs.js";
@@ -37,6 +37,9 @@ const getPluginSetting = (
     : null;
 };
 
+const processMarkdown = (processor: Processor, markdown: string): unknown =>
+  processor.runSync(processor.parse(markdown));
+
 const renderMarkdown = (props: StaticObjectValue): StaticValue => {
   const markdown = getObjectProperty(props, "children");
   const isGfmEnabled = getPluginSetting(props, "remarkPlugins", "remark-gfm");
@@ -47,13 +50,13 @@ const renderMarkdown = (props: StaticObjectValue): StaticValue => {
   if (isGfmEnabled === null || isRawEnabled === null) {
     return unknownValue("unsupported react-markdown plugins");
   }
-  let markdownProcessor = unified().use(remarkParse);
+  let markdownProcessor: Processor = unified().use(remarkParse);
   if (isGfmEnabled) markdownProcessor = markdownProcessor.use(remarkGfm);
   markdownProcessor = markdownProcessor.use(remarkRehype, {
     allowDangerousHtml: isRawEnabled,
   });
   if (isRawEnabled) markdownProcessor = markdownProcessor.use(rehypeRaw);
-  const tree = markdownProcessor.runSync(markdownProcessor.parse(markdown.value));
+  const tree = processMarkdown(markdownProcessor, markdown.value);
   return renderHast(fromNativeValue(tree, "react-markdown tree", null), {
     components: getObjectProperty(props, "components"),
     fragment: { kind: "react-api", api: "Fragment" },
