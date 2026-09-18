@@ -1051,6 +1051,56 @@ describe("next pages router", () => {
       fiber("RouterProvider", "FunctionComponent", [matched]),
     ]);
   });
+
+  it("splices legacy router providers and the default LinkAnchor", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const anchor = fiber("a", "HostComponent");
+    const runtime = {
+      reactVersion: "17.0.2",
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("BrowserRouter", "ClassComponent", [
+            fiber("Router", "ClassComponent", [
+              fiber("Router", "ContextProvider", [
+                fiber("Router-History", "ContextProvider", [
+                  fiber("Switch", "ClassComponent", [
+                    fiber("Router", "ContextConsumer", [
+                      fiber("Route", "ClassComponent", [
+                        fiber("Router", "ContextConsumer", [
+                          fiber("Router", "ContextProvider", [
+                            fiber("Link", "ForwardRef", [
+                              fiber("Router", "ContextConsumer", [
+                                fiber("LinkAnchor", "ForwardRef", [anchor]),
+                              ]),
+                            ]),
+                          ]),
+                        ]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("react-router"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("BrowserRouter", "ClassComponent", [
+        fiber("Switch", "ClassComponent", [
+          fiber("Route", "ClassComponent", [fiber("Link", "ForwardRef", [anchor])]),
+        ]),
+      ]),
+    ]);
+  });
 });
 
 describe("react router component versions", () => {
