@@ -80,6 +80,10 @@ const AXIOS_ASYNC_SOURCE = `
 import axios from "axios";
 import { useEffect, useState } from "react";
 
+const Loading = () => <p>loading</p>;
+const Failed = () => <p>failed</p>;
+const Ready = () => <p>ready</p>;
+
 const Status = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,9 +99,9 @@ const Status = () => {
     };
     check();
   }, []);
-  if (isLoading) return <p>loading</p>;
-  if (error) return <p>failed</p>;
-  return <p>ready</p>;
+  if (isLoading) return <Loading />;
+  if (error) return <Failed />;
+  return <Ready />;
 };
 
 export default Status;
@@ -282,7 +286,9 @@ describe("library models", () => {
 
   it("enumerates fulfillment and rejection through async try/catch/finally", async () => {
     const tree = await renderSource(AXIOS_ASYNC_SOURCE);
-    expect(tree.match(/<p>/g)).toHaveLength(3);
+    expect(tree).toContain("<Loading>");
+    expect(tree).toContain("<Failed>");
+    expect(tree).toContain("<Ready>");
   });
 
   it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {
