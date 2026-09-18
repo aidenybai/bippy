@@ -18,10 +18,6 @@ interface PreactDevTools {
   attachPreact: (version: string, options: PreactOptions, internals: PreactInternals) => void;
 }
 
-interface PreactGlobal {
-  __PREACT_DEVTOOLS__?: PreactDevTools;
-}
-
 export interface PreactRecorder {
   snapshot: () => RuntimeSnapshot;
   commitCount: () => number;
@@ -42,13 +38,13 @@ const getVNodeChildren = (vnode: object): object[] => {
 
 const getVNodeType = (vnode: object): unknown => getProperty(vnode, "type");
 
-const getFunctionName = (value: (...args: never[]) => unknown): string | null => {
+const getFunctionName = (value: Function): string | null => {
   const displayName = getProperty(value, "displayName");
   if (typeof displayName === "string" && displayName) return displayName;
   return value.name || null;
 };
 
-const getContext = (value: (...args: never[]) => unknown): object | null => {
+const getContext = (value: Function): object | null => {
   const context = getProperty(value, "_contextRef");
   return isObject(context) ? context : null;
 };
@@ -58,7 +54,7 @@ const getContextName = (context: object): string | null => {
   return typeof displayName === "string" && displayName ? displayName : null;
 };
 
-const getFunctionTag = (value: (...args: never[]) => unknown): SnapshotWorkTag => {
+const getFunctionTag = (value: Function): SnapshotWorkTag => {
   if (getContext(value)) {
     return value.name === "Consumer" ? "ContextConsumer" : "ContextProvider";
   }
@@ -218,13 +214,24 @@ const getRootVNode = (vnode: object): object => {
   return root;
 };
 
-export const installPreactRecorder = (target: PreactGlobal): PreactRecorder => {
+const getPreactDevTools = (target: object): PreactDevTools | null => {
+  const devTools = getProperty(target, "__PREACT_DEVTOOLS__");
+  if (!isObject(devTools)) return null;
+  const attachPreact = getProperty(devTools, "attachPreact");
+  if (typeof attachPreact !== "function") return null;
+  return {
+    attachPreact: (version, options, internals) =>
+      Reflect.apply(attachPreact, devTools, [version, options, internals]),
+  };
+};
+
+export const installPreactRecorder = (target: object): PreactRecorder => {
   let commits = 0;
   let version: string | null = null;
   let fragment: unknown;
   const roots = new Set<object>();
-  const previousDevTools = target.__PREACT_DEVTOOLS__;
-  target.__PREACT_DEVTOOLS__ = {
+  const previousDevTools = getPreactDevTools(target);
+  Reflect.set(target, "__PREACT_DEVTOOLS__", {
     attachPreact: (nextVersion, options, internals) => {
       previousDevTools?.attachPreact(nextVersion, options, internals);
       version = nextVersion;
@@ -237,10 +244,10 @@ export const installPreactRecorder = (target: PreactGlobal): PreactRecorder => {
         roots.add(getRootVNode(nextRoot));
         commits++;
       };
-      if (options._commit !== undefined) options._commit = recordCommit;
+      if ("_commit" in options || !("__c" in options)) options._commit = recordCommit;
       else options.__c = recordCommit;
     },
-  };
+  });
   return {
     snapshot: () => ({
       reactVersion: version,
