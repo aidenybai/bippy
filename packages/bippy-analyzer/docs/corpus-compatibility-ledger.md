@@ -113,16 +113,33 @@ define the modeled router components as functions.
 
 The versioned regression uses the installed package version and real React materialization. Before
 the correction it captured `BrowserRouter@5.3.4` as `FunctionComponent`; the native
-`react-router-dom@5.3.4` oracle captured `ClassComponent`.
+`react-router-dom@5.3.4` oracle captured `BrowserRouter`, `Switch`, and the selected `Route` as
+`ClassComponent` fibers and rendered only the first matching route.
 
 `mural@e9d4a5bf80dfdb90e8831dfebdfbfdb57bf76ff0` was run at `/` on
 `http://127.0.0.1:54376/` with its manifest environment and default comparison budget. The
 historical result stopped after 28 steps at an expected `BrowserRouter` function versus the native
 class. A fresh React 17.0.2 development capture at `2026-09-18T00:26:45.234Z` has 151 fibers, 5
-commits, and the same 7 DNS resource errors. With the correction, comparison passes the class
-fiber and stops after 29 steps at the next independent mismatch: `Container` still shows
-`Loading`, while native behavior has fired the authored one-second timer and mounted
-`BrowserRouter`. Both decision assignments replay without contradiction.
+commits, and 7 DNS resource errors.
 
-The repository remains a mismatch. The class-fiber correction does not establish timer settling,
-remote resource behavior, interactions, or whole-state-space coverage.
+The next divergence was host behavior. `new FontFace(...).load()` was treated as an unimplemented
+constructor result whose `load` member was `undefined`; the invented throw stopped the effect before
+its following one-second timer. The host regression constructs declared browser objects and calls a
+promise-returning method before a short timer. Declared host instances now retain their interface,
+members use the generated host-realm return types, and promise-returning methods remain modeled
+promises. The unchanged Mural source then reaches its loaded branch.
+
+React Router 5.3.4 also defines `Route` and `Switch` as classes. `Switch` visits children in order
+and clones the first path match; `Route` provides the legacy route context and applies
+children/component/render precedence. The model now preserves those fibers and semantics, and the
+profile removes only demonstrated package-owned wrappers: the `Router` and `Router-History`
+providers and react-router-dom's default `LinkAnchor`.
+
+Replaying the fresh capture after these corrections changes Mural from mismatch to partial in 140
+steps: 119 fibers and 10 text nodes match, non-opaque coverage is 100%, strict coverage is 98.47%,
+and no opaque subtree remains. The remaining two runtime fibers are under one explicit wildcard for
+a spread-derived SVG child. The state space has 8 states and one omitted nested alternative; all 7
+joint assignments were replayed with no contradiction, but 6 are incomplete because their claims
+or replays retain unresolved nodes. This is saved-capture comparison against the fresh native
+capture, not another live capture. Remote resources, interactions, the omitted alternative, and
+whole-state-space agreement remain unverified.
