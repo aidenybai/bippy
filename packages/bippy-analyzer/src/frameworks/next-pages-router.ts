@@ -182,6 +182,19 @@ const readAppProps = (
   });
 };
 
+const readDocumentProps = (
+  renderer: StaticRenderer,
+  interpreter: Interpreter,
+): StaticValue => {
+  const capturedNextData = renderer.options.observations?.globals?.[NEXT_DATA_GLOBAL];
+  return objectFromRecord({
+    __NEXT_DATA__:
+      capturedNextData === undefined
+        ? objectFromRecord({ props: objectFromRecord({ pageProps: objectValue() }) })
+        : interpreter.captured(capturedNextData, `window.${NEXT_DATA_GLOBAL}`),
+  });
+};
+
 /**
  * Composes `<App Component={Page} pageProps={…} router={…} />` (or just
  * `<Page {...pageProps} />` without a custom `_app`). `_document` (or Next's
@@ -209,7 +222,7 @@ export const renderNextPagesRoute = (
     }
     return interpreter.createElement(
       interpreter.evaluateModuleExport(documentModule, "default"),
-      objectValue(),
+      readDocumentProps(renderer, interpreter),
       null,
       [],
       null,
