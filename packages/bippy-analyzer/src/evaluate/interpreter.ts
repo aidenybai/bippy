@@ -59,6 +59,7 @@ import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { getLibraryValue, isModeledLibraryExport } from "../libraries/index.js";
+import { getCapturedPromiseOutcome } from "../observations.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
   getDeclaredNames,
@@ -230,7 +231,11 @@ import {
   type MutableHeapValue,
 } from "./heap-journal.js";
 import type { StateCell } from "./hooks.js";
-import { getPrimitiveWitness, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import {
+  getDeclaredHostObjectMember,
+  getPrimitiveWitness,
+  GLOBAL_OBJECT_VALUE,
+} from "./host-globals.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
@@ -257,6 +262,7 @@ import {
   getHostDocumentExpando,
   getNativeObjectComposedMember,
   getNativeObjectMember,
+  getNativeOwnEntries,
   hasHostDocumentMember,
   setHostDocumentMember,
   setNativeObjectComposedMember,
@@ -313,6 +319,7 @@ import {
 import { isStrictCode } from "./strict-code.js";
 import { nativeFunction } from "./stubs.js";
 import {
+  collectReactDocgenTypescriptDisplayNames,
   collectStyledDisplayNames,
   DEFAULT_STYLED_COMPONENTS_TRANSFORM,
   STYLED_COMPONENTS_MACRO_SPECIFIER,
@@ -795,6 +802,19 @@ const markExternallyMutable = (value: StaticObjectValue, reason: string): void =
   value.entries.push({ kind: "spread", value: unknownValue(reason) });
 };
 
+const getCopiedSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | null => {
+  const copied = getSpreadEntries(spread);
+  if (copied) return copied;
+  if (spread.kind !== "native-object") return null;
+  return (
+    getNativeOwnEntries(spread)?.map(([key, value]): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value,
+    })) ?? null
+  );
+};
+
 /**
  * A mutation of a statically known property widens that property alone and a
  * computed member the whole object. A mutating method call widens a collection
@@ -896,6 +916,7 @@ export class Interpreter {
   readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
   /** The styled-components transform the project's build applies to its own modules; `null` when it has none. */
   styledComponentsTransform: StyledComponentsTransformOptions | null;
+  reactDocgenTypescript = false;
   private readonly styledDisplayNames = new WeakMap<ModuleRecord, Map<Node, string>>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
@@ -1008,6 +1029,18 @@ export class Interpreter {
 
   /** A value recorded from the running page, with references to the project's own module exports evaluated. */
   captured(captured: CapturedValue, name: string): StaticValue {
+    const promise = getCapturedPromiseOutcome(captured);
+    if (promise) {
+      const settled =
+        promise.value === undefined
+          ? UNDEFINED_VALUE
+          : this.captured(promise.value, `${name}.value`);
+      return resolvedPromiseValue(
+        promise.status === "rejected"
+          ? thrownValue("promise rejected on the captured page", settled, null)
+          : settled,
+      );
+    }
     return capturedValue(captured, name, (reference) => this.resolveCapturedExport(reference));
   }
 
@@ -2302,6 +2335,48 @@ export class Interpreter {
     });
   };
 
+  runTaskAlternatives = (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
+    context: EvaluationContext | null = null,
+    location: SourceLocation | null = null,
+  ): void => {
+    const parentGuard = this.guard;
+    const alternatives = causes.flatMap((cause, index) => {
+      const guard = andGuard([parentGuard, cause.guard]);
+      return this.isTaskPossible(guard) ? [{ cause, guard, index }] : [];
+    });
+    if (alternatives.length === 0) return;
+    if (alternatives.length === 1) {
+      const [alternative] = alternatives;
+      if (alternative) this.runWithGuard(alternative.guard, () => task(alternative.index));
+      return;
+    }
+    const scope = context?.scope ?? null;
+    const entrySnapshot = snapshotScopes(scope);
+    const pathSnapshots: ScopeSnapshot[][] = [];
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    alternatives.forEach((alternative, alternativeIndex) => {
+      if (alternativeIndex > 0) restoreScopes(entrySnapshot);
+      this.runWithGuard(alternative.guard, () => task(alternative.index));
+      pathSnapshots.push(snapshotScopes(scope));
+      journal.endPath();
+    });
+    this.removeHeapJournal(journal);
+    const predicate = guardedPredicate(
+      alternatives.map((alternative) => alternative.cause.guard),
+      alternatives.map((alternative) => alternative.cause.inputs),
+    );
+    const preferredPath = Math.max(
+      0,
+      alternatives.findIndex((alternative) => alternative.index === 0),
+    );
+    journal.join(reason, location, preferredPath, predicate);
+    joinScopes(pathSnapshots, reason, location, preferredPath, predicate);
+  };
+
   bindContinuationWithCause: TaskBinder = (task) => {
     const cause = { guard: this.guard, inputs: [] };
     return (...args) => this.runTaskWithCause(cause, () => task(...args));
@@ -2704,7 +2779,7 @@ export class Interpreter {
     for (const property of node.properties) {
       if (property.type === "SpreadElement") {
         const spread = this.evaluateExpression(property.argument, context);
-        const copied = getSpreadEntries(spread);
+        const copied = getCopiedSpreadEntries(spread);
         if (copied) {
           entries.push(...copied);
           continue;
@@ -3848,6 +3923,13 @@ export class Interpreter {
         }
         const property = getObjectProperty(object, key);
         if (property.kind !== "primitive" || property.value !== undefined) return property;
+        const declared = getDeclaredHostObjectMember(
+          this.getRealm(context.environment),
+          object,
+          key,
+          location,
+        );
+        if (declared) return declared;
         if (key === "constructor") return getIntrinsicConstructor(object) ?? property;
         if (
           !object.hasNullPrototype &&
@@ -4459,6 +4541,11 @@ export class Interpreter {
           ? null
           : this.styledComponentsTransform;
       displayNames = transform ? collectStyledDisplayNames(module, transform) : new Map();
+      if (this.reactDocgenTypescript && !isInsideNodeModules(module.filePath)) {
+        for (const [node, displayName] of collectReactDocgenTypescriptDisplayNames(module)) {
+          displayNames.set(node, displayName);
+        }
+      }
       this.styledDisplayNames.set(module, displayNames);
     }
     return displayNames;
@@ -4626,6 +4713,8 @@ export class Interpreter {
       queueMicrotask: (task) => this.queueMicrotask(task, context, location),
       bindTask: (task) => this.bindTask(task, context, location),
       runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
+      runTaskAlternatives: (causes, task, reason) =>
+        this.runTaskAlternatives(causes, task, reason, context, location),
       isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
       setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
       materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
@@ -4836,14 +4925,15 @@ export class Interpreter {
           promise,
           (outcome, isEscaped) => {
             this.resolvedAwaits.set(node, outcome);
-            let resumed = isEscaped
-              ? this.runDeferred(context, location, resumeStatement)
-              : resumeStatement();
-            for (const handler of suspension.outcomeHandlers.toReversed()) {
-              if (resumed.isSuspended) return null;
-              resumed = handler(resumed);
-            }
-            return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+            const resume = (): StaticValue | null => {
+              let resumed = resumeStatement();
+              for (const handler of suspension.outcomeHandlers.toReversed()) {
+                if (resumed.isSuspended) return null;
+                resumed = handler(resumed);
+              }
+              return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+            };
+            return isEscaped ? this.runDeferred(context, location, resume) : resume();
           },
           location,
           promiseTools(this, context, location),
@@ -6132,10 +6222,9 @@ export class Interpreter {
     let maybeKey: StaticValue = UNDEFINED_VALUE;
     for (const attribute of attributes) {
       if (attribute.type === "JSXSpreadAttribute") {
-        entries.push({
-          kind: "spread",
-          value: this.evaluateExpression(attribute.argument, context),
-        });
+        const spread = this.evaluateExpression(attribute.argument, context);
+        const copied = getCopiedSpreadEntries(spread);
+        entries.push(...(copied ?? [{ kind: "spread", value: spread }]));
         continue;
       }
       const name =

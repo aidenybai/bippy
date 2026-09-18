@@ -31,9 +31,24 @@ const Relay = () => {
   return hop >= RELAY_HOPS ? <output>arrived</output> : <progress value={hop} max={RELAY_HOPS} />;
 };
 
+const HostPromiseBeforeTimer = () => {
+  const [isReady, setReady] = useState(false);
+  useEffect(() => {
+    const load =
+      typeof FontFace === "undefined"
+        ? Promise.resolve()
+        : new FontFace("fixture-font", "url(data:font/woff2;base64,d09GMgABAAAAAA==)").load();
+    load.then(() => undefined).catch(() => undefined);
+    const timeout = setTimeout(() => setReady(true), 10);
+    return () => clearTimeout(timeout);
+  }, []);
+  return isReady ? <strong>host ready</strong> : <small>host waiting</small>;
+};
+
 export const App = () => (
   <main>
     <SavedAgo />
     <Relay />
+    <HostPromiseBeforeTimer />
   </main>
 );

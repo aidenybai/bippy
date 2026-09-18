@@ -1786,6 +1786,8 @@ export class Materializer {
       bindTask: (task) => this.interpreter.bindTask(task, context.owner, location),
       runTask: (cause, task) =>
         this.interpreter.runTaskWithCause(cause, task, context.owner, location),
+      runTaskAlternatives: (causes, task, reason) =>
+        this.interpreter.runTaskAlternatives(causes, task, reason, context.owner, location),
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       materializeNamespace: (value) =>

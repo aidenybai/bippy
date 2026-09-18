@@ -6,18 +6,21 @@ import type {
   CapturedLinguiCatalog,
   CapturedMutation,
   CapturedPageState,
+  CapturedPromiseOutcome,
   CapturedQuery,
   CapturedRequest,
   CapturedRouteMatch,
   CapturedRouterState,
   CapturedSwrEntry,
   CapturedValue,
+  JsonValue,
   RuntimeObservations,
 } from "./types.js";
 
 const OPAQUE_CAPTURE_KEY = "$bippyOpaque";
 const EXPORT_CAPTURE_KEY = "$bippyExport";
 const DATE_CAPTURE_KEY = "$bippyDate";
+const PROMISE_CAPTURE_KEY = "$bippyPromise";
 
 export const EMPTY_OBSERVATIONS: RuntimeObservations = { globals: {}, queries: [] };
 
@@ -43,6 +46,10 @@ export const hashKey = (key: unknown): string =>
   );
 
 const capturedValueSchema: z.ZodType<CapturedValue> = z.json();
+const capturedPromiseOutcomeSchema: z.ZodType<CapturedPromiseOutcome> = z.object({
+  status: z.enum(["fulfilled", "rejected"]),
+  value: capturedValueSchema.optional(),
+});
 const capturedValueRecordSchema = z.record(z.string(), capturedValueSchema);
 const stringRecordSchema = z.record(z.string(), z.string());
 
@@ -171,6 +178,19 @@ export const getCapturedDate = (value: CapturedValue): Date | null => {
   if (Object.keys(value).length !== 1 || !(DATE_CAPTURE_KEY in value)) return null;
   const time = value[DATE_CAPTURE_KEY];
   return new Date(typeof time === "number" ? time : Number.NaN);
+};
+
+export const promiseCapture = (outcome: CapturedPromiseOutcome): CapturedValue => {
+  const capturedOutcome: Record<string, JsonValue> = { status: outcome.status };
+  if (outcome.value !== undefined) capturedOutcome.value = outcome.value;
+  return { [PROMISE_CAPTURE_KEY]: capturedOutcome };
+};
+
+export const getCapturedPromiseOutcome = (value: CapturedValue): CapturedPromiseOutcome | null => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  if (Object.keys(value).length !== 1) return null;
+  const outcome = capturedPromiseOutcomeSchema.safeParse(value[PROMISE_CAPTURE_KEY]);
+  return outcome.success ? outcome.data : null;
 };
 
 export const exportCapture = (reference: CapturedExportReference): CapturedValue => ({

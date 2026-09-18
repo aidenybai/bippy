@@ -53,7 +53,12 @@ import { callEventTargetMethod, type EventListenerEvaluator } from "./event-list
 import { callFetch } from "./fetch.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
-import { getHostGlobal, getLanguageMethodResult, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import {
+  constructDeclaredHostObject,
+  getHostGlobal,
+  getLanguageMethodResult,
+  GLOBAL_OBJECT_VALUE,
+} from "./host-globals.js";
 import { createImageElement, type ImageLoadHost } from "./image-loading.js";
 import { callImportMetaGlob } from "./import-glob.js";
 import {
@@ -259,6 +264,13 @@ export interface BuiltinEvaluator
   runTaskWithCause: (
     cause: GuardContext,
     task: () => void,
+    context?: EvaluationContext | null,
+    location?: SourceLocation | null,
+  ) => void;
+  runTaskAlternatives: (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
     context?: EvaluationContext | null,
     location?: SourceLocation | null,
   ) => void;
@@ -1519,7 +1531,12 @@ const callGlobal = (
     const dateFunction = name === "Date.UTC" ? Date.UTC : Date.parse;
     return fromNativeValue(Reflect.apply(dateFunction, Date, natives), `${name}()`, null);
   }
-  if (isConstructor) return unknownValue(`new ${name}()`, location);
+  if (isConstructor) {
+    return (
+      constructDeclaredHostObject(evaluator.getRealm(context.environment), name, location) ??
+      unknownValue(`new ${name}()`, location)
+    );
+  }
   return unknownValue(`${name}()`, location);
 };
 
@@ -1602,6 +1619,8 @@ export const promiseTools = (
   queueMicrotask: (task) => evaluator.queueMicrotask(task, context, location),
   bindTask: (task) => evaluator.bindTask(task, context, location),
   runTask: (cause, task) => evaluator.runTaskWithCause(cause, task, context, location),
+  runTaskAlternatives: (causes, task, reason) =>
+    evaluator.runTaskAlternatives(causes, task, reason, context, location),
   recordStateMutation: (state) => evaluator.recordStateMutation(state),
 });
 

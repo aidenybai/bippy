@@ -15,6 +15,7 @@ import {
   hoistNonReactStaticsValue,
 } from "./hoist-non-react-statics.js";
 import { IMMER_PACKAGES, immerValue } from "./immer.js";
+import { I18NEXT_MODELED_EXPORTS, I18NEXT_PACKAGES, i18nextValue } from "./i18next.js";
 import { JED_PACKAGES, jedValue } from "./jed.js";
 import { JOTAI_MODELED_EXPORTS, JOTAI_PACKAGES, jotaiValue } from "./jotai.js";
 import { KEA_PACKAGES, keaValue } from "./kea.js";
@@ -54,6 +55,11 @@ import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
 import { SCHEDULER_PACKAGES, schedulerValue } from "./scheduler.js";
 import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
 import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
+import {
+  STYLETRON_REACT_MODELED_EXPORTS,
+  STYLETRON_REACT_PACKAGES,
+  styletronReactValue,
+} from "./styletron-react.js";
 import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
 import {
   TANSTACK_QUERY_MODELED_EXPORTS,
@@ -93,6 +99,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   },
   { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
   { packages: IMMER_PACKAGES, getValue: immerValue },
+  {
+    packages: I18NEXT_PACKAGES,
+    getValue: i18nextValue,
+    modeledExports: I18NEXT_MODELED_EXPORTS,
+  },
   { packages: JED_PACKAGES, getValue: jedValue },
   { packages: JOTAI_PACKAGES, getValue: jotaiValue, modeledExports: JOTAI_MODELED_EXPORTS },
   { packages: KEA_PACKAGES, getValue: keaValue },
@@ -128,6 +139,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: SCHEDULER_PACKAGES, getValue: schedulerValue },
   { packages: SENTRY_PACKAGES, getValue: sentryValue },
   { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
+  {
+    packages: STYLETRON_REACT_PACKAGES,
+    getValue: styletronReactValue,
+    modeledExports: STYLETRON_REACT_MODELED_EXPORTS,
+  },
   { packages: STYLEX_PACKAGES, getValue: stylexValue },
   { packages: SWR_PACKAGES, getValue: swrValue },
   {

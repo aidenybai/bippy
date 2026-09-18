@@ -76,6 +76,37 @@ export default function Items() {
 }
 `;
 
+const AXIOS_ASYNC_SOURCE = `
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+const Loading = () => <p>loading</p>;
+const Failed = () => <p>failed</p>;
+const Ready = () => <p>ready</p>;
+
+const Status = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        await axios.get("/status");
+      } catch {
+        setError("failed");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    check();
+  }, []);
+  if (isLoading) return <Loading />;
+  if (error) return <Failed />;
+  return <Ready />;
+};
+
+export default Status;
+`;
+
 const OPAQUE_RENDER_PROP_SOURCE = `
 import { Highlight } from "prism-react-renderer";
 
@@ -114,6 +145,83 @@ export default function App() {
     </section>
   );
 }
+`,
+};
+
+const PURE_CLASS_INSTANCE_PROJECT: Record<string, string> = {
+  "node_modules/values.js/package.json": JSON.stringify({
+    name: "values.js",
+    version: "2.0.0",
+    main: "index.cjs",
+  }),
+  "node_modules/values.js/index.cjs": `
+class Color {
+  constructor(rgb, weight) {
+    this.rgb = rgb;
+    this.weight = weight;
+  }
+
+  get hex() {
+    return "4747a4";
+  }
+}
+
+class Values {
+  all() {
+    return [new Color([71, 71, 164], 100)];
+  }
+}
+
+module.exports = Values;
+`,
+  "app.tsx": `
+import Values from "values.js";
+
+interface SwatchProps {
+  hexColor: string;
+  weight: number;
+}
+
+const Swatch = ({ hexColor, weight }: SwatchProps) => <p>{weight}% {hexColor}</p>;
+const colors = new Values("#4747a4").all(10);
+
+export default () => (
+  <section>
+    {colors.map((color) => (
+      <Swatch {...color} hexColor={color.hex} />
+    ))}
+  </section>
+);
+`,
+};
+
+const STYLETRON_PROJECT: Record<string, string> = {
+  "node_modules/styletron-react/package.json": JSON.stringify({
+    name: "styletron-react",
+    version: "6.1.0",
+    main: "index.js",
+  }),
+  "node_modules/styletron-react/index.js": "exports.createStyled = () => null;\n",
+  "app.tsx": `
+import { createContext, forwardRef } from "react";
+import { createStyled } from "styletron-react";
+
+const ThemeContext = createContext({});
+const wrapper = (StyledComponent) =>
+  forwardRef((props, ref) => (
+    <ThemeContext.Consumer>
+      {(theme) => <StyledComponent {...props} ref={ref} $theme={theme} />}
+    </ThemeContext.Consumer>
+  ));
+const styled = createStyled({ wrapper });
+const Icon = styled("svg", {});
+Icon.displayName = "Icon";
+
+export default () => (
+  <Icon viewBox="0 0 24 24">
+    <path />
+  </Icon>
+);
 `,
 };
 
@@ -172,6 +280,35 @@ describe("library models", () => {
     expect(isPurePackage("lodash-webpack-plugin")).toBe(false);
   });
 
+  it("preserves enumerable fields from pure package class instances", async () => {
+    expect(await renderProject(PURE_CLASS_INSTANCE_PROJECT, "app.tsx")).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <section>",
+        "      <Swatch>",
+        "        <p>",
+        '          "100"',
+        '          "% "',
+        '          "4747a4"',
+      ].join("\n"),
+    );
+  });
+
+  it("preserves Styletron wrapper fibers and forwarded children", async () => {
+    expect(await renderProject(STYLETRON_PROJECT, "app.tsx")).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <Icon>",
+        "      <ContextConsumer>",
+        "        <ForwardRef>",
+        "          <svg>",
+        "            <path>",
+      ].join("\n"),
+    );
+  });
+
   it("keeps an Axios response pending so the request's outcomes stay enumerated", async () => {
     expect(await renderSource(AXIOS_SOURCE)).toBe(
       [
@@ -189,6 +326,13 @@ describe("library models", () => {
         "              <span>",
       ].join("\n"),
     );
+  });
+
+  it("enumerates fulfillment and rejection through async try/catch/finally", async () => {
+    const tree = await renderSource(AXIOS_ASYNC_SOURCE);
+    expect(tree).toContain("<Loading>");
+    expect(tree).toContain("<Failed>");
+    expect(tree).toContain("<Ready>");
   });
 
   it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {

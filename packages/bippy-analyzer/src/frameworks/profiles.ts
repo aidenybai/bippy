@@ -190,6 +190,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
 // sharing one (`Router`) is spliced from both trees alike.
 const REACT_ROUTER_RUNTIME_WRAPPERS = [
   "Router",
+  "LinkAnchor",
   // react-router 6.4-6.10's `RouterProvider` renders `<Routes />` (no children)
   // to mount `router.routes`; 6.11 split that into `DataRoutes`.
   "Routes",
@@ -212,6 +213,8 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
 ];
 
 const REACT_ROUTER_RUNTIME_PROVIDERS = [
+  "Router",
+  "Router-History",
   "DataRouter",
   "DataRouterState",
   "Fetchers",
@@ -238,6 +241,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set([
     ...REACT_ROUTER_RUNTIME_WRAPPERS,
+    "Navigation",
     "Location",
     "DataRouterState",
     "FrameworkContext",

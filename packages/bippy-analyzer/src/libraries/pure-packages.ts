@@ -37,6 +37,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "path-to-regexp",
   "tailwind-merge",
   "url",
+  "values.js",
 ]);
 
 const liftExport = (

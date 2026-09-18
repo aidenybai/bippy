@@ -16,6 +16,7 @@ import {
   renderReactRouterRoute,
   type ReactRouterModel,
 } from "./react-router.js";
+import { applyStorybookCompilerOptions } from "./storybook-config.js";
 
 export interface FrameworkRenderTarget {
   framework: FrameworkKind;
@@ -156,13 +157,17 @@ const renderRootComponent = async (
 ): Promise<StaticRenderResult> => {
   const entry = requireField(target, "entry");
   const exportName = target.rootComponent;
+  const renderComponent = (targetRenderer: StaticRenderer) =>
+    targetRenderer.renderComponent(entry, {
+      exportName,
+      prepareInterpreter: (interpreter) =>
+        applyStorybookCompilerOptions(targetRenderer, interpreter),
+    });
   switch (target.framework) {
     case "spa":
-      return renderer.renderComponent(entry, { exportName });
+      return renderComponent(renderer);
     case "react-router":
-      return createReactRouterRenderer(target, renderer).renderer.renderComponent(entry, {
-        exportName,
-      });
+      return renderComponent(createReactRouterRenderer(target, renderer).renderer);
     case "next-app":
     case "next-pages":
       throw new FrameworkTargetError(

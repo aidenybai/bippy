@@ -33,6 +33,8 @@ type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
 interface PendingHookUpdate {
   next: StaticValue | null;
   actions: StaticValue | null;
+  deferred: StaticValue[];
+  isEscaped: boolean;
 }
 
 type PendingUpdates = Map<StateCell, PendingHookUpdate>;
@@ -40,11 +42,15 @@ type PendingUpdates = Map<StateCell, PendingHookUpdate>;
 const captureHookUpdate = (cell: StateCell): PendingHookUpdate => ({
   next: cell.next,
   actions: cell.pendingReducerActions,
+  deferred: [...cell.deferred],
+  isEscaped: cell.isEscaped,
 });
 
 const restoreHookUpdate = (cell: StateCell, update: PendingHookUpdate): void => {
   cell.next = update.next;
   cell.pendingReducerActions = update.actions;
+  cell.deferred = [...update.deferred];
+  cell.isEscaped = update.isEscaped;
 };
 
 interface ListState {
@@ -282,6 +288,15 @@ export class HeapJournal {
               preferredPath,
               predicate,
             );
+      cell.deferred = [];
+      for (const update of pathUpdates) {
+        for (const value of update.deferred) {
+          if (!cell.deferred.some((existing) => isSameValue(existing, value))) {
+            cell.deferred.push(value);
+          }
+        }
+      }
+      cell.isEscaped = pathUpdates.some((update) => update.isEscaped);
     }
     for (const [values, originals] of this.bindings) {
       for (const [name, original] of originals) {

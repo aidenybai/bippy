@@ -1150,6 +1150,11 @@
           "next-i18next",
           "react-i18next",
           "@teable/*",
+          "@dnd-kit/core",
+          "@dnd-kit/sortable",
+          "@dnd-kit/utilities",
+          "@headless-tree/core",
+          "@headless-tree/react",
           "@radix-ui/*",
           "@tanstack/react-query"
         ]
@@ -2503,7 +2508,7 @@
       "description": "remix-fastify playground example (React Router v7 framework mode served by Fastify, pnpm workspace)",
       "framework": "react-router",
       "workingDirectory": "examples/playground",
-      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build && pnpm add \"react-router-dom@$(node -p \"require('react-router/package.json').version\")\"",
+      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build && pnpm --dir examples/playground add \"react-router-dom@$(pnpm --dir examples/playground exec node -p \"require('react-router/package.json').version\")\"",
       "dev": "pnpm dev",
       "url": "http://localhost:3000/",
       "settleMs": 6000,
@@ -2513,7 +2518,7 @@
         "route": "/",
         "externalPackageAllowList": ["@radix-ui/*"]
       },
-      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Installing a matching react-router-dom@7 in the app shadows the hoisted copy; nothing else is patched."
+      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Resolving react-router from and installing matching react-router-dom@7 into the declared playground workspace shadows the hoisted copy; nothing else is patched."
     },
     {
       "id": "gcn-nasa-gov",
@@ -8821,18 +8826,19 @@
           "@remix-run/router",
           "use-sync-external-store",
           "use-sync-external-store/*",
+          "@tanstack/react-query",
           "lucide-react",
           "@radix-ui/*"
         ]
       },
-      "notes": "Keep README-required Node22, original Husky prepare, auth/kanban/theme/query providers and BrowserRouter route tree. Audit original backend/auth defaults before capture; no credentials, cookies, board input or route substitution. Separate installed-source policy for the listed fiber-bearing libraries, compared against the unchanged independent Bippy capture. Preserve the original sparse policy, failures, replay uncertainty and all omissions; no application or interpreter repair is claimed. Select the repeated stronger router/icon/Radix source policy: still partial, now sampled-passed. Preserve the original empty-storage Login route and provider tree. Passing replay does not verify opaque internals, backend authentication, form submission or kanban behavior. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 643851920 identifies a distinct non-fork repository."
+      "notes": "Keep README-required Node22, original Husky prepare, auth/kanban/theme/query providers and BrowserRouter route tree. Audit original backend/auth defaults before capture; no credentials, cookies, board input or route substitution. Separate installed-source policy for the listed fiber-bearing libraries, compared against the unchanged independent Bippy capture. Preserve the original sparse policy, failures, replay uncertainty and all omissions; no application or interpreter repair is claimed. Select the repeated stronger router/icon/Radix/React Query source policy: exact and sample-passed. Preserve the original empty-storage Login route and provider tree. Passing replay does not verify backend authentication, form submission or kanban behavior. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 643851920 identifies a distinct non-fork repository."
     },
     {
       "id": "sam70361-glass-ui-react",
       "repository": "https://github.com/sam70361/glass-ui-react",
       "revision": "f43d49e4e152003f6e8fca1bbc8be4977c8e7e29",
       "description": "sam70361/glass-ui-react",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
       "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54631 --strictPort",
@@ -8857,7 +8863,7 @@
       "repository": "https://github.com/sonjoydatta/react-boilerplate",
       "revision": "faec32955579a2b02ba49b871ee5dbd6b20c56ff",
       "description": "sonjoydatta/react-boilerplate",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec yarn install --frozen-lockfile --non-interactive",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54632 --strictPort",
@@ -9018,7 +9024,7 @@
       "repository": "https://github.com/Phixyn/react-todo-app",
       "revision": "42eab19c06bfbe5bfd6bebec001ff780262619fa",
       "description": "Phixyn/react-todo-app",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54803 --strictPort",
@@ -9034,7 +9040,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["react-icons", "react-icons/*"]
       },
       "notes": "Original source, startup, data, scripts and npm lock retained. Pinned Node22.16/npm10.9.2/pnpm10.12.1 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through Vite configuration; no application configuration values are invented. Empty reducer-backed task list; localStorage read on mount, real date/Intl header and OS theme preference preserved. No time/date or theme input. Retain the opaque Router/NavLink slot limitation and 15.9% strict coverage. No About navigation, date change or task operation is claimed. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 341281937 identifies a distinct non-fork repository."
     },
@@ -9428,7 +9435,7 @@
       "repository": "https://github.com/scDjanGo/todo-list-react",
       "revision": "0c9c61bce9e095320a9fbaf5283aee9cd5c062e2",
       "description": "scDjanGo/todo-list-react",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54841 --strictPort",
@@ -9444,7 +9451,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["react-redux"]
       },
       "notes": "Original source, startup, data, scripts and npm lock retained. Pinned Node22.16/npm10.9.2/pnpm10.12.1 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through Vite configuration; no application configuration values are invented. Original root redirects empty-token guest to login while dispatching original read-only todo fetch. No auth/profile fetch invocation, login, registration, task mutation or token input. Partial router/provider boundary has 2.9% strict coverage and an original resource-404 warning; guest redirect captured without token or backend substitutions. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 881126869 identifies a distinct non-fork repository."
     },
@@ -9453,7 +9461,7 @@
       "repository": "https://github.com/BulutHamali/labtasker-frontend",
       "revision": "4280fe5253b85f90e82f5144ec26d59b3d056f22",
       "description": "BulutHamali/labtasker-frontend",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54842 --strictPort",
@@ -9469,7 +9477,13 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@radix-ui/react-context",
+          "@radix-ui/react-tooltip",
+          "@tanstack/react-query",
+          "sonner"
+        ]
       },
       "notes": "Original source, startup, data, scripts and npm lock retained. Pinned Node22.16/npm10.9.2/pnpm10.12.1 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through Vite configuration; no application configuration values are invented. Original public LandingPage, null auth state, Navbar and query/tooltip/toast providers. No backend supplied: useApi hardcodes localhost:3001 and is only used on other routes. No registration/auth or navigation. Partial landing-page/router/toast boundary has 16.9% strict coverage. No login/register or localhost API interaction. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 1029076441 identifies a distinct non-fork repository."
     },
@@ -9478,7 +9492,7 @@
       "repository": "https://github.com/orodrigogo/pomodoro-react-extension",
       "revision": "569ca9c73519c4230a5ecb38d70847be76a24554",
       "description": "orodrigogo/pomodoro-react-extension",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54843 --strictPort",
@@ -9553,7 +9567,7 @@
       "repository": "https://github.com/M0hc3n/Memory-Game-Front-End",
       "revision": "41b96c07809b38d7cd56f606b1b3acfe69e26925",
       "description": "M0hc3n/Memory-Game-Front-End",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54846 --strictPort",
@@ -9647,7 +9661,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["react-redux"]
       },
       "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Empty Redux todo store with fetch data button; JSONPlaceholder fetch only on untriggered click. No fabricated todos. Partial React-Redux Provider boundary has zero strict coverage, one repeat omission, one wildcard and two incomplete replay assignments. Empty store/fetch button is original, no JSONPlaceholder request triggered. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 194358548 identifies a distinct non-fork repository."
     },
@@ -9922,7 +9937,7 @@
       "repository": "https://github.com/shehza-d/quiz-app",
       "revision": "8bf4e6e6a9a4227442f20b22adab36a2fc1677c0",
       "description": "shehza-d/quiz-app",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
@@ -9967,16 +9982,22 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": [
+          "@chakra-ui/*",
+          "css-box-model",
+          "react-icons",
+          "react-icons/*"
+        ]
       },
-      "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty localStorage fallback and authored writes, light theme and live elapsed-session interval created in render. No storage seeding, Date override, task input or timer suppression. Partial initial empty Todoist has22.7% strict coverage,72 opaque tree nodes, eight unmatched text slots and one productive-time wildcard;11 bounded states and five incomplete replay assignments. Native64 commits/two roots and original live session interval retained, no timer suppression or seeded tasks. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 424290537 identifies a distinct non-fork repository."
+      "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty localStorage fallback and authored writes, light theme and live elapsed-session interval created in render. No storage seeding, Date override, task input or timer suppression. A fresh native capture followed by Chakra, css-box-model and React Icons source analysis is exact with 100% strict coverage, no opaque or wildcard match, four bounded states and two replayed assignments without contradiction; one escaped productive-time state remains incomplete. Native64 commits/two roots and original live session interval retained, no timer suppression or seeded tasks. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 424290537 identifies a distinct non-fork repository."
     },
     {
       "id": "hqwuzhaoyi-react-ddd",
       "repository": "https://github.com/hqwuzhaoyi/react_ddd",
       "revision": "cc5a264af5005f8afff48f62bfce6a4327f9e806",
       "description": "hqwuzhaoyi/react_ddd",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@6.14.18 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
@@ -10003,7 +10024,7 @@
       "repository": "https://github.com/kajal-rekha/immemorial",
       "revision": "1326a6243df9518dd86fae455982a09747f0a0de",
       "description": "kajal-rekha/immemorial",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
@@ -10367,7 +10388,7 @@
       "repository": "https://github.com/Lucas-Erkana/math_magician_react",
       "revision": "cdf7061fa5092753c7064ef8de9ae50822d996be",
       "description": "Lucas-Erkana/math_magician_react",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
@@ -10497,7 +10518,7 @@
       "repository": "https://github.com/ahangarha/MV-MathMagicians",
       "revision": "67804d18395a1eb3811ab24d398b8fda645ae804",
       "description": "ahangarha/MV-MathMagicians",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
@@ -10523,7 +10544,7 @@
       "repository": "https://github.com/iLynette/math_magician",
       "revision": "b441768996896a8950c6852a3567d0b7618ec06a",
       "description": "iLynette/math_magician",
-      "framework": "spa",
+      "framework": "react-router",
       "workingDirectory": ".",
       "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
@@ -10826,7 +10847,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-helmet", "react-side-effect"]
       },
       "notes": "Original three-second animated loader and Club Animals menu/Start Game/footer, Helmet title and new Audio construction. Module-level17-animal double/shuffle retained; no Start, game-grid mount, flips, confetti, moves, sound playback or timer suppression. Do not inject image/random identities, viewport or storage; initial fiber matching cannot prove animation/audio/attributes or gameplay. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original three-second animated loader and Club Animals menu/Start Game/footer, Helmet title and new Audio construction. Module-level17-animal double/shuffle retained; no Start, game-grid mount, flips, confetti, moves, sound playback or timer suppression. Do not inject image/random identities, viewport or storage; initial fiber matching cannot prove animation/audio/attributes or gameplay. Partial91.7% strict coverage on original Club Animals menu after three-second loader. Two opaque whole-tree nodes, one unmatched Helmet slot/opaque renaming, three bounded states/two passing sampled assignments, no wildcards/omissions. Original StrictMode UNSAFE_componentWillMount warning from SideEffect(NullComponent), Helmet title, audio construction and module-level animal shuffle remain. No Start, card flips, sound playback, confetti, random identity, pixel/host-lifecycle or gameplay completeness claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 451588125 identifies a distinct non-fork repository."
     },
@@ -11060,7 +11082,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["@chakra-ui/*"]
       },
       "notes": "Original empty input, false error and #f15025 Values palette at all(10); original conversion, alert-reset timers and clipboard handlers retained. No submit, color injection, clipboard access, timer suppression, tint arithmetic or pixel/attribute proof. Original Chakra Grid without adding a provider and uncleaned timers retained. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty input, false error and #f15025 Values palette at all(10); original conversion, alert-reset timers and clipboard handlers retained. No submit, color injection, clipboard access, timer suppression, tint arithmetic or pixel/attribute proof. Original Chakra Grid without adding a provider and uncleaned timers retained. Partial 13.7% strict coverage; 1 opaque whole-model nodes/1 wildcards, three bounded states and one repeat omission above2. All three incomplete assignments retained among four replays, including the outside-enumeration21-item assignment. Dynamic-key diagnostic preserved. Original palette, Values dependency, timers and clipboard handlers retained; no input, copy, color injection, cardinality completeness or pixel/attribute proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 498257319 identifies a distinct non-fork repository."
     },
@@ -11424,7 +11447,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-color", "@icons/*"]
       },
       "notes": "Original #22194D all(10) palette and ChromePicker with undefined initial color.background from empty string. No picker input, clipboard, timer manipulation or palette/color correctness claim. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #22194D all(10) palette and ChromePicker with undefined initial color.background from empty string. No picker input, clipboard, timer manipulation or palette/color correctness claim. Partial70.4% strict coverage with one opaque ChromePicker node/renaming, two whole-model wildcards, six bounded states and two repeat omissions above2. Five incomplete assignments remain among seven replays, including21-item outside-enumeration matching. Two dynamic-key diagnostics preserved. No picker input, palette replacement, clipboard operations, timer manipulation or complete cardinality/color/pixel proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 524639414 identifies a distinct non-fork repository."
     },
@@ -11840,7 +11864,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original #FF6000 Values all(8), two #FF6000 inputs, hex-only cards, nanoid render keys and empty ToastContainer retained; no random key identity claim. No submit, clipboard, toast, storage, random, clock or route injection. Initial fiber membership does not prove full models, arithmetic, attributes or pixels. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #FF6000 Values all(8), two #FF6000 inputs, hex-only cards, nanoid render keys and empty ToastContainer retained; no random key identity claim. No submit, clipboard, toast, storage, random, clock or route injection. Initial fiber membership does not prove full models, arithmetic, attributes or pixels. Partial initial membership at 80.4% strict coverage against 139 native fibers. Whole model: 1 opaque nodes, 1 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/annanft-colorgenerator-react/src/components/ColorList.jsx:8:10\",\"count\":25}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 630162986 identifies a distinct non-fork repository."
     },
@@ -12075,7 +12100,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original #f15025 Values all(10), empty color/text inputs, missing list keys, literal semicolon after ColorList and top-center ToastContainer retained. No submit, clipboard, toast, storage, random, clock or route injection. Initial fiber membership does not prove full models, arithmetic, attributes or pixels. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #f15025 Values all(10), empty color/text inputs, missing list keys, literal semicolon after ColorList and top-center ToastContainer retained. No submit, clipboard, toast, storage, random, clock or route injection. Initial fiber membership does not prove full models, arithmetic, attributes or pixels. Partial initial membership at 76.0% strict coverage against 184 native fibers. Whole model: 1 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/hieutran2103-colorgenerator-react-fundamental/src/ColorList.jsx:8:8\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 662134863 identifies a distinct non-fork repository."
     },
@@ -12153,7 +12179,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original #f15025 Values all(10), empty text/color inputs, nanoid keys and top-center ToastContainer. Distinct Vite repository, not independent tutorial semantics. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #f15025 Values all(10), empty text/color inputs, nanoid keys and top-center ToastContainer. Distinct Vite repository, not independent tutorial semantics. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 75.8% strict coverage against 183 native fibers. Whole model: 1 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/john-smilga-react-vite-projects-9-color-generator/src/ColorList.jsx:6:8\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 610348091 identifies a distinct non-fork repository."
     },
@@ -12205,7 +12232,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original #f15025 Values all(10), empty text/color inputs, nanoid render keys, padded text and top-center ToastContainer. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #f15025 Values all(10), empty text/color inputs, nanoid render keys, padded text and top-center ToastContainer. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 80.4% strict coverage against 225 native fibers. Whole model: 1 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/odiriteddie-color-generator-react/src/components/ColorList.jsx:8:8\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 640276442 identifies a distinct non-fork repository."
     },
@@ -12216,12 +12244,13 @@
       "description": "lalidiaz/colors-generator-ReactJs",
       "framework": "spa",
       "workingDirectory": ".",
-      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci && corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm install --prefix .bippy-runtime --package-lock=false --no-save chokidar@3.5.1",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
       "env": {
         "PORT": "55105",
         "HOST": "127.0.0.1",
         "NODE_OPTIONS": "",
+        "NODE_PATH": ".bippy-runtime/node_modules",
         "BROWSER": "none",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
         "PUPPETEER_SKIP_DOWNLOAD": "1"
@@ -12231,7 +12260,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons", "react-icons/*"]
       },
       "notes": "Original #f15025 Values all(10), empty input with different #66bb6a placeholder, copy buttons with IoMdCopy and3000ms false-alert resets. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #f15025 Values all(10), empty input with different #66bb6a placeholder, copy buttons with IoMdCopy and3000ms false-alert resets. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 47.7% strict coverage against 282 native fibers. Whole model: 1 opaque nodes, 1 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/lalidiaz-colors-generator-reactjs/src/App.js:40:10\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 340004941 identifies a distinct non-fork repository."
     },
@@ -12283,7 +12313,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original #f15025 Values all(10), empty text/color inputs despite README prefilled claim, nanoid keys, type-based shade class and top-center ToastContainer. Distinct V2 repository, not algorithmic independence. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #f15025 Values all(10), empty text/color inputs despite README prefilled claim, nanoid keys, type-based shade class and top-center ToastContainer. Distinct V2 repository, not algorithmic independence. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 75.8% strict coverage against 183 native fibers. Whole model: 1 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/pktcodes-color-generator-react-project-v2/src/ColorList.jsx:8:8\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 674480540 identifies a distinct non-fork repository."
     },
@@ -12362,7 +12393,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original React19/Vite7/Toastify11 #f15025 Values all(10), empty color/text inputs, nanoid keys and top-center ToastContainer. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original React19/Vite7/Toastify11 #f15025 Values all(10), empty color/text inputs, nanoid keys and top-center ToastContainer. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 75.8% strict coverage against 183 native fibers. Whole model: 1 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/themshahid-react-color-generator/src/ColorList.jsx:8:8\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 1042012702 identifies a distinct non-fork repository."
     },
@@ -12492,7 +12524,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original #d87d4a Values all(1), empty color/text inputs, index>100 threshold and top-center ToastContainer. No Vite config is authored; none supplied. Original defaults and all source/configuration retained. Initial membership is not complete gameplay, timing, color/cardinality, attributes or pixel proof. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #d87d4a Values all(1), empty color/text inputs, index>100 threshold and top-center ToastContainer. No Vite config is authored; none supplied. Original defaults and all source/configuration retained. Initial membership is not complete gameplay, timing, color/cardinality, attributes or pixel proof. Partial initial membership at 75.1% strict coverage against 1624 native fibers. Whole model: 1 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/maher-batha-color-generator/src/components/ColorList.jsx:7:8\",\"count\":201}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 666745657 identifies a distinct non-fork repository."
     },
@@ -13118,7 +13151,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons", "react-icons/*"]
       },
       "notes": "Empty input; #ed213a Values all(10), weight10, original select and icons/scroll listener; preserve node-sass7 and any install failure. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Empty input; #ed213a Values all(10), weight10, original select and icons/scroll listener; preserve node-sass7 and any install failure. partial initial membership, 82.0% strict coverage, budgetExhausted=false, 184 native fibers. Whole model: 2 opaque nodes, 2 wildcards, 3 bounded states, 1 omissions. 3 incomplete and 0 mismatched among 4 replays; sample-incomplete. Original warnings, incomplete replay and omissions retained. No game/timer transitions, cardinality, attribute, pixel, randomness or arithmetic correctness claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 446199350 identifies a distinct non-fork repository."
     },
@@ -13534,7 +13568,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["@mui/*", "react-icons", "react-icons/*"]
       },
       "notes": "Original React17/ReactDOM16 pairing, MUI, #f15025 all(10), hidden picker, percent10 and controlled/default warning; no pairing/peer repair. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original React17/ReactDOM16 pairing, MUI, #f15025 all(10), hidden picker, percent10 and controlled/default warning; no pairing/peer repair. partial initial membership, 53.9% strict coverage, budgetExhausted=false, 207 native fibers. Whole model: 3 opaque nodes, 2 wildcards, 6 bounded states, 2 omissions. 5 incomplete and 0 mismatched among 7 replays; sample-incomplete. Original warnings and limitations retained. No game/timer transitions, cardinality, attribute, pixel, randomness, API or arithmetic correctness claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 430210332 identifies a distinct non-fork repository."
     },
@@ -13717,7 +13752,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["framer-motion"]
       },
       "notes": "Original nine empty strings/X turn/no winner/New Game, Framer Motion and two turn symbols; /web-task-react-tic-tac-toe/ and same-array mutation unchanged. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original nine empty strings/X turn/no winner/New Game, Framer Motion and two turn symbols; /web-task-react-tic-tac-toe/ and same-array mutation unchanged. partial initial membership, 98.3% strict coverage, budgetExhausted=false, 60 native fibers. Whole model: 1 opaque nodes, 0 wildcards, 1 bounded states, 0 omissions. 0 incomplete and 0 mismatched among 1 replays; sample-passed. Original warnings and limitations retained. No game/timer transitions, cardinality, attribute, pixel, randomness, API or arithmetic correctness claim. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 739373974 identifies a distinct non-fork repository."
     },

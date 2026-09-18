@@ -54,6 +54,7 @@ export interface RenderComponentOptions {
   props?: StaticObjectValue;
   /** The component is rendered somewhere inside a larger app, so unprovided contexts may still be provided. */
   isolated?: boolean;
+  prepareInterpreter?: (interpreter: Interpreter) => void;
 }
 
 interface RenderWithOptions {
@@ -419,6 +420,7 @@ export class StaticRenderer {
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
     const exportName = options.exportName ?? "default";
     const run = this.startRun(options.isolated ?? false);
+    options.prepareInterpreter?.(run.interpreter);
     const componentValue = run.interpreter.evaluateModuleExport(module, exportName);
     const type = toElementType(
       componentValue,

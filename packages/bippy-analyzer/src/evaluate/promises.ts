@@ -27,6 +27,7 @@ export interface PromiseTools extends Pick<
   | "queueMicrotask"
   | "bindTask"
   | "runTask"
+  | "runTaskAlternatives"
   | "recordStateMutation"
 > {}
 
@@ -159,7 +160,7 @@ export const isPossiblyUnsettled = (value: StaticValue): boolean =>
 
 export const getAwaitPromise = (value: StaticValue): ModeledPromise | null => {
   const promise = getModeledPromise(value);
-  if (promise) return promise.isEscaped ? null : promise;
+  if (promise) return promise;
   if (isThrownOutcome(value) || isPossiblyUnsettled(value)) return null;
   return resolvePromise(value);
 };
@@ -181,7 +182,39 @@ export const suspendOnPromise = (
         if (returned) settlePromise(result, returned, runTools);
       },
       escape: (escapeTools) => {
-        resume(unknownValue("promise settled outside the analysis", location), true);
+        const reason = "promise settled outside the analysis";
+        const outcome = branchValue(
+          [
+            unknownValue("promise fulfilled outside the analysis", location),
+            thrownValue(
+              "promise rejected outside the analysis",
+              unknownValue("promise rejection reason", location),
+              location,
+            ),
+          ],
+          reason,
+          location,
+        );
+        if (outcome.kind === "branch") {
+          const alternatives = getAlternativeGuards(outcome);
+          if (alternatives) {
+            escapeTools.runTaskAlternatives(
+              alternatives.guards.map((guard) => ({
+                guard,
+                inputs: [...alternatives.inputs],
+              })),
+              (index) => {
+                const alternative = outcome.alternatives[index];
+                if (alternative) resume(alternative, true);
+              },
+              reason,
+            );
+          } else {
+            resume(outcome, true);
+          }
+        } else {
+          resume(outcome, true);
+        }
         escapePromise(result, escapeTools);
       },
     },

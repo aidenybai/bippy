@@ -1051,6 +1051,125 @@ describe("next pages router", () => {
       fiber("RouterProvider", "FunctionComponent", [matched]),
     ]);
   });
+
+  it("splices legacy router providers and the default LinkAnchor", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const anchor = fiber("a", "HostComponent");
+    const runtime = {
+      reactVersion: "17.0.2",
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("BrowserRouter", "ClassComponent", [
+            fiber("Router", "ClassComponent", [
+              fiber("Router", "ContextProvider", [
+                fiber("Router-History", "ContextProvider", [
+                  fiber("Switch", "ClassComponent", [
+                    fiber("Router", "ContextConsumer", [
+                      fiber("Route", "ClassComponent", [
+                        fiber("Router", "ContextConsumer", [
+                          fiber("Router", "ContextProvider", [
+                            fiber("Link", "ForwardRef", [
+                              fiber("Router", "ContextConsumer", [
+                                fiber("LinkAnchor", "ForwardRef", [anchor]),
+                              ]),
+                            ]),
+                          ]),
+                        ]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("react-router"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("BrowserRouter", "ClassComponent", [
+        fiber("Switch", "ClassComponent", [
+          fiber("Route", "ClassComponent", [fiber("Link", "ForwardRef", [anchor])]),
+        ]),
+      ]),
+    ]);
+  });
+});
+
+describe("react router component versions", () => {
+  it.each([
+    ["5.3.4", "ClassComponent"],
+    ["6.0.0", "FunctionComponent"],
+  ])("models BrowserRouter %s with its native fiber tag", async (version, expectedTag) => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      version,
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-browser.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    expect(findFiberTags(getRenderPattern(result), "BrowserRouter")).toEqual([expectedTag]);
+    expect(findFiberTags(getRenderPattern(result), "Route")).toEqual([expectedTag]);
+  });
+
+  it("models v5 Switch first-match semantics and class fibers", async () => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      "5.3.4",
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-switch.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const pattern = getRenderPattern(result);
+    const tree = formatPattern(pattern);
+    expect(result.diagnostics).toEqual([]);
+    expect(findFiberTags(pattern, "Switch")).toEqual(["ClassComponent"]);
+    expect(findFiberTags(pattern, "Route")).toEqual([
+      "ClassComponent",
+      "ClassComponent",
+      "ClassComponent",
+      "ClassComponent",
+    ]);
+    expect(tree).toContain("<Match>");
+    expect(tree).toContain("<main>");
+    expect(tree).toContain('"settings"');
+    expect(tree).toContain('"/forced/settings"');
+    expect(tree).toContain("<EmptyChildrenFallback>");
+    expect(tree).toContain("<footer>");
+    expect(tree).toMatch(/<NestedMatch>[\s\S]*<span>\n\s+"nested-"\n\s+"42"/);
+    expect(tree).toMatch(/<InheritedMatch>[\s\S]*<output>\n\s+"inherited-"\n\s+"42"/);
+    expect(tree).not.toContain("<Miss>");
+    expect(tree).not.toContain("<aside>");
+  });
+
+  it("applies a v5 Redirect after its lifecycle commits", async () => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      "5.3.4",
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-redirect.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const tree = formatPattern(getRenderPattern(result));
+    expect(result.diagnostics).toEqual([]);
+    expect(tree).toContain("<Login>");
+    expect(tree).toContain("<aside>");
+    expect(tree).not.toContain("<Dashboard>");
+    expect(tree).not.toContain("<Redirect>");
+  });
 });
 
 describe("react router framework mode with react-router-auto-routes", () => {
