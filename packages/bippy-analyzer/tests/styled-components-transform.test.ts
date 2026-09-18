@@ -52,7 +52,14 @@ describe("styled-components build transform", () => {
     const result = await renderer.render();
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === "error")).toEqual([]);
     expect(formatPattern(getRenderPattern(result))).toBe(
-      ["<HostRoot>", "  <Basic>", "    <ResponsiveWrapper>", "      <div>"].join("\n"),
+      [
+        "<HostRoot>",
+        "  <Basic>",
+        "    <styled.header>",
+        "      <header>",
+        "        <ResponsiveWrapper>",
+        "          <div>",
+      ].join("\n"),
     );
   });
 });

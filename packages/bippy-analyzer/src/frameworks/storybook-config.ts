@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import type { Interpreter } from "../evaluate/interpreter.js";
-import { DEFAULT_STYLED_COMPONENTS_TRANSFORM } from "../evaluate/styled-components-transform.js";
 import { getObjectProperty, isKnownString } from "../evaluate/values.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
 
@@ -29,8 +28,5 @@ export const applyStorybookCompilerOptions = (
   if (typescript.kind !== "object") return;
   const reactDocgen = getObjectProperty(typescript, "reactDocgen");
   if (!isKnownString(reactDocgen) || reactDocgen.value !== "react-docgen-typescript") return;
-  interpreter.styledComponentsTransform = {
-    ...DEFAULT_STYLED_COMPONENTS_TRANSFORM,
-    fileName: false,
-  };
+  interpreter.reactDocgenTypescript = true;
 };

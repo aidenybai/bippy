@@ -318,6 +318,7 @@ import {
 import { isStrictCode } from "./strict-code.js";
 import { nativeFunction } from "./stubs.js";
 import {
+  collectReactDocgenTypescriptDisplayNames,
   collectStyledDisplayNames,
   DEFAULT_STYLED_COMPONENTS_TRANSFORM,
   STYLED_COMPONENTS_MACRO_SPECIFIER,
@@ -914,6 +915,7 @@ export class Interpreter {
   readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
   /** The styled-components transform the project's build applies to its own modules; `null` when it has none. */
   styledComponentsTransform: StyledComponentsTransformOptions | null;
+  reactDocgenTypescript = false;
   private readonly styledDisplayNames = new WeakMap<ModuleRecord, Map<Node, string>>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
@@ -4484,6 +4486,11 @@ export class Interpreter {
           ? null
           : this.styledComponentsTransform;
       displayNames = transform ? collectStyledDisplayNames(module, transform) : new Map();
+      if (this.reactDocgenTypescript && !isInsideNodeModules(module.filePath)) {
+        for (const [node, displayName] of collectReactDocgenTypescriptDisplayNames(module)) {
+          displayNames.set(node, displayName);
+        }
+      }
       this.styledDisplayNames.set(module, displayNames);
     }
     return displayNames;
