@@ -233,6 +233,20 @@ describe("corpus server startup", () => {
 });
 
 describe("corpus child environments", () => {
+  it("waits for descendant output before closing the command log", async () => {
+    await withParentEnvironment(async (directory) => {
+      const logPath = join(directory, "command.log");
+      const delayedOutput = `setTimeout(() => process.stdout.write("descendant output\\\\n"), 50)`;
+      await runCommand({
+        command: `${JSON.stringify(process.execPath)} -e ${JSON.stringify(delayedOutput)} &`,
+        cwd: directory,
+        logPath,
+        timeoutMs: 5000,
+      });
+      expect(readFileSync(logPath, "utf8")).toContain("descendant output");
+    });
+  });
+
   it.each(SERVER_CASES)(
     "$name",
     async ({ environment, expectedCI }) => {
