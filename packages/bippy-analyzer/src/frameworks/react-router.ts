@@ -6,7 +6,6 @@ import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
 import { countChildrenExactly } from "../evaluate/react-children.js";
 import {
   element,
-  emptyStub,
   hostElement,
   nativeFunction,
   omitProps,
