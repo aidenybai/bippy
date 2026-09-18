@@ -59,9 +59,6 @@ const I18NEXT_CONTEXT: ContextDefinition = {
 const getOption = (options: StaticValue, name: string): StaticValue =>
   options.kind === "object" ? getObjectProperty(options, name) : UNDEFINED_VALUE;
 
-const getFirstValue = (value: StaticValue): StaticValue =>
-  value.kind === "list" ? (value.items[0] ?? UNDEFINED_VALUE) : value;
-
 const getLanguageCandidates = (
   language: StaticValue,
   fallbackLanguage: StaticValue,
@@ -85,10 +82,20 @@ const getLanguageCandidates = (
       candidates.push(primitiveValue(baseLanguage));
     }
   };
-  addCandidate(getFirstValue(language));
-  addCandidate(getFirstValue(fallbackLanguage));
+  const addCandidates = (value: StaticValue): void => {
+    if (value.kind === "list") {
+      value.items.forEach(addCandidate);
+      return;
+    }
+    addCandidate(value);
+  };
+  addCandidates(language);
+  addCandidates(fallbackLanguage);
   return candidates;
 };
+
+const getNamespaceCandidates = (namespace: StaticValue): StaticValue[] =>
+  namespace.kind === "list" ? namespace.items : [namespace];
 
 const getNestedValue = (root: StaticValue, segments: readonly string[]): StaticValue => {
   let value = root;
@@ -143,10 +150,10 @@ const getTranslation = (
       ? state.language
       : fixedLanguage
     : optionLanguage;
-  const optionNamespace = getFirstValue(getOption(options, "ns"));
+  const optionNamespace = getOption(options, "ns");
   let namespaceValue = isUndefinedValue(optionNamespace)
     ? isUndefinedValue(fixedNamespace)
-      ? getFirstValue(state.defaultNamespace)
+      ? state.defaultNamespace
       : fixedNamespace
     : optionNamespace;
   let key = keyValue.value;
@@ -169,23 +176,27 @@ const getTranslation = (
             key,
           ]
         : [key];
-  const namespaceName = isKnownString(namespaceValue) ? namespaceValue.value : "translation";
-  for (const languageCandidate of getLanguageCandidates(language, state.fallbackLanguage)) {
-    if (!isKnownString(languageCandidate)) {
-      return unknownPrimitiveValue("string", "translation from a dynamic language");
+  for (const namespaceCandidate of getNamespaceCandidates(namespaceValue)) {
+    if (!isKnownString(namespaceCandidate)) {
+      return unknownPrimitiveValue("string", "translation from a dynamic namespace");
     }
-    for (const keyCandidate of keyCandidates) {
-      const segments =
-        state.keySeparator === null ? [keyCandidate] : keyCandidate.split(state.keySeparator);
-      const value = getNestedValue(state.resources, [
-        languageCandidate.value,
-        namespaceName,
-        ...segments,
-      ]);
-      if (isUndefinedValue(value)) continue;
-      return isKnownString(value)
-        ? getInterpolation(value.value, options)
-        : unknownPrimitiveValue("string", `translation of "${key}"`);
+    for (const languageCandidate of getLanguageCandidates(language, state.fallbackLanguage)) {
+      if (!isKnownString(languageCandidate)) {
+        return unknownPrimitiveValue("string", "translation from a dynamic language");
+      }
+      for (const keyCandidate of keyCandidates) {
+        const segments =
+          state.keySeparator === null ? [keyCandidate] : keyCandidate.split(state.keySeparator);
+        const value = getNestedValue(state.resources, [
+          languageCandidate.value,
+          namespaceCandidate.value,
+          ...segments,
+        ]);
+        if (isUndefinedValue(value)) continue;
+        return isKnownString(value)
+          ? getInterpolation(value.value, options)
+          : unknownPrimitiveValue("string", `translation of "${key}"`);
+      }
     }
   }
   const defaultValue = getOption(options, "defaultValue");
@@ -229,7 +240,7 @@ const createI18nextInstance = (): StaticObjectValue => {
       "getFixedT",
       ([language = UNDEFINED_VALUE, namespace = UNDEFINED_VALUE, keyPrefix = UNDEFINED_VALUE]) =>
         nativeFunction("fixedT", ([key = UNDEFINED_VALUE, options]) =>
-          translate(key, options, language, getFirstValue(namespace), keyPrefix),
+          translate(key, options, language, namespace, keyPrefix),
         ),
     ),
     use: nativeFunction("use", () => instance),
