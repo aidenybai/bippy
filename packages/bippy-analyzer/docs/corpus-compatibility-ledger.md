@@ -2,28 +2,28 @@
 
 ## Artifact baseline
 
-Recomputed at analyzer commit `39c4235c99a74394712869ba0f8a7c113a2dbbc9` from the current
+Recomputed at analyzer commit `ccc5e6b7` from the current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 
 - Manifest entries: 500
 - Result rows: 500; missing rows: 0; manifest revision mismatches: 0
-- Membership: 330 exact, 109 partial, 23 truncated, 19 mismatch, 7 unresolved
-- Strict coverage: 355 rows at 100%, 106 between 0% and 100%, 27 at 0%, and 12
-  without a report. Of the 355 rows at 100%, 25 remain partial or truncated.
-- Explicit uncertainty: 107 rows with opaque or wildcard matching
+- Membership: 336 exact, 104 partial, 23 truncated, 18 mismatch, 7 unresolved
+- Strict coverage: 361 rows at 100%, 101 between 0% and 100%, 26 at 0%, and 12
+  without a report. Of the 361 rows at 100%, 25 remain partial or truncated.
+- Explicit uncertainty: 102 rows with opaque or wildcard matching
 - Incompleteness: 75 rows with state-space omissions; 4 budget-exhausted comparisons
-- Replay: 8 contradiction rows, 41 incomplete rows, 142 rows without replay evidence
-- Native evidence: 16 live-result rows, 472 saved-capture replay rows, 12 rows without a native
+- Replay: 8 contradiction rows, 41 incomplete rows, 141 rows without replay evidence
+- Native evidence: 18 live-result rows, 470 saved-capture replay rows, 12 rows without a native
   report
 - Recorded environment/install failures: 0. The artifact gives no failure provenance for the 12
   static-only rows, so this is not evidence that their native setup succeeded.
 
-The 19 native mismatches are `actual`, `blocknote`, `clip`, `ens-app-v3`,
+The 18 native mismatches are `actual`, `blocknote`, `clip`, `ens-app-v3`,
 `gabrielwr-react-retirement-calculator`, `guohub8080-mtkit`, `heroicons-dev`,
 `logicmason5-many-short-games-using-reactjs`, `museeks`, `novel`, `phar-converter`,
 `quocbao19982009-todo-app`, `remix-blocks`, `rendy278-kanban-board`, `shivankacker-type`,
-`standardnotes`, `taxepfa-taxepfa-github-io`, `teable`, and `theonlyrasheed-color-generator`.
+`standardnotes`, `taxepfa-taxepfa-github-io`, and `theonlyrasheed-color-generator`.
 
 The 4 exhausted comparisons are `ens-app-v3`, `gabrielwr-react-retirement-calculator`,
 `rendy278-kanban-board`, and `taxepfa-taxepfa-github-io`.
@@ -390,3 +390,16 @@ configuration, records their JSON values with the native observations, and gives
 precedence over the later static config load. A fresh native capture at
 `2026-09-18T19:38:01.867Z` is exact in 498 steps with 100% strict coverage, no opaque or wildcard
 node, and all six sampled assignments replaying without contradiction.
+
+## Final single-package boundaries
+
+Scoped source expansion for `next-seo`, `react-icons`, and `react-toastify` removes the remaining
+opaque component from `next-landing-starter`, `nicolaeciobanuu-react-timer`,
+`dilsherb-react-budget-calculator`, `john-smilga-react-hooks-budged-calculator-app`, and
+`ravimishra007-timer-application`. Fresh captures or saved captures from the same UTC run replay
+exact with 100% strict coverage, no opaque or wildcard node, and no replay contradiction.
+
+`0shuvo0-react-memory-game` also has fresh native evidence with no opaque or wildcard node and 100%
+strict coverage. Its authored sixteen-card random list remains honestly truncated because the
+symbolic repeat is unbounded; the native ×16 assignment matches outside the bounded enumeration and
+all four replay assignments pass.

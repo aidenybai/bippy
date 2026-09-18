@@ -64156,8 +64156,8 @@
       "id": "next-landing-starter",
       "revision": "cd6694e6c69efad1128c1ed732188389182789df",
       "framework": "next-pages",
-      "capturedAt": "2026-09-09T06:58:14.553Z",
-      "durationMs": 389,
+      "capturedAt": "2026-09-18T20:13:55.550Z",
+      "durationMs": 409,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -64170,22 +64170,26 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 425,
+          "fiberCount": 431,
           "textCount": 26,
           "branchCount": 1,
           "repeatCount": 0,
-          "opaqueCount": 2,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 22
+          "modulesLoaded": 24
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "next-config",
+            "count": 2
+          }
+        ]
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 194,
+        "matchedFibers": 198,
         "matchedText": 12,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -64194,24 +64198,25 @@
         "wildcards": [],
         "branchesResolved": 1,
         "repeatIterations": 0,
-        "transparentFibers": 0,
+        "transparentFibers": 16,
+        "status": "exact",
         "runtimeFibers": 210,
-        "staticFibers": 208,
+        "staticFibers": 210,
         "coverage": 1,
-        "strictCoverage": 0.9809523809523809,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 208,
+        "stepsUsed": 211,
         "budgetExhausted": false
       },
       "stateSpace": {
         "states": 2,
-        "stateCount": 0,
-        "clusters": 0,
+        "stateCount": 2,
+        "clusters": 1,
         "tree": {
-          "nodes": 0,
-          "inputs": 0,
-          "guards": 0,
-          "branches": 0,
+          "nodes": 421,
+          "inputs": 1,
+          "guards": 2,
+          "branches": 1,
           "repeats": 0,
           "opaque": 0,
           "wildcards": 0
@@ -64221,7 +64226,7 @@
           "conditions": [
             {
               "kind": "branch",
-              "variable": "branch#1",
+              "variable": "choice(#1)",
               "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
               "location": null,
               "alternativeIndex": 0,
@@ -64232,15 +64237,42 @@
         "closestState": null,
         "omitted": null,
         "coverage": {
-          "sides": [],
-          "witnessed": 0,
-          "possible": 0,
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()().default)",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
           "unreachable": 0
         }
       },
-      "stateReplay": null,
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 2,
+        "assignments": 2,
+        "replayed": 2,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T09:26:12.233Z",
+      "note": "runtime replayed from 2026-09-18T20:06:54.921Z",
       "failure": null
     },
     {
@@ -320132,8 +320164,8 @@
       "id": "0shuvo0-react-memory-game",
       "revision": "7d15e0352b76c06a2208ed6db92b370021bad792",
       "framework": "spa",
-      "capturedAt": "2026-09-14T14:57:04.669Z",
-      "durationMs": 277,
+      "capturedAt": "2026-09-18T20:15:49.082Z",
+      "durationMs": 10072,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -320203,7 +320235,7 @@
             {
               "kind": "repeat",
               "variable": "len(#1)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
               "count": 16
             }
           ]
@@ -320215,7 +320247,7 @@
             {
               "kind": "repeat",
               "variable": "len(#1)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -320228,7 +320260,7 @@
               "kind": "repeat",
               "variable": "len(#1)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
               "side": 0,
               "guard": "eq(len(#1), 0)",
               "status": "possible"
@@ -320237,7 +320269,7 @@
               "kind": "repeat",
               "variable": "len(#1)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
               "side": 1,
               "guard": "len(#1) > 0",
               "status": "witnessed"
@@ -320261,7 +320293,7 @@
             {
               "kind": "repeat",
               "variable": "len(#1)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-seven/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/0shuvo0-react-memory-game/src/components/Cards.js:57:14",
               "count": 16
             }
           ],
@@ -320269,7 +320301,7 @@
         }
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T14:57:02.450Z",
+      "note": null,
       "failure": null
     },
     {
@@ -320912,8 +320944,8 @@
       "id": "nicolaeciobanuu-react-timer",
       "revision": "f0efe6c782d2213e7d5a2a5f93c16a9941195460",
       "framework": "spa",
-      "capturedAt": "2026-09-14T14:57:57.132Z",
-      "durationMs": 298,
+      "capturedAt": "2026-09-18T20:13:56.934Z",
+      "durationMs": 519,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -320926,21 +320958,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 57,
+          "fiberCount": 62,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 11
+          "modulesLoaded": 16
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 55,
+        "matchedFibers": 61,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -320950,13 +320982,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 61,
-        "staticFibers": 56,
+        "staticFibers": 61,
         "coverage": 1,
-        "strictCoverage": 0.9016393442622951,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 56,
+        "stepsUsed": 61,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -320964,12 +320996,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 56,
+          "nodes": 61,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -320995,7 +321027,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T14:57:54.662Z",
+      "note": "runtime replayed from 2026-09-18T20:07:13.132Z",
       "failure": null
     },
     {
@@ -323851,8 +323883,8 @@
       "id": "dilsherb-react-budget-calculator",
       "revision": "a8deb697fa35c03e2c07ef418520cd24a8c39732",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:31:07.661Z",
-      "durationMs": 284,
+      "capturedAt": "2026-09-18T20:13:57.454Z",
+      "durationMs": 656,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -323865,21 +323897,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 45,
+          "fiberCount": 51,
           "textCount": 13,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 6
+          "modulesLoaded": 11
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 30,
+        "matchedFibers": 37,
         "matchedText": 13,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -323889,13 +323921,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 50,
-        "staticFibers": 44,
+        "staticFibers": 50,
         "coverage": 1,
-        "strictCoverage": 0.86,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 44,
+        "stepsUsed": 50,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -323903,12 +323935,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 44,
+          "nodes": 50,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -323934,7 +323966,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:31:05.403Z",
+      "note": "runtime replayed from 2026-09-18T20:06:22.279Z",
       "failure": null
     },
     {
@@ -324727,8 +324759,8 @@
       "id": "john-smilga-react-hooks-budged-calculator-app",
       "revision": "d0c098af63b6c86ca74b1a1bad97af3fab9b1845",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:31:56.387Z",
-      "durationMs": 266,
+      "capturedAt": "2026-09-18T20:13:58.112Z",
+      "durationMs": 437,
       "runtime": {
         "reactVersion": "16.8.6",
         "rendererName": "react-dom",
@@ -324741,21 +324773,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 23,
+          "fiberCount": 28,
           "textCount": 4,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 7
+          "modulesLoaded": 12
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 17,
+        "matchedFibers": 23,
         "matchedText": 4,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -324765,13 +324797,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 27,
-        "staticFibers": 22,
+        "staticFibers": 27,
         "coverage": 1,
-        "strictCoverage": 0.7777777777777778,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 22,
+        "stepsUsed": 27,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -324779,12 +324811,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 22,
+          "nodes": 27,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -324810,7 +324842,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:31:54.202Z",
+      "note": "runtime replayed from 2026-09-18T20:11:47.098Z",
       "failure": null
     },
     {
@@ -334039,8 +334071,8 @@
       "id": "ravimishra007-timer-application",
       "revision": "10a2c1ffc0409a196c3a123c1848740e070f0456",
       "framework": "spa",
-      "capturedAt": "2026-09-14T17:27:37.895Z",
-      "durationMs": 391,
+      "capturedAt": "2026-09-18T20:13:58.551Z",
+      "durationMs": 664,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -334053,37 +334085,37 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 17,
+          "fiberCount": 18,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 4
+          "modulesLoaded": 5
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 15,
+        "matchedFibers": 17,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 2,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
-        "opaqueRenamed": 1,
+        "opaqueRenamed": 0,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 17,
-        "staticFibers": 16,
+        "staticFibers": 17,
         "coverage": 1,
-        "strictCoverage": 0.8823529411764706,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 16,
+        "stepsUsed": 17,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -334091,12 +334123,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 16,
+          "nodes": 17,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -334122,7 +334154,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T17:27:35.384Z",
+      "note": "runtime replayed from 2026-09-18T20:06:40.334Z",
       "failure": null
     },
     {
