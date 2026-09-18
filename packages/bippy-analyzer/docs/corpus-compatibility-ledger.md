@@ -106,6 +106,12 @@ correction.
 All three fresh results replay every enumerated assignment with no contradiction. These are
 initial-page captures only; they do not exercise interactions or prove exhaustive behavior.
 
+`lucas-erkana-math-magician-react` was subsequently classified with the manifest's React Router
+profile instead of the generic SPA profile. Under the same pinned revision, `/` route, environment,
+and native conditions, a third fresh comparison is exact in 25 steps with 100% strict coverage, no
+opaque or wildcard node, and one replayed assignment with no mismatch. Calculator and Quote
+navigation and calculator interactions remain unverified.
+
 ## Pure package class instances
 
 The artifact contains 392 wildcard-absorbed text fibers across 40 color-generator repositories
