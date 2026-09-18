@@ -1,10 +1,23 @@
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
-import { GLOBAL_INTERFACE_NAME, type HostValueKind } from "../host/realm-table.js";
-import type { StaticValue, UnknownPrimitiveType } from "../types.js";
+import {
+  GLOBAL_INTERFACE_NAME,
+  type HostType,
+  type HostValueKind,
+} from "../host/realm-table.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { StaticObjectValue, StaticValue, UnknownPrimitiveType } from "../types.js";
 import { readLanguageValue } from "./language-intrinsics.js";
 import { getHostDocumentMember, getNativeInterfaceName } from "./native-values.js";
-import { NULL_VALUE, UNDEFINED_VALUE, unknownPrimitiveValue, unknownValue } from "./values.js";
+import { escapedPromiseValue } from "./promises.js";
+import { nativeFunction } from "./stubs.js";
+import {
+  NULL_VALUE,
+  objectValue,
+  UNDEFINED_VALUE,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
 
 export const GLOBAL_OBJECT_VALUE: StaticValue = { kind: "global", name: GLOBAL_INTERFACE_NAME };
 
@@ -34,6 +47,72 @@ const DISPATCH_STATE_GLOBALS = new Map<string, StaticValue>([["event", UNDEFINED
 
 const toUnknownPrimitiveType = (kind: HostValueKind): UnknownPrimitiveType =>
   kind === "string" || kind === "number" || kind === "boolean" ? kind : "any";
+
+const getDeclaredHostValue = (
+  realm: HostRealm,
+  type: HostType,
+  reason: string,
+  location: SourceLocation | null,
+): StaticValue => {
+  if (type.isNullable || type.kind === "any") return unknownValue(reason, location);
+  switch (realm.getTypeKind(type)) {
+    case "string":
+    case "number":
+    case "boolean":
+    case "bigint":
+      return unknownPrimitiveValue(toUnknownPrimitiveType(type.kind), reason);
+    case "symbol":
+      return unknownValue(reason, location);
+    case "undefined":
+      return UNDEFINED_VALUE;
+    case "null":
+      return NULL_VALUE;
+    case "function":
+      return nativeFunction(reason, (args, tools) => {
+        for (const argument of args) tools.markEscaped(argument);
+        return unknownValue(`${reason}()`, location);
+      });
+    case "object":
+      if (type.interfaceName === "Promise") return escapedPromiseValue();
+      return type.interfaceName === null
+        ? unknownValue(reason, location)
+        : { ...objectValue(), hostInterfaceName: type.interfaceName };
+    case "any":
+      return unknownValue(reason, location);
+  }
+};
+
+export const constructDeclaredHostObject = (
+  realm: HostRealm,
+  name: string,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const instanceType = realm.getGlobal(`${name}.prototype`)?.type;
+  return instanceType?.kind === "object" && instanceType.interfaceName !== null
+    ? getDeclaredHostValue(realm, instanceType, `new ${name}()`, location)
+    : null;
+};
+
+export const getDeclaredHostObjectMember = (
+  realm: HostRealm,
+  object: StaticObjectValue,
+  key: string,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  if (object.hostInterfaceName === undefined) return null;
+  const member = realm.getMember(object.hostInterfaceName, key);
+  if (member === null) return null;
+  const reason = `${object.hostInterfaceName}.${key}`;
+  if (member.type.kind !== "function") {
+    return getDeclaredHostValue(realm, member.type, reason, location);
+  }
+  return nativeFunction(reason, (args, tools) => {
+    for (const argument of args) tools.markEscaped(argument);
+    return member.returnType === null
+      ? unknownValue(`${reason}()`, location)
+      : getDeclaredHostValue(realm, member.returnType, `${reason}()`, location);
+  });
+};
 
 /**
  * The value a global by dotted path holds in this host, from its declarations:

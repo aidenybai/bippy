@@ -31,9 +31,23 @@ const Relay = () => {
   return hop >= RELAY_HOPS ? <output>arrived</output> : <progress value={hop} max={RELAY_HOPS} />;
 };
 
+const HostPromiseBeforeTimer = () => {
+  const [isReady, setReady] = useState(false);
+  useEffect(() => {
+    const reads = [new FileReader().readAsText(new Blob(["ready"]))];
+    Promise.all(reads)
+      .then(() => undefined)
+      .catch(() => undefined);
+    const timeout = setTimeout(() => setReady(true), 10);
+    return () => clearTimeout(timeout);
+  }, []);
+  return isReady ? <strong>host ready</strong> : <small>host waiting</small>;
+};
+
 export const App = () => (
   <main>
     <SavedAgo />
     <Relay />
+    <HostPromiseBeforeTimer />
   </main>
 );

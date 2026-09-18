@@ -230,7 +230,11 @@ import {
   type MutableHeapValue,
 } from "./heap-journal.js";
 import type { StateCell } from "./hooks.js";
-import { getPrimitiveWitness, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import {
+  getDeclaredHostObjectMember,
+  getPrimitiveWitness,
+  GLOBAL_OBJECT_VALUE,
+} from "./host-globals.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
@@ -3848,6 +3852,13 @@ export class Interpreter {
         }
         const property = getObjectProperty(object, key);
         if (property.kind !== "primitive" || property.value !== undefined) return property;
+        const declared = getDeclaredHostObjectMember(
+          this.getRealm(context.environment),
+          object,
+          key,
+          location,
+        );
+        if (declared) return declared;
         if (key === "constructor") return getIntrinsicConstructor(object) ?? property;
         if (
           !object.hasNullPrototype &&

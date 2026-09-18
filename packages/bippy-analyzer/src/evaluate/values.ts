@@ -1389,6 +1389,7 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return true;
     case "object": {
       if (right.kind !== "object") return false;
+      if (left.hostInterfaceName !== right.hostInterfaceName) return false;
       const leftKeys = getKnownObjectKeys(left);
       const rightKeys = getKnownObjectKeys(right);
       if (!leftKeys || !rightKeys || leftKeys.length !== rightKeys.length)

@@ -538,6 +538,8 @@ export interface StaticObjectValue {
   entries: StaticObjectEntry[];
   /** Allocation ordinal (see `getAllocationCount`); values constructed without one have undecidable identity. */
   allocation?: number;
+  /** Browser or server interface declared for an object whose host implementation is unavailable. */
+  hostInterfaceName?: string;
   constructedBy?: StaticClassValue;
   /** Created with `Object.create(null)`: no inherited `constructor` or `Object.prototype` methods. */
   hasNullPrototype?: boolean;
