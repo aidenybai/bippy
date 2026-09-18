@@ -9655,7 +9655,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["react-redux"]
       },
       "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Empty Redux todo store with fetch data button; JSONPlaceholder fetch only on untriggered click. No fabricated todos. Partial React-Redux Provider boundary has zero strict coverage, one repeat omission, one wildcard and two incomplete replay assignments. Empty store/fetch button is original, no JSONPlaceholder request triggered. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 194358548 identifies a distinct non-fork repository."
     },
