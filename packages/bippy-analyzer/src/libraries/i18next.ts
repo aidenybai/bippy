@@ -212,7 +212,7 @@ const createI18nextInstance = (): StaticObjectValue => {
     getTranslation(
       state,
       key,
-      isKnownString(options)
+      options !== undefined && isKnownString(options)
         ? objectFromRecord({ defaultValue: options })
         : (options ?? UNDEFINED_VALUE),
       fixedLanguage ?? UNDEFINED_VALUE,
@@ -308,7 +308,7 @@ const createI18nextModel = (): I18nextModel => {
     const contextNamespace =
       context.kind === "object" ? getObjectProperty(context, "defaultNS") : UNDEFINED_VALUE;
     const activeNamespace = namespace ?? contextNamespace ?? UNDEFINED_VALUE;
-    const fixedT = getObjectProperty(activeInstance, "getFixedT");
+    const fixedT = getOption(activeInstance, "getFixedT");
     const keyPrefix = options ? getOption(options, "keyPrefix") : UNDEFINED_VALUE;
     const t = tools.call(fixedT, [UNDEFINED_VALUE, activeNamespace, keyPrefix]);
     return objectFromRecord({
