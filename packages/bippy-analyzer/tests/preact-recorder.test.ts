@@ -71,3 +71,38 @@ it("records Preact commits as React-compatible snapshots", () => {
     ],
   });
 });
+
+it("recovers a Preact root mounted before DevTools attach", () => {
+  const nodes: object[] = [];
+  const target = { document: { querySelectorAll: (): object[] => nodes } };
+  const recorder = installPreactRecorder(target);
+  const options: TestPreactOptions = {};
+  const Fragment = (props: object): object => props;
+  const hostNode = { parentNode: { nodeName: "MAIN" } };
+  const host = {
+    type: "p",
+    props: { children: "ready" },
+    key: null,
+    __e: hostNode,
+    __k: [{ type: null, props: "ready", key: null, __k: [] }],
+  };
+  const root = {
+    type: Fragment,
+    props: { children: [host] },
+    key: null,
+    __e: hostNode,
+    __k: [host],
+  };
+  nodes.push({ __k: root });
+
+  const attachPreact = Reflect.get(getAttachedDevTools(target), "attachPreact");
+  if (typeof attachPreact !== "function") throw new Error("Preact attach hook is missing");
+  Reflect.apply(attachPreact, null, ["10.23.2", options, { Fragment }]);
+
+  expect(recorder.commitCount()).toBe(1);
+  expect(recorder.snapshot().roots[0]).toMatchObject({
+    tag: "HostRoot",
+    props: { container: "main" },
+    children: [{ tag: "HostComponent", name: "p", props: { children: "ready" } }],
+  });
+});

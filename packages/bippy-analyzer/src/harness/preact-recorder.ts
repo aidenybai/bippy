@@ -7,7 +7,9 @@ import type {
 
 interface PreactOptions {
   _commit?: (...args: unknown[]) => void;
+  _root?: (...args: unknown[]) => void;
   __c?: (...args: unknown[]) => void;
+  __?: (...args: unknown[]) => void;
 }
 
 interface PreactInternals {
@@ -21,6 +23,11 @@ interface PreactDevTools {
 export interface PreactRecorder {
   snapshot: () => RuntimeSnapshot;
   commitCount: () => number;
+}
+
+interface MountedPreactRoot {
+  container: object;
+  root: object;
 }
 
 const isObject = (value: unknown): value is object =>
@@ -184,12 +191,17 @@ const getVNodeSnapshot = (vnode: object, fragment: unknown): RuntimeFiberSnapsho
   };
 };
 
-const getRootContainerName = (root: object): string | null => {
+const getRootContainer = (root: object): object | null => {
   const dom = getAliasedProperty(root, "_dom", "__e");
   if (!isObject(dom)) return null;
   const parent = getProperty(dom, "parentNode");
-  if (!isObject(parent)) return null;
-  const nodeName = getProperty(parent, "nodeName");
+  return isObject(parent) ? parent : null;
+};
+
+const getRootContainerName = (root: object): string | null => {
+  const container = getRootContainer(root);
+  if (!container) return null;
+  const nodeName = getProperty(container, "nodeName");
   return typeof nodeName === "string" ? nodeName.toLowerCase() : null;
 };
 
@@ -214,6 +226,25 @@ const getRootVNode = (vnode: object): object => {
   return root;
 };
 
+const getMountedRoots = (target: object): MountedPreactRoot[] => {
+  const document = getProperty(target, "document");
+  if (!isObject(document)) return [];
+  const querySelectorAll = getProperty(document, "querySelectorAll");
+  if (typeof querySelectorAll !== "function") return [];
+  const nodeList = Reflect.apply(querySelectorAll, document, ["*"]);
+  if (!isObject(nodeList)) return [];
+  const length = getProperty(nodeList, "length");
+  if (typeof length !== "number") return [];
+  const roots: MountedPreactRoot[] = [];
+  for (let index = 0; index < length; index++) {
+    const node = getProperty(nodeList, String(index));
+    if (!isObject(node)) continue;
+    const root = getAliasedProperty(node, "_children", "__k");
+    if (isObject(root)) roots.push({ container: node, root });
+  }
+  return roots;
+};
+
 const getPreactDevTools = (target: object): PreactDevTools | null => {
   const devTools = getProperty(target, "__PREACT_DEVTOOLS__");
   if (!isObject(devTools)) return null;
@@ -230,6 +261,24 @@ export const installPreactRecorder = (target: object): PreactRecorder => {
   let version: string | null = null;
   let fragment: unknown;
   const roots = new Set<object>();
+  const containers = new Set<object>();
+  const rootsByContainer = new Map<object, object>();
+  const setContainerRoot = (container: object, root: object): void => {
+    const previousRoot = rootsByContainer.get(container);
+    if (previousRoot && previousRoot !== root) roots.delete(previousRoot);
+    rootsByContainer.set(container, root);
+    roots.add(root);
+  };
+  const refreshRoots = (): void => {
+    for (const container of containers) {
+      const root = getAliasedProperty(container, "_children", "__k");
+      if (isObject(root)) setContainerRoot(container, root);
+    }
+    for (const mounted of getMountedRoots(target)) {
+      containers.add(mounted.container);
+      setContainerRoot(mounted.container, mounted.root);
+    }
+  };
   const previousDevTools = getPreactDevTools(target);
   const devTools: PreactDevTools = {
     attachPreact: (nextVersion, options, internals) => {
@@ -237,26 +286,50 @@ export const installPreactRecorder = (target: object): PreactRecorder => {
       version = nextVersion;
       fragment = internals.Fragment;
       const previousCommit = options._commit ?? options.__c;
+      const previousRoot = options._root ?? options.__;
+      const recordRoot = (...args: unknown[]): void => {
+        previousRoot?.(...args);
+        const container = args[1];
+        if (isObject(container)) containers.add(container);
+      };
       const recordCommit = (...args: unknown[]): void => {
         previousCommit?.(...args);
         const nextRoot = args[0];
         if (!isObject(nextRoot)) return;
-        roots.add(getRootVNode(nextRoot));
+        const root = getRootVNode(nextRoot);
+        const container = getRootContainer(root);
+        if (container) {
+          containers.add(container);
+          setContainerRoot(container, root);
+        } else {
+          roots.add(root);
+        }
         commits++;
       };
+      if ("_root" in options || !("__" in options)) options._root = recordRoot;
+      else options.__ = recordRoot;
       if ("_commit" in options || !("__c" in options)) options._commit = recordCommit;
       else options.__c = recordCommit;
+      refreshRoots();
+      if (roots.size > 0 && commits === 0) commits = 1;
     },
   };
   Reflect.set(target, "__PREACT_DEVTOOLS__", devTools);
   return {
-    snapshot: () => ({
-      reactVersion: version,
-      rendererName: version === null ? null : "preact",
-      buildType: version === null ? null : "development",
-      roots: [...roots].map((root) => getRootSnapshot(root, fragment)),
-      capturedAt: new Date().toISOString(),
-    }),
-    commitCount: () => commits,
+    snapshot: () => {
+      refreshRoots();
+      return {
+        reactVersion: version,
+        rendererName: version === null ? null : "preact",
+        buildType: version === null ? null : "development",
+        roots: [...roots].map((root) => getRootSnapshot(root, fragment)),
+        capturedAt: new Date().toISOString(),
+      };
+    },
+    commitCount: () => {
+      refreshRoots();
+      if (roots.size > 0 && commits === 0) commits = 1;
+      return commits;
+    },
   };
 };
