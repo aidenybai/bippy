@@ -220,6 +220,8 @@ describe("index writes into lists of unknown length", () => {
       `
 interface Item {
   id: string;
+  kind: string;
+  visible: boolean;
 }
 
 interface StreamProps {
@@ -227,12 +229,20 @@ interface StreamProps {
 }
 
 export const Stream = ({ items }: StreamProps) => {
-  const collected: Item[] = [];
-  for (let index = items.length - 1; index >= 0; index--) {
-    const item = items[index];
-    collected.unshift({ id: item.id });
+  const filtered = items.filter((item) => item.visible);
+  const buckets: Record<string, Item[]> = {
+    source: [],
+    translation: [],
+  };
+  for (let index = filtered.length - 1; index >= 0; index--) {
+    const item = filtered[index];
+    const key = item.kind === "source" ? "source" : "translation";
+    buckets[key].unshift(item);
   }
-  return <>{collected.map((item) => <span key={item.id} />)}</>;
+  const lines = ["source", "translation"]
+    .map((key) => ({ items: buckets[key] }))
+    .filter((line) => line.items.length > 0);
+  return <>{lines.map((line) => line.items.map((item) => <span key={item.id} />))}</>;
 };
 `,
     );
@@ -243,7 +253,11 @@ export const Stream = ({ items }: StreamProps) => {
         items: listValue([
           {
             kind: "repeat",
-            item: objectFromRecord({ id: unknownPrimitiveValue("string", "item id") }),
+            item: objectFromRecord({
+              id: unknownPrimitiveValue("string", "item id"),
+              kind: unknownPrimitiveValue("string", "item kind"),
+              visible: unknownPrimitiveValue("boolean", "item visibility"),
+            }),
             location: null,
           },
         ]),
