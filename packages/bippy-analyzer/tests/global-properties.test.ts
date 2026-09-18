@@ -114,6 +114,55 @@ it("restores host properties that were never explicitly injected", () => {
     });
 });
 
+it("creates globals through sloppy assignments to unbound names", () => {
+  const interpreter = createInterpreter({});
+  const module = interpreter.graph.addVirtualModule(
+    join(rootDirectory, "sloppy-global.js"),
+    `
+module.exports.run = () => {
+  createdByAssignment = 4;
+  return createdByAssignment;
+};
+`,
+  );
+  expect(module).not.toBeNull();
+  if (!module) return;
+  const result = interpreter.callValue(
+    interpreter.evaluateModuleExport(module, "run"),
+    [],
+    interpreter.createModuleContext(module),
+    null,
+  );
+  expect(result).toEqual(primitiveValue(4));
+});
+
+it("throws for strict assignments to unbound names", () => {
+  const interpreter = createInterpreter({});
+  const module = interpreter.graph.addVirtualModule(
+    join(rootDirectory, "strict-global.js"),
+    `
+module.exports.run = () => {
+  "use strict";
+  try {
+    forbiddenAssignment = 4;
+    return "assigned";
+  } catch (error) {
+    return error.name;
+  }
+};
+`,
+  );
+  expect(module).not.toBeNull();
+  if (!module) return;
+  const result = interpreter.callValue(
+    interpreter.evaluateModuleExport(module, "run"),
+    [],
+    interpreter.createModuleContext(module),
+    null,
+  );
+  expect(result).toEqual(primitiveValue("ReferenceError"));
+});
+
 it("isolates client globals and builtin expandos from server writes", () => {
   const interpreter = createInterpreter({
     __BIPPY_REALM_VALUE__: { value: "client" },
