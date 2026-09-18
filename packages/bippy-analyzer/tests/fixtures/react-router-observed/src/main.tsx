@@ -13,7 +13,7 @@ const router = createBrowserRouter([
       {
         path: "posts/:slug",
         loader: ({ params }) => ({
-          title: `Post ${params.slug}`,
+          title: Promise.resolve(`Post ${params.slug}`),
           tags: ["react", "router"],
           publishedAt: null,
         }),

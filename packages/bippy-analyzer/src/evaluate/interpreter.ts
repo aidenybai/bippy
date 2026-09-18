@@ -59,6 +59,7 @@ import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { getLibraryValue, isModeledLibraryExport } from "../libraries/index.js";
+import { getCapturedPromiseOutcome } from "../observations.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
   getDeclaredNames,
@@ -1028,6 +1029,18 @@ export class Interpreter {
 
   /** A value recorded from the running page, with references to the project's own module exports evaluated. */
   captured(captured: CapturedValue, name: string): StaticValue {
+    const promise = getCapturedPromiseOutcome(captured);
+    if (promise) {
+      const settled =
+        promise.value === undefined
+          ? UNDEFINED_VALUE
+          : this.captured(promise.value, `${name}.value`);
+      return resolvedPromiseValue(
+        promise.status === "rejected"
+          ? thrownValue("promise rejected on the captured page", settled, null)
+          : settled,
+      );
+    }
     return capturedValue(captured, name, (reference) => this.resolveCapturedExport(reference));
   }
 

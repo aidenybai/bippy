@@ -1,6 +1,13 @@
 import type { Fiber, FiberRoot } from "bippy";
 import { traverseFiber } from "bippy";
-import { dateCapture, hashKey, isPlainObject, isRecord, opaqueCapture } from "../observations.js";
+import {
+  dateCapture,
+  hashKey,
+  isPlainObject,
+  isRecord,
+  opaqueCapture,
+  promiseCapture,
+} from "../observations.js";
 import type {
   CapturedMutation,
   CapturedQuery,
@@ -31,6 +38,25 @@ const describeOpaque = (value: unknown): string => {
   return typeof value;
 };
 
+const captureTrackedPromise = (
+  value: Record<string, unknown>,
+  exports: ExportIndex,
+  seen: Set<object>,
+): CapturedValue | null => {
+  if (value._tracked !== true || typeof value.then !== "function") return null;
+  const status = "_error" in value ? "rejected" : "_data" in value ? "fulfilled" : null;
+  if (status === null) return null;
+  seen.add(value);
+  const settledValue = toCapturedValue(
+    status === "rejected" ? value._error : value._data,
+    exports,
+    seen,
+  );
+  return promiseCapture(
+    settledValue === undefined ? { status } : { status, value: settledValue },
+  );
+};
+
 /**
  * Serializes what JSON can carry, names nodes that are a loaded module's export,
  * and marks the rest opaque; `undefined` is returned for absent values so callers omit them.
@@ -51,6 +77,8 @@ export const toCapturedValue = (
   }
   if (!isRecord(value)) return opaqueCapture(describeOpaque(value));
   if (value instanceof Date) return dateCapture(value);
+  const trackedPromise = captureTrackedPromise(value, exports, seen);
+  if (trackedPromise !== null) return trackedPromise;
   if (seen.has(value)) return opaqueCapture("cycle");
   seen.add(value);
   if (value instanceof Error) {

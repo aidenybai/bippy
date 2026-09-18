@@ -344,6 +344,11 @@ export type JsonValue =
  */
 export type CapturedValue = JsonValue;
 
+export interface CapturedPromiseOutcome {
+  status: "fulfilled" | "rejected";
+  value?: CapturedValue;
+}
+
 /** A module export the page held: `module` is the URL path the dev server served the module at. */
 export interface CapturedExportReference {
   module: string;
