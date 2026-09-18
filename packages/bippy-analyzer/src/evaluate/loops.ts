@@ -27,6 +27,7 @@ import { createScope } from "./scope.js";
 import { getThrowCertainty } from "./thrown.js";
 import {
   UNDEFINED_VALUE,
+  getGuaranteedObjectEnumerableKeys,
   getObjectProperty,
   getOwnEnumerableEntries,
   getTruthiness,
@@ -110,7 +111,7 @@ const MAX_UNROLLED_ITERATIONS = 256;
 
 type UnrollResult =
   | { kind: "exact"; outcome: StatementOutcome }
-  | { kind: "partial"; outcomes: StatementOutcome[] };
+  | { kind: "partial"; outcomes: StatementOutcome[]; excludedLoopKeys?: string[] };
 
 const completeUnrolling = (
   outcomes: StatementOutcome[],
@@ -189,7 +190,10 @@ const iterationValues = (
   }
   if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
   const entries = getOwnEnumerableEntries(enumerated);
-  return entries ? { items: entries.map(([key]) => primitiveValue(key)), isComplete: true } : null;
+  if (entries) return { items: entries.map(([key]) => primitiveValue(key)), isComplete: true };
+  if (enumerated.kind !== "object") return null;
+  const keys = getGuaranteedObjectEnumerableKeys(enumerated);
+  return keys.length > 0 ? { items: keys.map(primitiveValue), isComplete: false } : null;
 };
 
 const runBody = (
@@ -297,7 +301,15 @@ const unrollForEach = (
       const step = advanceIteration(evaluation.outcome, outcomes);
       if (step !== "next") return step;
     }
-    return iteration.isComplete ? exactCompletion(outcomes) : { kind: "partial", outcomes };
+    return iteration.isComplete
+      ? exactCompletion(outcomes)
+      : {
+          kind: "partial",
+          outcomes,
+          excludedLoopKeys: iteration.items.flatMap((item) =>
+            item.kind === "primitive" ? [String(item.value)] : [],
+          ),
+        };
   };
   return collectFrom(0, context);
 };
@@ -417,6 +429,7 @@ const evaluateUncertainTail = (
   statement: LoopStatement,
   context: EvaluationContext,
   location: SourceLocation,
+  excludedLoopKeys: string[] = [],
 ): StatementOutcome => {
   const loopContext: EvaluationContext = {
     ...context,
@@ -425,7 +438,7 @@ const evaluateUncertainTail = (
   if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
     const value =
       statement.type === "ForInStatement"
-        ? unknownPrimitiveValue("string", "loop key")
+        ? { ...unknownPrimitiveValue("string", "loop key"), excludedStrings: excludedLoopKeys }
         : unknownValue("loop variable", location);
     bindLoopLeft(evaluator, statement.left, value, loopContext);
   } else if (statement.type === "ForStatement" && statement.init?.type === "VariableDeclaration") {
@@ -470,7 +483,13 @@ const finishUnrolling = (
   location: SourceLocation,
 ): StatementOutcome => {
   if (unrolled?.kind === "exact") return unrolled.outcome;
-  const tail = evaluateUncertainTail(evaluator, statement, context, location);
+  const tail = evaluateUncertainTail(
+    evaluator,
+    statement,
+    context,
+    location,
+    unrolled?.excludedLoopKeys,
+  );
   return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
 };
 

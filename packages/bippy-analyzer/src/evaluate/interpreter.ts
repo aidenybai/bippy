@@ -3668,6 +3668,7 @@ export class Interpreter {
     target.entries.push({
       kind: "spread",
       value: unknownValue(`property ${describeValue(key)} set to ${describeValue(value)}`),
+      omittedKeys: key.kind === "unknown-primitive" ? key.excludedStrings : undefined,
     });
   }
 

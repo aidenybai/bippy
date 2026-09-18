@@ -30,6 +30,7 @@ import type {
   StaticPrimitiveValue,
   StaticPropertyEntry,
   StaticRegExpValue,
+  StaticSpreadEntry,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
   StaticUnknownValue,
@@ -301,7 +302,10 @@ export const setObjectProperty = (
 ): void => {
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
-    if (entry.kind === "spread") break;
+    if (entry.kind === "spread") {
+      if (entry.omittedKeys?.includes(key)) continue;
+      break;
+    }
     if (entry.key === key) {
       object.entries[index] = { kind: "property", key, value };
       return;
@@ -318,6 +322,7 @@ export const getObjectAccessor = (
   for (let index = object.entries.length - 1; index >= 0; index--) {
     const entry = object.entries[index];
     if (entry.kind === "spread") {
+      if (entry.omittedKeys?.includes(key)) continue;
       const presence = withLookupMemo((memo) => getSpreadOwnPresence(memo, entry.value, key));
       if (getTruthiness(presence) === false) continue;
       return null;
@@ -391,6 +396,9 @@ const getMemoizedObjectProperty = (
 const isPresent = (value: StaticValue): boolean =>
   value.kind !== "primitive" || value.value !== undefined;
 
+const omitsSpreadKey = (entry: StaticSpreadEntry, key: string): boolean =>
+  entry.omittedKeys?.includes(key) === true;
+
 const lookupObjectProperty = (
   memo: LookupMemo,
   object: StaticObjectValue,
@@ -403,6 +411,7 @@ const lookupObjectProperty = (
       if (entry.key === key) return entry.value;
       continue;
     }
+    if (omitsSpreadKey(entry, key)) continue;
     let fromEarlier: StaticValue | null = null;
     return getSpreadContribution(memo, entry.value, key, () => {
       fromEarlier ??= getMemoizedObjectProperty(memo, object, key, index);
@@ -581,6 +590,16 @@ const getEnumerableKeys = (keys: Map<string, boolean> | null): string[] | null =
 export const getKnownObjectKeys = (object: StaticObjectValue): string[] | null =>
   getEnumerableKeys(getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key)));
 
+export const getGuaranteedObjectEnumerableKeys = (object: StaticObjectValue): string[] => {
+  const keys = new Set<string>();
+  for (const entry of object.entries) {
+    if (entry.kind === "spread") continue;
+    if (entry.isEnumerable === false) keys.delete(entry.key);
+    else keys.add(entry.key);
+  }
+  return [...keys];
+};
+
 /** Own string keys including non-enumerable ones, as `Object.getOwnPropertyNames` lists them. */
 export const getKnownObjectOwnNames = (object: StaticObjectValue): string[] | null => {
   const keys = getKnownOwnKeys(object, (key) => !isSymbolPropertyKey(key));
@@ -621,6 +640,7 @@ const getMemoizedOwnPresence = (
       verdict = TRUE_VALUE;
       break;
     }
+    if (omitsSpreadKey(entry, key)) continue;
     const previous = verdict;
     verdict = mapValue(getSpreadOwnPresence(memo, entry.value, key), (presence) => {
       const truthiness = getTruthiness(presence);

@@ -533,6 +533,7 @@ export interface StaticPropertyEntry {
 export interface StaticSpreadEntry {
   kind: "spread";
   value: StaticValue;
+  omittedKeys?: string[];
 }
 
 export type StaticObjectEntry = StaticPropertyEntry | StaticSpreadEntry;
@@ -646,6 +647,7 @@ export interface StaticUnknownPrimitiveValue {
   stringShape?: StringShape;
   composition?: StringComposition;
   numberRange?: NumberRange;
+  excludedStrings?: string[];
 }
 
 export interface StaticListValue {
