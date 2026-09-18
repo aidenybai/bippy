@@ -227,6 +227,9 @@ describe("library models", () => {
         "    <section>",
         "      <Swatch>",
         "        <p>",
+        '          "100"',
+        '          "% "',
+        '          "4747a4"',
       ].join("\n"),
     );
   });
