@@ -188,6 +188,11 @@ children/component/render precedence. The model now preserves those fibers and s
 profile removes only demonstrated package-owned wrappers: the `Router` and `Router-History`
 providers and react-router-dom's default `LinkAnchor`.
 
+The audit regression additionally covers `useParams()` through `match.params`, empty `children`
+falling through to `component`, `Switch` and `Route` location overrides, and a pathless child
+inheriting its parent match. A saved-capture replay after these corrections remains unchanged at the
+result below.
+
 Replaying the fresh capture after these corrections changes Mural from mismatch to partial in 140
 steps: 119 fibers and 10 text nodes match, non-opaque coverage is 100%, strict coverage is 98.47%,
 and no opaque subtree remains. The remaining two runtime fibers are under one explicit wildcard for
