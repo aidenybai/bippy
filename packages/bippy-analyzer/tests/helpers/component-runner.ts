@@ -106,7 +106,6 @@ export const createComponentRenderer = () =>
   createStaticRenderer({
     rootDirectory: COMPONENTS_DIRECTORY,
     tsconfigPath: join(COMPONENTS_DIRECTORY, "tsconfig.json"),
-    externalPackageAllowList: ["i18next", "react-i18next"],
     settleMs: QUIET_COMMIT_MS,
     timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
   });

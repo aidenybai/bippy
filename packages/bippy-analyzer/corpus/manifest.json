@@ -1147,7 +1147,6 @@
         "envFiles": [".env.development.local", ".env.development"],
         "maxFiberCount": 20000,
         "externalPackageAllowList": [
-          "i18next",
           "next-i18next",
           "react-i18next",
           "@teable/*",
@@ -5228,7 +5227,6 @@
       "static": {
         "rootDirectory": ".",
         "entry": "src/main.tsx",
-        "externalPackageAllowList": ["i18next", "react-i18next"],
         "defines": {
           "__BASE_PATH__": "/texlyre",
           "__APP_VERSION__": "0.12.1",
@@ -5438,7 +5436,7 @@
       "static": {
         "rootDirectory": ".",
         "entry": "shared/index.tsx",
-        "externalPackageAllowList": ["i18next", "react-i18next", "react-router-dom", "react-router"]
+        "externalPackageAllowList": ["react-router-dom", "react-router"]
       },
       "notes": "src/utils/environment.ts resolves to the `web` platform when neither the Electron preload nor chrome.runtime is present, which is what the Vite dev server gives a plain browser (CLAUDE.md: `npm run dev` runs the React app only). `npm ci --ignore-scripts` skips the postinstall (`electron-rebuild` + copy-ort-wasm) so the Electron binary and native modules are never downloaded or built; setup re-runs only the WASM copy the renderer needs. vite-plugin-electron's `onstart` spawns `electron .` and exits the dev server when that child exits, so the setup writes a sleeping stand-in executable and ELECTRON_OVERRIDE_DIST_PATH points the `electron` package at it; nothing of the app's source is patched."
     },
