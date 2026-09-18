@@ -157,6 +157,18 @@ wildcard, but remains truncated: its color-picker interaction and escaped state 
 assignments, an unbounded palette repeat, and eight incomplete sampled replays. This cluster-wide
 strict result does not resolve that state-space omission or establish interaction completeness.
 
+## Framer Motion presence source
+
+`asmajalal-web-task-react-tic-tac-toe@5710d6f467a7b5b9353292557b6f83e88650fd91`
+was freshly captured at `/web-task-react-tic-tac-toe/` under its manifest environment on
+2026-09-18. The baseline was 98.31% strict because its empty initial winner rendered the
+`AnimatePresence` function fiber itself, while that unmodeled Framer Motion export remained opaque.
+
+Analyzing the pinned `framer-motion@10.17.8` source preserves the demonstrated empty
+`AnimatePresence` fiber without inventing a winner or animation state. Saved-capture replay under
+the unchanged route and comparison budget is exact in 59 steps: all 59 runtime fibers match, strict
+coverage is 100%, and the one unconditional assignment replays with no mismatch or omission.
+
 ## Chakra UI package-source boundary
 
 `heysagnik-todoist@06a1e8b55de66a7721776c005e0c4f87e03bce57` was freshly captured at `/`
