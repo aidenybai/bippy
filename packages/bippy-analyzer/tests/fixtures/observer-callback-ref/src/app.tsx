@@ -8,12 +8,12 @@ import {
 } from "react";
 import { useCallbackRef } from "./use-callback-ref";
 
-const setRef = <Value>(ref: unknown, value: Value): void => {
+const setRef = <Value,>(ref: unknown, value: Value): void => {
   if (typeof ref === "function") ref(value);
   else if (ref && typeof ref === "object" && "current" in ref) ref.current = value;
 };
 
-const useComposedRefs = <Value>(...refs: unknown[]): ((value: Value) => void) =>
+const useComposedRefs = <Value,>(...refs: unknown[]): ((value: Value) => void) =>
   useCallback((value: Value) => refs.forEach((ref) => setRef(ref, value)), refs);
 
 const useDebounceCallback = (callback: () => void, delay: number): (() => void) => {
