@@ -73202,8 +73202,8 @@
       "id": "openai-translator",
       "revision": "3536d2869175a5211a88523a44183d9fc9136fda",
       "framework": "react-router",
-      "capturedAt": "2026-09-09T07:32:12.941Z",
-      "durationMs": 1804,
+      "capturedAt": "2026-09-18T19:21:06.698Z",
+      "durationMs": 29367,
       "runtime": {
         "reactVersion": "19.2.3",
         "rendererName": "react-dom",
@@ -73216,86 +73216,157 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 502,
-          "textCount": 6,
-          "branchCount": 1,
+          "fiberCount": 541,
+          "textCount": 10,
+          "branchCount": 4,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 1,
-          "modulesLoaded": 411
+          "unknownCount": 0,
+          "modulesLoaded": 413
         },
         "diagnostics": []
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 488,
-        "matchedText": 6,
+        "matchedFibers": 0,
+        "matchedText": 0,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 1,
-        "wildcards": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <Routes> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent]",
-            "reason": "`BUILD_TIME` is not defined",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"2026-09-08T13:28:04.114Z\""
-            ]
-          }
-        ],
-        "branchesResolved": 1,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 3,
-        "runtimeFibers": 495,
-        "staticFibers": 494,
-        "coverage": 1,
-        "strictCoverage": 0.997979797979798,
-        "divergence": null,
-        "stepsUsed": 496,
+        "transparentFibers": 0,
+        "status": "mismatch",
+        "runtimeFibers": 498,
+        "staticFibers": 513,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent][1]",
+          "expected": "\"2026-09-18T19:21:07.267Z\"",
+          "actual": "\"2026-09-18T19:14:58.330Z\""
+        },
+        "stepsUsed": 27,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 2,
-        "stateCount": 0,
-        "clusters": 0,
+        "states": 9,
+        "stateCount": 9,
+        "clusters": 3,
         "tree": {
-          "nodes": 0,
-          "inputs": 0,
-          "guards": 0,
-          "branches": 0,
+          "nodes": 1027,
+          "inputs": 7,
+          "guards": 14,
+          "branches": 6,
           "repeats": 0,
           "opaque": 0,
           "wildcards": 0
         },
-        "matchedState": {
-          "index": 1,
-          "conditions": [
-            {
-              "kind": "branch",
-              "variable": "branch#1",
-              "reason": "if (branch(<boolean> | true))",
-              "location": "/home/ubuntu/repos/bippy/packages/parser/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            }
-          ]
+        "matchedState": null,
+        "closestState": {
+          "index": 3,
+          "divergence": {
+            "path": "root > <StrictMode> [Mode] > <App> [FunctionComponent] > <ReactQueryProvider> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <GlobalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BrowserRouter> [FunctionComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider] > <TabLayout> [FunctionComponent] > <ConfigDrawerLayout> [FunctionComponent] > <div> [HostComponent] > <Header> [FunctionComponent] > <AboutModal> [FunctionComponent] > <label> [HostComponent] > <label> [HostComponent] > <p> [HostComponent][1]",
+            "expected": "\"2026-09-18T19:21:07.267Z\"",
+            "actual": "\"2026-09-18T19:14:58.330Z\""
+          }
         },
-        "closestState": null,
         "omitted": null,
         "coverage": {
-          "sides": [],
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(truthy(#1), truthy(#2))",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
+              "side": 0,
+              "guard": "or(and(eq(choice(commit), 0), or(truthy(#1), truthy(#2))), and(eq(choice(commit), 1), or(truthy(#1), truthy(#2))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#3), 0)), truthy(#4))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:54:8",
+              "side": 0,
+              "guard": "or(and(eq(choice(commit), 0), or(truthy(#1), truthy(#2)), not(eq(choice(#3), 0)), truthy(#4)), and(eq(choice(commit), 1), or(truthy(#1), truthy(#2)), not(eq(choice(#3), 0)), truthy(#4)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(choice(#3), 0)), truthy(#4))",
+              "reason": "conditional on branch(false | unknown)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:54:8",
+              "side": 1,
+              "guard": "or(and(eq(choice(commit), 0), or(truthy(#1), truthy(#2)), not(and(not(eq(choice(#3), 0)), truthy(#4)))), and(eq(choice(commit), 1), or(truthy(#1), truthy(#2)), not(and(not(eq(choice(#3), 0)), truthy(#4)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(truthy(#1), truthy(#2))",
+              "reason": "if (branch(<boolean> | true))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/components/SpeechRecognitionButton.tsx:37:3",
+              "side": 1,
+              "guard": "or(and(eq(choice(commit), 0), not(or(truthy(#1), truthy(#2)))), and(eq(choice(commit), 1), not(or(truthy(#1), truthy(#2)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(truthy(#6))))), truthy(#6))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/pages/Translator.tsx:211:18",
+              "side": 0,
+              "guard": "and(eq(choice(commit), 1), not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(truthy(#6))))), truthy(#6))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(truthy(#6))))), truthy(#6))",
+              "reason": "&& on branch(false | <boolean>)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/openai-translator/src/pages/Translator.tsx:211:18",
+              "side": 1,
+              "guard": "and(eq(choice(commit), 1), not(and(not(or(eq(choice(#5), 0), and(not(eq(choice(#5), 0)), not(truthy(#6))))), truthy(#6))))",
+              "status": "possible"
+            }
+          ],
           "witnessed": 0,
-          "possible": 0,
+          "possible": 8,
           "unreachable": 0
         }
       },
-      "stateReplay": null,
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 9,
+        "assignments": 6,
+        "replayed": 6,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T13:28:08.982Z",
+      "note": "runtime replayed from 2026-09-18T19:15:04.422Z",
       "failure": null
     },
     {
@@ -180852,73 +180923,100 @@
       "id": "teable",
       "revision": "bda82ee5c1553e560a8db7f3ac9ff1131d7c3628",
       "framework": "next-pages",
-      "capturedAt": "2026-09-08T12:29:23.764Z",
-      "durationMs": 1694,
+      "capturedAt": "2026-09-18T19:28:50.347Z",
+      "durationMs": 2741,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
         "fibers": 554,
-        "commits": 18,
+        "commits": 16,
         "pageErrors": [
-          "Warning: Prop `%s` did not match. Server: %s Client: %s%s style \"animation:pulse 2.9094913846195753s cubic-bezier(0.4, 0, 0.6, 1) infinite\" \"animation:pulse 3.184256283327418s cubic-bezier(0.4, 0, 0.6, 1) infinite\" \n    at div\n    at Rectangles (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:292:23)\n    at div\n    at div\n    at DescContent (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:344:362)\n    at div\n    at div\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7598:32\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at Provider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25395:28)\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7546:32\n    at _c (http://localhost:3000/_next/static/chunks/packages_6eecbca4._.js:565:230)\n    at LoginPage (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:1874:13)\n    at HydrationBoundary (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:619:28)\n    at QueryClientProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:583:30)\n    at LoginRoute (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:2101:217)\n    at ConfirmModalProvider (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:2711:33)\n    at B (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17130:24)\n    at K (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17125:200)\n    at AppProviders (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3283:13)\n    at MyApp (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3396:13)\n    at I18nextProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:2009:11)\n    at AppWithTranslation (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:3124:26)\n    at PathnameContextProviderAdapter (http://localhost:3000/_next/static/chunks/e0369_next_dist_shared_lib_0ec0913e._.js:5872:43)\n    at PagesDevOverlayErrorBoundary (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:2719:9)\n    at PagesDevOverlayBridge (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:3496:34)\n    at Container (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3085:1)\n    at AppContainer (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3184:25)\n    at Root (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3393:17)"
+          "Warning: Prop `%s` did not match. Server: %s Client: %s%s className \"bg-zinc-50 bg-opacity-25 dark:bg-zinc-900 dark:bg-opacity-25 size-10 rounded-md\" \"bg-zinc-50 dark:bg-zinc-900 size-10 rounded-md\" \n    at div\n    at Rectangles (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:292:23)\n    at div\n    at div\n    at DescContent (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:344:362)\n    at div\n    at div\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7598:32\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at Provider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25395:28)\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7546:32\n    at _c (http://localhost:3000/_next/static/chunks/packages_6eecbca4._.js:565:230)\n    at LoginPage (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:1874:13)\n    at HydrationBoundary (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:619:28)\n    at QueryClientProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:583:30)\n    at LoginRoute (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:2101:217)\n    at ConfirmModalProvider (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:2711:33)\n    at B (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17130:24)\n    at K (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17125:200)\n    at AppProviders (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3283:13)\n    at MyApp (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3396:13)\n    at I18nextProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:2009:11)\n    at AppWithTranslation (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:3124:26)\n    at PathnameContextProviderAdapter (http://localhost:3000/_next/static/chunks/e0369_next_dist_shared_lib_0ec0913e._.js:5872:43)\n    at PagesDevOverlayErrorBoundary (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:2719:9)\n    at PagesDevOverlayBridge (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:3496:34)\n    at Container (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3085:1)\n    at AppContainer (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3184:25)\n    at Root (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3393:17)"
         ],
         "title": "Login"
       },
       "static": {
         "stats": {
-          "fiberCount": 1326,
-          "textCount": 11,
-          "branchCount": 53,
+          "fiberCount": 479,
+          "textCount": 2,
+          "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 6,
-          "unknownCount": 66,
-          "modulesLoaded": 1871
+          "opaqueCount": 3,
+          "unknownCount": 0,
+          "modulesLoaded": 1879
         },
-        "diagnostics": [
-          {
-            "code": "dynamic-key",
-            "count": 1
-          }
-        ]
+        "diagnostics": []
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 471,
-        "matchedText": 1,
-        "opaqueSubtrees": 3,
-        "opaqueSkippedFibers": 8,
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 1,
-        "wildcards": [
-          {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ScrollAreaViewport> [ForwardRef] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <SignForm> [FunctionComponent] > <div> [HostComponent] > <form> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <Button> [ForwardRef] > <button> [HostComponent]",
-            "reason": "value from i18next (default.createInstance().getFixedT()())",
-            "absorbedFibers": 1,
-            "heads": [
-              "\"Sign in\""
-            ]
-          }
-        ],
-        "branchesResolved": 23,
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "runtimeFibers": 481,
-        "staticFibers": 494,
-        "coverage": 1,
-        "strictCoverage": 0.9812889812889813,
-        "divergence": null,
-        "stepsUsed": 507,
+        "status": "mismatch",
+        "runtimeFibers": 498,
+        "staticFibers": 474,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
+          "expected": "<end of children>",
+          "actual": "<ForwardRef> [ForwardRef]"
+        },
+        "stepsUsed": 440,
         "budgetExhausted": false
       },
-      "stateSpace": null,
-      "stateReplay": null,
+      "stateSpace": {
+        "states": 1,
+        "stateCount": 1,
+        "clusters": 0,
+        "tree": {
+          "nodes": 474,
+          "inputs": 0,
+          "guards": 0,
+          "branches": 0,
+          "repeats": 0,
+          "opaque": 3,
+          "wildcards": 0
+        },
+        "matchedState": null,
+        "closestState": {
+          "index": 0,
+          "divergence": {
+            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
+            "expected": "<end of children>",
+            "actual": "<ForwardRef> [ForwardRef]"
+          }
+        },
+        "omitted": null,
+        "coverage": {
+          "sides": [],
+          "witnessed": 0,
+          "possible": 0,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-passed",
+        "states": 1,
+        "assignments": 1,
+        "replayed": 1,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": []
+      },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-08T11:37:09.679Z",
+      "note": "runtime replayed from 2026-09-18T18:57:43.314Z",
       "failure": null
     },
     {

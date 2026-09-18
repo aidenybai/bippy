@@ -2,28 +2,29 @@
 
 ## Artifact baseline
 
-Recomputed at analyzer commit `19108ca056a732aba1784ac1a2cfa9df39e82205` from the current
+Recomputed at analyzer commit `6682ba8f6fab1259387c18115471087b1157024e` from the current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 
 - Manifest entries: 500
 - Result rows: 500; missing rows: 0; manifest revision mismatches: 0
-- Membership: 273 exact, 167 partial, 22 truncated, 19 mismatch, 7 unresolved
-- Strict coverage: 297 rows at 100%, 163 between 0% and 100%, 28 at 0%, and 12
-  without a report. Of the 297 rows at 100%, 24 remain partial or truncated.
-- Explicit uncertainty: 165 rows with opaque or wildcard matching
-- Incompleteness: 115 rows with state-space omissions; 4 budget-exhausted comparisons
-- Replay: 8 contradiction rows, 80 incomplete rows, 146 rows without replay evidence
+- Membership: 329 exact, 109 partial, 23 truncated, 20 mismatch, 7 unresolved
+- Strict coverage: 354 rows at 100%, 106 between 0% and 100%, 28 at 0%, and 12
+  without a report. Of the 354 rows at 100%, 25 remain partial or truncated.
+- Explicit uncertainty: 107 rows with opaque or wildcard matching
+- Incompleteness: 75 rows with state-space omissions; 4 budget-exhausted comparisons
+- Replay: 8 contradiction rows, 41 incomplete rows, 142 rows without replay evidence
 - Native evidence: 15 live-result rows, 473 saved-capture replay rows, 12 rows without a native
   report
 - Recorded environment/install failures: 0. The artifact gives no failure provenance for the 12
   static-only rows, so this is not evidence that their native setup succeeded.
 
-The 19 native mismatches are `actual`, `blocknote`, `clip`, `ens-app-v3`,
+The 20 native mismatches are `actual`, `blocknote`, `clip`, `ens-app-v3`,
 `gabrielwr-react-retirement-calculator`, `guohub8080-mtkit`, `heroicons-dev`,
-`logicmason5-many-short-games-using-reactjs`, `mural`, `museeks`, `novel`, `phar-converter`,
-`quocbao19982009-todo-app`, `remix-blocks`, `rendy278-kanban-board`, `shivankacker-type`,
-`standardnotes`, `taxepfa-taxepfa-github-io`, and `theonlyrasheed-color-generator`.
+`logicmason5-many-short-games-using-reactjs`, `museeks`, `novel`, `openai-translator`,
+`phar-converter`, `quocbao19982009-todo-app`, `remix-blocks`, `rendy278-kanban-board`,
+`shivankacker-type`, `standardnotes`, `taxepfa-taxepfa-github-io`, `teable`, and
+`theonlyrasheed-color-generator`.
 
 The 4 exhausted comparisons are `ens-app-v3`, `gabrielwr-react-retirement-calculator`,
 `rendy278-kanban-board`, and `taxepfa-taxepfa-github-io`.
@@ -357,3 +358,17 @@ space has 6 states with no omission; all 5 joint assignments replay without cont
 unwitnessed alternatives remain sample-incomplete because their claims retain unresolved package
 inputs. This is saved-capture comparison, not another live capture, so remote resources,
 interactions, and whole-state-space agreement remain unverified.
+
+## Uncertain pure-package calls
+
+`teable@bda82ee5c1553e560a8db7f3ac9ff1131d7c3628` calls `tailwind-merge` with a class
+selected through `Math.random()`. The package is declared pure, so an uncertain scalar result can
+remain a stable derived value; interpreting its initialization source cannot recover the random
+class and exhausted the evaluator while constructing Tailwind's class map.
+
+The pure-package boundary now executes concrete calls natively and keeps uncertain calls derived
+without source lifting. Replaying capture `2026-09-18T18:57:43.314Z` removes all 18 exhausted
+diagnostics and all 180 wildcards, reducing the symbolic tree from 478 nodes with 180 wildcards to
+474 nodes with none. Its one assignment replays without contradiction. Teable remains an honest
+mismatch: the native auto scrollbar mounted one additional Radix `ForwardRef` below `Presence`,
+and `NextSeo`, Sonner, and React Joyride still account for three opaque static nodes.
