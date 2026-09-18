@@ -1,5 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import { createContext, h, render } from "preact";
+import type { ComponentChildren } from "preact";
 import {
   installPreactRecorder,
   snapshotPreactContainer,
@@ -7,6 +8,11 @@ import {
 
 interface TestPreactOptions {
   _commit?: (...args: unknown[]) => void;
+}
+
+interface BranchProps {
+  children?: ComponentChildren;
+  predicate: string;
 }
 
 const getAttachedDevTools = (target: object): object => {
@@ -114,8 +120,14 @@ it("recovers a Preact root mounted before DevTools attach", () => {
 it("snapshots a native Preact container after rendering", () => {
   const container = document.createElement("div");
   const Context = createContext("fallback");
+  const predicate = "x".repeat(250);
+  const $Branch = ({ children }: BranchProps): ComponentChildren => children;
   const App = () =>
-    h(Context.Provider, { value: "provided" }, h("section", { title: "native" }, "ready"));
+    h(
+      Context.Provider,
+      { value: "provided" },
+      h($Branch, { predicate }, h("section", { title: "native" }, "ready")),
+    );
   render(h(App, {}), container);
   try {
     expect(snapshotPreactContainer(container, "10.29.8")).toMatchObject({
@@ -133,9 +145,16 @@ it("snapshots a native Preact container after rendering", () => {
                   name: null,
                   children: [
                     {
-                      tag: "HostComponent",
-                      name: "section",
-                      props: { title: "native", children: "ready" },
+                      tag: "FunctionComponent",
+                      name: "$Branch",
+                      props: { predicate },
+                      children: [
+                        {
+                          tag: "HostComponent",
+                          name: "section",
+                          props: { title: "native", children: "ready" },
+                        },
+                      ],
                     },
                   ],
                 },

@@ -4,6 +4,7 @@ import type {
   SnapshotPropValue,
   SnapshotWorkTag,
 } from "./snapshot.js";
+import { isMarkerName } from "../materialize/markers.js";
 
 interface PreactOptions {
   _commit?: (...args: unknown[]) => void;
@@ -87,9 +88,12 @@ const getFunctionTag = (value: Function): SnapshotWorkTag => {
 
 const MAX_STRING_PROP_LENGTH = 200;
 
-const getSnapshotProp = (value: unknown): SnapshotPropValue | undefined => {
+const getSnapshotProp = (
+  value: unknown,
+  isUntruncated: boolean,
+): SnapshotPropValue | undefined => {
   if (typeof value === "string") {
-    return value.length > MAX_STRING_PROP_LENGTH
+    return value.length > MAX_STRING_PROP_LENGTH && !isUntruncated
       ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…`
       : value;
   }
@@ -105,13 +109,14 @@ const getSnapshotProp = (value: unknown): SnapshotPropValue | undefined => {
 const getSnapshotProps = (
   vnode: object,
   hasDirectText: boolean,
+  isMarker: boolean,
 ): Record<string, SnapshotPropValue> => {
   const vnodeProps = getProperty(vnode, "props");
   if (!isObject(vnodeProps)) return {};
   const props: Record<string, SnapshotPropValue> = {};
   for (const [name, value] of Object.entries(vnodeProps)) {
     if (name === "children" && !hasDirectText) continue;
-    const prop = getSnapshotProp(value);
+    const prop = getSnapshotProp(value, isMarker);
     if (prop !== undefined) props[name] = prop;
   }
   return props;
@@ -184,12 +189,13 @@ const getVNodeSnapshot = (vnode: object, fragment: unknown): RuntimeFiberSnapsho
           ? getFunctionName(type)
           : null;
   const context = typeof type === "function" ? getContext(type) : null;
+  const snapshotName = context ? getContextName(context) : name;
   return {
     tag,
-    name: context ? getContextName(context) : name,
+    name: snapshotName,
     key: getVNodeKey(vnode),
     text: null,
-    props: getSnapshotProps(vnode, directText),
+    props: getSnapshotProps(vnode, directText, isMarkerName(snapshotName)),
     children: getSnapshotChildren(vnode, fragment, directText),
   };
 };
