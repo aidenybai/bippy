@@ -52,8 +52,10 @@ const getFunctionName = (value: Function): string | null => {
 };
 
 const getContext = (value: Function): object | null => {
-  const context = getProperty(value, "_contextRef");
-  return isObject(context) ? context : null;
+  const context = getAliasedProperty(value, "_contextRef", "__l");
+  return (typeof context === "object" && context !== null) || typeof context === "function"
+    ? context
+    : null;
 };
 
 const getContextName = (context: object): string | null => {
@@ -62,8 +64,9 @@ const getContextName = (context: object): string | null => {
 };
 
 const getFunctionTag = (value: Function): SnapshotWorkTag => {
-  if (getContext(value)) {
-    return value.name === "Consumer" ? "ContextConsumer" : "ContextProvider";
+  const context = getContext(value);
+  if (context) {
+    return getProperty(context, "Consumer") === value ? "ContextConsumer" : "ContextProvider";
   }
   const reactType = getProperty(value, "$$typeof");
   if (typeof reactType === "symbol" && reactType.description === "react.forward_ref") {

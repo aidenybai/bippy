@@ -40,14 +40,14 @@ const PREACT_CONTEXT_REACT_STUB = `
 module.exports = {
   version: "17.0.2",
   createElement: () => null,
-  createContext: (defaultValue) => ({ _id: "__cC0", _defaultValue: defaultValue }),
+  createContext: (defaultValue) => ({ __c: "__cC0", __: defaultValue }),
   Component: class Component {},
   useState: (initial) => [initial, () => {}],
   act: (callback) => callback(),
   __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
     ReactCurrentDispatcher: {
       current: {
-        readContext: (context) => ({})[context._id].props.value,
+        readContext: (context) => ({})[context.__c].props.value,
       },
     },
   },

@@ -167,10 +167,12 @@ const loadContextReader = (react: ReactModule): ReactRuntime["readContext"] => {
       if (
         typeof context === "object" &&
         context !== null &&
-        "_id" in context &&
-        "_defaultValue" in context
+        (("_id" in context && "_defaultValue" in context) ||
+          ("__c" in context && "__" in context))
       ) {
-        return Reflect.get(context, "_defaultValue");
+        return "_defaultValue" in context
+          ? Reflect.get(context, "_defaultValue")
+          : Reflect.get(context, "__");
       }
       throw error;
     }

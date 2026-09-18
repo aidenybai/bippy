@@ -1,5 +1,5 @@
 import { expect, it } from "vite-plus/test";
-import { h, render } from "preact";
+import { createContext, h, render } from "preact";
 import {
   installPreactRecorder,
   snapshotPreactContainer,
@@ -113,7 +113,9 @@ it("recovers a Preact root mounted before DevTools attach", () => {
 
 it("snapshots a native Preact container after rendering", () => {
   const container = document.createElement("div");
-  const App = () => h("section", { title: "native" }, "ready");
+  const Context = createContext("fallback");
+  const App = () =>
+    h(Context.Provider, { value: "provided" }, h("section", { title: "native" }, "ready"));
   render(h(App, {}), container);
   try {
     expect(snapshotPreactContainer(container, "10.29.8")).toMatchObject({
@@ -127,9 +129,15 @@ it("snapshots a native Preact container after rendering", () => {
               name: "App",
               children: [
                 {
-                  tag: "HostComponent",
-                  name: "section",
-                  props: { title: "native", children: "ready" },
+                  tag: "ContextProvider",
+                  name: null,
+                  children: [
+                    {
+                      tag: "HostComponent",
+                      name: "section",
+                      props: { title: "native", children: "ready" },
+                    },
+                  ],
                 },
               ],
             },
