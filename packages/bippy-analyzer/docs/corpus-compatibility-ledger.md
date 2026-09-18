@@ -157,6 +157,34 @@ wildcard, but remains truncated: its color-picker interaction and escaped state 
 assignments, an unbounded palette repeat, and eight incomplete sampled replays. This cluster-wide
 strict result does not resolve that state-space omission or establish interaction completeness.
 
+## Chakra UI package-source boundary
+
+`heysagnik-todoist@06a1e8b55de66a7721776c005e0c4f87e03bce57` was freshly captured at `/`
+under its manifest environment on 2026-09-18. The baseline was partial with 22.66% strict coverage:
+36 opaque Chakra subtrees skipped 155 fibers, and an unresolved productive-time state absorbed two
+fibers through a wildcard. All ten sampled assignments agreed with native, while five remained
+incomplete.
+
+Analyzing the installed Chakra v1 source first exposed a native contradiction: the model prepended
+`Noop` to `@emotion/styled@11.3.0`, but the pinned React 17 capture rendered `Styled(div)` directly.
+Published Emotion source places the hydration placeholder boundary at 11.6.0: Emotion 10 uses
+`Noop`, 11.0–11.5 has no placeholder, 11.6–11.7 uses `Noop`, and 11.8+ uses `Insertion`. The
+corrected version regression covers both sides of that boundary.
+
+Chakra's utility barrel also re-exported `css-box-model`; analyzing that declared dependency made
+its star-export set complete, resolving `omit` without an unknown spread. React Icons was the last
+package-owned fiber. Replaying the unchanged native capture after those general and scoped
+corrections is exact in 204 steps with 100% strict coverage, 199 fibers and four text nodes matched,
+no opaque or wildcard match, and no replay contradiction. One escaped productive-time state remains
+incomplete, so this does not establish complete interaction or state-space coverage.
+
+The separate Chakra v3 expansion for
+`ayokanmi-adejola-frontend-quiz@9037a812654f63892ae07bf1ee13613265953def` did not reach comparison:
+interpreting the package's aggregate barrel consumed a full CPU for over eight minutes without
+producing an artifact. Its fresh native baseline remains partial at 5.43% strict coverage with 43
+opaque subtrees. No package-source override is retained for that row until the analyzer's barrel
+scalability defect is reduced and verified.
+
 ## Legacy React Router class fibers
 
 React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component
