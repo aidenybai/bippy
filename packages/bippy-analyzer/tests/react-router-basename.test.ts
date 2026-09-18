@@ -84,7 +84,8 @@ it("keeps sibling basenames and memoized location consumers separate", async () 
 it("applies an imperative navigation scheduled by an effect", async () => {
   const { tree } = await render("/", "src/imperative-navigation.tsx");
   expect(tree).toContain("<Login>");
-  expect(tree).toContain('"/login"');
+  expect(tree).toContain('"login-location"');
+  expect(tree).not.toContain('"wrong-location"');
   expect(tree).not.toContain("<Home>");
   expect(tree).not.toContain("<main>");
 });

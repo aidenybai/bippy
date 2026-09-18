@@ -10,7 +10,7 @@ const Home = () => {
 
 const Login = () => {
   const location = useLocation();
-  return <aside>{location.pathname}</aside>;
+  return <aside>{location.pathname === "/login" ? "login-location" : "wrong-location"}</aside>;
 };
 
 createRoot(document.getElementById("root")!).render(
