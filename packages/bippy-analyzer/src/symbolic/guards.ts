@@ -320,7 +320,47 @@ const appendGuard = (
   return guard;
 };
 
+const combineGuardList = (
+  kind: "and" | "or",
+  operands: Guard[],
+  absorbing: boolean,
+): Guard => {
+  const unique: Guard[] = [];
+  const operandsByHash = new Map<number, Guard[]>();
+  let isAbsorbed = false;
+  const add = (operand: Guard): void => {
+    if (isAbsorbed) return;
+    if (operand.kind === kind) {
+      for (const nested of operand.operands) add(nested);
+      return;
+    }
+    if (operand.kind === "constant") {
+      isAbsorbed = operand.value === absorbing;
+      return;
+    }
+    if (hasSameGuard(operandsByHash, operand)) return;
+    if (hasSameGuard(operandsByHash, negateGuard(operand))) {
+      isAbsorbed = true;
+      return;
+    }
+    unique.push(operand);
+    addGuardByHash(operandsByHash, operand);
+  };
+  for (const operand of operands) add(operand);
+  if (isAbsorbed) return constantGuard(absorbing);
+  if (unique.length === 0) return constantGuard(!absorbing);
+  if (unique.length === 1) return unique[0];
+  const guard = createGuardGroup(kind, unique);
+  guardSequenceCache.set(guard, {
+    kind,
+    chunks: [guard],
+    operandsByHash,
+  });
+  return guard;
+};
+
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
+  if (operands.length > 2) return combineGuardList(kind, operands, absorbing);
   let combined: Guard | null = null;
   const add = (operand: Guard): void => {
     if (combined?.kind === "constant" && combined.value === absorbing) return;
