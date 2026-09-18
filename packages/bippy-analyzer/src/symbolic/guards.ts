@@ -259,24 +259,30 @@ const appendGuard = (kind: "and" | "or", base: Guard, operand: Guard): Guard => 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   if (operands.some((operand) => operand.kind === "constant" && operand.value === absorbing))
     return constantGuard(absorbing);
-  const remaining: Guard[] = [];
+  const remaining = operands.filter((operand) => operand.kind !== "constant");
+  if (remaining.length === 0) return constantGuard(!absorbing);
+  if (remaining.length === 1) return remaining[0];
+  if (remaining.length === 2) {
+    if (isSameGuard(remaining[0], remaining[1])) return remaining[0];
+    if (isSameGuard(remaining[0], negateGuard(remaining[1]))) return constantGuard(absorbing);
+    return appendGuard(kind, remaining[0], remaining[1]);
+  }
+  const unique: Guard[] = [];
   const remainingByHash = new Map<number, Guard[]>();
-  for (const operand of operands) {
-    if (operand.kind === "constant") continue;
+  for (const operand of remaining) {
     if (hasSameGuard(remainingByHash, operand)) continue;
     const complement = negateGuard(operand);
     if (hasSameGuard(remainingByHash, complement)) return constantGuard(absorbing);
-    remaining.push(operand);
+    unique.push(operand);
     const hash = getGuardHash(operand);
     const matching = remainingByHash.get(hash);
     if (matching === undefined) remainingByHash.set(hash, [operand]);
     else matching.push(operand);
   }
-  if (remaining.length === 0) return constantGuard(!absorbing);
-  if (remaining.length === 1) return remaining[0];
-  return remaining.length === 2
-    ? appendGuard(kind, remaining[0], remaining[1])
-    : createGuardGroup(kind, remaining);
+  if (unique.length === 1) return unique[0];
+  return unique.length === 2
+    ? appendGuard(kind, unique[0], unique[1])
+    : createGuardGroup(kind, unique);
 };
 
 export const andGuard = (operands: Guard[]): Guard => combineGuards("and", operands, false);
