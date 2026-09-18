@@ -34,3 +34,36 @@ export const MarkdownCard = () => <Markdown>{"Hello **world**."}</Markdown>;
     rmSync(rootDirectory, { recursive: true, force: true });
   }
 });
+
+it("materializes supported React Markdown plugins without a wildcard", async () => {
+  const rootDirectory = mkdtempSync(join(import.meta.dirname, "react-markdown-plugins-"));
+  try {
+    const filePath = join(rootDirectory, "markdown.tsx");
+    writeFileSync(
+      filePath,
+      `
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
+import Markdown from "react-markdown";
+
+export const MarkdownCard = () => (
+  <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+    {"~~old~~\\n\\n<section>raw</section>"}
+  </Markdown>
+);
+`,
+    );
+    const renderer = await createStaticRenderer({
+      rootDirectory,
+      externalPackageAllowList: ["react-markdown"],
+    });
+    const result = await renderer.renderComponent(filePath, { exportName: "MarkdownCard" });
+    const pattern = formatPattern(getRenderPattern(result));
+
+    expect(pattern).toContain("<del>");
+    expect(pattern).toContain("<section>");
+    expect(result.stats.unknownCount).toBe(0);
+  } finally {
+    rmSync(rootDirectory, { recursive: true, force: true });
+  }
+});
