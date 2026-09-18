@@ -89,6 +89,7 @@ export interface GuardOr {
 interface GuardSequence {
   kind: "and" | "or";
   chunks: Guard[];
+  operandsByHash: Map<number, Guard[]> | null;
 }
 
 export type Guard =
@@ -227,7 +228,16 @@ const hasSameGuard = (guardsByHash: Map<number, Guard[]>, guard: Guard): boolean
 const guardSizeCache = new WeakMap<Guard, number>();
 const guardSequenceCache = new WeakMap<Guard, GuardSequence>();
 
-const getGuardSize = (guard: Guard): number => guardSizeCache.get(guard) ?? 1;
+const getGuardSize = (guard: Guard): number => {
+  const cached = guardSizeCache.get(guard);
+  if (cached !== undefined) return cached;
+  const size =
+    guard.kind === "and" || guard.kind === "or"
+      ? guard.operands.reduce((total, operand) => total + getGuardSize(operand), 0)
+      : 1;
+  guardSizeCache.set(guard, size);
+  return size;
+};
 
 const createGuardGroup = (kind: "and" | "or", operands: Guard[]): Guard => {
   const guard: Guard = { kind, operands };
@@ -238,9 +248,41 @@ const createGuardGroup = (kind: "and" | "or", operands: Guard[]): Guard => {
   return guard;
 };
 
-const appendGuard = (kind: "and" | "or", base: Guard, operand: Guard): Guard => {
-  const sequence = guardSequenceCache.get(base);
-  const chunks = sequence?.kind === kind ? [...sequence.chunks] : [base];
+const addGuardByHash = (guardsByHash: Map<number, Guard[]>, guard: Guard): void => {
+  const hash = getGuardHash(guard);
+  const matching = guardsByHash.get(hash);
+  if (matching === undefined) guardsByHash.set(hash, [guard]);
+  else matching.push(guard);
+};
+
+const collectGuardOperandsByHash = (
+  kind: "and" | "or",
+  guard: Guard,
+  guardsByHash: Map<number, Guard[]>,
+): void => {
+  if (guard.kind === kind) {
+    for (const operand of guard.operands) {
+      collectGuardOperandsByHash(kind, operand, guardsByHash);
+    }
+    return;
+  }
+  addGuardByHash(guardsByHash, guard);
+};
+
+const takeGuardOperandsByHash = (sequence: GuardSequence): Map<number, Guard[]> => {
+  if (sequence.operandsByHash !== null) {
+    const operandsByHash = sequence.operandsByHash;
+    sequence.operandsByHash = null;
+    return operandsByHash;
+  }
+  const operandsByHash = new Map<number, Guard[]>();
+  for (const chunk of sequence.chunks) {
+    collectGuardOperandsByHash(sequence.kind, chunk, operandsByHash);
+  }
+  return operandsByHash;
+};
+
+const appendGuardChunk = (kind: "and" | "or", chunks: Guard[], operand: Guard): void => {
   let chunk = operand;
   for (
     let previous = chunks.at(-1);
@@ -251,54 +293,89 @@ const appendGuard = (kind: "and" | "or", base: Guard, operand: Guard): Guard => 
     chunk = createGuardGroup(kind, [previous, chunk]);
   }
   chunks.push(chunk);
+};
+
+const appendGuard = (
+  kind: "and" | "or",
+  base: Guard,
+  operand: Guard,
+  absorbing: boolean,
+): Guard => {
+  const cachedSequence = guardSequenceCache.get(base);
+  const sequence =
+    cachedSequence?.kind === kind
+      ? cachedSequence
+      : { kind, chunks: [base], operandsByHash: null };
+  const operandsByHash = takeGuardOperandsByHash(sequence);
+  if (hasSameGuard(operandsByHash, operand)) {
+    sequence.operandsByHash = operandsByHash;
+    return base;
+  }
+  if (hasSameGuard(operandsByHash, negateGuard(operand))) return constantGuard(absorbing);
+  addGuardByHash(operandsByHash, operand);
+  const chunks = [...sequence.chunks];
+  appendGuardChunk(kind, chunks, operand);
   const guard = chunks.length === 1 ? chunks[0] : createGuardGroup(kind, chunks);
-  guardSequenceCache.set(guard, { kind, chunks });
+  guardSequenceCache.set(guard, { kind, chunks, operandsByHash });
   return guard;
 };
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
-  if (operands.some((operand) => operand.kind === "constant" && operand.value === absorbing))
-    return constantGuard(absorbing);
-  const remaining = operands.filter((operand) => operand.kind !== "constant");
-  if (remaining.length === 0) return constantGuard(!absorbing);
-  if (remaining.length === 1) return remaining[0];
-  if (remaining.length === 2) {
-    if (isSameGuard(remaining[0], remaining[1])) return remaining[0];
-    if (isSameGuard(remaining[0], negateGuard(remaining[1]))) return constantGuard(absorbing);
-    return appendGuard(kind, remaining[0], remaining[1]);
-  }
-  const unique: Guard[] = [];
-  const remainingByHash = new Map<number, Guard[]>();
-  for (const operand of remaining) {
-    if (hasSameGuard(remainingByHash, operand)) continue;
-    const complement = negateGuard(operand);
-    if (hasSameGuard(remainingByHash, complement)) return constantGuard(absorbing);
-    unique.push(operand);
-    const hash = getGuardHash(operand);
-    const matching = remainingByHash.get(hash);
-    if (matching === undefined) remainingByHash.set(hash, [operand]);
-    else matching.push(operand);
-  }
-  if (unique.length === 1) return unique[0];
-  return unique.length === 2
-    ? appendGuard(kind, unique[0], unique[1])
-    : createGuardGroup(kind, unique);
+  let combined: Guard | null = null;
+  const add = (operand: Guard): void => {
+    if (combined?.kind === "constant" && combined.value === absorbing) return;
+    if (operand.kind === kind) {
+      for (const nested of operand.operands) add(nested);
+      return;
+    }
+    if (operand.kind === "constant") {
+      if (operand.value === absorbing) combined = constantGuard(absorbing);
+      return;
+    }
+    combined =
+      combined === null ? operand : appendGuard(kind, combined, operand, absorbing);
+  };
+  for (const operand of operands) add(operand);
+  return combined ?? constantGuard(!absorbing);
 };
 
 export const andGuard = (operands: Guard[]): Guard => combineGuards("and", operands, false);
 
 export const orGuard = (operands: Guard[]): Guard => combineGuards("or", operands, true);
 
+const inputIdsCache = new WeakMap<InputVariable[], Set<string>>();
+
+const getInputIds = (inputs: InputVariable[]): Set<string> => {
+  const cached = inputIdsCache.get(inputs);
+  if (cached !== undefined) return cached;
+  const ids = new Set(inputs.map((input) => input.id));
+  inputIdsCache.set(inputs, ids);
+  return ids;
+};
+
+const combineContextInputs = (contexts: GuardContext[]): InputVariable[] => {
+  let combined: InputVariable[] = [];
+  for (const context of contexts) {
+    if (context.inputs.length === 0 || context.inputs === combined) continue;
+    if (combined.length === 0) {
+      combined = context.inputs;
+      continue;
+    }
+    const ids = getInputIds(combined);
+    const additions = context.inputs.filter((input) => !ids.has(input.id));
+    if (additions.length === 0) continue;
+    combined = [...combined, ...additions];
+    inputIdsCache.set(combined, new Set([...ids, ...additions.map((input) => input.id)]));
+  }
+  return combined;
+};
+
 export const combineGuardContexts = (
   contexts: GuardContext[],
   combine: (guards: Guard[]) => Guard,
 ): GuardContext => ({
   guard: combine(contexts.map((context) => context.guard)),
-  inputs: [
-    ...new Map(
-      contexts.flatMap((context) => context.inputs).map((input) => [input.id, input]),
-    ).values(),
-  ],
+  inputs: combineContextInputs(contexts),
 });
 
 export const isSameVariable = (left: SymbolicVariable, right: SymbolicVariable): boolean =>

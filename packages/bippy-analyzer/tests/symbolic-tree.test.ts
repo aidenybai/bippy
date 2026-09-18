@@ -22,6 +22,7 @@ import {
 } from "../src/symbolic/guard-solver.js";
 import {
   andGuard,
+  combineGuardContexts,
   compareGuard,
   constantGuard,
   countGuardAtoms,
@@ -169,6 +170,25 @@ describe("symbolic tree: guard algebra", () => {
       guard = andGuard([guard, equalsGuard(variable(`#${index}`), index)]);
     }
     expect(countGuardAtoms(guard)).toBe(20_000);
+  }, 2_000);
+
+  it("reuses repeated guard and input extensions", () => {
+    const repeatedInput = input("repeated", "state");
+    let context = { guard: isTruthy, inputs: [repeatedInput] };
+    for (let index = 0; index < 20_000; index++) {
+      context = combineGuardContexts(
+        [
+          context,
+          {
+            guard: truthyGuard(variable("#1")),
+            inputs: [{ ...repeatedInput }],
+          },
+        ],
+        andGuard,
+      );
+    }
+    expect(context.guard).toBe(isTruthy);
+    expect(context.inputs).toEqual([repeatedInput]);
   }, 2_000);
 
   it("solves large independent guard sets without quadratic partition scans", () => {
