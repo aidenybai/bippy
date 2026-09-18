@@ -31354,35 +31354,567 @@
       "id": "giscus",
       "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
       "framework": "next-pages",
-      "capturedAt": "2026-09-10T00:00:17.661Z",
-      "durationMs": 2456,
-      "runtime": null,
+      "capturedAt": "2026-09-18T21:52:05.592Z",
+      "durationMs": 2769,
+      "runtime": {
+        "reactVersion": "10.23.2",
+        "rendererName": "preact",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 422,
+        "commits": 1,
+        "pageErrors": [
+          "Refused to apply style from 'http://localhost:3011/themes/preferred_color_scheme.css' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+          "Refused to apply style from 'http://localhost:3011/themes/preferred_color_scheme.css' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled."
+        ],
+        "title": "giscus"
+      },
       "static": {
         "stats": {
-          "fiberCount": 0,
-          "textCount": 0,
-          "branchCount": 0,
+          "fiberCount": 844,
+          "textCount": 194,
+          "branchCount": 7,
           "repeatCount": 0,
           "opaqueCount": 0,
-          "unknownCount": 0,
-          "modulesLoaded": 45
+          "unknownCount": 2,
+          "modulesLoaded": 46
         },
         "diagnostics": [
           {
             "code": "next-config",
-            "count": 1
-          },
-          {
-            "code": "dynamic-key",
-            "count": 1
+            "count": 2
           }
         ]
       },
-      "report": null,
-      "stateSpace": null,
-      "stateReplay": null,
+      "report": {
+        "matchedFibers": 304,
+        "matchedText": 95,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 4,
+        "repeatIterations": 0,
+        "transparentFibers": 19,
+        "status": "exact",
+        "runtimeFibers": 399,
+        "staticFibers": 401,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 403,
+        "budgetExhausted": false
+      },
+      "stateSpace": {
+        "states": 16,
+        "stateCount": 16,
+        "clusters": 1,
+        "tree": {
+          "nodes": 811,
+          "inputs": 13,
+          "guards": 14,
+          "branches": 7,
+          "repeats": 0,
+          "opaque": 0,
+          "wildcards": 2
+        },
+        "matchedState": {
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(typeof(#4), \"undefined\")",
+              "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+              "reason": "conditional on branch(undefined | <string> | \"\")",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
+        },
+        "closestState": null,
+        "omitted": null,
+        "coverage": {
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(#1), 0)",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+              "side": 0,
+              "guard": "or(#2 > 0, and(not(#2 > 0), #3 >= 30))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+              "side": 1,
+              "guard": "and(not(#2 > 0), not(#3 >= 30))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(typeof(#4), \"undefined\")",
+              "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+              "location": null,
+              "side": 0,
+              "guard": "or(and(eq(choice(#1), 0), eq(typeof(#4), \"undefined\")), and(not(eq(choice(#1), 0)), eq(typeof(#4), \"undefined\")))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "eq(typeof(#4), \"undefined\")",
+              "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+              "location": null,
+              "side": 1,
+              "guard": "or(and(eq(choice(#1), 0), not(eq(typeof(#4), \"undefined\"))), and(not(eq(choice(#1), 0)), not(eq(typeof(#4), \"undefined\"))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+              "reason": "conditional on branch(undefined | <string> | \"\")",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+              "side": 0,
+              "guard": "or(and(eq(choice(#1), 0), not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7)), and(not(eq(choice(#1), 0)), not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+              "reason": "conditional on branch(undefined | <string> | \"\")",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+              "side": 1,
+              "guard": "or(and(eq(choice(#1), 0), not(and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7)))), and(not(eq(choice(#1), 0)), not(and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+              "location": null,
+              "side": 1,
+              "guard": "not(eq(choice(#1), 0))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(#10 > 0, and(not(#10 > 0), #11 >= 30)) | and(not(#10 > 0), not(#11 >= 30))",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+              "side": 0,
+              "guard": "or(#10 > 0, and(not(#10 > 0), #11 >= 30))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(#10 > 0, and(not(#10 > 0), #11 >= 30)) | and(not(#10 > 0), not(#11 >= 30))",
+              "reason": "if (<boolean: > on dynamic values>)",
+              "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+              "side": 1,
+              "guard": "and(not(#10 > 0), not(#11 >= 30))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 4,
+          "possible": 6,
+          "unreachable": 0
+        }
+      },
+      "stateReplay": {
+        "verification": "sample-incomplete",
+        "states": 16,
+        "assignments": 16,
+        "replayed": 16,
+        "maxReplayed": 16,
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              5
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              6
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              7
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#2 > 0, and(not(#2 > 0), #3 >= 30)) | and(not(#2 > 0), not(#3 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              12
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#10 > 0, and(not(#10 > 0), #11 >= 30)) | and(not(#10 > 0), not(#11 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              13
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#10 > 0, and(not(#10 > 0), #11 >= 30)) | and(not(#10 > 0), not(#11 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              14
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#10 > 0, and(not(#10 > 0), #11 >= 30)) | and(not(#10 > 0), not(#11 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              15
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "next.config reactStrictMode is unknown(next.config is @next/bundle-analyzer#*()())",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "or(#10 > 0, and(not(#10 > 0), #11 >= 30)) | and(not(#10 > 0), not(#11 >= 30))",
+                "reason": "if (<boolean: > on dynamic values>)",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/lib/i18n.tsx:376:7",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "eq(typeof(#4), \"undefined\")",
+                "reason": "environment variable NEXT_PUBLIC_GISCUS_APP_HOST",
+                "location": null,
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(eq(typeof(#5), \"undefined\")), truthy(#5), not(eq(typeof(#6), \"undefined\")), truthy(#6), not(eq(typeof(#7), \"undefined\")), truthy(#7))",
+                "reason": "conditional on branch(undefined | <string> | \"\")",
+                "location": "/tmp/bippy-analyzer-corpus/giscus/pages/index.tsx:154:10",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
+      },
       "anchor": null,
-      "note": "static only",
+      "note": "runtime replayed from 2026-09-18T21:32:06.319Z",
       "failure": null
     },
     {
@@ -148248,115 +148780,89 @@
       "id": "socialecho",
       "revision": "4dc6c7822bfff5c0b13e1b8098e8d7ae0084939a",
       "framework": "react-router",
-      "capturedAt": "2026-09-10T11:40:23.013Z",
-      "durationMs": 16347,
+      "capturedAt": "2026-09-18T16:21:05.594Z",
+      "durationMs": 4221,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
-        "fibers": 62,
+        "fibers": 9,
         "commits": 3,
-        "pageErrors": [],
+        "pageErrors": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ],
         "title": "Sign In | SocialEcho"
       },
       "static": {
         "stats": {
-          "fiberCount": 105,
+          "fiberCount": 93,
           "textCount": 0,
-          "branchCount": 5,
+          "branchCount": 3,
           "repeatCount": 0,
-          "opaqueCount": 2,
-          "unknownCount": 4,
+          "opaqueCount": 1,
+          "unknownCount": 2,
           "modulesLoaded": 158
         },
         "diagnostics": []
       },
       "report": {
-        "status": "partial",
-        "matchedFibers": 54,
+        "matchedFibers": 5,
         "matchedText": 0,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 3,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
-        "slotsUnmatched": 1,
-        "opaqueRenamed": 1,
-        "unmatchedSlots": [
-          {
-            "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <Helmet> (opaque)",
-            "reason": "Helmet from react-helmet is not analyzed",
-            "head": "<HelmetWrapper> [ClassComponent]",
-            "skippedFibers": 3,
-            "divergence": {
-              "path": "root > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <Helmet> (opaque)[0]",
-              "expected": "<title> [HostComponent]",
-              "actual": "<SideEffect(NullComponent)> [ClassComponent]"
-            }
-          }
-        ],
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 4,
+        "branchesResolved": 2,
         "repeatIterations": 0,
-        "transparentFibers": 4,
-        "runtimeFibers": 57,
+        "transparentFibers": 3,
+        "status": "truncated",
+        "runtimeFibers": 5,
         "staticFibers": 76,
         "coverage": 1,
-        "strictCoverage": 0.9473684210526315,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 70,
+        "stepsUsed": 8,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 7,
-        "stateCount": 7,
-        "clusters": 1,
+        "states": 10,
+        "stateCount": 10,
+        "clusters": 4,
         "tree": {
-          "nodes": 96,
-          "inputs": 5,
-          "guards": 12,
-          "branches": 5,
+          "nodes": 191,
+          "inputs": 9,
+          "guards": 20,
+          "branches": 8,
           "repeats": 0,
-          "opaque": 3,
-          "wildcards": 4
+          "opaque": 5,
+          "wildcards": 6
         },
         "matchedState": {
-          "index": 6,
+          "index": 2,
           "conditions": [
             {
               "kind": "transition",
               "commit": 1,
-              "commitCount": 2
+              "commitCount": 4
+            },
+            {
+              "kind": "state-update",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+              "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
             },
             {
               "kind": "state-update",
               "variable": "eq(choice(#1), 0)",
-              "reason": "if (branch(true | null))",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/AppContainer.jsx:53:3",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#2.auth.userData)",
-              "reason": "conditional on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/App.jsx:43:20",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3.auth.signInError)",
-              "reason": "&& on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4.auth.successMessage)",
-              "reason": "&& on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "reason": "conditional on branch(true | false)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:56:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -148394,9 +148900,18 @@
             },
             {
               "kind": "branch",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+              "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+              "side": 0,
+              "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
               "variable": "eq(choice(#1), 0)",
-              "reason": "if (branch(true | null))",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+              "reason": "conditional on branch(true | false)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:56:10",
               "side": 0,
               "guard": "eq(choice(#1), 0)",
               "status": "possible"
@@ -148405,80 +148920,735 @@
               "kind": "branch",
               "variable": "eq(choice(#1), 0)",
               "reason": "conditional on branch(true | false)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/AppContainer.jsx:56:10",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:56:10",
               "side": 1,
               "guard": "not(eq(choice(#1), 0))",
               "status": "witnessed"
             },
             {
               "kind": "branch",
-              "variable": "truthy(#2.auth.userData)",
-              "reason": "conditional on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/App.jsx:43:20",
-              "side": 0,
-              "guard": "truthy(#2.auth.userData)",
+              "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+              "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+              "side": 1,
+              "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1))))))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "truthy(#2.auth.userData)",
-              "reason": "conditional on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/App.jsx:43:20",
-              "side": 1,
-              "guard": "not(truthy(#2.auth.userData))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#3.auth.signInError)",
-              "reason": "&& on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "variable": "truthy(#3.auth.userData)",
+              "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
               "side": 0,
-              "guard": "truthy(#3.auth.signInError)",
+              "guard": "truthy(#3.auth.userData)",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "truthy(#3.auth.signInError)",
-              "reason": "&& on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "variable": "truthy(#3.auth.userData)",
+              "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
               "side": 1,
-              "guard": "not(truthy(#3.auth.signInError))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
-              "variable": "truthy(#4.auth.successMessage)",
-              "reason": "&& on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
-              "side": 0,
-              "guard": "truthy(#4.auth.successMessage)",
+              "guard": "not(truthy(#3.auth.userData))",
               "status": "possible"
             },
             {
               "kind": "branch",
-              "variable": "truthy(#4.auth.successMessage)",
-              "reason": "&& on unknown(call of property \"getState\" of null)",
-              "location": "/home/ubuntu/bippy-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "variable": "truthy(#4.auth.signInError)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "side": 0,
+              "guard": "truthy(#4.auth.signInError)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#4.auth.signInError)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
               "side": 1,
-              "guard": "not(truthy(#4.auth.successMessage))",
-              "status": "witnessed"
+              "guard": "not(truthy(#4.auth.signInError))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5.auth.successMessage)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "side": 0,
+              "guard": "truthy(#5.auth.successMessage)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5.auth.successMessage)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "side": 1,
+              "guard": "not(truthy(#5.auth.successMessage))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 2,
+              "guard": "and(eq(choice(commit), 2), not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))), truthy(#3.auth.userData))",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 3,
+              "guard": "and(eq(choice(commit), 3), not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))), truthy(#3.auth.userData))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.auth.userData)",
+              "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+              "side": 0,
+              "guard": "truthy(#6.auth.userData)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#6.auth.userData)",
+              "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+              "side": 1,
+              "guard": "not(truthy(#6.auth.userData))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#7.auth.signInError)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "side": 0,
+              "guard": "truthy(#7.auth.signInError)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#7.auth.signInError)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+              "side": 1,
+              "guard": "not(truthy(#7.auth.signInError))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#8.auth.successMessage)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "side": 0,
+              "guard": "truthy(#8.auth.successMessage)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#8.auth.successMessage)",
+              "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+              "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+              "side": 1,
+              "guard": "not(truthy(#8.auth.successMessage))",
+              "status": "possible"
             }
           ],
-          "witnessed": 5,
-          "possible": 5,
+          "witnessed": 3,
+          "possible": 17,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "states": 7,
-        "assignments": 6,
-        "replayed": 6,
+        "verification": "contradicted",
+        "states": 14,
+        "assignments": 11,
+        "replayed": 11,
         "maxReplayed": 16,
-        "mismatched": []
+        "mismatched": [
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 4 > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <App> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider][0]",
+              "expected": "<SignIn> [FunctionComponent]",
+              "actual": "<PrivateRoute> [FunctionComponent]"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              11
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 4 > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <App> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider][0]",
+              "expected": "<SignIn> [FunctionComponent]",
+              "actual": "<PrivateRoute> [FunctionComponent]"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              12
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 4 > <BrowserRouter> [FunctionComponent] > <AppContainer> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <App> [FunctionComponent] > <Suspense> [SuspenseComponent] > <Offscreen> [OffscreenComponent] > <RenderedRoute> [FunctionComponent] > <Route> [ContextProvider][0]",
+              "expected": "<SignIn> [FunctionComponent]",
+              "actual": "<PrivateRoute> [FunctionComponent]"
+            },
+            "isCorrected": true
+          },
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              13
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "claimedCommits": 4,
+            "replayedCommits": 3,
+            "divergence": {
+              "path": "commit 4 > root[0]",
+              "expected": "<BrowserRouter> [FunctionComponent]",
+              "actual": "<end of children>"
+            },
+            "isCorrected": true
+          }
+        ],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              10
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              3
+            ],
+            "isReplayConcrete": true
+          },
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              11
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              3
+            ],
+            "isReplayConcrete": true
+          },
+          {
+            "stateIndices": [
+              0,
+              3,
+              8,
+              12
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#6.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#7.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#8.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              3
+            ],
+            "isReplayConcrete": true
+          },
+          {
+            "stateIndices": [
+              0,
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              5
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              6
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              7
+            ],
+            "conditions": [
+              {
+                "kind": "state-update",
+                "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), eq(choice(#2), 1)), and(not(eq(choice(#1), 0)), not(or(eq(choice(#2), 0), eq(choice(#2), 1)))))",
+                "reason": "if (branch(true | null | \"Server is down. Please try again later.\" | <string>))",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/AppContainer.jsx:53:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#3.auth.userData)",
+                "reason": "conditional on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/App.jsx:43:20",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#4.auth.signInError)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:51:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5.auth.successMessage)",
+                "reason": "&& on unknown(call of promise fulfilled outside the analysis)",
+                "location": "/tmp/socialecho-corpus/socialecho/client/src/pages/SignIn.jsx:67:12",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
       },
       "anchor": null,
-      "note": null,
+      "note": "runtime replayed from 2026-09-18T13:31:09.324Z",
       "failure": null
     },
     {
@@ -281896,8 +283066,8 @@
       "id": "maxleiter-easyarty",
       "revision": "427df1469df401819ec4aa543b9adc72a3601866",
       "framework": "next-app",
-      "capturedAt": "2026-09-12T20:37:23.064Z",
-      "durationMs": 328,
+      "capturedAt": "2026-09-18T21:57:47.232Z",
+      "durationMs": 835,
       "runtime": {
         "reactVersion": "19.0.0-rc-66855b96-20241106",
         "rendererName": "react-dom",
@@ -281915,13 +283085,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 197,
+          "fiberCount": 202,
           "textCount": 11,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 329
+          "modulesLoaded": 333
         },
         "diagnostics": [
           {
@@ -281931,24 +283101,24 @@
         ]
       },
       "report": {
-        "matchedFibers": 158,
+        "matchedFibers": 163,
         "matchedText": 11,
-        "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 6,
-        "slotsMatched": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
         "slotsUnmatched": 0,
-        "opaqueRenamed": 1,
+        "opaqueRenamed": 0,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 26,
-        "status": "partial",
-        "runtimeFibers": 175,
-        "staticFibers": 171,
+        "transparentFibers": 27,
+        "status": "exact",
+        "runtimeFibers": 174,
+        "staticFibers": 174,
         "coverage": 1,
-        "strictCoverage": 0.9657142857142857,
+        "strictCoverage": 1,
         "divergence": null,
         "stepsUsed": 174,
         "budgetExhausted": false
@@ -281958,12 +283128,12 @@
         "stateCount": 3,
         "clusters": 0,
         "tree": {
-          "nodes": 440,
+          "nodes": 449,
           "inputs": 1,
           "guards": 3,
           "branches": 0,
           "repeats": 0,
-          "opaque": 6,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -282023,7 +283193,7 @@
         "incomplete": []
       },
       "anchor": "body",
-      "note": "runtime replayed from 2026-09-12T20:09:35.333Z",
+      "note": "runtime replayed from 2026-09-18T21:55:49.006Z",
       "failure": null
     },
     {
@@ -323747,9 +324917,9 @@
     {
       "id": "lucas-erkana-math-magician-react",
       "revision": "cdf7061fa5092753c7064ef8de9ae50822d996be",
-      "framework": "spa",
-      "capturedAt": "2026-09-14T15:26:45.202Z",
-      "durationMs": 302,
+      "framework": "react-router",
+      "capturedAt": "2026-09-18T16:24:38.885Z",
+      "durationMs": 4805,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -323762,82 +324932,37 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 23,
-          "textCount": 5,
+          "fiberCount": 29,
+          "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 8,
+          "opaqueCount": 0,
           "unknownCount": 0,
           "modulesLoaded": 8
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 9,
+        "matchedFibers": 23,
         "matchedText": 2,
-        "opaqueSubtrees": 5,
-        "opaqueSkippedFibers": 18,
-        "slotsMatched": 1,
-        "slotsUnmatched": 4,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
         "opaqueRenamed": 0,
-        "unmatchedSlots": [
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <Routes> (opaque)",
-            "reason": "Routes from react-router-dom is not analyzed",
-            "head": "<Routes> [FunctionComponent]",
-            "skippedFibers": 8,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <Routes> (opaque)[1]",
-              "expected": "<Route> (opaque)",
-              "actual": "<end of children>"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
-            "reason": "Link from react-router-dom is not analyzed",
-            "head": "<Link> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
-              "expected": "\"Quote\"",
-              "actual": "<a> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
-            "reason": "Link from react-router-dom is not analyzed",
-            "head": "<Link> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
-              "expected": "\"Calculator\"",
-              "actual": "<a> [HostComponent]"
-            }
-          },
-          {
-            "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)",
-            "reason": "Link from react-router-dom is not analyzed",
-            "head": "<Link> [ForwardRef]",
-            "skippedFibers": 2,
-            "divergence": {
-              "path": "root > <StrictMode> [Mode] > <App> [ClassComponent] > <Router> (opaque) > <div> [HostComponent] > <nav> [HostComponent] > <ul> [HostComponent] > <li> [HostComponent] > <Link> (opaque)[0]",
-              "expected": "\"Home\"",
-              "actual": "<a> [HostComponent]"
-            }
-          }
-        ],
+        "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "status": "partial",
-        "runtimeFibers": 29,
-        "staticFibers": 22,
+        "transparentFibers": 4,
+        "status": "exact",
+        "runtimeFibers": 25,
+        "staticFibers": 25,
         "coverage": 1,
-        "strictCoverage": 0.3793103448275862,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 59,
+        "stepsUsed": 25,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -323845,12 +324970,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 22,
+          "nodes": 25,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 8,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -323876,7 +325001,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:26:42.835Z",
+      "note": "runtime replayed from 2026-09-18T01:38:10.494Z",
       "failure": null
     },
     {
