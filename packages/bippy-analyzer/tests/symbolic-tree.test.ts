@@ -24,6 +24,7 @@ import {
   andGuard,
   compareGuard,
   constantGuard,
+  countGuardAtoms,
   equalsGuard,
   formatGuard,
   negateGuard,
@@ -160,6 +161,14 @@ describe("symbolic tree: guard algebra", () => {
       kind: "or",
       operands: guards,
     });
+  }, 2_000);
+
+  it("grows nested guard conjunctions without copying prior operands", () => {
+    let guard = constantGuard(true);
+    for (let index = 0; index < 20_000; index++) {
+      guard = andGuard([guard, equalsGuard(variable(`#${index}`), index)]);
+    }
+    expect(countGuardAtoms(guard)).toBe(20_000);
   }, 2_000);
 
   it("solves large independent guard sets without quadratic partition scans", () => {

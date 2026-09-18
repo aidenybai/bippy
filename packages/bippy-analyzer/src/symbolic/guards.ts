@@ -86,6 +86,11 @@ export interface GuardOr {
   operands: Guard[];
 }
 
+interface GuardSequence {
+  kind: "and" | "or";
+  chunks: Guard[];
+}
+
 export type Guard =
   | GuardConstant
   | GuardTruthy
@@ -161,53 +166,117 @@ export const negateGuard = (guard: Guard): Guard => {
   return { kind: "not", operand: guard };
 };
 
-const getVariableKey = (variable: SymbolicVariable): string =>
-  JSON.stringify([variable.input, variable.path, variable.measure]);
+const guardHashCache = new WeakMap<Guard, number>();
 
-const getGuardKey = (guard: Guard): string => {
+const hashText = (value: string): number => {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < value.length; index++) {
+    hash = Math.imul(hash ^ value.charCodeAt(index), 16_777_619);
+  }
+  return hash >>> 0;
+};
+
+const mixHash = (hash: number, value: number): number => Math.imul(hash ^ value, 16_777_619) >>> 0;
+
+const getVariableHash = (variable: SymbolicVariable): number =>
+  hashText(JSON.stringify([variable.input, variable.path, variable.measure]));
+
+const getGuardHash = (guard: Guard): number => {
+  const cached = guardHashCache.get(guard);
+  if (cached !== undefined) return cached;
+  let hash: number;
   switch (guard.kind) {
     case "constant":
-      return JSON.stringify([guard.kind, guard.value]);
+      return hashText(JSON.stringify([guard.kind, guard.value]));
     case "truthy":
-      return JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
+      return mixHash(hashText(guard.kind), getVariableHash(guard.variable));
     case "eq":
-      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
+      return mixHash(
+        mixHash(hashText(guard.kind), getVariableHash(guard.variable)),
+        hashText(JSON.stringify(guard.value)),
+      );
     case "compare":
-      return JSON.stringify([
-        guard.kind,
-        getVariableKey(guard.variable),
-        guard.operator,
-        guard.value,
-      ]);
+      return mixHash(
+        mixHash(
+          mixHash(hashText(guard.kind), getVariableHash(guard.variable)),
+          hashText(guard.operator),
+        ),
+        hashText(String(guard.value)),
+      );
     case "in-set":
-      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
+      hash = mixHash(hashText(guard.kind), getVariableHash(guard.variable));
+      for (const value of guard.values) hash = mixHash(hash, hashText(JSON.stringify(value)));
+      return hash;
     case "not":
-      return JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
+      hash = mixHash(hashText(guard.kind), getGuardHash(guard.operand));
+      break;
     case "and":
     case "or":
-      return JSON.stringify([guard.kind, guard.operands.map(getGuardKey)]);
+      hash = hashText(guard.kind);
+      for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
+      break;
   }
+  guardHashCache.set(guard, hash);
+  return hash;
+};
+
+const hasSameGuard = (guardsByHash: Map<number, Guard[]>, guard: Guard): boolean =>
+  guardsByHash.get(getGuardHash(guard))?.some((candidate) => isSameGuard(candidate, guard)) ??
+  false;
+
+const guardSizeCache = new WeakMap<Guard, number>();
+const guardSequenceCache = new WeakMap<Guard, GuardSequence>();
+
+const getGuardSize = (guard: Guard): number => guardSizeCache.get(guard) ?? 1;
+
+const createGuardGroup = (kind: "and" | "or", operands: Guard[]): Guard => {
+  const guard: Guard = { kind, operands };
+  guardSizeCache.set(
+    guard,
+    operands.reduce((size, operand) => size + getGuardSize(operand), 0),
+  );
+  return guard;
+};
+
+const appendGuard = (kind: "and" | "or", base: Guard, operand: Guard): Guard => {
+  const sequence = guardSequenceCache.get(base);
+  const chunks = sequence?.kind === kind ? [...sequence.chunks] : [base];
+  let chunk = operand;
+  for (
+    let previous = chunks.at(-1);
+    previous !== undefined && getGuardSize(previous) === getGuardSize(chunk);
+    previous = chunks.at(-1)
+  ) {
+    chunks.pop();
+    chunk = createGuardGroup(kind, [previous, chunk]);
+  }
+  chunks.push(chunk);
+  const guard = chunks.length === 1 ? chunks[0] : createGuardGroup(kind, chunks);
+  guardSequenceCache.set(guard, { kind, chunks });
+  return guard;
 };
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
-  const flattened = operands.flatMap((operand) =>
-    operand.kind === kind ? operand.operands : [operand],
-  );
-  if (flattened.some((operand) => operand.kind === "constant" && operand.value === absorbing))
+  if (operands.some((operand) => operand.kind === "constant" && operand.value === absorbing))
     return constantGuard(absorbing);
   const remaining: Guard[] = [];
-  const remainingKeys = new Set<string>();
-  for (const operand of flattened) {
+  const remainingByHash = new Map<number, Guard[]>();
+  for (const operand of operands) {
     if (operand.kind === "constant") continue;
-    const key = getGuardKey(operand);
-    if (remainingKeys.has(key)) continue;
+    if (hasSameGuard(remainingByHash, operand)) continue;
     const complement = negateGuard(operand);
-    if (remainingKeys.has(getGuardKey(complement))) return constantGuard(absorbing);
+    if (hasSameGuard(remainingByHash, complement)) return constantGuard(absorbing);
     remaining.push(operand);
-    remainingKeys.add(key);
+    const hash = getGuardHash(operand);
+    const matching = remainingByHash.get(hash);
+    if (matching === undefined) remainingByHash.set(hash, [operand]);
+    else matching.push(operand);
   }
   if (remaining.length === 0) return constantGuard(!absorbing);
-  return remaining.length === 1 ? remaining[0] : { kind, operands: remaining };
+  if (remaining.length === 1) return remaining[0];
+  return remaining.length === 2
+    ? appendGuard(kind, remaining[0], remaining[1])
+    : createGuardGroup(kind, remaining);
 };
 
 export const andGuard = (operands: Guard[]): Guard => combineGuards("and", operands, false);
