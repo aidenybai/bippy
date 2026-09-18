@@ -12222,12 +12222,13 @@
       "description": "lalidiaz/colors-generator-ReactJs",
       "framework": "spa",
       "workingDirectory": ".",
-      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+      "install": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm ci && corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm install --prefix .bippy-runtime --package-lock=false --no-save chokidar@3.5.1",
       "dev": "corepack pnpm@11.20.0 --config.verify-deps-before-run=false --package=node@16.20.2 --package=pnpm@8.15.9 --package=npm@8.19.4 --package=yarn@1.22.22 dlx pnpm --config.verify-deps-before-run=false exec npm start",
       "env": {
         "PORT": "55105",
         "HOST": "127.0.0.1",
         "NODE_OPTIONS": "",
+        "NODE_PATH": ".bippy-runtime/node_modules",
         "BROWSER": "none",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
         "PUPPETEER_SKIP_DOWNLOAD": "1"
@@ -12237,7 +12238,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons", "react-icons/*"]
       },
       "notes": "Original #f15025 Values all(10), empty input with different #66bb6a placeholder, copy buttons with IoMdCopy and3000ms false-alert resets. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original #f15025 Values all(10), empty input with different #66bb6a placeholder, copy buttons with IoMdCopy and3000ms false-alert resets. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 47.7% strict coverage against 282 native fibers. Whole model: 1 opaque nodes, 1 wildcards, 3 bounded states, 1 omissions. Replay: 3 incomplete and 0 mismatched among 4 assignments; sample-incomplete. Matching outside enumeration remains {\"conditions\":[{\"kind\":\"repeat\",\"variable\":\"len(#1)\",\"location\":\"/private/tmp/bippy-parser-ui-expansion-twelve/lalidiaz-colors-generator-reactjs/src/App.js:40:10\",\"count\":21}],\"verification\":\"incomplete\"}. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 340004941 identifies a distinct non-fork repository."
     },
