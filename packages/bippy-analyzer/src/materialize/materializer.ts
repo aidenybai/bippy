@@ -36,7 +36,6 @@ import {
 } from "../evaluate/thrown.js";
 import {
   areValuesEquivalent,
-  branchValue,
   compareIdentity,
   compareShallowly,
   describeElementType,
@@ -537,26 +536,6 @@ const EXOTIC_EXPORT_NAMES: Record<"suspense-list" | "activity" | "view-transitio
 };
 
 const noop = (): void => {};
-
-const getStubStateUpdate = (
-  current: StaticValue,
-  next: StaticValue,
-  cause: GuardContext,
-): StaticValue => {
-  if (cause.guard.kind === "constant") return cause.guard.value ? next : current;
-  return branchValue(
-    [current, next],
-    "state update from a conditional stub effect",
-    null,
-    0,
-    serializeSymbolicPredicate({
-      formula: negateGuard(cause.guard),
-      choice: null,
-      guards: null,
-      inputs: cause.inputs,
-    }),
-  );
-};
 
 const createDecisionScope = (pins: PinnedDecisions | null, prefix = ""): DecisionScope => ({
   pins,
@@ -1747,18 +1726,8 @@ export class Materializer {
           const committed = useRef(current);
           committed.current = current;
           const setter = useRef((next: StaticValue) => {
-            const updated = getStubStateUpdate(
-              committed.current,
-              next,
-              this.commitCauses.getCause(),
-            );
-            const isUnchanged =
-              compareIdentity(committed.current, updated) ??
-              areValuesEquivalent(committed.current, updated);
-            if (isUnchanged) return;
-            committed.current = updated;
-            this.commitCauses.schedule();
-            setCurrent(updated);
+            if (next !== committed.current) this.commitCauses.schedule();
+            setCurrent(next);
           });
           return [current, setter.current];
         },

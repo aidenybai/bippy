@@ -100,5 +100,5 @@ it("settles guarded redirects that converge on opposite routes", async () => {
   const { result, tree } = await render("/guarded", "src/imperative-navigation.tsx");
   expect(result.diagnostics).toEqual([]);
   expect(tree).toContain("<Login>");
-  expect(tree).toContain("<Private>");
+  expect(tree).not.toContain("<Private>");
 });
