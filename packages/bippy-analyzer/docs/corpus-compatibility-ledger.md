@@ -2,7 +2,7 @@
 
 ## Artifact baseline
 
-Recomputed at analyzer commit `d1ab64fa` from the current
+Recomputed at analyzer commit `d8dedacc` from the current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 
@@ -426,3 +426,17 @@ three are exact with one passing replay assignment.
 remains truncated: the authored storage-derived notes list is unbounded, and two non-native list
 assignments remain replay-incomplete. No note data or interaction was invented to hide that
 limitation.
+
+Fresh captures also replace stale evidence for `aman1106-react-timer` and
+`varun-seth-stopwatch`. The timer's CRA preflight now starts under the pinned environment; analyzing
+`react-sound` leaves eight Ant Design subtrees and eight incomplete replay assignments, so it
+remains partial at 6.57% strict coverage. Expanding the old Ant Design or icon barrels instead
+produced a class-construction failure or an SVG contradiction, and those overrides are not retained.
+
+The stopwatch's six Material UI subtrees remain honestly opaque at 17.19% strict coverage. Source
+expansion with and without Emotion consumed a full CPU for more than eight minutes without reaching
+comparison, so no unverified Material UI override is retained. A fresh baseline replay passes its
+single assignment without contradiction. `rapidraw` likewise obtained a fresh native capture, but
+its static analysis consumed a full CPU and about 1 GiB for more than nine minutes without reaching
+comparison; it remains one of the 12 rows without a native report while that scalability defect is
+profiled.

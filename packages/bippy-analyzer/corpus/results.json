@@ -337414,8 +337414,8 @@
       "id": "varun-seth-stopwatch",
       "revision": "1e808f50eedb992002b77598a26b11f2a181becb",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:03:00.631Z",
-      "durationMs": 275,
+      "capturedAt": "2026-09-18T20:44:10.934Z",
+      "durationMs": 668,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -337497,7 +337497,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:02:58.358Z",
+      "note": "runtime replayed from 2026-09-18T20:29:11.378Z",
       "failure": null
     },
     {
@@ -338194,8 +338194,8 @@
       "id": "aman1106-react-timer",
       "revision": "075b3228941c03f5c21ceb5ae68df9ff3b961ff2",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:07:01.001Z",
-      "durationMs": 1374,
+      "capturedAt": "2026-09-18T20:42:11.097Z",
+      "durationMs": 6237,
       "runtime": {
         "reactVersion": "16.13.0",
         "rendererName": "react-dom",
@@ -338212,9 +338212,9 @@
           "textCount": 7,
           "branchCount": 3,
           "repeatCount": 0,
-          "opaqueCount": 12,
+          "opaqueCount": 11,
           "unknownCount": 2,
-          "modulesLoaded": 7
+          "modulesLoaded": 8
         },
         "diagnostics": []
       },
@@ -338223,21 +338223,10 @@
         "matchedText": 0,
         "opaqueSubtrees": 8,
         "opaqueSkippedFibers": 128,
-        "slotsMatched": 3,
-        "slotsUnmatched": 3,
+        "slotsMatched": 4,
+        "slotsUnmatched": 2,
         "opaqueRenamed": 0,
         "unmatchedSlots": [
-          {
-            "path": "root > <App> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <HrTimer> [ClassComponent] > <Auxiliary> [FunctionComponent] > <Card> (opaque) > <Tabs> (opaque) > <TabPane> (opaque) > <Timer> [ClassComponent] > <Auxiliary> [FunctionComponent] > <Button> (opaque)",
-            "reason": "Button from antd is not analyzed",
-            "head": "<Button> [ClassComponent]",
-            "skippedFibers": 7,
-            "divergence": {
-              "path": "root > <App> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <HrTimer> [ClassComponent] > <Auxiliary> [FunctionComponent] > <Card> (opaque) > <Tabs> (opaque) > <TabPane> (opaque) > <Timer> [ClassComponent] > <Auxiliary> [FunctionComponent] > <Button> (opaque)[0]",
-              "expected": "\"RESET\"",
-              "actual": "<ContextConsumer> [ContextConsumer]"
-            }
-          },
           {
             "path": "root > <App> [FunctionComponent] > <div> [HostComponent] > <header> [HostComponent] > <HrTimer> [ClassComponent] > <Auxiliary> [FunctionComponent] > <Card> (opaque) > <Tabs> (opaque) > <TabPane> (opaque) > <Timer> [ClassComponent] > <Auxiliary> [FunctionComponent] > <Button> (opaque)",
             "reason": "Button from antd is not analyzed",
@@ -338272,7 +338261,7 @@
         "coverage": 1,
         "strictCoverage": 0.06569343065693431,
         "divergence": null,
-        "stepsUsed": 4279,
+        "stepsUsed": 4272,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -338285,7 +338274,7 @@
           "guards": 9,
           "branches": 3,
           "repeats": 0,
-          "opaque": 33,
+          "opaque": 32,
           "wildcards": 6
         },
         "matchedState": {
@@ -338300,7 +338289,7 @@
               "kind": "state-update",
               "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -338308,7 +338297,7 @@
               "kind": "state-update",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -338316,7 +338305,7 @@
               "kind": "state-update",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -338357,7 +338346,7 @@
               "kind": "branch",
               "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
               "side": 0,
               "guard": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
               "status": "possible"
@@ -338366,7 +338355,7 @@
               "kind": "branch",
               "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
               "side": 1,
               "guard": "not(and(not(eq(choice(#1), 0)), eq(#2.time, 0)))",
               "status": "witnessed"
@@ -338375,7 +338364,7 @@
               "kind": "branch",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
               "side": 0,
               "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
               "status": "possible"
@@ -338384,7 +338373,7 @@
               "kind": "branch",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
               "side": 1,
               "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading))))",
               "status": "witnessed"
@@ -338393,7 +338382,7 @@
               "kind": "branch",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
               "side": 0,
               "guard": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
               "status": "possible"
@@ -338402,7 +338391,7 @@
               "kind": "branch",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
               "side": 1,
               "guard": "not(or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start))))",
               "status": "possible"
@@ -338432,7 +338421,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338440,7 +338429,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338448,7 +338437,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               }
@@ -338471,7 +338460,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338479,7 +338468,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338487,7 +338476,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               }
@@ -338510,7 +338499,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338518,7 +338507,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338526,7 +338515,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               }
@@ -338549,7 +338538,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338557,7 +338546,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338565,7 +338554,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               }
@@ -338588,7 +338577,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338596,7 +338585,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338604,7 +338593,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               }
@@ -338627,7 +338616,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338635,7 +338624,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
@@ -338643,7 +338632,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               }
@@ -338666,7 +338655,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338674,7 +338663,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338682,7 +338671,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               }
@@ -338705,7 +338694,7 @@
                 "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
                 "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338713,7 +338702,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -338721,7 +338710,7 @@
                 "kind": "state-update",
                 "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.start)))",
                 "reason": "conditional on branch(true | unknown)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:66:85",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               }
@@ -338745,7 +338734,7 @@
               "kind": "state-update",
               "variable": "and(not(eq(choice(#1), 0)), eq(#2.time, 0))",
               "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:61:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -338753,7 +338742,7 @@
               "kind": "state-update",
               "variable": "or(eq(choice(#1), 0), and(not(eq(choice(#1), 0)), truthy(#2.loading)))",
               "reason": "conditional on branch(true | unknown)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/aman1106-react-timer/src/components/Timer/Timer.js:62:10",
               "alternativeIndex": 1,
               "alternativeCount": 2
             }
@@ -338762,7 +338751,7 @@
         }
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:06:56.392Z",
+      "note": "runtime replayed from 2026-09-18T20:37:27.260Z",
       "failure": null
     },
     {
