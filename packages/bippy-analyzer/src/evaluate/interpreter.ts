@@ -3367,10 +3367,8 @@ export class Interpreter {
       return proceed(
         {
           getValue: (readContext) => this.evaluateExpression(target, readContext),
-          setValue: (value, assignmentContext) => {
-            this.assignIdentifier(target.name, value, assignmentContext);
-            return value;
-          },
+          setValue: (value, assignmentContext) =>
+            this.assignIdentifier(target.name, value, assignmentContext, target) ?? value,
         },
         context,
       );
@@ -3574,7 +3572,7 @@ export class Interpreter {
   assignTarget(target: AssignmentTarget, value: StaticValue, context: EvaluationContext): void {
     switch (target.type) {
       case "Identifier":
-        this.assignIdentifier(target.name, value, context);
+        this.assignIdentifier(target.name, value, context, target);
         return;
       case "MemberExpression":
         this.evaluateReference(target, context, (reference, pathContext) =>
@@ -3585,7 +3583,7 @@ export class Interpreter {
       case "ArrayPattern":
         this.destructure(target, value, context.scope, context, (leaf, leafValue) => {
           if (leaf.type === "Identifier") {
-            this.assignIdentifier(leaf.name, leafValue, context);
+            this.assignIdentifier(leaf.name, leafValue, context, leaf);
           } else {
             this.assignTarget(leaf, leafValue, context);
           }
@@ -3684,7 +3682,12 @@ export class Interpreter {
     });
   }
 
-  private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
+  private assignIdentifier(
+    name: string,
+    value: StaticValue,
+    context: EvaluationContext,
+    node: Node,
+  ): StaticValue | null {
     const owner = findOwningScope(context.scope, name);
     if (owner) {
       this.mutations.record(owner.allocation);
@@ -3693,23 +3696,28 @@ export class Interpreter {
         name,
         this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
       );
-      return;
+      return null;
     }
     const bindingKind = context.module.bindings.get(name)?.kind;
     if (bindingKind === undefined || bindingKind === "typescript") {
-      const properties = this.getGlobalProperties(context.environment);
-      if (properties.has(name))
-        this.setGlobalMember({ kind: "global", name: "globalThis" }, name, value, context);
-      return;
+      if (isStrictCode(context.module, node)) {
+        return thrownValue(
+          `\`${name}\` is not defined`,
+          createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
+        );
+      }
+      this.setGlobalMember({ kind: "global", name: "globalThis" }, name, value, context);
+      return null;
     }
     const values = this.getModuleValues(context.module, context.environment);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name, context.environment);
     const previous = values.get(name);
-    if (previous === undefined || previous === IN_PROGRESS) return;
+    if (previous === undefined || previous === IN_PROGRESS) return null;
     this.mutations.record(0);
     this.escapeWalk.memo.invalidate(context.module, name);
     for (const journal of this.heapJournals) journal.recordModuleBinding(values, name, previous);
     values.set(name, this.withUncertainAssignment(previous, value, name, context));
+    return null;
   }
 
   private withUncertainAssignment(
