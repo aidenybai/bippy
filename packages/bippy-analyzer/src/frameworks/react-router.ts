@@ -2298,6 +2298,22 @@ export const createReactRouterModel = (
       });
     },
   });
+  const navigateStub: StubComponent = {
+    displayName: "Navigate",
+    render: (props, tools) => {
+      const contextualNavigate = tools.readContext(NAVIGATION_CONTEXT);
+      const to = getObjectProperty(props, "to");
+      const options = objectFromRecord({
+        relative: getObjectProperty(props, "relative"),
+        replace: getObjectProperty(props, "replace"),
+        state: getObjectProperty(props, "state"),
+      });
+      tools.hooks?.useEffect(() => {
+        if (isCallable(contextualNavigate)) tools.call(contextualNavigate, [to, options]);
+      }, [contextualNavigate, to, options]);
+      return NULL_VALUE;
+    },
+  };
   const getRouterComponentTag = (specifier: string) => {
     const packageName = specifier === "react-router-dom" ? specifier : "react-router";
     const version = readInstalledVersion(rootDirectory, packageName);
@@ -2395,7 +2411,7 @@ export const createReactRouterModel = (
       case "PrefetchPageLinks":
         return stubValue(PREFETCH_PAGE_LINKS_STUB);
       case "Navigate":
-        return stubValue(emptyStub(importedName));
+        return stubValue(navigateStub);
       default:
         return routerHookValue(importedName);
     }
