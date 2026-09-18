@@ -317271,8 +317271,8 @@
       "id": "rendy278-kanban-board",
       "revision": "0a2965a647190e9c5468ee65a85be404c5b3de65",
       "framework": "spa",
-      "capturedAt": "2026-09-14T14:06:26.978Z",
-      "durationMs": 1302,
+      "capturedAt": "2026-09-17T23:58:12.746Z",
+      "durationMs": 1674,
       "runtime": {
         "reactVersion": "19.1.0",
         "rendererName": "react-dom",
@@ -317345,7 +317345,7 @@
               "kind": "branch",
               "variable": "eq(#1.forcedTheme, \"dark\")",
               "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/private/tmp/bippy-parser-ui-expansion-four/rendy278-kanban-board/src/components/ui/color-mode.tsx:46:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/rendy278-kanban-board/src/components/ui/color-mode.tsx:46:10",
               "side": 0,
               "guard": "eq(#1.forcedTheme, \"dark\")",
               "status": "possible"
@@ -317354,7 +317354,7 @@
               "kind": "branch",
               "variable": "eq(#1.forcedTheme, \"dark\")",
               "reason": "conditional on <boolean: === on dynamic values>",
-              "location": "/private/tmp/bippy-parser-ui-expansion-four/rendy278-kanban-board/src/components/ui/color-mode.tsx:46:10",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/rendy278-kanban-board/src/components/ui/color-mode.tsx:46:10",
               "side": 1,
               "guard": "not(eq(#1.forcedTheme, \"dark\"))",
               "status": "possible"
@@ -317375,7 +317375,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T14:01:43.446Z",
+      "note": "runtime replayed from 2026-09-17T23:55:28.804Z",
       "failure": null
     },
     {
