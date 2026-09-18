@@ -261,6 +261,7 @@ import {
   getHostDocumentExpando,
   getNativeObjectComposedMember,
   getNativeObjectMember,
+  getNativeOwnEntries,
   hasHostDocumentMember,
   setHostDocumentMember,
   setNativeObjectComposedMember,
@@ -797,6 +798,19 @@ const markExternallyMutable = (value: StaticObjectValue, reason: string): void =
     return;
   }
   value.entries.push({ kind: "spread", value: unknownValue(reason) });
+};
+
+const getCopiedSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | null => {
+  const copied = getSpreadEntries(spread);
+  if (copied) return copied;
+  if (spread.kind !== "native-object") return null;
+  return (
+    getNativeOwnEntries(spread)?.map(([key, value]): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value,
+    })) ?? null
+  );
 };
 
 /**
@@ -2708,7 +2722,7 @@ export class Interpreter {
     for (const property of node.properties) {
       if (property.type === "SpreadElement") {
         const spread = this.evaluateExpression(property.argument, context);
-        const copied = getSpreadEntries(spread);
+        const copied = getCopiedSpreadEntries(spread);
         if (copied) {
           entries.push(...copied);
           continue;
@@ -6143,10 +6157,9 @@ export class Interpreter {
     let maybeKey: StaticValue = UNDEFINED_VALUE;
     for (const attribute of attributes) {
       if (attribute.type === "JSXSpreadAttribute") {
-        entries.push({
-          kind: "spread",
-          value: this.evaluateExpression(attribute.argument, context),
-        });
+        const spread = this.evaluateExpression(attribute.argument, context);
+        const copied = getCopiedSpreadEntries(spread);
+        entries.push(...(copied ?? [{ kind: "spread", value: spread }]));
         continue;
       }
       const name =
