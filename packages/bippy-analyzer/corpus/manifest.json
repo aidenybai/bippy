@@ -9792,7 +9792,8 @@
         "NODE_OPTIONS": "",
         "BROWSER": "none",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
-        "PUPPETEER_SKIP_DOWNLOAD": "1"
+        "PUPPETEER_SKIP_DOWNLOAD": "1",
+        "SKIP_PREFLIGHT_CHECK": "true"
       },
       "url": "http://127.0.0.1:54871/",
       "readyTimeoutMs": 120000,
