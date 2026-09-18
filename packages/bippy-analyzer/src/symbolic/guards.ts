@@ -86,20 +86,6 @@ export interface GuardOr {
   operands: Guard[];
 }
 
-interface GuardSequence {
-  kind: "and" | "or";
-  chunks: Guard[];
-  operands: GuardIndex | null;
-}
-
-interface GuardIndex {
-  hash: number;
-  priority: number;
-  guards: Guard[];
-  left: GuardIndex | null;
-  right: GuardIndex | null;
-}
-
 export type Guard =
   | GuardConstant
   | GuardTruthy
@@ -175,314 +161,69 @@ export const negateGuard = (guard: Guard): Guard => {
   return { kind: "not", operand: guard };
 };
 
-const guardHashCache = new WeakMap<Guard, number>();
+const getVariableKey = (variable: SymbolicVariable): string =>
+  JSON.stringify([variable.input, variable.path, variable.measure]);
 
-const hashText = (value: string): number => {
-  let hash = 2_166_136_261;
-  for (let index = 0; index < value.length; index++) {
-    hash = Math.imul(hash ^ value.charCodeAt(index), 16_777_619);
-  }
-  return hash >>> 0;
-};
-
-const mixHash = (hash: number, value: number): number => Math.imul(hash ^ value, 16_777_619) >>> 0;
-
-const getVariableHash = (variable: SymbolicVariable): number =>
-  hashText(JSON.stringify([variable.input, variable.path, variable.measure]));
-
-const getGuardHash = (guard: Guard): number => {
-  const cached = guardHashCache.get(guard);
-  if (cached !== undefined) return cached;
-  let hash: number;
+const getGuardKey = (guard: Guard): string => {
   switch (guard.kind) {
     case "constant":
-      return hashText(JSON.stringify([guard.kind, guard.value]));
+      return JSON.stringify([guard.kind, guard.value]);
     case "truthy":
-      return mixHash(hashText(guard.kind), getVariableHash(guard.variable));
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
     case "eq":
-      return mixHash(
-        mixHash(hashText(guard.kind), getVariableHash(guard.variable)),
-        hashText(JSON.stringify(guard.value)),
-      );
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
     case "compare":
-      return mixHash(
-        mixHash(
-          mixHash(hashText(guard.kind), getVariableHash(guard.variable)),
-          hashText(guard.operator),
-        ),
-        hashText(String(guard.value)),
-      );
+      return JSON.stringify([
+        guard.kind,
+        getVariableKey(guard.variable),
+        guard.operator,
+        guard.value,
+      ]);
     case "in-set":
-      hash = mixHash(hashText(guard.kind), getVariableHash(guard.variable));
-      for (const value of guard.values) hash = mixHash(hash, hashText(JSON.stringify(value)));
-      return hash;
+      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
     case "not":
-      hash = mixHash(hashText(guard.kind), getGuardHash(guard.operand));
-      break;
+      return JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
     case "and":
     case "or":
-      hash = hashText(guard.kind);
-      for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
-      break;
+      return JSON.stringify([guard.kind, guard.operands.map(getGuardKey)]);
   }
-  guardHashCache.set(guard, hash);
-  return hash;
-};
-
-const guardSizeCache = new WeakMap<Guard, number>();
-const guardSequenceCache = new WeakMap<Guard, GuardSequence>();
-
-const getGuardSize = (guard: Guard): number => {
-  const cached = guardSizeCache.get(guard);
-  if (cached !== undefined) return cached;
-  const size =
-    guard.kind === "and" || guard.kind === "or"
-      ? guard.operands.reduce((total, operand) => total + getGuardSize(operand), 0)
-      : 1;
-  guardSizeCache.set(guard, size);
-  return size;
-};
-
-const createGuardGroup = (kind: "and" | "or", operands: Guard[]): Guard => {
-  const guard: Guard = { kind, operands };
-  guardSizeCache.set(
-    guard,
-    operands.reduce((size, operand) => size + getGuardSize(operand), 0),
-  );
-  return guard;
-};
-
-const getGuardPriority = (hash: number): number => {
-  let priority = hash + 0x9e_37_79_b9;
-  priority = Math.imul(priority ^ (priority >>> 16), 0x21_f0_aa_ad);
-  priority = Math.imul(priority ^ (priority >>> 15), 0x73_5a_2d_97);
-  return (priority ^ (priority >>> 15)) >>> 0;
-};
-
-const getIndexedGuards = (index: GuardIndex | null, hash: number): Guard[] | null => {
-  let current = index;
-  while (current !== null) {
-    if (hash === current.hash) return current.guards;
-    current = hash < current.hash ? current.left : current.right;
-  }
-  return null;
-};
-
-const hasSameGuard = (index: GuardIndex | null, guard: Guard): boolean =>
-  getIndexedGuards(index, getGuardHash(guard))?.some((candidate) =>
-    isSameGuard(candidate, guard),
-  ) ?? false;
-
-const rotateGuardIndexRight = (index: GuardIndex): GuardIndex => {
-  const root = index.left;
-  if (root === null) return index;
-  return {
-    ...root,
-    right: {
-      ...index,
-      left: root.right,
-    },
-  };
-};
-
-const rotateGuardIndexLeft = (index: GuardIndex): GuardIndex => {
-  const root = index.right;
-  if (root === null) return index;
-  return {
-    ...root,
-    left: {
-      ...index,
-      right: root.left,
-    },
-  };
-};
-
-const insertGuardIndex = (
-  index: GuardIndex | null,
-  hash: number,
-  guard: Guard,
-): GuardIndex => {
-  if (index === null) {
-    return {
-      hash,
-      priority: getGuardPriority(hash),
-      guards: [guard],
-      left: null,
-      right: null,
-    };
-  }
-  if (hash === index.hash) return { ...index, guards: [...index.guards, guard] };
-  if (hash < index.hash) {
-    const next = { ...index, left: insertGuardIndex(index.left, hash, guard) };
-    return next.left !== null && next.left.priority < next.priority
-      ? rotateGuardIndexRight(next)
-      : next;
-  }
-  const next = { ...index, right: insertGuardIndex(index.right, hash, guard) };
-  return next.right !== null && next.right.priority < next.priority
-    ? rotateGuardIndexLeft(next)
-    : next;
-};
-
-const addGuardToIndex = (index: GuardIndex | null, guard: Guard): GuardIndex =>
-  insertGuardIndex(index, getGuardHash(guard), guard);
-
-const collectGuardOperands = (
-  kind: "and" | "or",
-  guard: Guard,
-  index: GuardIndex | null,
-): GuardIndex | null => {
-  if (guard.kind === kind) {
-    for (const operand of guard.operands) {
-      index = collectGuardOperands(kind, operand, index);
-    }
-    return index;
-  }
-  return addGuardToIndex(index, guard);
-};
-
-const appendGuardChunk = (kind: "and" | "or", chunks: Guard[], operand: Guard): void => {
-  let chunk = operand;
-  for (
-    let previous = chunks.at(-1);
-    previous !== undefined && getGuardSize(previous) === getGuardSize(chunk);
-    previous = chunks.at(-1)
-  ) {
-    chunks.pop();
-    chunk = createGuardGroup(kind, [previous, chunk]);
-  }
-  chunks.push(chunk);
-};
-
-const appendGuard = (
-  kind: "and" | "or",
-  base: Guard,
-  operand: Guard,
-  absorbing: boolean,
-): Guard => {
-  const cachedSequence = guardSequenceCache.get(base);
-  const sequence =
-    cachedSequence?.kind === kind
-      ? cachedSequence
-      : {
-          kind,
-          chunks: [base],
-          operands: collectGuardOperands(kind, base, null),
-        };
-  if (hasSameGuard(sequence.operands, operand)) return base;
-  if (hasSameGuard(sequence.operands, negateGuard(operand))) return constantGuard(absorbing);
-  const chunks = [...sequence.chunks];
-  appendGuardChunk(kind, chunks, operand);
-  const guard = chunks.length === 1 ? chunks[0] : createGuardGroup(kind, chunks);
-  guardSequenceCache.set(guard, {
-    kind,
-    chunks,
-    operands: addGuardToIndex(sequence.operands, operand),
-  });
-  return guard;
-};
-
-const combineGuardList = (
-  kind: "and" | "or",
-  operands: Guard[],
-  absorbing: boolean,
-): Guard => {
-  const unique: Guard[] = [];
-  let indexedOperands: GuardIndex | null = null;
-  let isAbsorbed = false;
-  const add = (operand: Guard): void => {
-    if (isAbsorbed) return;
-    if (operand.kind === kind) {
-      for (const nested of operand.operands) add(nested);
-      return;
-    }
-    if (operand.kind === "constant") {
-      isAbsorbed = operand.value === absorbing;
-      return;
-    }
-    if (hasSameGuard(indexedOperands, operand)) return;
-    if (hasSameGuard(indexedOperands, negateGuard(operand))) {
-      isAbsorbed = true;
-      return;
-    }
-    unique.push(operand);
-    indexedOperands = addGuardToIndex(indexedOperands, operand);
-  };
-  for (const operand of operands) add(operand);
-  if (isAbsorbed) return constantGuard(absorbing);
-  if (unique.length === 0) return constantGuard(!absorbing);
-  if (unique.length === 1) return unique[0];
-  const guard = createGuardGroup(kind, unique);
-  guardSequenceCache.set(guard, {
-    kind,
-    chunks: [guard],
-    operands: indexedOperands,
-  });
-  return guard;
 };
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
-  if (operands.length > 2) return combineGuardList(kind, operands, absorbing);
-  let combined: Guard | null = null;
-  const add = (operand: Guard): void => {
-    if (combined?.kind === "constant" && combined.value === absorbing) return;
-    if (combined === null && (operand.kind !== kind || guardSequenceCache.has(operand))) {
-      if (operand.kind !== "constant") combined = operand;
-      else if (operand.value === absorbing) combined = constantGuard(absorbing);
-      return;
-    }
-    if (operand.kind === kind) {
-      for (const nested of operand.operands) add(nested);
-      return;
-    }
-    if (operand.kind === "constant") {
-      if (operand.value === absorbing) combined = constantGuard(absorbing);
-      return;
-    }
-    combined =
-      combined === null ? operand : appendGuard(kind, combined, operand, absorbing);
-  };
-  for (const operand of operands) add(operand);
-  return combined ?? constantGuard(!absorbing);
+  const flattened = operands.flatMap((operand) =>
+    operand.kind === kind ? operand.operands : [operand],
+  );
+  if (flattened.some((operand) => operand.kind === "constant" && operand.value === absorbing))
+    return constantGuard(absorbing);
+  const remaining: Guard[] = [];
+  const remainingKeys = new Set<string>();
+  for (const operand of flattened) {
+    if (operand.kind === "constant") continue;
+    const key = getGuardKey(operand);
+    if (remainingKeys.has(key)) continue;
+    const complement = negateGuard(operand);
+    if (remainingKeys.has(getGuardKey(complement))) return constantGuard(absorbing);
+    remaining.push(operand);
+    remainingKeys.add(key);
+  }
+  if (remaining.length === 0) return constantGuard(!absorbing);
+  return remaining.length === 1 ? remaining[0] : { kind, operands: remaining };
 };
 
 export const andGuard = (operands: Guard[]): Guard => combineGuards("and", operands, false);
 
 export const orGuard = (operands: Guard[]): Guard => combineGuards("or", operands, true);
 
-const inputIdsCache = new WeakMap<InputVariable[], Set<string>>();
-
-const getInputIds = (inputs: InputVariable[]): Set<string> => {
-  const cached = inputIdsCache.get(inputs);
-  if (cached !== undefined) return cached;
-  const ids = new Set(inputs.map((input) => input.id));
-  inputIdsCache.set(inputs, ids);
-  return ids;
-};
-
-const combineContextInputs = (contexts: GuardContext[]): InputVariable[] => {
-  let combined: InputVariable[] = [];
-  for (const context of contexts) {
-    if (context.inputs.length === 0 || context.inputs === combined) continue;
-    if (combined.length === 0) {
-      combined = context.inputs;
-      continue;
-    }
-    const ids = getInputIds(combined);
-    const additions = context.inputs.filter((input) => !ids.has(input.id));
-    if (additions.length === 0) continue;
-    combined = [...combined, ...additions];
-    inputIdsCache.set(combined, new Set([...ids, ...additions.map((input) => input.id)]));
-  }
-  return combined;
-};
-
 export const combineGuardContexts = (
   contexts: GuardContext[],
   combine: (guards: Guard[]) => Guard,
 ): GuardContext => ({
   guard: combine(contexts.map((context) => context.guard)),
-  inputs: combineContextInputs(contexts),
+  inputs: [
+    ...new Map(
+      contexts.flatMap((context) => context.inputs).map((input) => [input.id, input]),
+    ).values(),
+  ],
 });
 
 export const isSameVariable = (left: SymbolicVariable, right: SymbolicVariable): boolean =>
