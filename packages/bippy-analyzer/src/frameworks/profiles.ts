@@ -212,6 +212,8 @@ const REACT_ROUTER_RUNTIME_WRAPPERS = [
 ];
 
 const REACT_ROUTER_RUNTIME_PROVIDERS = [
+  "Router",
+  "Router-History",
   "DataRouter",
   "DataRouterState",
   "Fetchers",
