@@ -120,7 +120,7 @@ describe("comparePatternToRuntime", () => {
         ),
       ]),
     ];
-    const result = matchPatternToRuntime(patterns, runtime, { maxSteps: 2_000 });
+    const result = matchPatternToRuntime(patterns, runtime, { maxSteps: 100 });
     expect(result.report.budgetExhausted).toBe(false);
     expect(result.report.status).toBe("partial");
   });
