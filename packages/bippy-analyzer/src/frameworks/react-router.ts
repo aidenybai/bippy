@@ -34,6 +34,7 @@ import {
 } from "../evaluate/values.js";
 import type { ModuleRecord } from "../graph/module-types.js";
 import { getInstalledModules } from "../libraries/installed-modules.js";
+import { isVersionAtLeast, readInstalledVersion } from "../libraries/installed-version.js";
 import { toElementType } from "../react/element-type.js";
 import { findRootRenderCalls } from "../render/find-root-elements.js";
 import type { StaticRenderer } from "../render/static-renderer.js";
@@ -50,7 +51,7 @@ import type {
   StubComponent,
   StubRenderTools,
 } from "../types.js";
-import { ForwardRefTag } from "../work-tags.js";
+import { ClassComponentTag, ForwardRefTag, FunctionComponentTag } from "../work-tags.js";
 import { FS_ROUTES_PACKAGE, readFsRoutes } from "./fs-routes.js";
 import { AUTO_ROUTES_PACKAGE, readAutoRoutes } from "./react-router-auto-routes.js";
 import {
@@ -1920,13 +1921,24 @@ export const createReactRouterModel = (
       );
     },
   };
-  const routerStub = (displayName: string): StubComponent => ({
+  const routerStub = (
+    displayName: string,
+    tag: typeof ClassComponentTag | typeof FunctionComponentTag,
+  ): StubComponent => ({
     displayName,
+    tag,
     render: (props, tools) =>
       withBasename(getObjectProperty(props, "basename"), tools, (scope) =>
         withinRouter(getObjectProperty(props, "children"), scope.context),
       ),
   });
+  const getRouterComponentTag = (specifier: string) => {
+    const packageName = specifier === "react-router-dom" ? specifier : "react-router";
+    const version = readInstalledVersion(rootDirectory, packageName);
+    return version !== null && !isVersionAtLeast(version, "6.0.0")
+      ? ClassComponentTag
+      : FunctionComponentTag;
+  };
   const routesStub: StubComponent = {
     displayName: "Routes",
     render: (props, tools) => {
@@ -1995,7 +2007,7 @@ export const createReactRouterModel = (
       case "MemoryRouter":
       case "Router":
       case "unstable_HistoryRouter":
-        return stubValue(routerStub(importedName));
+        return stubValue(routerStub(importedName, getRouterComponentTag(specifier)));
       case "HydratedRouter":
         return stubValue(hydratedRouterStub);
       case "RemixBrowser":
