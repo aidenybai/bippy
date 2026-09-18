@@ -4910,14 +4910,15 @@ export class Interpreter {
           promise,
           (outcome, isEscaped) => {
             this.resolvedAwaits.set(node, outcome);
-            let resumed = isEscaped
-              ? this.runDeferred(context, location, resumeStatement)
-              : resumeStatement();
-            for (const handler of suspension.outcomeHandlers.toReversed()) {
-              if (resumed.isSuspended) return null;
-              resumed = handler(resumed);
-            }
-            return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+            const resume = (): StaticValue | null => {
+              let resumed = resumeStatement();
+              for (const handler of suspension.outcomeHandlers.toReversed()) {
+                if (resumed.isSuspended) return null;
+                resumed = handler(resumed);
+              }
+              return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+            };
+            return isEscaped ? this.runDeferred(context, location, resume) : resume();
           },
           location,
           promiseTools(this, context, location),
