@@ -1927,10 +1927,12 @@ export const createReactRouterModel = (
   ): StubComponent => ({
     displayName,
     tag,
-    render: (props, tools) =>
-      withBasename(getObjectProperty(props, "basename"), tools, (scope) =>
+    render: (props, tools) => {
+      const routerTools = tag === ClassComponentTag ? { ...tools, hooks: null } : tools;
+      return withBasename(getObjectProperty(props, "basename"), routerTools, (scope) =>
         withinRouter(getObjectProperty(props, "children"), scope.context),
-      ),
+      );
+    },
   });
   const getRouterComponentTag = (specifier: string) => {
     const packageName = specifier === "react-router-dom" ? specifier : "react-router";
