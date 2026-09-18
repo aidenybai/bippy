@@ -2069,8 +2069,7 @@
           "lucide-react",
           "next-themes",
           "motion",
-          "framer-motion",
-          "react-markdown"
+          "framer-motion"
         ]
       },
       "notes": "The app has no pnpm-workspace.yaml, so pnpm must not attach the clone to the parser workspace above `.corpus/`."
