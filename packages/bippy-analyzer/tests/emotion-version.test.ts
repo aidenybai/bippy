@@ -13,7 +13,9 @@ interface EmotionVersionCase {
 }
 
 const CASES: EmotionVersionCase[] = [
-  { react: "11.1.5", styled: "11.1.5", insertions: 0, noops: 3 },
+  { react: "11.1.5", styled: "11.1.5", insertions: 0, noops: 0 },
+  { react: "11.5.0", styled: "11.5.0", insertions: 0, noops: 0 },
+  { react: "11.6.0", styled: "11.6.0", insertions: 0, noops: 3 },
   { react: "11.7.1", styled: "11.6.0", insertions: 0, noops: 3 },
   { react: "11.8.0", styled: "11.8.0", insertions: 3, noops: 0 },
   { react: "11.8.0", styled: "11.6.0", insertions: 2, noops: 1 },
