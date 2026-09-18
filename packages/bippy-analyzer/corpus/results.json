@@ -180945,15 +180945,15 @@
       "id": "teable",
       "revision": "bda82ee5c1553e560a8db7f3ac9ff1131d7c3628",
       "framework": "next-pages",
-      "capturedAt": "2026-09-18T19:28:50.347Z",
-      "durationMs": 2741,
+      "capturedAt": "2026-09-18T20:00:06.730Z",
+      "durationMs": 71646,
       "runtime": {
         "reactVersion": "19.3.0-canary-f93b9fd4-20251217",
         "rendererName": "react-dom",
         "buildType": "production",
         "roots": 2,
-        "fibers": 554,
-        "commits": 16,
+        "fibers": 552,
+        "commits": 12,
         "pageErrors": [
           "Warning: Prop `%s` did not match. Server: %s Client: %s%s className \"bg-zinc-50 bg-opacity-25 dark:bg-zinc-900 dark:bg-opacity-25 size-10 rounded-md\" \"bg-zinc-50 dark:bg-zinc-900 size-10 rounded-md\" \n    at div\n    at Rectangles (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:292:23)\n    at div\n    at div\n    at DescContent (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:344:362)\n    at div\n    at div\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7598:32\n    at div\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25644:26\n    at Provider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:25395:28)\n    at http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:7546:32\n    at _c (http://localhost:3000/_next/static/chunks/packages_6eecbca4._.js:565:230)\n    at LoginPage (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:1874:13)\n    at HydrationBoundary (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:619:28)\n    at QueryClientProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_c91247aa._.js:583:30)\n    at LoginRoute (http://localhost:3000/_next/static/chunks/apps_nextjs-app_src_1b162657._.js:2101:217)\n    at ConfirmModalProvider (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:2711:33)\n    at B (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17130:24)\n    at K (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:17125:200)\n    at AppProviders (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3283:13)\n    at MyApp (http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__425c3197._.js:3396:13)\n    at I18nextProvider (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:2009:11)\n    at AppWithTranslation (http://localhost:3000/_next/static/chunks/node_modules__pnpm_3d40a891._.js:3124:26)\n    at PathnameContextProviderAdapter (http://localhost:3000/_next/static/chunks/e0369_next_dist_shared_lib_0ec0913e._.js:5872:43)\n    at PagesDevOverlayErrorBoundary (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:2719:9)\n    at PagesDevOverlayBridge (http://localhost:3000/_next/static/chunks/e0369_next_dist_6908bab3._.js:3496:34)\n    at Container (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3085:1)\n    at AppContainer (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3184:25)\n    at Root (http://localhost:3000/_next/static/chunks/e0369_next_dist_client_4b07ac1b._.js:3393:17)"
         ],
@@ -180961,19 +180961,19 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 479,
+          "fiberCount": 484,
           "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 3,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1879
+          "modulesLoaded": 1882
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 0,
-        "matchedText": 0,
+        "matchedFibers": 477,
+        "matchedText": 2,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
@@ -180984,18 +180984,14 @@
         "wildcards": [],
         "branchesResolved": 0,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "status": "mismatch",
-        "runtimeFibers": 498,
-        "staticFibers": 474,
-        "coverage": 0,
-        "strictCoverage": 0,
-        "divergence": {
-          "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
-          "expected": "<end of children>",
-          "actual": "<ForwardRef> [ForwardRef]"
-        },
-        "stepsUsed": 440,
+        "transparentFibers": 17,
+        "status": "exact",
+        "runtimeFibers": 479,
+        "staticFibers": 479,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 479,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -181003,23 +180999,19 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 474,
+          "nodes": 479,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 3,
+          "opaque": 0,
           "wildcards": 0
         },
-        "matchedState": null,
-        "closestState": {
+        "matchedState": {
           "index": 0,
-          "divergence": {
-            "path": "root > <AppWithTranslation> [FunctionComponent] > <I18nextProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <MyApp> [FunctionComponent] > <AppProviders> [FunctionComponent] > <K> [FunctionComponent] > <B> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ConfirmModalProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <LoginRoute> [FunctionComponent] > <QueryClientProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <HydrationBoundary> [FunctionComponent] > <LoginPage> [FunctionComponent] > <ForwardRef> [ForwardRef] > <ScrollArea> [ForwardRef] > <ScrollAreaProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Primitive.div> [ForwardRef] > <div> [HostComponent] > <ForwardRef> [ForwardRef] > <ScrollAreaScrollbar> [ForwardRef] > <ForwardRef> [ForwardRef] > <Presence> [FunctionComponent][0]",
-            "expected": "<end of children>",
-            "actual": "<ForwardRef> [ForwardRef]"
-          }
+          "conditions": []
         },
+        "closestState": null,
         "omitted": null,
         "coverage": {
           "sides": [],
@@ -181038,7 +181030,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-18T18:57:43.314Z",
+      "note": null,
       "failure": null
     },
     {

@@ -368,9 +368,14 @@ class and exhausted the evaluator while constructing Tailwind's class map.
 The pure-package boundary now executes concrete calls natively and keeps uncertain calls derived
 without source lifting. Replaying capture `2026-09-18T18:57:43.314Z` removes all 18 exhausted
 diagnostics and all 180 wildcards, reducing the symbolic tree from 478 nodes with 180 wildcards to
-474 nodes with none. Its one assignment replays without contradiction. Teable remains an honest
-mismatch: the native auto scrollbar mounted one additional Radix `ForwardRef` below `Presence`,
-and `NextSeo`, Sonner, and React Joyride still account for three opaque static nodes.
+474 nodes with none.
+
+Expanding NextSeo, Sonner, and React Joyride removes Teable's final three opaque nodes. The remaining
+divergence was Radix's hover scrollbar: Chromium delivered a synthetic `pointerenter` during
+navigation after the pointer had initially been parked outside the viewport. Parking it again after
+navigation and reload removes that browser-only input. A fresh native capture at
+`2026-09-18T20:00:06.730Z` is exact across all 479 comparison nodes with 100% strict coverage, no
+opaque or wildcard node, and its one assignment replays without contradiction.
 
 ## Runtime compiler defines
 
