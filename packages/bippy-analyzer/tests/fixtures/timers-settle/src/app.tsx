@@ -34,8 +34,8 @@ const Relay = () => {
 const HostPromiseBeforeTimer = () => {
   const [isReady, setReady] = useState(false);
   useEffect(() => {
-    const reads = [new FileReader().readAsText(new Blob(["ready"]))];
-    Promise.all(reads)
+    new FontFace("fixture-font", "url(data:font/woff2;base64,d09GMgABAAAAAA==)")
+      .load()
       .then(() => undefined)
       .catch(() => undefined);
     const timeout = setTimeout(() => setReady(true), 10);
