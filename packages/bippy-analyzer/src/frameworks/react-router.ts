@@ -23,6 +23,7 @@ import {
   objectFromRecord,
   objectValue,
   primitiveValue,
+  thrownValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "../evaluate/values.js";
@@ -1141,6 +1142,19 @@ const awaitProvider = (data: StaticValue, children: StaticValue): StaticElementV
     objectFromRecord({ value: objectFromRecord({ _data: data }), children }),
   );
 
+const getCapturedAwaitOutcome = (resolve: StaticValue): StaticValue | null => {
+  if (resolve.kind !== "object") return null;
+  const captured = getObjectProperty(resolve, "$bippyPromise");
+  if (captured.kind !== "object") return null;
+  const status = getObjectProperty(captured, "status");
+  if (status.kind !== "primitive") return null;
+  const value = getObjectProperty(captured, "value");
+  if (status.value === "fulfilled") return value;
+  return status.value === "rejected"
+    ? thrownValue("promise rejected on the captured page", value, null)
+    : null;
+};
+
 /**
  * `<Await>` renders `AwaitErrorBoundary` > `AwaitContext.Provider` > `ResolveAwait`
  * once `resolve` settles; a rejection renders `errorElement` instead when given
@@ -1152,7 +1166,7 @@ const AWAIT_STUB: StubComponent = {
     const resolve = getObjectProperty(props, "resolve");
     const errorElement = getObjectProperty(props, "errorElement");
     const promise = getModeledPromise(resolve);
-    const outcome = promise ? promise.settled : resolve;
+    const outcome = promise ? promise.settled : (getCapturedAwaitOutcome(resolve) ?? resolve);
     const isResolved = outcome !== null && outcome.kind !== "unknown";
     const isRejected = outcome !== null && isThrownOutcome(outcome);
     const hasErrorElement = getTruthiness(errorElement);
