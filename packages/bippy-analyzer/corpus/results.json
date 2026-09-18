@@ -260687,8 +260687,8 @@
       "id": "mural",
       "revision": "e9d4a5bf80dfdb90e8831dfebdfbfdb57bf76ff0",
       "framework": "react-router",
-      "capturedAt": "2026-09-12T13:25:24.496Z",
-      "durationMs": 1015,
+      "capturedAt": "2026-09-18T16:35:47.348Z",
+      "durationMs": 10033,
       "runtime": {
         "reactVersion": "17.0.2",
         "rendererName": "react-dom",
@@ -260709,66 +260709,123 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 42,
-          "textCount": 1,
-          "branchCount": 1,
+          "fiberCount": 160,
+          "textCount": 10,
+          "branchCount": 6,
           "repeatCount": 0,
-          "opaqueCount": 1,
-          "unknownCount": 0,
-          "modulesLoaded": 348
+          "opaqueCount": 0,
+          "unknownCount": 4,
+          "modulesLoaded": 355
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 1
+          },
+          {
+            "code": "dynamic-props",
+            "count": 1
+          }
+        ]
       },
       "report": {
-        "status": "mismatch",
-        "matchedFibers": 0,
-        "matchedText": 0,
+        "matchedFibers": 119,
+        "matchedText": 10,
         "opaqueSubtrees": 0,
         "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
-        "wildcardAbsorbedFibers": 0,
-        "wildcards": [],
-        "branchesResolved": 0,
+        "wildcardAbsorbedFibers": 2,
+        "wildcards": [
+          {
+            "path": "root > <Providers> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <DevProvider> [ClassComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <EditorProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BaseProvider> [FunctionComponent] > <LayersManager> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <StyledAppContainer> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <UIDReset> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Container> [FunctionComponent] > <div> [HostComponent] > <BrowserRouter> [ClassComponent] > <Switch> [ClassComponent] > <Route> [ClassComponent] > <Dashboard> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Switch> [ClassComponent] > <Route> [ClassComponent] > <Templates> [FunctionComponent] > <div> [HostComponent] > <Scrollbars> [ClassComponent] > <div> [HostComponent] > <div> key=\"view\" [HostComponent] > <div> [HostComponent] > <Searcher> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <Input> [ClassComponent] > <Root> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <InputEnhancer> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <Search> [ForwardRef] > <Icon> [ForwardRef] > <Svg> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <svg> [HostComponent]",
+            "reason": "property \"children\" may come from a spread of {..., className}",
+            "absorbedFibers": 2,
+            "heads": [
+              "<title> [HostComponent]",
+              "<path> [HostComponent]"
+            ]
+          }
+        ],
+        "branchesResolved": 4,
         "repeatIterations": 0,
-        "transparentFibers": 0,
-        "runtimeFibers": 150,
-        "staticFibers": 35,
-        "coverage": 0,
-        "strictCoverage": 0,
-        "divergence": {
-          "path": "root > <Providers> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <DevProvider> [ClassComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <EditorProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BaseProvider> [FunctionComponent] > <LayersManager> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <StyledAppContainer> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <UIDReset> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Container> [FunctionComponent] > <div> [HostComponent][0]",
-          "expected": "<BrowserRouter> [FunctionComponent]",
-          "actual": "<BrowserRouter> [ClassComponent]"
-        },
-        "stepsUsed": 28,
+        "transparentFibers": 19,
+        "status": "partial",
+        "runtimeFibers": 131,
+        "staticFibers": 129,
+        "coverage": 1,
+        "strictCoverage": 0.9847328244274809,
+        "divergence": null,
+        "stepsUsed": 140,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 3,
-        "stateCount": 3,
+        "states": 8,
+        "stateCount": 8,
         "clusters": 2,
         "tree": {
-          "nodes": 78,
-          "inputs": 2,
-          "guards": 6,
-          "branches": 2,
+          "nodes": 182,
+          "inputs": 6,
+          "guards": 16,
+          "branches": 7,
           "repeats": 0,
-          "opaque": 1,
-          "wildcards": 0
+          "opaque": 0,
+          "wildcards": 4
         },
-        "matchedState": null,
-        "closestState": {
-          "index": 2,
-          "divergence": {
-            "path": "root > <Providers> [FunctionComponent] > <Provider> [FunctionComponent] > <ReactRedux> [ContextProvider] > <PersistGate> [ClassComponent] > <DevProvider> [ClassComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <EditorProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <BaseProvider> [FunctionComponent] > <LayersManager> [ClassComponent] > <ContextConsumer> [ContextConsumer] > <ContextProvider> [ContextProvider] > <StyledAppContainer> [ForwardRef] > <ContextConsumer> [ContextConsumer] > <ForwardRef> [ForwardRef] > <div> [HostComponent] > <UIDReset> [FunctionComponent] > <ContextProvider> [ContextProvider] > <ThemeProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <AppProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <Container> [FunctionComponent] > <div> [HostComponent][0]",
-            "expected": "<BrowserRouter> [FunctionComponent]",
-            "actual": "<BrowserRouter> [ClassComponent]"
-          }
+        "matchedState": {
+          "index": 5,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "choice(#1)",
+              "reason": "whether the persistor has bootstrapped",
+              "location": null,
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "|| on branch({style} | undefined)",
+              "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "|| on branch({component} | null)",
+              "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+              "reason": "loop iterations are uncertain",
+              "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
         },
-        "omitted": null,
+        "closestState": null,
+        "omitted": {
+          "total": 1,
+          "omissions": [
+            {
+              "kind": "subtree",
+              "reason": "alternative nested 2 branches away from the preferred path"
+            }
+          ]
+        },
         "coverage": {
           "sides": [
             {
@@ -260787,7 +260844,7 @@
               "location": null,
               "side": 0,
               "guard": "or(and(eq(choice(commit), 0), eq(choice(#1), 0)), and(eq(choice(commit), 1), eq(choice(#1), 0)))",
-              "status": "possible"
+              "status": "witnessed"
             },
             {
               "kind": "branch",
@@ -260805,25 +260862,328 @@
               "location": null,
               "side": 1,
               "guard": "and(eq(choice(commit), 1), eq(choice(#1), 0))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "|| on branch({component} | null)",
+              "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+              "side": 0,
+              "guard": "truthy(#2)",
               "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#2)",
+              "reason": "|| on branch({component} | null)",
+              "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+              "side": 1,
+              "guard": "not(truthy(#2))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+              "reason": "loop iterations are uncertain",
+              "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+              "side": 0,
+              "guard": "or(and(eq(choice(commit), 1), eq(choice(#1), 0), not(truthy(#2)), eq(choice(#3), 0), not(eq(#4, \"$\"))), and(eq(choice(commit), 1), eq(choice(#1), 0), not(truthy(#2)), or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0))), eq(choice(#3), 0), not(eq(#4, \"$\"))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+              "reason": "loop iterations are uncertain",
+              "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+              "side": 1,
+              "guard": "or(and(eq(choice(commit), 1), eq(choice(#1), 0), not(truthy(#2)), eq(choice(#3), 0), not(eq(#4, \"$\")), or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))), and(eq(choice(commit), 1), eq(choice(#1), 0), not(truthy(#2)), or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "|| on branch({style} | undefined)",
+              "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+              "side": 0,
+              "guard": "truthy(#5)",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "truthy(#5)",
+              "reason": "|| on branch({style} | undefined)",
+              "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+              "side": 1,
+              "guard": "not(truthy(#5))",
+              "status": "witnessed"
             }
           ],
-          "witnessed": 0,
-          "possible": 4,
+          "witnessed": 5,
+          "possible": 5,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "verification": "sample-passed",
-        "incomplete": [],
-        "states": 3,
-        "assignments": 2,
-        "replayed": 2,
+        "verification": "sample-incomplete",
+        "states": 8,
+        "assignments": 7,
+        "replayed": 7,
         "maxReplayed": 16,
-        "mismatched": []
+        "mismatched": [],
+        "incomplete": [
+          {
+            "stateIndices": [
+              0,
+              2
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "whether the persistor has bootstrapped",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)",
+                "reason": "|| on branch({component} | null)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5)",
+                "reason": "|| on branch({style} | undefined)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              3
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "whether the persistor has bootstrapped",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)",
+                "reason": "|| on branch({component} | null)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5)",
+                "reason": "|| on branch({style} | undefined)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              4
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "whether the persistor has bootstrapped",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)",
+                "reason": "|| on branch({component} | null)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+                "reason": "loop iterations are uncertain",
+                "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5)",
+                "reason": "|| on branch({style} | undefined)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              5
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "whether the persistor has bootstrapped",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)",
+                "reason": "|| on branch({component} | null)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+                "reason": "loop iterations are uncertain",
+                "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5)",
+                "reason": "|| on branch({style} | undefined)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              6
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "whether the persistor has bootstrapped",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)",
+                "reason": "|| on branch({component} | null)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+                "reason": "loop iterations are uncertain",
+                "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5)",
+                "reason": "|| on branch({style} | undefined)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              0,
+              7
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "whether the persistor has bootstrapped",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#2)",
+                "reason": "|| on branch({component} | null)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(eq(choice(#3), 0), not(eq(#4, \"$\"))) | or(and(eq(choice(#3), 0), eq(#4, \"$\")), not(eq(choice(#3), 0)))",
+                "reason": "loop iterations are uncertain",
+                "location": "/tmp/mural-corpus/mural/node_modules/styletron-react/dist-browser-esm/index.js:444:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "truthy(#5)",
+                "reason": "|| on branch({style} | undefined)",
+                "location": "/tmp/mural-corpus/mural/node_modules/baseui/esm/helpers/overrides.js:92:19",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              1
+            ],
+            "isReplayConcrete": false
+          }
+        ]
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-12T12:38:13.148Z",
+      "note": "runtime replayed from 2026-09-18T00:26:45.234Z",
       "failure": null
     },
     {
@@ -317301,6 +317661,7 @@
         ]
       },
       "report": {
+        "status": "mismatch",
         "matchedFibers": 0,
         "matchedText": 0,
         "opaqueSubtrees": 0,
@@ -317314,7 +317675,6 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "mismatch",
         "runtimeFibers": 310,
         "staticFibers": 84,
         "coverage": 0,
@@ -317367,12 +317727,12 @@
       },
       "stateReplay": {
         "verification": "sample-passed",
+        "incomplete": [],
         "states": 2,
         "assignments": 2,
         "replayed": 2,
         "maxReplayed": 16,
-        "mismatched": [],
-        "incomplete": []
+        "mismatched": []
       },
       "anchor": null,
       "note": "runtime replayed from 2026-09-17T23:55:28.804Z",
