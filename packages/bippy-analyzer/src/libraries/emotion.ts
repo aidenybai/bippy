@@ -36,8 +36,8 @@ import { describeTag } from "./component-name.js";
 import { isVersionAtLeast } from "./installed-version.js";
 
 // Emotion's fiber-visible surface. A styled component is a `forwardRef`
-// (`withEmotionCache`) rendering its base tag; Emotion 10 and 11.8+ prepend
-// a null-returning placeholder. The base receives the props that survive
+// (`withEmotionCache`) rendering its base tag; Emotion 10 and early 11 prepend
+// `Noop`, while 11.8+ prepends `Insertion`. The base receives the props that survive
 // `shouldForwardProp` (`@emotion/is-prop-valid` for host tags, everything but
 // `theme` for components). Styling a styled component composes the styles and
 // keeps the original base, so `styled(Flex)` renders Flex's `div`, not Flex.
@@ -75,7 +75,10 @@ interface EmotionRuntime {
 
 const EMOTION_10: EmotionRuntime = { placeholder: emptyStub("Noop"), hasConsumerFibers: true };
 
-const EMOTION_EARLY_11: EmotionRuntime = { placeholder: null, hasConsumerFibers: false };
+const EMOTION_EARLY_11: EmotionRuntime = {
+  placeholder: emptyStub("Noop"),
+  hasConsumerFibers: false,
+};
 
 const EMOTION_11: EmotionRuntime = {
   placeholder: emptyStub("Insertion"),

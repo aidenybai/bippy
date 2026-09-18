@@ -9,14 +9,15 @@ interface EmotionVersionCase {
   react: string;
   styled: string;
   insertions: number;
+  noops: number;
 }
 
 const CASES: EmotionVersionCase[] = [
-  { react: "11.1.5", styled: "11.1.5", insertions: 0 },
-  { react: "11.7.1", styled: "11.6.0", insertions: 0 },
-  { react: "11.8.0", styled: "11.8.0", insertions: 3 },
-  { react: "11.8.0", styled: "11.6.0", insertions: 2 },
-  { react: "11.7.1", styled: "11.8.0", insertions: 1 },
+  { react: "11.1.5", styled: "11.1.5", insertions: 0, noops: 3 },
+  { react: "11.7.1", styled: "11.6.0", insertions: 0, noops: 3 },
+  { react: "11.8.0", styled: "11.8.0", insertions: 3, noops: 0 },
+  { react: "11.8.0", styled: "11.6.0", insertions: 2, noops: 1 },
+  { react: "11.7.1", styled: "11.8.0", insertions: 1, noops: 2 },
 ];
 
 const writePackage = (directory: string, name: string, version: string): void => {
@@ -30,7 +31,7 @@ const writePackage = (directory: string, name: string, version: string): void =>
 };
 
 describe("Emotion insertion component versions", () => {
-  it.each(CASES)("react $react / styled $styled", async ({ react, styled, insertions }) => {
+  it.each(CASES)("react $react / styled $styled", async ({ react, styled, insertions, noops }) => {
     const directory = mkdtempSync(join(tmpdir(), "bippy-emotion-version-"));
     try {
       writeFileSync(
@@ -57,6 +58,7 @@ describe("Emotion insertion component versions", () => {
       const rendered = await renderer.renderComponent(filePath);
       const pattern = formatPattern(getRenderPattern(rendered));
       expect(pattern.split("<Insertion>").length - 1).toBe(insertions);
+      expect(pattern.split("<Noop>").length - 1).toBe(noops);
       expect(pattern).toContain("<section>");
       expect(pattern).toContain("<aside>");
       expect(pattern).toContain("<footer>");
