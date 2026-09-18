@@ -22,7 +22,7 @@ const App = () => {
     ...dynamicProps,
     children: createElement("text", null, "kept"),
   };
-  return createElement("svg", copyProps(props));
+  return createElement("main", null, createElement("svg", copyProps(props)));
 };
 
 export default App;
