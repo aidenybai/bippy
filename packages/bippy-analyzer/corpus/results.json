@@ -326804,8 +326804,8 @@
       "id": "zevaguillo-hilda-memory-card",
       "revision": "6c92a3d1bf7a342a34a7a1fddfa518737810360b",
       "framework": "spa",
-      "capturedAt": "2026-09-14T15:48:24.294Z",
-      "durationMs": 692,
+      "capturedAt": "2026-09-18T20:19:44.003Z",
+      "durationMs": 1504,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -326818,21 +326818,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 52,
+          "fiberCount": 57,
           "textCount": 4,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 5,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 20
+          "modulesLoaded": 24
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 42,
+        "matchedFibers": 52,
         "matchedText": 4,
-        "opaqueSubtrees": 5,
-        "opaqueSkippedFibers": 10,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -326842,13 +326842,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 56,
-        "staticFibers": 51,
+        "staticFibers": 56,
         "coverage": 1,
-        "strictCoverage": 0.8214285714285714,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 51,
+        "stepsUsed": 56,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -326856,12 +326856,12 @@
         "stateCount": 2,
         "clusters": 0,
         "tree": {
-          "nodes": 61,
+          "nodes": 66,
           "inputs": 1,
           "guards": 2,
           "branches": 0,
           "repeats": 0,
-          "opaque": 5,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -326912,7 +326912,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T15:48:21.344Z",
+      "note": "runtime replayed from 2026-09-18T20:15:54.845Z",
       "failure": null
     },
     {
@@ -332590,8 +332590,8 @@
       "id": "ganeshborole-stopwatch-using-react",
       "revision": "53ec33bf356f5d83f11cc6b22a2a30cfc501b493",
       "framework": "spa",
-      "capturedAt": "2026-09-14T17:19:20.992Z",
-      "durationMs": 442,
+      "capturedAt": "2026-09-18T20:19:45.508Z",
+      "durationMs": 731,
       "runtime": {
         "reactVersion": "19.0.0",
         "rendererName": "react-dom",
@@ -332604,21 +332604,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 23,
+          "fiberCount": 38,
           "textCount": 4,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 3,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 3
+          "modulesLoaded": 8
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 15,
+        "matchedFibers": 33,
         "matchedText": 4,
-        "opaqueSubtrees": 3,
-        "opaqueSkippedFibers": 18,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -332628,13 +332628,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 37,
-        "staticFibers": 22,
+        "staticFibers": 37,
         "coverage": 1,
-        "strictCoverage": 0.5135135135135135,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 22,
+        "stepsUsed": 37,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -332642,12 +332642,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 22,
+          "nodes": 37,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 3,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -332673,7 +332673,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T17:19:18.463Z",
+      "note": "runtime replayed from 2026-09-18T20:16:06.515Z",
       "failure": null
     },
     {
@@ -337385,8 +337385,8 @@
       "id": "tulna07-reactjs-tic-tac-toe",
       "revision": "69b769973f72b2d0bb4ec116ae570b9d61b93db4",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:02:45.063Z",
-      "durationMs": 671,
+      "capturedAt": "2026-09-18T20:19:46.242Z",
+      "durationMs": 1080,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -337399,21 +337399,21 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 38,
+          "fiberCount": 48,
           "textCount": 0,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 2,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 6
+          "modulesLoaded": 11
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 35,
+        "matchedFibers": 47,
         "matchedText": 0,
-        "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 12,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -337423,13 +337423,13 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 47,
-        "staticFibers": 37,
+        "staticFibers": 47,
         "coverage": 1,
-        "strictCoverage": 0.7446808510638298,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 37,
+        "stepsUsed": 47,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -337437,12 +337437,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 37,
+          "nodes": 47,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 2,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -337468,7 +337468,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:02:41.701Z",
+      "note": "runtime replayed from 2026-09-18T20:16:20.234Z",
       "failure": null
     },
     {
@@ -338139,8 +338139,8 @@
       "id": "birkaany-color-generator-react",
       "revision": "c6a42ce48073a0c849681151a521476b3a675879",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:04:39.552Z",
-      "durationMs": 977,
+      "capturedAt": "2026-09-18T20:19:47.324Z",
+      "durationMs": 1134,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -338153,13 +338153,13 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 28,
+          "fiberCount": 33,
           "textCount": 1,
           "branchCount": 1,
           "repeatCount": 1,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 7
+          "modulesLoaded": 13
         },
         "diagnostics": [
           {
@@ -338169,10 +338169,10 @@
         ]
       },
       "report": {
-        "matchedFibers": 33,
+        "matchedFibers": 63,
         "matchedText": 1,
-        "opaqueSubtrees": 5,
-        "opaqueSkippedFibers": 30,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
@@ -338182,13 +338182,13 @@
         "branchesResolved": 1,
         "repeatIterations": 5,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "truncated",
         "runtimeFibers": 64,
-        "staticFibers": 23,
+        "staticFibers": 28,
         "coverage": 1,
-        "strictCoverage": 0.53125,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 42,
+        "stepsUsed": 67,
         "budgetExhausted": false
       },
       "stateSpace": {
@@ -338196,12 +338196,12 @@
         "stateCount": 5,
         "clusters": 1,
         "tree": {
-          "nodes": 44,
+          "nodes": 49,
           "inputs": 3,
           "guards": 5,
           "branches": 1,
           "repeats": 1,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -338223,7 +338223,7 @@
             {
               "kind": "repeat",
               "variable": "len(#2.result)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
               "count": 5
             }
           ]
@@ -338235,7 +338235,7 @@
             {
               "kind": "repeat",
               "variable": "len(#2.result)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -338284,7 +338284,7 @@
               "kind": "repeat",
               "variable": "len(#2.result)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
               "side": 0,
               "guard": "eq(len(#2.result), 0)",
               "status": "possible"
@@ -338293,7 +338293,7 @@
               "kind": "repeat",
               "variable": "len(#2.result)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
               "side": 1,
               "guard": "len(#2.result) > 0",
               "status": "witnessed"
@@ -338330,7 +338330,7 @@
             {
               "kind": "repeat",
               "variable": "len(#2.result)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-twelve/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/birkaany-color-generator-react/src/components/ColorPalette.jsx:6:8",
               "count": 5
             }
           ],
@@ -338338,7 +338338,7 @@
         }
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:04:36.108Z",
+      "note": "runtime replayed from 2026-09-18T20:16:31.665Z",
       "failure": null
     },
     {
@@ -340379,15 +340379,15 @@
       "id": "darkbits018-stopwatch-react",
       "revision": "2d39b3c425e75bab9ca0a3930ae8ec07ade214e0",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:07:42.064Z",
-      "durationMs": 676,
+      "capturedAt": "2026-09-18T20:20:28.444Z",
+      "durationMs": 1412,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
         "buildType": "development",
         "roots": 1,
         "fibers": 41,
-        "commits": 10027,
+        "commits": 11496,
         "pageErrors": [],
         "title": "React App"
       },
@@ -340395,11 +340395,11 @@
         "stats": {
           "fiberCount": 68,
           "textCount": 6,
-          "branchCount": 3,
+          "branchCount": 2,
           "repeatCount": 2,
-          "opaqueCount": 1,
-          "unknownCount": 4,
-          "modulesLoaded": 3
+          "opaqueCount": 0,
+          "unknownCount": 1,
+          "modulesLoaded": 8
         },
         "diagnostics": [
           {
@@ -340409,43 +340409,43 @@
         ]
       },
       "report": {
-        "matchedFibers": 31,
+        "matchedFibers": 38,
         "matchedText": 2,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 7,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 3,
+        "branchesResolved": 2,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "truncated",
         "runtimeFibers": 40,
-        "staticFibers": 39,
+        "staticFibers": 45,
         "coverage": 1,
-        "strictCoverage": 0.825,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 37,
+        "stepsUsed": 42,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 26,
-        "stateCount": 26,
+        "states": 14,
+        "stateCount": 14,
         "clusters": 1,
         "tree": {
-          "nodes": 94,
+          "nodes": 102,
           "inputs": 3,
-          "guards": 10,
-          "branches": 3,
+          "guards": 8,
+          "branches": 2,
           "repeats": 2,
-          "opaque": 2,
-          "wildcards": 4
+          "opaque": 0,
+          "wildcards": 1
         },
         "matchedState": {
-          "index": 22,
+          "index": 10,
           "conditions": [
             {
               "kind": "transition",
@@ -340454,17 +340454,9 @@
             },
             {
               "kind": "state-update",
-              "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-              "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-              "alternativeIndex": 1,
-              "alternativeCount": 2
-            },
-            {
-              "kind": "state-update",
               "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
               "reason": "&& on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
               "alternativeIndex": 1,
               "alternativeCount": 2
             },
@@ -340485,7 +340477,7 @@
             {
               "kind": "repeat",
               "variable": "len(#2.0.lap)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -340493,7 +340485,7 @@
             {
               "kind": "repeat",
               "variable": "len(#2)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
               "countsAbove": 2,
               "max": null,
               "conditions": []
@@ -340522,27 +340514,9 @@
             },
             {
               "kind": "branch",
-              "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-              "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-              "side": 0,
-              "guard": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-              "status": "possible"
-            },
-            {
-              "kind": "branch",
-              "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-              "reason": "conditional on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-              "side": 1,
-              "guard": "not(and(not(eq(choice(#1), 0)), #2.0.time > 0))",
-              "status": "witnessed"
-            },
-            {
-              "kind": "branch",
               "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
               "reason": "&& on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
               "side": 0,
               "guard": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
               "status": "possible"
@@ -340551,7 +340525,7 @@
               "kind": "repeat",
               "variable": "len(#2.0.lap)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
               "side": 0,
               "guard": "eq(len(#2.0.lap), 0)",
               "status": "possible"
@@ -340560,7 +340534,7 @@
               "kind": "repeat",
               "variable": "len(#2.0.lap)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
               "side": 1,
               "guard": "len(#2.0.lap) > 0",
               "status": "possible"
@@ -340569,7 +340543,7 @@
               "kind": "branch",
               "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
               "reason": "&& on branch(false | <boolean>)",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
               "side": 1,
               "guard": "not(and(not(eq(choice(#1), 0)), #2.0.lap.length > 0))",
               "status": "witnessed"
@@ -340596,7 +340570,7 @@
               "kind": "repeat",
               "variable": "len(#2)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
               "side": 0,
               "guard": "eq(len(#2), 0)",
               "status": "possible"
@@ -340605,51 +340579,43 @@
               "kind": "repeat",
               "variable": "len(#2)",
               "reason": "repeated list",
-              "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
               "side": 1,
               "guard": "len(#2) > 0",
               "status": "possible"
             }
           ],
-          "witnessed": 4,
-          "possible": 8,
+          "witnessed": 3,
+          "possible": 7,
           "unreachable": 0
         }
       },
       "stateReplay": {
         "verification": "sample-incomplete",
-        "states": 26,
-        "assignments": 25,
-        "replayed": 16,
+        "states": 14,
+        "assignments": 13,
+        "replayed": 13,
         "maxReplayed": 16,
         "mismatched": [],
         "incomplete": [
           {
             "stateIndices": [
               0,
-              1
+              2
             ],
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
                 "count": 0
               },
               {
@@ -340663,8 +340629,8 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 0
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
+                "count": 1
               }
             ],
             "unresolvedClaimCommits": [
@@ -340680,24 +340646,16 @@
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
                 "count": 0
               },
               {
@@ -340711,7 +340669,7 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
                 "count": 2
               }
             ],
@@ -340723,29 +340681,21 @@
           {
             "stateIndices": [
               0,
-              4
+              5
             ],
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
                 "count": 1
               },
               {
@@ -340759,8 +340709,8 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 0
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
+                "count": 1
               }
             ],
             "unresolvedClaimCommits": [
@@ -340776,24 +340726,16 @@
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
                 "count": 1
               },
               {
@@ -340807,7 +340749,7 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
                 "count": 2
               }
             ],
@@ -340819,29 +340761,21 @@
           {
             "stateIndices": [
               0,
-              7
+              8
             ],
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
                 "count": 2
               },
               {
@@ -340855,8 +340789,8 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 0
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
+                "count": 1
               }
             ],
             "unresolvedClaimCommits": [
@@ -340872,24 +340806,16 @@
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 0,
                 "alternativeCount": 2
               },
               {
                 "kind": "repeat",
                 "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:60",
                 "count": 2
               },
               {
@@ -340903,50 +340829,8 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
                 "count": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              11
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
-                "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 1
               }
             ],
             "unresolvedClaimCommits": [
@@ -340962,17 +340846,9 @@
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -340987,55 +340863,7 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              14
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
-                "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
-                "count": 0
-              },
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
                 "count": 1
               }
             ],
@@ -341047,214 +340875,14 @@
           {
             "stateIndices": [
               0,
-              15
+              13
             ],
             "conditions": [
               {
                 "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
                 "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
                 "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
-                "count": 0
-              },
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 2
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              17
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
-                "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
-                "count": 1
-              },
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 1
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              19
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
-                "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
-                "count": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 0
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              20
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
-                "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
-                "alternativeIndex": 0,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2.0.lap)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:60",
-                "count": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "choice(#1)",
-                "reason": "state setter escapes to code that is not evaluated",
-                "location": null,
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "repeat",
-                "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
-                "count": 1
-              }
-            ],
-            "unresolvedClaimCommits": [
-              1
-            ],
-            "isReplayConcrete": false
-          },
-          {
-            "stateIndices": [
-              0,
-              25
-            ],
-            "conditions": [
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.time > 0)",
-                "reason": "conditional on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:72:43",
-                "alternativeIndex": 1,
-                "alternativeCount": 2
-              },
-              {
-                "kind": "state-update",
-                "variable": "and(not(eq(choice(#1), 0)), #2.0.lap.length > 0)",
-                "reason": "&& on branch(false | <boolean>)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:81:14",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:81:14",
                 "alternativeIndex": 1,
                 "alternativeCount": 2
               },
@@ -341269,7 +340897,7 @@
               {
                 "kind": "repeat",
                 "variable": "len(#2)",
-                "location": "/private/tmp/bippy-parser-ui-expansion-eleven/darkbits018-stopwatch-react/src/App.js:90:12",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/darkbits018-stopwatch-react/src/App.js:90:12",
                 "count": 2
               }
             ],
@@ -341281,7 +340909,7 @@
         ]
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:07:38.838Z",
+      "note": "runtime replayed from 2026-09-18T20:18:55.214Z",
       "failure": null
     },
     {
@@ -342417,8 +342045,8 @@
       "id": "hetpatel4065-dice-app",
       "revision": "4e27a7c12882bdfc97f565982b13921c8fe4c2d5",
       "framework": "spa",
-      "capturedAt": "2026-09-14T18:08:42.855Z",
-      "durationMs": 314,
+      "capturedAt": "2026-09-18T20:20:29.857Z",
+      "durationMs": 28730,
       "runtime": {
         "reactVersion": "19.2.4",
         "rendererName": "react-dom",
@@ -342431,76 +342059,551 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 14,
+          "fiberCount": 62,
           "textCount": 0,
-          "branchCount": 0,
+          "branchCount": 8,
           "repeatCount": 0,
-          "opaqueCount": 2,
-          "unknownCount": 0,
-          "modulesLoaded": 5
+          "opaqueCount": 0,
+          "unknownCount": 2,
+          "modulesLoaded": 8
         },
-        "diagnostics": []
+        "diagnostics": [
+          {
+            "code": "dynamic-props",
+            "count": 1
+          },
+          {
+            "code": "dynamic-key",
+            "count": 1
+          }
+        ]
       },
       "report": {
-        "matchedFibers": 11,
+        "matchedFibers": 17,
         "matchedText": 0,
-        "opaqueSubtrees": 2,
-        "opaqueSkippedFibers": 6,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
         "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
         "wildcardAbsorbedFibers": 0,
         "wildcards": [],
-        "branchesResolved": 0,
+        "branchesResolved": 6,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 17,
-        "staticFibers": 13,
+        "staticFibers": 21,
         "coverage": 1,
-        "strictCoverage": 0.6470588235294118,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 13,
+        "stepsUsed": 27,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 1,
-        "stateCount": 1,
-        "clusters": 0,
+        "states": 25,
+        "stateCount": 25,
+        "clusters": 2,
         "tree": {
-          "nodes": 13,
-          "inputs": 0,
-          "guards": 0,
-          "branches": 0,
+          "nodes": 41,
+          "inputs": 10,
+          "guards": 20,
+          "branches": 8,
           "repeats": 0,
-          "opaque": 2,
-          "wildcards": 0
+          "opaque": 0,
+          "wildcards": 2
         },
         "matchedState": {
-          "index": 0,
-          "conditions": []
+          "index": 18,
+          "conditions": [
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+              "reason": "if (branch(true | false))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "alternativeIndex": 2,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))) | and(eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "loop iterations are uncertain",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+              "reason": "if (branch(true | false))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+              "alternativeIndex": 1,
+              "alternativeCount": 2
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "alternativeIndex": 2,
+              "alternativeCount": 4
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "loop iterations are uncertain",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+              "alternativeIndex": 0,
+              "alternativeCount": 2
+            }
+          ]
         },
         "closestState": null,
         "omitted": null,
         "coverage": {
-          "sides": [],
-          "witnessed": 0,
-          "possible": 0,
+          "sides": [
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+              "reason": "if (branch(true | false))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+              "side": 0,
+              "guard": "and(not(truthy(#1)), not(truthy(#2)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+              "reason": "if (branch(true | false))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+              "side": 1,
+              "guard": "not(and(not(truthy(#1)), not(truthy(#2))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 0,
+              "guard": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 1,
+              "guard": "and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 2,
+              "guard": "and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "loop iterations are uncertain",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+              "side": 0,
+              "guard": "or(and(not(and(not(truthy(#1)), not(truthy(#2)))), not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))), and(not(and(not(truthy(#1)), not(truthy(#2)))), not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "loop iterations are uncertain",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+              "side": 1,
+              "guard": "or(and(not(and(not(truthy(#1)), not(truthy(#2)))), not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))), and(not(and(not(truthy(#1)), not(truthy(#2)))), not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 3,
+              "guard": "and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+              "reason": "if (branch(true | false))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+              "side": 0,
+              "guard": "and(not(truthy(#6)), not(truthy(#7)))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+              "reason": "if (branch(true | false))",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+              "side": 1,
+              "guard": "not(and(not(truthy(#6)), not(truthy(#7))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 0,
+              "guard": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 1,
+              "guard": "and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 2,
+              "guard": "and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))) | and(eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "loop iterations are uncertain",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+              "side": 0,
+              "guard": "or(and(not(and(not(truthy(#6)), not(truthy(#7)))), not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))), and(not(and(not(truthy(#6)), not(truthy(#7)))), not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))))",
+              "status": "witnessed"
+            },
+            {
+              "kind": "branch",
+              "variable": "or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))) | and(eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "loop iterations are uncertain",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+              "side": 1,
+              "guard": "or(and(not(and(not(truthy(#6)), not(truthy(#7)))), not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))), and(not(and(not(truthy(#6)), not(truthy(#7)))), not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))))",
+              "status": "possible"
+            },
+            {
+              "kind": "branch",
+              "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+              "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+              "side": 3,
+              "guard": "and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+              "status": "possible"
+            }
+          ],
+          "witnessed": 6,
+          "possible": 10,
           "unreachable": 0
         }
       },
       "stateReplay": {
-        "verification": "sample-passed",
-        "states": 1,
-        "assignments": 1,
-        "replayed": 1,
+        "verification": "sample-incomplete",
+        "states": 25,
+        "assignments": 25,
+        "replayed": 16,
         "maxReplayed": 16,
         "mismatched": [],
-        "incomplete": []
+        "incomplete": [
+          {
+            "stateIndices": [
+              14
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 1,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 3,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))) | and(eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              19
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 2,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 3,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))) | and(eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              21
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 3,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 0,
+                "alternativeCount": 4
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              22
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 3,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 1,
+                "alternativeCount": 4
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          },
+          {
+            "stateIndices": [
+              24
+            ],
+            "conditions": [
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#1)), not(truthy(#2)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#3), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(truthy(#3), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3))))) | and(not(truthy(#3)), or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0)))) | and(not(truthy(#3)), eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 3,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#4), 0), or(eq(choice(#5), 0), eq(choice(#5), 1))), not(eq(choice(#4), 0))) | and(eq(choice(#4), 0), or(eq(choice(#5), 2), eq(choice(#5), 3), not(or(eq(choice(#5), 0), eq(choice(#5), 1), eq(choice(#5), 2), eq(choice(#5), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(not(truthy(#6)), not(truthy(#7)))",
+                "reason": "if (branch(true | false))",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:361:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "and(truthy(#8), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(truthy(#8), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3))))) | and(not(truthy(#8)), or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0)))) | and(not(truthy(#8)), eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "|| on branch([{tag, attributes}, {tag, attributes}] | undefined)",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:65:21",
+                "alternativeIndex": 3,
+                "alternativeCount": 4
+              },
+              {
+                "kind": "branch",
+                "variable": "or(and(eq(choice(#9), 0), or(eq(choice(#10), 0), eq(choice(#10), 1))), not(eq(choice(#9), 0))) | and(eq(choice(#9), 0), or(eq(choice(#10), 2), eq(choice(#10), 3), not(or(eq(choice(#10), 0), eq(choice(#10), 1), eq(choice(#10), 2), eq(choice(#10), 3)))))",
+                "reason": "loop iterations are uncertain",
+                "location": "/workspace/packages/bippy-analyzer/.corpus/hetpatel4065-dice-app/node_modules/@fortawesome/react-fontawesome/dist/index.js:70:3",
+                "alternativeIndex": 1,
+                "alternativeCount": 2
+              }
+            ],
+            "unresolvedClaimCommits": [
+              0
+            ],
+            "isReplayConcrete": false
+          }
+        ]
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T18:08:40.529Z",
+      "note": "runtime replayed from 2026-09-18T20:19:03.712Z",
       "failure": null
     },
     {

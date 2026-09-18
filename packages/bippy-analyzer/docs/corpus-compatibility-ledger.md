@@ -2,18 +2,18 @@
 
 ## Artifact baseline
 
-Recomputed at analyzer commit `ccc5e6b7` from the current
+Recomputed at analyzer commit `af063a8c` from the current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 
 - Manifest entries: 500
 - Result rows: 500; missing rows: 0; manifest revision mismatches: 0
-- Membership: 336 exact, 104 partial, 23 truncated, 18 mismatch, 7 unresolved
-- Strict coverage: 361 rows at 100%, 101 between 0% and 100%, 26 at 0%, and 12
-  without a report. Of the 361 rows at 100%, 25 remain partial or truncated.
-- Explicit uncertainty: 102 rows with opaque or wildcard matching
+- Membership: 340 exact, 98 partial, 25 truncated, 18 mismatch, 7 unresolved
+- Strict coverage: 367 rows at 100%, 95 between 0% and 100%, 26 at 0%, and 12
+  without a report. Of the 367 rows at 100%, 27 remain partial or truncated.
+- Explicit uncertainty: 96 rows with opaque or wildcard matching
 - Incompleteness: 75 rows with state-space omissions; 4 budget-exhausted comparisons
-- Replay: 8 contradiction rows, 41 incomplete rows, 141 rows without replay evidence
+- Replay: 8 contradiction rows, 42 incomplete rows, 141 rows without replay evidence
 - Native evidence: 18 live-result rows, 470 saved-capture replay rows, 12 rows without a native
   report
 - Recorded environment/install failures: 0. The artifact gives no failure provenance for the 12
@@ -403,3 +403,13 @@ exact with 100% strict coverage, no opaque or wildcard node, and no replay contr
 strict coverage. Its authored sixteen-card random list remains honestly truncated because the
 symbolic repeat is unbounded; the native ×16 assignment matches outside the bounded enumeration and
 all four replay assignments pass.
+
+The same scoped-boundary pass removes React Icons from
+`ganeshborole-stopwatch-using-react`, `tulna07-reactjs-tic-tac-toe`,
+`birkaany-color-generator-react`, and `darkbits018-stopwatch-react`; React Howler from
+`zevaguillo-hilda-memory-card`; and Font Awesome from `hetpatel4065-dice-app`. All six fresh native
+captures replay at 100% strict coverage with no opaque or wildcard match. Four are exact.
+`birkaany-color-generator-react` retains its unbounded five-color response repeat, while
+`darkbits018-stopwatch-react` retains two unbounded authored lists and incomplete escaped timer
+states. `hetpatel4065-dice-app` is exact for the native initial tree, but five unwitnessed Font
+Awesome source assignments remain replay-incomplete.
