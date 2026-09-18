@@ -804,17 +804,10 @@ export const joinObjectEntries = (
     const commonKeys = originalKeys.filter((key) =>
       guaranteedPathKeys.every((pathKeys) => pathKeys.has(key)),
     );
-    const omitted = new Set(commonKeys);
     return [
       {
         kind: "spread",
-        value: branchValue(
-          pathObjects.map((pathObject) => omitObjectKeys(pathObject, omitted)),
-          reason,
-          location,
-          preferredIndex,
-          predicate,
-        ),
+        value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
       },
       ...commonKeys.map(joinedEntry),
     ];
@@ -920,19 +913,17 @@ const omitObjectKeysShared = (
       else entries.push(entry);
       continue;
     }
-    const spreadOmittedKeys = new Set([...(entry.omittedKeys ?? []), ...omitted]);
-    const rest = omitSpreadKeys(entry.value, spreadOmittedKeys, results, omitOpaqueSpread);
-    const omittedKeys = [...spreadOmittedKeys];
-    if (
-      rest === entry.value &&
-      omittedKeys.length === (entry.omittedKeys?.length ?? 0) &&
-      omittedKeys.every((key) => entry.omittedKeys?.includes(key))
-    ) {
+    const rest = omitSpreadKeys(entry.value, omitted, results, omitOpaqueSpread);
+    if (rest.kind !== "object" && rest.kind !== "branch" && rest.kind !== "primitive") {
+      results.set(object, rest);
+      return rest;
+    }
+    if (rest === entry.value) {
       entries.push(entry);
       continue;
     }
     isChanged = true;
-    entries.push({ kind: "spread", value: rest, omittedKeys });
+    entries.push({ kind: "spread", value: rest });
   }
   const result = isChanged ? objectValue(entries) : object;
   results.set(object, result);

@@ -11,7 +11,6 @@ import {
   joinObjectEntries,
   objectFromRecord,
   objectValue,
-  omitRestKeys,
   primitiveValue,
   setObjectProperty,
   TRUE_VALUE,
@@ -84,21 +83,6 @@ it("keeps explicit undefined over an earlier spread value", () => {
   ]);
   expect(getObjectProperty(target, "value")).toEqual(UNDEFINED_VALUE);
   expect(getKnownObjectKeys(target)).toEqual(["value"]);
-});
-
-it("keeps omitted rest keys out of an opaque spread", () => {
-  const rest = omitRestKeys(
-    objectValue([
-      { kind: "spread", value: unknownValue("source shape") },
-      { kind: "property", key: "children", value: primitiveValue("source") },
-    ]),
-    new Set(["children"]),
-  );
-  const target = objectValue([
-    { kind: "property", key: "children", value: primitiveValue("kept") },
-    { kind: "spread", value: rest },
-  ]);
-  expect(getObjectProperty(target, "children")).toEqual(primitiveValue("kept"));
 });
 
 it("lifts properties shared by every whole-object join path", () => {
