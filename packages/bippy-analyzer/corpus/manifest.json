@@ -8613,6 +8613,7 @@
         "tsconfig": "tsconfig.app.json",
         "entry": "src/main.tsx",
         "externalPackageAllowList": [
+          "@dnd-kit/accessibility",
           "@dnd-kit/core",
           "@dnd-kit/sortable",
           "@dnd-kit/utilities",
