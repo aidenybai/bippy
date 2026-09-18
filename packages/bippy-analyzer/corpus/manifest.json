@@ -8544,15 +8544,7 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx",
-        "externalPackageAllowList": [
-          "@radix-ui/react-context",
-          "@radix-ui/react-tooltip",
-          "@tanstack/react-query",
-          "react-router",
-          "react-router-dom",
-          "sonner"
-        ]
+        "entry": "src/main.tsx"
       },
       "notes": "Keep original PWA configuration, initial level-selection popup and original prefilled/validation data. Do not choose a level, supply a puzzle, alter validation or claim solver correctness. Native React18.3.1 has 126 fibers and one commit without page errors. Exact initial membership and one replay pass repeat for the original level-selection popup. Preserve undefined level, initial cell data, structuredClone use and PWA configuration; do not select a level, supply a puzzle or claim solving/validation completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 895631493 identifies a distinct non-fork repository."
     },
@@ -8857,7 +8849,15 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": [
+          "@radix-ui/react-context",
+          "@radix-ui/react-tooltip",
+          "@tanstack/react-query",
+          "react-router",
+          "react-router-dom",
+          "sonner"
+        ]
       },
       "notes": "Preserve original pnpm lock and onlyBuiltDependencies approvals, MSW startup gated by import.meta.env.DEV, original fixture handlers, inline pre-paint settings script, locale synchronization, registry routes, PWA and regex Vite alias. Audit original worker before capture; do not edit source aliases, seed custom settings or choose a scenario. Retain the sparse partial 1726-fiber, 62-commit capture and passing sampled replay. Preserve original DEV-gated MSW initialization, tracked worker/fixtures, inline settings, query/store bridge and index navigation. No scenario, API response or settings input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1283503075 identifies a distinct non-fork repository."
     },
