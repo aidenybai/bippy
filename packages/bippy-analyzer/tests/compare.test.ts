@@ -71,8 +71,9 @@ const NativeGrid = ({ children }: NativeWrapperProps) => createElement("main", n
 const NativeColumn = ({ children }: NativeWrapperProps) => createElement("article", null, children);
 const NativeCard = ({ children }: NativeWrapperProps) => createElement("div", null, children);
 const NativeGeneratedEditor = () => createElement("textarea");
+const NativeText = ({ children }: NativeWrapperProps) => createElement("p", null, children);
 
-const captureNativeOpaqueTree = (): RuntimeFiberSnapshot[] => {
+const captureNativeTree = (element: ReactNode): RuntimeFiberSnapshot[] => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
@@ -81,23 +82,7 @@ const captureNativeOpaqueTree = (): RuntimeFiberSnapshot[] => {
   const root = createRoot(container);
   try {
     flushSync(() => {
-      root.render(
-        createElement(
-          NativeVendorRoot,
-          null,
-          createElement(
-            NativeGrid,
-            null,
-            ...Array.from({ length: 12 }, (_, columnIndex) =>
-              createElement(
-                NativeColumn,
-                { key: columnIndex },
-                createElement(NativeCard, null, createElement(NativeGeneratedEditor)),
-              ),
-            ),
-          ),
-        ),
-      );
+      root.render(element);
     });
     return recorder.snapshot().roots.flatMap((snapshotRoot) => snapshotRoot.children);
   } finally {
@@ -107,9 +92,37 @@ const captureNativeOpaqueTree = (): RuntimeFiberSnapshot[] => {
   }
 };
 
+const createNativeOpaqueTree = (): ReactNode =>
+  createElement(
+    NativeVendorRoot,
+    null,
+    createElement(
+      NativeGrid,
+      null,
+      ...Array.from({ length: 12 }, (_, columnIndex) =>
+        createElement(
+          NativeColumn,
+          { key: columnIndex },
+          createElement(NativeCard, null, createElement(NativeGeneratedEditor)),
+        ),
+      ),
+    ),
+  );
+
 describe("comparePatternToRuntime", () => {
+  it("finds text passed through an opaque component into a direct-text host", () => {
+    const runtime = captureNativeTree(createElement(NativeText, null, "Known text"));
+    const result = matchPatternToRuntime(
+      [opaqueFiber("NativeText", [{ kind: "text", text: "Known text" }])],
+      runtime,
+    );
+    expect(result.report.status).toBe("partial");
+    expect(result.report.slotsMatched).toBe(1);
+    expect(result.report.slotsUnmatched).toBe(0);
+  });
+
   it("finds nested opaque slots without exhausting the comparison budget", () => {
-    const runtime = captureNativeOpaqueTree();
+    const runtime = captureNativeTree(createNativeOpaqueTree());
     const column = patternFiber("NativeColumn", [
       opaqueFiber("NativeCard", [opaqueFiber("Editor", [])]),
     ]);
