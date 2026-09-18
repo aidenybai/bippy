@@ -10605,6 +10605,7 @@
         "externalPackageAllowList": [
           "react-bootstrap",
           "@restart/*",
+          "react-overlays",
           "@fortawesome/react-fontawesome",
           "@fortawesome/fontawesome-svg-core",
           "@fortawesome/free-solid-svg-icons"
