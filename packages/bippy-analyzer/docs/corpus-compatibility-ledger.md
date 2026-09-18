@@ -185,6 +185,45 @@ producing an artifact. Its fresh native baseline remains partial at 5.43% strict
 opaque subtrees. No package-source override is retained for that row until the analyzer's barrel
 scalability defect is reduced and verified.
 
+## React Router SPA profiles and redirects
+
+Fresh pinned captures on 2026-09-18 confirmed that twelve applications importing React Router were
+still declared as generic SPAs. Their router components were consequently opaque, with representative
+strict coverage between 2.86% and 40.82%. Applying the React Router profile exposed two semantic gaps:
+imperative navigation returned an inert function, and both v6 `Navigate` and v5 `Redirect` were inert
+empty fibers. React's effect commit and hook state scheduling at
+`71f725593739d2cb5866a282a1075d581831722f` confirm that these redirects schedule later commits.
+
+The regression covers a v6 `useNavigate()` effect, a v6 `Navigate` effect, and a v5 chain from
+`Redirect` to a component effect calling `useHistory().push()`. Router location is now stateful for
+both function and class router fibers while preserving basename identity. Saved-capture replay after
+the general correction and scoped package-source boundaries proves these rows exact:
+
+| Repository                                                                     |  React | Runtime fibers | Matched fibers + text | Steps |
+| ------------------------------------------------------------------------------ | -----: | -------------: | --------------------: | ----: |
+| `scdjango-todo-list-react@0c9c61bce9e095320a9fbaf5283aee9cd5c062e2`            | 18.3.1 |             36 |                31 + 0 |    31 |
+| `m0hc3n-memory-game-front-end@41b96c07809b38d7cd56f606b1b3acfe69e26925`        | 18.2.0 |             18 |                13 + 0 |    13 |
+| `ahangarha-mv-mathmagicians@67804d18395a1eb3811ab24d398b8fda645ae804`          | 17.0.2 |             50 |                39 + 6 |    45 |
+| `shehza-d-quiz-app@8bf4e6e6a9a4227442f20b22adab36a2fc1677c0`                   | 18.2.0 |             20 |                15 + 0 |    15 |
+| `kajal-rekha-immemorial@1326a6243df9518dd86fae455982a09747f0a0de`              | 18.2.0 |             97 |                84 + 8 |    92 |
+| `ilynette-math-magician@b441768996896a8950c6852a3567d0b7618ec06a`              | 17.0.2 |             35 |                30 + 0 |    30 |
+| `buluthamali-labtasker-frontend@4280fe5253b85f90e82f5144ec26d59b3d056f22`      | 18.3.1 |             78 |                73 + 0 |    73 |
+| `phixyn-react-todo-app@42eab19c06bfbe5bfd6bebec001ff780262619fa`               | 19.2.5 |             70 |               55 + 10 |    65 |
+| `orodrigogo-pomodoro-react-extension@569ca9c73519c4230a5ecb38d70847be76a24554` | 19.2.0 |             25 |                20 + 0 |    20 |
+
+Each has 100% strict coverage, no opaque or wildcard match, and sample-passed replay at unchanged
+budgets. These are initial-route captures and do not establish complete interactions or state-space
+coverage.
+
+Three rows remain non-strict after the router correction. `sonjoydatta-react-boilerplate` is at 15.31%
+strict coverage behind Redux, TanStack Query, Ant Design, and translation boundaries.
+`sam70361-glass-ui-react` still has 1,722 runtime fibers behind Query Client and Radix Tooltip
+providers plus over 1.7 billion symbolic states before enumeration limits.
+`hqwuzhaoyi-react-ddd` now agrees on its authored `/` → `/dash/home` → `/login` transition, but eight
+Ant Design subtrees leave it at 11.11% strict coverage. A transitive Ant Design source experiment
+exposed `rc-field-form`, `rc-motion`, and `rc-util` wildcards and replay contradictions; that incomplete
+override is not retained.
+
 ## Legacy React Router class fibers
 
 React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component
