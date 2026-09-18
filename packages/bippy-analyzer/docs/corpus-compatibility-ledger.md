@@ -308,14 +308,18 @@ providers and react-router-dom's default `LinkAnchor`.
 
 The audit regression additionally covers `useParams()` through `match.params`, empty `children`
 falling through to `component`, `Switch` and `Route` location overrides, and a pathless child
-inheriting its parent match. A saved-capture replay after these corrections remains unchanged at the
-result below.
+inheriting its parent match. A saved-capture replay after these corrections isolated the remaining
+gap to two SVG child fibers forwarded through BaseUI's wrapper around
+`styletron-react@6.1.0`.
 
-Replaying the fresh capture after these corrections changes Mural from mismatch to partial in 140
-steps: 119 fibers and 10 text nodes match, non-opaque coverage is 100%, strict coverage is 98.47%,
-and no opaque subtree remains. The remaining two runtime fibers are under one explicit wildcard for
-a spread-derived SVG child. The state space has 8 states and one omitted nested alternative; all 7
-joint assignments were replayed with no contradiction, but 6 are incomplete because their claims
-or replays retain unresolved nodes. This is saved-capture comparison against the fresh native
-capture, not another live capture. Remote resources, interactions, the omitted alternative, and
-whole-state-space agreement remain unverified.
+Styletron's `createStyled` creates an inner anonymous forward ref, applies its configured wrapper,
+filters `$` props, and forwards concrete children to the selected `$as` or base target. Modeling
+only that export preserves BaseUI's native `Svg` → context consumer → anonymous forward ref →
+`svg` boundary without interpreting Styletron's class-name generation or accepting a wildcard.
+
+Replaying the same fresh capture after the localized correction is exact in 136 steps: 121 fibers
+and 10 text nodes match, strict coverage is 100%, and no opaque or wildcard match remains. The state
+space has 6 states with no omission; all 5 joint assignments replay without contradiction. Three
+unwitnessed alternatives remain sample-incomplete because their claims retain unresolved package
+inputs. This is saved-capture comparison, not another live capture, so remote resources,
+interactions, and whole-state-space agreement remain unverified.
