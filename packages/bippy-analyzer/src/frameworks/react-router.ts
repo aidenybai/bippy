@@ -236,6 +236,13 @@ const LOCATION_CONTEXT: ContextDefinition = {
   location: null,
 };
 
+const NAVIGATION_CONTEXT: ContextDefinition = {
+  name: "NavigationContext",
+  displayName: "Navigation",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
 /**
  * `DataRouterStateContext`: the router's state, republished on every state
  * update so that `<Scripts>` re-renders (and drops its preloads) when route
@@ -1774,7 +1781,10 @@ const createRouterHookValues = (
       case "useSearchParams":
         return nativeFunction(importedName, (args) => searchParamsValue(args[0]));
       case "useNavigate":
-        return nativeFunction(importedName, () => navigate);
+        return nativeFunction(importedName, (_args, tools) => {
+          const contextualNavigate = tools.readContext(NAVIGATION_CONTEXT);
+          return isCallable(contextualNavigate) ? contextualNavigate : navigate;
+        });
       case "useNavigationType":
         return nativeFunction(importedName, () => primitiveValue("POP"));
       case "useInRouterContext":
@@ -2242,9 +2252,40 @@ export const createReactRouterModel = (
     tag,
     render: (props, tools) => {
       const routerTools = tag === ClassComponentTag ? { ...tools, hooks: null } : tools;
-      return withBasename(getObjectProperty(props, "basename"), routerTools, (scope) =>
-        withinRouter(getObjectProperty(props, "children"), scope.context),
-      );
+      return withBasename(getObjectProperty(props, "basename"), routerTools, (scope) => {
+        const contextState = routerTools.hooks?.useState(scope.context);
+        const activeContext = contextState?.[0] ?? scope.context;
+        const contextualNavigate = nativeFunction("navigate", (args, callTools) => {
+          const target = resolveTarget(
+            args[0] ?? UNDEFINED_VALUE,
+            readParentMatch(callTools),
+            readRouterPathname(callTools, scope.pathname),
+          );
+          const nextContext =
+            target === null
+              ? unknownValue("react-router: navigate target is not static")
+              : objectValue([
+                  { kind: "spread", value: scope.context },
+                  {
+                    kind: "property",
+                    key: "location",
+                    value: locationValue(parseRouteLocation(target.href), null),
+                  },
+                  {
+                    kind: "property",
+                    key: "navigationType",
+                    value: primitiveValue("PUSH"),
+                  },
+                ]);
+          contextState?.[1](nextContext);
+          return UNDEFINED_VALUE;
+        });
+        return provide(
+          NAVIGATION_CONTEXT,
+          contextualNavigate,
+          withinRouter(getObjectProperty(props, "children"), activeContext),
+        );
+      });
     },
   });
   const getRouterComponentTag = (specifier: string) => {

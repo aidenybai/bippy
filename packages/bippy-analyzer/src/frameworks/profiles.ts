@@ -241,6 +241,7 @@ export const REACT_ROUTER_PROFILE: FrameworkProfile = {
   transparentRuntimeWrapperChildren: new Map(),
   transparentStaticFibers: new Set([
     ...REACT_ROUTER_RUNTIME_WRAPPERS,
+    "Navigation",
     "Location",
     "DataRouterState",
     "FrameworkContext",
