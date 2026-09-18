@@ -1147,8 +1147,8 @@ describe("react router component versions", () => {
     expect(tree).toContain('"/forced/settings"');
     expect(tree).toContain("<EmptyChildrenFallback>");
     expect(tree).toContain("<footer>");
-    expect(tree).toContain('"nested-42"');
-    expect(tree).toContain('"inherited-42"');
+    expect(tree).toMatch(/<NestedMatch>[\s\S]*<span>\n\s+"nested-"\n\s+"42"/);
+    expect(tree).toMatch(/<InheritedMatch>[\s\S]*<output>\n\s+"inherited-"\n\s+"42"/);
     expect(tree).not.toContain("<Miss>");
     expect(tree).not.toContain("<aside>");
   });
