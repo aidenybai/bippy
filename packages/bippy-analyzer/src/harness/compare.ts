@@ -255,12 +255,6 @@ interface FurthestSlotDivergence {
 
 class BudgetExceeded extends Error {}
 
-// Any non-host fiber passes an opaque head check, so a slot candidate that
-// merely leaves its own slots unmatched is only a fallback; the candidate
-// explaining the most runtime fibers is the library's real slot.
-const isSettledSlotMatch = ({ tally }: SlotMatch): boolean =>
-  tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
-
 const isBetterSlotMatch = (candidate: SlotMatch, best: SlotMatch): boolean => {
   const matched = candidate.tally.matchedFibers + candidate.tally.matchedText;
   const bestMatched = best.tally.matchedFibers + best.tally.matchedText;
@@ -847,6 +841,18 @@ class Matcher {
     );
   }
 
+  private isSettledSlotMatch(
+    pattern: PatternOpaque,
+    actual: RuntimeFiberSnapshot,
+    { tally }: SlotMatch,
+  ): boolean {
+    if (tally.slotsUnmatched !== 0) return false;
+    if (tally.opaqueRenamed === 0) return true;
+    const head = pattern.passedChildren[0];
+    if (head?.kind === "fiber" || head?.kind === "text") return true;
+    return head?.kind === "opaque" && this.opaqueNameAgrees(head, actual);
+  }
+
   // Searches the library's runtime subtree breadth-first for the place where it
   // rendered the children the application passed in, so the shallowest fit wins.
   // Libraries may render siblings around the slot, so the passed children only
@@ -868,7 +874,9 @@ class Matcher {
           this.attempt(() => this.matchSlotAt(pattern, fiber.children, start, path)),
         );
         if (result) {
-          if (isSettledSlotMatch(result)) return { match: result, divergence: null };
+          if (this.isSettledSlotMatch(pattern, fiber.children[start], result)) {
+            return { match: result, divergence: null };
+          }
           if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
           continue;
         }

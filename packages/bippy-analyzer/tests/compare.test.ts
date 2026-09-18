@@ -1,4 +1,5 @@
-import { act, createElement, type ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime, matchPatternToRuntime } from "../src/harness/compare.js";
@@ -71,7 +72,7 @@ const NativeColumn = ({ children }: NativeWrapperProps) => createElement("articl
 const NativeCard = ({ children }: NativeWrapperProps) => createElement("div", null, children);
 const NativeGeneratedEditor = () => createElement("textarea");
 
-const captureNativeOpaqueTree = async (): Promise<RuntimeFiberSnapshot[]> => {
+const captureNativeOpaqueTree = (): RuntimeFiberSnapshot[] => {
   const container = document.createElement("div");
   document.body.appendChild(container);
   const recorder = createCommitRecorder({
@@ -79,7 +80,7 @@ const captureNativeOpaqueTree = async (): Promise<RuntimeFiberSnapshot[]> => {
   });
   const root = createRoot(container);
   try {
-    await act(async () => {
+    flushSync(() => {
       root.render(
         createElement(
           NativeVendorRoot,
@@ -100,15 +101,15 @@ const captureNativeOpaqueTree = async (): Promise<RuntimeFiberSnapshot[]> => {
     });
     return recorder.snapshot().roots.flatMap((snapshotRoot) => snapshotRoot.children);
   } finally {
-    await act(async () => root.unmount());
+    flushSync(() => root.unmount());
     recorder.dispose();
     container.remove();
   }
 };
 
 describe("comparePatternToRuntime", () => {
-  it("finds nested opaque slots without exhausting the comparison budget", async () => {
-    const runtime = await captureNativeOpaqueTree();
+  it("finds nested opaque slots without exhausting the comparison budget", () => {
+    const runtime = captureNativeOpaqueTree();
     const column = patternFiber("NativeColumn", [
       opaqueFiber("NativeCard", [opaqueFiber("Editor", [])]),
     ]);
