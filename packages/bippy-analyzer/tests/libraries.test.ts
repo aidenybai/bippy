@@ -112,8 +112,18 @@ import { Highlight } from "prism-react-renderer";
 
 export default () => (
   <section>
-    <Highlight code="const x = 1;" language="tsx">
-      {({ tokens }) => <pre>{tokens.length}</pre>}
+    <Highlight code={"const count = 1;\\ncount++;"} language="tsx">
+      {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        <pre className={className} style={style}>
+          {tokens.map((line, lineIndex) => (
+            <div {...getLineProps({ line })} key={lineIndex}>
+              {line.map((token, tokenIndex) => (
+                <span {...getTokenProps({ token })} key={tokenIndex} />
+              ))}
+            </div>
+          ))}
+        </pre>
+      )}
     </Highlight>
   </section>
 );
@@ -396,13 +406,27 @@ describe("library models", () => {
     expect(tree).toContain("<Ready>");
   });
 
-  it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {
+  it("tokenizes Prism source without evaluating bundled grammar initialization", async () => {
     expect(await renderSource(OPAQUE_RENDER_PROP_SOURCE)).toBe(
       [
         "<HostRoot>",
         "  <default>",
         "    <section>",
-        "      <Highlight> (opaque: Highlight from prism-react-renderer is not analyzed)",
+        "      <Highlight2>",
+        "        <Highlight>",
+        "          <pre>",
+        '            <div> key="0"',
+        '              <span> key="0"',
+        '              <span> key="1"',
+        '              <span> key="2"',
+        '              <span> key="3"',
+        '              <span> key="4"',
+        '              <span> key="5"',
+        '              <span> key="6"',
+        '            <div> key="1"',
+        '              <span> key="0"',
+        '              <span> key="1"',
+        '              <span> key="2"',
       ].join("\n"),
     );
   });

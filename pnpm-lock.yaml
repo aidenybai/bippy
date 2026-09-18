@@ -93,6 +93,9 @@ importers:
       playwright:
         specifier: ^1.63.0
         version: 1.63.0
+      prismjs:
+        specifier: 1.30.0
+        version: 1.30.0
       rehype-raw:
         specifier: ^7.0.0
         version: 7.0.0

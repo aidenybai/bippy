@@ -40,6 +40,11 @@ import {
   nextTranslateValue,
 } from "./next-translate.js";
 import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
+import {
+  PRISM_REACT_RENDERER_MODELED_EXPORTS,
+  PRISM_REACT_RENDERER_PACKAGES,
+  prismReactRendererValue,
+} from "./prism-react-renderer.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
@@ -153,6 +158,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     modeledExports: NEXT_TRANSLATE_MODELED_EXPORTS,
   },
   { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
+  {
+    packages: PRISM_REACT_RENDERER_PACKAGES,
+    getValue: prismReactRendererValue,
+    modeledExports: PRISM_REACT_RENDERER_MODELED_EXPORTS,
+  },
   { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
   {
     packages: REACT_INLINESVG_PACKAGES,
