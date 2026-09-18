@@ -2253,8 +2253,18 @@ export const createReactRouterModel = (
     render: (props, tools) => {
       const routerTools = tag === ClassComponentTag ? { ...tools, hooks: null } : tools;
       return withBasename(getObjectProperty(props, "basename"), routerTools, (scope) => {
-        const contextState = routerTools.hooks?.useState(scope.context);
-        const activeContext = contextState?.[0] ?? scope.context;
+        const navigationOverride = routerTools.hooks?.useState(UNDEFINED_VALUE);
+        const previousScope = routerTools.hooks?.useRef(scope.context);
+        const didScopeChange =
+          previousScope !== undefined && !isSameValue(previousScope.current, scope.context);
+        if (previousScope) previousScope.current = scope.context;
+        const activeContext =
+          !didScopeChange && navigationOverride && isDefined(navigationOverride[0])
+            ? navigationOverride[0]
+            : scope.context;
+        if (didScopeChange && navigationOverride && isDefined(navigationOverride[0])) {
+          navigationOverride[1](UNDEFINED_VALUE);
+        }
         const contextualNavigate = nativeFunction("navigate", (args, callTools) => {
           const target = resolveTarget(
             args[0] ?? UNDEFINED_VALUE,
@@ -2277,7 +2287,7 @@ export const createReactRouterModel = (
                     value: primitiveValue("PUSH"),
                   },
                 ]);
-          contextState?.[1](nextContext);
+          navigationOverride?.[1](nextContext);
           return UNDEFINED_VALUE;
         });
         return provide(
