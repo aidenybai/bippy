@@ -294,6 +294,21 @@ Replaying the same fresh capture is exact in seven steps: six fibers and one tex
 coverage is 100%, no opaque or wildcard match remains, and the single unconditional assignment
 passes replay. This initial empty-store result does not establish fetch or populated-list behavior.
 
+## TanStack Query provider source
+
+`hariadiarief-react-vite-shadcn-dashboard-starter-kit@46ce5235b3ec7e01cbec3a511bc8e07343d8f536`
+was freshly captured at `/` under its manifest environment on 2026-09-18. Its router, icons, and
+Radix components were already source-visible, leaving only the two runtime nodes inside
+`QueryClientProvider` opaque at 97.06% strict coverage.
+
+TanStack React Query 5.65.1 mounts its client in a passive effect and returns its context provider
+around the original children. Analyzing that installed package preserves the native
+`QueryClientProvider` and context fibers without changing query data or the application. Replaying
+capture `2026-09-18T17:49:36.794Z` is exact in 68 steps: all 66 fibers and two text nodes match,
+strict coverage is 100%, no opaque or wildcard match remains, and the unconditional assignment
+passes. The empty-storage login route does not establish authentication, form submission, or
+kanban behavior.
+
 ## Legacy React Router class fibers
 
 React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component

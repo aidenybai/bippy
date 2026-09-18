@@ -305475,8 +305475,8 @@
       "id": "hariadiarief-react-vite-shadcn-dashboard-starter-kit",
       "revision": "46ce5235b3ec7e01cbec3a511bc8e07343d8f536",
       "framework": "spa",
-      "capturedAt": "2026-09-13T03:19:46.311Z",
-      "durationMs": 972,
+      "capturedAt": "2026-09-18T18:00:07.900Z",
+      "durationMs": 1981,
       "runtime": {
         "reactVersion": "18.3.1",
         "rendererName": "react-dom",
@@ -305489,22 +305489,23 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 68,
+          "fiberCount": 69,
           "textCount": 2,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 1,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 1659
+          "modulesLoaded": 1682
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 64,
+        "status": "exact",
+        "matchedFibers": 66,
         "matchedText": 2,
-        "opaqueSubtrees": 1,
-        "opaqueSkippedFibers": 2,
-        "slotsMatched": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
@@ -305513,11 +305514,10 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
         "runtimeFibers": 68,
-        "staticFibers": 67,
+        "staticFibers": 68,
         "coverage": 1,
-        "strictCoverage": 0.9705882352941176,
+        "strictCoverage": 1,
         "divergence": null,
         "stepsUsed": 68,
         "budgetExhausted": false
@@ -305527,12 +305527,12 @@
         "stateCount": 1,
         "clusters": 0,
         "tree": {
-          "nodes": 67,
+          "nodes": 68,
           "inputs": 0,
           "guards": 0,
           "branches": 0,
           "repeats": 0,
-          "opaque": 1,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
@@ -305550,15 +305550,15 @@
       },
       "stateReplay": {
         "verification": "sample-passed",
+        "incomplete": [],
         "states": 1,
         "assignments": 1,
         "replayed": 1,
         "maxReplayed": 16,
-        "mismatched": [],
-        "incomplete": []
+        "mismatched": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-13T01:41:49.040Z",
+      "note": "runtime replayed from 2026-09-18T17:49:36.794Z",
       "failure": null
     },
     {
