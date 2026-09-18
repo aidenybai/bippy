@@ -1137,6 +1137,12 @@ describe("react router component versions", () => {
     expect(findFiberTags(pattern, "Route")).toEqual(["ClassComponent"]);
     expect(tree).toContain("<Match>");
     expect(tree).toContain("<main>");
+    expect(tree).toContain('"settings"');
+    expect(tree).toContain('"/forced/settings"');
+    expect(tree).toContain("<EmptyChildrenFallback>");
+    expect(tree).toContain("<footer>");
+    expect(tree).toContain("<InheritedMatch>");
+    expect(tree).toContain('"42"');
     expect(tree).not.toContain("<Miss>");
     expect(tree).not.toContain("<aside>");
   });

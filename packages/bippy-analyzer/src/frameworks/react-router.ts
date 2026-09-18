@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Interpreter } from "../evaluate/interpreter.js";
 import { recordInputSource } from "../evaluate/predicates.js";
 import { getModeledPromise, isThrownOutcome } from "../evaluate/promises.js";
+import { countChildrenExactly } from "../evaluate/react-children.js";
 import {
   element,
   emptyStub,
@@ -735,14 +736,18 @@ const readRouteContext = (
   field: "outlet" | "params" | "id",
 ): StaticValue => {
   const currentRouteContext = tools.readContext(ROUTE_CONTEXT);
-  const routeContext =
-    currentRouteContext.kind === "object"
-      ? currentRouteContext
-      : tools.readContext(LEGACY_ROUTE_CONTEXT);
-  if (routeContext.kind !== "object") {
+  if (currentRouteContext.kind === "object") {
+    return getObjectProperty(currentRouteContext, field);
+  }
+  const legacyRouteContext = tools.readContext(LEGACY_ROUTE_CONTEXT);
+  if (field === "params" && legacyRouteContext.kind === "object") {
+    const match = getObjectProperty(legacyRouteContext, "match");
+    if (match.kind === "object") return getObjectProperty(match, "params");
+  }
+  if (legacyRouteContext.kind !== "object") {
     return unknownValue(`react-router: ${field} read outside a matched route`);
   }
-  return getObjectProperty(routeContext, field);
+  return unknownValue(`react-router v5 route context has no ${field}`);
 };
 
 /**
@@ -1501,11 +1506,18 @@ const getLegacyRoutePath = (props: StaticObjectValue): StaticValue => {
   return unknownValue("react-router v5 route path or from");
 };
 
+const readLegacyLocation = (props: StaticObjectValue, tools: StubRenderTools): StaticValue => {
+  const location = getObjectProperty(props, "location");
+  return isDefined(location) ? location : readRouterLocation(tools, UNDEFINED_VALUE);
+};
+
 const matchLegacyRoute = (
   props: StaticObjectValue,
   tools: StubRenderTools,
 ): LegacyRouteMatchResult => {
-  const pathname = readRouterPathname(tools, null);
+  const location = readLegacyLocation(props, tools);
+  const pathname =
+    location.kind === "object" ? readString(getObjectProperty(location, "pathname")) : null;
   const routePath = getLegacyRoutePath(props);
   if (pathname === null) {
     return {
@@ -1515,6 +1527,20 @@ const matchLegacyRoute = (
     };
   }
   if (!isDefined(routePath)) {
+    const legacyRouteContext = tools.readContext(LEGACY_ROUTE_CONTEXT);
+    if (legacyRouteContext.kind === "object") {
+      const inheritedMatch = getObjectProperty(legacyRouteContext, "match");
+      if (inheritedMatch.kind === "object") {
+        return { isMatch: true, match: inheritedMatch, reason: "" };
+      }
+      if (getTruthiness(inheritedMatch) === false) {
+        return {
+          isMatch: false,
+          match: createLegacyMatch(UNDEFINED_VALUE, pathname, null),
+          reason: "react-router v5 inherited route does not match",
+        };
+      }
+    }
     const ownMatch = matchOwnPath(null, splitPathname(pathname));
     return {
       isMatch: true,
@@ -1550,15 +1576,18 @@ const matchLegacyRoute = (
 const withLegacyComputedMatch = (
   route: StaticElementValue,
   match: StaticObjectValue,
+  location: StaticValue,
 ): StaticElementValue => ({
   ...route,
   props: objectValue([
     { kind: "spread", value: route.props },
     { kind: "property", key: "computedMatch", value: match },
+    { kind: "property", key: "location", value: location },
   ]),
 });
 
 const renderLegacySwitch = (props: StaticObjectValue, tools: StubRenderTools): StaticValue => {
+  const location = readLegacyLocation(props, tools);
   const children = flattenChildren(getObjectProperty(props, "children"));
   const select = (index: number): StaticValue => {
     const child = children[index];
@@ -1570,8 +1599,15 @@ const renderLegacySwitch = (props: StaticObjectValue, tools: StubRenderTools): S
         "whether a dynamic Switch child matches the location",
       );
     }
-    const result = matchLegacyRoute(child.props, tools);
-    const selected = withLegacyComputedMatch(child, result.match);
+    const route = {
+      ...child,
+      props: objectValue([
+        { kind: "spread", value: child.props },
+        { kind: "property", key: "location", value: location },
+      ]),
+    };
+    const result = matchLegacyRoute(route.props, tools);
+    const selected = withLegacyComputedMatch(route, result.match, location);
     if (result.isMatch === true) return selected;
     const remaining = select(index + 1);
     return result.isMatch === false ? remaining : branchValue([selected, remaining], result.reason);
@@ -1579,10 +1615,14 @@ const renderLegacySwitch = (props: StaticObjectValue, tools: StubRenderTools): S
   return select(0);
 };
 
-const createLegacyRouteProps = (tools: StubRenderTools, match: StaticValue): StaticObjectValue =>
+const createLegacyRouteProps = (
+  props: StaticObjectValue,
+  tools: StubRenderTools,
+  match: StaticValue,
+): StaticObjectValue =>
   objectFromRecord({
     history: unknownValue("react-router v5 history"),
-    location: readRouterLocation(tools, UNDEFINED_VALUE),
+    location: readLegacyLocation(props, tools),
     match,
     staticContext: UNDEFINED_VALUE,
   });
@@ -1595,7 +1635,8 @@ const renderLegacyRouteContent = (
 ): StaticValue => {
   const children = getObjectProperty(props, "children");
   if (!isMatched) return isCallable(children) ? tools.call(children, [routeProps]) : NULL_VALUE;
-  const hasChildren = getTruthiness(children);
+  const childCount = countChildrenExactly(children);
+  const hasChildren = childCount === null ? getTruthiness(children) : childCount > 0;
   const renderedChildren = isCallable(children) ? tools.call(children, [routeProps]) : children;
   const component = getObjectProperty(props, "component");
   const render = getObjectProperty(props, "render");
@@ -1626,14 +1667,14 @@ const renderLegacyRoute = (props: StaticObjectValue, tools: StubRenderTools): St
           reason: "",
         }
       : matchLegacyRoute(props, tools);
-  const matchedProps = createLegacyRouteProps(tools, result.match);
+  const matchedProps = createLegacyRouteProps(props, tools, result.match);
   const matched = provide(
     LEGACY_ROUTE_CONTEXT,
     matchedProps,
     renderLegacyRouteContent(props, matchedProps, tools, true),
   );
   if (result.isMatch === true) return matched;
-  const unmatchedProps = createLegacyRouteProps(tools, NULL_VALUE);
+  const unmatchedProps = createLegacyRouteProps(props, tools, NULL_VALUE);
   const unmatched = provide(
     LEGACY_ROUTE_CONTEXT,
     unmatchedProps,
