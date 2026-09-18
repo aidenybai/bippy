@@ -2070,7 +2070,8 @@
           "next-themes",
           "motion",
           "framer-motion",
-          "react-markdown"
+          "react-markdown",
+          "hast-util-to-jsx-runtime"
         ]
       },
       "notes": "The app has no pnpm-workspace.yaml, so pnpm must not attach the clone to the parser workspace above `.corpus/`."
