@@ -88,3 +88,10 @@ it("applies an imperative navigation scheduled by an effect", async () => {
   expect(tree).not.toContain("<Home>");
   expect(tree).not.toContain("<main>");
 });
+
+it("applies a Navigate redirect after its effect commits", async () => {
+  const { tree } = await render("/redirect", "src/imperative-navigation.tsx");
+  expect(tree).toContain("<Login>");
+  expect(tree).toContain("<aside>");
+  expect(tree).not.toContain("<Navigate>");
+});
