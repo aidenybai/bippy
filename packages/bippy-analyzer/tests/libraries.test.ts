@@ -129,6 +129,23 @@ export default () => (
 );
 `;
 
+const TANSTACK_QUERY_PROVIDER_SOURCE = `
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+
+const queryClient = { label: "ready" };
+
+const Child = () => {
+  const client = useQueryClient();
+  return <main>{client.label}</main>;
+};
+
+export default () => (
+  <QueryClientProvider client={queryClient}>
+    <Child />
+  </QueryClientProvider>
+);
+`;
+
 const ZUSTAND_SOURCE = `
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
@@ -427,6 +444,20 @@ describe("library models", () => {
         '              <span> key="0"',
         '              <span> key="1"',
         '              <span> key="2"',
+      ].join("\n"),
+    );
+  });
+
+  it("provides the TanStack Query client without analyzing provider effects", async () => {
+    expect(await renderSource(TANSTACK_QUERY_PROVIDER_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <QueryClientProvider>",
+        "      <ContextProvider>",
+        "        <Child>",
+        "          <main>",
+        '            "ready"',
       ].join("\n"),
     );
   });
