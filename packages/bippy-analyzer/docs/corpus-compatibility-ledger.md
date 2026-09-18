@@ -9,6 +9,8 @@ of all repositories.
 - Manifest entries: 500
 - Result rows: 500; missing rows: 0; manifest revision mismatches: 0
 - Membership: 273 exact, 167 partial, 22 truncated, 19 mismatch, 7 unresolved
+- Strict coverage: 297 rows at 100%, 163 between 0% and 100%, 28 at 0%, and 12
+  without a report. Of the 297 rows at 100%, 24 remain partial or truncated.
 - Explicit uncertainty: 165 rows with opaque or wildcard matching
 - Incompleteness: 115 rows with state-space omissions; 4 budget-exhausted comparisons
 - Replay: 8 contradiction rows, 80 incomplete rows, 146 rows without replay evidence
@@ -103,6 +105,32 @@ correction.
 
 All three fresh results replay every enumerated assignment with no contradiction. These are
 initial-page captures only; they do not exercise interactions or prove exhaustive behavior.
+
+## Pure package class instances
+
+The artifact contains 392 wildcard-absorbed text fibers across 40 color-generator repositories
+whose common source is `new Values(color).all(step)`. The 32 repositories that spread each returned
+item into component props account for 312 unknown `weight` values; eight more retain each entire
+item as unknown.
+
+Installed `values.js@2.0.0` declares `sideEffects: false`. Its `all` method returns a fixed array of
+`Values` instances when the color and step are concrete. Each instance owns enumerable `rgb`,
+`alpha`, `type`, and `weight` fields, while `hex` is a prototype getter. Before the correction, the
+package remained external, so `all` became an unbounded repeat and JSX spread could not recover any
+field.
+
+The regression uses a deterministic CommonJS class export with the same relevant semantics:
+construction returns a class instance array, component props come from JSX spread, and another prop
+comes from a prototype getter. It failed before the correction with two unknown values. `values.js`
+is now executed through the existing pure-package boundary when its inputs are concrete, and object
+and JSX spread copy the known own enumerable entries of the resulting native object.
+
+| Repository and revision | Conditions and before | Correction and fresh result | Remaining limitation |
+| --- | --- | --- | --- |
+| `abhigk-color-generator-reactjs@682a1acbe88d54ef140ebfd7f1646967ffa820b4` | `/`, `http://127.0.0.1:55069/`, manifest environment. Fresh native React 16.13.1 development capture, 135 fibers and 23 commits. Before: partial in 157 steps, 84% strict coverage, 21 wildcard-absorbed text fibers, an unbounded 21-item repeat, and three incomplete replays. | Execute concrete `values.js` calls and preserve native-object own entries through spread. Fresh native capture and static rerun: exact in 134 steps, 100% strict coverage, 0 wildcards, 0 repeats, and one replayed assignment with no mismatch. | This verifies the initial palette only. Twenty-one alternate commit guards remain possible rather than natively witnessed; form submission, invalid colors, clipboard behavior, and complete interactions remain unverified. |
+
+The second shape and the other 39 repositories still require fresh post-fix corpus runs before the
+artifact-wide gain can be claimed.
 
 ## Legacy React Router class fibers
 
