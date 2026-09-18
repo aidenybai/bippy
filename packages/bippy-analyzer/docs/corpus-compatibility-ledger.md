@@ -238,6 +238,19 @@ outer `displayName` before deriving a wrapped name. Replaying the fresh pinned c
 the docgen export assignment is exact in 310 steps: all 310 runtime fibers match, strict coverage is
 100%, there are no opaque or wildcard matches, and the single replayed assignment passes.
 
+## React Helmet source boundary
+
+`runtimeterror10-club-animals@4c2519e31e269f929e0f437b1cb56673b0f6d57b` was freshly installed
+and captured at `/` under its manifest environment on 2026-09-18. The baseline matched through one
+opaque `Helmet` subtree, leaving strict coverage at 91.67%. React Helmet 6.1.0 delegates its class
+fiber to `react-side-effect`; analyzing those two installed packages reproduces the native
+`HelmetWrapper` and `SideEffect(NullComponent)` fibers without a repository-specific model.
+
+Replaying the same fresh capture with that source boundary is exact in 38 steps: all 36 runtime
+fibers match, strict coverage is 100%, there are no opaque or wildcard matches, and both bounded
+assignments pass replay. The initial menu capture does not establish head mutation, timer, audio, or
+gameplay behavior beyond the observed commits.
+
 ## Legacy React Router class fibers
 
 React source `71f725593739d2cb5866a282a1075d581831722f` selects a class fiber when a component
