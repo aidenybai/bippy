@@ -1053,6 +1053,24 @@ describe("next pages router", () => {
   });
 });
 
+describe("react router component versions", () => {
+  it.each([
+    ["5.3.4", "ClassComponent"],
+    ["6.0.0", "FunctionComponent"],
+  ])("models BrowserRouter %s with its native fiber tag", async (version, expectedTag) => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      version,
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-browser.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    expect(findFiberTags(getRenderPattern(result), "BrowserRouter")).toEqual([expectedTag]);
+  });
+});
+
 describe("react router framework mode with react-router-auto-routes", () => {
   const target = (route: string) =>
     render("react-router-auto", { framework: "react-router", route, entry: "app/routes.ts" });

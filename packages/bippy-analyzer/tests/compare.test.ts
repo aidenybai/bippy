@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { createElement, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -18,6 +19,8 @@ import { anonymousRepeat, choiceBranch } from "./helpers/pattern-builders.js";
 interface NativeWrapperProps {
   children?: ReactNode;
 }
+
+const harnessRequire = createRequire(import.meta.url);
 
 const runtimeFiber = (
   name: string,
@@ -110,6 +113,21 @@ const createNativeOpaqueTree = (): ReactNode =>
   );
 
 describe("comparePatternToRuntime", () => {
+  it("captures react-router v5 BrowserRouter as a class component", () => {
+    const legacyRouterModule: unknown = harnessRequire("react-router-dom-v5");
+    if (typeof legacyRouterModule !== "object" || legacyRouterModule === null) {
+      throw new Error("react-router-dom-v5 did not load");
+    }
+    const LegacyBrowserRouter = Object(legacyRouterModule).BrowserRouter;
+    if (typeof LegacyBrowserRouter !== "function") {
+      throw new Error("react-router-dom-v5 does not export BrowserRouter");
+    }
+    const runtime = captureNativeTree(
+      createElement(LegacyBrowserRouter, null, createElement("main")),
+    );
+    expect(runtime[0]).toMatchObject({ name: "BrowserRouter", tag: "ClassComponent" });
+  });
+
   it("finds text passed through an opaque component into a direct-text host", () => {
     const runtime = captureNativeTree(createElement(NativeText, null, "Known text"));
     expect(runtime[0]?.children[0]?.props.children).toBe("Known text");
