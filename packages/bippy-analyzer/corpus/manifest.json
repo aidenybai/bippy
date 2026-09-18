@@ -2108,7 +2108,8 @@
       "static": {
         "rootDirectory": ".",
         "appDirectory": "src/pages",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": ["next-seo"]
       }
     },
     {
@@ -9613,7 +9614,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons"]
       },
       "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original sixteen tech-image cards shuffled using real Math.random, no clicks or artificial random seed. Truncated report matches sixteen cards but retains a repeat omission above two, three bounded states and dynamic-key diagnostic. Four replay assignments pass; no random-order/attribute or game completeness. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 432424926 identifies a distinct non-fork repository."
     },
@@ -9801,7 +9803,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["react-icons"]
       },
       "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original idle 25:00 timer with three presets and keyboard-help icon. Authored notification permission request left to default browser response; no granted permissions, key input or service-worker notification. Partial idle 25:00 display has 90.2% strict coverage and opaque keyboard icon. Original notification permission request retained without permission override; no timer/shortcut/service-worker activation. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 370577729 identifies a distinct non-fork repository."
     },
@@ -10437,7 +10440,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons"]
       },
       "notes": "Original empty budgetItems, blank expense/amount, PKR default/zero spending, no alert and focused input. Authored autoprefixer10.4.5 override retained; no added override, expense, currency toggle or backend. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty budgetItems, blank expense/amount, PKR default/zero spending, no alert and focused input. Authored autoprefixer10.4.5 override retained; no added override, expense, currency toggle or backend. Partial86% strict coverage, one opaque icon; original empty budget/PKR/zero spending/focused input and authored autoprefixer override retained. No expense submission or currency toggle. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 635176110 identifies a distinct non-fork repository."
     },
@@ -10638,14 +10642,16 @@
         "NODE_OPTIONS": "",
         "BROWSER": "none",
         "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
-        "PUPPETEER_SKIP_DOWNLOAD": "1"
+        "PUPPETEER_SKIP_DOWNLOAD": "1",
+        "SKIP_PREFLIGHT_CHECK": "true"
       },
       "url": "http://127.0.0.1:54951/",
       "readyTimeoutMs": 120000,
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/index.js"
+        "entry": "src/index.js",
+        "externalPackageAllowList": ["react-icons"]
       },
       "notes": "Original empty expenses fallback/blank form/zero total, no alert or clear-items button, authored storage write. Commented sample expenses stay commented; no seeded data, submit/edit/delete or timeout override. Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original empty expenses fallback/blank form/zero total, no alert or clear-items button, authored storage write. Commented sample expenses stay commented; no seeded data, submit/edit/delete or timeout override. Partial77.8% strict coverage, one opaque icon on original empty budget form/zero total; authored storage write remains, commented sample expenses not seeded. No submit/edit/delete or alert timer override. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 195668566 identifies a distinct non-fork repository."
     },
@@ -12452,7 +12458,8 @@
       "settleMs": 3000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.jsx"
+        "entry": "src/main.jsx",
+        "externalPackageAllowList": ["react-toastify"]
       },
       "notes": "Original stopped00:00:00, five Start/Pause/Stop/Reset/Lap buttons, empty laps and ToastContainer. Preserve minute60..300 toast thresholds without clock advancement. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Original source, startup, data, scripts and locks retained. CRA uses pinned Node16.20.2/npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9; Vite uses Node22.16.0/npm10.9.2/pnpm10.12.1. Outer pnpm11.20 launcher; no added peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original stopped00:00:00, five Start/Pause/Stop/Reset/Lap buttons, empty laps and ToastContainer. Preserve minute60..300 toast thresholds without clock advancement. No clipboard, toast, color, storage, random, clock or route injection. Initial fibers do not establish attributes, pixels, arithmetic, complete interactions or reachability. Partial initial membership at 88.2% strict coverage against 18 native fibers. Whole model: 1 opaque nodes, 0 wildcards, 1 bounded states, 0 omissions. Replay: 0 incomplete and 0 mismatched among 1 assignments; sample-passed. Original native warnings retained. No interaction, cardinality, attribute, pixel, tint arithmetic or timing accuracy proof. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 805375073 identifies a distinct non-fork repository."
     },
