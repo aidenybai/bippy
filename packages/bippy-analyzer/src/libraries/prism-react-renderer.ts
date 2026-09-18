@@ -77,12 +77,32 @@ const appendToken = (
   appendToken(content, types, lines);
 };
 
+const splitPropertyAccess = (line: NormalizedPrismToken[]): NormalizedPrismToken[] =>
+  line.flatMap((token, index) => {
+    const previousToken = line[index - 1];
+    if (
+      previousToken?.types.includes("punctuation") !== true ||
+      previousToken.content !== "." ||
+      token.types.length !== 1 ||
+      token.types[0] !== "plain"
+    ) {
+      return [token];
+    }
+    const property = /^[A-Za-z_$][\w$]*/.exec(token.content)?.[0];
+    if (property === undefined) return [token];
+    const remainder = token.content.slice(property.length);
+    return [
+      { types: ["property-access"], content: property },
+      ...(remainder === "" ? [] : [{ types: ["plain"], content: remainder }]),
+    ];
+  });
+
 const normalizePrismTokens = (tokens: unknown[]): NormalizedPrismToken[][] => {
   const lines: NormalizedPrismToken[][] = [[]];
   appendToken(tokens, [], lines);
   const currentLine = lines.at(-1);
   if (currentLine) normalizeEmptyLine(currentLine);
-  return lines;
+  return lines.map(splitPropertyAccess);
 };
 
 const require = createRequire(import.meta.url);
