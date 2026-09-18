@@ -160,7 +160,7 @@ export const isPossiblyUnsettled = (value: StaticValue): boolean =>
 
 export const getAwaitPromise = (value: StaticValue): ModeledPromise | null => {
   const promise = getModeledPromise(value);
-  if (promise) return promise.isEscaped ? null : promise;
+  if (promise) return promise;
   if (isThrownOutcome(value) || isPossiblyUnsettled(value)) return null;
   return resolvePromise(value);
 };
