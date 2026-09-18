@@ -231,7 +231,7 @@ export const installPreactRecorder = (target: object): PreactRecorder => {
   let fragment: unknown;
   const roots = new Set<object>();
   const previousDevTools = getPreactDevTools(target);
-  Reflect.set(target, "__PREACT_DEVTOOLS__", {
+  const devTools: PreactDevTools = {
     attachPreact: (nextVersion, options, internals) => {
       previousDevTools?.attachPreact(nextVersion, options, internals);
       version = nextVersion;
@@ -247,7 +247,8 @@ export const installPreactRecorder = (target: object): PreactRecorder => {
       if ("_commit" in options || !("__c" in options)) options._commit = recordCommit;
       else options.__c = recordCommit;
     },
-  });
+  };
+  Reflect.set(target, "__PREACT_DEVTOOLS__", devTools);
   return {
     snapshot: () => ({
       reactVersion: version,
