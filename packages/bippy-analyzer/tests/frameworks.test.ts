@@ -1070,6 +1070,26 @@ describe("react router component versions", () => {
     expect(findFiberTags(getRenderPattern(result), "BrowserRouter")).toEqual([expectedTag]);
     expect(findFiberTags(getRenderPattern(result), "Route")).toEqual([expectedTag]);
   });
+
+  it("models v5 Switch first-match semantics and class fibers", async () => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      "5.3.4",
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-switch.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const pattern = getRenderPattern(result);
+    const tree = formatPattern(pattern);
+    expect(findFiberTags(pattern, "Switch")).toEqual(["ClassComponent"]);
+    expect(findFiberTags(pattern, "Route")).toEqual(["ClassComponent"]);
+    expect(tree).toContain("<Match>");
+    expect(tree).toContain("<main>");
+    expect(tree).not.toContain("<Miss>");
+    expect(tree).not.toContain("<aside>");
+  });
 });
 
 describe("react router framework mode with react-router-auto-routes", () => {

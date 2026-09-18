@@ -75,6 +75,8 @@ const NativeColumn = ({ children }: NativeWrapperProps) => createElement("articl
 const NativeCard = ({ children }: NativeWrapperProps) => createElement("div", null, children);
 const NativeGeneratedEditor = () => createElement("textarea");
 const NativeText = ({ children }: NativeWrapperProps) => createElement("p", null, children);
+const NativeLegacyMiss = () => createElement("aside");
+const NativeLegacyMatch = () => createElement("main");
 
 const captureNativeTree = (element: ReactNode): RuntimeFiberSnapshot[] => {
   const container = document.createElement("div");
@@ -122,25 +124,42 @@ const createNativeOpaqueTree = (): ReactNode =>
   );
 
 describe("comparePatternToRuntime", () => {
-  it("captures react-router v5 router components as classes", () => {
+  it("captures react-router v5 routing classes and its first matching route", () => {
     const legacyRouterModule: unknown = harnessRequire("react-router-dom-v5");
     if (typeof legacyRouterModule !== "object" || legacyRouterModule === null) {
       throw new Error("react-router-dom-v5 did not load");
     }
     const LegacyBrowserRouter = Object(legacyRouterModule).BrowserRouter;
     const LegacyRoute = Object(legacyRouterModule).Route;
-    if (typeof LegacyBrowserRouter !== "function" || typeof LegacyRoute !== "function") {
-      throw new Error("react-router-dom-v5 does not export BrowserRouter and Route");
+    const LegacySwitch = Object(legacyRouterModule).Switch;
+    if (
+      typeof LegacyBrowserRouter !== "function" ||
+      typeof LegacyRoute !== "function" ||
+      typeof LegacySwitch !== "function"
+    ) {
+      throw new Error("react-router-dom-v5 does not export BrowserRouter, Switch, and Route");
     }
     const runtime = captureNativeTree(
       createElement(
         LegacyBrowserRouter,
         null,
-        createElement(LegacyRoute, { path: "/" }, createElement("main")),
+        createElement(
+          LegacySwitch,
+          null,
+          createElement(LegacyRoute, {
+            exact: true,
+            path: "/other",
+            component: NativeLegacyMiss,
+          }),
+          createElement(LegacyRoute, { path: "/", component: NativeLegacyMatch }),
+        ),
       ),
     );
     expect(findRuntimeFiberTags(runtime, "BrowserRouter")).toEqual(["ClassComponent"]);
+    expect(findRuntimeFiberTags(runtime, "Switch")).toEqual(["ClassComponent"]);
     expect(findRuntimeFiberTags(runtime, "Route")).toEqual(["ClassComponent"]);
+    expect(findRuntimeFiberTags(runtime, "main")).toEqual(["HostComponent"]);
+    expect(findRuntimeFiberTags(runtime, "aside")).toEqual([]);
   });
 
   it("finds text passed through an opaque component into a direct-text host", () => {
