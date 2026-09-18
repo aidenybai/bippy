@@ -140,6 +140,8 @@ const NEXT_PAGES_RUNTIME_WRAPPERS = [
   "PagesDevOverlay",
   "PagesDevOverlayBridge",
   "PagesDevOverlayErrorBoundary",
+  "AppWithTranslations",
+  "I18nProvider",
   "Fragment",
 ];
 
@@ -172,7 +174,9 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(NEXT_PAGES_RUNTIME_PROVIDERS),
-  transparentRuntimeWrapperChildren: new Map(),
+  transparentRuntimeWrapperChildren: new Map([
+    ["I18nProvider", new Set(["ContextProvider"])],
+  ]),
   transparentStaticFibers: new Set(["Fragment", "StrictMode"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,
