@@ -331,7 +331,7 @@ const collectGuardOperands = (
   kind: "and" | "or",
   guard: Guard,
   index: GuardIndex | null,
-): GuardIndex => {
+): GuardIndex | null => {
   if (guard.kind === kind) {
     for (const operand of guard.operands) {
       index = collectGuardOperands(kind, operand, index);
