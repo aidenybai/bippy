@@ -1165,8 +1165,9 @@ describe("react router component versions", () => {
     );
     const tree = formatPattern(getRenderPattern(result));
     expect(result.diagnostics).toEqual([]);
-    expect(tree).toContain("<Dashboard>");
-    expect(tree).toContain("<main>");
+    expect(tree).toContain("<Login>");
+    expect(tree).toContain("<aside>");
+    expect(tree).not.toContain("<Dashboard>");
     expect(tree).not.toContain("<Redirect>");
   });
 });
