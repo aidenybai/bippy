@@ -181,23 +181,38 @@ export const suspendOnPromise = (
         if (returned) settlePromise(result, returned, runTools);
       },
       escape: (escapeTools) => {
-        resume(
-          branchValue(
-            [
-              unknownValue("promise fulfilled outside the analysis", location),
-              thrownValue(
-                "promise rejected outside the analysis",
-                unknownValue("promise rejection reason", location),
-                location,
-              ),
-            ],
-            "promise settled outside the analysis",
-            location,
-            0,
-            createPathPredicate("whether the promise fulfilled or rejected", location),
-          ),
-          true,
+        const outcome = branchValue(
+          [
+            unknownValue("promise fulfilled outside the analysis", location),
+            thrownValue(
+              "promise rejected outside the analysis",
+              unknownValue("promise rejection reason", location),
+              location,
+            ),
+          ],
+          "promise settled outside the analysis",
+          location,
+          0,
+          createPathPredicate("whether the promise fulfilled or rejected", location),
         );
+        if (outcome.kind === "branch") {
+          const alternatives = getAlternativeGuards(outcome);
+          if (alternatives) {
+            outcome.alternatives.forEach((alternative, index) =>
+              escapeTools.runTask(
+                {
+                  guard: alternatives.guards[index],
+                  inputs: [...alternatives.inputs],
+                },
+                () => resume(alternative, true),
+              ),
+            );
+          } else {
+            resume(outcome, true);
+          }
+        } else {
+          resume(outcome, true);
+        }
         escapePromise(result, escapeTools);
       },
     },
