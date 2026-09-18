@@ -13,13 +13,13 @@ const Match = ({ location }: { location: { pathname: string } }) => {
 const EmptyChildrenFallback = () => <footer />;
 const InheritedMatch = () => {
   const params = useParams<{ identifier: string }>();
-  return <output>{params.identifier}</output>;
+  return <output>inherited-{params.identifier}</output>;
 };
 const NestedMatch = () => {
   const params = useParams<{ identifier: string }>();
   return (
     <>
-      <span>{params.identifier}</span>
+      <span>nested-{params.identifier}</span>
       <Route component={InheritedMatch} />
     </>
   );
