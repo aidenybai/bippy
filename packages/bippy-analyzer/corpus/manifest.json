@@ -8544,7 +8544,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.app.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@chakra-ui/*"]
       },
       "notes": "Keep original PWA configuration, initial level-selection popup and original prefilled/validation data. Do not choose a level, supply a puzzle, alter validation or claim solver correctness. Native React18.3.1 has 126 fibers and one commit without page errors. Exact initial membership and one replay pass repeat for the original level-selection popup. Preserve undefined level, initial cell data, structuredClone use and PWA configuration; do not select a level, supply a puzzle or claim solving/validation completeness. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 895631493 identifies a distinct non-fork repository."
     },
@@ -9213,7 +9214,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/index.tsx"
+        "entry": "src/index.tsx",
+        "externalPackageAllowList": ["@chakra-ui/*"]
       },
       "notes": "Original source, startup, data, scripts and npm lock retained. Pinned Node22.16/npm10.9.2/pnpm10.12.1 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through Vite configuration; no application configuration values are invented. Original fakeRestDataProvider over checked-in twelve posts/eleven comments; root Admin route with original loading/data effects. Vite entire-process.env define runs only in the documented credential-free launcher environment. No backend substitution or post movement. Retain the original first-child SSR warning and 0.15% strict coverage. Opaque Admin/provider membership does not verify the twelve-post board, dialogs, mutation or backend behavior. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 667787056 identifies a distinct non-fork repository."
     },
