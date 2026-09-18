@@ -165,6 +165,18 @@ const findFiberTags = (nodes: PatternNode[], name: string): SnapshotWorkTag[] =>
       : [],
   );
 
+const findRuntimeFiber = (
+  fibers: RuntimeFiberSnapshot[],
+  name: string,
+): RuntimeFiberSnapshot | null => {
+  for (const fiber of fibers) {
+    if (fiber.name === name) return fiber;
+    const descendant = findRuntimeFiber(fiber.children, name);
+    if (descendant) return descendant;
+  }
+  return null;
+};
+
 describe("next app router", () => {
   it("composes root layout, elides server components, keeps client boundaries", async () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
@@ -708,7 +720,7 @@ describe("next pages router", () => {
   });
 
   it("provides captured next-translate namespaces to the static page", async () => {
-    const { tree, errors } = await render(
+    const { result, tree, errors } = await render(
       "next-pages",
       { framework: "next-pages", route: "/translated" },
       [],
@@ -732,8 +744,9 @@ describe("next pages router", () => {
       },
     );
     expect(errors).toEqual([]);
-    expect(tree).toMatch(/<p>\n\s+"Hello, Ada"/);
-    expect(tree).toMatch(/<Trans>\n\s+<strong>\n\s+"Ada"/);
+    expect(findRuntimeFiber(result.snapshot.roots, "p")?.props.children).toBe("Hello, Ada");
+    expect(tree).toMatch(/<Trans>\n\s+"Welcome, "\n\s+<strong>/);
+    expect(findRuntimeFiber(result.snapshot.roots, "strong")?.props.children).toBe("Ada");
     expect(tree).not.toContain("common:");
   });
 
