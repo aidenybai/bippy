@@ -2722,6 +2722,7 @@
           "react-speech-recognition",
           "react-string-replace",
           "react-textarea-autosize",
+          "regenerator-runtime",
           "use-composed-ref",
           "use-latest",
           "use-isomorphic-layout-effect",
