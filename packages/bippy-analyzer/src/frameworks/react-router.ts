@@ -217,6 +217,13 @@ const ROUTE_CONTEXT: ContextDefinition = {
   location: null,
 };
 
+const LEGACY_ROUTE_CONTEXT: ContextDefinition = {
+  name: "LegacyRouteContext",
+  displayName: "Router",
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
 /**
  * Mirrors `LocationContext` (displayName `Location`): every router component
  * provides it, and `useInRouterContext` is whether it is provided.
@@ -446,6 +453,12 @@ const readRouteElements = (
 
 type RouteParams = Record<string, string>;
 
+interface LegacyRouteMatchResult {
+  isMatch: boolean | null;
+  match: StaticObjectValue;
+  reason: string;
+}
+
 interface MatchedRouteModule {
   module: ModuleRecord;
   params: RouteParams;
@@ -478,7 +491,11 @@ interface OwnPathMatch {
 }
 
 /** Matches one route's own `path` against the remaining URL segments. */
-const matchOwnPath = (routePath: string | null, remaining: string[]): OwnPathMatch | null => {
+const matchOwnPath = (
+  routePath: string | null,
+  remaining: string[],
+  isCaseSensitive = true,
+): OwnPathMatch | null => {
   if (routePath === null) return { rest: remaining, score: 0, params: {}, consumedSegments: 0 };
   const params: RouteParams = {};
   let score = 0;
@@ -499,7 +516,9 @@ const matchOwnPath = (routePath: string | null, remaining: string[]): OwnPathMat
       params[name.slice(1)] = decodeURIComponent(current);
       score += DYNAMIC_SEGMENT_SCORE;
       cursor += 1;
-    } else if (name === current) {
+    } else if (
+      isCaseSensitive ? name === current : name.toLowerCase() === current.toLowerCase()
+    ) {
       score += STATIC_SEGMENT_SCORE;
       cursor += 1;
     } else if (!optional) {
@@ -717,7 +736,11 @@ const readRouteContext = (
   tools: StubRenderTools,
   field: "outlet" | "params" | "id",
 ): StaticValue => {
-  const routeContext = tools.readContext(ROUTE_CONTEXT);
+  const currentRouteContext = tools.readContext(ROUTE_CONTEXT);
+  const routeContext =
+    currentRouteContext.kind === "object"
+      ? currentRouteContext
+      : tools.readContext(LEGACY_ROUTE_CONTEXT);
   if (routeContext.kind !== "object") {
     return unknownValue(`react-router: ${field} read outside a matched route`);
   }
@@ -749,11 +772,17 @@ const createRouteStub = (
 ): StubComponent => ({
   displayName: "Route",
   tag,
-  render: () => NULL_VALUE,
+  render: (props, tools) =>
+    tag === ClassComponentTag ? renderLegacyRoute(props, tools) : NULL_VALUE,
 });
 
 const FUNCTION_ROUTE_STUB = createRouteStub(FunctionComponentTag);
 const CLASS_ROUTE_STUB = createRouteStub(ClassComponentTag);
+const CLASS_SWITCH_STUB: StubComponent = {
+  displayName: "Switch",
+  tag: ClassComponentTag,
+  render: (props, tools) => renderLegacySwitch(props, tools),
+};
 const isRouteStub = (stub: StubComponent): boolean =>
   stub === FUNCTION_ROUTE_STUB || stub === CLASS_ROUTE_STUB;
 const getRouteStub = (
@@ -1382,6 +1411,252 @@ const readRouterBasename = (tools: StubRenderTools): string | null => {
   return isDefined(basename) ? readString(basename) : "/";
 };
 
+const createLegacyMatch = (
+  routePath: StaticValue,
+  pathname: string,
+  ownMatch: OwnPathMatch | null,
+): StaticObjectValue => {
+  if (ownMatch === null) {
+    return objectFromRecord({
+      path: routePath,
+      url: unknownPrimitiveValue("string", "react-router v5 matched URL"),
+      isExact: unknownPrimitiveValue("boolean", "react-router v5 exact match"),
+      params: unknownValue("react-router v5 route params"),
+    });
+  }
+  const consumed = splitPathname(pathname).slice(0, ownMatch.consumedSegments);
+  return objectFromRecord({
+    path: routePath,
+    url: primitiveValue(consumed.length === 0 ? "/" : `/${consumed.join("/")}`),
+    isExact: primitiveValue(ownMatch.rest.length === 0),
+    params: paramsValue(ownMatch.params),
+  });
+};
+
+const matchLegacyStaticPath = (
+  routePath: string,
+  pathname: string,
+  props: StaticObjectValue,
+): LegacyRouteMatchResult => {
+  const reason = `react-router v5 route ${routePath} may match ${pathname}`;
+  if (/[()[\]{}+]/.test(routePath)) {
+    return {
+      isMatch: null,
+      match: createLegacyMatch(primitiveValue(routePath), pathname, null),
+      reason,
+    };
+  }
+  const isSensitive = getTruthiness(getObjectProperty(props, "sensitive"));
+  const insensitiveMatch = matchOwnPath(routePath, splitPathname(pathname), false);
+  const sensitiveMatch = matchOwnPath(routePath, splitPathname(pathname), true);
+  const ownMatch = isSensitive === true ? sensitiveMatch : insensitiveMatch;
+  if (
+    isSensitive === null &&
+    (insensitiveMatch === null) !== (sensitiveMatch === null)
+  ) {
+    return {
+      isMatch: null,
+      match: createLegacyMatch(primitiveValue(routePath), pathname, insensitiveMatch),
+      reason,
+    };
+  }
+  if (ownMatch === null) {
+    return {
+      isMatch: false,
+      match: createLegacyMatch(primitiveValue(routePath), pathname, null),
+      reason,
+    };
+  }
+  const isExact = ownMatch.rest.length === 0;
+  const exact = getTruthiness(getObjectProperty(props, "exact"));
+  if (exact === true && !isExact) {
+    return {
+      isMatch: false,
+      match: createLegacyMatch(primitiveValue(routePath), pathname, ownMatch),
+      reason,
+    };
+  }
+  if (exact === null && !isExact) {
+    return {
+      isMatch: null,
+      match: createLegacyMatch(primitiveValue(routePath), pathname, ownMatch),
+      reason,
+    };
+  }
+  const strict = getTruthiness(getObjectProperty(props, "strict"));
+  if (
+    strict !== false &&
+    routePath !== "/" &&
+    routePath.endsWith("/") !== pathname.endsWith("/")
+  ) {
+    return {
+      isMatch: strict === true ? false : null,
+      match: createLegacyMatch(primitiveValue(routePath), pathname, ownMatch),
+      reason,
+    };
+  }
+  return {
+    isMatch: true,
+    match: createLegacyMatch(primitiveValue(routePath), pathname, ownMatch),
+    reason,
+  };
+};
+
+const getLegacyRoutePath = (props: StaticObjectValue): StaticValue => {
+  const pathValue = getObjectProperty(props, "path");
+  const hasPath = getTruthiness(pathValue);
+  if (hasPath === true) return pathValue;
+  if (hasPath === false) return getObjectProperty(props, "from");
+  return unknownValue("react-router v5 route path or from");
+};
+
+const matchLegacyRoute = (
+  props: StaticObjectValue,
+  tools: StubRenderTools,
+): LegacyRouteMatchResult => {
+  const pathname = readRouterPathname(tools, null);
+  const routePath = getLegacyRoutePath(props);
+  if (pathname === null) {
+    return {
+      isMatch: null,
+      match: createLegacyMatch(routePath, "/", null),
+      reason: "react-router v5 location pathname is not static",
+    };
+  }
+  if (!isDefined(routePath)) {
+    const ownMatch = matchOwnPath(null, splitPathname(pathname));
+    return {
+      isMatch: true,
+      match: createLegacyMatch(UNDEFINED_VALUE, pathname, ownMatch),
+      reason: "",
+    };
+  }
+  const paths = routePath.kind === "list" ? routePath.items : [routePath];
+  let possible: LegacyRouteMatchResult | null = null;
+  for (const candidate of paths) {
+    const pathName = readString(candidate);
+    if (pathName === null) {
+      possible ??= {
+        isMatch: null,
+        match: createLegacyMatch(candidate, pathname, null),
+        reason: "react-router v5 route path is not a static string",
+      };
+      continue;
+    }
+    const result = matchLegacyStaticPath(pathName, pathname, props);
+    if (result.isMatch === true) return result;
+    if (result.isMatch === null) possible ??= result;
+  }
+  return (
+    possible ?? {
+      isMatch: false,
+      match: createLegacyMatch(routePath, pathname, null),
+      reason: `react-router v5 route does not match ${pathname}`,
+    }
+  );
+};
+
+const withLegacyComputedMatch = (
+  route: StaticElementValue,
+  match: StaticObjectValue,
+): StaticElementValue => ({
+  ...route,
+  props: objectValue([
+    { kind: "spread", value: route.props },
+    { kind: "property", key: "computedMatch", value: match },
+  ]),
+});
+
+const renderLegacySwitch = (props: StaticObjectValue, tools: StubRenderTools): StaticValue => {
+  const children = flattenChildren(getObjectProperty(props, "children"));
+  const select = (index: number): StaticValue => {
+    const child = children[index];
+    if (child === undefined) return NULL_VALUE;
+    if (child.kind === "primitive") return select(index + 1);
+    if (child.kind !== "element") {
+      return branchValue(
+        [unknownValue("react-router v5 Switch child is not a static element"), select(index + 1)],
+        "whether a dynamic Switch child matches the location",
+      );
+    }
+    const result = matchLegacyRoute(child.props, tools);
+    const selected = withLegacyComputedMatch(child, result.match);
+    if (result.isMatch === true) return selected;
+    const remaining = select(index + 1);
+    return result.isMatch === false
+      ? remaining
+      : branchValue([selected, remaining], result.reason);
+  };
+  return select(0);
+};
+
+const createLegacyRouteProps = (
+  tools: StubRenderTools,
+  match: StaticValue,
+): StaticObjectValue =>
+  objectFromRecord({
+    history: unknownValue("react-router v5 history"),
+    location: readRouterLocation(tools, UNDEFINED_VALUE),
+    match,
+    staticContext: UNDEFINED_VALUE,
+  });
+
+const renderLegacyRouteContent = (
+  props: StaticObjectValue,
+  routeProps: StaticObjectValue,
+  tools: StubRenderTools,
+  isMatched: boolean,
+): StaticValue => {
+  const children = getObjectProperty(props, "children");
+  if (!isMatched) return isCallable(children) ? tools.call(children, [routeProps]) : NULL_VALUE;
+  const hasChildren = getTruthiness(children);
+  const renderedChildren = isCallable(children) ? tools.call(children, [routeProps]) : children;
+  const component = getObjectProperty(props, "component");
+  const render = getObjectProperty(props, "render");
+  const fallback = isDefined(component)
+    ? element(toElementType(component, null), routeProps)
+    : isCallable(render)
+      ? tools.call(render, [routeProps])
+      : NULL_VALUE;
+  if (hasChildren === true) return renderedChildren;
+  if (hasChildren === false) return fallback;
+  return branchValue(
+    [renderedChildren, fallback],
+    "whether react-router v5 Route children are present",
+  );
+};
+
+const renderLegacyRoute = (props: StaticObjectValue, tools: StubRenderTools): StaticValue => {
+  const computedMatch = getObjectProperty(props, "computedMatch");
+  const hasComputedMatch = getTruthiness(computedMatch);
+  const result =
+    hasComputedMatch === true
+      ? {
+          isMatch: true,
+          match:
+            computedMatch.kind === "object"
+              ? computedMatch
+              : createLegacyMatch(unknownValue("react-router v5 computed match"), "/", null),
+          reason: "",
+        }
+      : matchLegacyRoute(props, tools);
+  const matchedProps = createLegacyRouteProps(tools, result.match);
+  const matched = provide(
+    LEGACY_ROUTE_CONTEXT,
+    matchedProps,
+    renderLegacyRouteContent(props, matchedProps, tools, true),
+  );
+  if (result.isMatch === true) return matched;
+  const unmatchedProps = createLegacyRouteProps(tools, NULL_VALUE);
+  const unmatched = provide(
+    LEGACY_ROUTE_CONTEXT,
+    unmatchedProps,
+    renderLegacyRouteContent(props, unmatchedProps, tools, false),
+  );
+  if (result.isMatch === false && hasComputedMatch !== null) return unmatched;
+  return branchValue([matched, unmatched], result.reason);
+};
+
 const getBasenameHref = (target: ResolvedTarget, basename: string | null): string | null => {
   if (basename === null) return null;
   if (basename === "/") return target.href;
@@ -2005,6 +2280,10 @@ export const createReactRouterModel = (
         });
       case "Route":
         return stubValue(getRouteStub(getRouterComponentTag(specifier)));
+      case "Switch":
+        return getRouterComponentTag(specifier) === ClassComponentTag
+          ? stubValue(CLASS_SWITCH_STUB)
+          : null;
       case "Outlet":
         return stubValue(OUTLET_STUB);
       case "Link":
