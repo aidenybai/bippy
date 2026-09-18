@@ -1153,6 +1153,8 @@
           "@dnd-kit/core",
           "@dnd-kit/sortable",
           "@dnd-kit/utilities",
+          "@headless-tree/core",
+          "@headless-tree/react",
           "@radix-ui/*",
           "@tanstack/react-query"
         ]
