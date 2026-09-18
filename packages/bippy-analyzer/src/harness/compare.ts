@@ -846,11 +846,10 @@ class Matcher {
     actual: RuntimeFiberSnapshot,
     { tally }: SlotMatch,
   ): boolean {
-    if (tally.slotsUnmatched !== 0) return false;
-    if (tally.opaqueRenamed === 0) return true;
     const head = pattern.passedChildren[0];
     if (head?.kind === "fiber" || head?.kind === "text") return true;
-    return head?.kind === "opaque" && this.opaqueNameAgrees(head, actual);
+    if (head?.kind === "opaque" && this.opaqueNameAgrees(head, actual)) return true;
+    return tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
   }
 
   // Searches the library's runtime subtree breadth-first for the place where it
