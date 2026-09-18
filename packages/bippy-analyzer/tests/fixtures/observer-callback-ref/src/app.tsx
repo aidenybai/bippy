@@ -15,10 +15,14 @@ const useCallbackRef = <Arguments extends unknown[]>(
   useEffect(() => {
     callbackRef.current = callback;
   });
+  // HACK: Mirror Babel's temporary alias for an optional callback-ref call.
   return useMemo(
-    () =>
-      (...args: Arguments) =>
-        callbackRef.current?.(...args),
+    () => (...args: Arguments) => {
+      let currentCallback;
+      return (currentCallback = callbackRef.current) === undefined
+        ? undefined
+        : currentCallback.call(callbackRef, ...args);
+    },
     [],
   );
 };
