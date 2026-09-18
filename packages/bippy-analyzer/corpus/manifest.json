@@ -2503,7 +2503,7 @@
       "description": "remix-fastify playground example (React Router v7 framework mode served by Fastify, pnpm workspace)",
       "framework": "react-router",
       "workingDirectory": "examples/playground",
-      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build && pnpm add \"react-router-dom@$(node -p \"require('react-router/package.json').version\")\"",
+      "install": "pnpm install && pnpm --filter @mcansh/remix-fastify build && pnpm --dir examples/playground add \"react-router-dom@$(pnpm --dir examples/playground exec node -p \"require('react-router/package.json').version\")\"",
       "dev": "pnpm dev",
       "url": "http://localhost:3000/",
       "settleMs": 6000,
@@ -2513,7 +2513,7 @@
         "route": "/",
         "externalPackageAllowList": ["@radix-ui/*"]
       },
-      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Installing a matching react-router-dom@7 in the app shadows the hoisted copy; nothing else is patched."
+      "notes": "The harness clones into the bippy monorepo, whose hoisted node_modules holds react-router-dom@6 for an e2e fixture; `@react-router/dev` pre-bundles `react-router-dom` whenever `require.resolve` finds one, and rolldown-vite (vite 8) fails the dependency optimizer on the v6 package's missing exports. Resolving react-router from and installing matching react-router-dom@7 into the declared playground workspace shadows the hoisted copy; nothing else is patched."
     },
     {
       "id": "gcn-nasa-gov",
