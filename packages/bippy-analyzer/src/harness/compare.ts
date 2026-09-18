@@ -251,6 +251,7 @@ interface SlotSearchResult {
 interface SlotCandidate {
   siblings: RuntimeFiberSnapshot[];
   start: number;
+  directMatch: SlotMatch | null;
 }
 
 interface FurthestSlotDivergence {
@@ -857,6 +858,20 @@ class Matcher {
     return tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
   }
 
+  private matchDirectTextSlot(
+    pattern: PatternOpaque,
+    actual: RuntimeFiberSnapshot,
+  ): SlotMatch | null {
+    const [text] = pattern.passedChildren;
+    if (pattern.passedChildren.length !== 1 || text.kind !== "text" || !isHostTag(actual.tag)) {
+      return null;
+    }
+    const directText = actual.props.children;
+    if (typeof directText !== "string" && typeof directText !== "number") return null;
+    if (this.compareText && text.text !== null && text.text !== String(directText)) return null;
+    return { tally: EMPTY_TALLY, consumedFibers: 0 };
+  }
+
   // Searches the library's runtime subtree breadth-first for the place where it
   // rendered the children the application passed in, so the shallowest fit wins.
   // Libraries may render siblings around the slot, so the passed children only
@@ -871,8 +886,13 @@ class Matcher {
     const queue: RuntimeFiberSnapshot[] = [actual];
     const candidates: SlotCandidate[] = [];
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
-      const siblings = queue[queueIndex].children;
-      for (let start = 0; start < siblings.length; start++) candidates.push({ siblings, start });
+      const fiber = queue[queueIndex];
+      const directMatch = this.matchDirectTextSlot(pattern, fiber);
+      if (directMatch) candidates.push({ siblings: [], start: 0, directMatch });
+      const siblings = fiber.children;
+      for (let start = 0; start < siblings.length; start++) {
+        candidates.push({ siblings, start, directMatch: null });
+      }
       queue.push(...siblings);
     }
     const patternHead = pattern.passedChildren[0];
@@ -885,7 +905,8 @@ class Matcher {
     }
     let best: FurthestSlotDivergence | null = null;
     let bestMatch: SlotMatch | null = null;
-    for (const { siblings, start } of candidates) {
+    for (const { siblings, start, directMatch } of candidates) {
+      if (directMatch) return { match: directMatch, divergence: null };
       const { result, failure } = yield* WorkStack.wait(
         this.attempt(() => this.matchSlotAt(pattern, siblings, start, path)),
       );

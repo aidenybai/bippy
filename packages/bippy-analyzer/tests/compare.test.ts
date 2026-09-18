@@ -112,6 +112,7 @@ const createNativeOpaqueTree = (): ReactNode =>
 describe("comparePatternToRuntime", () => {
   it("finds text passed through an opaque component into a direct-text host", () => {
     const runtime = captureNativeTree(createElement(NativeText, null, "Known text"));
+    expect(runtime[0]?.children[0]?.props.children).toBe("Known text");
     const result = matchPatternToRuntime(
       [opaqueFiber("NativeText", [{ kind: "text", text: "Known text" }])],
       runtime,
