@@ -2237,66 +2237,73 @@ export const createReactRouterModel = (
       );
     },
   };
+  const renderRouter = (props: StaticObjectValue, tools: StubRenderTools): StaticValue =>
+    withBasename(getObjectProperty(props, "basename"), tools, (scope) => {
+      const navigationOverride = tools.hooks?.useState(UNDEFINED_VALUE);
+      const previousScope = tools.hooks?.useRef(scope.context);
+      const didScopeChange =
+        previousScope !== undefined && !isSameValue(previousScope.current, scope.context);
+      if (previousScope) previousScope.current = scope.context;
+      const activeContext =
+        !didScopeChange && navigationOverride && isDefined(navigationOverride[0])
+          ? navigationOverride[0]
+          : scope.context;
+      if (didScopeChange && navigationOverride && isDefined(navigationOverride[0])) {
+        navigationOverride[1](UNDEFINED_VALUE);
+      }
+      const contextualNavigate = nativeFunction("navigate", (args, callTools) => {
+        const target = resolveTarget(
+          args[0] ?? UNDEFINED_VALUE,
+          readParentMatch(callTools),
+          readRouterPathname(callTools, scope.pathname),
+        );
+        const nextContext =
+          target === null
+            ? unknownValue("react-router: navigate target is not static")
+            : objectValue([
+                { kind: "spread", value: scope.context },
+                {
+                  kind: "property",
+                  key: "location",
+                  value: locationValue(parseRouteLocation(target.href), null),
+                },
+                {
+                  kind: "property",
+                  key: "navigationType",
+                  value: primitiveValue("PUSH"),
+                },
+              ]);
+        navigationOverride?.[1](nextContext);
+        return UNDEFINED_VALUE;
+      });
+      return provide(
+        NAVIGATION_CONTEXT,
+        contextualNavigate,
+        withinRouter(getObjectProperty(props, "children"), activeContext),
+      );
+    });
+  const routerStateStub: StubComponent = {
+    displayName: "Router",
+    render: renderRouter,
+  };
   const routerStub = (
     displayName: string,
     tag: typeof ClassComponentTag | typeof FunctionComponentTag,
   ): StubComponent => ({
     displayName,
     tag,
-    render: (props, tools) => {
-      const routerTools = tag === ClassComponentTag ? { ...tools, hooks: null } : tools;
-      return withBasename(getObjectProperty(props, "basename"), routerTools, (scope) => {
-        const navigationOverride = routerTools.hooks?.useState(UNDEFINED_VALUE);
-        const previousScope = routerTools.hooks?.useRef(scope.context);
-        const didScopeChange =
-          previousScope !== undefined && !isSameValue(previousScope.current, scope.context);
-        if (previousScope) previousScope.current = scope.context;
-        const activeContext =
-          !didScopeChange && navigationOverride && isDefined(navigationOverride[0])
-            ? navigationOverride[0]
-            : scope.context;
-        if (didScopeChange && navigationOverride && isDefined(navigationOverride[0])) {
-          navigationOverride[1](UNDEFINED_VALUE);
-        }
-        const contextualNavigate = nativeFunction("navigate", (args, callTools) => {
-          const target = resolveTarget(
-            args[0] ?? UNDEFINED_VALUE,
-            readParentMatch(callTools),
-            readRouterPathname(callTools, scope.pathname),
-          );
-          const nextContext =
-            target === null
-              ? unknownValue("react-router: navigate target is not static")
-              : objectValue([
-                  { kind: "spread", value: scope.context },
-                  {
-                    kind: "property",
-                    key: "location",
-                    value: locationValue(parseRouteLocation(target.href), null),
-                  },
-                  {
-                    kind: "property",
-                    key: "navigationType",
-                    value: primitiveValue("PUSH"),
-                  },
-                ]);
-          navigationOverride?.[1](nextContext);
-          return UNDEFINED_VALUE;
-        });
-        return provide(
-          NAVIGATION_CONTEXT,
-          contextualNavigate,
-          withinRouter(getObjectProperty(props, "children"), activeContext),
-        );
-      });
-    },
+    render: (props, tools) =>
+      tag === ClassComponentTag
+        ? element({ kind: "stub", stub: routerStateStub }, props)
+        : renderRouter(props, tools),
   });
-  const navigateStub: StubComponent = {
-    displayName: "Navigate",
+  const redirectStub = (displayName: string): StubComponent => ({
+    displayName,
     render: (props, tools) => {
       const contextualNavigate = tools.readContext(NAVIGATION_CONTEXT);
       const to = getObjectProperty(props, "to");
       const options = objectFromRecord({
+        push: getObjectProperty(props, "push"),
         relative: getObjectProperty(props, "relative"),
         replace: getObjectProperty(props, "replace"),
         state: getObjectProperty(props, "state"),
@@ -2306,7 +2313,9 @@ export const createReactRouterModel = (
       }, [contextualNavigate, to, options]);
       return NULL_VALUE;
     },
-  };
+  });
+  const navigateStub = redirectStub("Navigate");
+  const legacyRedirectStub = redirectStub("Redirect");
   const getRouterComponentTag = (specifier: string) => {
     const packageName = specifier === "react-router-dom" ? specifier : "react-router";
     const version = readInstalledVersion(rootDirectory, packageName);
@@ -2405,6 +2414,8 @@ export const createReactRouterModel = (
         return stubValue(PREFETCH_PAGE_LINKS_STUB);
       case "Navigate":
         return stubValue(navigateStub);
+      case "Redirect":
+        return stubValue(legacyRedirectStub);
       default:
         return routerHookValue(importedName);
     }
