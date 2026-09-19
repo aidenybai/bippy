@@ -2470,9 +2470,7 @@ export class Interpreter {
     if (!resolved) return value;
     const isImplied = getGuardImplicationChecker(activeGuard);
     const indices = resolved.guards.flatMap((guard, index) =>
-      isImplied(guard) ||
-      (!isImplied(negateGuard(guard)) &&
-        isGuardCompatibleWithActivePath(activeGuard, guard))
+      isImplied(guard) || isGuardCompatibleWithActivePath(activeGuard, guard)
         ? [index]
         : [],
     );
