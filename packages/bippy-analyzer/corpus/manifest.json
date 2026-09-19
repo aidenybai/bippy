@@ -4144,7 +4144,12 @@
       "static": {
         "rootDirectory": ".",
         "entry": "src/main.tsx",
-        "externalPackageAllowList": ["lucide-react"]
+        "externalPackageAllowList": [
+          "@clerk/*",
+          "framer-motion",
+          "lucide-react",
+          "react-toastify"
+        ]
       },
       "notes": "Static-only: RapidRAW is a Tauri 2 desktop app with no web target. Served by Vite in a plain browser, the first render throws `Cannot read properties of undefined (reading 'metadata')` from `@tauri-apps/api/window` (`getCurrentWindow()` reads `window.__TAURI_INTERNALS__` in `App.tsx` and `window/TitleBar.tsx`) before React commits a root, and the UI is driven by 96 distinct `invoke()` commands into the Rust/wgpu backend (settings, folder tree, thumbnails, GPU image processing), so no browser capture of the desktop UI exists to compare against."
     },
