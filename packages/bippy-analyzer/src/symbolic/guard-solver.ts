@@ -540,11 +540,7 @@ const findModel = (
       if (isSatisfied) continue;
       if (viableOperands.length === 0) return null;
       viableOperands.sort((left, right) => getGuardComplexity(left) - getGuardComplexity(right));
-      unresolvedDisjunctions.push(
-        viableOperands.length === disjunction.operands.length
-          ? disjunction
-          : { kind: "or", operands: viableOperands },
-      );
+      unresolvedDisjunctions.push({ kind: "or", operands: viableOperands });
     }
     if (unresolvedDisjunctions.length === 0)
       return [...state.witnessesByProjection.values()].flat();
