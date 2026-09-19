@@ -11,7 +11,6 @@ import {
   formatVariable,
   getGuardImplicationChecker,
   negateGuard,
-  simplifyGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -793,33 +792,8 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
   return true;
 };
 
-export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): boolean => {
-  const simplifiedBase = simplifyGuard(base);
-  const simplifiedCandidate = simplifyGuard(candidate);
-  if (simplifiedBase.kind === "constant" && !simplifiedBase.value) return false;
-  const isImplied = getGuardImplicationChecker(simplifiedBase);
-  const narrowedCandidate =
-    simplifiedCandidate.kind === "and"
-      ? andGuard(simplifiedCandidate.operands.filter((operand) => !isImplied(operand)))
-      : simplifiedCandidate.kind === "not" && simplifiedCandidate.operand.kind === "and"
-        ? negateGuard(
-            andGuard(simplifiedCandidate.operand.operands.filter((operand) => !isImplied(operand))),
-          )
-        : simplifiedCandidate;
-  if (narrowedCandidate.kind === "constant") return narrowedCandidate.value;
-  const baseAnalysis = getGuardAnalysis(simplifiedBase);
-  const overlappingComponents = new Set<GuardComponent>();
-  for (const key of collectProjectionKeys(narrowedCandidate, new Set())) {
-    const component = baseAnalysis.componentByKey.get(key);
-    if (component !== undefined) overlappingComponents.add(component);
-  }
-  return overlappingComponents.size === 0
-    ? solveGuards([narrowedCandidate]) !== null
-    : solveGuards([
-        ...[...overlappingComponents].flatMap((component) => component.guards),
-        narrowedCandidate,
-      ]) !== null;
-};
+export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): boolean =>
+  areGuardPairSatisfiable(base, candidate);
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
   const relevant = guards.filter((guard) => guard.kind !== "constant" || !guard.value);
