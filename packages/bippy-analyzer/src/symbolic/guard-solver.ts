@@ -803,9 +803,7 @@ export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): 
       ? andGuard(simplifiedCandidate.operands.filter((operand) => !isImplied(operand)))
       : simplifiedCandidate.kind === "not" && simplifiedCandidate.operand.kind === "and"
         ? negateGuard(
-            andGuard(
-              simplifiedCandidate.operand.operands.filter((operand) => !isImplied(operand)),
-            ),
+            andGuard(simplifiedCandidate.operand.operands.filter((operand) => !isImplied(operand))),
           )
         : simplifiedCandidate;
   if (narrowedCandidate.kind === "constant") return narrowedCandidate.value;
