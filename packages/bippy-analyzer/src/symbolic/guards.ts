@@ -595,13 +595,15 @@ const computeGuardImplication = (
   conclusion: Guard,
   cache: GuardRelationCache,
 ): boolean => {
-  if (isSameGuardWithin(premise, conclusion, cache)) return true;
+  const isStructurallySame = (left: Guard, right: Guard): boolean =>
+    left === right ||
+    (left.kind === right.kind &&
+      getGuardHash(left) === getGuardHash(right) &&
+      isSameGuardWithin(left, right, cache));
+  if (isStructurallySame(premise, conclusion)) return true;
   if (
     premise.kind === "and" &&
-    premise.operands.some(
-      (operand) =>
-        operand === conclusion || isSameGuardWithin(operand, conclusion, cache),
-    )
+    premise.operands.some((operand) => isStructurallySame(operand, conclusion))
   )
     return true;
   if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
@@ -643,6 +645,11 @@ const isGuardImpliedWithin = (
 
 export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean =>
   isGuardImpliedWithin(premise, conclusion, createGuardRelationCache());
+
+export const getGuardImplicationChecker = (premise: Guard): ((conclusion: Guard) => boolean) => {
+  const cache = createGuardRelationCache();
+  return (conclusion) => isGuardImpliedWithin(premise, conclusion, cache);
+};
 
 export const collectGuardVariables = (
   guard: Guard,

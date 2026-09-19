@@ -27,6 +27,7 @@ import {
   constantGuard,
   equalsGuard,
   formatGuard,
+  getGuardImplicationChecker,
   inSetGuard,
   isGuardImplied,
   negateGuard,
@@ -241,6 +242,14 @@ describe("symbolic tree: guard algebra", () => {
       conclusion = { kind: "and", operands: [conclusion, conclusion] };
     }
     expect(isGuardImplied(premise, conclusion)).toBe(false);
+  });
+
+  it("reuses implication work across conclusions", () => {
+    const premise = orGuard([isTruthy, isBeta]);
+    const isImplied = getGuardImplicationChecker(premise);
+    expect(isImplied({ kind: "or", operands: [isTruthy, isBeta] })).toBe(true);
+    expect(isImplied(isTruthy)).toBe(false);
+    expect(isImplied(isBeta)).toBe(false);
   });
 
   it("combines large guard sets without quadratic duplicate scans", () => {

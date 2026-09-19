@@ -98,9 +98,9 @@ import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbol
 import {
   andGuard,
   constantGuard,
+  getGuardImplicationChecker,
   type Guard,
   type GuardContext,
-  isGuardImplied,
   negateGuard,
   orGuard,
 } from "../symbolic/guards.js";
@@ -2468,9 +2468,10 @@ export class Interpreter {
     }
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
+    const isImplied = getGuardImplicationChecker(activeGuard);
     const indices = resolved.guards.flatMap((guard, index) =>
-      isGuardImplied(activeGuard, guard) ||
-      (!isGuardImplied(activeGuard, negateGuard(guard)) &&
+      isImplied(guard) ||
+      (!isImplied(negateGuard(guard)) &&
         isGuardCompatibleWithActivePath(activeGuard, guard))
         ? [index]
         : [],

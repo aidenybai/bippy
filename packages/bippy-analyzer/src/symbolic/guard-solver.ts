@@ -9,7 +9,7 @@ import {
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
-  isGuardImplied,
+  getGuardImplicationChecker,
   negateGuard,
   simplifyGuard,
 } from "./guards.js";
@@ -748,19 +748,14 @@ export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): 
   const simplifiedBase = simplifyGuard(base);
   const simplifiedCandidate = simplifyGuard(candidate);
   if (simplifiedBase.kind === "constant" && !simplifiedBase.value) return false;
+  const isImplied = getGuardImplicationChecker(simplifiedBase);
   const narrowedCandidate =
     simplifiedCandidate.kind === "and"
-      ? andGuard(
-          simplifiedCandidate.operands.filter(
-            (operand) => !isGuardImplied(simplifiedBase, operand),
-          ),
-        )
+      ? andGuard(simplifiedCandidate.operands.filter((operand) => !isImplied(operand)))
       : simplifiedCandidate.kind === "not" && simplifiedCandidate.operand.kind === "and"
         ? negateGuard(
             andGuard(
-              simplifiedCandidate.operand.operands.filter(
-                (operand) => !isGuardImplied(simplifiedBase, operand),
-              ),
+              simplifiedCandidate.operand.operands.filter((operand) => !isImplied(operand)),
             ),
           )
         : simplifiedCandidate;
