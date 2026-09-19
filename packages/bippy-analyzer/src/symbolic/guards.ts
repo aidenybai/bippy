@@ -485,7 +485,6 @@ interface GuardRelationCache {
   disjoint: WeakMap<Guard, WeakMap<Guard, boolean>>;
   implied: WeakMap<Guard, WeakMap<Guard, boolean>>;
   operands: WeakMap<Guard, Map<number, Guard[]>>;
-  operandsByVariable: WeakMap<GuardAnd, Map<string, Guard[]>>;
   same: WeakMap<Guard, WeakMap<Guard, boolean>>;
 }
 
@@ -493,7 +492,6 @@ const createGuardRelationCache = (): GuardRelationCache => ({
   disjoint: new WeakMap(),
   implied: new WeakMap(),
   operands: new WeakMap(),
-  operandsByVariable: new WeakMap(),
   same: new WeakMap(),
 });
 
@@ -511,63 +509,12 @@ const setGuardRelation = (
   rightGuards.set(right, value);
 };
 
-const collectGuardVariableKeys = (guard: Guard, keys: Set<string>): Set<string> => {
-  switch (guard.kind) {
-    case "constant":
-      break;
-    case "truthy":
-    case "eq":
-    case "compare":
-    case "in-set":
-      keys.add(getVariableKey(guard.variable));
-      break;
-    case "not":
-      collectGuardVariableKeys(guard.operand, keys);
-      break;
-    case "and":
-    case "or":
-      for (const operand of guard.operands) collectGuardVariableKeys(operand, keys);
-      break;
-  }
-  return keys;
-};
-
-const getOverlappingOperands = (
-  guard: GuardAnd,
-  target: Guard,
-  cache: GuardRelationCache,
-): Guard[] => {
-  let operandsByVariable = cache.operandsByVariable.get(guard);
-  if (operandsByVariable === undefined) {
-    operandsByVariable = new Map();
-    for (const operand of guard.operands) {
-      const variableKeys = collectGuardVariableKeys(operand, new Set());
-      if (variableKeys.size === 0) variableKeys.add("");
-      for (const key of variableKeys) {
-        const operands = operandsByVariable.get(key);
-        if (operands === undefined) operandsByVariable.set(key, [operand]);
-        else operands.push(operand);
-      }
-    }
-    cache.operandsByVariable.set(guard, operandsByVariable);
-  }
-  const overlapping = new Set(operandsByVariable.get("") ?? []);
-  for (const key of collectGuardVariableKeys(target, new Set())) {
-    for (const operand of operandsByVariable.get(key) ?? []) overlapping.add(operand);
-  }
-  return [...overlapping];
-};
-
 const computeGuardsDisjoint = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
   if (isAtomicGuard(left) && isAtomicGuard(right)) return areAtomicGuardsDisjoint(left, right);
   if (left.kind === "and")
-    return getOverlappingOperands(left, right, cache).some((operand) =>
-      areGuardsDisjointWithin(operand, right, cache),
-    );
+    return left.operands.some((operand) => areGuardsDisjointWithin(operand, right, cache));
   if (right.kind === "and")
-    return getOverlappingOperands(right, left, cache).some((operand) =>
-      areGuardsDisjointWithin(left, operand, cache),
-    );
+    return right.operands.some((operand) => areGuardsDisjointWithin(left, operand, cache));
   if (left.kind === "or")
     return left.operands.every((operand) => areGuardsDisjointWithin(operand, right, cache));
   if (right.kind === "or")
@@ -679,9 +626,7 @@ const computeGuardImplication = (
   if (conclusion.kind === "or")
     return conclusion.operands.some((operand) => isGuardImpliedWithin(premise, operand, cache));
   if (premise.kind === "and")
-    return getOverlappingOperands(premise, conclusion, cache).some((operand) =>
-      isGuardImpliedWithin(operand, conclusion, cache),
-    );
+    return premise.operands.some((operand) => isGuardImpliedWithin(operand, conclusion, cache));
   if (premise.kind === "or")
     return premise.operands.every((operand) => isGuardImpliedWithin(operand, conclusion, cache));
   if (premise.kind === "not" && conclusion.kind === "not")
