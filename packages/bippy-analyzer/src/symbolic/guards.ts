@@ -509,11 +509,7 @@ const setGuardRelation = (
   rightGuards.set(right, value);
 };
 
-const computeGuardsDisjoint = (
-  left: Guard,
-  right: Guard,
-  cache: GuardRelationCache,
-): boolean => {
+const computeGuardsDisjoint = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
   if (isAtomicGuard(left) && isAtomicGuard(right)) return areAtomicGuardsDisjoint(left, right);
   if (left.kind === "and")
     return left.operands.some((operand) => areGuardsDisjointWithin(operand, right, cache));
@@ -526,11 +522,7 @@ const computeGuardsDisjoint = (
   return false;
 };
 
-const areGuardsDisjointWithin = (
-  left: Guard,
-  right: Guard,
-  cache: GuardRelationCache,
-): boolean => {
+const areGuardsDisjointWithin = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
   const cached = cache.disjoint.get(left)?.get(right);
   if (cached !== undefined) return cached;
   const isDisjoint = computeGuardsDisjoint(left, right, cache);
@@ -624,17 +616,12 @@ const computeGuardImplication = (
   if (premise.kind === "and" && hasEquivalentOperand(premise, conclusion, cache)) return true;
   if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
     return isAtomicGuardImplied(premise, conclusion);
-  if (
-    conclusion.kind === "not" &&
-    areGuardsDisjointWithin(premise, conclusion.operand, cache)
-  )
+  if (conclusion.kind === "not" && areGuardsDisjointWithin(premise, conclusion.operand, cache))
     return true;
   if (conclusion.kind === "constant") return conclusion.value;
   if (premise.kind === "constant") return !premise.value;
   if (conclusion.kind === "and")
-    return conclusion.operands.every((operand) =>
-      isGuardImpliedWithin(premise, operand, cache),
-    );
+    return conclusion.operands.every((operand) => isGuardImpliedWithin(premise, operand, cache));
   if (conclusion.kind === "or")
     return conclusion.operands.some((operand) => isGuardImpliedWithin(premise, operand, cache));
   if (premise.kind === "and")
