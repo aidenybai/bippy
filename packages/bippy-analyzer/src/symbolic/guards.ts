@@ -121,6 +121,12 @@ export interface NormalizedPredicate {
   isSwapped: boolean;
 }
 
+interface GuardKeyState {
+  keys: WeakMap<Guard, number>;
+  shapes: Map<string, number>;
+  nextKey: number;
+}
+
 /** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
 export const normalizePredicate = (
   predicate: SymbolicPredicate,
@@ -164,29 +170,49 @@ export const negateGuard = (guard: Guard): Guard => {
 const getVariableKey = (variable: SymbolicVariable): string =>
   JSON.stringify([variable.input, variable.path, variable.measure]);
 
-const getGuardKey = (guard: Guard): string => {
+const getGuardKey = (guard: Guard, state: GuardKeyState): number => {
+  const cached = state.keys.get(guard);
+  if (cached !== undefined) return cached;
+  let shape: string;
   switch (guard.kind) {
     case "constant":
-      return JSON.stringify([guard.kind, guard.value]);
+      shape = JSON.stringify([guard.kind, guard.value]);
+      break;
     case "truthy":
-      return JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
+      shape = JSON.stringify([guard.kind, getVariableKey(guard.variable)]);
+      break;
     case "eq":
-      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
+      shape = JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.value]);
+      break;
     case "compare":
-      return JSON.stringify([
+      shape = JSON.stringify([
         guard.kind,
         getVariableKey(guard.variable),
         guard.operator,
         guard.value,
       ]);
+      break;
     case "in-set":
-      return JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
+      shape = JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
+      break;
     case "not":
-      return JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
+      shape = JSON.stringify([guard.kind, getGuardKey(guard.operand, state)]);
+      break;
     case "and":
     case "or":
-      return JSON.stringify([guard.kind, guard.operands.map(getGuardKey)]);
+      shape = JSON.stringify([
+        guard.kind,
+        guard.operands.map((operand) => getGuardKey(operand, state)),
+      ]);
+      break;
   }
+  let key = state.shapes.get(shape);
+  if (key === undefined) {
+    key = state.nextKey++;
+    state.shapes.set(shape, key);
+  }
+  state.keys.set(guard, key);
+  return key;
 };
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
@@ -196,13 +222,18 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
   if (flattened.some((operand) => operand.kind === "constant" && operand.value === absorbing))
     return constantGuard(absorbing);
   const remaining: Guard[] = [];
-  const remainingKeys = new Set<string>();
+  const remainingKeys = new Set<number>();
+  const keyState: GuardKeyState = {
+    keys: new WeakMap(),
+    shapes: new Map(),
+    nextKey: 0,
+  };
   for (const operand of flattened) {
     if (operand.kind === "constant") continue;
-    const key = getGuardKey(operand);
+    const key = getGuardKey(operand, keyState);
     if (remainingKeys.has(key)) continue;
     const complement = negateGuard(operand);
-    if (remainingKeys.has(getGuardKey(complement))) return constantGuard(absorbing);
+    if (remainingKeys.has(getGuardKey(complement, keyState))) return constantGuard(absorbing);
     remaining.push(operand);
     remainingKeys.add(key);
   }
