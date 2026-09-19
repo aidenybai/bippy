@@ -376,12 +376,23 @@ export const guardedPredicate = (
         inputs: mergeInputs(inputs),
       });
 
-export const getListIndexPredicate = (index: StaticValue, length: number): string | null => {
+export const getListIndexPredicate = (
+  index: StaticValue,
+  length: number,
+  hasIndefiniteTail = false,
+): string | null => {
   const term = resolveTerm(index);
-  return guardedPredicate(
-    Array.from({ length }, (_value, itemIndex) => equalsGuard(term.variable, itemIndex)),
-    [[term.input]],
-  );
+  const fixedLength = hasIndefiniteTail ? length - 1 : length;
+  const fixedIndices = Array.from({ length: fixedLength }, (_value, itemIndex) => itemIndex);
+  const guards: Guard[] = fixedIndices.map((itemIndex) => equalsGuard(term.variable, itemIndex));
+  if (hasIndefiniteTail) {
+    guards.push(
+      fixedLength === 0
+        ? constantGuard(true)
+        : negateGuard(inSetGuard(term.variable, fixedIndices)),
+    );
+  }
+  return guardedPredicate(guards, [[term.input]]);
 };
 
 export const composeFlattenedPredicate = (

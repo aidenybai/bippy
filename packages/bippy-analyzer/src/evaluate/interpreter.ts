@@ -354,7 +354,6 @@ import {
   getClassPrototype,
   getExternalMember,
   getFunctionPrototype,
-  hasDefiniteItems,
   getKnownObjectOwnNames,
   getKnownOwnKeys,
   getItemValue,
@@ -371,6 +370,7 @@ import {
   getSymbolDescription,
   getTruthiness,
   isCallable,
+  isIndefiniteItem,
   isJsonRecord,
   isNullish,
   isSymbolPropertyKey,
@@ -3833,6 +3833,10 @@ export class Interpreter {
     if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
       const candidates = object.items.map(getItemValue);
+      const indefiniteIndex = object.items.findIndex(isIndefiniteItem);
+      const canCorrelateIndex =
+        mayBeIndexKey(key) &&
+        (indefiniteIndex === -1 || indefiniteIndex === object.items.length - 1);
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
         : branchValue(
@@ -3840,8 +3844,8 @@ export class Interpreter {
             "dynamic list index",
             location,
             0,
-            mayBeIndexKey(key) && hasDefiniteItems(object)
-              ? getListIndexPredicate(key, candidates.length)
+            canCorrelateIndex
+              ? getListIndexPredicate(key, candidates.length, indefiniteIndex !== -1)
               : null,
           );
     }

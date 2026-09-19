@@ -90,6 +90,27 @@ it("reuses an unknown member index guard across list reads", async () => {
   expect(getAlternativeGuards(first)).toEqual(getAlternativeGuards(second));
 });
 
+it("reuses an unknown index guard with an indefinite list tail", async () => {
+  const [result] = await evaluateCases(
+    [
+      {
+        name: "indefinite list tail",
+        body: `const values = ['left']; if (first) values.push('right'); const dynamicIndex = index; return { first: values[dynamicIndex], second: values[dynamicIndex] };`,
+      },
+    ],
+    "declare const first: boolean;\ndeclare const index: number;\n",
+  );
+  expect(result?.kind).toBe("object");
+  if (result?.kind !== "object") throw new Error("Expected an object result");
+  const first = getObjectProperty(result, "first");
+  const second = getObjectProperty(result, "second");
+  expect(first.kind).toBe("branch");
+  expect(second.kind).toBe("branch");
+  if (first.kind !== "branch" || second.kind !== "branch")
+    throw new Error("Expected branched properties");
+  expect(getAlternativeGuards(first)).toEqual(getAlternativeGuards(second));
+});
+
 it.fails.each([
   {
     name: "arithmetic retains the predicates connecting values and labels",
