@@ -2212,9 +2212,11 @@ export const spreadListItems = (
     }
     const length = Math.max(...lengths);
     return Array.from({ length }, (_value, index) => {
+      const fallback = lists.find((list) => index < list.items.length)?.items[index];
+      if (fallback === undefined) return UNDEFINED_VALUE;
       const item = joinMappedAlternatives(
         value,
-        lists.map((list) => list.items[index] ?? UNDEFINED_VALUE),
+        lists.map((list) => list.items[index] ?? fallback),
       );
       if (lists.every((list) => index < list.items.length)) return item;
       return optionalValue(
