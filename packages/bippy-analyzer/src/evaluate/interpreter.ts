@@ -1456,7 +1456,7 @@ export class Interpreter {
     environment: RenderEnvironment | null,
   ): void {
     for (const specifier of module.dependencies) {
-      const target = this.graph.resolveImportedModule(specifier, module);
+      const target = this.graph.resolveDependencyForInitialization(specifier, module);
       if (isModuleRecord(target)) {
         this.initializeModule(target, target.sideEffectStatements, environment);
       }

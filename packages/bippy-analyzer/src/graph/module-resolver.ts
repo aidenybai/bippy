@@ -3,6 +3,7 @@ import { isBuiltin } from "node:module";
 import path from "node:path";
 import { ResolverFactory, type ResolveResult } from "oxc-resolver";
 import { z } from "zod";
+import { readPackageManifest } from "../package-manifest.js";
 import type { ModuleResolution } from "./module-types.js";
 
 export interface ModuleResolverOptions {
@@ -119,6 +120,8 @@ interface ResolverPair {
 export class ModuleResolver {
   private readonly resolvers: Record<ImporterKind, ResolverPair>;
   private readonly cache = new Map<string, ModuleResolution>();
+  private readonly packageManifestPaths = new Map<string, string>();
+  private readonly sideEffectFreeManifests = new Map<string, boolean>();
   private readonly aliasNames: string[];
   readonly rootDirectory: string | null;
   readonly extensions: readonly string[] = SOURCE_EXTENSIONS;
@@ -163,6 +166,17 @@ export class ModuleResolver {
     return resolution;
   }
 
+  isSideEffectFreePackageModule(resolution: ModuleResolution): boolean {
+    if (resolution.kind !== "external" || resolution.filePath === null) return false;
+    const manifestPath = this.packageManifestPaths.get(resolution.filePath);
+    if (manifestPath === undefined) return false;
+    const cached = this.sideEffectFreeManifests.get(manifestPath);
+    if (cached !== undefined) return cached;
+    const isSideEffectFree = readPackageManifest(manifestPath).sideEffects === false;
+    this.sideEffectFreeManifests.set(manifestPath, isSideEffectFree);
+    return isSideEffectFree;
+  }
+
   private resolveUncached(
     specifier: string,
     fromFile: string,
@@ -193,6 +207,9 @@ export class ModuleResolver {
           ? specifierPackage
           : null);
       if (packageName) {
+        if (result.packageJsonPath !== undefined) {
+          this.packageManifestPaths.set(filePath, result.packageJsonPath);
+        }
         return {
           kind: "external",
           packageName,
