@@ -315,7 +315,10 @@ const getGuardAtomCount = (guard: Guard, context: GuardSearchContext): number =>
   const count =
     guard.kind === "not"
       ? getGuardAtomCount(guard.operand, context)
-      : guard.operands.reduce((total, operand) => total + getGuardAtomCount(operand, context), 0);
+      : guard.operands.reduce(
+          (total, operand) => total + getGuardAtomCount(operand, context),
+          0,
+        );
   context.atomCounts.set(guard, count);
   return count;
 };
