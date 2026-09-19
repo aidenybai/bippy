@@ -119,17 +119,27 @@ export default () => getClient() ? <main /> : <aside />;
 
 const TAURI_SOURCE = `
 import { useEffect, useState } from "react";
-import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 
 export default () => {
   const [isReady, setIsReady] = useState(false);
-  const [version, setVersion] = useState("");
   useEffect(() => {
     invoke("load_settings").then(() => setIsReady(true)).catch(() => setIsReady(false));
+  }, []);
+  return isReady ? <main /> : <aside />;
+};
+`;
+
+const TAURI_VERSION_SOURCE = `
+import { useEffect, useState } from "react";
+import { getVersion } from "@tauri-apps/api/app";
+
+export default () => {
+  const [version, setVersion] = useState("");
+  useEffect(() => {
     getVersion().then(setVersion);
   }, []);
-  return isReady ? <main>{version}</main> : <aside />;
+  return version ? <main>{version}</main> : <aside />;
 };
 `;
 
@@ -488,6 +498,9 @@ describe("library models", () => {
 
   it("settles Tauri commands through their successful host result", async () => {
     expect(await renderSource(TAURI_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+    expect(await renderSource(TAURI_VERSION_SOURCE)).toBe(
       ["<HostRoot>", "  <default>", "    <main>", '      "0.0.0"'].join("\n"),
     );
   });
