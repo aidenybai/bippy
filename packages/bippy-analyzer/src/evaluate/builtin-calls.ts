@@ -1412,20 +1412,27 @@ const callGlobal = (
     case "requestIdleCallback": {
       const handle = evaluator.timers.createHandle(name);
       if (first) {
+        if (name === "requestAnimationFrame" && evaluator.timers.isRunningAnimationFrame) {
+          evaluator.markEscaped(first);
+          return handle;
+        }
         const delayMs =
           name === "requestAnimationFrame" ? 16 : evaluator.timers.getSettledDelay(second);
         if (delayMs === null) evaluator.markEscaped(first);
         else {
+          const task = scheduledTask(
+            evaluator,
+            first,
+            context,
+            location,
+            handle,
+            name === "setTimeout" ? args.slice(2) : [],
+          );
           evaluator.timers.schedule(
             handle,
-            scheduledTask(
-              evaluator,
-              first,
-              context,
-              location,
-              handle,
-              name === "setTimeout" ? args.slice(2) : [],
-            ),
+            name === "requestAnimationFrame"
+              ? () => evaluator.timers.runAnimationFrame(task)
+              : task,
             delayMs,
           );
         }

@@ -75,17 +75,35 @@ it("dispatches primitive builtins without an interpreter", () => {
   ).toEqual(primitiveValue("42"));
 });
 
-it("queues animation frames instead of escaping their callbacks", () => {
+it("runs one animation frame and escapes a recursively scheduled frame", () => {
   const context = createEvaluationContext();
+  const callback = createCallbackValue(context);
+  const nestedCallback = createCallbackValue(context);
   const markEscaped = vi.fn<BuiltinEvaluator["markEscaped"]>();
+  let evaluator: BuiltinEvaluator;
+  const callValue = vi.fn<BuiltinEvaluator["callValue"]>(() => {
+    evaluateBuiltinCall(
+      evaluator,
+      { kind: "global", name: "requestAnimationFrame" },
+      [nestedCallback],
+      context,
+      null,
+    );
+    return UNDEFINED_VALUE;
+  });
+  evaluator = createBuiltinEvaluator({ callValue, markEscaped });
   evaluateBuiltinCall(
-    createBuiltinEvaluator({ markEscaped }),
+    evaluator,
     { kind: "global", name: "requestAnimationFrame" },
-    [createCallbackValue(context)],
+    [callback],
     context,
     null,
   );
   expect(markEscaped).not.toHaveBeenCalled();
+  evaluator.timers.runNextTask();
+  expect(callValue).toHaveBeenCalledWith(callback, [], context, null);
+  expect(markEscaped).toHaveBeenCalledWith(nestedCallback);
+  expect(evaluator.timers.hasTasks()).toBe(false);
 });
 
 it("constructs Web Audio objects with concrete control surfaces", () => {
