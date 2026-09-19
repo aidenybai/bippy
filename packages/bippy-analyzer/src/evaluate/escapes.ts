@@ -383,6 +383,7 @@ const getLocalAlias = (
   const alias = shape.localAliases.get(name);
   if (!alias) return null;
   const [root, ...members] = alias;
+  if (root === name || visited.has(root)) return null;
   if (!shape.declaredNames.has(root)) return alias;
   const expanded = getLocalAlias(shape, root, new Set([...visited, name]));
   return expanded ? [...expanded, ...members] : null;

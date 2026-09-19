@@ -310,6 +310,26 @@ describe("escaped bound mutations", () => {
     );
     expect(results).toEqual({ direct: "branch(0 | unknown)", held: "0" });
   });
+
+  it("terminates when an escaped callback rebinds a parameter through itself", async () => {
+    const results = await evaluateExports(
+      `
+      import { register } from "opaque-store";
+      export const selfParameterAlias = () => {
+        let count = 0;
+        const update = () => { count = 1; };
+        const listener = (target: { current: (callback: () => void) => void }) => {
+          target = target.current;
+          target(update);
+        };
+        register(listener);
+        return count;
+      };
+    `,
+      ["selfParameterAlias"],
+    );
+    expect(results).toEqual({ selfParameterAlias: "branch(0 | unknown)" });
+  });
 });
 
 describe("branch-valued primitives", () => {
