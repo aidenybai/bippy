@@ -6,6 +6,13 @@ const BUNDLER_DEDUPE_SUFFIX = /^(?:\$\d+|\d+)$/;
 export const isBundlerDedupedName = (name: string, runtimeName: string): boolean =>
   runtimeName.startsWith(name) && BUNDLER_DEDUPE_SUFFIX.test(runtimeName.slice(name.length));
 
+const MINIFIED_BINDING_NAME = /^[A-Za-z_$]$/;
+
+export const isBundlerMinifiedNamePair = (name: string, runtimeName: string): boolean =>
+  name !== runtimeName &&
+  MINIFIED_BINDING_NAME.test(name) &&
+  MINIFIED_BINDING_NAME.test(runtimeName);
+
 // esbuild in bundle mode (the Remix classic compiler) hoists an anonymous
 // `export default function () {}` to `<basename>_default`; webpack
 // (`lib/util/concatenate.js`) and rspack (`HarmonyExportExpressionDependency`)

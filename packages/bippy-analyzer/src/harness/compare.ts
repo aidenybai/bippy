@@ -1,6 +1,7 @@
 import {
   isBundledDefaultExportName,
   isBundlerDedupedName,
+  isBundlerMinifiedNamePair,
   isReactCompilerOutlinedName,
 } from "./bundler-names.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
@@ -819,6 +820,7 @@ class Matcher {
     if (isHostTag(actual.tag)) return false;
     return (
       isBundlerRenamedName(pattern.name, actual.name) ||
+      isBundlerMinifiedNamePair(pattern.name, actual.name) ||
       isBundledDefaultExportName(pattern.name, actual.name) ||
       (isClassTag(actual.tag)
         ? isBundlerClassName(actual.name, pattern.name)

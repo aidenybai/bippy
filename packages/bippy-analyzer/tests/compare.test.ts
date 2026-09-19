@@ -342,6 +342,15 @@ describe("comparePatternToRuntime", () => {
     expect(report.matchedFibers).toBe(4);
   });
 
+  it("accepts different one-character bindings produced by dependency minification", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("J", [patternFiber("V")])],
+      [runtimeFiber("z", [runtimeFiber("e")])],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(2);
+  });
+
   it("accepts esbuild's `_Name` alias of a lowered class", () => {
     const report = comparePatternToRuntime(
       [patternFiber("ErrorBoundary", [], "ClassComponent")],
