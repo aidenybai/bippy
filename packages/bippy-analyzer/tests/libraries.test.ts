@@ -122,11 +122,11 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 export default () => {
-  const [status, setStatus] = useState("loading");
+  const [isReady, setIsReady] = useState(false);
   useEffect(() => {
-    invoke("load_settings").then(() => setStatus("ready")).catch(() => setStatus("failed"));
+    invoke("load_settings").then(() => setIsReady(true)).catch(() => setIsReady(false));
   }, []);
-  return <main>{status}</main>;
+  return isReady ? <main /> : <aside />;
 };
 `;
 
@@ -485,7 +485,7 @@ describe("library models", () => {
 
   it("settles Tauri commands through their successful host result", async () => {
     expect(await renderSource(TAURI_SOURCE)).toBe(
-      ["<HostRoot>", "  <default>", "    <main>", '      "ready"'].join("\n"),
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
     );
   });
 
