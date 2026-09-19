@@ -671,7 +671,10 @@ export const getNativeObjectMember = (
   if (object.value instanceof Intl.DateTimeFormat && DATE_FORMATTING_METHODS.has(key)) {
     return nativeFunction(name, (args, tools) => {
       if (args.length === 0 && CLOCK_FORMATTING_METHODS.has(key)) {
-        return unknownPrimitiveValue("string", `${name}() of the current time`);
+        const reason = `${name}() of the current time`;
+        return key.endsWith("ToParts")
+          ? unknownValue(reason)
+          : unknownPrimitiveValue("string", reason);
       }
       if (!args.some(isWallClockArgument)) return method.call(args, tools);
       const reason = `${name}() of the wall clock`;

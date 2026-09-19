@@ -564,7 +564,7 @@ describe("Intl.DateTimeFormat", () => {
       "resolvesOptions",
     ]);
     expect(results.formatsKnownDates).toBe('"01"');
-    expect(results.formatsTheClockAsUnknown).toMatch(/^unknown\(/);
+    expect(results.formatsTheClockAsUnknown).toMatch(/^<string:/);
     expect(results.partsOfTheClockAreUnknown).toMatch(/^unknown\(/);
     expect(results.formatsClockDatesAsStrings).toBe('"string"');
     expect(results.formatsClockReadingsAsStrings).toBe('"string"');
