@@ -7,6 +7,7 @@ import {
   type GuardOr,
   type GuardTruthy,
   type SymbolicVariable,
+  formatGuard,
   formatVariable,
   getGuardHash,
   isSameGuard,
@@ -307,6 +308,11 @@ interface GuardClause {
   operands: Guard[];
 }
 
+interface GuardFrequency {
+  count: number;
+  guard: Guard;
+}
+
 const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals> => {
   const groups = new Map<number, ProjectionLiterals>();
   for (const literal of literals) {
@@ -466,6 +472,16 @@ const findModel = (
     while (depth >= nextGuardSolverDepth) nextGuardSolverDepth *= 2;
     while (pending.length >= nextGuardSolverPending) nextGuardSolverPending *= 2;
     while (literals.length >= nextGuardSolverLiterals) nextGuardSolverLiterals *= 2;
+    const frequencies = new Map<number, GuardFrequency>();
+    for (const guard of pending) {
+      const operands = guard.kind === "or" ? guard.operands : [guard];
+      for (const operand of operands) {
+        const hash = getGuardHash(operand);
+        const frequency = frequencies.get(hash);
+        if (frequency === undefined) frequencies.set(hash, { count: 1, guard: operand });
+        else frequency.count++;
+      }
+    }
     process.stderr.write(
       `[guard-solver-profile] ${JSON.stringify({
         calls: guardSolverCalls,
@@ -476,6 +492,17 @@ const findModel = (
           counts[guard.kind] = (counts[guard.kind] ?? 0) + 1;
           return counts;
         }, {}),
+        topOperands: [...frequencies.values()]
+          .sort((left, right) => right.count - left.count)
+          .slice(0, 10)
+          .map((frequency) => ({
+            count: frequency.count,
+            guard: formatGuard(frequency.guard).slice(0, 500),
+          })),
+        latestLiterals: literals.slice(-10).map(
+          (literal) =>
+            `${literal.isNegated ? "not " : ""}${formatGuard(literal.atom)}`,
+        ),
       })}\n`,
     );
   }
