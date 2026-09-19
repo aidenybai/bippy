@@ -481,40 +481,65 @@ const areAtomicGuardsDisjoint = (
   return false;
 };
 
-const disjointGuards = new WeakMap<Guard, WeakMap<Guard, boolean>>();
+interface GuardRelationCache {
+  disjoint: WeakMap<Guard, WeakMap<Guard, boolean>>;
+  implied: WeakMap<Guard, WeakMap<Guard, boolean>>;
+  same: WeakMap<Guard, WeakMap<Guard, boolean>>;
+}
 
-const computeGuardsDisjoint = (left: Guard, right: Guard): boolean => {
+const createGuardRelationCache = (): GuardRelationCache => ({
+  disjoint: new WeakMap(),
+  implied: new WeakMap(),
+  same: new WeakMap(),
+});
+
+const setGuardRelation = (
+  relations: WeakMap<Guard, WeakMap<Guard, boolean>>,
+  left: Guard,
+  right: Guard,
+  value: boolean,
+): void => {
+  let rightGuards = relations.get(left);
+  if (rightGuards === undefined) {
+    rightGuards = new WeakMap();
+    relations.set(left, rightGuards);
+  }
+  rightGuards.set(right, value);
+};
+
+const computeGuardsDisjoint = (
+  left: Guard,
+  right: Guard,
+  cache: GuardRelationCache,
+): boolean => {
   if (isAtomicGuard(left) && isAtomicGuard(right)) return areAtomicGuardsDisjoint(left, right);
   if (left.kind === "and")
-    return left.operands.some((operand) => areGuardsDisjoint(operand, right));
+    return left.operands.some((operand) => areGuardsDisjointWithin(operand, right, cache));
   if (right.kind === "and")
-    return right.operands.some((operand) => areGuardsDisjoint(left, operand));
+    return right.operands.some((operand) => areGuardsDisjointWithin(left, operand, cache));
   if (left.kind === "or")
-    return left.operands.every((operand) => areGuardsDisjoint(operand, right));
+    return left.operands.every((operand) => areGuardsDisjointWithin(operand, right, cache));
   if (right.kind === "or")
-    return right.operands.every((operand) => areGuardsDisjoint(left, operand));
+    return right.operands.every((operand) => areGuardsDisjointWithin(left, operand, cache));
   return false;
 };
 
-const areGuardsDisjoint = (left: Guard, right: Guard): boolean => {
-  const cached = disjointGuards.get(left)?.get(right);
+const areGuardsDisjointWithin = (
+  left: Guard,
+  right: Guard,
+  cache: GuardRelationCache,
+): boolean => {
+  const cached = cache.disjoint.get(left)?.get(right);
   if (cached !== undefined) return cached;
-  const isDisjoint = computeGuardsDisjoint(left, right);
-  let rightGuards = disjointGuards.get(left);
-  if (rightGuards === undefined) {
-    rightGuards = new WeakMap();
-    disjointGuards.set(left, rightGuards);
-  }
-  rightGuards.set(right, isDisjoint);
+  const isDisjoint = computeGuardsDisjoint(left, right, cache);
+  setGuardRelation(cache.disjoint, left, right, isDisjoint);
   return isDisjoint;
 };
 
 const isSameLiteralList = (left: GuardLiteral[], right: GuardLiteral[]): boolean =>
   left.length === right.length && left.every((value, index) => value === right[index]);
 
-const sameGuards = new WeakMap<Guard, WeakMap<Guard, boolean>>();
-
-const computeSameGuard = (left: Guard, right: Guard): boolean => {
+const computeSameGuard = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
   switch (left.kind) {
     case "constant":
       return right.kind === "constant" && left.value === right.value;
@@ -540,71 +565,84 @@ const computeSameGuard = (left: Guard, right: Guard): boolean => {
         isSameLiteralList(left.values, right.values)
       );
     case "not":
-      return right.kind === "not" && isSameGuard(left.operand, right.operand);
+      return right.kind === "not" && isSameGuardWithin(left.operand, right.operand, cache);
     case "and":
     case "or":
       return (
         right.kind === left.kind &&
         left.operands.length === right.operands.length &&
-        left.operands.every((operand, index) => isSameGuard(operand, right.operands[index]))
+        left.operands.every((operand, index) =>
+          isSameGuardWithin(operand, right.operands[index], cache),
+        )
       );
   }
 };
 
-export const isSameGuard = (left: Guard, right: Guard): boolean => {
+const isSameGuardWithin = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
   if (left === right) return true;
-  const cached = sameGuards.get(left)?.get(right);
+  const cached = cache.same.get(left)?.get(right);
   if (cached !== undefined) return cached;
-  const isSame = computeSameGuard(left, right);
-  let rightGuards = sameGuards.get(left);
-  if (rightGuards === undefined) {
-    rightGuards = new WeakMap();
-    sameGuards.set(left, rightGuards);
-  }
-  rightGuards.set(right, isSame);
+  const isSame = computeSameGuard(left, right, cache);
+  setGuardRelation(cache.same, left, right, isSame);
   return isSame;
 };
 
-const impliedGuards = new WeakMap<Guard, WeakMap<Guard, boolean>>();
+export const isSameGuard = (left: Guard, right: Guard): boolean =>
+  isSameGuardWithin(left, right, createGuardRelationCache());
 
-const computeGuardImplication = (premise: Guard, conclusion: Guard): boolean => {
-  if (isSameGuard(premise, conclusion)) return true;
+const computeGuardImplication = (
+  premise: Guard,
+  conclusion: Guard,
+  cache: GuardRelationCache,
+): boolean => {
+  if (isSameGuardWithin(premise, conclusion, cache)) return true;
   if (
     premise.kind === "and" &&
-    premise.operands.some((operand) => operand === conclusion || isSameGuard(operand, conclusion))
+    premise.operands.some(
+      (operand) =>
+        operand === conclusion || isSameGuardWithin(operand, conclusion, cache),
+    )
   )
     return true;
   if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
     return isAtomicGuardImplied(premise, conclusion);
-  if (conclusion.kind === "not" && areGuardsDisjoint(premise, conclusion.operand)) return true;
+  if (
+    conclusion.kind === "not" &&
+    areGuardsDisjointWithin(premise, conclusion.operand, cache)
+  )
+    return true;
   if (conclusion.kind === "constant") return conclusion.value;
   if (premise.kind === "constant") return !premise.value;
   if (conclusion.kind === "and")
-    return conclusion.operands.every((operand) => isGuardImplied(premise, operand));
+    return conclusion.operands.every((operand) =>
+      isGuardImpliedWithin(premise, operand, cache),
+    );
   if (conclusion.kind === "or")
-    return conclusion.operands.some((operand) => isGuardImplied(premise, operand));
+    return conclusion.operands.some((operand) => isGuardImpliedWithin(premise, operand, cache));
   if (premise.kind === "and")
-    return premise.operands.some((operand) => isGuardImplied(operand, conclusion));
+    return premise.operands.some((operand) => isGuardImpliedWithin(operand, conclusion, cache));
   if (premise.kind === "or")
-    return premise.operands.every((operand) => isGuardImplied(operand, conclusion));
+    return premise.operands.every((operand) => isGuardImpliedWithin(operand, conclusion, cache));
   if (premise.kind === "not" && conclusion.kind === "not")
-    return isGuardImplied(conclusion.operand, premise.operand);
+    return isGuardImpliedWithin(conclusion.operand, premise.operand, cache);
   return false;
 };
 
-export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
+const isGuardImpliedWithin = (
+  premise: Guard,
+  conclusion: Guard,
+  cache: GuardRelationCache,
+): boolean => {
   if (premise === conclusion) return true;
-  const cached = impliedGuards.get(premise)?.get(conclusion);
+  const cached = cache.implied.get(premise)?.get(conclusion);
   if (cached !== undefined) return cached;
-  const isImplied = computeGuardImplication(premise, conclusion);
-  let conclusions = impliedGuards.get(premise);
-  if (conclusions === undefined) {
-    conclusions = new WeakMap();
-    impliedGuards.set(premise, conclusions);
-  }
-  conclusions.set(conclusion, isImplied);
+  const isImplied = computeGuardImplication(premise, conclusion, cache);
+  setGuardRelation(cache.implied, premise, conclusion, isImplied);
   return isImplied;
 };
+
+export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean =>
+  isGuardImpliedWithin(premise, conclusion, createGuardRelationCache());
 
 export const collectGuardVariables = (
   guard: Guard,
