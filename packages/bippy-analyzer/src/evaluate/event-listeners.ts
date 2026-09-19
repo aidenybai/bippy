@@ -173,10 +173,23 @@ const attachNativeListener = (
       { thisValue: fromNativeValue(target, `${type} event target`, evaluator.hostDocument) },
     );
   });
+  const dispatchingTargets = new WeakSet<object>();
   let isScheduled = false;
   const native = (event: object): void => {
     if (!TASK_QUEUED_EVENTS.has(type)) {
-      dispatch(event);
+      const eventTarget = Reflect.get(event, "target");
+      if (typeof eventTarget !== "object" || eventTarget === null) {
+        dispatch(event);
+        return;
+      }
+      // HACK: Symbolic alternatives share one host document; stop a listener revisiting a target in one synchronous dispatch chain.
+      if (dispatchingTargets.has(eventTarget)) return;
+      dispatchingTargets.add(eventTarget);
+      try {
+        dispatch(event);
+      } finally {
+        dispatchingTargets.delete(eventTarget);
+      }
       return;
     }
     if (isScheduled) return;
