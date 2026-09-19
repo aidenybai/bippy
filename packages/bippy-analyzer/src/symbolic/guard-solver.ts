@@ -437,6 +437,43 @@ const findModel = (
     extended[variable.measure].push(literal);
     return modelOfGroup(extended) !== null;
   };
+  const getGuardVerdict = (guard: Guard): boolean | null => {
+    const literal = getLiteral(guard);
+    if (literal !== null) {
+      if (!isLiteralCompatible(literal)) return false;
+      return isLiteralCompatible({ atom: literal.atom, isNegated: !literal.isNegated })
+        ? null
+        : true;
+    }
+    switch (guard.kind) {
+      case "constant":
+        return guard.value;
+      case "not": {
+        const verdict = getGuardVerdict(guard.operand);
+        return verdict === null ? null : !verdict;
+      }
+      case "and": {
+        let hasUnknown = false;
+        for (const operand of guard.operands) {
+          const verdict = getGuardVerdict(operand);
+          if (verdict === false) return false;
+          if (verdict === null) hasUnknown = true;
+        }
+        return hasUnknown ? null : true;
+      }
+      case "or": {
+        let hasUnknown = false;
+        for (const operand of guard.operands) {
+          const verdict = getGuardVerdict(operand);
+          if (verdict === true) return true;
+          if (verdict === null) hasUnknown = true;
+        }
+        return hasUnknown ? null : false;
+      }
+      default:
+        return null;
+    }
+  };
   try {
     while (remaining.length > 0) {
       const guard = remaining.pop();
@@ -483,28 +520,40 @@ const findModel = (
       state.witnessesByProjection.set(key, witnesses);
     }
     if (disjunctions.length === 0) return [...state.witnessesByProjection.values()].flat();
+    const unresolvedDisjunctions: GuardOr[] = [];
+    for (const disjunction of disjunctions) {
+      const viableOperands: Guard[] = [];
+      let isSatisfied = false;
+      for (const operand of disjunction.operands) {
+        const verdict = getGuardVerdict(operand);
+        if (verdict === true) {
+          isSatisfied = true;
+          break;
+        }
+        if (verdict === null) viableOperands.push(operand);
+      }
+      if (isSatisfied) continue;
+      if (viableOperands.length === 0) return null;
+      unresolvedDisjunctions.push(
+        viableOperands.length === disjunction.operands.length
+          ? disjunction
+          : { kind: "or", operands: viableOperands },
+      );
+    }
+    if (unresolvedDisjunctions.length === 0)
+      return [...state.witnessesByProjection.values()].flat();
     let disjunctionIndex = 0;
-    for (let index = 1; index < disjunctions.length; index++) {
-      if (disjunctions[index].operands.length < disjunctions[disjunctionIndex].operands.length) {
+    for (let index = 1; index < unresolvedDisjunctions.length; index++) {
+      if (
+        unresolvedDisjunctions[index].operands.length <
+        unresolvedDisjunctions[disjunctionIndex].operands.length
+      ) {
         disjunctionIndex = index;
       }
     }
-    const [disjunction] = disjunctions.splice(disjunctionIndex, 1);
-    const viableOperands: Guard[] = [];
+    const [disjunction] = unresolvedDisjunctions.splice(disjunctionIndex, 1);
     for (const operand of disjunction.operands) {
-      const literal = getLiteral(operand);
-      if (literal === null) {
-        viableOperands.push(operand);
-        continue;
-      }
-      if (!isLiteralCompatible(literal)) continue;
-      if (!isLiteralCompatible({ atom: literal.atom, isNegated: !literal.isNegated })) {
-        return findModel(disjunctions, state);
-      }
-      viableOperands.push(operand);
-    }
-    for (const operand of viableOperands) {
-      const split = findModel([...disjunctions, operand], state);
+      const split = findModel([...unresolvedDisjunctions, operand], state);
       if (split) return split;
     }
     return null;

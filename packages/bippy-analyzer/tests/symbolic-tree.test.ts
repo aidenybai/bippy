@@ -547,6 +547,24 @@ describe("guard solver", () => {
     expect(performance.now() - started).toBeLessThan(1000);
   });
 
+  it("propagates finite literals through compound disjunction operands", () => {
+    const enabled = truthyGuard(variable("settings", "enabled"));
+    const mode = equalsGuard(variable("panel", "mode"), "chat");
+    const required = Array.from({ length: 512 }, (_, index) =>
+      truthyGuard(variable(`required-${index}`)),
+    );
+    const started = performance.now();
+    const witnesses = solveGuards([
+      enabled,
+      mode,
+      ...required.map((guard) => orGuard([negateGuard(andGuard([enabled, mode])), guard])),
+    ]);
+    expect(witnesses).not.toBeNull();
+    const model = toWitnessModel(witnesses ?? []);
+    for (const guard of required) expect(evaluateGuard(guard, model)).toBe(true);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   it("splits a disjunction only against the conjuncts sharing its variables", () => {
     const started = performance.now();
     expect(
