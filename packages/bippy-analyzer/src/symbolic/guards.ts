@@ -580,8 +580,7 @@ const isSameGuardWithin = (left: Guard, right: Guard): boolean =>
     getGuardHash(left) === getGuardHash(right) &&
     getGuardKey(left) === getGuardKey(right));
 
-export const isSameGuard = (left: Guard, right: Guard): boolean =>
-  isSameGuardWithin(left, right);
+export const isSameGuard = (left: Guard, right: Guard): boolean => isSameGuardWithin(left, right);
 
 const hasEquivalentOperand = (
   guard: GuardAnd | GuardOr,
@@ -596,8 +595,7 @@ const hasEquivalentOperand = (
   return (
     operands
       .get(getGuardHash(candidate))
-      ?.some((operand) => operand === candidate || isSameGuardWithin(operand, candidate)) ??
-    false
+      ?.some((operand) => operand === candidate || isSameGuardWithin(operand, candidate)) ?? false
   );
 };
 
