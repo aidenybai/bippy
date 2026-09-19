@@ -30,6 +30,7 @@ import {
   getGuardImplicationChecker,
   inSetGuard,
   isGuardImplied,
+  isSameGuard,
   negateGuard,
   orGuard,
   simplifyGuard,
@@ -250,6 +251,16 @@ describe("symbolic tree: guard algebra", () => {
     expect(isImplied({ kind: "or", operands: [isTruthy, isBeta] })).toBe(true);
     expect(isImplied(isTruthy)).toBe(false);
     expect(isImplied(isBeta)).toBe(false);
+  });
+
+  it("caches exact structural keys without changing serialized guards", () => {
+    const premise = andGuard([isTruthy, isBeta]);
+    const serialized = JSON.stringify(premise);
+    expect(isSameGuard(premise, { kind: "and", operands: [isTruthy, isBeta] })).toBe(true);
+    expect(JSON.stringify(premise)).toBe(serialized);
+    const nanGuard = equalsGuard(variable("#nan"), Number.NaN);
+    expect(isSameGuard(nanGuard, nanGuard)).toBe(true);
+    expect(isSameGuard(nanGuard, equalsGuard(variable("#nan"), Number.NaN))).toBe(false);
   });
 
   it("indexes structurally equivalent conjuncts across implication checks", () => {
