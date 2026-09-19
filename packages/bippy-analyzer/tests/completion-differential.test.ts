@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkKnownDifferentialCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -64,26 +65,31 @@ it.each(differentialSeeds)(
 );
 
 it("preserves switch fallthrough with default in the middle and late or absent matches", async () => {
-  const cases: DifferentialCase[] = [];
-  for (const discriminant of [-1, 2, 3]) {
-    for (const failingCase of [-1]) {
-      cases.push({
-        name: `discriminant=${discriminant}/failingCase=${failingCase}`,
-        body: `
-          let trace = '';
-          const test = (value) => { trace += 'T' + value; if (value === ${failingCase}) throw 'case'; return value; };
-          try {
-            switch (${discriminant}) {
-              case test(0): trace += 'A'; break;
-              default: trace += 'D';
-              case test(1): trace += 'B';
-              case test(2): trace += 'C'; break;
-            }
-          } catch (error) { trace += 'E' + error; }
-          return trace;
-        `,
-      });
-    }
-  }
-  await checkDifferentialCases(cases);
+  await checkDifferentialCases(
+    [-1, 2, 3].map((discriminant) => ({
+      name: `discriminant=${discriminant}`,
+      body: `
+      let trace = '';
+      const test = (value) => { trace += 'T' + value; return value; };
+      switch (${discriminant}) {
+        case test(0): trace += 'A'; break;
+        default: trace += 'D';
+        case test(1): trace += 'B';
+        case test(2): trace += 'C'; break;
+      }
+      return trace;
+    `,
+    })),
+  );
 });
+
+it.each([
+  {
+    name: "switch stops evaluating cases after an earlier match",
+    body: `let calls = 0; const later = () => { calls++; return 2; }; switch (1) { case 1: break; case later(): break; } return calls;`,
+  },
+  {
+    name: "a throwing switch case stops dispatch and reaches catch",
+    body: `let trace = ''; const test = () => { trace += 'T'; throw 'stop'; }; try { switch (0) { case test(): trace += 'B'; break; default: trace += 'D'; } } catch (error) { trace += 'C'; } return trace;`,
+  },
+])("known divergence: $name", (testCase) => checkKnownDifferentialCases([testCase]));

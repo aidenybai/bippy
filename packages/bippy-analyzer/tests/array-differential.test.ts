@@ -1,6 +1,7 @@
-import { describe, it } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkKnownDifferentialCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -66,20 +67,33 @@ const createCallbackCase = (
   };
 };
 
-const checkCallbacks = async (method: string, mutation: string): Promise<void> =>
-  checkDifferentialCases([
-    createCallbackCase(method, mutation, [1, 2, 3], 0),
-    createCallbackCase(method, mutation, [3, 1, 2], 2),
-    createCallbackCase(method, mutation, [], 0),
-  ]);
+const getCallbackCases = (method: string, mutation: string): DifferentialCase[] => [
+  createCallbackCase(method, mutation, [1, 2, 3], 0),
+  createCallbackCase(method, mutation, [3, 1, 2], 2),
+  createCallbackCase(method, mutation, [], 0),
+];
 
 describe.each(methods)("native $method callback semantics", ({ method, knownDivergences }) => {
   it.each(Object.keys(mutations).filter((mutation) => !knownDivergences.includes(mutation)))(
     "matches %s mutation and callback traces",
-    (mutation) => checkCallbacks(method, mutation),
+    (mutation) => checkDifferentialCases(getCallbackCases(method, mutation)),
   );
-  it.fails.each(knownDivergences)("known divergence: %s mutation and callback traces", (mutation) =>
-    checkCallbacks(method, mutation),
+  it.each(knownDivergences)(
+    "known divergence: %s mutation and callback traces",
+    async (mutation) => {
+      const cases = getCallbackCases(method, mutation);
+      if (method === "map" && mutation === "truncate") {
+        await expect(checkDifferentialCases(cases)).rejects.toMatchObject({
+          name: "AnalyzerEvaluationCrash",
+          cause: {
+            name: "TypeError",
+            message: "Cannot read properties of undefined (reading 'kind')",
+          },
+        });
+        return;
+      }
+      await checkKnownDifferentialCases(cases);
+    },
   );
 });
 
@@ -102,18 +116,18 @@ it.each(differentialSeeds)(
   },
 );
 
-it.fails.each(["NaN", "1.8", "-1.8"])(
+it.each(["NaN", "1.8", "-1.8"])(
   "known divergence: indexOf normalizes %s to an integer offset",
   (fromIndex) =>
-    checkDifferentialCases([
+    checkKnownDifferentialCases([
       { name: `indexOf(${fromIndex})`, body: `return [1, 1, 1].indexOf(1, ${fromIndex});` },
     ]),
 );
 
-it.fails.each(["undefined", "null", "true", "false", "'1'"])(
+it.each(["undefined", "null", "true", "false", "'1'"])(
   "known precision gap: array searches coerce %s",
   (fromIndex) =>
-    checkDifferentialCases([
+    checkKnownDifferentialCases([
       {
         name: `search(${fromIndex})`,
         body: `return [1, 1, 1].indexOf(1, ${fromIndex}) + ':' + [1, 1, 1].includes(1, ${fromIndex});`,
@@ -121,8 +135,8 @@ it.fails.each(["undefined", "null", "true", "false", "'1'"])(
     ]),
 );
 
-it.fails("known divergence: includes uses SameValueZero for NaN", () =>
-  checkDifferentialCases([{ name: "includes(NaN)", body: "return [NaN].includes(NaN);" }]));
+it("known divergence: includes uses SameValueZero for NaN", () =>
+  checkKnownDifferentialCases([{ name: "includes(NaN)", body: "return [NaN].includes(NaN);" }]));
 
 it.each(differentialSeeds)(
   "matches native mutation sequences and return values through aliases, seed %i",

@@ -1,6 +1,7 @@
 import { describe, it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkKnownDifferentialCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -112,8 +113,8 @@ describe.each([
   it.each(cases.filter((testCase) => !testCase.knownDivergence))("$name", (testCase) =>
     checkDifferentialCases([testCase]),
   );
-  it.fails.each(cases.filter((testCase) => testCase.knownDivergence))(
+  it.each(cases.filter((testCase) => testCase.knownDivergence))(
     "known divergence: $name",
-    (testCase) => checkDifferentialCases([testCase]),
+    (testCase) => checkKnownDifferentialCases([testCase]),
   );
 });
