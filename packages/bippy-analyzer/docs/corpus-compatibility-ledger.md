@@ -1,8 +1,11 @@
 # Corpus compatibility ledger
 
+The active corpus scope is React-only. The Preact-based `giscus` entry and Preact-specific
+runtime support were removed after this historical audit, leaving 499 entries.
+
 ## Artifact baseline
 
-Recomputed at analyzer commit `d8dedacc` from the current
+Recomputed at analyzer commit `d8dedacc` from the then-current
 `manifest.json` and `results.json` on 2026-09-18 UTC. This is an artifact audit, not a fresh run
 of all repositories.
 

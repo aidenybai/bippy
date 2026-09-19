@@ -161,19 +161,7 @@ const loadContextReader = (react: ReactModule): ReactRuntime["readContext"] => {
     if (!isContextDispatcher(dispatcher)) {
       throw new ReactRuntimeError("context read outside a React render");
     }
-    try {
-      return dispatcher.readContext(context);
-    } catch (error) {
-      if (
-        typeof context === "object" &&
-        context !== null &&
-        "_id" in context &&
-        "_defaultValue" in context
-      ) {
-        return Reflect.get(context, "_defaultValue");
-      }
-      throw error;
-    }
+    return dispatcher.readContext(context);
   };
 };
 

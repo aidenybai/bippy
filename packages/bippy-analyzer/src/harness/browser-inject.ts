@@ -5,7 +5,6 @@ import type { CapturedPageState, CapturedValue, RootObservations } from "../type
 import { createCommitRecorder } from "./commit-recorder.js";
 import { readKeaStores } from "./kea-store.js";
 import { readModuleExports } from "./module-exports.js";
-import { installPreactRecorder } from "./preact-recorder.js";
 import { toCapturedValue } from "./query-cache.js";
 import { installReduxStoreHook } from "./redux-store.js";
 import type { RuntimeSnapshot } from "./snapshot.js";
@@ -77,15 +76,9 @@ const recorder = createCommitRecorder({
   reduxStores: async () => [...readHookedStores(), ...(await readKeaStores())],
   moduleExports: readModuleExports,
 });
-const preactRecorder = installPreactRecorder(globalThis);
-const readSnapshot = (): RuntimeSnapshot => {
-  const reactSnapshot = recorder.snapshot();
-  const preactSnapshot = preactRecorder.snapshot();
-  return reactSnapshot.roots.length > 0 ? reactSnapshot : preactSnapshot;
-};
 const target: Partial<HarnessGlobals> = Object(globalThis);
-target.__BIPPY_PARSER_SNAPSHOT__ = readSnapshot;
+target.__BIPPY_PARSER_SNAPSHOT__ = recorder.snapshot;
 target.__BIPPY_PARSER_OBSERVATIONS__ = recorder.observations;
 target.__BIPPY_PARSER_GLOBALS__ = readWindowGlobals;
 target.__BIPPY_PARSER_PAGE__ = readPageState;
-target.__BIPPY_PARSER_COMMITS__ = () => recorder.commitCount() + preactRecorder.commitCount();
+target.__BIPPY_PARSER_COMMITS__ = recorder.commitCount;

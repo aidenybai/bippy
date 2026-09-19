@@ -3826,28 +3826,6 @@
       "notes": "The `apache/answer:latest` image is built from revision 3b9f137 (v2.0.2), so the Go backend behind the CRA proxy is the exact same commit as the UI; `AUTO_INSTALL` provisions the SQLite site (name `Bippy Corpus`) so `/users/login` renders the real Layout + login form. CRA inlines shell variables over `.env.development`, hence `REACT_APP_API_URL` in `env`."
     },
     {
-      "id": "giscus",
-      "repository": "https://github.com/giscus/giscus",
-      "revision": "3d6430237108ca4ee3eb6a1a20595201c09c72d5",
-      "description": "giscus.app landing page (Next 12 pages router built with next-plugin-preact: `react`/`react-dom` are `npm:@preact/compat`, next-translate, swr)",
-      "framework": "next-pages",
-      "workingDirectory": ".",
-      "install": "yarn install --frozen-lockfile",
-      "dev": "yarn next dev -p 3011",
-      "env": {
-        "NEXT_TELEMETRY_DISABLED": "1"
-      },
-      "url": "http://localhost:3011/",
-      "readyTimeoutMs": 600000,
-      "settleMs": 8000,
-      "static": {
-        "rootDirectory": ".",
-        "route": "/",
-        "externalPackageAllowList": ["next-translate", "swr", "@primer/octicons-react"]
-      },
-      "notes": "Static-only: the app renders with Preact (`react` and `react-dom` resolve to `@preact/compat`), which commits no React fibers, so neither a browser capture nor the static materialization through the app's own `react-dom` can produce a fiber tree. `getStaticProps` also needs a GitHub App private key (`services/github/getAppAccessToken`) to render the README through the GitHub Markdown API."
-    },
-    {
       "id": "panwriter",
       "repository": "https://github.com/mb21/panwriter",
       "revision": "3bc3d60b700e83781369a789bd0078625e2756c6",
