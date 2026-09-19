@@ -94,7 +94,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
@@ -659,6 +659,12 @@ interface PendingReturnJoin {
   predicate?: string | null;
 }
 
+interface GuardedValueCacheEntry {
+  alternatives: StaticValue[];
+  predicate: string | null;
+  value: StaticValue;
+}
+
 const completeBlock: StatementContinuation = () => COMPLETES;
 
 /** A counter or flag threaded through a recursion; it only bounds a walk whose data the analysis cannot see. */
@@ -896,6 +902,10 @@ export class Interpreter {
   readonly rootRender = new RootRenderState();
   readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
+  private readonly guardedValues = new WeakMap<
+    StaticBranchValue,
+    WeakMap<Guard, GuardedValueCacheEntry>
+  >();
   private guard: Guard = constantGuard(true);
   private taskAssumptions: Guard = constantGuard(true);
   private readonly pendingReturnJoins: PendingReturnJoin[] = [];
@@ -2452,26 +2462,43 @@ export class Interpreter {
   private getGuardedValue(value: StaticValue, activeGuard = this.guard): StaticValue {
     if (value.kind !== "branch") return value;
     if (activeGuard.kind === "constant" && activeGuard.value) return value;
+    const cached = this.guardedValues.get(value)?.get(activeGuard);
+    if (cached?.alternatives === value.alternatives && cached.predicate === value.predicate) {
+      return cached.value;
+    }
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
     const indices = resolved.guards.flatMap((guard, index) =>
       isGuardImplied(activeGuard, guard) ||
       (!isGuardImplied(activeGuard, negateGuard(guard)) &&
-        areGuardsSatisfiable([activeGuard, guard]))
+        isGuardCompatibleWithActivePath(activeGuard, guard))
         ? [index]
         : [],
     );
-    if (indices.length === value.alternatives.length || indices.length === 0) return value;
-    return branchValue(
-      indices.map((index) => value.alternatives[index]),
-      value.reason,
-      value.location,
-      Math.max(0, indices.indexOf(value.preferredIndex)),
-      guardedPredicate(
-        indices.map((index) => resolved.guards[index]),
-        [resolved.inputs],
-      ),
-    );
+    const guarded =
+      indices.length === value.alternatives.length || indices.length === 0
+        ? value
+        : branchValue(
+            indices.map((index) => value.alternatives[index]),
+            value.reason,
+            value.location,
+            Math.max(0, indices.indexOf(value.preferredIndex)),
+            guardedPredicate(
+              indices.map((index) => resolved.guards[index]),
+              [resolved.inputs],
+            ),
+          );
+    let byGuard = this.guardedValues.get(value);
+    if (byGuard === undefined) {
+      byGuard = new WeakMap();
+      this.guardedValues.set(value, byGuard);
+    }
+    byGuard.set(activeGuard, {
+      alternatives: value.alternatives,
+      predicate: value.predicate,
+      value: guarded,
+    });
+    return guarded;
   }
 
   evaluateExpression(

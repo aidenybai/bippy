@@ -17,6 +17,7 @@ import { createStaticRenderer } from "../src/index.js";
 import {
   areGuardsSatisfiable,
   evaluateGuard,
+  isGuardCompatibleWithActivePath,
   solveGuards,
   toWitnessModel,
 } from "../src/symbolic/guard-solver.js";
@@ -26,6 +27,7 @@ import {
   constantGuard,
   equalsGuard,
   formatGuard,
+  inSetGuard,
   isGuardImplied,
   negateGuard,
   orGuard,
@@ -164,6 +166,17 @@ describe("symbolic tree: guard algebra", () => {
     );
   });
 
+  it("compacts finite alternatives and their catch-all consensus", () => {
+    const mode = variable("#mode");
+    const named = [0, 1, 2].map((value) => equalsGuard(mode, value));
+    const namedSet = inSetGuard(mode, [0, 1, 2]);
+    const isOpen = truthyGuard(variable("#open"));
+    expect(orGuard(named)).toEqual(namedSet);
+    expect(orGuard([...named, andGuard([negateGuard(orGuard(named)), isOpen])])).toEqual(
+      orGuard([namedSet, isOpen]),
+    );
+  });
+
   it("proves structural guard implications without a model search", () => {
     expect(isGuardImplied(andGuard([isTruthy, isBeta]), isTruthy)).toBe(true);
     expect(isGuardImplied(isTruthy, orGuard([isTruthy, isBeta]))).toBe(true);
@@ -174,6 +187,14 @@ describe("symbolic tree: guard algebra", () => {
       ),
     ).toBe(true);
     expect(isGuardImplied(isTruthy, isBeta)).toBe(false);
+    const choice = variable("#choice");
+    expect(isGuardImplied(equalsGuard(choice, 0), negateGuard(equalsGuard(choice, 1)))).toBe(true);
+    expect(isGuardImplied(inSetGuard(choice, [0, 1]), negateGuard(equalsGuard(choice, 2)))).toBe(
+      true,
+    );
+    expect(isGuardImplied(inSetGuard(choice, [0, 1]), negateGuard(equalsGuard(choice, 1)))).toBe(
+      false,
+    );
   });
 
   it("combines large guard sets without quadratic duplicate scans", () => {
@@ -212,6 +233,14 @@ describe("symbolic tree: guard algebra", () => {
       ).toBe(true);
     }
   }, 2_000);
+
+  it("checks candidates against only the active path components they share", () => {
+    const active = andGuard([isTruthy, isBeta]);
+    expect(isGuardCompatibleWithActivePath(active, negateGuard(isBeta))).toBe(false);
+    expect(
+      isGuardCompatibleWithActivePath(active, equalsGuard(variable("#independent"), "open")),
+    ).toBe(true);
+  });
 
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
     const space = await renderFixture("narrowed-opaque-portal-root.tsx");

@@ -52,8 +52,15 @@ const ALL_TYPES: TypeName[] = [
   "function",
 ];
 
-const projectionKey = (variable: SymbolicVariable): string =>
-  formatVariable({ ...variable, measure: "value" });
+const projectionKeys = new WeakMap<SymbolicVariable, string>();
+
+const projectionKey = (variable: SymbolicVariable): string => {
+  const cached = projectionKeys.get(variable);
+  if (cached !== undefined) return cached;
+  const key = JSON.stringify([variable.input, variable.path]);
+  projectionKeys.set(variable, key);
+  return key;
+};
 
 interface Bound {
   value: number;
@@ -275,20 +282,10 @@ interface ProjectionLiterals {
   choice: Literal[];
 }
 
-const groupByProjection = (literals: Literal[]): Map<string, ProjectionLiterals> => {
-  const groups = new Map<string, ProjectionLiterals>();
-  for (const literal of literals) {
-    const { variable } = literal.atom;
-    const key = projectionKey(variable);
-    let group = groups.get(key);
-    if (!group) {
-      group = { variable, value: [], typeof: [], length: [], choice: [] };
-      groups.set(key, group);
-    }
-    group[variable.measure].push(literal);
-  }
-  return groups;
-};
+interface GuardModelState {
+  groups: Map<string, ProjectionLiterals>;
+  witnessesByProjection: Map<string, VariableWitness[]>;
+}
 
 const pickValue = (group: ProjectionLiterals): VariableWitness | null => {
   if (wantsFalsy(group.value) && wantsTruthy(group.value)) return null;
@@ -333,20 +330,18 @@ const pickCount = (
   return picked === null ? null : { variable, value: picked };
 };
 
-const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null => {
+const modelOfGroup = (group: ProjectionLiterals): VariableWitness[] | null => {
   const witnesses: VariableWitness[] = [];
-  for (const group of groupByProjection(literals).values()) {
-    if (group.value.length > 0 || group.typeof.length > 0) {
-      const witness = pickValue(group);
-      if (witness === null) return null;
-      witnesses.push(witness);
-    }
-    for (const measure of ["length", "choice"] as const) {
-      if (group[measure].length === 0) continue;
-      const witness = pickCount(group, measure);
-      if (witness === null) return null;
-      witnesses.push(witness);
-    }
+  if (group.value.length > 0 || group.typeof.length > 0) {
+    const witness = pickValue(group);
+    if (witness === null) return null;
+    witnesses.push(witness);
+  }
+  for (const measure of ["length", "choice"] as const) {
+    if (group[measure].length === 0) continue;
+    const witness = pickCount(group, measure);
+    if (witness === null) return null;
+    witnesses.push(witness);
   }
   return witnesses;
 };
@@ -359,10 +354,46 @@ const negateOperands = (operands: Guard[]): Guard[] =>
  * before any disjunction splits, so a contradiction among the atoms is found
  * without exploring the disjunctions' product.
  */
-const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
+const findModel = (
+  pending: Guard[],
+  state: GuardModelState = {
+    groups: new Map(),
+    witnessesByProjection: new Map(),
+  },
+): VariableWitness[] | null => {
   const remaining = [...pending];
-  const collected = [...literals];
   const disjunctions: GuardOr[] = [];
+  let groups = state.groups;
+  let witnessesByProjection = state.witnessesByProjection;
+  const changedProjections = new Set<string>();
+  const addLiteral = (literal: Literal): void => {
+    if (groups === state.groups) groups = new Map(state.groups);
+    if (witnessesByProjection === state.witnessesByProjection) {
+      witnessesByProjection = new Map(state.witnessesByProjection);
+    }
+    const { variable } = literal.atom;
+    const key = projectionKey(variable);
+    let group = groups.get(key);
+    if (!changedProjections.has(key)) {
+      group = group
+        ? {
+            variable: group.variable,
+            value: [...group.value],
+            typeof: [...group.typeof],
+            length: [...group.length],
+            choice: [...group.choice],
+          }
+        : { variable, value: [], typeof: [], length: [], choice: [] };
+      groups.set(key, group);
+      changedProjections.add(key);
+    }
+    if (group === undefined) {
+      group = { variable, value: [], typeof: [], length: [], choice: [] };
+      groups.set(key, group);
+      changedProjections.add(key);
+    }
+    group[variable.measure].push(literal);
+  };
   while (remaining.length > 0) {
     const guard = remaining.pop();
     if (!guard) break;
@@ -392,19 +423,26 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
             remaining.push(...negateOperands(operand.operands));
             break;
           default:
-            collected.push({ atom: operand, isNegated: true });
+            addLiteral({ atom: operand, isNegated: true });
         }
         break;
       }
       default:
-        collected.push({ atom: guard, isNegated: false });
+        addLiteral({ atom: guard, isNegated: false });
     }
   }
-  const model = modelOfLiterals(collected);
+  for (const key of changedProjections) {
+    const group = groups.get(key);
+    if (group === undefined) continue;
+    const witnesses = modelOfGroup(group);
+    if (witnesses === null) return null;
+    witnessesByProjection.set(key, witnesses);
+  }
   const disjunction = disjunctions.pop();
-  if (model === null || disjunction === undefined) return model;
+  if (disjunction === undefined) return [...witnessesByProjection.values()].flat();
+  const nextState = { groups, witnessesByProjection };
   for (const operand of disjunction.operands) {
-    const split = findModel([...disjunctions, operand], collected);
+    const split = findModel([...disjunctions, operand], nextState);
     if (split) return split;
   }
   return null;
@@ -445,8 +483,10 @@ interface GuardComponent {
 }
 
 interface GuardAnalysis {
+  components: GuardComponent[];
   componentByKey: Map<string, GuardComponent>;
-  isSatisfiable: boolean;
+  isSatisfiable: boolean | null;
+  models: WitnessModel[];
 }
 
 /**
@@ -487,7 +527,7 @@ const independentComponents = (guards: Guard[]): GuardComponent[] => {
 export const solveGuards = (guards: Guard[]): VariableWitness[] | null => {
   const witnesses: VariableWitness[] = [];
   for (const component of independentComponents(guards)) {
-    const model = findModel(component.guards, []);
+    const model = findModel(component.guards);
     if (model === null) return null;
     witnesses.push(...model);
   }
@@ -558,6 +598,7 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
 };
 
 const MAX_CACHED_GUARD_ANALYSES = 16;
+const MAX_CACHED_GUARD_MODELS = 16;
 const guardAnalysisCache = new Map<Guard, GuardAnalysis>();
 
 const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
@@ -569,12 +610,15 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   }
   const components = independentComponents([guard]);
   const componentByKey = new Map<string, GuardComponent>();
-  let isSatisfiable = true;
   for (const component of components) {
     for (const key of component.keys) componentByKey.set(key, component);
-    if (isSatisfiable && findModel(component.guards, []) === null) isSatisfiable = false;
   }
-  const analysis = { componentByKey, isSatisfiable };
+  const analysis: GuardAnalysis = {
+    components,
+    componentByKey,
+    isSatisfiable: null,
+    models: [],
+  };
   guardAnalysisCache.set(guard, analysis);
   if (guardAnalysisCache.size > MAX_CACHED_GUARD_ANALYSES) {
     const oldest = guardAnalysisCache.keys().next();
@@ -583,15 +627,58 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   return analysis;
 };
 
+const solveGuardAnalysis = (analysis: GuardAnalysis): boolean => {
+  if (analysis.isSatisfiable !== null) return analysis.isSatisfiable;
+  const model = new Map<string, WitnessValue>();
+  for (const component of analysis.components) {
+    const witnesses = findModel(component.guards);
+    if (witnesses === null) {
+      analysis.isSatisfiable = false;
+      return false;
+    }
+    for (const witness of witnesses) {
+      model.set(formatVariable(witness.variable), witness.value);
+    }
+  }
+  analysis.isSatisfiable = true;
+  analysis.models.push(model);
+  return true;
+};
+
 const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
   const baseAnalysis = getGuardAnalysis(base);
-  if (!baseAnalysis.isSatisfiable) return false;
+  if (!solveGuardAnalysis(baseAnalysis)) return false;
+  if (baseAnalysis.models.some((model) => evaluateGuard(candidate, model) === true)) return true;
   const overlappingComponents = new Set<GuardComponent>();
   for (const key of collectProjectionKeys(candidate, new Set())) {
     const component = baseAnalysis.componentByKey.get(key);
     if (component !== undefined) overlappingComponents.add(component);
   }
-  if (overlappingComponents.size === 0) return solveGuards([candidate]) !== null;
+  const witnesses =
+    overlappingComponents.size === 0
+      ? solveGuards([candidate])
+      : solveGuards([
+          ...[...overlappingComponents].flatMap((component) => component.guards),
+          candidate,
+        ]);
+  if (witnesses === null) return false;
+  if (baseAnalysis.models.length < MAX_CACHED_GUARD_MODELS) {
+    const model = new Map(baseAnalysis.models[0]);
+    for (const witness of witnesses) {
+      model.set(formatVariable(witness.variable), witness.value);
+    }
+    baseAnalysis.models.push(model);
+  }
+  return true;
+};
+
+export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): boolean => {
+  const baseAnalysis = getGuardAnalysis(base);
+  const overlappingComponents = new Set<GuardComponent>();
+  for (const key of collectProjectionKeys(candidate, new Set())) {
+    const component = baseAnalysis.componentByKey.get(key);
+    if (component !== undefined) overlappingComponents.add(component);
+  }
   return (
     solveGuards([
       ...[...overlappingComponents].flatMap((component) => component.guards),
@@ -602,7 +689,7 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
   if (guards.length === 0) return true;
-  if (guards.length === 1) return getGuardAnalysis(guards[0]).isSatisfiable;
+  if (guards.length === 1) return solveGuardAnalysis(getGuardAnalysis(guards[0]));
   if (guards.length === 2) return areGuardPairSatisfiable(guards[0], guards[1]);
   return solveGuards(guards) !== null;
 };

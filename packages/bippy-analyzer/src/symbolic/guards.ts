@@ -225,6 +225,44 @@ const hasEquivalentGuard = (guards: Map<number, Guard[]>, guard: Guard): boolean
     .get(getGuardHash(guard))
     ?.some((candidate) => candidate === guard || isSameGuard(candidate, guard)) ?? false;
 
+interface GuardEqualityGroup {
+  firstIndex: number;
+  values: GuardLiteral[];
+  variable: SymbolicVariable;
+}
+
+const getVariableKey = (variable: SymbolicVariable): string =>
+  JSON.stringify([variable.input, variable.path, variable.measure]);
+
+const indexGuards = (guards: Guard[]): Map<number, Guard[]> => {
+  const indexed = new Map<number, Guard[]>();
+  for (const guard of guards) {
+    const key = getGuardHash(guard);
+    const matching = indexed.get(key);
+    if (matching) matching.push(guard);
+    else indexed.set(key, [guard]);
+  }
+  return indexed;
+};
+
+const mergeEqualityDisjuncts = (guards: Guard[]): Guard[] => {
+  const groups = new Map<string, GuardEqualityGroup>();
+  guards.forEach((guard, index) => {
+    if (guard.kind !== "eq") return;
+    const key = getVariableKey(guard.variable);
+    const group = groups.get(key);
+    if (group) group.values.push(guard.value);
+    else groups.set(key, { firstIndex: index, values: [guard.value], variable: guard.variable });
+  });
+  if (![...groups.values()].some((group) => group.values.length > 1)) return guards;
+  return guards.flatMap((guard, index) => {
+    if (guard.kind !== "eq") return [guard];
+    const group = groups.get(getVariableKey(guard.variable));
+    if (group === undefined || group.values.length === 1) return [guard];
+    return group.firstIndex === index ? [inSetGuard(group.variable, group.values)] : [];
+  });
+};
+
 const isAbsorbedDisjunct = (guard: Guard, disjuncts: Map<number, Guard[]>): boolean =>
   guard.kind === "and" &&
   guard.operands.some(
@@ -233,6 +271,17 @@ const isAbsorbedDisjunct = (guard: Guard, disjuncts: Map<number, Guard[]>): bool
       (operand.kind === "or" &&
         operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))),
   );
+
+const reduceCoveredNegation = (guard: Guard, disjuncts: Map<number, Guard[]>): Guard => {
+  if (guard.kind !== "and") return guard;
+  const operands = guard.operands.filter((operand) => {
+    if (operand.kind !== "not") return true;
+    return operand.operand.kind === "or"
+      ? !operand.operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))
+      : !hasEquivalentGuard(disjuncts, operand.operand);
+  });
+  return operands.length === guard.operands.length ? guard : combineGuards("and", operands, false);
+};
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   const flattened = operands.flatMap((operand) =>
@@ -254,10 +303,17 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
     else remainingByHash.set(key, [operand]);
   }
   if (remaining.length === 0) return constantGuard(!absorbing);
+  const merged = kind === "or" ? mergeEqualityDisjuncts(remaining) : remaining;
+  const mergedByHash = merged === remaining ? remainingByHash : indexGuards(merged);
   const simplified =
-    kind === "or"
-      ? remaining.filter((operand) => !isAbsorbedDisjunct(operand, remainingByHash))
-      : remaining;
+    kind === "or" ? merged.filter((operand) => !isAbsorbedDisjunct(operand, mergedByHash)) : merged;
+  if (kind === "or") {
+    const simplifiedByHash = simplified === merged ? mergedByHash : indexGuards(simplified);
+    const reduced = simplified.map((operand) => reduceCoveredNegation(operand, simplifiedByHash));
+    if (reduced.some((operand, index) => operand !== simplified[index])) {
+      return combineGuards("or", reduced, true);
+    }
+  }
   return simplified.length === 1 ? simplified[0] : { kind, operands: simplified };
 };
 
@@ -282,6 +338,92 @@ export const isSameVariable = (left: SymbolicVariable, right: SymbolicVariable):
   left.measure === right.measure &&
   left.path.length === right.path.length &&
   left.path.every((segment, index) => segment === right.path[index]);
+
+const isAtomicGuard = (
+  guard: Guard,
+): guard is GuardTruthy | GuardEquals | GuardCompare | GuardInSet =>
+  guard.kind === "truthy" ||
+  guard.kind === "eq" ||
+  guard.kind === "compare" ||
+  guard.kind === "in-set";
+
+const satisfiesComparison = (value: GuardLiteral, guard: GuardCompare): boolean => {
+  if (typeof value !== "number") return false;
+  switch (guard.operator) {
+    case "<":
+      return value < guard.value;
+    case "<=":
+      return value <= guard.value;
+    case ">":
+      return value > guard.value;
+    case ">=":
+      return value >= guard.value;
+  }
+};
+
+const isAtomicGuardImplied = (
+  premise: GuardTruthy | GuardEquals | GuardCompare | GuardInSet,
+  conclusion: GuardTruthy | GuardEquals | GuardCompare | GuardInSet,
+): boolean => {
+  if (!isSameVariable(premise.variable, conclusion.variable)) return false;
+  if (premise.kind === "eq") {
+    switch (conclusion.kind) {
+      case "truthy":
+        return Boolean(premise.value);
+      case "eq":
+        return premise.value === conclusion.value;
+      case "in-set":
+        return conclusion.values.includes(premise.value);
+      case "compare":
+        return satisfiesComparison(premise.value, conclusion);
+    }
+  }
+  if (premise.kind === "in-set") {
+    switch (conclusion.kind) {
+      case "truthy":
+        return premise.values.every(Boolean);
+      case "eq":
+        return (
+          premise.values.length > 0 && premise.values.every((value) => value === conclusion.value)
+        );
+      case "in-set":
+        return premise.values.every((value) => conclusion.values.includes(value));
+      case "compare":
+        return premise.values.every((value) => satisfiesComparison(value, conclusion));
+    }
+  }
+  return false;
+};
+
+const areAtomicGuardsDisjoint = (
+  left: GuardTruthy | GuardEquals | GuardCompare | GuardInSet,
+  right: GuardTruthy | GuardEquals | GuardCompare | GuardInSet,
+): boolean => {
+  if (!isSameVariable(left.variable, right.variable)) return false;
+  if (left.kind === "eq") return !isAtomicGuardImplied(left, right);
+  if (right.kind === "eq") return !isAtomicGuardImplied(right, left);
+  if (left.kind === "in-set" && right.kind === "in-set") {
+    return !left.values.some((value) => right.values.includes(value));
+  }
+  if (left.kind === "truthy" && right.kind === "in-set")
+    return right.values.every((value) => !value);
+  if (left.kind === "in-set" && right.kind === "truthy")
+    return left.values.every((value) => !value);
+  return false;
+};
+
+const areGuardsDisjoint = (left: Guard, right: Guard): boolean => {
+  if (isAtomicGuard(left) && isAtomicGuard(right)) return areAtomicGuardsDisjoint(left, right);
+  if (left.kind === "and")
+    return left.operands.some((operand) => areGuardsDisjoint(operand, right));
+  if (right.kind === "and")
+    return right.operands.some((operand) => areGuardsDisjoint(left, operand));
+  if (left.kind === "or")
+    return left.operands.every((operand) => areGuardsDisjoint(operand, right));
+  if (right.kind === "or")
+    return right.operands.every((operand) => areGuardsDisjoint(left, operand));
+  return false;
+};
 
 const isSameLiteralList = (left: GuardLiteral[], right: GuardLiteral[]): boolean =>
   left.length === right.length && left.every((value, index) => value === right[index]);
@@ -325,6 +467,9 @@ export const isSameGuard = (left: Guard, right: Guard): boolean => {
 
 export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
   if (premise === conclusion || isSameGuard(premise, conclusion)) return true;
+  if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
+    return isAtomicGuardImplied(premise, conclusion);
+  if (conclusion.kind === "not" && areGuardsDisjoint(premise, conclusion.operand)) return true;
   if (conclusion.kind === "constant") return conclusion.value;
   if (premise.kind === "constant") return !premise.value;
   if (conclusion.kind === "and")

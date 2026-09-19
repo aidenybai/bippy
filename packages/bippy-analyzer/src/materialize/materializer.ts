@@ -1990,10 +1990,7 @@ export class Materializer {
     if (cause.guard.kind === "constant" && cause.guard.value) return run();
     const ownerCause = frame && this.frameCauses.get(frame);
     const unconditionalUpdates =
-      frame &&
-      ownerCause &&
-      (isGuardImplied(ownerCause.guard, cause.guard) ||
-        !areGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)]))
+      frame && ownerCause && isGuardImplied(ownerCause.guard, cause.guard)
         ? new Set(frame.cells)
         : undefined;
     return this.interpreter.runMaybe(
