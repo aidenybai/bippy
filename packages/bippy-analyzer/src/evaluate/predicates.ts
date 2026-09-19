@@ -389,16 +389,23 @@ export const composeFlattenedPredicate = (
   const outerGuards = predicateGuards(outer, alternatives.length);
   const inputs: (readonly InputVariable[])[] = [outer.inputs];
   const sides: Guard[][] = Array.from({ length: positionCount }, () => []);
+  let atomCount = 0;
+  const addSide = (position: number, guard: Guard): boolean => {
+    atomCount += countGuardAtoms(guard);
+    if (atomCount > MAX_PREDICATE_ATOMS) return false;
+    sides[position].push(guard);
+    return true;
+  };
   for (const [index, alternative] of alternatives.entries()) {
     if (alternative.kind !== "branch") {
-      sides[positions[index][0]].push(outerGuards[index]);
+      if (!addSide(positions[index][0], outerGuards[index])) return null;
       continue;
     }
     const inner = getAlternativeGuards(alternative);
     if (!inner) return null;
     inputs.push(inner.inputs);
     for (const [innerIndex, guard] of inner.guards.entries()) {
-      sides[positions[index][innerIndex]].push(andGuard([outerGuards[index], guard]));
+      if (!addSide(positions[index][innerIndex], andGuard([outerGuards[index], guard]))) return null;
     }
   }
   return guardedPredicate(sides.map(orGuard), inputs);
