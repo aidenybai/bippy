@@ -6717,7 +6717,8 @@
       "static": {
         "rootDirectory": ".",
         "tsconfig": "tsconfig.json",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["@dnd-kit/*"]
       },
       "notes": "Unchanged source and pinned npm dependencies. Original five-word game; no backend. One random word selection was independently captured. The model counts six initial-render states including loading and replays all five decision assignments. This is not independent evidence for all selections or any gameplay transition."
     },
