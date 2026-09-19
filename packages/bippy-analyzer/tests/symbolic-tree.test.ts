@@ -192,6 +192,12 @@ describe("symbolic tree: guard algebra", () => {
     expect(isGuardImplied(isTruthy, orGuard([isTruthy, isBeta]))).toBe(true);
     expect(
       isGuardImplied(
+        andGuard([orGuard([isTruthy, isBeta]), truthyGuard(variable("#open"))]),
+        orGuard([isTruthy, isBeta]),
+      ),
+    ).toBe(true);
+    expect(
+      isGuardImplied(
         orGuard([andGuard([isTruthy, isBeta]), isTruthy]),
         orGuard([isTruthy, isBeta]),
       ),

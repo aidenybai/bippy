@@ -482,6 +482,11 @@ export const isSameGuard = (left: Guard, right: Guard): boolean => {
 
 export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
   if (premise === conclusion || isSameGuard(premise, conclusion)) return true;
+  if (
+    premise.kind === "and" &&
+    premise.operands.some((operand) => operand === conclusion || isSameGuard(operand, conclusion))
+  )
+    return true;
   if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
     return isAtomicGuardImplied(premise, conclusion);
   if (conclusion.kind === "not" && areGuardsDisjoint(premise, conclusion.operand)) return true;
