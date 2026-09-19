@@ -31,7 +31,9 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - if: matrix.task == 'test'
-        run: pnpm build
+        run: |
+          pnpm build
+          pnpm --filter bippy-analyzer exec playwright install --with-deps chromium
       - run: pnpm run ${{ matrix.task }}
       - if: matrix.task == 'build'
         run: |
