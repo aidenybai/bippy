@@ -2456,7 +2456,7 @@ export class Interpreter {
   }
 
   isTaskPossible(guard: Guard): boolean {
-    return areGuardsSatisfiable([this.taskAssumptions, guard]);
+    return isGuardCompatibleWithActivePath(this.taskAssumptions, guard);
   }
 
   private getGuardedValue(value: StaticValue, activeGuard = this.guard): StaticValue {
