@@ -3145,7 +3145,7 @@
         ],
         "maxFiberCount": 20000
       },
-      "notes": "The committed .env points the dev server at OpenBeta's public staging API (stg-api.openbeta.io) and OpenCollective; server components fetch from them at request time, so their rows are network data."
+      "notes": "The fresh 1,535-fiber capture has 100% strict coverage with 1,421 matched fibers, 18 matched text nodes, and no opaque or wildcard nodes. It remains honestly truncated: network-derived list lengths produce 3,504,384 states, 3,504,150 omissions, and 16 incomplete sampled replays. The committed .env points at OpenBeta's public staging API and OpenCollective, so server-component rows are live network data."
     },
     {
       "id": "sqlrooms-ai-agent",
