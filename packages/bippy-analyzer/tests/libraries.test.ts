@@ -453,7 +453,6 @@ describe("library models", () => {
         "      <ContextProvider>",
         "        <Child>",
         "          <main>",
-        '            "ready"',
       ].join("\n"),
     );
   });
