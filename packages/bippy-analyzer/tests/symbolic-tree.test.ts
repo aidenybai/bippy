@@ -26,6 +26,7 @@ import {
   constantGuard,
   equalsGuard,
   formatGuard,
+  isGuardImplied,
   negateGuard,
   orGuard,
   truthyGuard,
@@ -150,6 +151,18 @@ describe("symbolic tree: guard algebra", () => {
       kind: "or",
       operands: [isTruthy, isBeta],
     });
+  });
+
+  it("proves structural guard implications without a model search", () => {
+    expect(isGuardImplied(andGuard([isTruthy, isBeta]), isTruthy)).toBe(true);
+    expect(isGuardImplied(isTruthy, orGuard([isTruthy, isBeta]))).toBe(true);
+    expect(
+      isGuardImplied(
+        orGuard([andGuard([isTruthy, isBeta]), isTruthy]),
+        orGuard([isTruthy, isBeta]),
+      ),
+    ).toBe(true);
+    expect(isGuardImplied(isTruthy, isBeta)).toBe(false);
   });
 
   it("combines large guard sets without quadratic duplicate scans", () => {

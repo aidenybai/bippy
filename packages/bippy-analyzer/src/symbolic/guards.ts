@@ -311,6 +311,23 @@ export const isSameGuard = (left: Guard, right: Guard): boolean => {
   }
 };
 
+export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
+  if (premise === conclusion || isSameGuard(premise, conclusion)) return true;
+  if (conclusion.kind === "constant") return conclusion.value;
+  if (premise.kind === "constant") return !premise.value;
+  if (conclusion.kind === "and")
+    return conclusion.operands.every((operand) => isGuardImplied(premise, operand));
+  if (conclusion.kind === "or")
+    return conclusion.operands.some((operand) => isGuardImplied(premise, operand));
+  if (premise.kind === "and")
+    return premise.operands.some((operand) => isGuardImplied(operand, conclusion));
+  if (premise.kind === "or")
+    return premise.operands.every((operand) => isGuardImplied(operand, conclusion));
+  if (premise.kind === "not" && conclusion.kind === "not")
+    return isGuardImplied(conclusion.operand, premise.operand);
+  return false;
+};
+
 export const collectGuardVariables = (
   guard: Guard,
   into: SymbolicVariable[] = [],

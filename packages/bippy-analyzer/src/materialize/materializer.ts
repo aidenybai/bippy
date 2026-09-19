@@ -64,6 +64,7 @@ import {
   constantGuard,
   ELEMENT_SEGMENT,
   type GuardContext,
+  isGuardImplied,
   negateGuard,
   normalizePredicate,
   orGuard,
@@ -1989,7 +1990,10 @@ export class Materializer {
     if (cause.guard.kind === "constant" && cause.guard.value) return run();
     const ownerCause = frame && this.frameCauses.get(frame);
     const unconditionalUpdates =
-      frame && ownerCause && !areGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)])
+      frame &&
+      ownerCause &&
+      (isGuardImplied(ownerCause.guard, cause.guard) ||
+        !areGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)]))
         ? new Set(frame.cells)
         : undefined;
     return this.interpreter.runMaybe(
