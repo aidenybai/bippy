@@ -252,6 +252,16 @@ describe("symbolic tree: guard algebra", () => {
     expect(isImplied(isBeta)).toBe(false);
   });
 
+  it("indexes structurally equivalent conjuncts across implication checks", () => {
+    const conjuncts = Array.from({ length: 5_000 }, (_, index) =>
+      equalsGuard(variable(`#indexed-${index}`), index),
+    );
+    const isImplied = getGuardImplicationChecker(andGuard(conjuncts));
+    for (let index = conjuncts.length - 1; index >= 0; index--) {
+      expect(isImplied(equalsGuard(variable(`#indexed-${index}`), index))).toBe(true);
+    }
+  }, 2_000);
+
   it("combines large guard sets without quadratic duplicate scans", () => {
     const guards = Array.from({ length: 20_000 }, (_, index) =>
       equalsGuard(variable(`#${index}`), index),

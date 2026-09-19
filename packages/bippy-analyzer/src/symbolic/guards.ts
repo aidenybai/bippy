@@ -484,12 +484,14 @@ const areAtomicGuardsDisjoint = (
 interface GuardRelationCache {
   disjoint: WeakMap<Guard, WeakMap<Guard, boolean>>;
   implied: WeakMap<Guard, WeakMap<Guard, boolean>>;
+  operands: WeakMap<Guard, Map<number, Guard[]>>;
   same: WeakMap<Guard, WeakMap<Guard, boolean>>;
 }
 
 const createGuardRelationCache = (): GuardRelationCache => ({
   disjoint: new WeakMap(),
   implied: new WeakMap(),
+  operands: new WeakMap(),
   same: new WeakMap(),
 });
 
@@ -590,6 +592,24 @@ const isSameGuardWithin = (left: Guard, right: Guard, cache: GuardRelationCache)
 export const isSameGuard = (left: Guard, right: Guard): boolean =>
   isSameGuardWithin(left, right, createGuardRelationCache());
 
+const hasEquivalentOperand = (
+  guard: GuardAnd | GuardOr,
+  candidate: Guard,
+  cache: GuardRelationCache,
+): boolean => {
+  let operands = cache.operands.get(guard);
+  if (operands === undefined) {
+    operands = indexGuards(guard.operands);
+    cache.operands.set(guard, operands);
+  }
+  return (
+    operands
+      .get(getGuardHash(candidate))
+      ?.some((operand) => operand === candidate || isSameGuardWithin(operand, candidate, cache)) ??
+    false
+  );
+};
+
 const computeGuardImplication = (
   premise: Guard,
   conclusion: Guard,
@@ -601,11 +621,7 @@ const computeGuardImplication = (
       getGuardHash(left) === getGuardHash(right) &&
       isSameGuardWithin(left, right, cache));
   if (isStructurallySame(premise, conclusion)) return true;
-  if (
-    premise.kind === "and" &&
-    premise.operands.some((operand) => isStructurallySame(operand, conclusion))
-  )
-    return true;
+  if (premise.kind === "and" && hasEquivalentOperand(premise, conclusion, cache)) return true;
   if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
     return isAtomicGuardImplied(premise, conclusion);
   if (
