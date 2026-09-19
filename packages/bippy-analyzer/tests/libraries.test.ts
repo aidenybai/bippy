@@ -142,16 +142,6 @@ export default () => (
 );
 `;
 
-const RADIX_TOOLTIP_PROVIDER_SOURCE = `
-import { Provider } from "@radix-ui/react-tooltip";
-
-export default () => (
-  <Provider>
-    <main />
-  </Provider>
-);
-`;
-
 const ZUSTAND_SOURCE = `
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
@@ -462,19 +452,6 @@ describe("library models", () => {
         "    <QueryClientProvider>",
         "      <ContextProvider>",
         "        <Child>",
-        "          <main>",
-      ].join("\n"),
-    );
-  });
-
-  it("preserves the Radix tooltip provider fiber and context boundary", async () => {
-    expect(await renderSource(RADIX_TOOLTIP_PROVIDER_SOURCE)).toBe(
-      [
-        "<HostRoot>",
-        "  <default>",
-        "    <TooltipProvider>",
-        "      <TooltipProvider>",
-        "        <ContextProvider>",
         "          <main>",
       ].join("\n"),
     );

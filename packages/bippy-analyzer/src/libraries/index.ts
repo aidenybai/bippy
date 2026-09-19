@@ -45,7 +45,6 @@ import {
   PRISM_REACT_RENDERER_PACKAGES,
   prismReactRendererValue,
 } from "./prism-react-renderer.js";
-import { RADIX_UI_MODELED_EXPORTS, RADIX_UI_PACKAGES, radixUiValue } from "./radix-ui.js";
 import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
 import {
   REACT_INLINESVG_MODELED_EXPORTS,
@@ -163,11 +162,6 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: PRISM_REACT_RENDERER_PACKAGES,
     getValue: prismReactRendererValue,
     modeledExports: PRISM_REACT_RENDERER_MODELED_EXPORTS,
-  },
-  {
-    packages: RADIX_UI_PACKAGES,
-    getValue: radixUiValue,
-    modeledExports: RADIX_UI_MODELED_EXPORTS,
   },
   { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
   {
