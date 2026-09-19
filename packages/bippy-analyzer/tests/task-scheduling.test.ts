@@ -15,6 +15,21 @@ const getHostNames = (nodes: PatternNode[]): string[] =>
   );
 
 describe("conditional task scheduling", () => {
+  it("keeps native listeners on mutually exclusive paths from dispatching to each other", async () => {
+    const renderer = await createComponentRenderer();
+    const rendered = await renderer.renderComponent(
+      join(COMPONENTS_DIRECTORY, "effect-cause-native-listener.tsx"),
+    );
+    const stateSpace = enumerateStaticStates(rendered);
+    const states = stateSpace.states.map((state) => getHostNames(state.tree));
+    expect(rendered.stats.unknownCount).toBe(0);
+    expect(states.every((names) => names.filter((name) => name === "section").length === 1)).toBe(
+      true,
+    );
+    expect(states.some((names) => names.includes("strong"))).toBe(true);
+    expect(stateSpace.omitted).toBeNull();
+  });
+
   it("guards task writes to a store shared with paths that never mount the owner", async () => {
     const renderer = await createComponentRenderer();
     const rendered = await renderer.renderComponent(
