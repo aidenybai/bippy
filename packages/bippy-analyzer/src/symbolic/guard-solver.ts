@@ -7,6 +7,8 @@ import {
   type GuardOr,
   type GuardTruthy,
   type SymbolicVariable,
+  andGuard,
+  constantGuard,
   formatVariable,
   getGuardHash,
   isSameGuard,
@@ -764,14 +766,20 @@ export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
 export class GuardSolver {
   private readonly stack: Guard[] = [];
+  private readonly previousCombinedGuards: Guard[] = [];
+  private combinedGuard: Guard = constantGuard(true);
 
   push(guard: Guard): boolean {
-    if (!areGuardsSatisfiable([...this.stack, guard])) return false;
+    if (!areGuardsSatisfiable([this.combinedGuard, guard])) return false;
     this.stack.push(guard);
+    this.previousCombinedGuards.push(this.combinedGuard);
+    this.combinedGuard = andGuard([this.combinedGuard, guard]);
     return true;
   }
 
   pop(): void {
-    this.stack.pop();
+    if (this.stack.pop() === undefined) return;
+    const previous = this.previousCombinedGuards.pop();
+    if (previous !== undefined) this.combinedGuard = previous;
   }
 }
