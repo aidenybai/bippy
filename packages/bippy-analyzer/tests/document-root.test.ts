@@ -31,7 +31,7 @@ it("mounts document singletons and body portals through a document root", async 
 
     expect(result.diagnostics).toEqual([]);
     expect(pattern).toMatch(
-      /<html>\n\s+<head>\n\s+<title>\n\s+<body>\n\s+<input>\n\s+<HostPortal>/,
+      /<html>\n\s+<head>\n\s+<title>\n\s+<body>\n\s+<input>\n\s+<Portal>\n\s+<aside>/,
     );
   } finally {
     rmSync(rootDirectory, { recursive: true, force: true });
