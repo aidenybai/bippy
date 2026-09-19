@@ -55,6 +55,7 @@ const createBuiltinEvaluator = (overrides: Partial<BuiltinEvaluator> = {}): Buil
   runIntervalTicks: unexpectedOperation,
   runTimerTask: unexpectedOperation,
   queueMicrotask: unexpectedOperation,
+  bindContinuationWithCause: (task) => task,
   bindTask: unexpectedOperation,
   runTaskWithCause: unexpectedOperation,
   runTaskAlternatives: unexpectedOperation,
