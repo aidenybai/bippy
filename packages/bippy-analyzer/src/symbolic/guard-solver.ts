@@ -52,8 +52,34 @@ const ALL_TYPES: TypeName[] = [
   "function",
 ];
 
-const projectionKey = (variable: SymbolicVariable): string =>
-  formatVariable({ ...variable, measure: "value" });
+interface ProjectionNode {
+  id: number;
+  children: Map<string, ProjectionNode>;
+}
+
+const projectionRoots = new Map<string, ProjectionNode>();
+const projectionKeyCache = new WeakMap<SymbolicVariable, number>();
+let nextProjectionId = 0;
+
+const projectionKey = (variable: SymbolicVariable): number => {
+  const cached = projectionKeyCache.get(variable);
+  if (cached !== undefined) return cached;
+  let node = projectionRoots.get(variable.input);
+  if (node === undefined) {
+    node = { id: nextProjectionId++, children: new Map() };
+    projectionRoots.set(variable.input, node);
+  }
+  for (const segment of variable.path) {
+    let child = node.children.get(segment);
+    if (child === undefined) {
+      child = { id: nextProjectionId++, children: new Map() };
+      node.children.set(segment, child);
+    }
+    node = child;
+  }
+  projectionKeyCache.set(variable, node.id);
+  return node.id;
+};
 
 interface Bound {
   value: number;
@@ -272,8 +298,8 @@ interface ProjectionLiterals {
   choice: Literal[];
 }
 
-const groupByProjection = (literals: Literal[]): Map<string, ProjectionLiterals> => {
-  const groups = new Map<string, ProjectionLiterals>();
+const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals> => {
+  const groups = new Map<number, ProjectionLiterals>();
   for (const literal of literals) {
     const { variable } = literal.atom;
     const key = projectionKey(variable);
@@ -351,6 +377,31 @@ const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null => {
 const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
+const isGuardImpliedByLiterals = (
+  guard: Guard,
+  literals: Literal[],
+  isNegated = false,
+): boolean => {
+  switch (guard.kind) {
+    case "constant":
+      return guard.value !== isNegated;
+    case "not":
+      return isGuardImpliedByLiterals(guard.operand, literals, !isNegated);
+    case "and":
+      return isNegated
+        ? guard.operands.some((operand) => isGuardImpliedByLiterals(operand, literals, true))
+        : guard.operands.every((operand) => isGuardImpliedByLiterals(operand, literals));
+    case "or":
+      return isNegated
+        ? guard.operands.every((operand) => isGuardImpliedByLiterals(operand, literals, true))
+        : guard.operands.some((operand) => isGuardImpliedByLiterals(operand, literals));
+    default:
+      return (
+        modelOfLiterals([...literals, { atom: guard, isNegated: !isNegated }]) === null
+      );
+  }
+};
+
 /**
  * DPLL over the guard formulas: atoms accumulate and are checked per variable
  * before any disjunction splits, so a contradiction among the atoms is found
@@ -398,10 +449,34 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
     }
   }
   const model = modelOfLiterals(collected);
-  const disjunction = disjunctions.pop();
-  if (model === null || disjunction === undefined) return model;
-  for (const operand of disjunction.operands) {
-    const split = findModel([...disjunctions, operand], collected);
+  if (model === null) return null;
+  const unresolvedDisjunctions: GuardOr[] = [];
+  let selectedDisjunction: GuardOr | null = null;
+  let selectedOperands: Guard[] = [];
+  for (const disjunction of disjunctions) {
+    if (isGuardImpliedByLiterals(disjunction, collected)) continue;
+    const viableOperands = disjunction.operands.filter(
+      (operand) => !isGuardImpliedByLiterals(operand, collected, true),
+    );
+    if (viableOperands.length === 0) return null;
+    if (viableOperands.length === 1) {
+      return findModel(
+        [...disjunctions.filter((candidate) => candidate !== disjunction), viableOperands[0]],
+        collected,
+      );
+    }
+    unresolvedDisjunctions.push(disjunction);
+    if (selectedDisjunction === null || viableOperands.length < selectedOperands.length) {
+      selectedDisjunction = disjunction;
+      selectedOperands = viableOperands;
+    }
+  }
+  if (selectedDisjunction === null) return model;
+  const remainingDisjunctions = unresolvedDisjunctions.filter(
+    (candidate) => candidate !== selectedDisjunction,
+  );
+  for (const operand of selectedOperands) {
+    const split = findModel([...remainingDisjunctions, operand], collected);
     if (split) return split;
   }
   return null;
@@ -418,7 +493,7 @@ const conjuncts = (guards: Guard[]): Guard[] =>
     return [guard];
   });
 
-const collectProjectionKeys = (guard: Guard, keys: Set<string>): Set<string> => {
+const collectProjectionKeys = (guard: Guard, keys: Set<number>): Set<number> => {
   switch (guard.kind) {
     case "constant":
       break;
@@ -435,14 +510,24 @@ const collectProjectionKeys = (guard: Guard, keys: Set<string>): Set<string> => 
   return keys;
 };
 
+const projectionKeysCache = new WeakMap<Guard, ReadonlySet<number>>();
+
+const getProjectionKeys = (guard: Guard): ReadonlySet<number> => {
+  const cached = projectionKeysCache.get(guard);
+  if (cached !== undefined) return cached;
+  const keys = collectProjectionKeys(guard, new Set());
+  projectionKeysCache.set(guard, keys);
+  return keys;
+};
+
 interface GuardComponent {
   id: number;
-  keys: Set<string>;
+  keys: Set<number>;
   guards: Guard[];
 }
 
 interface GuardAnalysis {
-  componentByKey: Map<string, GuardComponent>;
+  componentByKey: Map<number, GuardComponent>;
   isSatisfiable: boolean;
 }
 
@@ -454,10 +539,10 @@ interface GuardAnalysis {
  */
 const independentComponents = (guards: Guard[]): GuardComponent[] => {
   const components = new Map<number, GuardComponent>();
-  const componentByKey = new Map<string, GuardComponent>();
+  const componentByKey = new Map<number, GuardComponent>();
   let nextComponentId = 0;
   for (const guard of conjuncts(guards)) {
-    const keys = collectProjectionKeys(guard, new Set());
+    const keys = new Set(getProjectionKeys(guard));
     const overlappingComponents = new Set<GuardComponent>();
     for (const key of keys) {
       const component = componentByKey.get(key);
@@ -565,7 +650,7 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
     return cached;
   }
   const components = independentComponents([guard]);
-  const componentByKey = new Map<string, GuardComponent>();
+  const componentByKey = new Map<number, GuardComponent>();
   let isSatisfiable = true;
   for (const component of components) {
     for (const key of component.keys) componentByKey.set(key, component);
@@ -584,7 +669,7 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
   const baseAnalysis = getGuardAnalysis(base);
   if (!baseAnalysis.isSatisfiable) return false;
   const overlappingComponents = new Set<GuardComponent>();
-  for (const key of collectProjectionKeys(candidate, new Set())) {
+  for (const key of getProjectionKeys(candidate)) {
     const component = baseAnalysis.componentByKey.get(key);
     if (component !== undefined) overlappingComponents.add(component);
   }

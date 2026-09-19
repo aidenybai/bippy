@@ -370,6 +370,21 @@ describe("guard solver", () => {
     ).toBeNull();
   });
 
+  it("keeps a disjunction required after another branch narrows its witness", () => {
+    const selected = equalsGuard(variable("selection"), 1);
+    const fallback = truthyGuard(variable("fallback"));
+    const later = truthyGuard(variable("later"));
+    expect(
+      solveGuards([
+        truthyGuard(variable("selection")),
+        negateGuard(fallback),
+        negateGuard(later),
+        orGuard([negateGuard(selected), fallback]),
+        orGuard([selected, later]),
+      ]),
+    ).toBeNull();
+  });
+
   const notGuard = (operand: Guard): Guard => ({ kind: "not", operand });
   const sectionGuard = (section: string): Guard =>
     orGuard([
