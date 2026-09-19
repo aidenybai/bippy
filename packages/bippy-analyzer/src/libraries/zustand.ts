@@ -41,8 +41,10 @@ export const ZUSTAND_MODELED_EXPORTS: ModeledExports = {
     "unstable_ssrSafe",
   ],
   "zustand/middleware/immer": ["immer"],
+  "zustand/react/shallow": ["useShallow"],
   "zustand/shallow": ["shallow", "useShallow"],
   "zustand/traditional": ["createWithEqualityFn", "useStoreWithEqualityFn"],
+  "zustand/vanilla/shallow": ["shallow"],
 };
 
 interface ZustandStore {
@@ -294,11 +296,12 @@ export const zustandValue: LibraryValueProvider = (specifier, importedName) => {
   if (specifier === "zustand/middleware/immer" && importedName === "immer") {
     return immer;
   }
-  if (specifier === "zustand/shallow") {
+  if (specifier === "zustand/shallow" || specifier === "zustand/react/shallow") {
     if (importedName === "shallow") return shallow;
     if (importedName === "useShallow") return useShallow;
     return null;
   }
+  if (specifier === "zustand/vanilla/shallow" && importedName === "shallow") return shallow;
   if (specifier === "zustand/traditional") {
     if (importedName === "createWithEqualityFn")
       return nativeFunction("createWithEqualityFn", ([initializer], tools) =>

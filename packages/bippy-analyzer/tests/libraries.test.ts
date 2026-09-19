@@ -160,7 +160,7 @@ export default () => (
 const ZUSTAND_SOURCE = `
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { useShallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 import { useEffect } from "react";
 
 interface CounterState {
