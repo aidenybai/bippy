@@ -104,6 +104,7 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
 
 /** Events the browser fires from a queued task rather than at the moment the state changes. */
 const TASK_QUEUED_EVENTS = new Set(["selectionchange"]);
+const FOCUS_EVENTS = new Set(["focus", "blur", "focusin", "focusout"]);
 
 interface NativeEventTarget {
   addEventListener(type: string, listener: (event: object) => void): void;
@@ -177,6 +178,10 @@ const attachNativeListener = (
   let isScheduled = false;
   const native = (event: object): void => {
     if (!TASK_QUEUED_EVENTS.has(type)) {
+      if (!FOCUS_EVENTS.has(type)) {
+        dispatch(event);
+        return;
+      }
       const eventTarget = Reflect.get(event, "target");
       if (typeof eventTarget !== "object" || eventTarget === null) {
         dispatch(event);

@@ -136,13 +136,16 @@ module.exports.run = () => {
   expect(result).toEqual(primitiveValue(4));
 });
 
-it("throws for strict assignments to unbound names", () => {
-  const interpreter = createInterpreter({});
-  const module = interpreter.graph.addVirtualModule(
-    join(rootDirectory, "strict-global.js"),
-    `
+it.each(["", "globalThis.forbiddenAssignment = 1; delete globalThis.forbiddenAssignment;"])(
+  "throws for strict assignments to absent globals after %s",
+  (setup) => {
+    const interpreter = createInterpreter({});
+    const module = interpreter.graph.addVirtualModule(
+      join(rootDirectory, "strict-global.js"),
+      `
 module.exports.run = () => {
   "use strict";
+  ${setup}
   try {
     forbiddenAssignment = 4;
     return "assigned";
@@ -151,16 +154,51 @@ module.exports.run = () => {
   }
 };
 `,
+    );
+    expect(module).not.toBeNull();
+    if (!module) return;
+    const result = interpreter.callValue(
+      interpreter.evaluateModuleExport(module, "run"),
+      [],
+      interpreter.createModuleContext(module),
+      null,
+    );
+    expect(result).toEqual(primitiveValue("ReferenceError"));
+  },
+);
+
+it("preserves conditional global absence during strict assignments", () => {
+  const interpreter = createInterpreter({});
+  const module = interpreter.graph.addVirtualModule(
+    join(rootDirectory, "conditional-global.js"),
+    `
+module.exports.run = () => {
+  "use strict";
+  globalThis.conditionalAssignment = 1;
+  if (Math.random() > 0.5) delete globalThis.conditionalAssignment;
+  try {
+    conditionalAssignment = 4;
+    return "assigned";
+  } catch (error) {
+    return error.name;
+  }
+};
+`,
   );
-  expect(module).not.toBeNull();
-  if (!module) return;
+  if (!module) throw new Error("Missing conditional global module");
   const result = interpreter.callValue(
     interpreter.evaluateModuleExport(module, "run"),
     [],
     interpreter.createModuleContext(module),
     null,
   );
-  expect(result).toEqual(primitiveValue("ReferenceError"));
+  expect(result).toMatchObject({
+    kind: "branch",
+    alternatives: expect.arrayContaining([
+      primitiveValue("assigned"),
+      primitiveValue("ReferenceError"),
+    ]),
+  });
 });
 
 it("isolates client globals and builtin expandos from server writes", () => {

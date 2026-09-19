@@ -3729,14 +3729,25 @@ export class Interpreter {
     }
     const bindingKind = context.module.bindings.get(name)?.kind;
     if (bindingKind === undefined || bindingKind === "typescript") {
-      if (
-        isStrictCode(context.module, node) &&
-        !this.getGlobalProperties(context.environment).has(name)
-      ) {
-        return thrownValue(
-          `\`${name}\` is not defined`,
-          createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
-        );
+      if (isStrictCode(context.module, node)) {
+        const presence =
+          this.getGlobalProperties(context.environment).has(name) ??
+          primitiveValue(this.getGlobal(name, context.environment) !== null);
+        return this.continueValue(presence, context, (present, assignmentContext) => {
+          if (getTruthiness(present) !== true) {
+            return thrownValue(
+              `\`${name}\` is not defined`,
+              createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
+            );
+          }
+          this.setGlobalMember(
+            { kind: "global", name: "globalThis" },
+            name,
+            value,
+            assignmentContext,
+          );
+          return value;
+        });
       }
       this.setGlobalMember({ kind: "global", name: "globalThis" }, name, value, context);
       return null;
