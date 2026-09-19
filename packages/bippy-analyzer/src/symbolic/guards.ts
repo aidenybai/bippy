@@ -482,26 +482,26 @@ const areAtomicGuardsDisjoint = (
 };
 
 interface GuardRelationCache {
-  disjoint: Map<Guard, Map<Guard, boolean>>;
-  implied: Map<Guard, Map<Guard, boolean>>;
-  same: Map<Guard, Map<Guard, boolean>>;
+  disjoint: WeakMap<Guard, WeakMap<Guard, boolean>>;
+  implied: WeakMap<Guard, WeakMap<Guard, boolean>>;
+  same: WeakMap<Guard, WeakMap<Guard, boolean>>;
 }
 
 const createGuardRelationCache = (): GuardRelationCache => ({
-  disjoint: new Map(),
-  implied: new Map(),
-  same: new Map(),
+  disjoint: new WeakMap(),
+  implied: new WeakMap(),
+  same: new WeakMap(),
 });
 
 const setGuardRelation = (
-  relations: Map<Guard, Map<Guard, boolean>>,
+  relations: WeakMap<Guard, WeakMap<Guard, boolean>>,
   left: Guard,
   right: Guard,
   value: boolean,
 ): void => {
   let rightGuards = relations.get(left);
   if (rightGuards === undefined) {
-    rightGuards = new Map();
+    rightGuards = new WeakMap();
     relations.set(left, rightGuards);
   }
   rightGuards.set(right, value);
