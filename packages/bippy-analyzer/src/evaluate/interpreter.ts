@@ -2410,8 +2410,8 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
   ): void {
-    const cause = { guard: this.guard, inputs: [] };
-    this.timers.queueMicrotask(() => this.runTaskWithCause(cause, task, context, location));
+    const handle = this.timers.createHandle("queueMicrotask");
+    this.timers.queueMicrotask(() => this.runTimerTask(handle, context, location, task), handle);
   }
 
   runTimerTask(
