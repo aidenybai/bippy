@@ -1339,8 +1339,30 @@ export class Materializer {
       case "function":
       case "native-function":
       case "method":
-      case "proxy":
-        return key.startsWith("on") ? noop : undefined;
+      case "proxy": {
+        if (!key.startsWith("on")) return undefined;
+        const owner = context.owner;
+        if (!owner) return noop;
+        return (event: object) =>
+          this.commitCauses.runTask(context.cause, () =>
+            this.runGuardedMutation(
+              value.kind === "function" ? value.scope : owner.scope,
+              null,
+              () =>
+                this.interpreter.callValue(
+                  value,
+                  [
+                    this.interpreter.hostDocument
+                      ? nativeObjectValue(event, this.interpreter.hostDocument)
+                      : unknownValue(`${key} event`),
+                  ],
+                  owner,
+                  null,
+                ),
+              owner.hooks,
+            ),
+          );
+      }
       default:
         return undefined;
     }

@@ -119,20 +119,23 @@ const readObservations = async (
   globalNames: string[],
   compilerDefinesUrl?: string,
 ): Promise<RuntimeObservations> => {
-  const json = await page.evaluate(async (options) => {
-    const globals: Partial<HarnessGlobals> = Object(globalThis);
-    const observed: RuntimeObservations = {
-      queries: [],
-      ...(await globals.__BIPPY_PARSER_OBSERVATIONS__?.()),
-      globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(options.globalNames)) ?? {},
-      page: globals.__BIPPY_PARSER_PAGE__?.(),
-    };
-    if (options.compilerDefinesUrl) {
-      const compilerDefines: unknown = (await import(options.compilerDefinesUrl)).default;
-      observed.compilerDefines = Object(compilerDefines);
-    }
-    return JSON.stringify(observed);
-  }, { globalNames, compilerDefinesUrl });
+  const json = await page.evaluate(
+    async (options) => {
+      const globals: Partial<HarnessGlobals> = Object(globalThis);
+      const observed: RuntimeObservations = {
+        queries: [],
+        ...(await globals.__BIPPY_PARSER_OBSERVATIONS__?.()),
+        globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(options.globalNames)) ?? {},
+        page: globals.__BIPPY_PARSER_PAGE__?.(),
+      };
+      if (options.compilerDefinesUrl) {
+        const compilerDefines: unknown = (await import(options.compilerDefinesUrl)).default;
+        observed.compilerDefines = Object(compilerDefines);
+      }
+      return JSON.stringify(observed);
+    },
+    { globalNames, compilerDefinesUrl },
+  );
   return readObservationsJson(JSON.parse(json), `${page.url()} observations`);
 };
 

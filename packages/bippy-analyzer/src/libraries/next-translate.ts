@@ -46,7 +46,8 @@ const getNestedProperty = (value: StaticValue, path: string): StaticValue => {
 
 const getPluralValue = (value: StaticValue, variables: StaticValue): StaticValue => {
   if (value.kind !== "object") return value;
-  const count = variables.kind === "object" ? getObjectProperty(variables, "count") : UNDEFINED_VALUE;
+  const count =
+    variables.kind === "object" ? getObjectProperty(variables, "count") : UNDEFINED_VALUE;
   if (count.kind !== "primitive" || typeof count.value !== "number") return UNDEFINED_VALUE;
   const exact = getObjectProperty(value, String(count.value));
   if (!isUndefinedValue(exact)) return exact;
@@ -136,16 +137,13 @@ const renderFormattedElements = (text: string, components: StaticValue): StaticV
           ? getObjectProperty(template.props, "children")
           : UNDEFINED_VALUE;
     const component =
-      template.kind === "element"
-        ? template
-        : element({ kind: "fragment" }, objectValue());
+      template.kind === "element" ? template : element({ kind: "fragment" }, objectValue());
     rendered.push(withChildren(component, children, key));
     key++;
     offset = match.index + match[0].length;
   }
   if (rendered.length === 0) return primitiveValue(normalizedText);
-  if (offset < normalizedText.length)
-    rendered.push(primitiveValue(normalizedText.slice(offset)));
+  if (offset < normalizedText.length) rendered.push(primitiveValue(normalizedText.slice(offset)));
   return listValue(rendered);
 };
 

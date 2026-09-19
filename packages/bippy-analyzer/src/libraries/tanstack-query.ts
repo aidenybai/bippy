@@ -496,9 +496,6 @@ const MODELED_EXPORT_NAMES: readonly string[] = [
 ];
 
 export const TANSTACK_QUERY_MODELED_EXPORTS: ModeledExports = {
-  "@tanstack/react-query": [
-    ...MODELED_EXPORT_NAMES,
-    "QueryClientProvider",
-  ],
+  "@tanstack/react-query": [...MODELED_EXPORT_NAMES, "QueryClientProvider"],
   "@tanstack/query-core": MODELED_EXPORT_NAMES,
 };

@@ -6,11 +6,7 @@ const Translated = () => {
   return (
     <main>
       <p>{t("hello", { name: "Ada" })}</p>
-      <Trans
-        i18nKey="common:rich"
-        values={{ name: "Ada" }}
-        components={{ strong: <strong /> }}
-      />
+      <Trans i18nKey="common:rich" values={{ name: "Ada" }} components={{ strong: <strong /> }} />
       <Trans i18nKey="common:literal" components={{ code: <code /> }} />
     </main>
   );

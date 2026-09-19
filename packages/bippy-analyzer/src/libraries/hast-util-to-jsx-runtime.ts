@@ -51,10 +51,7 @@ const getChildKeyName = (child: StaticValue): string | null => {
   return null;
 };
 
-const getElementChildren = (
-  node: StaticObjectValue,
-  state: HastJsxRuntimeOptions,
-): StaticValue => {
+const getElementChildren = (node: StaticObjectValue, state: HastJsxRuntimeOptions): StaticValue => {
   const children = getChildren(node);
   if (children === null) return unknownValue("dynamic hast children");
   const countsByName = new Map<string, number>();
@@ -105,9 +102,7 @@ const renderNode = (
     return element(
       toElementType(state.fragment, "Fragment"),
       objectValue(
-        isUndefinedValue(children)
-          ? []
-          : [{ kind: "property", key: "children", value: children }],
+        isUndefinedValue(children) ? [] : [{ kind: "property", key: "children", value: children }],
       ),
     );
   }
@@ -115,8 +110,7 @@ const renderNode = (
   const tagName = getString(getObjectProperty(value, "tagName"));
   if (tagName === null) return unknownValue("dynamic hast tag name");
   const component = getComponent(state.components, tagName);
-  const isCustomComponent =
-    component.kind !== "primitive" || component.value !== tagName;
+  const isCustomComponent = component.kind !== "primitive" || component.value !== tagName;
   const children = getElementChildren(value, state);
   return element(
     toElementType(component, tagName),

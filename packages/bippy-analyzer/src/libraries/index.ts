@@ -66,10 +66,7 @@ import {
   REACT_MARKDOWN_PACKAGES,
   reactMarkdownValue,
 } from "./react-markdown.js";
-import {
-  RADIX_FOCUS_SCOPE_PACKAGES,
-  radixFocusScopeValue,
-} from "./radix-focus-scope.js";
+import { RADIX_FOCUS_SCOPE_PACKAGES, radixFocusScopeValue } from "./radix-focus-scope.js";
 import {
   REACT_LIFECYCLES_COMPAT_PACKAGES,
   reactLifecyclesCompatValue,

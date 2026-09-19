@@ -174,9 +174,7 @@ export const NEXT_PAGES_PROFILE: FrameworkProfile = {
   kind: "next-pages",
   transparentRuntimeFibers: new Set(NEXT_PAGES_RUNTIME_WRAPPERS),
   transparentRuntimeProviders: new Set(NEXT_PAGES_RUNTIME_PROVIDERS),
-  transparentRuntimeWrapperChildren: new Map([
-    ["I18nProvider", new Set(["ContextProvider"])],
-  ]),
+  transparentRuntimeWrapperChildren: new Map([["I18nProvider", new Set(["ContextProvider"])]]),
   transparentStaticFibers: new Set(["Fragment", "StrictMode", "NextTranslationContext"]),
   isInjectedRuntimeFiber: isNextPagesInjectedFiber,
   defaultAnchor: null,

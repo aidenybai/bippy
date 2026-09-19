@@ -105,7 +105,9 @@ const getResourceProperty = (
 ): StaticValue => {
   let properties = state.resourceProperties.get(object);
   if (properties === undefined) {
-    if (object.entries.every((entry) => entry.kind === "property" && entry.accessor === undefined)) {
+    if (
+      object.entries.every((entry) => entry.kind === "property" && entry.accessor === undefined)
+    ) {
       const knownProperties = new Map<string, StaticValue>();
       for (const entry of object.entries) {
         if (entry.kind === "property") knownProperties.set(entry.key, entry.value);

@@ -64,7 +64,7 @@ const liftExport = (
       });
       return memoizeScalarOperation(exported, args, derive) ?? derive();
     },
-    false,
+    packageName !== "tailwind-merge",
   );
 };
 

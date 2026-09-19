@@ -131,21 +131,16 @@ describe("guarded timer cancellation", () => {
     expect(hasRun).toBe(false);
   });
 
-  it("settles a timer that recursively schedules its call site", () => {
+  it("runs finite recursive timers without dropping repeated callbacks", () => {
     const queue = new TimerQueue();
-    const firstHandle = queue.createHandle("setTimeout");
-    const nextHandle = queue.createHandle("setTimeout");
-    let isNextScheduled = true;
-    queue.schedule(
-      firstHandle,
-      () => {
-        isNextScheduled = queue.schedule(nextHandle, () => {}, 1000, "poll");
-      },
-      1000,
-      "poll",
-    );
-    queue.runNextTask();
-    expect(isNextScheduled).toBe(false);
+    let count = 0;
+    const tick = () => {
+      count++;
+      if (count < 3) queue.schedule(queue.createHandle("setTimeout"), tick, 10);
+    };
+    queue.schedule(queue.createHandle("setTimeout"), tick, 10);
+    for (let index = 0; index < 3; index++) queue.runNextTask();
+    expect(count).toBe(3);
     expect(queue.hasTasks()).toBe(false);
   });
 });

@@ -46,7 +46,6 @@ const captureTrackedPromise = (
   if (value._tracked !== true || typeof value.then !== "function") return null;
   const status = "_error" in value ? "rejected" : "_data" in value ? "fulfilled" : null;
   if (status === null) return null;
-  seen.add(value);
   const settledValue = toCapturedValue(
     status === "rejected" ? value._error : value._data,
     exports,
@@ -75,10 +74,10 @@ export const toCapturedValue = (
   }
   if (!isRecord(value)) return opaqueCapture(describeOpaque(value));
   if (value instanceof Date) return dateCapture(value);
-  const trackedPromise = captureTrackedPromise(value, exports, seen);
-  if (trackedPromise !== null) return trackedPromise;
   if (seen.has(value)) return opaqueCapture("cycle");
   seen.add(value);
+  const trackedPromise = captureTrackedPromise(value, exports, seen);
+  if (trackedPromise !== null) return trackedPromise;
   if (value instanceof Error) {
     const entries: Record<string, CapturedValue> = { name: value.name, message: value.message };
     for (const [key, item] of Object.entries(value)) {

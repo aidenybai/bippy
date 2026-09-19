@@ -26,7 +26,6 @@ const registerApolloClient = (): StaticValue =>
   );
 
 export const apolloNextjsValue: LibraryValueProvider = (specifier, importedName) =>
-  specifier === "@apollo/experimental-nextjs-app-support" &&
-  importedName === "registerApolloClient"
+  specifier === "@apollo/experimental-nextjs-app-support" && importedName === "registerApolloClient"
     ? registerApolloClient()
     : null;

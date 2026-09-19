@@ -24,6 +24,17 @@ describe("corpus manifest", () => {
     expect(entries.every((entry) => entry.static.rootDirectory.length > 0)).toBe(true);
   });
 
+  it("pairs retained results with every pinned React application", () => {
+    const manifest = readCorpusManifest(MANIFEST_PATH);
+    const saved = readCorpusResults(path.resolve(import.meta.dirname, "../corpus/results.json"));
+    const expected = manifest.entries.map(({ id, revision }) => ({ id, revision }));
+    const actual = saved.results.map(({ id, revision }) => ({ id, revision }));
+    expect(actual).toHaveLength(expected.length);
+    expect(actual).toEqual(expect.arrayContaining(expected));
+    expect(new Set(actual.map(({ id }) => id)).size).toBe(expected.length);
+    expect(actual.some(({ id }) => id === "giscus")).toBe(false);
+  });
+
   it("preserves the served directory supplied by the manifest", () => {
     const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
     const target = { ...entry.static, servedDirectory: "src" };

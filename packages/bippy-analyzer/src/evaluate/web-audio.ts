@@ -67,9 +67,7 @@ export const createAudioContext = (options: StaticValue | undefined): StaticValu
         smoothingTimeConstant: primitiveValue(0.8),
       }),
     ),
-    createGain: nativeFunction("createGain", () =>
-      createAudioNode({ gain: createAudioParam() }),
-    ),
+    createGain: nativeFunction("createGain", () => createAudioNode({ gain: createAudioParam() })),
     createMediaStreamDestination: nativeFunction("createMediaStreamDestination", () =>
       createAudioNode({ stream: unknownValue("MediaStream from audio destination") }),
     ),

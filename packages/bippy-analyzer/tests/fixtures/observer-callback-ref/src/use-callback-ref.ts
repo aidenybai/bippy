@@ -11,8 +11,7 @@ export const useCallbackRef = <Arguments extends unknown[]>(
     () =>
       (...args: Arguments) => {
         let currentCallback;
-        return (currentCallback = callbackRef.current) === null ||
-          currentCallback === undefined
+        return (currentCallback = callbackRef.current) === null || currentCallback === undefined
           ? undefined
           : currentCallback.call(callbackRef, ...args);
       },

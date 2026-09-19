@@ -3729,7 +3729,10 @@ export class Interpreter {
     }
     const bindingKind = context.module.bindings.get(name)?.kind;
     if (bindingKind === undefined || bindingKind === "typescript") {
-      if (isStrictCode(context.module, node)) {
+      if (
+        isStrictCode(context.module, node) &&
+        !this.getGlobalProperties(context.environment).has(name)
+      ) {
         return thrownValue(
           `\`${name}\` is not defined`,
           createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
@@ -6269,8 +6272,10 @@ export class Interpreter {
   ): JsxAttributeValues {
     const entries: StaticObjectEntry[] = [];
     let maybeKey: StaticValue = UNDEFINED_VALUE;
+    let hasSpread = false;
     for (const attribute of attributes) {
       if (attribute.type === "JSXSpreadAttribute") {
+        hasSpread = true;
         const spread = this.evaluateExpression(attribute.argument, context);
         const copied = getCopiedSpreadEntries(spread);
         entries.push(...(copied ?? [{ kind: "spread", value: spread }]));
@@ -6297,7 +6302,7 @@ export class Interpreter {
       } else {
         value = this.evaluateExpression(attribute.value, context, name);
       }
-      if (name === "key" && entries.every((entry) => entry.kind === "property")) {
+      if (name === "key" && !hasSpread) {
         maybeKey = value;
         continue;
       }

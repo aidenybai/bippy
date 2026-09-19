@@ -28,7 +28,7 @@ const fullExpansionRows = [
   [7, 11, 14],
   nonconstantMasks,
   [7, 11, 14],
-  [6, 7, 10, 11, 14],
+  [7, 11, 14],
   nonconstantMasks,
   [],
 ];

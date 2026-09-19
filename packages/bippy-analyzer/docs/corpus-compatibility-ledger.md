@@ -3,6 +3,18 @@
 The active corpus scope is React-only. The Preact-based `giscus` entry and Preact-specific
 runtime support were removed after this historical audit, leaving 499 entries.
 
+## Merge review
+
+The retained results below predate the merge review; they are not a fresh validation of the
+final analyzer. The local corpus clones and captures were unavailable during review.
+
+Review removed call-site timer suppression because it dropped finite timer chains and repeated
+async helper calls. Recursive timers now use the existing execution budget rather than silently
+appearing settled. Native package source lifting is retained except for `tailwind-merge`, and
+Floating UI coordinates remain symbolic rather than being fabricated as zero. Corpus entries
+affected by these changes need fresh capture replay before their previous coverage claims can
+be attributed to the final code.
+
 ## Artifact baseline
 
 Recomputed at analyzer commit `d8dedacc` from the then-current

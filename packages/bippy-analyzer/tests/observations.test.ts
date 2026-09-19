@@ -70,6 +70,21 @@ describe("runtime observations", () => {
     ).toEqual({ status: "fulfilled", value: { name: "Ada" } });
   });
 
+  it.each(["_data", "_error"])("bounds cycles through a tracked promise's %s", (property) => {
+    const tracked = Promise.resolve();
+    const payload = { tracked };
+    Object.defineProperties(tracked, {
+      _tracked: { value: true },
+      [property]: { value: payload },
+    });
+    expect(toCapturedValue(tracked)).toEqual(
+      promiseCapture({
+        status: property === "_error" ? "rejected" : "fulfilled",
+        value: { tracked: opaqueCapture("cycle") },
+      }),
+    );
+  });
+
   it("reads saved observations and rejects malformed ones", () => {
     const query = {
       queryHash: '["todos"]',

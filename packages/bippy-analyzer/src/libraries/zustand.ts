@@ -80,8 +80,7 @@ const createState = (): ZustandState => {
 const getState = (store: ZustandStore): StaticValue => store.state.current;
 
 const isObjectState = (state: StaticValue): boolean =>
-  state.kind === "object" ||
-  (state.kind === "branch" && state.alternatives.every(isObjectState));
+  state.kind === "object" || (state.kind === "branch" && state.alternatives.every(isObjectState));
 
 const mergeState = (previousState: StaticValue, nextState: StaticValue): StaticValue => {
   if (isObjectState(nextState)) {

@@ -11,7 +11,7 @@ const writeSource = (rootDirectory: string, fileName: string, source: string): s
   return filePath;
 };
 
-it("settles Floating UI positioning without evaluating its middleware loop", async () => {
+it.each(["x", "y"])("keeps Floating UI %s coordinates symbolic", async (coordinate) => {
   const rootDirectory = mkdtempSync(join(import.meta.dirname, "floating-ui-"));
   try {
     const packageDirectory = join(rootDirectory, "node_modules/@floating-ui/core");
@@ -41,7 +41,7 @@ it("settles Floating UI positioning without evaluating its middleware loop", asy
           const [result, setResult] = useState("pending");
           useEffect(() => {
             computePosition(null, null, { placement: "top", strategy: "fixed" }).then(
-              ({ placement, strategy, x }) => setResult(\`\${placement}:\${strategy}:\${x}\`),
+              ({ placement, strategy, ${coordinate}: position }) => setResult(\`\${placement}:\${strategy}:\${position}\`),
             );
           }, []);
           return result === "top:fixed:0" ? <main /> : <aside />;
@@ -59,7 +59,8 @@ it("settles Floating UI positioning without evaluating its middleware loop", asy
     expect(result.stats.unknownCount).toBe(0);
     expect(result.diagnostics).toEqual([]);
     expect(pattern).toContain("<main>");
-    expect(pattern).not.toContain("<aside>");
+    expect(pattern).toContain("<aside>");
+    expect(pattern).toContain("?branch");
   } finally {
     rmSync(rootDirectory, { recursive: true, force: true });
   }

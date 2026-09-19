@@ -65,9 +65,7 @@ describe("distributeObjectBranches", () => {
     expect(
       distributed.kind === "branch"
         ? distributed.alternatives.map((alternative) =>
-            alternative.kind === "object"
-              ? getObjectProperty(alternative, "href")
-              : alternative,
+            alternative.kind === "object" ? getObjectProperty(alternative, "href") : alternative,
           )
         : [],
     ).toEqual([text("/dark.png"), text("/light.png")]);

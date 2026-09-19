@@ -131,7 +131,7 @@ const signalProcessGroup = (pid: number, signal: NodeJS.Signals): boolean => {
 };
 
 const isChildClosed = (child: ChildProcess): boolean =>
-  child.exitCode !== null &&
+  (child.exitCode !== null || child.signalCode !== null) &&
   (child.stdout === null || child.stdout.closed) &&
   (child.stderr === null || child.stderr.closed);
 
@@ -160,14 +160,16 @@ export const runCommand = async (options: RunCommandOptions): Promise<void> => {
     child.once("error", rejectClose);
     child.once("close", (code) => resolveClose(code));
   });
-  const outcome = await Promise.race([close, deadline(options.timeoutMs, "timeout" as const)]);
-  if (outcome === "timeout") {
-    await killProcessGroup(child);
+  try {
+    const outcome = await Promise.race([close, deadline(options.timeoutMs, "timeout" as const)]);
+    if (outcome === "timeout") {
+      await killProcessGroup(child);
+      throw new CommandTimeoutError(options.command, options.timeoutMs);
+    }
+    if (outcome !== 0) throw new CommandFailedError(options.command, outcome);
+  } finally {
     await endLog(child, log);
-    throw new CommandTimeoutError(options.command, options.timeoutMs);
   }
-  await endLog(child, log);
-  if (outcome !== 0) throw new CommandFailedError(options.command, outcome);
 };
 
 export class DevServer {

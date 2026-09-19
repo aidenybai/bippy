@@ -5,7 +5,7 @@ import { formatPattern, getRenderPattern } from "../src/harness/index.js";
 import { createStaticRenderer } from "../src/render/static-renderer.js";
 
 const APP = join(import.meta.dirname, "fixtures/styled-components-transform");
-const STORYBOOK_APP = join(import.meta.dirname, "fixtures/storybook-styled-components");
+const STORYBOOK_APP = join(import.meta.dirname, "framework-fixtures/storybook-styled-components");
 
 describe("styled-components build transform", () => {
   it("names styled components `file__Binding` when the project declares babel-plugin-styled-components", async () => {
