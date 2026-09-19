@@ -1784,7 +1784,7 @@ export class Materializer {
       captured: (captured, name) => this.interpreter.captured(captured, name),
       markEscaped: (value) => this.interpreter.markEscaped(value),
       queueMicrotask: (task) => this.interpreter.timers.queueMicrotask(task),
-      bindTask: (task) => this.interpreter.bindTask(task, context.owner, location),
+      bindTask: (task) => this.interpreter.bindTask(task),
       runTask: (cause, task) =>
         this.interpreter.runTaskWithCause(cause, task, context.owner, location),
       runTaskAlternatives: (causes, task, reason) =>

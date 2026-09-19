@@ -2395,14 +2395,8 @@ export class Interpreter {
 
   bindTask<Arguments extends unknown[]>(
     task: (...args: Arguments) => void,
-    context: EvaluationContext | null,
-    location: SourceLocation | null,
   ): (...args: Arguments) => void {
-    const handle = this.timers.createHandle("continuation");
-    this.timers.activate(handle);
-    return this.bindContinuationWithCause((...args: Arguments) =>
-      this.runTimerTask(handle, context, location, () => task(...args)),
-    );
+    return this.bindContinuationWithCause(task);
   }
 
   queueMicrotask(
@@ -4752,7 +4746,7 @@ export class Interpreter {
       captured: (captured, name) => this.captured(captured, name),
       markEscaped: (value) => this.markEscaped(value),
       queueMicrotask: (task) => this.queueMicrotask(task, context, location),
-      bindTask: (task) => this.bindTask(task, context, location),
+      bindTask: (task) => this.bindTask(task),
       runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
       runTaskAlternatives: (causes, task, reason) =>
         this.runTaskAlternatives(causes, task, reason, context, location),

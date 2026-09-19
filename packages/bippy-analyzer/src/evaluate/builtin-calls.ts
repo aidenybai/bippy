@@ -1633,7 +1633,7 @@ export const promiseTools = (
   callDeferred: (callee, callArgs) => evaluator.callDeferred(callee, callArgs, context, location),
   markEscaped: (value) => evaluator.markEscaped(value),
   queueMicrotask: (task) => evaluator.queueMicrotask(task, context, location),
-  bindTask: (task) => evaluator.bindTask(task, context, location),
+  bindTask: (task) => evaluator.bindTask(task),
   runTask: (cause, task) => evaluator.runTaskWithCause(cause, task, context, location),
   runTaskAlternatives: (causes, task, reason) =>
     evaluator.runTaskAlternatives(causes, task, reason, context, location),
