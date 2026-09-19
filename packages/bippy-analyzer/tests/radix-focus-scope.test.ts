@@ -11,7 +11,20 @@ const writeSource = (rootDirectory: string, fileName: string, source: string): s
   return filePath;
 };
 
-it("renders an as-child Radix FocusScope without mounting its document effects", async () => {
+it.each([
+  {
+    name: "ES module import",
+    packageEntry: { module: "index.js" },
+    packageSource: 'export const FocusScope = () => { throw new Error("source should not run"); };',
+    importSource: 'import { FocusScope } from "@radix-ui/react-focus-scope";',
+  },
+  {
+    name: "CommonJS require",
+    packageEntry: { main: "index.js" },
+    packageSource: 'exports.FocusScope = () => { throw new Error("source should not run"); };',
+    importSource: 'const { FocusScope } = require("@radix-ui/react-focus-scope");',
+  },
+])("renders an as-child Radix FocusScope from a $name", async (fixture) => {
   const rootDirectory = mkdtempSync(join(import.meta.dirname, "radix-focus-scope-"));
   try {
     const packageDirectory = join(rootDirectory, "node_modules/@radix-ui/react-focus-scope");
@@ -21,20 +34,16 @@ it("renders an as-child Radix FocusScope without mounting its document effects",
       JSON.stringify({
         name: "@radix-ui/react-focus-scope",
         version: "1.0.0",
-        module: "index.js",
+        ...fixture.packageEntry,
         sideEffects: false,
       }),
     );
-    writeSource(
-      packageDirectory,
-      "index.js",
-      'export const FocusScope = () => { throw new Error("source should not run"); };',
-    );
+    writeSource(packageDirectory, "index.js", fixture.packageSource);
     const entryPath = writeSource(
       rootDirectory,
       "entry.jsx",
       `
-        import { FocusScope } from "@radix-ui/react-focus-scope";
+        ${fixture.importSource}
         export default () => (
           <FocusScope asChild trapped>
             <section><button /></section>

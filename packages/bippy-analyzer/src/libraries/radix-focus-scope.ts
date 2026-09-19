@@ -5,7 +5,7 @@ import {
   objectValue,
   primitiveValue,
 } from "../evaluate/values.js";
-import type { LibraryValueProvider, ModeledExports, StubComponent } from "../types.js";
+import type { LibraryValueProvider, StubComponent } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 
 export const RADIX_FOCUS_SCOPE_PACKAGES = ["@radix-ui/react-focus-scope"];
@@ -49,10 +49,6 @@ const focusScope: StubComponent = {
 };
 
 const focusScopeValue = stubValue(focusScope);
-
-export const RADIX_FOCUS_SCOPE_MODELED_EXPORTS: ModeledExports = {
-  [PACKAGE_NAME]: ["FocusScope", "Root"],
-};
 
 export const radixFocusScopeValue: LibraryValueProvider = (specifier, importedName) =>
   specifier === PACKAGE_NAME && (importedName === "FocusScope" || importedName === "Root")
