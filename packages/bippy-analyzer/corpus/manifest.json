@@ -1261,7 +1261,8 @@
           "sonner",
           "next-themes"
         ]
-      }
+      },
+      "notes": "The retained 24-commit React capture reaches 100% strict coverage with no opaque or wildcard matches. State-space enumeration remains truncated at 256 of 6,426,880 states, and all 16 sampled replay assignments are incomplete rather than contradictory."
     },
     {
       "id": "next-mdx-blog",
@@ -9931,7 +9932,7 @@
         "entry": "src/index.js",
         "externalPackageAllowList": ["@fortawesome/*"]
       },
-      "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original options menu with ten backgrounds, liquid-cheese default, FontAwesome and Audio objects. No background choice/play/reshuffle or audio action. Partial initial options screen has83.8% strict coverage with four opaque FontAwesome nodes. Original backgrounds/liquid-cheese default and audio retained, no play or setting choice. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 181024879 identifies a distinct non-fork repository."
+      "notes": "Original CRA source, startup, data, scripts and locks retained. Pinned Node16.20.2 and npm6.14.18 for v1 locks or npm8.19.4 for newer locks/Yarn1.22.22/pnpm8.15.9 with outer pnpm11.20 launcher; no peer overrides or lock conversion. No task input, storage injection, auth, timer changes or route substitution. Independent native React/Bippy capture and identical-capture replay do not establish complete interactions, layout or workflow reachability. CLI launches use a documented environment allowlist to avoid exposing harness credentials through configuration; no application configuration values are invented. Original options menu with ten backgrounds, liquid-cheese default, FontAwesome and Audio objects. No background choice/play/reshuffle or audio action. The retained capture now replays exactly with 100% strict coverage after analyzing the FontAwesome packages, with no opaque or wildcard matches and its single assignment passing replay. Original backgrounds/liquid-cheese default and audio retained, no play or setting choice. Frozen installs, installed-tree and actual launcher versions verify before/after capture; original source and locks are unchanged. All base and selected-policy comparisons repeat against the identical Bippy capture with full report/runtime/static/state-space/replay fields preserved. Initial fiber membership does not establish attributes, pixels, transitions, reachability or whole-space completeness. GitHub repository ID 181024879 identifies a distinct non-fork repository."
     },
     {
       "id": "saadusufzai-quiz-app-react-and-typescrpt",
