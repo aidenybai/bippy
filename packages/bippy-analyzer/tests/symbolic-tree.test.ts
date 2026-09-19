@@ -252,10 +252,15 @@ describe("symbolic tree: guard algebra", () => {
 
   it("checks candidates against only the active path components they share", () => {
     const active = andGuard([isTruthy, isBeta]);
+    const isIndependent = equalsGuard(variable("#independent"), "open");
     expect(isGuardCompatibleWithActivePath(constantGuard(false), isTruthy)).toBe(false);
     expect(isGuardCompatibleWithActivePath(active, negateGuard(isBeta))).toBe(false);
+    expect(isGuardCompatibleWithActivePath(active, isIndependent)).toBe(true);
     expect(
-      isGuardCompatibleWithActivePath(active, equalsGuard(variable("#independent"), "open")),
+      isGuardCompatibleWithActivePath(
+        active,
+        negateGuard(andGuard([isTruthy, isBeta, isIndependent])),
+      ),
     ).toBe(true);
   });
 

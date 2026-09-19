@@ -1,4 +1,5 @@
 import {
+  andGuard,
   type Guard,
   type GuardCompare,
   type GuardEquals,
@@ -8,6 +9,8 @@ import {
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
+  isGuardImplied,
+  negateGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -690,16 +693,27 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
 
 export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): boolean => {
   if (base.kind === "constant" && !base.value) return false;
+  const narrowedCandidate =
+    candidate.kind === "and"
+      ? andGuard(candidate.operands.filter((operand) => !isGuardImplied(base, operand)))
+      : candidate.kind === "not" && candidate.operand.kind === "and"
+        ? negateGuard(
+            andGuard(
+              candidate.operand.operands.filter((operand) => !isGuardImplied(base, operand)),
+            ),
+          )
+        : candidate;
+  if (narrowedCandidate.kind === "constant") return narrowedCandidate.value;
   const baseAnalysis = getGuardAnalysis(base);
   const overlappingComponents = new Set<GuardComponent>();
-  for (const key of collectProjectionKeys(candidate, new Set())) {
+  for (const key of collectProjectionKeys(narrowedCandidate, new Set())) {
     const component = baseAnalysis.componentByKey.get(key);
     if (component !== undefined) overlappingComponents.add(component);
   }
   return (
     solveGuards([
       ...[...overlappingComponents].flatMap((component) => component.guards),
-      candidate,
+      narrowedCandidate,
     ]) !== null
   );
 };
