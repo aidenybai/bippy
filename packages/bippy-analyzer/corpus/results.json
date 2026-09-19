@@ -261310,8 +261310,8 @@
       "id": "muhammad-faizan-tariq-kanban-board-react-dnd-kit",
       "revision": "a38915c173a03814296a4cf7cfffb678d5d535c4",
       "framework": "spa",
-      "capturedAt": "2026-09-14T13:53:06.152Z",
-      "durationMs": 769,
+      "capturedAt": "2026-09-19T14:14:05.932Z",
+      "durationMs": 950,
       "runtime": {
         "reactVersion": "18.2.0",
         "rendererName": "react-dom",
@@ -261324,22 +261324,22 @@
       },
       "static": {
         "stats": {
-          "fiberCount": 16,
+          "fiberCount": 31,
           "textCount": 1,
           "branchCount": 0,
           "repeatCount": 0,
-          "opaqueCount": 3,
+          "opaqueCount": 0,
           "unknownCount": 0,
-          "modulesLoaded": 9
+          "modulesLoaded": 13
         },
         "diagnostics": []
       },
       "report": {
-        "matchedFibers": 11,
+        "matchedFibers": 29,
         "matchedText": 1,
-        "opaqueSubtrees": 3,
-        "opaqueSkippedFibers": 18,
-        "slotsMatched": 1,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
         "slotsUnmatched": 0,
         "opaqueRenamed": 0,
         "unmatchedSlots": [],
@@ -261348,44 +261348,69 @@
         "branchesResolved": 0,
         "repeatIterations": 0,
         "transparentFibers": 0,
-        "status": "partial",
+        "status": "exact",
         "runtimeFibers": 30,
-        "staticFibers": 15,
+        "staticFibers": 30,
         "coverage": 1,
-        "strictCoverage": 0.4,
+        "strictCoverage": 1,
         "divergence": null,
-        "stepsUsed": 27,
+        "stepsUsed": 30,
         "budgetExhausted": false
       },
       "stateSpace": {
-        "states": 1,
-        "stateCount": 1,
+        "states": 2,
+        "stateCount": 2,
         "clusters": 0,
         "tree": {
-          "nodes": 15,
-          "inputs": 0,
-          "guards": 0,
+          "nodes": 56,
+          "inputs": 1,
+          "guards": 2,
           "branches": 0,
           "repeats": 0,
-          "opaque": 3,
+          "opaque": 0,
           "wildcards": 0
         },
         "matchedState": {
-          "index": 0,
-          "conditions": []
+          "index": 1,
+          "conditions": [
+            {
+              "kind": "transition",
+              "commit": 1,
+              "commitCount": 2
+            }
+          ]
         },
         "closestState": null,
         "omitted": null,
         "coverage": {
-          "sides": [],
-          "witnessed": 0,
-          "possible": 0,
+          "sides": [
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 0,
+              "guard": "eq(choice(commit), 0)",
+              "status": "possible"
+            },
+            {
+              "kind": "commit",
+              "variable": "commit",
+              "reason": "committed render",
+              "location": null,
+              "side": 1,
+              "guard": "eq(choice(commit), 1)",
+              "status": "witnessed"
+            }
+          ],
+          "witnessed": 1,
+          "possible": 1,
           "unreachable": 0
         }
       },
       "stateReplay": {
         "verification": "sample-passed",
-        "states": 1,
+        "states": 2,
         "assignments": 1,
         "replayed": 1,
         "maxReplayed": 16,
@@ -261393,7 +261418,7 @@
         "incomplete": []
       },
       "anchor": null,
-      "note": "runtime replayed from 2026-09-14T13:53:02.238Z",
+      "note": "runtime replayed from 2026-09-19T14:12:45.790Z",
       "failure": null
     },
     {
