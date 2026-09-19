@@ -5476,7 +5476,7 @@
         "entry": "shared/index.tsx",
         "externalPackageAllowList": ["react-router-dom", "react-router"]
       },
-      "notes": "src/utils/environment.ts resolves to the `web` platform when neither the Electron preload nor chrome.runtime is present, which is what the Vite dev server gives a plain browser (CLAUDE.md: `npm run dev` runs the React app only). `npm ci --ignore-scripts` skips the postinstall (`electron-rebuild` + copy-ort-wasm) so the Electron binary and native modules are never downloaded or built; setup re-runs only the WASM copy the renderer needs. vite-plugin-electron's `onstart` spawns `electron .` and exits the dev server when that child exits, so the setup writes a sleeping stand-in executable and ELECTRON_OVERRIDE_DIST_PATH points the `electron` package at it; nothing of the app's source is patched."
+      "notes": "Exact against the fresh plain-browser capture: 100% strict coverage with 85 matched fibers, 1 matched text node, no opaque or wildcard nodes, and 2/2 replay assignments passing. The web platform is selected when neither the Electron preload nor chrome.runtime is present; setup skips native Electron rebuilds, copies the renderer's WASM assets, and keeps Vite's Electron child alive without patching application source."
     },
     {
       "id": "open-react-template",
