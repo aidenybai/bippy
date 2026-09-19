@@ -42,46 +42,52 @@ export type GuardLiteral = string | number | boolean | null;
 
 export type CompareOperator = "<" | "<=" | ">" | ">=";
 
-export interface GuardConstant {
+const guardHashKey = Symbol("guard hash");
+
+interface GuardHashCache {
+  [guardHashKey]?: number;
+}
+
+export interface GuardConstant extends GuardHashCache {
   kind: "constant";
   value: boolean;
 }
 
-export interface GuardTruthy {
+export interface GuardTruthy extends GuardHashCache {
   kind: "truthy";
   variable: SymbolicVariable;
 }
 
-export interface GuardEquals {
+export interface GuardEquals extends GuardHashCache {
   kind: "eq";
   variable: SymbolicVariable;
   value: GuardLiteral;
 }
 
-export interface GuardCompare {
+export interface GuardCompare extends GuardHashCache {
   kind: "compare";
   variable: SymbolicVariable;
   operator: CompareOperator;
   value: number;
 }
 
-export interface GuardInSet {
+export interface GuardInSet extends GuardHashCache {
   kind: "in-set";
   variable: SymbolicVariable;
   values: GuardLiteral[];
 }
 
-export interface GuardNot {
+export interface GuardNot extends GuardHashCache {
   kind: "not";
   operand: Guard;
 }
 
-export interface GuardAnd {
+export interface GuardAnd extends GuardHashCache {
   kind: "and";
   operands: Guard[];
 }
 
-export interface GuardOr {
+export interface GuardOr extends GuardHashCache {
   kind: "or";
   operands: Guard[];
 }
@@ -120,8 +126,6 @@ export interface NormalizedPredicate {
   /** The branch's alternatives are stored in the opposite order from the materializer's. */
   isSwapped: boolean;
 }
-
-const guardHashes = new WeakMap<Guard, number>();
 
 const hashText = (text: string, seed: number): number => {
   let hash = seed;
@@ -186,7 +190,7 @@ const mixLiteral = (hash: number, value: GuardLiteral): number =>
   mixText(mixText(hash, value === null ? "null" : typeof value), String(value));
 
 const getGuardHash = (guard: Guard): number => {
-  const cached = guardHashes.get(guard);
+  const cached = guard[guardHashKey];
   if (cached !== undefined) return cached;
   let hash = hashText(guard.kind, 2_166_136_261);
   switch (guard.kind) {
@@ -215,7 +219,7 @@ const getGuardHash = (guard: Guard): number => {
       for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
       break;
   }
-  guardHashes.set(guard, hash);
+  Object.defineProperty(guard, guardHashKey, { value: hash });
   return hash;
 };
 
