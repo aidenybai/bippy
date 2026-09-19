@@ -30,7 +30,10 @@ export class DifferentialMismatch extends Error {
   }
 }
 
-const evaluateCases = async (cases: DifferentialCase[], prelude = ""): Promise<StaticValue[]> => {
+export const evaluateCases = async (
+  cases: DifferentialCase[],
+  prelude = "",
+): Promise<StaticValue[]> => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-differential-"));
   try {
     const entryPath = join(directory, "program.ts");
