@@ -1412,7 +1412,8 @@ const callGlobal = (
     case "requestIdleCallback": {
       const handle = evaluator.timers.createHandle(name);
       if (first) {
-        const delayMs = evaluator.timers.getSettledDelay(second);
+        const delayMs =
+          name === "requestAnimationFrame" ? 16 : evaluator.timers.getSettledDelay(second);
         if (delayMs === null) evaluator.markEscaped(first);
         else {
           evaluator.timers.schedule(

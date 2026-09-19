@@ -75,6 +75,19 @@ it("dispatches primitive builtins without an interpreter", () => {
   ).toEqual(primitiveValue("42"));
 });
 
+it("queues animation frames instead of escaping their callbacks", () => {
+  const context = createEvaluationContext();
+  const markEscaped = vi.fn<BuiltinEvaluator["markEscaped"]>();
+  evaluateBuiltinCall(
+    createBuiltinEvaluator({ markEscaped }),
+    { kind: "global", name: "requestAnimationFrame" },
+    [createCallbackValue(context)],
+    context,
+    null,
+  );
+  expect(markEscaped).not.toHaveBeenCalled();
+});
+
 it("constructs Web Audio objects with concrete control surfaces", () => {
   const context = createEvaluationContext();
   const evaluator = createBuiltinEvaluator();
