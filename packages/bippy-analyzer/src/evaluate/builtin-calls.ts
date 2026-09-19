@@ -136,6 +136,7 @@ import { createSearchParamsValue } from "./url-search-params.js";
 import { createUrlValue } from "./url.js";
 import { isPrimitiveBranch, MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distribution.js";
 import { getTypeofValue } from "./value-typeof.js";
+import { createAudioContext, createAudioWorkletNode } from "./web-audio.js";
 import {
   accessorEntry,
   branchValue,
@@ -1001,6 +1002,13 @@ const callGlobal = (
       return createUrlValue(args, location);
     case "AbortController":
       if (isConstructor) return createAbortController(evaluator, location);
+      break;
+    case "AudioContext":
+    case "webkitAudioContext":
+      if (isConstructor) return createAudioContext(first);
+      break;
+    case "AudioWorkletNode":
+      if (isConstructor) return createAudioWorkletNode();
       break;
     case "Image":
       if (isConstructor)

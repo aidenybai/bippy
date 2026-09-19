@@ -75,6 +75,36 @@ it("dispatches primitive builtins without an interpreter", () => {
   ).toEqual(primitiveValue("42"));
 });
 
+it("constructs Web Audio objects with concrete control surfaces", () => {
+  const context = createEvaluationContext();
+  const evaluator = createBuiltinEvaluator();
+  const audioContext = evaluateBuiltinCall(
+    evaluator,
+    { kind: "global", name: "AudioContext" },
+    [objectValue([{ kind: "property", key: "sampleRate", value: primitiveValue(24_000) }])],
+    context,
+    null,
+    true,
+  );
+  const workletNode = evaluateBuiltinCall(
+    evaluator,
+    { kind: "global", name: "AudioWorkletNode" },
+    [audioContext, primitiveValue("processor")],
+    context,
+    null,
+    true,
+  );
+  expect(getObjectProperty(audioContext, "sampleRate")).toEqual(primitiveValue(24_000));
+  expect(getObjectProperty(audioContext, "state")).toMatchObject({
+    kind: "unknown-primitive",
+    primitiveType: "string",
+  });
+  expect(getObjectProperty(audioContext, "createGain")).toMatchObject({ kind: "function" });
+  expect(getObjectProperty(getObjectProperty(workletNode, "port"), "postMessage")).toMatchObject({
+    kind: "function",
+  });
+});
+
 it("preserves array callback receivers through builtin dispatch", () => {
   const context = createEvaluationContext();
   const callback = createCallbackValue(context);
