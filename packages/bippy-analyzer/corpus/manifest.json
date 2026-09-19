@@ -2184,9 +2184,11 @@
         "externalPackageAllowList": [
           "@radix-ui/*",
           "@floating-ui/*",
+          "@shadcn-chat/ui",
           "lucide-react",
           "next-themes",
-          "framer-motion"
+          "framer-motion",
+          "react-resizable-panels"
         ]
       }
     },
