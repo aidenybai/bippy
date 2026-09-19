@@ -54,6 +54,7 @@ export interface StaticRendererOptions {
   externalPackageAllowList?: string[];
   /** Apply React Server Components semantics: components outside `"use client"` modules render without a fiber. */
   serverComponents?: boolean;
+  renderIntoDocument?: boolean;
   /** The JavaScript host the client code runs on, deciding which globals exist; browser when unset. Server-side code always sees Node. */
   hostPlatform?: HostPlatform;
   /**

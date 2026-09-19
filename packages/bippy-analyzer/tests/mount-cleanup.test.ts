@@ -63,7 +63,7 @@ describe("materialized mount cleanup", () => {
         });
       }
       const host = createDomHost(false);
-      const container = host.createContainer();
+      const container = document.createElement("div");
       const detach = vi.fn();
       const originalError = console.error;
       const originalWarn = console.warn;
@@ -74,9 +74,9 @@ describe("materialized mount cleanup", () => {
             failingRuntime,
             {
               ...host,
-              createContainer: () => container,
-              attachContainer: (element) => {
-                const remove = host.attachContainer(element);
+              createRootContainer: () => container,
+              attachRootContainer: (element) => {
+                const remove = host.attachRootContainer(element);
                 return () => {
                   detach();
                   remove();

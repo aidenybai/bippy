@@ -62,6 +62,7 @@ export const createFrameworkRenderer = async (
     ...rendererOptions,
     route: target.route,
     serverComponents: target.framework === "next-app" ? true : rendererOptions.serverComponents,
+    renderIntoDocument: target.framework === "next-app" || rendererOptions.renderIntoDocument,
     modeledVitePlugins:
       target.framework === "react-router"
         ? REACT_ROUTER_VITE_PLUGINS

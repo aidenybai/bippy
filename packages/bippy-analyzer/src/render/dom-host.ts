@@ -28,17 +28,22 @@ const CHILDLESS_TAGS = new Set([
   "wbr",
 ]);
 
-/** React DOM rendering into the installed happy-dom document; roots and portals mount in detached `div`s under `body`. */
-export const createDomHost = (hasKnownMarkup: boolean): RendererHost<Element> => {
+/** React DOM rendering into the installed happy-dom document. */
+export const createDomHost = (
+  hasKnownMarkup: boolean,
+  renderIntoDocument = false,
+): RendererHost<Element, Element | Document> => {
   const hostDocument = createDomHostDocument(hasKnownMarkup);
   return {
     hostDocument,
     isChildlessTag: (tagName) => CHILDLESS_TAGS.has(tagName),
     isContainer: (value): value is Element => value instanceof Element,
-    createContainer: () => document.createElement("div"),
-    attachContainer: (container) => {
+    createRootContainer: () => (renderIntoDocument ? document : document.createElement("div")),
+    attachRootContainer: (container) => {
+      if (container instanceof Document) return () => {};
       document.body.appendChild(container);
       return () => container.remove();
     },
+    createContainer: () => document.createElement("div"),
   };
 };

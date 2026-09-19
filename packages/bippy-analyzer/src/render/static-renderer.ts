@@ -74,7 +74,7 @@ interface DocumentShell {
 /** One analysis: the interpreter over a fresh document, and the renderer host that mounts what it evaluates. */
 interface AnalysisRun {
   interpreter: Interpreter;
-  host: RendererHost<Element>;
+  host: RendererHost<Element, Element | Document>;
 }
 
 interface BootstrapCall {
@@ -274,7 +274,7 @@ export class StaticRenderer {
 
   private startRun(assumeOuterProviders = false, documentShell = this.documentShell): AnalysisRun {
     resetDomGlobals(documentShell);
-    const host = createDomHost(documentShell !== null);
+    const host = createDomHost(documentShell !== null, this.options.renderIntoDocument);
     const interpreter = new Interpreter(this.graph, {
       maxCallDepth: this.options.maxCallDepth,
       maxSteps: this.options.maxSteps,
@@ -376,7 +376,7 @@ export class StaticRenderer {
   private createMaterializer(
     interpreter: Interpreter,
     runtime: ReactRuntime,
-    host: RendererHost<Element>,
+    host: RendererHost<Element, Element | Document>,
   ): Materializer {
     return new Materializer(interpreter, runtime, host, {
       maxComponentDepth: this.options.maxComponentDepth,

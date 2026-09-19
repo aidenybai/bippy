@@ -576,7 +576,7 @@ const selectPinnedAlternative = (
 export class Materializer {
   readonly interpreter: Interpreter;
   readonly runtime: ReactRuntime;
-  readonly host: RendererHost<Element>;
+  readonly host: RendererHost<Element, Element | Document>;
   private materializedCount = 0;
   private readonly maxComponentDepth: number;
   private readonly maxElementCount: number;
@@ -630,7 +630,7 @@ export class Materializer {
   constructor(
     interpreter: Interpreter,
     runtime: ReactRuntime,
-    host: RendererHost<Element>,
+    host: RendererHost<Element, Element | Document>,
     options: MaterializerOptions = {},
   ) {
     this.interpreter = interpreter;
