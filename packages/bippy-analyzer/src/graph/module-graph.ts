@@ -126,6 +126,16 @@ export class ModuleGraph {
     return this.getResolvedModule(this.resolveSpecifier(specifier, fromModule), specifier);
   }
 
+  resolveDependencyForInitialization(
+    specifier: string,
+    fromModule: ModuleRecord,
+  ): ModuleRecord | ModuleResolution {
+    const resolution = this.resolveSpecifier(specifier, fromModule);
+    return this.resolver.isSideEffectFreePackageModule(resolution)
+      ? resolution
+      : this.getResolvedModule(resolution, specifier);
+  }
+
   private getResolvedModule(
     resolution: ModuleResolution,
     specifier: string,

@@ -5,9 +5,11 @@ import { toCapturedValue } from "../src/harness/query-cache.js";
 import {
   EMPTY_OBSERVATIONS,
   dateCapture,
+  getCapturedPromiseOutcome,
   getOpaqueCaptureDescription,
   hashKey,
   opaqueCapture,
+  promiseCapture,
   readObservationsJson,
 } from "../src/observations.js";
 import { describeFixtureRun, listFixtures, runFixture } from "./helpers/fixture-runner.js";
@@ -20,6 +22,16 @@ describe("runtime observations", () => {
   it("serializes plain data and marks everything else opaque", () => {
     const cyclic: Record<string, unknown> = { name: "loop" };
     cyclic.self = cyclic;
+    const fulfilled = Promise.resolve();
+    Object.defineProperties(fulfilled, {
+      _tracked: { get: () => true },
+      _data: { get: () => ({ name: "Ada" }) },
+    });
+    const rejected = Promise.resolve();
+    Object.defineProperties(rejected, {
+      _tracked: { get: () => true },
+      _error: { get: () => new Error("nope") },
+    });
     const captured = toCapturedValue({
       list: [1, "two", null, undefined, true],
       nested: { count: 0, ratio: 0.5 },
@@ -30,6 +42,8 @@ describe("runtime observations", () => {
       session: new Session("secret"),
       cyclic,
       failure: Object.assign(new Error("boom"), { status: 404 }),
+      fulfilled,
+      rejected,
       dropped: undefined,
     });
     expect(captured).toEqual({
@@ -42,10 +56,33 @@ describe("runtime observations", () => {
       session: opaqueCapture("Session"),
       cyclic: { name: "loop", self: opaqueCapture("cycle") },
       failure: { name: "Error", message: "boom", status: 404 },
+      fulfilled: promiseCapture({ status: "fulfilled", value: { name: "Ada" } }),
+      rejected: promiseCapture({
+        status: "rejected",
+        value: { name: "Error", message: "nope" },
+      }),
     });
     expect(getOpaqueCaptureDescription(opaqueCapture("Date"))).toBe("Date");
     expect(getOpaqueCaptureDescription({ $bippyOpaque: "Date", extra: 1 })).toBeNull();
     expect(getOpaqueCaptureDescription({ name: "x" })).toBeNull();
+    expect(
+      getCapturedPromiseOutcome(promiseCapture({ status: "fulfilled", value: { name: "Ada" } })),
+    ).toEqual({ status: "fulfilled", value: { name: "Ada" } });
+  });
+
+  it.each(["_data", "_error"])("bounds cycles through a tracked promise's %s", (property) => {
+    const tracked = Promise.resolve();
+    const payload = { tracked };
+    Object.defineProperties(tracked, {
+      _tracked: { value: true },
+      [property]: { value: payload },
+    });
+    expect(toCapturedValue(tracked)).toEqual(
+      promiseCapture({
+        status: property === "_error" ? "rejected" : "fulfilled",
+        value: { tracked: opaqueCapture("cycle") },
+      }),
+    );
   });
 
   it("reads saved observations and rejects malformed ones", () => {
@@ -82,6 +119,12 @@ describe("runtime observations", () => {
     expect(
       readObservationsJson({ globals: {}, queries: [], mutations: [mutation] }, source),
     ).toEqual({ globals: {}, queries: [], mutations: [mutation] });
+    expect(
+      readObservationsJson(
+        { globals: {}, compilerDefines: { BUILD_TIME: "captured" }, queries: [] },
+        source,
+      ),
+    ).toEqual({ globals: {}, compilerDefines: { BUILD_TIME: "captured" }, queries: [] });
     const page = { cookie: "", localStorage: {}, sessionStorage: {} };
     const browser = {
       ...page,

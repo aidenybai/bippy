@@ -16,7 +16,7 @@ import type {
 } from "../types.js";
 import { primitiveValue, UNDEFINED_VALUE } from "./values.js";
 
-import { isClockDateValue } from "./clock-date.js";
+import { isClockDateValue, isClockReading } from "./clock-date.js";
 import { getCollectionKind } from "./collection-values.js";
 import { readsEnvironment } from "./environment-reads.js";
 import {
@@ -284,6 +284,15 @@ const INTL_CONSTRUCTORS = {
 /** `Intl.DateTimeFormat` methods that format `Date.now()` when given no date. */
 const CLOCK_FORMATTING_METHODS = new Set(["format", "formatToParts"]);
 
+const DATE_FORMATTING_METHODS = new Set([
+  ...CLOCK_FORMATTING_METHODS,
+  "formatRange",
+  "formatRangeToParts",
+]);
+
+const isWallClockArgument = (value: StaticValue): boolean =>
+  isClockDateValue(value) || isClockReading(value);
+
 const isIntlObject = (value: object): boolean =>
   Object.values(INTL_CONSTRUCTORS).some((constructor) => value instanceof constructor);
 
@@ -460,6 +469,7 @@ export const pureNativeFunction = (
   thisValue: unknown,
   host: HostDocument | null,
   onUncertain: NativeCallFallback,
+  isSourceLiftEnabled = true,
 ): StaticNativeFunctionValue => {
   const run = (args: StaticValue[], tools: StubRenderTools, isConstruct: boolean): StaticValue => {
     const receiver = thisValue === undefined ? tools.thisValue : null;
@@ -481,7 +491,7 @@ export const pureNativeFunction = (
           });
     if (outcome !== null && !isRefusal(outcome)) return outcome;
     const lifted =
-      host === null
+      host === null && isSourceLiftEnabled
         ? liftNativeClosure(callee, name, {
             lift: (value, valueName) => fromNativeValue(value, valueName, null),
             defineClass: (thunk) => tools.call(thunk, []),
@@ -658,10 +668,20 @@ export const getNativeObjectMember = (
     if (!isPureMethodName(key)) uncertainNativeObjects.add(object.value);
     return unknownValue(`${name}() on dynamic arguments`);
   });
-  if (object.value instanceof Intl.DateTimeFormat && CLOCK_FORMATTING_METHODS.has(key)) {
-    return nativeFunction(name, (args, tools) =>
-      args.length === 0 ? unknownValue(`${name}() of the current time`) : method.call(args, tools),
-    );
+  if (object.value instanceof Intl.DateTimeFormat && DATE_FORMATTING_METHODS.has(key)) {
+    return nativeFunction(name, (args, tools) => {
+      if (args.length === 0 && CLOCK_FORMATTING_METHODS.has(key)) {
+        const reason = `${name}() of the current time`;
+        return key.endsWith("ToParts")
+          ? unknownValue(reason)
+          : unknownPrimitiveValue("string", reason);
+      }
+      if (!args.some(isWallClockArgument)) return method.call(args, tools);
+      const reason = `${name}() of the wall clock`;
+      return key.endsWith("ToParts")
+        ? unknownValue(reason)
+        : unknownPrimitiveValue("string", reason);
+    });
   }
   return method;
 };
@@ -723,8 +743,15 @@ export const setNativeObjectMember = (
   if (isLayoutMember(object, key)) return;
   if (key in object.value || getNativeInterfaceName(object.value) === "DOMStringMap") {
     const native = toNative(value, object.host);
-    if (native !== UNCERTAIN) Reflect.set(object.value, key, native);
-    else if (!LAYOUT_MEMBERS.has(key)) uncertainNativeObjects.add(object.value);
+    if (native !== UNCERTAIN) {
+      try {
+        Reflect.set(object.value, key, native);
+      } catch {
+        uncertainNativeObjects.add(object.value);
+      }
+    } else if (!LAYOUT_MEMBERS.has(key)) {
+      uncertainNativeObjects.add(object.value);
+    }
     return;
   }
   let expandos = expandoProperties.get(object.value);

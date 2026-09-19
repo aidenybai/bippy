@@ -80,3 +80,25 @@ it("keeps sibling basenames and memoized location consumers separate", async () 
   expect(tree).toContain('"/app/items/"');
   expect(tree.match(/"1"/g)).toHaveLength(2);
 });
+
+it("applies an imperative navigation scheduled by an effect", async () => {
+  const { tree } = await render("/", "src/imperative-navigation.tsx");
+  expect(tree).toContain("<Login>");
+  expect(tree).toContain("<aside>");
+  expect(tree).not.toContain("<Home>");
+  expect(tree).not.toContain("<main>");
+});
+
+it("applies a Navigate redirect after its effect commits", async () => {
+  const { tree } = await render("/redirect", "src/imperative-navigation.tsx");
+  expect(tree).toContain("<Login>");
+  expect(tree).toContain("<aside>");
+  expect(tree).not.toContain("<Navigate>");
+});
+
+it("settles guarded redirects that converge on opposite routes", async () => {
+  const { result, tree } = await render("/guarded", "src/imperative-navigation.tsx");
+  expect(result.diagnostics).toEqual([]);
+  expect(tree).toContain("<Login>");
+  expect(tree).not.toContain("<Private>");
+});

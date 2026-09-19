@@ -33,8 +33,8 @@ const DEFAULT_REACT_PACKAGES: ReactPackageSpecifiers = {
 
 /** `react-dom` before 18: roots are created by `render(element, container)` and are always legacy (sync) roots. */
 interface LegacyReactDomModule extends ReactDomModule {
-  render: (element: ReactNode, container: Element) => void;
-  unmountComponentAtNode: (container: Element) => boolean;
+  render: (element: ReactNode, container: Element | Document) => void;
+  unmountComponentAtNode: (container: Element | Document) => boolean;
 }
 
 export interface RootErrorCallbacks {
@@ -70,7 +70,7 @@ export interface ReactRuntime {
   react: ReactModule;
   dom: ReactDomModule;
   domServer: ReactDomServerModule;
-  createRoot: (container: Element, callbacks: RootErrorCallbacks) => MountedRoot;
+  createRoot: (container: Element | Document, callbacks: RootErrorCallbacks) => MountedRoot;
   act: <T>(callback: () => T | Promise<T>) => Promise<T>;
   /** Reads a context at the rendering fiber the way `readContext(contextType)` does for classes: `use` on React 19, the dispatcher's `readContext` before. */
   readContext: <T>(context: Context<T>) => T;

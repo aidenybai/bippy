@@ -64,6 +64,7 @@ import {
   constantGuard,
   ELEMENT_SEGMENT,
   type GuardContext,
+  isGuardImplied,
   negateGuard,
   normalizePredicate,
   orGuard,
@@ -575,7 +576,7 @@ const selectPinnedAlternative = (
 export class Materializer {
   readonly interpreter: Interpreter;
   readonly runtime: ReactRuntime;
-  readonly host: RendererHost<Element>;
+  readonly host: RendererHost<Element, Element | Document>;
   private materializedCount = 0;
   private readonly maxComponentDepth: number;
   private readonly maxElementCount: number;
@@ -629,7 +630,7 @@ export class Materializer {
   constructor(
     interpreter: Interpreter,
     runtime: ReactRuntime,
-    host: RendererHost<Element>,
+    host: RendererHost<Element, Element | Document>,
     options: MaterializerOptions = {},
   ) {
     this.interpreter = interpreter;
@@ -1338,8 +1339,30 @@ export class Materializer {
       case "function":
       case "native-function":
       case "method":
-      case "proxy":
-        return key.startsWith("on") ? noop : undefined;
+      case "proxy": {
+        if (!key.startsWith("on")) return undefined;
+        const owner = context.owner;
+        if (!owner) return noop;
+        return (event: object) =>
+          this.commitCauses.runTask(context.cause, () =>
+            this.runGuardedMutation(
+              value.kind === "function" ? value.scope : owner.scope,
+              null,
+              () =>
+                this.interpreter.callValue(
+                  value,
+                  [
+                    this.interpreter.hostDocument
+                      ? nativeObjectValue(event, this.interpreter.hostDocument)
+                      : unknownValue(`${key} event`),
+                  ],
+                  owner,
+                  null,
+                ),
+              owner.hooks,
+            ),
+          );
+      }
       default:
         return undefined;
     }
@@ -1786,6 +1809,8 @@ export class Materializer {
       bindTask: (task) => this.interpreter.bindTask(task, context.owner, location),
       runTask: (cause, task) =>
         this.interpreter.runTaskWithCause(cause, task, context.owner, location),
+      runTaskAlternatives: (causes, task, reason) =>
+        this.interpreter.runTaskAlternatives(causes, task, reason, context.owner, location),
       isDeferred: () => this.interpreter.timers.isDeferred,
       setProperty: (object, key, value) => this.interpreter.assignOwnProperty(object, key, value),
       materializeNamespace: (value) =>
@@ -1987,7 +2012,7 @@ export class Materializer {
     if (cause.guard.kind === "constant" && cause.guard.value) return run();
     const ownerCause = frame && this.frameCauses.get(frame);
     const unconditionalUpdates =
-      frame && ownerCause && !areGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)])
+      frame && ownerCause && isGuardImplied(ownerCause.guard, cause.guard)
         ? new Set(frame.cells)
         : undefined;
     return this.interpreter.runMaybe(

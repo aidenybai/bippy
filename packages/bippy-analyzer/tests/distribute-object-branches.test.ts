@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   branchValue,
   distributeObjectBranches,
+  getObjectProperty,
   listValue,
   objectFromRecord,
   primitiveValue,
@@ -54,6 +55,20 @@ describe("distributeObjectBranches", () => {
       '[{"rel":"stylesheet","href":"/app.css"},{"rel":"icon","href":"/dark.png"}]',
       '[{"rel":"stylesheet","href":"/app.css"},{"rel":"icon","href":"/light.png"}]',
     ]);
+  });
+
+  it("terminates while hoisting a branch from a cyclic object", () => {
+    const cyclic = objectFromRecord({ href: eitherHref() });
+    cyclic.entries.push({ kind: "property", key: "self", value: cyclic });
+    const distributed = distributeObjectBranches(cyclic);
+    expect(distributed.kind).toBe("branch");
+    expect(
+      distributed.kind === "branch"
+        ? distributed.alternatives.map((alternative) =>
+            alternative.kind === "object" ? getObjectProperty(alternative, "href") : alternative,
+          )
+        : [],
+    ).toEqual([text("/dark.png"), text("/light.png")]);
   });
 
   it("takes the cartesian product of independent decisions", () => {

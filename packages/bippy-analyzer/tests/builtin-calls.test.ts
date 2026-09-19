@@ -55,8 +55,10 @@ const createBuiltinEvaluator = (overrides: Partial<BuiltinEvaluator> = {}): Buil
   runIntervalTicks: unexpectedOperation,
   runTimerTask: unexpectedOperation,
   queueMicrotask: unexpectedOperation,
+  bindContinuationWithCause: (task) => task,
   bindTask: unexpectedOperation,
   runTaskWithCause: unexpectedOperation,
+  runTaskAlternatives: unexpectedOperation,
   recordStateMutation: unexpectedOperation,
   ...overrides,
 });
@@ -72,6 +74,73 @@ it("dispatches primitive builtins without an interpreter", () => {
       null,
     ),
   ).toEqual(primitiveValue("42"));
+});
+
+it("runs one animation frame and escapes a recursively scheduled frame", () => {
+  const context = createEvaluationContext();
+  const callback = createCallbackValue(context);
+  const nestedCallback = createCallbackValue(context);
+  const markEscaped = vi.fn<BuiltinEvaluator["markEscaped"]>();
+  let evaluator: BuiltinEvaluator;
+  const callValue = vi.fn<BuiltinEvaluator["callValue"]>(() => {
+    evaluateBuiltinCall(
+      evaluator,
+      { kind: "global", name: "requestAnimationFrame" },
+      [nestedCallback],
+      context,
+      null,
+    );
+    return UNDEFINED_VALUE;
+  });
+  evaluator = createBuiltinEvaluator({
+    callValue,
+    markEscaped,
+    runTimerTask: (_handle, _context, _location, task) => task(),
+  });
+  evaluateBuiltinCall(
+    evaluator,
+    { kind: "global", name: "requestAnimationFrame" },
+    [callback],
+    context,
+    null,
+  );
+  expect(markEscaped).not.toHaveBeenCalled();
+  evaluator.timers.runNextTask();
+  expect(callValue).toHaveBeenCalledWith(callback, [], context, null);
+  expect(markEscaped).toHaveBeenCalledWith(nestedCallback);
+  expect(evaluator.timers.hasTasks()).toBe(false);
+});
+
+it("constructs Web Audio objects with concrete control surfaces", () => {
+  const context = createEvaluationContext();
+  const evaluator = createBuiltinEvaluator();
+  const audioContext = evaluateBuiltinCall(
+    evaluator,
+    { kind: "global", name: "AudioContext" },
+    [objectValue([{ kind: "property", key: "sampleRate", value: primitiveValue(24_000) }])],
+    context,
+    null,
+    true,
+  );
+  const workletNode = evaluateBuiltinCall(
+    evaluator,
+    { kind: "global", name: "AudioWorkletNode" },
+    [audioContext, primitiveValue("processor")],
+    context,
+    null,
+    true,
+  );
+  if (audioContext.kind !== "object" || workletNode.kind !== "object")
+    throw new Error("Expected modeled Web Audio objects");
+  const port = getObjectProperty(workletNode, "port");
+  if (port.kind !== "object") throw new Error("Expected modeled AudioWorklet port");
+  expect(getObjectProperty(audioContext, "sampleRate")).toEqual(primitiveValue(24_000));
+  expect(getObjectProperty(audioContext, "state")).toMatchObject({
+    kind: "unknown-primitive",
+    primitiveType: "string",
+  });
+  expect(getObjectProperty(audioContext, "createGain")).toMatchObject({ kind: "native-function" });
+  expect(getObjectProperty(port, "postMessage")).toMatchObject({ kind: "native-function" });
 });
 
 it("preserves array callback receivers through builtin dispatch", () => {

@@ -1,5 +1,11 @@
+import { createRequire } from "node:module";
+import { createElement, type ReactNode } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vite-plus/test";
 import { comparePatternToRuntime, matchPatternToRuntime } from "../src/harness/compare.js";
+import { createCommitRecorder } from "../src/harness/commit-recorder.js";
+import { getRootContainer } from "../src/harness/runtime-snapshot.js";
 import type { RuntimeFiberSnapshot } from "../src/harness/snapshot.js";
 import type {
   PatternBranch,
@@ -9,6 +15,12 @@ import type {
   PatternWildcard,
 } from "../src/harness/static-pattern.js";
 import { anonymousRepeat, choiceBranch } from "./helpers/pattern-builders.js";
+
+interface NativeWrapperProps {
+  children?: ReactNode;
+}
+
+const harnessRequire = createRequire(import.meta.url);
 
 const runtimeFiber = (
   name: string,
@@ -55,7 +67,132 @@ const patternWildcard: PatternWildcard = {
   isTruncated: false,
 };
 
+const NativeBridge = ({ children }: NativeWrapperProps) => createElement("section", null, children);
+const NativeVendorRoot = ({ children }: NativeWrapperProps) =>
+  createElement(NativeBridge, null, children);
+const NativeGrid = ({ children }: NativeWrapperProps) => createElement("main", null, children);
+const NativeColumn = ({ children }: NativeWrapperProps) => createElement("article", null, children);
+const NativeCard = ({ children }: NativeWrapperProps) => createElement("div", null, children);
+const Editor = () => createElement("textarea");
+const NativeText = ({ children }: NativeWrapperProps) => createElement("p", null, children);
+const NativeLegacyMiss = () => createElement("aside");
+const NativeLegacyMatch = () => createElement("main");
+
+const captureNativeTree = (element: ReactNode): RuntimeFiberSnapshot[] => {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const recorder = createCommitRecorder({
+    rootFilter: (root) => getRootContainer(root) === container,
+  });
+  const root = createRoot(container);
+  try {
+    flushSync(() => {
+      root.render(element);
+    });
+    return recorder.snapshot().roots.flatMap((snapshotRoot) => snapshotRoot.children);
+  } finally {
+    flushSync(() => root.unmount());
+    recorder.dispose();
+    container.remove();
+  }
+};
+
+const findRuntimeFiberTags = (
+  fibers: RuntimeFiberSnapshot[],
+  name: string,
+): RuntimeFiberSnapshot["tag"][] =>
+  fibers.flatMap((fiber) => [
+    ...(fiber.name === name ? [fiber.tag] : []),
+    ...findRuntimeFiberTags(fiber.children, name),
+  ]);
+
+const createNativeOpaqueTree = (): ReactNode =>
+  createElement(
+    NativeVendorRoot,
+    null,
+    createElement(
+      NativeGrid,
+      null,
+      ...Array.from({ length: 12 }, (_, columnIndex) =>
+        createElement(
+          NativeColumn,
+          { key: columnIndex },
+          createElement(NativeCard, null, createElement(Editor)),
+        ),
+      ),
+    ),
+  );
+
 describe("comparePatternToRuntime", () => {
+  it("captures react-router v5 routing classes and its first matching route", () => {
+    const legacyRouterModule: unknown = harnessRequire("react-router-dom-v5");
+    if (typeof legacyRouterModule !== "object" || legacyRouterModule === null) {
+      throw new Error("react-router-dom-v5 did not load");
+    }
+    const LegacyBrowserRouter = Object(legacyRouterModule).BrowserRouter;
+    const LegacyRoute = Object(legacyRouterModule).Route;
+    const LegacySwitch = Object(legacyRouterModule).Switch;
+    if (
+      typeof LegacyBrowserRouter !== "function" ||
+      typeof LegacyRoute !== "function" ||
+      typeof LegacySwitch !== "function"
+    ) {
+      throw new Error("react-router-dom-v5 does not export BrowserRouter, Switch, and Route");
+    }
+    const runtime = captureNativeTree(
+      createElement(
+        LegacyBrowserRouter,
+        null,
+        createElement(
+          LegacySwitch,
+          null,
+          createElement(LegacyRoute, {
+            exact: true,
+            path: "/other",
+            component: NativeLegacyMiss,
+          }),
+          createElement(LegacyRoute, { path: "/", component: NativeLegacyMatch }),
+        ),
+      ),
+    );
+    expect(findRuntimeFiberTags(runtime, "BrowserRouter")).toEqual(["ClassComponent"]);
+    expect(findRuntimeFiberTags(runtime, "Switch")).toEqual(["ClassComponent"]);
+    expect(findRuntimeFiberTags(runtime, "Route")).toEqual(["ClassComponent"]);
+    expect(findRuntimeFiberTags(runtime, "main")).toEqual(["HostComponent"]);
+    expect(findRuntimeFiberTags(runtime, "aside")).toEqual([]);
+  });
+
+  it("finds text passed through an opaque component into a direct-text host", () => {
+    const runtime = captureNativeTree(createElement(NativeText, null, "Known text"));
+    expect(runtime[0]?.children[0]?.props.children).toBe("Known text");
+    const result = matchPatternToRuntime(
+      [opaqueFiber("NativeText", [{ kind: "text", text: "Known text" }])],
+      runtime,
+    );
+    expect(result.report.status).toBe("partial");
+    expect(result.report.slotsMatched).toBe(1);
+    expect(result.report.slotsUnmatched).toBe(0);
+  });
+
+  it("finds nested opaque slots without exhausting the comparison budget", () => {
+    const runtime = captureNativeTree(createNativeOpaqueTree());
+    const column = patternFiber("NativeColumn", [
+      patternHost("article", [opaqueFiber("NativeCard", [opaqueFiber("Editor", [])])]),
+    ]);
+    const patterns = [
+      opaqueFiber("NativeVendorRoot", [
+        opaqueFiber(
+          "NativeGrid",
+          Array.from({ length: 12 }, () => column),
+        ),
+      ]),
+    ];
+    const result = matchPatternToRuntime(patterns, runtime, { maxSteps: 100 });
+    expect(result.report.budgetExhausted).toBe(false);
+    expect(result.report.status).toBe("partial");
+    expect(result.report.slotsUnmatched).toBe(0);
+  });
+
   it("matches wide independent decisions without consuming the call stack", () => {
     const patterns = Array.from({ length: 5_000 }, (_value, index) =>
       branch(`wide-${index}`, [patternHost("b")], [patternHost("i")]),
@@ -203,6 +340,15 @@ describe("comparePatternToRuntime", () => {
     const report = comparePatternToRuntime([pattern], [runtime]);
     expect(report.status).toBe("exact");
     expect(report.matchedFibers).toBe(4);
+  });
+
+  it("accepts different one-character bindings produced by dependency minification", () => {
+    const report = comparePatternToRuntime(
+      [patternFiber("J", [patternFiber("V")])],
+      [runtimeFiber("z", [runtimeFiber("e")])],
+    );
+    expect(report.status).toBe("exact");
+    expect(report.matchedFibers).toBe(2);
   });
 
   it("accepts esbuild's `_Name` alias of a lowered class", () => {

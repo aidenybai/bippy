@@ -83,6 +83,15 @@ const spawnShell = (
   return child;
 };
 
+const endLog = async (child: ChildProcess, log: WriteStream): Promise<void> => {
+  child.stdout?.unpipe(log);
+  child.stderr?.unpipe(log);
+  await new Promise<void>((resolve, reject) => {
+    log.once("error", reject);
+    log.end(resolve);
+  });
+};
+
 const getSystemErrorCode = (error: unknown): string | null =>
   error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : null;
 
@@ -121,14 +130,21 @@ const signalProcessGroup = (pid: number, signal: NodeJS.Signals): boolean => {
   }
 };
 
+const isChildClosed = (child: ChildProcess): boolean =>
+  (child.exitCode !== null || child.signalCode !== null) &&
+  (child.stdout === null || child.stdout.closed) &&
+  (child.stderr === null || child.stderr.closed);
+
 // Detached children are their own process group so the whole dev-server tree
 // (package manager -> vite/next -> workers) goes away together.
 const killProcessGroup = async (child: ChildProcess): Promise<void> => {
-  if (child.exitCode !== null || child.pid === undefined) return;
-  const exited = new Promise<void>((resolveExit) => child.once("exit", () => resolveExit()));
-  if (!signalProcessGroup(child.pid, "SIGTERM")) return;
-  const timedOut = await Promise.race([exited.then(() => false), deadline(KILL_GRACE_MS, true)]);
-  if (timedOut) signalProcessGroup(child.pid, "SIGKILL");
+  if (child.pid === undefined || isChildClosed(child)) return;
+  const closed = new Promise<void>((resolveClose) => child.once("close", () => resolveClose()));
+  signalProcessGroup(child.pid, "SIGTERM");
+  const timedOut = await Promise.race([closed.then(() => false), deadline(KILL_GRACE_MS, true)]);
+  if (!timedOut) return;
+  signalProcessGroup(child.pid, "SIGKILL");
+  await Promise.race([closed, deadline(KILL_GRACE_MS, undefined)]);
 };
 
 export const runCommand = async (options: RunCommandOptions): Promise<void> => {
@@ -140,18 +156,20 @@ export const runCommand = async (options: RunCommandOptions): Promise<void> => {
     { ...NON_INTERACTIVE_ENV, ...options.env },
     log,
   );
-  const exit = new Promise<number | null>((resolveExit, rejectExit) => {
-    child.once("error", rejectExit);
-    child.once("exit", (code) => resolveExit(code));
+  const close = new Promise<number | null>((resolveClose, rejectClose) => {
+    child.once("error", rejectClose);
+    child.once("close", (code) => resolveClose(code));
   });
-  const outcome = await Promise.race([exit, deadline(options.timeoutMs, "timeout" as const)]);
-  if (outcome === "timeout") {
-    await killProcessGroup(child);
-    log.end();
-    throw new CommandTimeoutError(options.command, options.timeoutMs);
+  try {
+    const outcome = await Promise.race([close, deadline(options.timeoutMs, "timeout" as const)]);
+    if (outcome === "timeout") {
+      await killProcessGroup(child);
+      throw new CommandTimeoutError(options.command, options.timeoutMs);
+    }
+    if (outcome !== 0) throw new CommandFailedError(options.command, outcome);
+  } finally {
+    await endLog(child, log);
   }
-  log.end();
-  if (outcome !== 0) throw new CommandFailedError(options.command, outcome);
 };
 
 export class DevServer {
@@ -210,10 +228,12 @@ export class DevServer {
   }
 
   async stop(): Promise<void> {
-    if (this.child) await killProcessGroup(this.child);
-    this.child?.stdin?.destroy();
+    const child = this.child;
+    const log = this.log;
+    if (child) await killProcessGroup(child);
+    child?.stdin?.destroy();
     this.child = null;
-    this.log?.end();
     this.log = null;
+    if (child && log) await endLog(child, log);
   }
 }

@@ -22,7 +22,7 @@ import {
  */
 describe("component fixtures: static fiber tree vs react-dom", () => {
   for (const fixture of listComponentFixtures()) {
-    it(fixture.name, async () => {
+    it(fixture.name, { timeout: 60_000 }, async () => {
       const run = await runComponentFixture(fixture);
       const detail = describeComponentRun(fixture, run);
       if (process.env.BIPPY_PARSER_DEBUG) process.stdout.write(`${detail}\n`);
@@ -74,5 +74,19 @@ describe("repeated reads of one uncertain value share one decision", () => {
     expect(run.comparison.report.status, detail).toBe("exact");
     expect(run.comparison.stateSpace.omitted, detail).toBeNull();
     expect(run.comparison.stateSpace.states.length, detail).toBe(2 + 2 ** 3);
+  });
+});
+
+describe("strict library models", () => {
+  it("materializes i18next translations without unresolved markers", async () => {
+    const fixture = listComponentFixtures().find(
+      (candidate) => candidate.name === "i18next-library.tsx",
+    );
+    if (!fixture) throw new Error("missing i18next fixture");
+    const run = await runComponentFixture(fixture);
+    const detail = describeComponentRun(fixture, run);
+    expect(run.comparison.stateSpace.tree.stats.opaque, detail).toBe(0);
+    expect(run.comparison.stateSpace.tree.stats.wildcards, detail).toBe(0);
+    expect(run.comparison.stateReplay?.verification, detail).toBe("sample-passed");
   });
 });

@@ -1,7 +1,7 @@
 import type { HostDocument } from "../host/host-document.js";
 import { type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import type { SourceLocation } from "../parse/source-types.js";
-import type { StaticNativeObjectValue, StaticValue } from "../types.js";
+import type { StaticNativeObjectValue, StaticValue, TaskBinder } from "../types.js";
 import type { EvaluationContext, ValueCaller } from "./context.js";
 import type { TimerQueue } from "./timers.js";
 import { EVENT_LISTENER_METHODS, fromNativeValue, toNativeArguments } from "./native-values.js";
@@ -13,6 +13,7 @@ export interface EventListenerEvaluator extends ValueCaller {
   readonly hostDocument: HostDocument | null;
   readonly history: Pick<SessionHistory, "traversalListeners">;
   readonly timers: Pick<TimerQueue, "isDeferred" | "enqueue" | "runDeferred">;
+  bindContinuationWithCause: TaskBinder;
   markEscaped: (value: StaticValue) => void;
 }
 
@@ -103,6 +104,7 @@ export const isUserDrivenEventHandlerProp = (name: string): boolean => {
 
 /** Events the browser fires from a queued task rather than at the moment the state changes. */
 const TASK_QUEUED_EVENTS = new Set(["selectionchange"]);
+const FOCUS_EVENTS = new Set(["focus", "blur", "focusin", "focusout"]);
 
 interface NativeEventTarget {
   addEventListener(type: string, listener: (event: object) => void): void;
@@ -163,7 +165,7 @@ const attachNativeListener = (
     byListener.set(listener, byType);
   }
   if (byType.has(type)) return;
-  const dispatch = (event: object): void => {
+  const dispatch = evaluator.bindContinuationWithCause((event: object): void => {
     evaluator.callValue(
       listener,
       [fromNativeValue(event, `${type} event`, evaluator.hostDocument)],
@@ -171,11 +173,28 @@ const attachNativeListener = (
       location,
       { thisValue: fromNativeValue(target, `${type} event target`, evaluator.hostDocument) },
     );
-  };
+  });
+  const dispatchingTargets = new WeakSet<object>();
   let isScheduled = false;
   const native = (event: object): void => {
     if (!TASK_QUEUED_EVENTS.has(type)) {
-      dispatch(event);
+      if (!FOCUS_EVENTS.has(type)) {
+        dispatch(event);
+        return;
+      }
+      const eventTarget = Reflect.get(event, "target");
+      if (typeof eventTarget !== "object" || eventTarget === null) {
+        dispatch(event);
+        return;
+      }
+      // HACK: Symbolic alternatives share one host document; stop a listener revisiting a target in one synchronous dispatch chain.
+      if (dispatchingTargets.has(eventTarget)) return;
+      dispatchingTargets.add(eventTarget);
+      try {
+        dispatch(event);
+      } finally {
+        dispatchingTargets.delete(eventTarget);
+      }
       return;
     }
     if (isScheduled) return;

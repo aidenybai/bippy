@@ -23,10 +23,15 @@ const createLayout = (): { outer: string; app: string } => {
     version: "8.1.0",
   });
   writePackage(outer, { name: "host", devDependencies: { "@svgr/webpack": "8.1.0" } });
-  writePackage(checkout, { name: "checkout", devDependencies: { vite: "6.0.0" } });
+  writePackage(checkout, {
+    name: "checkout",
+    workspaces: ["packages/*"],
+    devDependencies: { vite: "6.0.0" },
+  });
   writeFileSync(path.join(checkout, "pnpm-lock.yaml"), "lockfileVersion: 9\n");
   writePackage(path.join(checkout, "node_modules", "react"), { name: "react", version: "19.0.0" });
   writePackage(app, { name: "app", dependencies: { react: "19.0.0" } });
+  writeFileSync(path.join(app, "package-lock.json"), "{}\n");
   return { outer, app };
 };
 

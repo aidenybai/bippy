@@ -210,6 +210,11 @@ export interface StubRenderTools {
   queueMicrotask: (task: () => void) => void;
   bindTask: TaskBinder;
   runTask: (cause: GuardContext, task: () => void) => void;
+  runTaskAlternatives: (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
+  ) => void;
   /** True while the caller runs at an unknown time relative to the captured commit (past an `await` the analysis cannot see settle, or in such a promise's continuation): the state it updates escapes. */
   isDeferred: () => boolean;
   /** Assigns an own property of a modeled object, undone on the other paths of an enclosing fork like any heap write. */
@@ -338,6 +343,11 @@ export type JsonValue =
  * values are omitted.
  */
 export type CapturedValue = JsonValue;
+
+export interface CapturedPromiseOutcome {
+  status: "fulfilled" | "rejected";
+  value?: CapturedValue;
+}
 
 /** A module export the page held: `module` is the URL path the dev server served the module at. */
 export interface CapturedExportReference {
@@ -491,6 +501,8 @@ export interface CapturedRequest {
 export interface RuntimeObservations {
   /** `window` properties recorded whole (bootstrap payloads); nested objects are complete, so unlisted keys are `undefined`. */
   globals: Record<string, CapturedValue>;
+  /** Bundler compile-time expressions recorded from the running dev server. */
+  compilerDefines?: Record<string, CapturedValue>;
   queries: CapturedQuery[];
   /** Absent in captures that predate mutation recording, which then stays uncertain. */
   mutations?: CapturedMutation[];
@@ -538,6 +550,8 @@ export interface StaticObjectValue {
   entries: StaticObjectEntry[];
   /** Allocation ordinal (see `getAllocationCount`); values constructed without one have undecidable identity. */
   allocation?: number;
+  /** Browser or server interface declared for an object whose host implementation is unavailable. */
+  hostInterfaceName?: string;
   constructedBy?: StaticClassValue;
   /** Created with `Object.create(null)`: no inherited `constructor` or `Object.prototype` methods. */
   hasNullPrototype?: boolean;

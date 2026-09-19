@@ -37,13 +37,13 @@ export interface MountResult {
  */
 export const mountNode = async (
   runtime: ReactRuntime,
-  host: RendererHost<Element>,
+  host: RendererHost<Element, Element | Document>,
   node: ReactNode,
   timers: TimerQueue,
   onCommit: () => void,
 ): Promise<MountResult> => {
-  const container = host.createContainer();
-  const detachContainer = host.attachContainer(container);
+  const container = host.createRootContainer();
+  const detachContainer = host.attachRootContainer(container);
   const recorder = createCommitRecorder({
     rootFilter: (root) => getRootContainer(root) === container,
     recordCommits: true,

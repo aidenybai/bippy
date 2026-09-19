@@ -67,6 +67,8 @@ export class TimerQueue {
   private clockSequence = 0;
   private clockTask: ClockTask = { scheduledBy: null, delayMs: 0 };
   private deferredDepth = 0;
+  private animationFrameDepth = 0;
+  private isDrainingMicrotasks = false;
   isClockSettled = false;
   isFlushing = false;
   bindTask = (task: () => void): (() => void) => task;
@@ -93,12 +95,25 @@ export class TimerQueue {
     return this.deferredDepth > 0;
   }
 
+  get isRunningAnimationFrame(): boolean {
+    return this.animationFrameDepth > 0;
+  }
+
   runDeferred<Result>(run: () => Result): Result {
     this.deferredDepth += 1;
     try {
       return run();
     } finally {
       this.deferredDepth -= 1;
+    }
+  }
+
+  runAnimationFrame<Result>(run: () => Result): Result {
+    this.animationFrameDepth += 1;
+    try {
+      return run();
+    } finally {
+      this.animationFrameDepth -= 1;
     }
   }
 
@@ -168,7 +183,13 @@ export class TimerQueue {
 
   /** Runs microtasks until none remain, including those they queue. */
   drainMicrotasks(): void {
-    for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
+    if (this.isDrainingMicrotasks) return;
+    this.isDrainingMicrotasks = true;
+    try {
+      for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
+    } finally {
+      this.isDrainingMicrotasks = false;
+    }
   }
 
   hasTasks(): boolean {

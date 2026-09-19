@@ -76,15 +76,227 @@ export default function Items() {
 }
 `;
 
+const AXIOS_ASYNC_SOURCE = `
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+const Loading = () => <p>loading</p>;
+const Failed = () => <p>failed</p>;
+const Ready = () => <p>ready</p>;
+
+const Status = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        await axios.get("/status");
+      } catch {
+        setError("failed");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    check();
+  }, []);
+  if (isLoading) return <Loading />;
+  if (error) return <Failed />;
+  return <Ready />;
+};
+
+export default Status;
+`;
+
+const APOLLO_NEXTJS_SOURCE = `
+import { registerApolloClient } from "@apollo/experimental-nextjs-app-support";
+
+const { getClient } = registerApolloClient(() => {
+  throw new Error("Apollo initialization should be modeled");
+});
+
+export default () => getClient() ? <main /> : <aside />;
+`;
+
+const TAURI_SOURCE = `
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+
+export default () => {
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    invoke("load_settings").then(() => setIsReady(true)).catch(() => setIsReady(false));
+  }, []);
+  return isReady ? <main /> : <aside />;
+};
+`;
+
+const TAURI_VERSION_SOURCE = `
+import { useEffect, useState } from "react";
+import { getVersion } from "@tauri-apps/api/app";
+
+export default () => {
+  const [version, setVersion] = useState("");
+  useEffect(() => {
+    getVersion().then(setVersion);
+  }, []);
+  return version ? <main>{version}</main> : <aside />;
+};
+`;
+
 const OPAQUE_RENDER_PROP_SOURCE = `
 import { Highlight } from "prism-react-renderer";
 
 export default () => (
   <section>
-    <Highlight code="const x = 1;" language="tsx">
-      {({ tokens }) => <pre>{tokens.length}</pre>}
+    <Highlight code={"const count = 1;\\ncount++;"} language="tsx">
+      {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        <pre className={className} style={style}>
+          {tokens.map((line, lineIndex) => (
+            <div {...getLineProps({ line })} key={lineIndex}>
+              {line.map((token, tokenIndex) => (
+                <span {...getTokenProps({ token })} key={tokenIndex} />
+              ))}
+            </div>
+          ))}
+        </pre>
+      )}
     </Highlight>
   </section>
+);
+`;
+
+const TANSTACK_QUERY_PROVIDER_SOURCE = `
+import { QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = {};
+const Child = () => <main>ready</main>;
+
+export default () => (
+  <QueryClientProvider client={queryClient}>
+    <Child />
+  </QueryClientProvider>
+);
+`;
+
+const NEXT_AUTH_PROVIDER_SOURCE = `
+import { SessionProvider, useSession } from "next-auth/react";
+
+const Child = () => {
+  const session = useSession();
+  return session ? <main /> : <aside />;
+};
+
+export default () => (
+  <SessionProvider>
+    <Child />
+  </SessionProvider>
+);
+`;
+
+const ZUSTAND_SOURCE = `
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
+import { useEffect } from "react";
+
+interface CounterState {
+  count: number;
+  label: string;
+  increment: () => void;
+}
+
+const useCounter = create<CounterState>()(
+  subscribeWithSelector((set) => ({
+    count: 2,
+    label: "ready",
+    increment: () => set((state) => ({ count: state.count + 1 })),
+  })),
+);
+
+useCounter.getState().increment();
+
+export default () => {
+  const selection = useCounter(
+    useShallow((state) => ({ count: state.count, label: state.label })),
+  );
+  useEffect(() => useCounter.getState().increment(), []);
+  return <main>{selection.label}<strong />{selection.count}<span /></main>;
+};
+`;
+
+const ZUSTAND_BRANCH_UPDATE_SOURCE = `
+import { create } from "zustand";
+
+const useStore = create(() => ({
+  dimensions: { width: 4 },
+  enabled: false,
+  count: 0,
+}));
+
+useStore.setState(Math.random() > 0.5 ? { enabled: true } : { enabled: false });
+useStore.setState({ count: 1 });
+
+export default () =>
+  useStore.getState().dimensions.width === 4 ? <main /> : <aside />;
+`;
+
+const ZUSTAND_SHALLOW_SOURCE = `
+import { useEffect, useRef } from "react";
+import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
+
+const useStore = create(() => ({
+  label: "ready",
+  unrelated: 0,
+}));
+
+export default () => {
+  const renders = useRef(0);
+  renders.current += 1;
+  const selection = useStore(useShallow((state) => ({ label: state.label })));
+  useEffect(() => useStore.setState({ unrelated: 1 }), []);
+  return <main>{selection.label}<span />{renders.current}</main>;
+};
+`;
+
+const SWR_IMMUTABLE_SOURCE = `
+import useSWRImmutable from "swr/immutable";
+
+export default () => {
+  const { data } = useSWRImmutable("/count", null, {
+    fallbackData: { count: 7 },
+  });
+  return <main>{data.count}<span /></main>;
+};
+`;
+
+const ZUSTAND_MIDDLEWARE_SOURCE = `
+import { create } from "zustand";
+import { redux } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+
+const useImmerStore = create(
+  immer((set) => ({
+    count: 1,
+    increment: () => set((state) => {
+      state.count += 1;
+    }),
+  })),
+);
+useImmerStore.getState().increment();
+
+const useReduxStore = create(
+  redux((state, action) => ({ count: state.count + action.amount }), { count: 3 }),
+);
+useReduxStore.getState().dispatch({ type: "increment", amount: 2 });
+
+export default () => (
+  <main>
+    {useImmerStore.getState().count}
+    <strong />
+    {useReduxStore.getState().count}
+    <span />
+  </main>
 );
 `;
 
@@ -114,6 +326,83 @@ export default function App() {
     </section>
   );
 }
+`,
+};
+
+const PURE_CLASS_INSTANCE_PROJECT: Record<string, string> = {
+  "node_modules/values.js/package.json": JSON.stringify({
+    name: "values.js",
+    version: "2.0.0",
+    main: "index.cjs",
+  }),
+  "node_modules/values.js/index.cjs": `
+class Color {
+  constructor(rgb, weight) {
+    this.rgb = rgb;
+    this.weight = weight;
+  }
+
+  get hex() {
+    return "4747a4";
+  }
+}
+
+class Values {
+  all() {
+    return [new Color([71, 71, 164], 100)];
+  }
+}
+
+module.exports = Values;
+`,
+  "app.tsx": `
+import Values from "values.js";
+
+interface SwatchProps {
+  hexColor: string;
+  weight: number;
+}
+
+const Swatch = ({ hexColor, weight }: SwatchProps) => <p>{weight}% {hexColor}</p>;
+const colors = new Values("#4747a4").all(10);
+
+export default () => (
+  <section>
+    {colors.map((color) => (
+      <Swatch {...color} hexColor={color.hex} />
+    ))}
+  </section>
+);
+`,
+};
+
+const STYLETRON_PROJECT: Record<string, string> = {
+  "node_modules/styletron-react/package.json": JSON.stringify({
+    name: "styletron-react",
+    version: "6.1.0",
+    main: "index.js",
+  }),
+  "node_modules/styletron-react/index.js": "exports.createStyled = () => null;\n",
+  "app.tsx": `
+import { createContext, forwardRef } from "react";
+import { createStyled } from "styletron-react";
+
+const ThemeContext = createContext({});
+const wrapper = (StyledComponent) =>
+  forwardRef((props, ref) => (
+    <ThemeContext.Consumer>
+      {(theme) => <StyledComponent {...props} ref={ref} $theme={theme} />}
+    </ThemeContext.Consumer>
+  ));
+const styled = createStyled({ wrapper });
+const Icon = styled("svg", {});
+Icon.displayName = "Icon";
+
+export default () => (
+  <Icon viewBox="0 0 24 24">
+    <path />
+  </Icon>
+);
 `,
 };
 
@@ -172,6 +461,50 @@ describe("library models", () => {
     expect(isPurePackage("lodash-webpack-plugin")).toBe(false);
   });
 
+  it("preserves enumerable fields from pure package class instances", async () => {
+    expect(await renderProject(PURE_CLASS_INSTANCE_PROJECT, "app.tsx")).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <section>",
+        "      <Swatch>",
+        "        <p>",
+        '          "100"',
+        '          "% "',
+        '          "4747a4"',
+      ].join("\n"),
+    );
+  });
+
+  it("preserves Styletron wrapper fibers and forwarded children", async () => {
+    expect(await renderProject(STYLETRON_PROJECT, "app.tsx")).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <Icon>",
+        "      <ContextConsumer>",
+        "        <ForwardRef>",
+        "          <svg>",
+        "            <path>",
+      ].join("\n"),
+    );
+  });
+
+  it("models Apollo client registration in React server modules", async () => {
+    expect(await renderSource(APOLLO_NEXTJS_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+  });
+
+  it("settles Tauri commands through their successful host result", async () => {
+    expect(await renderSource(TAURI_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+    expect(await renderSource(TAURI_VERSION_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+  });
+
   it("keeps an Axios response pending so the request's outcomes stay enumerated", async () => {
     expect(await renderSource(AXIOS_SOURCE)).toBe(
       [
@@ -191,13 +524,113 @@ describe("library models", () => {
     );
   });
 
-  it("leaves a render prop to the opaque component that calls it instead of a wildcard child", async () => {
+  it("enumerates fulfillment and rejection through async try/catch/finally", async () => {
+    const tree = await renderSource(AXIOS_ASYNC_SOURCE);
+    expect(tree).toContain("<Loading>");
+    expect(tree).toContain("<Failed>");
+    expect(tree).toContain("<Ready>");
+  });
+
+  it("tokenizes Prism source without evaluating bundled grammar initialization", async () => {
     expect(await renderSource(OPAQUE_RENDER_PROP_SOURCE)).toBe(
       [
         "<HostRoot>",
         "  <default>",
         "    <section>",
-        "      <Highlight> (opaque: Highlight from prism-react-renderer is not analyzed)",
+        "      <Highlight2>",
+        "        <Highlight>",
+        "          <pre>",
+        '            <div> key="0"',
+        '              <span> key="0"',
+        '              <span> key="1"',
+        '              <span> key="2"',
+        '              <span> key="3"',
+        '              <span> key="4"',
+        '              <span> key="5"',
+        '              <span> key="6"',
+        '            <div> key="1"',
+        '              <span> key="0"',
+        '              <span> key="1"',
+        '              <span> key="2"',
+      ].join("\n"),
+    );
+  });
+
+  it("provides the TanStack Query client without analyzing provider effects", async () => {
+    expect(await renderSource(TANSTACK_QUERY_PROVIDER_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <QueryClientProvider>",
+        "      <ContextProvider>",
+        "        <Child>",
+        "          <main>",
+      ].join("\n"),
+    );
+  });
+
+  it("shares the modeled next-auth session between provider and consumer", async () => {
+    expect(await renderSource(NEXT_AUTH_PROVIDER_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <SessionProvider>",
+        "      <ContextProvider>",
+        "        <Child>",
+        "          <main>",
+      ].join("\n"),
+    );
+  });
+
+  it("reads concrete initial and updated state from Zustand stores", async () => {
+    expect(await renderSource(ZUSTAND_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <main>",
+        '      "ready"',
+        "      <strong>",
+        '      "4"',
+        "      <span>",
+      ].join("\n"),
+    );
+  });
+
+  it("preserves untouched Zustand fields across symbolic partial updates", async () => {
+    expect(await renderSource(ZUSTAND_BRANCH_UPDATE_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+  });
+
+  it("keeps shallow selections stable across unrelated Zustand updates", async () => {
+    expect(await renderSource(ZUSTAND_SHALLOW_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <main>",
+        '      "ready"',
+        "      <span>",
+        '      "1"',
+      ].join("\n"),
+    );
+  });
+
+  it("reads fallback data through the SWR immutable entry point", async () => {
+    expect(await renderSource(SWR_IMMUTABLE_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>", '      "7"', "      <span>"].join("\n"),
+    );
+  });
+
+  it("applies Zustand Immer and Redux middleware updates", async () => {
+    expect(await renderSource(ZUSTAND_MIDDLEWARE_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <main>",
+        '      "2"',
+        "      <strong>",
+        '      "5"',
+        "      <span>",
       ].join("\n"),
     );
   });

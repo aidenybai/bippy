@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { readCorpusManifest, type CorpusResult } from "../src/corpus/manifest.js";
@@ -27,8 +28,7 @@ const USAGE = `usage: tsx scripts/corpus.ts [options] [entry-id ...]
   --manifest <p>    corpus manifest (default corpus/manifest.json)
   --results <p>     merged results file (default corpus/results.json)
   --markdown <p>    also write a markdown table of all results
-  --corpus-dir <p>  where repositories are cloned (default .corpus; keep it outside
-                    this monorepo for tools that walk up to the nearest workspace root)
+  --corpus-dir <p>  where repositories are cloned (default system temp directory)
   --headed          run the capture browser headed
   --list            print manifest entries and exit`;
 
@@ -36,7 +36,10 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     "static-only": { type: "boolean", default: false },
-    "corpus-dir": { type: "string", default: ".corpus" },
+    "corpus-dir": {
+      type: "string",
+      default: path.join(tmpdir(), "bippy-analyzer-corpus"),
+    },
     "skip-install": { type: "boolean", default: false },
     "install-only": { type: "boolean", default: false },
     parallel: { type: "string", default: "1" },

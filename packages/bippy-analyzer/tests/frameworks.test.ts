@@ -165,6 +165,18 @@ const findFiberTags = (nodes: PatternNode[], name: string): SnapshotWorkTag[] =>
       : [],
   );
 
+const findRuntimeFiber = (
+  fibers: RuntimeFiberSnapshot[],
+  name: string,
+): RuntimeFiberSnapshot | null => {
+  for (const fiber of fibers) {
+    if (fiber.name === name) return fiber;
+    const descendant = findRuntimeFiber(fiber.children, name);
+    if (descendant) return descendant;
+  }
+  return null;
+};
+
 describe("next app router", () => {
   it("composes root layout, elides server components, keeps client boundaries", async () => {
     const { tree, errors } = await render("next-app", { framework: "next-app", route: "/" });
@@ -178,6 +190,26 @@ describe("next app router", () => {
     expect(names).not.toContain("<HomePage>");
     expect(names).not.toContain("<Nav>");
     expect(tree).toMatch(/<section>\n\s+<h1>\n\s+<Counter>/);
+  });
+
+  it("renders modeled server-compatible libraries through Flight", async () => {
+    const { tree, errors } = await render("next-app", {
+      framework: "next-app",
+      route: "/markdown",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(
+      /<main>\n\s+<p> key="p-0"\n\s+"Server "\n\s+<strong> key="strong-0"\n\s+<ClientMarkdown>\n\s+<Markdown>\n\s+<p> key="p-0"\n\s+"Client "\n\s+<strong> key="strong-0"$/,
+    );
+  });
+
+  it("keeps modeled client-only providers in the Flight tree", async () => {
+    const { tree, errors } = await render("next-app", {
+      framework: "next-app",
+      route: "/session",
+    });
+    expect(errors).toEqual([]);
+    expect(tree).toMatch(/<SessionProvider>\n\s+<ContextProvider>\n\s+<main>$/);
   });
 
   it("renders forwardRef/memo wrappers created by server code on the server", async () => {
@@ -707,6 +739,40 @@ describe("next pages router", () => {
     expect(tree).not.toContain("?");
   });
 
+  it("provides captured next-translate namespaces to the static page", async () => {
+    const { result, tree, errors } = await render(
+      "next-pages",
+      { framework: "next-pages", route: "/translated" },
+      [],
+      {
+        globals: {
+          __NEXT_DATA__: {
+            props: {
+              pageProps: {
+                __lang: "en",
+                __namespaces: {
+                  common: {
+                    hello: "Hello, {{name}}",
+                    rich: "Welcome, <strong>{{name}}</strong>",
+                    literal: "HTML tag: <code><title></code>",
+                  },
+                },
+              },
+            },
+          },
+        },
+        queries: [],
+      },
+    );
+    expect(errors).toEqual([]);
+    expect(findRuntimeFiber(result.snapshot.roots, "p")?.props.children).toBe("Hello, Ada");
+    expect(tree).toMatch(/<Trans>\n\s+"Welcome, "\n\s+<strong>/);
+    expect(findRuntimeFiber(result.snapshot.roots, "strong")?.props.children).toBe("Ada");
+    expect(findRuntimeFiber(result.snapshot.roots, "code")?.props.children).toBe("<title>");
+    expect(tree).not.toContain("<title>");
+    expect(tree).not.toContain("common:");
+  });
+
   it("never renders api routes", async () => {
     const { errors } = await render("next-pages", { framework: "next-pages", route: "/api/hello" });
     expect(errors.map((diagnostic) => diagnostic.code)).toEqual(["next-pages-no-page"]);
@@ -1050,6 +1116,125 @@ describe("next pages router", () => {
     expect(flattened.roots[0].children).toEqual([
       fiber("RouterProvider", "FunctionComponent", [matched]),
     ]);
+  });
+
+  it("splices legacy router providers and the default LinkAnchor", () => {
+    const fiber = (
+      name: string,
+      tag: SnapshotWorkTag,
+      children: RuntimeFiberSnapshot[] = [],
+    ): RuntimeFiberSnapshot => ({ tag, name, key: null, text: null, props: {}, children });
+    const anchor = fiber("a", "HostComponent");
+    const runtime = {
+      reactVersion: "17.0.2",
+      rendererName: null,
+      buildType: null,
+      capturedAt: "",
+      roots: [
+        fiber("HostRoot", "HostRoot", [
+          fiber("BrowserRouter", "ClassComponent", [
+            fiber("Router", "ClassComponent", [
+              fiber("Router", "ContextProvider", [
+                fiber("Router-History", "ContextProvider", [
+                  fiber("Switch", "ClassComponent", [
+                    fiber("Router", "ContextConsumer", [
+                      fiber("Route", "ClassComponent", [
+                        fiber("Router", "ContextConsumer", [
+                          fiber("Router", "ContextProvider", [
+                            fiber("Link", "ForwardRef", [
+                              fiber("Router", "ContextConsumer", [
+                                fiber("LinkAnchor", "ForwardRef", [anchor]),
+                              ]),
+                            ]),
+                          ]),
+                        ]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ],
+    };
+    const flattened = flattenTransparentFibers(runtime, getFrameworkProfile("react-router"));
+    expect(flattened.roots[0].children).toEqual([
+      fiber("BrowserRouter", "ClassComponent", [
+        fiber("Switch", "ClassComponent", [
+          fiber("Route", "ClassComponent", [fiber("Link", "ForwardRef", [anchor])]),
+        ]),
+      ]),
+    ]);
+  });
+});
+
+describe("react router component versions", () => {
+  it.each([
+    ["5.3.4", "ClassComponent"],
+    ["6.0.0", "FunctionComponent"],
+  ])("models BrowserRouter %s with its native fiber tag", async (version, expectedTag) => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      version,
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-browser.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    expect(findFiberTags(getRenderPattern(result), "BrowserRouter")).toEqual([expectedTag]);
+    expect(findFiberTags(getRenderPattern(result), "Route")).toEqual([expectedTag]);
+  });
+
+  it("models v5 Switch first-match semantics and class fibers", async () => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      "5.3.4",
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-switch.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const pattern = getRenderPattern(result);
+    const tree = formatPattern(pattern);
+    expect(result.diagnostics).toEqual([]);
+    expect(findFiberTags(pattern, "Switch")).toEqual(["ClassComponent"]);
+    expect(findFiberTags(pattern, "Route")).toEqual([
+      "ClassComponent",
+      "ClassComponent",
+      "ClassComponent",
+      "ClassComponent",
+    ]);
+    expect(tree).toContain("<Match>");
+    expect(tree).toContain("<main>");
+    expect(tree).toContain('"settings"');
+    expect(tree).toContain('"/forced/settings"');
+    expect(tree).toContain("<EmptyChildrenFallback>");
+    expect(tree).toContain("<footer>");
+    expect(tree).toMatch(/<NestedMatch>[\s\S]*<span>\n\s+"nested-"\n\s+"42"/);
+    expect(tree).toMatch(/<InheritedMatch>[\s\S]*<output>\n\s+"inherited-"\n\s+"42"/);
+    expect(tree).not.toContain("<Miss>");
+    expect(tree).not.toContain("<aside>");
+  });
+
+  it("applies a v5 Redirect after its lifecycle commits", async () => {
+    const rootDirectory = await withInstalledPackage(
+      "react-router-basename",
+      "react-router-dom",
+      "5.3.4",
+    );
+    const result = await renderFrameworkTarget(
+      { framework: "react-router", route: "/", entry: "src/legacy-redirect.tsx" },
+      { rootDirectory, tsconfigPath: join(rootDirectory, "tsconfig.json") },
+    );
+    const tree = formatPattern(getRenderPattern(result));
+    expect(result.diagnostics).toEqual([]);
+    expect(tree).toContain("<Login>");
+    expect(tree).toContain("<aside>");
+    expect(tree).not.toContain("<Dashboard>");
+    expect(tree).not.toContain("<Redirect>");
   });
 });
 

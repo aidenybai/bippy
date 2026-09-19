@@ -1,6 +1,7 @@
 import {
   isBundledDefaultExportName,
   isBundlerDedupedName,
+  isBundlerMinifiedNamePair,
   isReactCompilerOutlinedName,
 } from "./bundler-names.js";
 import { countSnapshotFibers, type RuntimeFiberSnapshot } from "./snapshot.js";
@@ -248,18 +249,18 @@ interface SlotSearchResult {
   divergence: ComparisonDivergence | null;
 }
 
+interface SlotCandidate {
+  siblings: RuntimeFiberSnapshot[];
+  start: number;
+  directMatch: SlotMatch | null;
+}
+
 interface FurthestSlotDivergence {
   progress: number;
   divergence: ComparisonDivergence;
 }
 
 class BudgetExceeded extends Error {}
-
-// Any non-host fiber passes an opaque head check, so a slot candidate that
-// merely leaves its own slots unmatched is only a fallback; the candidate
-// explaining the most runtime fibers is the library's real slot.
-const isSettledSlotMatch = ({ tally }: SlotMatch): boolean =>
-  tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
 
 const isBetterSlotMatch = (candidate: SlotMatch, best: SlotMatch): boolean => {
   const matched = candidate.tally.matchedFibers + candidate.tally.matchedText;
@@ -819,6 +820,7 @@ class Matcher {
     if (isHostTag(actual.tag)) return false;
     return (
       isBundlerRenamedName(pattern.name, actual.name) ||
+      isBundlerMinifiedNamePair(pattern.name, actual.name) ||
       isBundledDefaultExportName(pattern.name, actual.name) ||
       (isClassTag(actual.tag)
         ? isBundlerClassName(actual.name, pattern.name)
@@ -847,6 +849,24 @@ class Matcher {
     );
   }
 
+  private isSettledSlotMatch({ tally }: SlotMatch): boolean {
+    return tally.slotsUnmatched === 0 && tally.opaqueRenamed === 0;
+  }
+
+  private matchDirectTextSlot(
+    pattern: PatternOpaque,
+    actual: RuntimeFiberSnapshot,
+  ): SlotMatch | null {
+    const [text] = pattern.passedChildren;
+    if (pattern.passedChildren.length !== 1 || text.kind !== "text" || !isHostTag(actual.tag)) {
+      return null;
+    }
+    const directText = actual.props.children;
+    if (typeof directText !== "string" && typeof directText !== "number") return null;
+    if (this.compareText && text.text !== null && text.text !== String(directText)) return null;
+    return { tally: EMPTY_TALLY, consumedFibers: 0 };
+  }
+
   // Searches the library's runtime subtree breadth-first for the place where it
   // rendered the children the application passed in, so the shallowest fit wins.
   // Libraries may render siblings around the slot, so the passed children only
@@ -859,25 +879,43 @@ class Matcher {
     path: string[],
   ): Work<SlotSearchResult> {
     const queue: RuntimeFiberSnapshot[] = [actual];
-    let best: FurthestSlotDivergence | null = null;
-    let bestMatch: SlotMatch | null = null;
+    const candidates: SlotCandidate[] = [];
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex++) {
       const fiber = queue[queueIndex];
-      for (let start = 0; start < fiber.children.length; start++) {
-        const { result, failure } = yield* WorkStack.wait(
-          this.attempt(() => this.matchSlotAt(pattern, fiber.children, start, path)),
-        );
-        if (result) {
-          if (isSettledSlotMatch(result)) return { match: result, divergence: null };
-          if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
-          continue;
-        }
-        const startPosition = this.positions.start.get(fiber.children[start]) ?? 0;
-        if (failure && (!best || failure.position - startPosition > best.progress)) {
-          best = { progress: failure.position - startPosition, divergence: failure.divergence };
-        }
+      const directMatch = this.matchDirectTextSlot(pattern, fiber);
+      if (directMatch) candidates.push({ siblings: [], start: 0, directMatch });
+      const siblings = fiber.children;
+      for (let start = 0; start < siblings.length; start++) {
+        candidates.push({ siblings, start, directMatch: null });
       }
-      queue.push(...fiber.children);
+      queue.push(...siblings);
+    }
+    const patternHead = pattern.passedChildren[0];
+    if (patternHead?.kind === "opaque" && patternHead.runtimeNames !== null) {
+      candidates.sort(
+        (left, right) =>
+          Number(this.opaqueNameAgrees(patternHead, right.siblings[right.start])) -
+          Number(this.opaqueNameAgrees(patternHead, left.siblings[left.start])),
+      );
+    }
+    let best: FurthestSlotDivergence | null = null;
+    let bestMatch: SlotMatch | null = null;
+    for (const { siblings, start, directMatch } of candidates) {
+      if (directMatch) return { match: directMatch, divergence: null };
+      const { result, failure } = yield* WorkStack.wait(
+        this.attempt(() => this.matchSlotAt(pattern, siblings, start, path)),
+      );
+      if (result) {
+        if (this.isSettledSlotMatch(result)) {
+          return { match: result, divergence: null };
+        }
+        if (!bestMatch || isBetterSlotMatch(result, bestMatch)) bestMatch = result;
+        continue;
+      }
+      const startPosition = this.positions.start.get(siblings[start]) ?? 0;
+      if (failure && (!best || failure.position - startPosition > best.progress)) {
+        best = { progress: failure.position - startPosition, divergence: failure.divergence };
+      }
     }
     if (bestMatch) return { match: bestMatch, divergence: null };
     // Passed children that evaluate to nothing (all-empty branches) leave no

@@ -1,5 +1,5 @@
 import { recordInputSource } from "../evaluate/predicates.js";
-import { nativeFunction } from "../evaluate/stubs.js";
+import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
 import {
   booleanValue,
   branchValue,
@@ -28,18 +28,18 @@ import type {
   CapturedMutation,
   CapturedQuery,
   CapturedValue,
+  ContextDefinition,
   LibraryValueProvider,
   ModeledExports,
   ProjectContext,
   StaticObjectValue,
   StaticSymbolValue,
   StaticValue,
+  StubComponent,
   StubRenderTools,
 } from "../types.js";
 
-// TanStack Query's hooks are the only part of the package that is modeled; the
-// providers and option helpers are analyzed from source. A hook's result is the
-// observer's `createResult` as it stands once the runtime has settled. When the
+// A hook result models the observer's `createResult` after runtime settlement. When the
 // page's query cache was captured and holds the hook's query (same `hashKey`),
 // the result is rebuilt from that entry's state; otherwise a query that may
 // fetch has fetched (and either succeeded or failed), a disabled query
@@ -49,6 +49,23 @@ import type {
 export const TANSTACK_QUERY_PACKAGES = ["@tanstack/react-query", "@tanstack/query-core"];
 
 const SKIP_TOKEN: StaticSymbolValue = { kind: "symbol", key: "@tanstack/query-core/skipToken" };
+const QUERY_CLIENT_CONTEXT: ContextDefinition = {
+  name: "QueryClientContext",
+  displayName: null,
+  defaultValue: UNDEFINED_VALUE,
+  location: null,
+};
+const QUERY_CLIENT_PROVIDER: StubComponent = {
+  displayName: "QueryClientProvider",
+  render: (props) =>
+    element(
+      { kind: "context-provider", context: QUERY_CLIENT_CONTEXT, displayName: null },
+      objectFromRecord({
+        value: getObjectProperty(props, "client"),
+        children: getObjectProperty(props, "children"),
+      }),
+    ),
+};
 
 const QUERY_HOOKS: ReadonlySet<string> = new Set([
   "useQuery",
@@ -437,6 +454,9 @@ const useMutation = (project: ProjectContext): StaticValue =>
 export const tanstackQueryValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!TANSTACK_QUERY_PACKAGES.includes(specifier)) return null;
   if (importedName === "skipToken") return SKIP_TOKEN;
+  if (specifier === "@tanstack/react-query" && importedName === "QueryClientProvider") {
+    return stubValue(QUERY_CLIENT_PROVIDER);
+  }
   if (QUERY_HOOKS.has(importedName)) {
     return nativeFunction(importedName, ([options], tools) =>
       queryResult(importedName, options ?? UNDEFINED_VALUE, tools, project),
@@ -475,6 +495,7 @@ const MODELED_EXPORT_NAMES: readonly string[] = [
   "usePrefetchInfiniteQuery",
 ];
 
-export const TANSTACK_QUERY_MODELED_EXPORTS: ModeledExports = Object.fromEntries(
-  TANSTACK_QUERY_PACKAGES.map((specifier) => [specifier, MODELED_EXPORT_NAMES]),
-);
+export const TANSTACK_QUERY_MODELED_EXPORTS: ModeledExports = {
+  "@tanstack/react-query": [...MODELED_EXPORT_NAMES, "QueryClientProvider"],
+  "@tanstack/query-core": MODELED_EXPORT_NAMES,
+};

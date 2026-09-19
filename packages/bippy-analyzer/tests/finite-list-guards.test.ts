@@ -118,6 +118,10 @@ describe("finite list guards", () => {
     );
     const values = listValue(spreadListItems(source, null));
     expect(values.items.map((item) => item.kind)).toEqual(["optional", "optional"]);
+    expect(values.items).toEqual([
+      expect.objectContaining({ kind: "optional", value: primitiveValue(1) }),
+      expect.objectContaining({ kind: "optional", value: primitiveValue(2) }),
+    ]);
     expect(getListLength(values)).toMatchObject({
       kind: "branch",
       preferredIndex: 1,

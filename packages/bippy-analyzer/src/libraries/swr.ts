@@ -39,6 +39,8 @@ import type {
 
 export const SWR_PACKAGES = ["swr"];
 
+const SWR_SPECIFIERS = new Set(["swr", "swr/immutable"]);
+
 interface SwrOptions {
   /** Whether `fn || config.fetcher` is a function; null when the inherited fetcher is uncertain. */
   hasFetcher: boolean | null;
@@ -336,7 +338,7 @@ const SWR_CONFIG_STUB: StubComponent = {
 };
 
 export const swrValue: LibraryValueProvider = (specifier, importedName) => {
-  if (!SWR_PACKAGES.includes(specifier)) return null;
+  if (!SWR_SPECIFIERS.has(specifier)) return null;
   if (importedName === "SWRConfig") return stubValue(SWR_CONFIG_STUB);
   if (importedName !== "default" && importedName !== "useSWR") return null;
   return {

@@ -36,8 +36,9 @@ import { describeTag } from "./component-name.js";
 import { isVersionAtLeast } from "./installed-version.js";
 
 // Emotion's fiber-visible surface. A styled component is a `forwardRef`
-// (`withEmotionCache`) rendering its base tag; Emotion 10 and 11.8+ prepend
-// a null-returning placeholder. The base receives the props that survive
+// (`withEmotionCache`) rendering its base tag; Emotion 10 and early 11 prepend
+// `Noop`; Emotion 11.0–11.5 has no placeholder, 11.6–11.7 restores `Noop`, and
+// 11.8+ prepends `Insertion`. The base receives the props that survive
 // `shouldForwardProp` (`@emotion/is-prop-valid` for host tags, everything but
 // `theme` for components). Styling a styled component composes the styles and
 // keeps the original base, so `styled(Flex)` renders Flex's `div`, not Flex.
@@ -75,7 +76,15 @@ interface EmotionRuntime {
 
 const EMOTION_10: EmotionRuntime = { placeholder: emptyStub("Noop"), hasConsumerFibers: true };
 
-const EMOTION_EARLY_11: EmotionRuntime = { placeholder: null, hasConsumerFibers: false };
+const EMOTION_EARLY_11: EmotionRuntime = {
+  placeholder: null,
+  hasConsumerFibers: false,
+};
+
+const EMOTION_HYDRATION_11: EmotionRuntime = {
+  placeholder: emptyStub("Noop"),
+  hasConsumerFibers: false,
+};
 
 const EMOTION_11: EmotionRuntime = {
   placeholder: emptyStub("Insertion"),
@@ -85,6 +94,7 @@ const EMOTION_11: EmotionRuntime = {
 const readRuntime = (project: ProjectContext, packageName: string): EmotionRuntime => {
   const version = project.readPackageVersion(packageName);
   if (version === null || isVersionAtLeast(version, "11.8.0")) return EMOTION_11;
+  if (isVersionAtLeast(version, "11.6.0")) return EMOTION_HYDRATION_11;
   return isVersionAtLeast(version, "11.0.0") ? EMOTION_EARLY_11 : EMOTION_10;
 };
 

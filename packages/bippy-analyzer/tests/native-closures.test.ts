@@ -212,6 +212,61 @@ describe("index writes into lists of unknown length", () => {
       ].join("\n"),
     );
   });
+
+  it("keeps uncertain reverse-index reads inside list bounds", async () => {
+    const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-analyzer-reverse-loop-"));
+    writeFileSync(
+      join(rootDirectory, "stream.tsx"),
+      `
+interface Item {
+  id: string;
+  kind: string;
+  visible: boolean;
+}
+
+interface StreamProps {
+  items: Item[];
+}
+
+export const Stream = ({ items }: StreamProps) => {
+  const filtered = items.filter((item) => item.visible);
+  const buckets: Record<string, Item[]> = {
+    source: [],
+    translation: [],
+  };
+  for (let index = filtered.length - 1; index >= 0; index--) {
+    const item = filtered[index];
+    const key = item.kind === "source" ? "source" : "translation";
+    buckets[key].unshift(item);
+  }
+  const lines = ["source", "translation"]
+    .map((key) => ({ items: buckets[key] }))
+    .filter((line) => line.items.length > 0);
+  return <>{lines.map((line) => line.items.map((item) => <span key={item.id} />))}</>;
+};
+`,
+    );
+    const renderer = await createStaticRenderer({ rootDirectory });
+    const result = await renderer.renderComponent(join(rootDirectory, "stream.tsx"), {
+      exportName: "Stream",
+      props: objectFromRecord({
+        items: listValue([
+          {
+            kind: "repeat",
+            item: objectFromRecord({
+              id: unknownPrimitiveValue("string", "item id"),
+              kind: unknownPrimitiveValue("string", "item kind"),
+              visible: unknownPrimitiveValue("boolean", "item visibility"),
+            }),
+            location: null,
+          },
+        ]),
+      }),
+    });
+    expect(result.diagnostics).not.toContainEqual(
+      expect.objectContaining({ code: "render-error" }),
+    );
+  });
 });
 
 const PRICE_SOURCE = `

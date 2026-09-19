@@ -19,6 +19,7 @@ export interface BrowserCaptureOptions {
   headless?: boolean;
   /** `window` properties to record once the page has settled (bootstrap payloads the server injects or the page fetches). */
   globals?: string[];
+  compilerDefinesUrl?: string;
   onConsole?: (type: string, text: string) => void;
 }
 
@@ -113,17 +114,28 @@ const readSnapshot = async (page: Page): Promise<RuntimeSnapshot | null> => {
   return json === null ? null : parseSnapshot(json);
 };
 
-const readObservations = async (page: Page, names: string[]): Promise<RuntimeObservations> => {
-  const json = await page.evaluate(async (globalNames) => {
-    const globals: Partial<HarnessGlobals> = Object(globalThis);
-    const observed: RuntimeObservations = {
-      queries: [],
-      ...(await globals.__BIPPY_PARSER_OBSERVATIONS__?.()),
-      globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(globalNames)) ?? {},
-      page: globals.__BIPPY_PARSER_PAGE__?.(),
-    };
-    return JSON.stringify(observed);
-  }, names);
+const readObservations = async (
+  page: Page,
+  globalNames: string[],
+  compilerDefinesUrl?: string,
+): Promise<RuntimeObservations> => {
+  const json = await page.evaluate(
+    async (options) => {
+      const globals: Partial<HarnessGlobals> = Object(globalThis);
+      const observed: RuntimeObservations = {
+        queries: [],
+        ...(await globals.__BIPPY_PARSER_OBSERVATIONS__?.()),
+        globals: (await globals.__BIPPY_PARSER_GLOBALS__?.(options.globalNames)) ?? {},
+        page: globals.__BIPPY_PARSER_PAGE__?.(),
+      };
+      if (options.compilerDefinesUrl) {
+        const compilerDefines: unknown = (await import(options.compilerDefinesUrl)).default;
+        observed.compilerDefines = Object(compilerDefines);
+      }
+      return JSON.stringify(observed);
+    },
+    { globalNames, compilerDefinesUrl },
+  );
   return readObservationsJson(JSON.parse(json), `${page.url()} observations`);
 };
 
@@ -197,6 +209,8 @@ export class BrowserCapturer {
     try {
       await context.addInitScript(inject);
       const page = await context.newPage();
+      // HACK: Keep Chromium's synthetic pointer origin from creating a mount-time hover.
+      await page.mouse.move(-1, -1);
       page.on("pageerror", (error) => pageErrors.push(error.message));
       page.on("console", (message) => {
         if (message.type() === "error") pageErrors.push(message.text());
@@ -206,6 +220,7 @@ export class BrowserCapturer {
         waitUntil: "domcontentloaded",
         timeout: timeoutMs,
       });
+      await page.mouse.move(-1, -1);
       const requestHeaders = (await response?.request().allHeaders()) ?? null;
       if (options.waitForSelector) {
         await page.waitForSelector(options.waitForSelector, { timeout: timeoutMs });
@@ -214,6 +229,7 @@ export class BrowserCapturer {
       if (commits === 0) {
         // HACK: a cold Vite server can 504 ("Outdated Optimize Dep") the first visit and never mount.
         await page.reload({ waitUntil: "domcontentloaded", timeout: timeoutMs });
+        await page.mouse.move(-1, -1);
         commits = await waitForQuietCommits(page, settleMs, timeoutMs);
       }
       const snapshot = await readSnapshot(page);
@@ -222,7 +238,11 @@ export class BrowserCapturer {
         const overlay = await readDevServerOverlay(page);
         if (overlay) pageErrors.push(overlay);
       }
-      const observations = await readObservations(page, options.globals ?? []);
+      const observations = await readObservations(
+        page,
+        options.globals ?? [],
+        options.compilerDefinesUrl,
+      );
       if (requestHeaders) observations.request = { headers: requestHeaders };
       return { snapshot, commits, pageErrors, title: await page.title(), observations };
     } finally {

@@ -59,6 +59,7 @@ import { getReactScriptsClientEnvironment } from "../graph/react-scripts.js";
 import type { HostDocument } from "../host/host-document.js";
 import { type HostPlatform, type HostRealm, loadHostRealm } from "../host/host-realm.js";
 import { getLibraryValue, isModeledLibraryExport } from "../libraries/index.js";
+import { getCapturedPromiseOutcome } from "../observations.js";
 import { PurePackages } from "../libraries/pure-packages.js";
 import {
   getDeclaredNames,
@@ -93,7 +94,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
@@ -230,7 +231,11 @@ import {
   type MutableHeapValue,
 } from "./heap-journal.js";
 import type { StateCell } from "./hooks.js";
-import { getPrimitiveWitness, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import {
+  getDeclaredHostObjectMember,
+  getPrimitiveWitness,
+  GLOBAL_OBJECT_VALUE,
+} from "./host-globals.js";
 import { createIndexedDbFactory, isIndexedDbName } from "./indexed-db.js";
 import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
@@ -257,6 +262,7 @@ import {
   getHostDocumentExpando,
   getNativeObjectComposedMember,
   getNativeObjectMember,
+  getNativeOwnEntries,
   hasHostDocumentMember,
   setHostDocumentMember,
   setNativeObjectComposedMember,
@@ -268,6 +274,7 @@ import {
   createPathPredicate,
   getAlternativeGuards,
   getBranchPredicate,
+  getListIndexPredicate,
   getPresencePredicate,
   getTruthinessPredicate,
   guardedPredicate,
@@ -313,6 +320,7 @@ import {
 import { isStrictCode } from "./strict-code.js";
 import { nativeFunction } from "./stubs.js";
 import {
+  collectReactDocgenTypescriptDisplayNames,
   collectStyledDisplayNames,
   DEFAULT_STYLED_COMPONENTS_TRANSFORM,
   STYLED_COMPONENTS_MACRO_SPECIFIER,
@@ -362,6 +370,7 @@ import {
   getSymbolDescription,
   getTruthiness,
   isCallable,
+  isIndefiniteItem,
   isJsonRecord,
   isNullish,
   isSymbolPropertyKey,
@@ -651,6 +660,12 @@ interface PendingReturnJoin {
   predicate?: string | null;
 }
 
+interface GuardedValueCacheEntry {
+  alternatives: StaticValue[];
+  predicate: string | null;
+  value: StaticValue;
+}
+
 const completeBlock: StatementContinuation = () => COMPLETES;
 
 /** A counter or flag threaded through a recursion; it only bounds a walk whose data the analysis cannot see. */
@@ -795,6 +810,19 @@ const markExternallyMutable = (value: StaticObjectValue, reason: string): void =
   value.entries.push({ kind: "spread", value: unknownValue(reason) });
 };
 
+const getCopiedSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | null => {
+  const copied = getSpreadEntries(spread);
+  if (copied) return copied;
+  if (spread.kind !== "native-object") return null;
+  return (
+    getNativeOwnEntries(spread)?.map(([key, value]): StaticObjectEntry => ({
+      kind: "property",
+      key,
+      value,
+    })) ?? null
+  );
+};
+
 /**
  * A mutation of a statically known property widens that property alone and a
  * computed member the whole object. A mutating method call widens a collection
@@ -875,6 +903,10 @@ export class Interpreter {
   readonly rootRender = new RootRenderState();
   readonly mutations = new MutationLog();
   private readonly heapJournals: HeapJournal[] = [];
+  private readonly guardedValues = new WeakMap<
+    StaticBranchValue,
+    WeakMap<Guard, GuardedValueCacheEntry>
+  >();
   private guard: Guard = constantGuard(true);
   private taskAssumptions: Guard = constantGuard(true);
   private readonly pendingReturnJoins: PendingReturnJoin[] = [];
@@ -896,6 +928,7 @@ export class Interpreter {
   readonly pendingSuperBindings = new WeakMap<StaticObjectValue, SuperBinding>();
   /** The styled-components transform the project's build applies to its own modules; `null` when it has none. */
   styledComponentsTransform: StyledComponentsTransformOptions | null;
+  reactDocgenTypescript = false;
   private readonly styledDisplayNames = new WeakMap<ModuleRecord, Map<Node, string>>();
 
   constructor(graph: ModuleGraph, options: InterpreterOptions = {}) {
@@ -1008,6 +1041,18 @@ export class Interpreter {
 
   /** A value recorded from the running page, with references to the project's own module exports evaluated. */
   captured(captured: CapturedValue, name: string): StaticValue {
+    const promise = getCapturedPromiseOutcome(captured);
+    if (promise) {
+      const settled =
+        promise.value === undefined
+          ? UNDEFINED_VALUE
+          : this.captured(promise.value, `${name}.value`);
+      return resolvedPromiseValue(
+        promise.status === "rejected"
+          ? thrownValue("promise rejected on the captured page", settled, null)
+          : settled,
+      );
+    }
     return capturedValue(captured, name, (reference) => this.resolveCapturedExport(reference));
   }
 
@@ -1413,7 +1458,7 @@ export class Interpreter {
     environment: RenderEnvironment | null,
   ): void {
     for (const specifier of module.dependencies) {
-      const target = this.graph.resolveImportedModule(specifier, module);
+      const target = this.graph.resolveDependencyForInitialization(specifier, module);
       if (isModuleRecord(target)) {
         this.initializeModule(target, target.sideEffectStatements, environment);
       }
@@ -2302,6 +2347,48 @@ export class Interpreter {
     });
   };
 
+  runTaskAlternatives = (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
+    context: EvaluationContext | null = null,
+    location: SourceLocation | null = null,
+  ): void => {
+    const parentGuard = this.guard;
+    const alternatives = causes.flatMap((cause, index) => {
+      const guard = andGuard([parentGuard, cause.guard]);
+      return this.isTaskPossible(guard) ? [{ cause, guard, index }] : [];
+    });
+    if (alternatives.length === 0) return;
+    if (alternatives.length === 1) {
+      const [alternative] = alternatives;
+      if (alternative) this.runWithGuard(alternative.guard, () => task(alternative.index));
+      return;
+    }
+    const scope = context?.scope ?? null;
+    const entrySnapshot = snapshotScopes(scope);
+    const pathSnapshots: ScopeSnapshot[][] = [];
+    const journal = new HeapJournal();
+    this.heapJournals.push(journal);
+    alternatives.forEach((alternative, alternativeIndex) => {
+      if (alternativeIndex > 0) restoreScopes(entrySnapshot);
+      this.runWithGuard(alternative.guard, () => task(alternative.index));
+      pathSnapshots.push(snapshotScopes(scope));
+      journal.endPath();
+    });
+    this.removeHeapJournal(journal);
+    const predicate = guardedPredicate(
+      alternatives.map((alternative) => alternative.cause.guard),
+      alternatives.map((alternative) => alternative.cause.inputs),
+    );
+    const preferredPath = Math.max(
+      0,
+      alternatives.findIndex((alternative) => alternative.index === 0),
+    );
+    journal.join(reason, location, preferredPath, predicate);
+    joinScopes(pathSnapshots, reason, location, preferredPath, predicate);
+  };
+
   bindContinuationWithCause: TaskBinder = (task) => {
     const cause = { guard: this.guard, inputs: [] };
     return (...args) => this.runTaskWithCause(cause, () => task(...args));
@@ -2376,22 +2463,39 @@ export class Interpreter {
   private getGuardedValue(value: StaticValue, activeGuard = this.guard): StaticValue {
     if (value.kind !== "branch") return value;
     if (activeGuard.kind === "constant" && activeGuard.value) return value;
+    const cached = this.guardedValues.get(value)?.get(activeGuard);
+    if (cached?.alternatives === value.alternatives && cached.predicate === value.predicate) {
+      return cached.value;
+    }
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
     const indices = resolved.guards.flatMap((guard, index) =>
-      areGuardsSatisfiable([activeGuard, guard]) ? [index] : [],
+      isGuardCompatibleWithActivePath(activeGuard, guard) ? [index] : [],
     );
-    if (indices.length === value.alternatives.length || indices.length === 0) return value;
-    return branchValue(
-      indices.map((index) => value.alternatives[index]),
-      value.reason,
-      value.location,
-      Math.max(0, indices.indexOf(value.preferredIndex)),
-      guardedPredicate(
-        indices.map((index) => resolved.guards[index]),
-        [resolved.inputs],
-      ),
-    );
+    const guarded =
+      indices.length === value.alternatives.length || indices.length === 0
+        ? value
+        : branchValue(
+            indices.map((index) => value.alternatives[index]),
+            value.reason,
+            value.location,
+            Math.max(0, indices.indexOf(value.preferredIndex)),
+            guardedPredicate(
+              indices.map((index) => resolved.guards[index]),
+              [resolved.inputs],
+            ),
+          );
+    let byGuard = this.guardedValues.get(value);
+    if (byGuard === undefined) {
+      byGuard = new WeakMap();
+      this.guardedValues.set(value, byGuard);
+    }
+    byGuard.set(activeGuard, {
+      alternatives: value.alternatives,
+      predicate: value.predicate,
+      value: guarded,
+    });
+    return guarded;
   }
 
   evaluateExpression(
@@ -2704,7 +2808,7 @@ export class Interpreter {
     for (const property of node.properties) {
       if (property.type === "SpreadElement") {
         const spread = this.evaluateExpression(property.argument, context);
-        const copied = getSpreadEntries(spread);
+        const copied = getCopiedSpreadEntries(spread);
         if (copied) {
           entries.push(...copied);
           continue;
@@ -3292,10 +3396,8 @@ export class Interpreter {
       return proceed(
         {
           getValue: (readContext) => this.evaluateExpression(target, readContext),
-          setValue: (value, assignmentContext) => {
-            this.assignIdentifier(target.name, value, assignmentContext);
-            return value;
-          },
+          setValue: (value, assignmentContext) =>
+            this.assignIdentifier(target.name, value, assignmentContext, target) ?? value,
         },
         context,
       );
@@ -3499,7 +3601,7 @@ export class Interpreter {
   assignTarget(target: AssignmentTarget, value: StaticValue, context: EvaluationContext): void {
     switch (target.type) {
       case "Identifier":
-        this.assignIdentifier(target.name, value, context);
+        this.assignIdentifier(target.name, value, context, target);
         return;
       case "MemberExpression":
         this.evaluateReference(target, context, (reference, pathContext) =>
@@ -3510,7 +3612,7 @@ export class Interpreter {
       case "ArrayPattern":
         this.destructure(target, value, context.scope, context, (leaf, leafValue) => {
           if (leaf.type === "Identifier") {
-            this.assignIdentifier(leaf.name, leafValue, context);
+            this.assignIdentifier(leaf.name, leafValue, context, leaf);
           } else {
             this.assignTarget(leaf, leafValue, context);
           }
@@ -3609,7 +3711,12 @@ export class Interpreter {
     });
   }
 
-  private assignIdentifier(name: string, value: StaticValue, context: EvaluationContext): void {
+  private assignIdentifier(
+    name: string,
+    value: StaticValue,
+    context: EvaluationContext,
+    node: Node,
+  ): StaticValue | null {
     const owner = findOwningScope(context.scope, name);
     if (owner) {
       this.mutations.record(owner.allocation);
@@ -3618,23 +3725,42 @@ export class Interpreter {
         name,
         this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
       );
-      return;
+      return null;
     }
     const bindingKind = context.module.bindings.get(name)?.kind;
     if (bindingKind === undefined || bindingKind === "typescript") {
-      const properties = this.getGlobalProperties(context.environment);
-      if (properties.has(name))
-        this.setGlobalMember({ kind: "global", name: "globalThis" }, name, value, context);
-      return;
+      if (isStrictCode(context.module, node)) {
+        const presence =
+          this.getGlobalProperties(context.environment).has(name) ??
+          primitiveValue(this.getGlobal(name, context.environment) !== null);
+        return this.continueValue(presence, context, (present, assignmentContext) => {
+          if (getTruthiness(present) !== true) {
+            return thrownValue(
+              `\`${name}\` is not defined`,
+              createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
+            );
+          }
+          this.setGlobalMember(
+            { kind: "global", name: "globalThis" },
+            name,
+            value,
+            assignmentContext,
+          );
+          return value;
+        });
+      }
+      this.setGlobalMember({ kind: "global", name: "globalThis" }, name, value, context);
+      return null;
     }
     const values = this.getModuleValues(context.module, context.environment);
     if (!values.has(name)) this.evaluateModuleBinding(context.module, name, context.environment);
     const previous = values.get(name);
-    if (previous === undefined || previous === IN_PROGRESS) return;
+    if (previous === undefined || previous === IN_PROGRESS) return null;
     this.mutations.record(0);
     this.escapeWalk.memo.invalidate(context.module, name);
     for (const journal of this.heapJournals) journal.recordModuleBinding(values, name, previous);
     values.set(name, this.withUncertainAssignment(previous, value, name, context));
+    return null;
   }
 
   private withUncertainAssignment(
@@ -3702,9 +3828,9 @@ export class Interpreter {
               this.getDynamicMember(alternative, propertyKey, location),
             );
       };
-      return getThrowCertainty(key) === "never"
-        ? readKey(key, receiverContext)
-        : this.continueValue(key, receiverContext, readKey);
+      return key.kind === "branch" || getThrowCertainty(key) !== "never"
+        ? this.continueValue(key, receiverContext, readKey)
+        : readKey(key, receiverContext);
     };
     return getThrowCertainty(object) !== "never" || (node.optional && object.kind === "branch")
       ? this.continueValue(object, context, readMember)
@@ -3721,9 +3847,21 @@ export class Interpreter {
     if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
       const candidates = object.items.map(getItemValue);
+      const indefiniteIndex = object.items.findIndex(isIndefiniteItem);
+      const canCorrelateIndex =
+        mayBeIndexKey(key) &&
+        (indefiniteIndex === -1 || indefiniteIndex === object.items.length - 1);
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
-        : branchValue(candidates, "dynamic list index", location);
+        : branchValue(
+            candidates,
+            "dynamic list index",
+            location,
+            0,
+            canCorrelateIndex
+              ? getListIndexPredicate(key, candidates.length, indefiniteIndex !== -1)
+              : null,
+          );
     }
     if (object.kind === "object") {
       const ownNames = getKnownObjectOwnNames(object);
@@ -3848,6 +3986,13 @@ export class Interpreter {
         }
         const property = getObjectProperty(object, key);
         if (property.kind !== "primitive" || property.value !== undefined) return property;
+        const declared = getDeclaredHostObjectMember(
+          this.getRealm(context.environment),
+          object,
+          key,
+          location,
+        );
+        if (declared) return declared;
         if (key === "constructor") return getIntrinsicConstructor(object) ?? property;
         if (
           !object.hasNullPrototype &&
@@ -4459,6 +4604,11 @@ export class Interpreter {
           ? null
           : this.styledComponentsTransform;
       displayNames = transform ? collectStyledDisplayNames(module, transform) : new Map();
+      if (this.reactDocgenTypescript && !isInsideNodeModules(module.filePath)) {
+        for (const [node, displayName] of collectReactDocgenTypescriptDisplayNames(module)) {
+          displayNames.set(node, displayName);
+        }
+      }
       this.styledDisplayNames.set(module, displayNames);
     }
     return displayNames;
@@ -4626,6 +4776,8 @@ export class Interpreter {
       queueMicrotask: (task) => this.queueMicrotask(task, context, location),
       bindTask: (task) => this.bindTask(task, context, location),
       runTask: (cause, task) => this.runTaskWithCause(cause, task, context, location),
+      runTaskAlternatives: (causes, task, reason) =>
+        this.runTaskAlternatives(causes, task, reason, context, location),
       isDeferred: () => this.timers.isDeferred || (context.hooks?.isDeferred ?? false),
       setProperty: (object, key, value) => this.assignOwnProperty(object, key, value),
       materializeNamespace: (value) => this.materializeNamespace(value, context.environment),
@@ -4836,14 +4988,15 @@ export class Interpreter {
           promise,
           (outcome, isEscaped) => {
             this.resolvedAwaits.set(node, outcome);
-            let resumed = isEscaped
-              ? this.runDeferred(context, location, resumeStatement)
-              : resumeStatement();
-            for (const handler of suspension.outcomeHandlers.toReversed()) {
-              if (resumed.isSuspended) return null;
-              resumed = handler(resumed);
-            }
-            return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+            const resume = (): StaticValue | null => {
+              let resumed = resumeStatement();
+              for (const handler of suspension.outcomeHandlers.toReversed()) {
+                if (resumed.isSuspended) return null;
+                resumed = handler(resumed);
+              }
+              return resumed.isSuspended ? null : outcomeToReturnValue(resumed, location);
+            };
+            return isEscaped ? this.runDeferred(context, location, resume) : resume();
           },
           location,
           promiseTools(this, context, location),
@@ -6130,12 +6283,13 @@ export class Interpreter {
   ): JsxAttributeValues {
     const entries: StaticObjectEntry[] = [];
     let maybeKey: StaticValue = UNDEFINED_VALUE;
+    let hasSpread = false;
     for (const attribute of attributes) {
       if (attribute.type === "JSXSpreadAttribute") {
-        entries.push({
-          kind: "spread",
-          value: this.evaluateExpression(attribute.argument, context),
-        });
+        hasSpread = true;
+        const spread = this.evaluateExpression(attribute.argument, context);
+        const copied = getCopiedSpreadEntries(spread);
+        entries.push(...(copied ?? [{ kind: "spread", value: spread }]));
         continue;
       }
       const name =
@@ -6159,7 +6313,7 @@ export class Interpreter {
       } else {
         value = this.evaluateExpression(attribute.value, context, name);
       }
-      if (name === "key" && entries.every((entry) => entry.kind === "property")) {
+      if (name === "key" && !hasSpread) {
         maybeKey = value;
         continue;
       }

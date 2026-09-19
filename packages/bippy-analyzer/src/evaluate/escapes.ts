@@ -15,6 +15,7 @@ import type {
   StaticPrimitiveValue,
   StaticValue,
 } from "../types.js";
+import { isSameEscapeTuple } from "./escape-memo.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
 import { isUserDrivenEventHandlerProp } from "./event-listeners.js";
 import { findOwningScope } from "./scope.js";
@@ -72,6 +73,7 @@ interface EscapedCallSite {
 interface ClosureShape {
   parameterNames: (string | null)[];
   declaredNames: Set<string>;
+  localAliases: Map<string, AccessPath | null>;
   callSites: EscapedCallSite[];
 }
 
@@ -99,6 +101,7 @@ type RecordDependency = (dependency: EscapeDependency, key: string) => void;
 
 /** Containers one walk already traversed: in full, or only for the callables they hand to an unresolved callee. */
 interface EscapeVisits {
+  active: Map<StaticFunctionValue, EscapeTuple[]>;
   escaped: Set<StaticValue>;
   handed: Set<StaticValue>;
 }
@@ -285,6 +288,15 @@ const getElementPaths = (element: JSXElement): AccessPath[] => {
   return paths;
 };
 
+const recordLocalAlias = (shape: ClosureShape, name: string, path: AccessPath): void => {
+  const previous = shape.localAliases.get(name);
+  if (previous === undefined) {
+    shape.localAliases.set(name, path);
+    return;
+  }
+  if (JSON.stringify(previous) !== JSON.stringify(path)) shape.localAliases.set(name, null);
+};
+
 const collectClosureShape = (node: Node, shape: ClosureShape, bindings: ItemBinding[]): void => {
   switch (node.type) {
     case "JSXElement":
@@ -312,9 +324,17 @@ const collectClosureShape = (node: Node, shape: ClosureShape, bindings: ItemBind
       });
       break;
     }
-    case "VariableDeclarator":
+    case "VariableDeclarator": {
       collectPatternNames(node.id, shape.declaredNames);
+      const path = node.init ? getAccessPath(node.init) : null;
+      if (node.id.type === "Identifier" && path) recordLocalAlias(shape, node.id.name, path);
       break;
+    }
+    case "AssignmentExpression": {
+      const path = node.operator === "=" ? getAccessPath(node.right) : null;
+      if (node.left.type === "Identifier" && path) recordLocalAlias(shape, node.left.name, path);
+      break;
+    }
     case "FunctionDeclaration":
     case "FunctionExpression":
     case "ArrowFunctionExpression":
@@ -345,6 +365,7 @@ const getClosureShape = (functionNode: FunctionLikeNode): ClosureShape => {
   const shape: ClosureShape = {
     parameterNames: getParameterNames(functionNode.params),
     declaredNames: new Set(),
+    localAliases: new Map(),
     callSites: [],
   };
   collectClosureShape(functionNode, shape, []);
@@ -353,6 +374,21 @@ const getClosureShape = (functionNode: FunctionLikeNode): ClosureShape => {
   }
   closureShapeCache.set(functionNode, shape);
   return shape;
+};
+
+const getLocalAlias = (
+  shape: ClosureShape,
+  name: string,
+  visited: Set<string> = new Set(),
+): AccessPath | null => {
+  if (visited.has(name)) return null;
+  const alias = shape.localAliases.get(name);
+  if (!alias) return null;
+  const [root, ...members] = alias;
+  if (root === name || visited.has(root)) return null;
+  if (!shape.declaredNames.has(root)) return alias;
+  const expanded = getLocalAlias(shape, root, new Set([...visited, name]));
+  return expanded ? [...expanded, ...members] : null;
 };
 
 const MUTATING_METHODS = new Set([
@@ -454,7 +490,10 @@ const resolveEscapedIdentifier = (
     );
     return getItemValues(receivers, record);
   }
-  if (isClosureLocal(closure, name)) return [];
+  if (isClosureLocal(closure, name)) {
+    const alias = getLocalAlias(getClosureShape(closure.node), name);
+    return alias ? resolveAccessPath(closure, frame, alias, walk, bindings) : [];
+  }
   const owner = findOwningScope(closure.scope, name);
   if (owner) {
     record(owner, name);
@@ -602,7 +641,7 @@ const bindArguments = (callee: StaticFunctionValue, argumentValues: EscapeTuple)
  * walk went stale since are followed again first.
  */
 export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): void => {
-  const visits: EscapeVisits = { escaped: new Set(), handed: new Set() };
+  const visits: EscapeVisits = { active: new Map(), escaped: new Set(), handed: new Set() };
   followStaleCallables(walk, visits);
   visitEscapedValue(value, walk, visits);
 };
@@ -610,7 +649,7 @@ export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): vo
 /** Follows again the escaped closures whose walk went stale, as their code may run at any time. */
 export const followStaleCallables = (
   walk: EscapeWalk,
-  visits: EscapeVisits = { escaped: new Set(), handed: new Set() },
+  visits: EscapeVisits = { active: new Map(), escaped: new Set(), handed: new Set() },
 ): void => {
   for (const [closure, tuples] of walk.memo.takeStale()) {
     for (const tuple of tuples) invokeOnce(closure, tuple, walk, visits);
@@ -669,15 +708,25 @@ const invokeOnce = (
   walk: EscapeWalk,
   visits: EscapeVisits,
 ): void => {
+  const activeTuples = visits.active.get(closure);
+  if (activeTuples?.some((activeTuple) => isSameEscapeTuple(activeTuple, argumentValues))) return;
   if (!walk.memo.follow(closure, argumentValues)) return;
-  forEachInvokedCallable(
-    closure,
-    argumentValues === null && !closure.boundArgs?.length
-      ? null
-      : bindArguments(closure, argumentValues),
-    walk,
-    visits,
-  );
+  if (activeTuples) activeTuples.push(argumentValues);
+  else visits.active.set(closure, [argumentValues]);
+  try {
+    forEachInvokedCallable(
+      closure,
+      argumentValues === null && !closure.boundArgs?.length
+        ? null
+        : bindArguments(closure, argumentValues),
+      walk,
+      visits,
+    );
+  } finally {
+    const currentActiveTuples = visits.active.get(closure);
+    currentActiveTuples?.splice(currentActiveTuples.indexOf(argumentValues), 1);
+    if (currentActiveTuples?.length === 0) visits.active.delete(closure);
+  }
 };
 
 /**

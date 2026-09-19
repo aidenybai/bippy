@@ -14,15 +14,25 @@ import type { PatternNode } from "../src/harness/static-pattern.js";
 import { parseSymbolicTree } from "../src/harness/symbolic-tree.js";
 import { planWitnesses, witnessPlanSchema } from "../src/harness/witness-plan.js";
 import { createStaticRenderer } from "../src/index.js";
-import { evaluateGuard, solveGuards, toWitnessModel } from "../src/symbolic/guard-solver.js";
+import {
+  areGuardsSatisfiable,
+  evaluateGuard,
+  isGuardCompatibleWithActivePath,
+  solveGuards,
+  toWitnessModel,
+} from "../src/symbolic/guard-solver.js";
 import {
   andGuard,
   compareGuard,
   constantGuard,
   equalsGuard,
   formatGuard,
+  getGuardImplicationChecker,
+  inSetGuard,
+  isGuardImplied,
   negateGuard,
   orGuard,
+  simplifyGuard,
   truthyGuard,
   type Guard,
   type InputVariable,
@@ -145,6 +155,196 @@ describe("symbolic tree: guard algebra", () => {
       kind: "or",
       operands: [isTruthy, isBeta],
     });
+  });
+
+  it("absorbs conjunctions already covered by another disjunct", () => {
+    const isOpen = truthyGuard(variable("#3"));
+    expect(orGuard([andGuard([isTruthy, isBeta]), isTruthy])).toEqual(isTruthy);
+    expect(orGuard([andGuard([isTruthy, isBeta, isOpen]), andGuard([isTruthy, isBeta])])).toEqual(
+      andGuard([isTruthy, isBeta]),
+    );
+    expect(
+      orGuard([orGuard([isTruthy, isBeta]), andGuard([orGuard([isTruthy, isBeta]), isOpen])]),
+    ).toEqual(orGuard([isTruthy, isBeta]));
+    expect(orGuard([isTruthy, andGuard([orGuard([isTruthy, isBeta]), isOpen])])).not.toEqual(
+      isTruthy,
+    );
+  });
+
+  it("absorbs disjunctions already covered by another conjunct", () => {
+    const isOpen = truthyGuard(variable("#open"));
+    expect(andGuard([orGuard([isTruthy, isBeta]), isTruthy])).toEqual(isTruthy);
+    expect(andGuard([orGuard([isTruthy, isBeta, isOpen]), orGuard([isTruthy, isBeta])])).toEqual(
+      orGuard([isTruthy, isBeta]),
+    );
+  });
+
+  it("normalizes guards produced by structural rewrites", () => {
+    const rewritten: Guard = {
+      kind: "and",
+      operands: [{ kind: "or", operands: [isTruthy, isBeta] }, isTruthy],
+    };
+    expect(simplifyGuard(rewritten)).toEqual(isTruthy);
+  });
+
+  it("removes known conjuncts from a negated conjunction", () => {
+    const isOpen = truthyGuard(variable("#open"));
+    expect(andGuard([isTruthy, isBeta, negateGuard(andGuard([isTruthy, isBeta]))])).toEqual(
+      constantGuard(false),
+    );
+    expect(andGuard([isTruthy, isBeta, negateGuard(andGuard([isTruthy, isBeta, isOpen]))])).toEqual(
+      andGuard([isTruthy, isBeta, negateGuard(isOpen)]),
+    );
+  });
+
+  it("compacts finite alternatives and their catch-all consensus", () => {
+    const mode = variable("#mode");
+    const named = [0, 1, 2].map((value) => equalsGuard(mode, value));
+    const namedSet = inSetGuard(mode, [0, 1, 2]);
+    const isOpen = truthyGuard(variable("#open"));
+    expect(orGuard(named)).toEqual(namedSet);
+    expect(orGuard([...named, andGuard([negateGuard(orGuard(named)), isOpen])])).toEqual(
+      orGuard([namedSet, isOpen]),
+    );
+  });
+
+  it("proves structural guard implications without a model search", () => {
+    expect(isGuardImplied(andGuard([isTruthy, isBeta]), isTruthy)).toBe(true);
+    expect(isGuardImplied(isTruthy, orGuard([isTruthy, isBeta]))).toBe(true);
+    expect(
+      isGuardImplied(
+        andGuard([orGuard([isTruthy, isBeta]), truthyGuard(variable("#open"))]),
+        orGuard([isTruthy, isBeta]),
+      ),
+    ).toBe(true);
+    expect(
+      isGuardImplied(
+        orGuard([andGuard([isTruthy, isBeta]), isTruthy]),
+        orGuard([isTruthy, isBeta]),
+      ),
+    ).toBe(true);
+    expect(isGuardImplied(isTruthy, isBeta)).toBe(false);
+    const choice = variable("#choice");
+    expect(isGuardImplied(equalsGuard(choice, 0), negateGuard(equalsGuard(choice, 1)))).toBe(true);
+    expect(isGuardImplied(inSetGuard(choice, [0, 1]), negateGuard(equalsGuard(choice, 2)))).toBe(
+      true,
+    );
+    expect(isGuardImplied(inSetGuard(choice, [0, 1]), negateGuard(equalsGuard(choice, 1)))).toBe(
+      false,
+    );
+  });
+
+  it("memoizes repeated subproblems in structural guard implications", () => {
+    let premise: Guard = isTruthy;
+    let conclusion: Guard = isBeta;
+    for (let depth = 0; depth < 20; depth++) {
+      premise = { kind: "or", operands: [premise, premise] };
+      conclusion = { kind: "and", operands: [conclusion, conclusion] };
+    }
+    expect(isGuardImplied(premise, conclusion)).toBe(false);
+  });
+
+  it("reuses implication work across conclusions", () => {
+    const premise = orGuard([isTruthy, isBeta]);
+    const isImplied = getGuardImplicationChecker(premise);
+    expect(isImplied({ kind: "or", operands: [isTruthy, isBeta] })).toBe(true);
+    expect(isImplied(isTruthy)).toBe(false);
+    expect(isImplied(isBeta)).toBe(false);
+  });
+
+  it("indexes structurally equivalent conjuncts across implication checks", () => {
+    const conjuncts = Array.from({ length: 5_000 }, (_, index) =>
+      equalsGuard(variable(`#indexed-${index}`), index),
+    );
+    const isImplied = getGuardImplicationChecker(andGuard(conjuncts));
+    for (let index = conjuncts.length - 1; index >= 0; index--) {
+      expect(isImplied(equalsGuard(variable(`#indexed-${index}`), index))).toBe(true);
+    }
+  }, 2_000);
+
+  it("combines large guard sets without quadratic duplicate scans", () => {
+    const guards = Array.from({ length: 20_000 }, (_, index) =>
+      equalsGuard(variable(`#${index}`), index),
+    );
+    expect(orGuard([...guards, ...guards])).toEqual({
+      kind: "or",
+      operands: guards,
+    });
+  }, 2_000);
+
+  it("deduplicates deeply nested guards without expanding recursive keys", () => {
+    let guard = isTruthy;
+    for (let depth = 0; depth < 2_000; depth++) {
+      const sibling = equalsGuard(variable(`#nested-${depth}`), depth);
+      guard = depth % 2 === 0 ? andGuard([guard, sibling]) : orGuard([guard, sibling]);
+    }
+    expect(andGuard([guard, guard])).toEqual(guard);
+  }, 2_000);
+
+  it("solves large independent guard sets without quadratic partition scans", () => {
+    const guards = Array.from({ length: 20_000 }, (_, index) =>
+      equalsGuard(variable(`#${index}`), index),
+    );
+    expect(solveGuards(guards)).toHaveLength(guards.length);
+  }, 2_000);
+
+  it("checks repeated extensions without rescanning independent base guards", () => {
+    const base = andGuard(
+      Array.from({ length: 2_000 }, (_, index) => equalsGuard(variable(`#base-${index}`), index)),
+    );
+    for (let index = 0; index < 2_000; index++) {
+      expect(
+        areGuardsSatisfiable([base, equalsGuard(variable(`#candidate-${index}`), index)]),
+      ).toBe(true);
+    }
+  }, 2_000);
+
+  it("checks candidates against only the active path components they share", () => {
+    const active = andGuard([isTruthy, isBeta]);
+    const isIndependent = equalsGuard(variable("#independent"), "open");
+    expect(isGuardCompatibleWithActivePath(constantGuard(false), isTruthy)).toBe(false);
+    expect(isGuardCompatibleWithActivePath(active, negateGuard(isBeta))).toBe(false);
+    expect(isGuardCompatibleWithActivePath(active, isIndependent)).toBe(true);
+    expect(
+      isGuardCompatibleWithActivePath(
+        active,
+        negateGuard(andGuard([isTruthy, isBeta, isIndependent])),
+      ),
+    ).toBe(true);
+  });
+
+  it("propagates finite literals through disjunctions", () => {
+    const selector: SymbolicVariable = { ...variable("#selector"), measure: "choice" };
+    const value: SymbolicVariable = { ...variable("#value"), measure: "choice" };
+    const values = Array.from({ length: 16 }, (_, index) => index);
+    const guard = andGuard([
+      negateGuard(inSetGuard(selector, [0])),
+      negateGuard(inSetGuard(value, values)),
+      ...values.map((entry) =>
+        orGuard([inSetGuard(selector, [0]), negateGuard(equalsGuard(value, entry))]),
+      ),
+    ]);
+    expect(solveGuards([guard])).not.toBeNull();
+  });
+
+  it("tries inexpensive disjunction operands before compound alternatives", () => {
+    const simpleVariable = variable("#simple");
+    const simple = equalsGuard(simpleVariable, "ready");
+    const compound = andGuard(
+      Array.from({ length: 100 }, (_, index) => truthyGuard(variable(`#compound-${index}`))),
+    );
+    expect(solveGuards([orGuard([compound, simple])])).toEqual([
+      { variable: simpleVariable, value: "ready" },
+    ]);
+  });
+
+  it("rejects negated conjunctions already implied by the active path", () => {
+    const required = Array.from({ length: 100 }, (_, index) =>
+      truthyGuard(variable(`#required-${index}`)),
+    );
+    const subset = andGuard(required.slice(20, 80));
+    const active = andGuard([...required, equalsGuard(variable("#mode"), "ready")]);
+    expect(isGuardCompatibleWithActivePath(active, negateGuard(subset))).toBe(false);
   });
 
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
@@ -364,6 +564,24 @@ describe("guard solver", () => {
     expect(
       solveGuards([...guards, equalsGuard(variable("settings", "enabled"), false)]),
     ).toBeNull();
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  it("propagates finite literals through compound disjunction operands", () => {
+    const enabled = truthyGuard(variable("settings", "enabled"));
+    const mode = equalsGuard(variable("panel", "mode"), "chat");
+    const required = Array.from({ length: 512 }, (_, index) =>
+      truthyGuard(variable(`required-${index}`)),
+    );
+    const started = performance.now();
+    const witnesses = solveGuards([
+      enabled,
+      mode,
+      ...required.map((guard) => orGuard([negateGuard(andGuard([enabled, mode])), guard])),
+    ]);
+    expect(witnesses).not.toBeNull();
+    const model = toWitnessModel(witnesses ?? []);
+    for (const guard of required) expect(evaluateGuard(guard, model)).toBe(true);
     expect(performance.now() - started).toBeLessThan(1000);
   });
 

@@ -310,6 +310,47 @@ describe("escaped bound mutations", () => {
     );
     expect(results).toEqual({ direct: "branch(0 | unknown)", held: "0" });
   });
+
+  it("terminates when an escaped callback rebinds a parameter through itself", async () => {
+    const results = await evaluateExports(
+      `
+      import { register } from "opaque-store";
+      export const selfParameterAlias = () => {
+        let count = 0;
+        const update = () => { count = 1; };
+        const listener = (target: { current: (callback: () => void) => void }) => {
+          target = target.current;
+          target(update);
+        };
+        register(listener);
+        return count;
+      };
+    `,
+      ["selfParameterAlias"],
+    );
+    expect(results).toEqual({ selfParameterAlias: "branch(0 | unknown)" });
+  });
+
+  it("terminates when an active escaped callback invalidates its own dependency", async () => {
+    const results = await evaluateExports(
+      `
+      import { register } from "opaque-store";
+      export const reentrantInvalidation = () => {
+        const holder = { callback: () => {} };
+        const invoke = () => {
+          holder.callback = invoke;
+          holder.callback();
+        };
+        holder.callback = invoke;
+        register(holder);
+        holder.callback = invoke;
+        return 1;
+      };
+    `,
+      ["reentrantInvalidation"],
+    );
+    expect(results).toEqual({ reentrantInvalidation: "1" });
+  });
 });
 
 describe("branch-valued primitives", () => {
@@ -507,6 +548,8 @@ const fixed = new Date("2022-04-04T01:00:00.000Z");
 export const formatsKnownDates = () => formatter.format(fixed);
 export const formatsTheClockAsUnknown = () => formatter.format();
 export const partsOfTheClockAreUnknown = () => formatter.formatToParts().length;
+export const formatsClockDatesAsStrings = () => typeof formatter.format(new Date());
+export const formatsClockReadingsAsStrings = () => typeof formatter.format(Date.now());
 export const resolvesOptions = () => formatter.resolvedOptions().timeZone;
 `;
 
@@ -516,11 +559,15 @@ describe("Intl.DateTimeFormat", () => {
       "formatsKnownDates",
       "formatsTheClockAsUnknown",
       "partsOfTheClockAreUnknown",
+      "formatsClockDatesAsStrings",
+      "formatsClockReadingsAsStrings",
       "resolvesOptions",
     ]);
     expect(results.formatsKnownDates).toBe('"01"');
-    expect(results.formatsTheClockAsUnknown).toMatch(/^unknown\(/);
+    expect(results.formatsTheClockAsUnknown).toMatch(/^<string:/);
     expect(results.partsOfTheClockAreUnknown).toMatch(/^unknown\(/);
+    expect(results.formatsClockDatesAsStrings).toBe('"string"');
+    expect(results.formatsClockReadingsAsStrings).toBe('"string"');
     expect(results.resolvesOptions).toBe('"UTC"');
   });
 });

@@ -37,6 +37,7 @@ const PURE_PACKAGES: ReadonlySet<string> = new Set([
   "path-to-regexp",
   "tailwind-merge",
   "url",
+  "values.js",
 ]);
 
 const liftExport = (
@@ -48,16 +49,23 @@ const liftExport = (
   if (packageName === null || exported === undefined) return null;
   const name = `${specifier}#${exportedName}`;
   if (typeof exported !== "function") return fromNativeValue(exported, name, null);
-  return pureNativeFunction(name, exported, undefined, null, (args) => {
-    const derive = (): StaticExternalValue => ({
-      kind: "external",
-      packageName,
-      specifier,
-      importedName: `${exportedName}()`,
-      origin: "derived",
-    });
-    return memoizeScalarOperation(exported, args, derive) ?? derive();
-  });
+  return pureNativeFunction(
+    name,
+    exported,
+    undefined,
+    null,
+    (args) => {
+      const derive = (): StaticExternalValue => ({
+        kind: "external",
+        packageName,
+        specifier,
+        importedName: `${exportedName}()`,
+        origin: "derived",
+      });
+      return memoizeScalarOperation(exported, args, derive) ?? derive();
+    },
+    packageName !== "tailwind-merge",
+  );
 };
 
 const IMPURE_LODASH_EXPORTS: ReadonlySet<string> = new Set([

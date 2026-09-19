@@ -53,7 +53,12 @@ import { callEventTargetMethod, type EventListenerEvaluator } from "./event-list
 import { callFetch } from "./fetch.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
 import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
-import { getHostGlobal, getLanguageMethodResult, GLOBAL_OBJECT_VALUE } from "./host-globals.js";
+import {
+  constructDeclaredHostObject,
+  getHostGlobal,
+  getLanguageMethodResult,
+  GLOBAL_OBJECT_VALUE,
+} from "./host-globals.js";
 import { createImageElement, type ImageLoadHost } from "./image-loading.js";
 import { callImportMetaGlob } from "./import-glob.js";
 import {
@@ -131,6 +136,7 @@ import { createSearchParamsValue } from "./url-search-params.js";
 import { createUrlValue } from "./url.js";
 import { isPrimitiveBranch, MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distribution.js";
 import { getTypeofValue } from "./value-typeof.js";
+import { createAudioContext, createAudioWorkletNode } from "./web-audio.js";
 import {
   accessorEntry,
   branchValue,
@@ -259,6 +265,13 @@ export interface BuiltinEvaluator
   runTaskWithCause: (
     cause: GuardContext,
     task: () => void,
+    context?: EvaluationContext | null,
+    location?: SourceLocation | null,
+  ) => void;
+  runTaskAlternatives: (
+    causes: readonly GuardContext[],
+    task: (index: number) => void,
+    reason: string,
     context?: EvaluationContext | null,
     location?: SourceLocation | null,
   ) => void;
@@ -990,6 +1003,13 @@ const callGlobal = (
     case "AbortController":
       if (isConstructor) return createAbortController(evaluator, location);
       break;
+    case "AudioContext":
+    case "webkitAudioContext":
+      if (isConstructor) return createAudioContext(first);
+      break;
+    case "AudioWorkletNode":
+      if (isConstructor) return createAudioWorkletNode();
+      break;
     case "Image":
       if (isConstructor)
         return createImageElement(imageLoadHost(evaluator, context, location), args);
@@ -1392,19 +1412,27 @@ const callGlobal = (
     case "requestIdleCallback": {
       const handle = evaluator.timers.createHandle(name);
       if (first) {
-        const delayMs = evaluator.timers.getSettledDelay(second);
+        if (name === "requestAnimationFrame" && evaluator.timers.isRunningAnimationFrame) {
+          evaluator.markEscaped(first);
+          return handle;
+        }
+        const delayMs =
+          name === "requestAnimationFrame" ? 16 : evaluator.timers.getSettledDelay(second);
         if (delayMs === null) evaluator.markEscaped(first);
         else {
+          const task = scheduledTask(
+            evaluator,
+            first,
+            context,
+            location,
+            handle,
+            name === "setTimeout" ? args.slice(2) : [],
+          );
           evaluator.timers.schedule(
             handle,
-            scheduledTask(
-              evaluator,
-              first,
-              context,
-              location,
-              handle,
-              name === "setTimeout" ? args.slice(2) : [],
-            ),
+            name === "requestAnimationFrame"
+              ? () => evaluator.timers.runAnimationFrame(task)
+              : task,
             delayMs,
           );
         }
@@ -1519,7 +1547,12 @@ const callGlobal = (
     const dateFunction = name === "Date.UTC" ? Date.UTC : Date.parse;
     return fromNativeValue(Reflect.apply(dateFunction, Date, natives), `${name}()`, null);
   }
-  if (isConstructor) return unknownValue(`new ${name}()`, location);
+  if (isConstructor) {
+    return (
+      constructDeclaredHostObject(evaluator.getRealm(context.environment), name, location) ??
+      unknownValue(`new ${name}()`, location)
+    );
+  }
   return unknownValue(`${name}()`, location);
 };
 
@@ -1602,6 +1635,8 @@ export const promiseTools = (
   queueMicrotask: (task) => evaluator.queueMicrotask(task, context, location),
   bindTask: (task) => evaluator.bindTask(task, context, location),
   runTask: (cause, task) => evaluator.runTaskWithCause(cause, task, context, location),
+  runTaskAlternatives: (causes, task, reason) =>
+    evaluator.runTaskAlternatives(causes, task, reason, context, location),
   recordStateMutation: (state) => evaluator.recordStateMutation(state),
 });
 

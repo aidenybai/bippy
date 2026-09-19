@@ -1,27 +1,35 @@
 import {
+  createContext,
   type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
+import { useCallbackRef } from "./use-callback-ref";
 
-const useCallbackRef = <Arguments extends unknown[]>(
-  callback: ((...args: Arguments) => void) | undefined,
-): ((...args: Arguments) => void) => {
-  const callbackRef = useRef(callback);
-  useEffect(() => {
-    callbackRef.current = callback;
-  });
-  return useMemo(
-    () =>
-      (...args: Arguments) =>
-        callbackRef.current?.(...args),
-    [],
-  );
+interface ScrollAreaContextValue {
+  viewport: HTMLDivElement | null;
+  onViewportChange: (viewport: HTMLDivElement | null) => void;
+}
+
+const ScrollAreaContext = createContext<ScrollAreaContextValue | null>(null);
+
+const getScrollAreaContext = (): ScrollAreaContextValue => {
+  const context = useContext(ScrollAreaContext);
+  if (!context) throw new Error("Missing scroll area context");
+  return context;
 };
+
+const setRef = <Value,>(ref: unknown, value: Value): void => {
+  if (typeof ref === "function") ref(value);
+  else if (ref && typeof ref === "object" && "current" in ref) ref.current = value;
+};
+
+const useComposedRefs = <Value,>(...refs: unknown[]): ((value: Value) => void) =>
+  useCallback((value: Value) => refs.forEach((ref) => setRef(ref, value)), refs);
 
 const useDebounceCallback = (callback: () => void, delay: number): (() => void) => {
   const handleCallback = useCallbackRef(callback);
@@ -54,27 +62,51 @@ const useResizeObserver = (element: HTMLElement | null, onResize: () => void): v
 const Presence = ({ present, children }: { present: boolean; children: ReactNode }) =>
   present ? <>{children}</> : null;
 
-export const ScrollArea = ({ children }: { children: ReactNode }) => {
+const ScrollArea = ({ children }: { children: ReactNode }) => {
   const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
+  return (
+    <ScrollAreaContext.Provider value={{ viewport, onViewportChange: setViewport }}>
+      <div className="scroll-area">{children}</div>
+    </ScrollAreaContext.Provider>
+  );
+};
+
+const Viewport = ({ children }: { children: ReactNode }) => {
+  const context = getScrollAreaContext();
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const viewportRefs = useComposedRefs<HTMLDivElement | null>(
+    undefined,
+    viewportRef,
+    context.onViewportChange,
+  );
+  return (
+    <div className="viewport" ref={viewportRefs}>
+      {children}
+    </div>
+  );
+};
+
+const Scrollbar = () => {
+  const context = getScrollAreaContext();
   const [isScrollbarVisible, setIsScrollbarVisible] = useState(false);
   const handleResize = useDebounceCallback(() => {
-    if (viewport) setIsScrollbarVisible(viewport.offsetHeight < viewport.scrollHeight);
+    if (context.viewport) {
+      setIsScrollbarVisible(context.viewport.offsetHeight < context.viewport.scrollHeight);
+    }
   }, 10);
-  useResizeObserver(viewport, handleResize);
+  useResizeObserver(context.viewport, handleResize);
   return (
-    <div className="scroll-area">
-      <div className="viewport" ref={setViewport}>
-        {children}
-      </div>
-      <Presence present={isScrollbarVisible}>
-        <div className="scrollbar" data-state={isScrollbarVisible ? "visible" : "hidden"} />
-      </Presence>
-    </div>
+    <Presence present={isScrollbarVisible}>
+      <div className="scrollbar" data-state={isScrollbarVisible ? "visible" : "hidden"} />
+    </Presence>
   );
 };
 
 export const App = () => (
   <ScrollArea>
-    <p>content</p>
+    <Viewport>
+      <p>content</p>
+    </Viewport>
+    <Scrollbar />
   </ScrollArea>
 );

@@ -87,11 +87,12 @@ const toPropValue = (value: unknown, isUntruncated: boolean): SnapshotPropValue 
 const snapshotProps = (
   memoizedProps: unknown,
   isMarker: boolean,
+  hasDirectText: boolean,
 ): Record<string, SnapshotPropValue> => {
   const result: Record<string, SnapshotPropValue> = {};
   if (typeof memoizedProps !== "object" || memoizedProps === null) return result;
   for (const [key, value] of Object.entries(memoizedProps)) {
-    if (key === "children") continue;
+    if (key === "children" && !hasDirectText) continue;
     const propValue = toPropValue(value, isMarker);
     if (propValue !== undefined) result[key] = propValue;
   }
@@ -148,6 +149,17 @@ const getFiberName = (fiber: Fiber, tag: SnapshotWorkTag): string | null => {
   }
 };
 
+const hasDirectText = (tag: SnapshotWorkTag, memoizedProps: unknown): boolean => {
+  if (tag !== "HostComponent" && tag !== "HostHoistable" && tag !== "HostSingleton") {
+    return false;
+  }
+  if (typeof memoizedProps !== "object" || memoizedProps === null) return false;
+  const children: unknown = Object(memoizedProps).children;
+  return (
+    typeof children === "string" || typeof children === "number" || typeof children === "bigint"
+  );
+};
+
 const snapshotFiber = (
   fiber: Fiber,
   lookup: Map<number, SnapshotWorkTag>,
@@ -166,7 +178,14 @@ const snapshotFiber = (
     name,
     key: typeof key === "string" ? key : null,
     text: tag === "HostText" ? String(fiber.memoizedProps) : null,
-    props: tag === "HostText" ? {} : snapshotProps(fiber.memoizedProps, isMarkerName(name)),
+    props:
+      tag === "HostText"
+        ? {}
+        : snapshotProps(
+            fiber.memoizedProps,
+            isMarkerName(name),
+            hasDirectText(tag, fiber.memoizedProps),
+          ),
     children,
   };
 };

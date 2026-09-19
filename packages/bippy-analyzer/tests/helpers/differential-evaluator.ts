@@ -59,14 +59,15 @@ const getCaseResult = (
   return interpreter.callValue(result, [], context, null);
 };
 
-const evaluateCases = async (
+export const evaluateCases = async (
   cases: DifferentialCase[],
   microtasks = false,
+  prelude = "",
 ): Promise<StaticValue[]> => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-differential-"));
   try {
     const entryPath = join(directory, "program.ts");
-    writeFileSync(entryPath, getProgramSource(cases));
+    writeFileSync(entryPath, prelude + getProgramSource(cases));
     const renderer = await createStaticRenderer({ rootDirectory: directory, maxSteps: 5_000_000 });
     const actual: StaticValue[] = [];
     await renderer.renderWith((interpreter) => {

@@ -201,6 +201,7 @@ export const queueStateUpdate = (
   if (cell.isEscaped) return;
   if (isDeferred) {
     if (cell.deferred.some((deferred) => isSameHookValue(deferred, value))) return;
+    frame.recordUpdate?.(cell);
     cell.deferred.push(value);
   } else {
     if (isSameHookValue(value, cell.next ?? cell.current)) {
@@ -258,6 +259,7 @@ export const escapeStateCell = (
     return;
   }
   if (cell.isEscaped) return;
+  frame.recordUpdate?.(cell);
   cell.isEscaped = true;
   if (isSameHookValue(escapedStateValue(cell), cell.current)) return;
   if (!frame.isRendering) frame.requestRender?.();

@@ -190,3 +190,46 @@ export const collectStyledDisplayNames = (
   visit(module.file.program, null);
   return displayNames;
 };
+
+const getReactDocgenDefaultName = (filePath: string): string => {
+  const stem = path.basename(filePath, path.extname(filePath));
+  const fileName = stem === "index" ? path.basename(path.dirname(filePath)) : stem;
+  return fileName.replace(/^[^A-Z]*/gi, "").replace(/[^A-Z0-9]*/gi, "") || "DefaultName";
+};
+
+export const collectReactDocgenTypescriptDisplayNames = (
+  module: ModuleRecord,
+): Map<Node, string> => {
+  if (path.extname(module.filePath) !== ".tsx") return new Map();
+  const defaultName = getReactDocgenDefaultName(module.filePath);
+  const exportedNames = new Map<string, string>();
+  for (const entry of module.exports) {
+    if (entry.kind !== "local") continue;
+    if (entry.exportedName === "default") {
+      if (entry.localName === defaultName) exportedNames.set(entry.localName, defaultName);
+    } else {
+      exportedNames.set(entry.localName, entry.exportedName);
+    }
+  }
+  for (const entry of module.exports) {
+    if (
+      entry.kind === "expression" &&
+      entry.exportedName === "default" &&
+      entry.expression.type === "Identifier" &&
+      entry.expression.name === defaultName
+    ) {
+      exportedNames.set(entry.expression.name, defaultName);
+    }
+  }
+  const transformedNames = collectStyledDisplayNames(module, {
+    ...DEFAULT_STYLED_COMPONENTS_TRANSFORM,
+    fileName: false,
+  });
+  const displayNames = new Map<Node, string>();
+  for (const [localName, displayName] of exportedNames) {
+    const binding = module.bindings.get(localName);
+    if (binding?.kind !== "variable" || binding.init === null) continue;
+    if (transformedNames.has(binding.init)) displayNames.set(binding.init, displayName);
+  }
+  return displayNames;
+};

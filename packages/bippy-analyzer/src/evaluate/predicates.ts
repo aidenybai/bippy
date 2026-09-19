@@ -376,6 +376,25 @@ export const guardedPredicate = (
         inputs: mergeInputs(inputs),
       });
 
+export const getListIndexPredicate = (
+  index: StaticValue,
+  length: number,
+  hasIndefiniteTail = false,
+): string | null => {
+  const term = resolveTerm(index);
+  const fixedLength = hasIndefiniteTail ? length - 1 : length;
+  const fixedIndices = Array.from({ length: fixedLength }, (_value, itemIndex) => itemIndex);
+  const guards: Guard[] = fixedIndices.map((itemIndex) => equalsGuard(term.variable, itemIndex));
+  if (hasIndefiniteTail) {
+    guards.push(
+      fixedLength === 0
+        ? constantGuard(true)
+        : negateGuard(inSetGuard(term.variable, fixedIndices)),
+    );
+  }
+  return guardedPredicate(guards, [[term.input]]);
+};
+
 export const composeFlattenedPredicate = (
   predicate: string | null,
   reason: string,
@@ -389,16 +408,24 @@ export const composeFlattenedPredicate = (
   const outerGuards = predicateGuards(outer, alternatives.length);
   const inputs: (readonly InputVariable[])[] = [outer.inputs];
   const sides: Guard[][] = Array.from({ length: positionCount }, () => []);
+  let atomCount = 0;
+  const addSide = (position: number, guard: Guard): boolean => {
+    atomCount += countGuardAtoms(guard);
+    if (atomCount > MAX_PREDICATE_ATOMS) return false;
+    sides[position].push(guard);
+    return true;
+  };
   for (const [index, alternative] of alternatives.entries()) {
     if (alternative.kind !== "branch") {
-      sides[positions[index][0]].push(outerGuards[index]);
+      if (!addSide(positions[index][0], outerGuards[index])) return null;
       continue;
     }
     const inner = getAlternativeGuards(alternative);
     if (!inner) return null;
     inputs.push(inner.inputs);
     for (const [innerIndex, guard] of inner.guards.entries()) {
-      sides[positions[index][innerIndex]].push(andGuard([outerGuards[index], guard]));
+      if (!addSide(positions[index][innerIndex], andGuard([outerGuards[index], guard])))
+        return null;
     }
   }
   return guardedPredicate(sides.map(orGuard), inputs);

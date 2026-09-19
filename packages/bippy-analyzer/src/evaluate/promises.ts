@@ -27,6 +27,7 @@ export interface PromiseTools extends Pick<
   | "queueMicrotask"
   | "bindTask"
   | "runTask"
+  | "runTaskAlternatives"
   | "recordStateMutation"
 > {}
 
@@ -159,7 +160,7 @@ export const isPossiblyUnsettled = (value: StaticValue): boolean =>
 
 export const getAwaitPromise = (value: StaticValue): ModeledPromise | null => {
   const promise = getModeledPromise(value);
-  if (promise) return promise.isEscaped ? null : promise;
+  if (promise) return promise;
   if (isThrownOutcome(value) || isPossiblyUnsettled(value)) return null;
   return resolvePromise(value);
 };
@@ -181,7 +182,39 @@ export const suspendOnPromise = (
         if (returned) settlePromise(result, returned, runTools);
       },
       escape: (escapeTools) => {
-        resume(unknownValue("promise settled outside the analysis", location), true);
+        const reason = "promise settled outside the analysis";
+        const outcome = branchValue(
+          [
+            unknownValue("promise fulfilled outside the analysis", location),
+            thrownValue(
+              "promise rejected outside the analysis",
+              unknownValue("promise rejection reason", location),
+              location,
+            ),
+          ],
+          reason,
+          location,
+        );
+        if (outcome.kind === "branch") {
+          const alternatives = getAlternativeGuards(outcome);
+          if (alternatives) {
+            escapeTools.runTaskAlternatives(
+              alternatives.guards.map((guard) => ({
+                guard,
+                inputs: [...alternatives.inputs],
+              })),
+              (index) => {
+                const alternative = outcome.alternatives[index];
+                if (alternative) resume(alternative, true);
+              },
+              reason,
+            );
+          } else {
+            resume(outcome, true);
+          }
+        } else {
+          resume(outcome, true);
+        }
         escapePromise(result, escapeTools);
       },
     },
@@ -270,21 +303,21 @@ const subscribe = (
   tools: PromiseTools,
 ): void => {
   visitState(promise.state, tools, (state) => {
-    const run = tools.bindTask((outcome: StaticValue | null, runTools: PromiseTools) => {
-      if (outcome) reaction.run(outcome, runTools);
-      else reaction.escape(runTools);
-    });
-    const guardedReaction: PromiseReaction = {
-      run,
-      escape: (escapeTools) => run(null, escapeTools),
-    };
-    if (state === PENDING_STATE || followingStates.has(state))
+    if (state === PENDING_STATE || followingStates.has(state)) {
+      const run = tools.bindTask((outcome: StaticValue | null, runTools: PromiseTools) => {
+        if (outcome) reaction.run(outcome, runTools);
+        else reaction.escape(runTools);
+      });
+      const guardedReaction: PromiseReaction = {
+        run,
+        escape: (escapeTools) => run(null, escapeTools),
+      };
       promise.reactions.push(guardedReaction);
-    else {
-      const outcome = outcomesByState.get(state);
-      if (outcome) tools.queueMicrotask(() => guardedReaction.run(outcome, tools));
-      else guardedReaction.escape(tools);
+      return;
     }
+    const outcome = outcomesByState.get(state);
+    if (outcome) tools.queueMicrotask(() => reaction.run(outcome, tools));
+    else reaction.escape(tools);
   });
 };
 

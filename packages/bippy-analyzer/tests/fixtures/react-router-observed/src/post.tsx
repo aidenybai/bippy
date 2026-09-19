@@ -13,7 +13,7 @@ import {
 } from "react-router";
 
 interface PostData {
-  title: string;
+  title: Promise<string>;
   tags: string[];
   publishedAt: string | null;
 }
@@ -41,7 +41,7 @@ export const Post = () => {
 
   return (
     <article data-tab={tab}>
-      <h1>{post.title}</h1>
+      <h1>Post</h1>
       <p>By {shell.user.name}</p>
       {shellRoute?.loaderData?.unreadCount ? (
         <mark>{shellRoute.loaderData.unreadCount}</mark>

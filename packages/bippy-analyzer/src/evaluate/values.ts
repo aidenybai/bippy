@@ -1389,6 +1389,7 @@ export const areValuesEquivalent = (left: StaticValue, right: StaticValue, depth
       return true;
     case "object": {
       if (right.kind !== "object") return false;
+      if (left.hostInterfaceName !== right.hostInterfaceName) return false;
       const leftKeys = getKnownObjectKeys(left);
       const rightKeys = getKnownObjectKeys(right);
       if (!leftKeys || !rightKeys || leftKeys.length !== rightKeys.length)
@@ -1833,6 +1834,7 @@ interface SequenceInstance {
 }
 
 interface StructureExpansion {
+  active: Set<StaticValue>;
   limit: number;
   firstBranch: StaticBranchValue | null;
 }
@@ -1893,41 +1895,53 @@ const expandStructure = (
       return instances;
     }
     case "object": {
-      const expanded = expandSequence(
-        value.entries.map((entry) => entry.value),
-        decisions,
-        isPreferred,
-        expansion,
-      );
-      return (
-        expanded?.map((instance) => ({
-          value: instance.values.every(
-            (entryValue, index) => entryValue === value.entries[index].value,
-          )
-            ? value
-            : {
-                ...value,
-                entries: value.entries.map((entry, index) => ({
-                  ...entry,
-                  value: instance.values[index],
-                })),
-              },
-          decisions: instance.decisions,
-          isPreferred: instance.isPreferred,
-        })) ?? null
-      );
+      if (expansion.active.has(value)) return [{ value, decisions, isPreferred }];
+      expansion.active.add(value);
+      try {
+        const expanded = expandSequence(
+          value.entries.map((entry) => entry.value),
+          decisions,
+          isPreferred,
+          expansion,
+        );
+        return (
+          expanded?.map((instance) => ({
+            value: instance.values.every(
+              (entryValue, index) => entryValue === value.entries[index].value,
+            )
+              ? value
+              : {
+                  ...value,
+                  entries: value.entries.map((entry, index) => ({
+                    ...entry,
+                    value: instance.values[index],
+                  })),
+                },
+            decisions: instance.decisions,
+            isPreferred: instance.isPreferred,
+          })) ?? null
+        );
+      } finally {
+        expansion.active.delete(value);
+      }
     }
     case "list": {
-      const expanded = expandSequence(value.items, decisions, isPreferred, expansion);
-      return (
-        expanded?.map((instance) => ({
-          value: instance.values.every((item, index) => item === value.items[index])
-            ? value
-            : { ...value, items: instance.values },
-          decisions: instance.decisions,
-          isPreferred: instance.isPreferred,
-        })) ?? null
-      );
+      if (expansion.active.has(value)) return [{ value, decisions, isPreferred }];
+      expansion.active.add(value);
+      try {
+        const expanded = expandSequence(value.items, decisions, isPreferred, expansion);
+        return (
+          expanded?.map((instance) => ({
+            value: instance.values.every((item, index) => item === value.items[index])
+              ? value
+              : { ...value, items: instance.values },
+            decisions: instance.decisions,
+            isPreferred: instance.isPreferred,
+          })) ?? null
+        );
+      } finally {
+        expansion.active.delete(value);
+      }
     }
     default:
       return [{ value, decisions, isPreferred }];
@@ -1944,7 +1958,7 @@ export const distributeObjectBranches = (
   value: StaticValue,
   limit = MAX_DISTRIBUTED_ALTERNATIVES,
 ): StaticValue => {
-  const expansion: StructureExpansion = { limit, firstBranch: null };
+  const expansion: StructureExpansion = { active: new Set(), limit, firstBranch: null };
   const instances = expandStructure(value, new Map(), true, expansion);
   if (instances === null || instances.length < 2 || expansion.firstBranch === null) return value;
   if (
@@ -2198,9 +2212,11 @@ export const spreadListItems = (
     }
     const length = Math.max(...lengths);
     return Array.from({ length }, (_value, index) => {
+      const fallback = lists.find((list) => index < list.items.length)?.items[index];
+      if (fallback === undefined) return UNDEFINED_VALUE;
       const item = joinMappedAlternatives(
         value,
-        lists.map((list) => list.items[index] ?? UNDEFINED_VALUE),
+        lists.map((list) => list.items[index] ?? fallback),
       );
       if (lists.every((list) => index < list.items.length)) return item;
       return optionalValue(

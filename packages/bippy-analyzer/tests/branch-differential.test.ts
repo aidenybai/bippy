@@ -1,9 +1,12 @@
-import { it } from "vite-plus/test";
+import { expect, it } from "vite-plus/test";
+import { getAlternativeGuards } from "../src/evaluate/predicates.js";
+import { getObjectProperty } from "../src/evaluate/values.js";
 import {
   checkSymbolicCases,
   checkKnownSymbolicCases,
   createSeededRandom,
   differentialSeeds,
+  evaluateCases,
   type DifferentialCase,
 } from "./helpers/differential-evaluator.js";
 
@@ -44,7 +47,77 @@ it.each([
     name: "deleting a branched key does not delete both keys",
     body: `const state = { left: 1, right: 2 }; const key = first ? 'left' : 'right'; delete state[key]; return ('left' in state) + ':' + ('right' in state);`,
   },
+  {
+    name: "a spread virtual item retains its column index",
+    body: `const measurements = [{ index: 0 }, { index: 1 }]; const columns = ['default', 'key']; const index = first ? 0 : 1; const item = { ...measurements[index] }; return item.index + ':' + columns[item.index];`,
+  },
 ])("$name", async (testCase) => checkSymbolicCases([testCase]));
+
+it("keeps a branched member read correlated with its index", async () => {
+  const [result] = await evaluateCases(
+    [
+      {
+        name: "branched member index",
+        body: `const values = ['left', 'right']; const index = first ? 0 : 1; return { index, value: values[index] };`,
+      },
+    ],
+    false,
+    "declare const first: boolean;\n",
+  );
+  expect(result?.kind).toBe("object");
+  if (result?.kind !== "object") throw new Error("Expected an object result");
+  const index = getObjectProperty(result, "index");
+  const value = getObjectProperty(result, "value");
+  expect(index.kind).toBe("branch");
+  expect(value.kind).toBe("branch");
+  if (index.kind !== "branch" || value.kind !== "branch")
+    throw new Error("Expected branched properties");
+  expect(getAlternativeGuards(value)).toEqual(getAlternativeGuards(index));
+});
+
+it("reuses an unknown member index guard across list reads", async () => {
+  const [result] = await evaluateCases(
+    [
+      {
+        name: "unknown member index",
+        body: `const values = ['left', 'right']; const dynamicIndex = index; return { first: values[dynamicIndex], second: values[dynamicIndex] };`,
+      },
+    ],
+    false,
+    "declare const index: number;\n",
+  );
+  expect(result?.kind).toBe("object");
+  if (result?.kind !== "object") throw new Error("Expected an object result");
+  const first = getObjectProperty(result, "first");
+  const second = getObjectProperty(result, "second");
+  expect(first.kind).toBe("branch");
+  expect(second.kind).toBe("branch");
+  if (first.kind !== "branch" || second.kind !== "branch")
+    throw new Error("Expected branched properties");
+  expect(getAlternativeGuards(first)).toEqual(getAlternativeGuards(second));
+});
+
+it("reuses an unknown index guard with an indefinite list tail", async () => {
+  const [result] = await evaluateCases(
+    [
+      {
+        name: "indefinite list tail",
+        body: `const values = ['left']; if (first) values.push('right'); const dynamicIndex = index; return { first: values[dynamicIndex], second: values[dynamicIndex] };`,
+      },
+    ],
+    false,
+    "declare const first: boolean;\ndeclare const index: number;\n",
+  );
+  expect(result?.kind).toBe("object");
+  if (result?.kind !== "object") throw new Error("Expected an object result");
+  const first = getObjectProperty(result, "first");
+  const second = getObjectProperty(result, "second");
+  expect(first.kind).toBe("branch");
+  expect(second.kind).toBe("branch");
+  if (first.kind !== "branch" || second.kind !== "branch")
+    throw new Error("Expected branched properties");
+  expect(getAlternativeGuards(first)).toEqual(getAlternativeGuards(second));
+});
 
 it.each([
   {

@@ -82,6 +82,34 @@ describe("framework profiles", () => {
     ]);
   });
 
+  it("splices next-translate wrappers while retaining the application provider", () => {
+    const snapshot = snapshotOf([
+      fiber("FunctionComponent", "Root", [
+        fiber("FunctionComponent", "AppContainer", [
+          fiber("FunctionComponent", "AppWithTranslations", [
+            fiber("FunctionComponent", "I18nProvider", [
+              fiber("ContextProvider", "ContextProvider", [
+                fiber("ContextProvider", "ContextProvider", [
+                  fiber("FunctionComponent", "App", [
+                    fiber("ContextProvider", "ContextProvider", [
+                      fiber("FunctionComponent", "Home"),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]),
+    ]);
+    const flattened = flattenTransparentFibers(snapshot, NEXT_PAGES_PROFILE);
+    expect(describeTree(flattened.roots[0]?.children ?? [])).toEqual([
+      "App[FunctionComponent]",
+      "  ContextProvider[ContextProvider]",
+      "    Home[FunctionComponent]",
+    ]);
+  });
+
   it("drops the root Next DevTools mounts on its <nextjs-portal> element, however large, for both routers", () => {
     const application = fiber("HostRoot", "HostRoot", [fiber("FunctionComponent", "App")], {
       container: "div",
