@@ -297,32 +297,6 @@ interface GuardModelChange {
   previousWitnesses: VariableWitness[] | undefined;
 }
 
-interface GuardSearchContext {
-  atomCounts: WeakMap<Guard, number>;
-}
-
-const getGuardAtomCount = (guard: Guard, context: GuardSearchContext): number => {
-  if (
-    guard.kind === "truthy" ||
-    guard.kind === "eq" ||
-    guard.kind === "compare" ||
-    guard.kind === "in-set"
-  )
-    return 1;
-  if (guard.kind === "constant") return 0;
-  const cached = context.atomCounts.get(guard);
-  if (cached !== undefined) return cached;
-  const count =
-    guard.kind === "not"
-      ? getGuardAtomCount(guard.operand, context)
-      : guard.operands.reduce(
-          (total, operand) => total + getGuardAtomCount(operand, context),
-          0,
-        );
-  context.atomCounts.set(guard, count);
-  return count;
-};
-
 const pickValue = (group: ProjectionLiterals): VariableWitness | null => {
   if (wantsFalsy(group.value) && wantsTruthy(group.value)) return null;
   const types = admittedTypes(group.typeof);
@@ -415,7 +389,6 @@ const findModel = (
     groups: new Map(),
     witnessesByProjection: new Map(),
   },
-  search: GuardSearchContext = { atomCounts: new WeakMap() },
 ): VariableWitness[] | null => {
   const remaining = [...pending];
   const disjunctions: GuardOr[] = [];
@@ -579,11 +552,8 @@ const findModel = (
       }
     }
     const [disjunction] = unresolvedDisjunctions.splice(disjunctionIndex, 1);
-    const orderedOperands = [...disjunction.operands].sort(
-      (left, right) => getGuardAtomCount(left, search) - getGuardAtomCount(right, search),
-    );
-    for (const operand of orderedOperands) {
-      const split = findModel([...unresolvedDisjunctions, operand], state, search);
+    for (const operand of disjunction.operands) {
+      const split = findModel([...unresolvedDisjunctions, operand], state);
       if (split) return split;
     }
     return null;
