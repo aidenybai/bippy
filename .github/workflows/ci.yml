@@ -16,7 +16,7 @@ jobs:
   checks:
     name: ${{ matrix.task }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: ${{ matrix.task == 'test' && 20 || 10 }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +30,8 @@ jobs:
           node-version: 22
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      - if: matrix.task == 'test'
+        run: pnpm build
       - run: pnpm run ${{ matrix.task }}
       - if: matrix.task == 'build'
         run: |

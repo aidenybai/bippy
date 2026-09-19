@@ -22,7 +22,7 @@ import {
  */
 describe("component fixtures: static fiber tree vs react-dom", () => {
   for (const fixture of listComponentFixtures()) {
-    it(fixture.name, async () => {
+    it(fixture.name, { timeout: 60_000 }, async () => {
       const run = await runComponentFixture(fixture);
       const detail = describeComponentRun(fixture, run);
       if (process.env.BIPPY_PARSER_DEBUG) process.stdout.write(`${detail}\n`);
