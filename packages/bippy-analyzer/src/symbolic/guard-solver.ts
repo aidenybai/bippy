@@ -719,21 +719,39 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   return analysis;
 };
 
-const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
-  const baseAnalysis = getGuardAnalysis(base);
-  if (!baseAnalysis.isSatisfiable) return false;
-  const overlappingComponents = new Set<GuardComponent>();
-  for (const key of getProjectionKeys(candidate)) {
-    const component = baseAnalysis.componentByKey.get(key);
-    if (component !== undefined) overlappingComponents.add(component);
+const guardPairCache = new WeakMap<Guard, WeakMap<Guard, boolean>>();
+
+const cacheGuardPair = (base: Guard, candidate: Guard, isSatisfiable: boolean): void => {
+  let candidates = guardPairCache.get(base);
+  if (candidates === undefined) {
+    candidates = new WeakMap();
+    guardPairCache.set(base, candidates);
   }
-  if (overlappingComponents.size === 0) return solveGuards([candidate]) !== null;
-  return (
-    solveGuards([
-      ...[...overlappingComponents].flatMap((component) => component.guards),
-      candidate,
-    ]) !== null
-  );
+  candidates.set(candidate, isSatisfiable);
+};
+
+const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
+  const cached = guardPairCache.get(base)?.get(candidate);
+  if (cached !== undefined) return cached;
+  const baseAnalysis = getGuardAnalysis(base);
+  let isSatisfiable = baseAnalysis.isSatisfiable;
+  if (isSatisfiable) {
+    const overlappingComponents = new Set<GuardComponent>();
+    for (const key of getProjectionKeys(candidate)) {
+      const component = baseAnalysis.componentByKey.get(key);
+      if (component !== undefined) overlappingComponents.add(component);
+    }
+    isSatisfiable =
+      overlappingComponents.size === 0
+        ? solveGuards([candidate]) !== null
+        : solveGuards([
+            ...[...overlappingComponents].flatMap((component) => component.guards),
+            candidate,
+          ]) !== null;
+  }
+  cacheGuardPair(base, candidate, isSatisfiable);
+  cacheGuardPair(candidate, base, isSatisfiable);
+  return isSatisfiable;
 };
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
