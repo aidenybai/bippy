@@ -1,5 +1,4 @@
 import {
-  andGuard,
   type Guard,
   type GuardCompare,
   type GuardEquals,
@@ -9,8 +8,6 @@ import {
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
-  getGuardImplicationChecker,
-  negateGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
