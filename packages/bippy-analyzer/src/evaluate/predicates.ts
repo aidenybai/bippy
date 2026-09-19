@@ -376,6 +376,14 @@ export const guardedPredicate = (
         inputs: mergeInputs(inputs),
       });
 
+export const getListIndexPredicate = (index: StaticValue, length: number): string | null => {
+  const term = resolveTerm(index);
+  return guardedPredicate(
+    Array.from({ length }, (_value, itemIndex) => equalsGuard(term.variable, itemIndex)),
+    [[term.input]],
+  );
+};
+
 export const composeFlattenedPredicate = (
   predicate: string | null,
   reason: string,
@@ -405,7 +413,8 @@ export const composeFlattenedPredicate = (
     if (!inner) return null;
     inputs.push(inner.inputs);
     for (const [innerIndex, guard] of inner.guards.entries()) {
-      if (!addSide(positions[index][innerIndex], andGuard([outerGuards[index], guard]))) return null;
+      if (!addSide(positions[index][innerIndex], andGuard([outerGuards[index], guard])))
+        return null;
     }
   }
   return guardedPredicate(sides.map(orGuard), inputs);

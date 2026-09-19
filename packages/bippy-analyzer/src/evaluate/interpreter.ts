@@ -274,6 +274,7 @@ import {
   createPathPredicate,
   getAlternativeGuards,
   getBranchPredicate,
+  getListIndexPredicate,
   getPresencePredicate,
   getTruthinessPredicate,
   guardedPredicate,
@@ -3833,7 +3834,13 @@ export class Interpreter {
       const candidates = object.items.map(getItemValue);
       return candidates.length === 0
         ? unknownValue("index into an unknown list", location)
-        : branchValue(candidates, "dynamic list index", location);
+        : branchValue(
+            candidates,
+            "dynamic list index",
+            location,
+            0,
+            mayBeIndexKey(key) ? getListIndexPredicate(key, candidates.length) : null,
+          );
     }
     if (object.kind === "object") {
       const ownNames = getKnownObjectOwnNames(object);
