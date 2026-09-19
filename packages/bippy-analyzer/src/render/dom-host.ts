@@ -40,9 +40,9 @@ export const createDomHost = (
     isContainer: (value): value is Element => value instanceof Element,
     createRootContainer: () => (renderIntoDocument ? document : document.createElement("div")),
     attachRootContainer: (container) => {
-      if (container instanceof Document) return () => {};
+      if (container.nodeType === Node.DOCUMENT_NODE) return () => {};
       document.body.appendChild(container);
-      return () => container.remove();
+      return () => container.parentNode?.removeChild(container);
     },
     createContainer: () => document.createElement("div"),
   };
