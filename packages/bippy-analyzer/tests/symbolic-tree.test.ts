@@ -338,6 +338,15 @@ describe("symbolic tree: guard algebra", () => {
     ]);
   });
 
+  it("rejects negated conjunctions already implied by the active path", () => {
+    const required = Array.from({ length: 100 }, (_, index) =>
+      truthyGuard(variable(`#required-${index}`)),
+    );
+    const subset = andGuard(required.slice(20, 80));
+    const active = andGuard([...required, equalsGuard(variable("#mode"), "ready")]);
+    expect(isGuardCompatibleWithActivePath(active, negateGuard(subset))).toBe(false);
+  });
+
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
     const space = await renderFixture("narrowed-opaque-portal-root.tsx");
     expect(space.tree.inputs).toHaveLength(0);

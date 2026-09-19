@@ -8,6 +8,7 @@ import {
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
+  isGuardImplied,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -779,6 +780,8 @@ const solveGuardAnalysis = (analysis: GuardAnalysis): boolean => {
 };
 
 const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
+  if (isGuardImplied(base, candidate)) return true;
+  if (candidate.kind === "not" && isGuardImplied(base, candidate.operand)) return false;
   const baseAnalysis = getGuardAnalysis(base);
   if (!solveGuardAnalysis(baseAnalysis)) return false;
   if (baseAnalysis.models.some((model) => evaluateGuard(candidate, model) === true)) return true;
