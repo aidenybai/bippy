@@ -775,10 +775,12 @@ export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): 
 };
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
-  if (guards.length === 0) return true;
-  if (guards.length === 1) return solveGuardAnalysis(getGuardAnalysis(guards[0]));
-  if (guards.length === 2) return areGuardPairSatisfiable(guards[0], guards[1]);
-  return solveGuards(guards) !== null;
+  const relevant = guards.filter((guard) => guard.kind !== "constant" || !guard.value);
+  if (relevant.some((guard) => guard.kind === "constant")) return false;
+  if (relevant.length === 0) return true;
+  if (relevant.length === 1) return solveGuardAnalysis(getGuardAnalysis(relevant[0]));
+  if (relevant.length === 2) return areGuardPairSatisfiable(relevant[0], relevant[1]);
+  return solveGuards(relevant) !== null;
 };
 
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
