@@ -303,21 +303,21 @@ const subscribe = (
   tools: PromiseTools,
 ): void => {
   visitState(promise.state, tools, (state) => {
-    const run = tools.bindTask((outcome: StaticValue | null, runTools: PromiseTools) => {
-      if (outcome) reaction.run(outcome, runTools);
-      else reaction.escape(runTools);
-    });
-    const guardedReaction: PromiseReaction = {
-      run,
-      escape: (escapeTools) => run(null, escapeTools),
-    };
-    if (state === PENDING_STATE || followingStates.has(state))
+    if (state === PENDING_STATE || followingStates.has(state)) {
+      const run = tools.bindTask((outcome: StaticValue | null, runTools: PromiseTools) => {
+        if (outcome) reaction.run(outcome, runTools);
+        else reaction.escape(runTools);
+      });
+      const guardedReaction: PromiseReaction = {
+        run,
+        escape: (escapeTools) => run(null, escapeTools),
+      };
       promise.reactions.push(guardedReaction);
-    else {
-      const outcome = outcomesByState.get(state);
-      if (outcome) tools.queueMicrotask(() => guardedReaction.run(outcome, tools));
-      else guardedReaction.escape(tools);
+      return;
     }
+    const outcome = outcomesByState.get(state);
+    if (outcome) tools.queueMicrotask(() => reaction.run(outcome, tools));
+    else reaction.escape(tools);
   });
 };
 
