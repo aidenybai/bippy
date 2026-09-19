@@ -153,6 +153,17 @@ describe("symbolic tree: guard algebra", () => {
     });
   });
 
+  it("absorbs conjunctions already covered by another disjunct", () => {
+    const isOpen = truthyGuard(variable("#3"));
+    expect(orGuard([andGuard([isTruthy, isBeta]), isTruthy])).toEqual(isTruthy);
+    expect(
+      orGuard([orGuard([isTruthy, isBeta]), andGuard([orGuard([isTruthy, isBeta]), isOpen])]),
+    ).toEqual(orGuard([isTruthy, isBeta]));
+    expect(orGuard([isTruthy, andGuard([orGuard([isTruthy, isBeta]), isOpen])])).not.toEqual(
+      isTruthy,
+    );
+  });
+
   it("proves structural guard implications without a model search", () => {
     expect(isGuardImplied(andGuard([isTruthy, isBeta]), isTruthy)).toBe(true);
     expect(isGuardImplied(isTruthy, orGuard([isTruthy, isBeta]))).toBe(true);

@@ -131,8 +131,7 @@ const hashText = (text: string, seed: number): number => {
   return hash >>> 0;
 };
 
-const mixHash = (hash: number, value: number): number =>
-  Math.imul(hash ^ value, 16_777_619) >>> 0;
+const mixHash = (hash: number, value: number): number => Math.imul(hash ^ value, 16_777_619) >>> 0;
 
 /** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
 export const normalizePredicate = (
@@ -226,6 +225,15 @@ const hasEquivalentGuard = (guards: Map<number, Guard[]>, guard: Guard): boolean
     .get(getGuardHash(guard))
     ?.some((candidate) => candidate === guard || isSameGuard(candidate, guard)) ?? false;
 
+const isAbsorbedDisjunct = (guard: Guard, disjuncts: Map<number, Guard[]>): boolean =>
+  guard.kind === "and" &&
+  guard.operands.some(
+    (operand) =>
+      hasEquivalentGuard(disjuncts, operand) ||
+      (operand.kind === "or" &&
+        operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))),
+  );
+
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   const flattened = operands.flatMap((operand) =>
     operand.kind === kind ? operand.operands : [operand],
@@ -246,7 +254,11 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
     else remainingByHash.set(key, [operand]);
   }
   if (remaining.length === 0) return constantGuard(!absorbing);
-  return remaining.length === 1 ? remaining[0] : { kind, operands: remaining };
+  const simplified =
+    kind === "or"
+      ? remaining.filter((operand) => !isAbsorbedDisjunct(operand, remainingByHash))
+      : remaining;
+  return simplified.length === 1 ? simplified[0] : { kind, operands: simplified };
 };
 
 export const andGuard = (operands: Guard[]): Guard => combineGuards("and", operands, false);
