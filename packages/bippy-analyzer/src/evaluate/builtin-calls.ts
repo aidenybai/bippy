@@ -903,6 +903,11 @@ const INSPECTING_GLOBALS = new Set([
   "JSON.parse",
 ]);
 
+const getTimerSource = (name: string, location: SourceLocation | null): string | undefined =>
+  location === null
+    ? undefined
+    : `${name}:${location.filePath}:${location.line}:${location.column}`;
+
 const callGlobal = (
   evaluator: BuiltinEvaluator,
   name: string,
@@ -1434,6 +1439,7 @@ const callGlobal = (
               ? () => evaluator.timers.runAnimationFrame(task)
               : task,
             delayMs,
+            getTimerSource(name, location),
           );
         }
       }
@@ -1458,6 +1464,7 @@ const callGlobal = (
                 args.slice(2),
               ),
             delayMs,
+            getTimerSource(name, location),
           );
         }
       }

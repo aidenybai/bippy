@@ -608,6 +608,7 @@ export type ClockOrdering = "reading" | "settled" | "unbounded";
 export interface ClockTask {
   scheduledBy: ClockTask | null;
   delayMs: number;
+  source?: string;
 }
 
 /** A clock reading's place among the readings the analysis took, and the timer task that took it. */

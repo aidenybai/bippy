@@ -133,14 +133,22 @@ export class TimerQueue {
     cancellation.value = FALSE_VALUE;
   }
 
-  schedule(handle: StaticValue, task: () => void, delayMs = 0): void {
+  schedule(handle: StaticValue, task: () => void, delayMs = 0, source?: string): boolean {
     this.activate(handle);
     const scheduledBy = this.clockTask;
+    for (
+      let ancestor: ClockTask | null = scheduledBy;
+      source && ancestor;
+      ancestor = ancestor.scheduledBy
+    ) {
+      if (ancestor.source === source) return false;
+    }
     this.enqueue(() => {
       if (this.isCleared(handle)) return;
-      this.clockTask = { scheduledBy, delayMs };
+      this.clockTask = { scheduledBy, delayMs, source };
       task();
     });
+    return true;
   }
 
   /** Queues `task` for the next round, like a short timer that cannot be cleared. */
