@@ -433,10 +433,11 @@ export const predicateGuards = (
   if (predicate.guards && predicate.guards.length === alternativeCount) return predicate.guards;
   if (predicate.choice) {
     const choice = predicate.choice;
-    const named = Array.from({ length: alternativeCount - 1 }, (_, index) =>
-      choiceGuard(choice, index),
-    );
-    return [...named, negateGuard(orGuard(named))];
+    const namedValues = Array.from({ length: alternativeCount - 1 }, (_, index) => index);
+    return [
+      ...namedValues.map((value) => choiceGuard(choice, value)),
+      negateGuard(inSetGuard(choice, namedValues)),
+    ];
   }
   throw new Error(`predicate does not decide ${alternativeCount} alternatives`);
 };

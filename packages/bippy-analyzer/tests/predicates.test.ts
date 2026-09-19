@@ -12,7 +12,13 @@ import {
   primitiveValue,
   unknownValue,
 } from "../src/evaluate/values.js";
-import { andGuard, predicateGuards } from "../src/symbolic/guards.js";
+import {
+  andGuard,
+  countGuardAtoms,
+  inSetGuard,
+  negateGuard,
+  predicateGuards,
+} from "../src/symbolic/guards.js";
 import { parseSymbolicPredicate } from "../src/symbolic/serialization.js";
 
 describe("truthiness predicates", () => {
@@ -76,6 +82,15 @@ describe("flattened predicates", () => {
     expect(changed?.inputs[0].label).toBe("second");
     value.alternatives.push(primitiveValue(2));
     expect(getAlternativeGuards(value)?.guards).toHaveLength(3);
+  });
+
+  it("represents a large choice catch-all as one finite-domain atom", () => {
+    const predicate = parseSymbolicPredicate(createPathPredicate("large choice", null));
+    if (!predicate.choice) throw new Error("Expected a choice predicate");
+    const guards = predicateGuards(predicate, 50);
+    const namedValues = Array.from({ length: 49 }, (_, index) => index);
+    expect(guards.at(-1)).toEqual(negateGuard(inSetGuard(predicate.choice, namedValues)));
+    expect(guards.reduce((total, guard) => total + countGuardAtoms(guard), 0)).toBe(50);
   });
 
   it("accepts serialized predicates predating per-alternative guards", () => {
