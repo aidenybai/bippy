@@ -482,11 +482,13 @@ const areAtomicGuardsDisjoint = (
 };
 
 interface GuardRelationCache {
+  disjoint: WeakMap<Guard, WeakMap<Guard, boolean>>;
   implied: WeakMap<Guard, WeakMap<Guard, boolean>>;
   same: WeakMap<Guard, WeakMap<Guard, boolean>>;
 }
 
 const createGuardRelationCache = (): GuardRelationCache => ({
+  disjoint: new WeakMap(),
   implied: new WeakMap(),
   same: new WeakMap(),
 });
@@ -503,6 +505,35 @@ const setGuardRelation = (
     relations.set(left, rightGuards);
   }
   rightGuards.set(right, value);
+};
+
+const computeGuardsDisjoint = (
+  left: Guard,
+  right: Guard,
+  cache: GuardRelationCache,
+): boolean => {
+  if (isAtomicGuard(left) && isAtomicGuard(right)) return areAtomicGuardsDisjoint(left, right);
+  if (left.kind === "and")
+    return left.operands.some((operand) => areGuardsDisjointWithin(operand, right, cache));
+  if (right.kind === "and")
+    return right.operands.some((operand) => areGuardsDisjointWithin(left, operand, cache));
+  if (left.kind === "or")
+    return left.operands.every((operand) => areGuardsDisjointWithin(operand, right, cache));
+  if (right.kind === "or")
+    return right.operands.every((operand) => areGuardsDisjointWithin(left, operand, cache));
+  return false;
+};
+
+const areGuardsDisjointWithin = (
+  left: Guard,
+  right: Guard,
+  cache: GuardRelationCache,
+): boolean => {
+  const cached = cache.disjoint.get(left)?.get(right);
+  if (cached !== undefined) return cached;
+  const isDisjoint = computeGuardsDisjoint(left, right, cache);
+  setGuardRelation(cache.disjoint, left, right, isDisjoint);
+  return isDisjoint;
 };
 
 const isSameLiteralList = (left: GuardLiteral[], right: GuardLiteral[]): boolean =>
@@ -579,10 +610,9 @@ const computeGuardImplication = (
     return isAtomicGuardImplied(premise, conclusion);
   if (
     conclusion.kind === "not" &&
-    isAtomicGuard(premise) &&
-    isAtomicGuard(conclusion.operand)
+    areGuardsDisjointWithin(premise, conclusion.operand, cache)
   )
-    return areAtomicGuardsDisjoint(premise, conclusion.operand);
+    return true;
   if (conclusion.kind === "constant") return conclusion.value;
   if (premise.kind === "constant") return !premise.value;
   if (conclusion.kind === "and")
