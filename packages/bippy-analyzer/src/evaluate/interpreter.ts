@@ -94,7 +94,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
+import { isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
