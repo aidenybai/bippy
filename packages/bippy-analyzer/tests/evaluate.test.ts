@@ -548,6 +548,8 @@ const fixed = new Date("2022-04-04T01:00:00.000Z");
 export const formatsKnownDates = () => formatter.format(fixed);
 export const formatsTheClockAsUnknown = () => formatter.format();
 export const partsOfTheClockAreUnknown = () => formatter.formatToParts().length;
+export const formatsClockDatesAsStrings = () => typeof formatter.format(new Date());
+export const formatsClockReadingsAsStrings = () => typeof formatter.format(Date.now());
 export const resolvesOptions = () => formatter.resolvedOptions().timeZone;
 `;
 
@@ -557,11 +559,15 @@ describe("Intl.DateTimeFormat", () => {
       "formatsKnownDates",
       "formatsTheClockAsUnknown",
       "partsOfTheClockAreUnknown",
+      "formatsClockDatesAsStrings",
+      "formatsClockReadingsAsStrings",
       "resolvesOptions",
     ]);
     expect(results.formatsKnownDates).toBe('"01"');
     expect(results.formatsTheClockAsUnknown).toMatch(/^unknown\(/);
     expect(results.partsOfTheClockAreUnknown).toMatch(/^unknown\(/);
+    expect(results.formatsClockDatesAsStrings).toBe('"string"');
+    expect(results.formatsClockReadingsAsStrings).toBe('"string"');
     expect(results.resolvesOptions).toBe('"UTC"');
   });
 });
