@@ -262,6 +262,24 @@ describe("symbolic tree: guard algebra", () => {
     }
   }, 2_000);
 
+  it("indexes conjuncts by symbolic variable for implication and disjointness", () => {
+    const target = variable("#target");
+    const blocked = variable("#blocked");
+    const conjuncts = [
+      ...Array.from({ length: 5_000 }, (_, index) =>
+        equalsGuard(variable(`#unrelated-${index}`), index),
+      ),
+      equalsGuard(target, true),
+      equalsGuard(blocked, false),
+    ];
+    const isImplied = getGuardImplicationChecker(andGuard(conjuncts));
+    expect(isImplied(truthyGuard(target))).toBe(true);
+    expect(isImplied(negateGuard(truthyGuard(blocked)))).toBe(true);
+    for (let index = 0; index < 5_000; index++) {
+      expect(isImplied(truthyGuard(variable(`#missing-${index}`)))).toBe(false);
+    }
+  }, 2_000);
+
   it("combines large guard sets without quadratic duplicate scans", () => {
     const guards = Array.from({ length: 20_000 }, (_, index) =>
       equalsGuard(variable(`#${index}`), index),
