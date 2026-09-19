@@ -46,6 +46,10 @@ it.each([
     name: "deleting a branched key does not delete both keys",
     body: `const state = { left: 1, right: 2 }; const key = first ? 'left' : 'right'; delete state[key]; return ('left' in state) + ':' + ('right' in state);`,
   },
+  {
+    name: "a spread virtual item retains its column index",
+    body: `const measurements = [{ index: 0 }, { index: 1 }]; const columns = ['default', 'key']; const index = first ? 0 : 1; const item = { ...measurements[index] }; return item.index + ':' + columns[item.index];`,
+  },
 ])("$name", async (testCase) => checkSymbolicCases([testCase]));
 
 it("keeps a branched member read correlated with its index", async () => {
