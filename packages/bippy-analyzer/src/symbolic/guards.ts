@@ -553,7 +553,6 @@ const computeSameGuard = (left: Guard, right: Guard): boolean => {
 
 export const isSameGuard = (left: Guard, right: Guard): boolean => {
   if (left === right) return true;
-  if (getGuardHash(left) !== getGuardHash(right)) return false;
   const cached = sameGuards.get(left)?.get(right);
   if (cached !== undefined) return cached;
   const isSame = computeSameGuard(left, right);
