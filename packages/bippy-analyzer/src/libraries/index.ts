@@ -67,6 +67,11 @@ import {
   reactMarkdownValue,
 } from "./react-markdown.js";
 import {
+  RADIX_FOCUS_SCOPE_MODELED_EXPORTS,
+  RADIX_FOCUS_SCOPE_PACKAGES,
+  radixFocusScopeValue,
+} from "./radix-focus-scope.js";
+import {
   REACT_LIFECYCLES_COMPAT_PACKAGES,
   reactLifecyclesCompatValue,
 } from "./react-lifecycles-compat.js";
@@ -194,6 +199,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
     packages: REACT_MARKDOWN_PACKAGES,
     getValue: reactMarkdownValue,
     modeledExports: REACT_MARKDOWN_MODELED_EXPORTS,
+  },
+  {
+    packages: RADIX_FOCUS_SCOPE_PACKAGES,
+    getValue: radixFocusScopeValue,
+    modeledExports: RADIX_FOCUS_SCOPE_MODELED_EXPORTS,
   },
   { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
   { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
