@@ -130,14 +130,10 @@ export default () => (
 `;
 
 const TANSTACK_QUERY_PROVIDER_SOURCE = `
-import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 
-const queryClient = { label: "ready" };
-
-const Child = () => {
-  const client = useQueryClient();
-  return <main>{client.label}</main>;
-};
+const queryClient = {};
+const Child = () => <main>ready</main>;
 
 export default () => (
   <QueryClientProvider client={queryClient}>

@@ -454,18 +454,8 @@ const useMutation = (project: ProjectContext): StaticValue =>
 export const tanstackQueryValue: LibraryValueProvider = (specifier, importedName, { project }) => {
   if (!TANSTACK_QUERY_PACKAGES.includes(specifier)) return null;
   if (importedName === "skipToken") return SKIP_TOKEN;
-  if (specifier === "@tanstack/react-query") {
-    if (importedName === "QueryClientContext") {
-      return { kind: "context", context: QUERY_CLIENT_CONTEXT };
-    }
-    if (importedName === "QueryClientProvider") return stubValue(QUERY_CLIENT_PROVIDER);
-    if (importedName === "useQueryClient") {
-      return nativeFunction("useQueryClient", ([queryClient], tools) =>
-        queryClient && !isUndefinedValue(queryClient)
-          ? queryClient
-          : tools.readContext(QUERY_CLIENT_CONTEXT),
-      );
-    }
+  if (specifier === "@tanstack/react-query" && importedName === "QueryClientProvider") {
+    return stubValue(QUERY_CLIENT_PROVIDER);
   }
   if (QUERY_HOOKS.has(importedName)) {
     return nativeFunction(importedName, ([options], tools) =>
@@ -508,9 +498,7 @@ const MODELED_EXPORT_NAMES: readonly string[] = [
 export const TANSTACK_QUERY_MODELED_EXPORTS: ModeledExports = {
   "@tanstack/react-query": [
     ...MODELED_EXPORT_NAMES,
-    "QueryClientContext",
     "QueryClientProvider",
-    "useQueryClient",
   ],
   "@tanstack/query-core": MODELED_EXPORT_NAMES,
 };
