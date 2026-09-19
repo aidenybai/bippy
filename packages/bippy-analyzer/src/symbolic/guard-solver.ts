@@ -7,10 +7,11 @@ import {
   type GuardOr,
   type GuardTruthy,
   type SymbolicVariable,
-  formatGuard,
   formatVariable,
   getGuardHash,
   isSameGuard,
+  negateGuard,
+  orGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -308,11 +309,6 @@ interface GuardClause {
   operands: Guard[];
 }
 
-interface GuardFrequency {
-  count: number;
-  guard: Guard;
-}
-
 const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals> => {
   const groups = new Map<number, ProjectionLiterals>();
   for (const literal of literals) {
@@ -323,7 +319,16 @@ const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals>
       group = { variable, value: [], typeof: [], length: [], choice: [] };
       groups.set(key, group);
     }
-    group[variable.measure].push(literal);
+    const projectionLiterals = group[variable.measure];
+    if (
+      projectionLiterals.some(
+        (candidate) =>
+          candidate.isNegated === literal.isNegated &&
+          isSameGuard(candidate.atom, literal.atom),
+      )
+    )
+      continue;
+    projectionLiterals.push(literal);
   }
   return groups;
 };
@@ -395,7 +400,7 @@ const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null =>
   modelOfGroups(groupByProjection(literals));
 
 const negateOperands = (operands: Guard[]): Guard[] =>
-  operands.map((operand) => ({ kind: "not", operand }));
+  operands.map(negateGuard);
 
 const groupLiteralsByHash = (literals: Literal[]): Map<number, Literal[]> => {
   const literalsByHash = new Map<number, Literal[]>();
@@ -451,61 +456,7 @@ const isGuardImpliedByLiterals = (
  * before any disjunction splits, so a contradiction among the atoms is found
  * without exploring the disjunctions' product.
  */
-let guardSolverCalls = 0;
-let nextGuardSolverDepth = 1;
-let nextGuardSolverPending = 1;
-let nextGuardSolverLiterals = 1;
-
-const findModel = (
-  pending: Guard[],
-  literals: Literal[],
-  depth = 0,
-): VariableWitness[] | null => {
-  guardSolverCalls++;
-  if (
-    process.env.BIPPY_GUARD_PROFILE === "1" &&
-    (depth >= nextGuardSolverDepth ||
-      pending.length >= nextGuardSolverPending ||
-      literals.length >= nextGuardSolverLiterals ||
-      guardSolverCalls % 100_000 === 0)
-  ) {
-    while (depth >= nextGuardSolverDepth) nextGuardSolverDepth *= 2;
-    while (pending.length >= nextGuardSolverPending) nextGuardSolverPending *= 2;
-    while (literals.length >= nextGuardSolverLiterals) nextGuardSolverLiterals *= 2;
-    const frequencies = new Map<number, GuardFrequency>();
-    for (const guard of pending) {
-      const operands = guard.kind === "or" ? guard.operands : [guard];
-      for (const operand of operands) {
-        const hash = getGuardHash(operand);
-        const frequency = frequencies.get(hash);
-        if (frequency === undefined) frequencies.set(hash, { count: 1, guard: operand });
-        else frequency.count++;
-      }
-    }
-    process.stderr.write(
-      `[guard-solver-profile] ${JSON.stringify({
-        calls: guardSolverCalls,
-        depth,
-        pending: pending.length,
-        literals: literals.length,
-        kinds: pending.reduce<Record<string, number>>((counts, guard) => {
-          counts[guard.kind] = (counts[guard.kind] ?? 0) + 1;
-          return counts;
-        }, {}),
-        topOperands: [...frequencies.values()]
-          .sort((left, right) => right.count - left.count)
-          .slice(0, 10)
-          .map((frequency) => ({
-            count: frequency.count,
-            guard: formatGuard(frequency.guard).slice(0, 500),
-          })),
-        latestLiterals: literals.slice(-10).map(
-          (literal) =>
-            `${literal.isNegated ? "not " : ""}${formatGuard(literal.atom)}`,
-        ),
-      })}\n`,
-    );
-  }
+const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
   const remaining = [...pending];
   const collected = [...literals];
   const disjunctions: GuardOr[] = [];
@@ -532,7 +483,7 @@ const findModel = (
             remaining.push(operand.operand);
             break;
           case "and":
-            remaining.push({ kind: "or", operands: negateOperands(operand.operands) });
+            remaining.push(orGuard(negateOperands(operand.operands)));
             break;
           case "or":
             remaining.push(...negateOperands(operand.operands));
@@ -560,7 +511,6 @@ const findModel = (
       return findModel(
         [...disjunctions.filter((candidate) => candidate !== disjunction), viableOperands[0]],
         collected,
-        depth + 1,
       );
     }
     clauses.push({ guard: disjunction, operands: viableOperands });
@@ -589,7 +539,7 @@ const findModel = (
     (left, right) => operandScore(right) - operandScore(left),
   );
   for (const operand of selectedOperands) {
-    const split = findModel([...remainingDisjunctions, operand], collected, depth + 1);
+    const split = findModel([...remainingDisjunctions, operand], collected);
     if (split) return split;
   }
   return null;
@@ -752,16 +702,11 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
   }
 };
 
-const MAX_CACHED_GUARD_ANALYSES = 16;
-const guardAnalysisCache = new Map<Guard, GuardAnalysis>();
+const guardAnalysisCache = new WeakMap<Guard, GuardAnalysis>();
 
 const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   const cached = guardAnalysisCache.get(guard);
-  if (cached !== undefined) {
-    guardAnalysisCache.delete(guard);
-    guardAnalysisCache.set(guard, cached);
-    return cached;
-  }
+  if (cached !== undefined) return cached;
   const components = independentComponents([guard]);
   const componentByKey = new Map<number, GuardComponent>();
   let isSatisfiable = true;
@@ -771,10 +716,6 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   }
   const analysis = { componentByKey, isSatisfiable };
   guardAnalysisCache.set(guard, analysis);
-  if (guardAnalysisCache.size > MAX_CACHED_GUARD_ANALYSES) {
-    const oldest = guardAnalysisCache.keys().next();
-    if (!oldest.done) guardAnalysisCache.delete(oldest.value);
-  }
   return analysis;
 };
 
