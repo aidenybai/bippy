@@ -98,6 +98,7 @@ import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
+  countGuardAtoms,
   type Guard,
   type GuardContext,
   negateGuard,
@@ -537,6 +538,8 @@ const DEFAULT_MAX_FORK_DEPTH = 5;
 const DEFAULT_MAX_STEPS = 2_000_000;
 
 const MAX_FORKED_REENTRIES = 1;
+
+const MAX_GUARD_FILTER_ATOMS = 96;
 
 export const STYLED_JSX_SPECIFIER = "styled-jsx/style";
 
@@ -2453,8 +2456,12 @@ export class Interpreter {
     if (activeGuard.kind === "constant" && activeGuard.value) return value;
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
+    const activeAtomCount = countGuardAtoms(activeGuard);
     const indices = resolved.guards.flatMap((guard, index) =>
-      areGuardsSatisfiable([activeGuard, guard]) ? [index] : [],
+      activeAtomCount + countGuardAtoms(guard) > MAX_GUARD_FILTER_ATOMS ||
+      areGuardsSatisfiable([activeGuard, guard])
+        ? [index]
+        : [],
     );
     if (indices.length === value.alternatives.length || indices.length === 0) return value;
     return branchValue(
