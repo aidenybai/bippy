@@ -354,6 +354,7 @@ import {
   getClassPrototype,
   getExternalMember,
   getFunctionPrototype,
+  hasDefiniteItems,
   getKnownObjectOwnNames,
   getKnownOwnKeys,
   getItemValue,
@@ -3839,7 +3840,9 @@ export class Interpreter {
             "dynamic list index",
             location,
             0,
-            mayBeIndexKey(key) ? getListIndexPredicate(key, candidates.length) : null,
+            mayBeIndexKey(key) && hasDefiniteItems(object)
+              ? getListIndexPredicate(key, candidates.length)
+              : null,
           );
     }
     if (object.kind === "object") {
