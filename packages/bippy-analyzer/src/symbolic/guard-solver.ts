@@ -448,8 +448,14 @@ const findModel = (
       if (witnesses === null) return null;
       state.witnessesByProjection.set(key, witnesses);
     }
-    const disjunction = disjunctions.pop();
-    if (disjunction === undefined) return [...state.witnessesByProjection.values()].flat();
+    if (disjunctions.length === 0) return [...state.witnessesByProjection.values()].flat();
+    let disjunctionIndex = 0;
+    for (let index = 1; index < disjunctions.length; index++) {
+      if (disjunctions[index].operands.length < disjunctions[disjunctionIndex].operands.length) {
+        disjunctionIndex = index;
+      }
+    }
+    const [disjunction] = disjunctions.splice(disjunctionIndex, 1);
     for (const operand of disjunction.operands) {
       const split = findModel([...disjunctions, operand], state);
       if (split) return split;
@@ -704,12 +710,25 @@ export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): 
           )
         : candidate;
   if (narrowedCandidate.kind === "constant") return narrowedCandidate.value;
+  const candidateWitnesses = solveGuards([narrowedCandidate]);
+  if (candidateWitnesses === null) return false;
   const baseAnalysis = getGuardAnalysis(base);
+  if (!solveGuardAnalysis(baseAnalysis)) return false;
+  const knownModel = baseAnalysis.models[0];
+  if (knownModel !== undefined) {
+    const combinedModel = new Map(knownModel);
+    for (const witness of candidateWitnesses) {
+      const key = formatVariable(witness.variable);
+      if (!combinedModel.has(key)) combinedModel.set(key, witness.value);
+    }
+    if (evaluateGuard(narrowedCandidate, combinedModel) === true) return true;
+  }
   const overlappingComponents = new Set<GuardComponent>();
   for (const key of collectProjectionKeys(narrowedCandidate, new Set())) {
     const component = baseAnalysis.componentByKey.get(key);
     if (component !== undefined) overlappingComponents.add(component);
   }
+  if (overlappingComponents.size === 0) return true;
   return (
     solveGuards([
       ...[...overlappingComponents].flatMap((component) => component.guards),
