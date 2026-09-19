@@ -565,6 +565,16 @@ describe("guard solver", () => {
     expect(performance.now() - started).toBeLessThan(1000);
   });
 
+  it("tries smaller disjunction witnesses before accumulated formulas", () => {
+    const simple = truthyGuard(variable("simple"));
+    const accumulated = andGuard(
+      Array.from({ length: 512 }, (_, index) => truthyGuard(variable(`accumulated-${index}`))),
+    );
+    const witnesses = solveGuards([orGuard([accumulated, simple])]);
+    expect(witnesses).toHaveLength(1);
+    expect(evaluateGuard(simple, toWitnessModel(witnesses ?? []))).toBe(true);
+  });
+
   it("splits a disjunction only against the conjuncts sharing its variables", () => {
     const started = performance.now();
     expect(
