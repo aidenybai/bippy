@@ -100,6 +100,7 @@ import {
   constantGuard,
   type Guard,
   type GuardContext,
+  isGuardImplied,
   negateGuard,
   orGuard,
 } from "../symbolic/guards.js";
@@ -2454,7 +2455,11 @@ export class Interpreter {
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
     const indices = resolved.guards.flatMap((guard, index) =>
-      areGuardsSatisfiable([activeGuard, guard]) ? [index] : [],
+      isGuardImplied(activeGuard, guard) ||
+      (!isGuardImplied(activeGuard, negateGuard(guard)) &&
+        areGuardsSatisfiable([activeGuard, guard]))
+        ? [index]
+        : [],
     );
     if (indices.length === value.alternatives.length || indices.length === 0) return value;
     return branchValue(
