@@ -4,7 +4,6 @@ import type {
   SnapshotPropValue,
   SnapshotWorkTag,
 } from "./snapshot.js";
-import { isMarkerName } from "../materialize/markers.js";
 
 interface PreactOptions {
   _commit?: (...args: unknown[]) => void;
@@ -53,13 +52,8 @@ const getFunctionName = (value: Function): string | null => {
 };
 
 const getContext = (value: Function): object | null => {
-  const context =
-    getAliasedProperty(value, "_contextRef", "__l") ??
-    getProperty(value, "__") ??
-    getProperty(value, "contextType");
-  return (typeof context === "object" && context !== null) || typeof context === "function"
-    ? context
-    : null;
+  const context = getProperty(value, "_contextRef");
+  return isObject(context) ? context : null;
 };
 
 const getContextName = (context: object): string | null => {
@@ -68,9 +62,8 @@ const getContextName = (context: object): string | null => {
 };
 
 const getFunctionTag = (value: Function): SnapshotWorkTag => {
-  const context = getContext(value);
-  if (context) {
-    return getProperty(context, "Consumer") === value ? "ContextConsumer" : "ContextProvider";
+  if (getContext(value)) {
+    return value.name === "Consumer" ? "ContextConsumer" : "ContextProvider";
   }
   const reactType = getProperty(value, "$$typeof");
   if (typeof reactType === "symbol" && reactType.description === "react.forward_ref") {
@@ -91,12 +84,9 @@ const getFunctionTag = (value: Function): SnapshotWorkTag => {
 
 const MAX_STRING_PROP_LENGTH = 200;
 
-const getSnapshotProp = (
-  value: unknown,
-  isUntruncated: boolean,
-): SnapshotPropValue | undefined => {
+const getSnapshotProp = (value: unknown): SnapshotPropValue | undefined => {
   if (typeof value === "string") {
-    return value.length > MAX_STRING_PROP_LENGTH && !isUntruncated
+    return value.length > MAX_STRING_PROP_LENGTH
       ? `${value.slice(0, MAX_STRING_PROP_LENGTH)}…`
       : value;
   }
@@ -112,14 +102,13 @@ const getSnapshotProp = (
 const getSnapshotProps = (
   vnode: object,
   hasDirectText: boolean,
-  isMarker: boolean,
 ): Record<string, SnapshotPropValue> => {
   const vnodeProps = getProperty(vnode, "props");
   if (!isObject(vnodeProps)) return {};
   const props: Record<string, SnapshotPropValue> = {};
   for (const [name, value] of Object.entries(vnodeProps)) {
     if (name === "children" && !hasDirectText) continue;
-    const prop = getSnapshotProp(value, isMarker);
+    const prop = getSnapshotProp(value);
     if (prop !== undefined) props[name] = prop;
   }
   return props;
@@ -192,13 +181,12 @@ const getVNodeSnapshot = (vnode: object, fragment: unknown): RuntimeFiberSnapsho
           ? getFunctionName(type)
           : null;
   const context = typeof type === "function" ? getContext(type) : null;
-  const snapshotName = context ? getContextName(context) : name;
   return {
     tag,
-    name: snapshotName,
+    name: context ? getContextName(context) : name,
     key: getVNodeKey(vnode),
     text: null,
-    props: getSnapshotProps(vnode, directText, isMarkerName(snapshotName)),
+    props: getSnapshotProps(vnode, directText),
     children: getSnapshotChildren(vnode, fragment, directText),
   };
 };
