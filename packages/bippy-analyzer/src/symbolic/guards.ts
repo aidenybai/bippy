@@ -209,14 +209,13 @@ const getGuardHash = (guard: Guard): number => {
       break;
     case "not":
       hash = mixHash(hash, getGuardHash(guard.operand));
-      guardHashes.set(guard, hash);
       break;
     case "and":
     case "or":
       for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
-      guardHashes.set(guard, hash);
       break;
   }
+  guardHashes.set(guard, hash);
   return hash;
 };
 
