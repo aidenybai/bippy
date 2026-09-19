@@ -327,6 +327,17 @@ describe("symbolic tree: guard algebra", () => {
     expect(solveGuards([guard])).not.toBeNull();
   });
 
+  it("tries inexpensive disjunction operands before compound alternatives", () => {
+    const simpleVariable = variable("#simple");
+    const simple = equalsGuard(simpleVariable, "ready");
+    const compound = andGuard(
+      Array.from({ length: 100 }, (_, index) => truthyGuard(variable(`#compound-${index}`))),
+    );
+    expect(solveGuards([orGuard([compound, simple])])).toEqual([
+      { variable: simpleVariable, value: "ready" },
+    ]);
+  });
+
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
     const space = await renderFixture("narrowed-opaque-portal-root.tsx");
     expect(space.tree.inputs).toHaveLength(0);

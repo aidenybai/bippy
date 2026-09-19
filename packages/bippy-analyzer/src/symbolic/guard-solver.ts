@@ -53,6 +53,7 @@ const ALL_TYPES: TypeName[] = [
 ];
 
 const projectionKeys = new WeakMap<SymbolicVariable, string>();
+const guardComplexities = new WeakMap<Guard, number>();
 
 const projectionKey = (variable: SymbolicVariable): string => {
   const cached = projectionKeys.get(variable);
@@ -60,6 +61,18 @@ const projectionKey = (variable: SymbolicVariable): string => {
   const key = JSON.stringify([variable.input, variable.path]);
   projectionKeys.set(variable, key);
   return key;
+};
+
+const getGuardComplexity = (guard: Guard): number => {
+  const cached = guardComplexities.get(guard);
+  if (cached !== undefined) return cached;
+  let complexity = 1;
+  if (guard.kind === "not") complexity += getGuardComplexity(guard.operand);
+  else if (guard.kind === "and" || guard.kind === "or") {
+    for (const operand of guard.operands) complexity += getGuardComplexity(operand);
+  }
+  guardComplexities.set(guard, complexity);
+  return complexity;
 };
 
 interface Bound {
@@ -526,6 +539,7 @@ const findModel = (
       }
       if (isSatisfied) continue;
       if (viableOperands.length === 0) return null;
+      viableOperands.sort((left, right) => getGuardComplexity(left) - getGuardComplexity(right));
       unresolvedDisjunctions.push(
         viableOperands.length === disjunction.operands.length
           ? disjunction
