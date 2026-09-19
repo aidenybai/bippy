@@ -48,10 +48,12 @@ export const compareNumberRanges = (
   }
 };
 
-const rangeOf = (reason: string, bounds: number[]): StaticValue | null =>
-  bounds.some(Number.isNaN)
-    ? null
-    : rangedNumberValue(reason, { min: Math.min(...bounds), max: Math.max(...bounds) });
+const rangeOf = (reason: string, bounds: number[]): StaticValue | null => {
+  if (bounds.some(Number.isNaN)) return null;
+  const min = Math.min(...bounds);
+  const max = Math.max(...bounds);
+  return min === max ? primitiveValue(min) : rangedNumberValue(reason, { min, max });
+};
 
 /** Interval arithmetic on two numbers whose ranges are known; null when the result's range is not. */
 export const applyNumberRangeOperator = (

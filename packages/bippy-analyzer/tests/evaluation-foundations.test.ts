@@ -165,6 +165,16 @@ describe("numeric range operations", () => {
       applyMathToRanges("floor", [rangedNumberValue("fraction", { min: -1.2, max: 2.3 })]),
     ).toMatchObject({ numberRange: { min: -2, max: 2 } });
   });
+
+  it("resolves arithmetic with one possible result", () => {
+    expect(
+      applyNumberRangeOperator(
+        "+",
+        rangedNumberValue("index", { min: 1, max: 1 }),
+        primitiveValue(1),
+      ),
+    ).toEqual(primitiveValue(2));
+  });
 });
 
 describe("external member values", () => {
