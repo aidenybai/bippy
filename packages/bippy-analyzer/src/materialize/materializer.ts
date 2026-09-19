@@ -55,7 +55,10 @@ import { formatSourceLocation } from "../parse/source-location.js";
 import type { SourceLocation } from "../parse/source-types.js";
 import { getFunctionComponent } from "../react/element-type.js";
 import type { PinnedBranchDecision, PinnedDecisions } from "../render/types.js";
-import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import {
+  areGuardsSatisfiable,
+  mayBeGuardsSatisfiable,
+} from "../symbolic/guard-solver.js";
 import {
   andGuard,
   collectGuardVariables,
@@ -1989,7 +1992,7 @@ export class Materializer {
     if (cause.guard.kind === "constant" && cause.guard.value) return run();
     const ownerCause = frame && this.frameCauses.get(frame);
     const unconditionalUpdates =
-      frame && ownerCause && !areGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)])
+      frame && ownerCause && !mayBeGuardsSatisfiable([ownerCause.guard, negateGuard(cause.guard)])
         ? new Set(frame.cells)
         : undefined;
     return this.interpreter.runMaybe(

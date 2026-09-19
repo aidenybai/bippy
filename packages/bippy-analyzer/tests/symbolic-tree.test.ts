@@ -17,6 +17,7 @@ import { createStaticRenderer } from "../src/index.js";
 import {
   areGuardsSatisfiable,
   evaluateGuard,
+  mayBeGuardsSatisfiable,
   solveGuards,
   toWitnessModel,
 } from "../src/symbolic/guard-solver.js";
@@ -188,6 +189,16 @@ describe("symbolic tree: guard algebra", () => {
       ).toBe(true);
     }
   }, 2_000);
+
+  it("keeps speculative alternatives when exact guard solving is too large", () => {
+    const guards = Array.from({ length: 97 }, (_, index) =>
+      equalsGuard(variable(`#speculative-${index}`), index),
+    );
+    const combined = andGuard(guards);
+    const contradiction = negateGuard(guards[0]);
+    expect(areGuardsSatisfiable([combined, contradiction])).toBe(false);
+    expect(mayBeGuardsSatisfiable([combined, contradiction])).toBe(true);
+  });
 
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
     const space = await renderFixture("narrowed-opaque-portal-root.tsx");
