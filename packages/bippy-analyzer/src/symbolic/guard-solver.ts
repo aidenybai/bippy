@@ -780,10 +780,9 @@ const solveGuardAnalysis = (analysis: GuardAnalysis): boolean => {
 };
 
 const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
-  if (isGuardImplied(base, candidate)) return true;
-  if (candidate.kind === "not" && isGuardImplied(base, candidate.operand)) return false;
   const baseAnalysis = getGuardAnalysis(base);
   if (!solveGuardAnalysis(baseAnalysis)) return false;
+  if (candidate.kind === "not" && isGuardImplied(base, candidate.operand)) return false;
   if (baseAnalysis.models.some((model) => evaluateGuard(candidate, model) === true)) return true;
   const overlappingComponents = new Set<GuardComponent>();
   for (const key of collectProjectionKeys(candidate, new Set())) {
