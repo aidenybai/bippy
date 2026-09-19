@@ -8,10 +8,12 @@ import {
   compareIdentity,
   decidedBooleanValue,
   getObjectProperty,
+  getSpreadEntries,
   getTruthiness,
   isCallable,
   isUndefinedValue,
   listValue,
+  mapValue,
   objectFromRecord,
   objectValue,
 } from "../evaluate/values.js";
@@ -67,13 +69,21 @@ const createState = (): ZustandState => {
       state.current = snapshot;
     },
     join: (snapshots, reason, location, preferredPath, predicate) => {
-      state.current = branchValue(snapshots, reason, location, preferredPath, predicate ?? null);
+      state.current = normalizeState(
+        branchValue(snapshots, reason, location, preferredPath, predicate ?? null),
+      );
     },
   };
   return state;
 };
 
 const getState = (store: ZustandStore): StaticValue => store.state.current;
+
+const normalizeState = (state: StaticValue): StaticValue => {
+  if (state.kind !== "branch") return state;
+  const entries = getSpreadEntries(state);
+  return entries ? objectValue(entries) : state;
+};
 
 const notify = (
   store: ZustandStore,
@@ -92,13 +102,18 @@ const setState = (store: ZustandStore): StaticValue =>
     const previousState = getState(store);
     const nextState = isCallable(partial) ? tools.call(partial, [previousState]) : partial;
     const shouldReplace = getTruthiness(replace ?? FALSE_VALUE) === true;
-    const mergedState =
-      !shouldReplace && previousState.kind === "object" && nextState.kind === "object"
-        ? objectValue([
-            { kind: "spread", value: previousState },
-            { kind: "spread", value: nextState },
-          ])
-        : nextState;
+    const mergedState = normalizeState(
+      !shouldReplace && previousState.kind === "object"
+        ? mapValue(nextState, (nextAlternative) =>
+            nextAlternative.kind === "object"
+              ? objectValue([
+                  { kind: "spread", value: previousState },
+                  { kind: "spread", value: nextAlternative },
+                ])
+              : nextAlternative,
+          )
+        : nextState,
+    );
     if (compareIdentity(previousState, mergedState) === true) return UNDEFINED_VALUE;
     tools.recordStateMutation(store.state);
     store.state.current = mergedState;

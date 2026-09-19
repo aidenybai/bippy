@@ -198,6 +198,22 @@ export default () => {
 };
 `;
 
+const ZUSTAND_BRANCH_UPDATE_SOURCE = `
+import { create } from "zustand";
+
+const useStore = create(() => ({
+  dimensions: { width: 4 },
+  enabled: false,
+  count: 0,
+}));
+
+useStore.setState(Math.random() > 0.5 ? { enabled: true } : { enabled: false });
+useStore.setState({ count: 1 });
+
+export default () =>
+  useStore.getState().dimensions.width === 4 ? <main /> : <aside />;
+`;
+
 const ZUSTAND_MIDDLEWARE_SOURCE = `
 import { create } from "zustand";
 import { redux } from "zustand/middleware";
@@ -512,6 +528,12 @@ describe("library models", () => {
         '      "4"',
         "      <span>",
       ].join("\n"),
+    );
+  });
+
+  it("preserves untouched Zustand fields across symbolic partial updates", async () => {
+    expect(await renderSource(ZUSTAND_BRANCH_UPDATE_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
     );
   });
 
