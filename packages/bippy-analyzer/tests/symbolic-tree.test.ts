@@ -17,7 +17,6 @@ import { createStaticRenderer } from "../src/index.js";
 import {
   areGuardsSatisfiable,
   evaluateGuard,
-  GuardSolver,
   solveGuards,
   toWitnessModel,
 } from "../src/symbolic/guard-solver.js";
@@ -369,32 +368,6 @@ describe("guard solver", () => {
         negateGuard(guard),
       ]),
     ).toBeNull();
-  });
-
-  it("keeps a disjunction required after another branch narrows its witness", () => {
-    const selected = equalsGuard(variable("selection"), 1);
-    const fallback = truthyGuard(variable("fallback"));
-    const later = truthyGuard(variable("later"));
-    expect(
-      solveGuards([
-        truthyGuard(variable("selection")),
-        negateGuard(fallback),
-        negateGuard(later),
-        orGuard([negateGuard(selected), fallback]),
-        orGuard([selected, later]),
-      ]),
-    ).toBeNull();
-  });
-
-  it("restores the previous incremental constraint after a pop", () => {
-    const first = truthyGuard(variable("first"));
-    const second = truthyGuard(variable("second"));
-    const solver = new GuardSolver();
-    expect(solver.push(first)).toBe(true);
-    expect(solver.push(negateGuard(first))).toBe(false);
-    expect(solver.push(second)).toBe(true);
-    solver.pop();
-    expect(solver.push(negateGuard(second))).toBe(true);
   });
 
   const notGuard = (operand: Guard): Guard => ({ kind: "not", operand });

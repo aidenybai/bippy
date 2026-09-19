@@ -7,13 +7,7 @@ import {
   type GuardOr,
   type GuardTruthy,
   type SymbolicVariable,
-  andGuard,
-  constantGuard,
   formatVariable,
-  getGuardHash,
-  isSameGuard,
-  negateGuard,
-  orGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -58,36 +52,8 @@ const ALL_TYPES: TypeName[] = [
   "function",
 ];
 
-interface ProjectionNode {
-  id: number;
-  children: Map<string, ProjectionNode>;
-}
-
-const projectionRoots = new Map<string, ProjectionNode>();
-const projectionKeyCache = new WeakMap<SymbolicVariable, number>();
-let nextProjectionId = 0;
-
-const getProjectionNode = (
-  nodes: Map<string, ProjectionNode>,
-  segment: string,
-): ProjectionNode => {
-  const existing = nodes.get(segment);
-  if (existing !== undefined) return existing;
-  const created = { id: nextProjectionId++, children: new Map<string, ProjectionNode>() };
-  nodes.set(segment, created);
-  return created;
-};
-
-const projectionKey = (variable: SymbolicVariable): number => {
-  const cached = projectionKeyCache.get(variable);
-  if (cached !== undefined) return cached;
-  let node = getProjectionNode(projectionRoots, variable.input);
-  for (const segment of variable.path) {
-    node = getProjectionNode(node.children, segment);
-  }
-  projectionKeyCache.set(variable, node.id);
-  return node.id;
-};
+const projectionKey = (variable: SymbolicVariable): string =>
+  formatVariable({ ...variable, measure: "value" });
 
 interface Bound {
   value: number;
@@ -306,13 +272,8 @@ interface ProjectionLiterals {
   choice: Literal[];
 }
 
-interface GuardClause {
-  guard: GuardOr;
-  operands: Guard[];
-}
-
-const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals> => {
-  const groups = new Map<number, ProjectionLiterals>();
+const groupByProjection = (literals: Literal[]): Map<string, ProjectionLiterals> => {
+  const groups = new Map<string, ProjectionLiterals>();
   for (const literal of literals) {
     const { variable } = literal.atom;
     const key = projectionKey(variable);
@@ -321,16 +282,7 @@ const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals>
       group = { variable, value: [], typeof: [], length: [], choice: [] };
       groups.set(key, group);
     }
-    const projectionLiterals = group[variable.measure];
-    if (
-      projectionLiterals.some(
-        (candidate) =>
-          candidate.isNegated === literal.isNegated &&
-          isSameGuard(candidate.atom, literal.atom),
-      )
-    )
-      continue;
-    projectionLiterals.push(literal);
+    group[variable.measure].push(literal);
   }
   return groups;
 };
@@ -378,11 +330,9 @@ const pickCount = (
   return picked === null ? null : { variable, value: picked };
 };
 
-const modelOfGroups = (
-  groups: ReadonlyMap<number, ProjectionLiterals>,
-): VariableWitness[] | null => {
+const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null => {
   const witnesses: VariableWitness[] = [];
-  for (const group of groups.values()) {
+  for (const group of groupByProjection(literals).values()) {
     if (group.value.length > 0 || group.typeof.length > 0) {
       const witness = pickValue(group);
       if (witness === null) return null;
@@ -398,60 +348,8 @@ const modelOfGroups = (
   return witnesses;
 };
 
-const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null =>
-  modelOfGroups(groupByProjection(literals));
-
 const negateOperands = (operands: Guard[]): Guard[] =>
-  operands.map(negateGuard);
-
-const groupLiteralsByHash = (literals: Literal[]): Map<number, Literal[]> => {
-  const literalsByHash = new Map<number, Literal[]>();
-  for (const literal of literals) {
-    const hash = getGuardHash(literal.atom);
-    const matching = literalsByHash.get(hash);
-    if (matching === undefined) literalsByHash.set(hash, [literal]);
-    else matching.push(literal);
-  }
-  return literalsByHash;
-};
-
-const isGuardImpliedByLiterals = (
-  guard: Guard,
-  literalsByHash: ReadonlyMap<number, Literal[]>,
-  isNegated = false,
-): boolean => {
-  switch (guard.kind) {
-    case "constant":
-      return guard.value !== isNegated;
-    case "not":
-      return isGuardImpliedByLiterals(guard.operand, literalsByHash, !isNegated);
-    case "and":
-      return isNegated
-        ? guard.operands.some((operand) =>
-            isGuardImpliedByLiterals(operand, literalsByHash, true),
-          )
-        : guard.operands.every((operand) =>
-            isGuardImpliedByLiterals(operand, literalsByHash),
-          );
-    case "or":
-      return isNegated
-        ? guard.operands.every((operand) =>
-            isGuardImpliedByLiterals(operand, literalsByHash, true),
-          )
-        : guard.operands.some((operand) =>
-            isGuardImpliedByLiterals(operand, literalsByHash),
-          );
-    default:
-      return (
-        literalsByHash
-          .get(getGuardHash(guard))
-          ?.some(
-            (literal) =>
-              literal.isNegated === isNegated && isSameGuard(literal.atom, guard),
-          ) ?? false
-      );
-  }
-};
+  operands.map((operand) => ({ kind: "not", operand }));
 
 /**
  * DPLL over the guard formulas: atoms accumulate and are checked per variable
@@ -485,7 +383,7 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
             remaining.push(operand.operand);
             break;
           case "and":
-            remaining.push(orGuard(negateOperands(operand.operands)));
+            remaining.push({ kind: "or", operands: negateOperands(operand.operands) });
             break;
           case "or":
             remaining.push(...negateOperands(operand.operands));
@@ -500,48 +398,10 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
     }
   }
   const model = modelOfLiterals(collected);
-  if (model === null) return null;
-  const literalsByHash = groupLiteralsByHash(collected);
-  const clauses: GuardClause[] = [];
-  for (const disjunction of disjunctions) {
-    if (isGuardImpliedByLiterals(disjunction, literalsByHash)) continue;
-    const viableOperands = disjunction.operands.filter(
-      (operand) => !isGuardImpliedByLiterals(operand, literalsByHash, true),
-    );
-    if (viableOperands.length === 0) return null;
-    if (viableOperands.length === 1) {
-      return findModel(
-        [...disjunctions.filter((candidate) => candidate !== disjunction), viableOperands[0]],
-        collected,
-      );
-    }
-    clauses.push({ guard: disjunction, operands: viableOperands });
-  }
-  if (clauses.length === 0) return model;
-  const operandFrequency = new Map<number, number>();
-  for (const clause of clauses) {
-    for (const operand of clause.operands) {
-      const hash = getGuardHash(operand);
-      operandFrequency.set(hash, (operandFrequency.get(hash) ?? 0) + 1);
-    }
-  }
-  const operandScore = (operand: Guard): number =>
-    operandFrequency.get(getGuardHash(operand)) ?? 0;
-  const selectedClause = clauses.reduce((selected, candidate) => {
-    if (candidate.operands.length < selected.operands.length) return candidate;
-    if (candidate.operands.length > selected.operands.length) return selected;
-    const candidateScore = Math.max(...candidate.operands.map(operandScore));
-    const selectedScore = Math.max(...selected.operands.map(operandScore));
-    return candidateScore > selectedScore ? candidate : selected;
-  });
-  const remainingDisjunctions = clauses
-    .filter((candidate) => candidate !== selectedClause)
-    .map((candidate) => candidate.guard);
-  const selectedOperands = [...selectedClause.operands].sort(
-    (left, right) => operandScore(right) - operandScore(left),
-  );
-  for (const operand of selectedOperands) {
-    const split = findModel([...remainingDisjunctions, operand], collected);
+  const disjunction = disjunctions.pop();
+  if (model === null || disjunction === undefined) return model;
+  for (const operand of disjunction.operands) {
+    const split = findModel([...disjunctions, operand], collected);
     if (split) return split;
   }
   return null;
@@ -558,7 +418,7 @@ const conjuncts = (guards: Guard[]): Guard[] =>
     return [guard];
   });
 
-const collectProjectionKeys = (guard: Guard, keys: Set<number>): Set<number> => {
+const collectProjectionKeys = (guard: Guard, keys: Set<string>): Set<string> => {
   switch (guard.kind) {
     case "constant":
       break;
@@ -575,24 +435,14 @@ const collectProjectionKeys = (guard: Guard, keys: Set<number>): Set<number> => 
   return keys;
 };
 
-const projectionKeysCache = new WeakMap<Guard, ReadonlySet<number>>();
-
-const getProjectionKeys = (guard: Guard): ReadonlySet<number> => {
-  const cached = projectionKeysCache.get(guard);
-  if (cached !== undefined) return cached;
-  const keys = collectProjectionKeys(guard, new Set());
-  projectionKeysCache.set(guard, keys);
-  return keys;
-};
-
 interface GuardComponent {
   id: number;
-  keys: Set<number>;
+  keys: Set<string>;
   guards: Guard[];
 }
 
 interface GuardAnalysis {
-  componentByKey: Map<number, GuardComponent>;
+  componentByKey: Map<string, GuardComponent>;
   isSatisfiable: boolean;
 }
 
@@ -604,10 +454,10 @@ interface GuardAnalysis {
  */
 const independentComponents = (guards: Guard[]): GuardComponent[] => {
   const components = new Map<number, GuardComponent>();
-  const componentByKey = new Map<number, GuardComponent>();
+  const componentByKey = new Map<string, GuardComponent>();
   let nextComponentId = 0;
   for (const guard of conjuncts(guards)) {
-    const keys = new Set(getProjectionKeys(guard));
+    const keys = collectProjectionKeys(guard, new Set());
     const overlappingComponents = new Set<GuardComponent>();
     for (const key of keys) {
       const component = componentByKey.get(key);
@@ -704,13 +554,18 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
   }
 };
 
-const guardAnalysisCache = new WeakMap<Guard, GuardAnalysis>();
+const MAX_CACHED_GUARD_ANALYSES = 16;
+const guardAnalysisCache = new Map<Guard, GuardAnalysis>();
 
 const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   const cached = guardAnalysisCache.get(guard);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) {
+    guardAnalysisCache.delete(guard);
+    guardAnalysisCache.set(guard, cached);
+    return cached;
+  }
   const components = independentComponents([guard]);
-  const componentByKey = new Map<number, GuardComponent>();
+  const componentByKey = new Map<string, GuardComponent>();
   let isSatisfiable = true;
   for (const component of components) {
     for (const key of component.keys) componentByKey.set(key, component);
@@ -718,42 +573,28 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   }
   const analysis = { componentByKey, isSatisfiable };
   guardAnalysisCache.set(guard, analysis);
+  if (guardAnalysisCache.size > MAX_CACHED_GUARD_ANALYSES) {
+    const oldest = guardAnalysisCache.keys().next();
+    if (!oldest.done) guardAnalysisCache.delete(oldest.value);
+  }
   return analysis;
 };
 
-const guardPairCache = new WeakMap<Guard, WeakMap<Guard, boolean>>();
-
-const cacheGuardPair = (base: Guard, candidate: Guard, isSatisfiable: boolean): void => {
-  let candidates = guardPairCache.get(base);
-  if (candidates === undefined) {
-    candidates = new WeakMap();
-    guardPairCache.set(base, candidates);
-  }
-  candidates.set(candidate, isSatisfiable);
-};
-
 const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
-  const cached = guardPairCache.get(base)?.get(candidate);
-  if (cached !== undefined) return cached;
   const baseAnalysis = getGuardAnalysis(base);
-  let isSatisfiable = baseAnalysis.isSatisfiable;
-  if (isSatisfiable) {
-    const overlappingComponents = new Set<GuardComponent>();
-    for (const key of getProjectionKeys(candidate)) {
-      const component = baseAnalysis.componentByKey.get(key);
-      if (component !== undefined) overlappingComponents.add(component);
-    }
-    isSatisfiable =
-      overlappingComponents.size === 0
-        ? solveGuards([candidate]) !== null
-        : solveGuards([
-            ...[...overlappingComponents].flatMap((component) => component.guards),
-            candidate,
-          ]) !== null;
+  if (!baseAnalysis.isSatisfiable) return false;
+  const overlappingComponents = new Set<GuardComponent>();
+  for (const key of collectProjectionKeys(candidate, new Set())) {
+    const component = baseAnalysis.componentByKey.get(key);
+    if (component !== undefined) overlappingComponents.add(component);
   }
-  cacheGuardPair(base, candidate, isSatisfiable);
-  cacheGuardPair(candidate, base, isSatisfiable);
-  return isSatisfiable;
+  if (overlappingComponents.size === 0) return solveGuards([candidate]) !== null;
+  return (
+    solveGuards([
+      ...[...overlappingComponents].flatMap((component) => component.guards),
+      candidate,
+    ]) !== null
+  );
 };
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
@@ -766,20 +607,14 @@ export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
 export class GuardSolver {
   private readonly stack: Guard[] = [];
-  private readonly previousCombinedGuards: Guard[] = [];
-  private combinedGuard: Guard = constantGuard(true);
 
   push(guard: Guard): boolean {
-    if (!areGuardsSatisfiable([this.combinedGuard, guard])) return false;
+    if (!areGuardsSatisfiable([...this.stack, guard])) return false;
     this.stack.push(guard);
-    this.previousCombinedGuards.push(this.combinedGuard);
-    this.combinedGuard = andGuard([this.combinedGuard, guard]);
     return true;
   }
 
   pop(): void {
-    if (this.stack.pop() === undefined) return;
-    const previous = this.previousCombinedGuards.pop();
-    if (previous !== undefined) this.combinedGuard = previous;
+    this.stack.pop();
   }
 }
