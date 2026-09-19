@@ -117,6 +117,19 @@ const { getClient } = registerApolloClient(() => {
 export default () => getClient() ? <main /> : <aside />;
 `;
 
+const TAURI_SOURCE = `
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+
+export default () => {
+  const [status, setStatus] = useState("loading");
+  useEffect(() => {
+    invoke("load_settings").then(() => setStatus("ready")).catch(() => setStatus("failed"));
+  }, []);
+  return <main>{status}</main>;
+};
+`;
+
 const OPAQUE_RENDER_PROP_SOURCE = `
 import { Highlight } from "prism-react-renderer";
 
@@ -467,6 +480,12 @@ describe("library models", () => {
   it("models Apollo client registration in React server modules", async () => {
     expect(await renderSource(APOLLO_NEXTJS_SOURCE)).toBe(
       ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+  });
+
+  it("settles Tauri commands through their successful host result", async () => {
+    expect(await renderSource(TAURI_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>", '      "ready"'].join("\n"),
     );
   });
 
