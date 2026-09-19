@@ -91,7 +91,11 @@ it("runs one animation frame and escapes a recursively scheduled frame", () => {
     );
     return UNDEFINED_VALUE;
   });
-  evaluator = createBuiltinEvaluator({ callValue, markEscaped });
+  evaluator = createBuiltinEvaluator({
+    callValue,
+    markEscaped,
+    runTimerTask: (_handle, _context, _location, task) => task(),
+  });
   evaluateBuiltinCall(
     evaluator,
     { kind: "global", name: "requestAnimationFrame" },
