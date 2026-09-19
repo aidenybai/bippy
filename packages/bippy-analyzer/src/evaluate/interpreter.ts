@@ -3812,9 +3812,9 @@ export class Interpreter {
               this.getDynamicMember(alternative, propertyKey, location),
             );
       };
-      return getThrowCertainty(key) === "never"
-        ? readKey(key, receiverContext)
-        : this.continueValue(key, receiverContext, readKey);
+      return key.kind === "branch" || getThrowCertainty(key) !== "never"
+        ? this.continueValue(key, receiverContext, readKey)
+        : readKey(key, receiverContext);
     };
     return getThrowCertainty(object) !== "never" || (node.optional && object.kind === "branch")
       ? this.continueValue(object, context, readMember)

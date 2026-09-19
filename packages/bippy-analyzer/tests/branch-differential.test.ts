@@ -43,6 +43,10 @@ it.each([
     name: "deleting a branched key does not delete both keys",
     body: `const state = { left: 1, right: 2 }; const key = first ? 'left' : 'right'; delete state[key]; return ('left' in state) + ':' + ('right' in state);`,
   },
+  {
+    name: "reading through a branched index stays correlated with the index",
+    body: `const values = ['left', 'right']; const index = first ? 0 : 1; return values[index] + ':' + (first ? 'A' : 'B');`,
+  },
 ])("$name", async (testCase) => checkSymbolicCases([testCase]));
 
 it.fails.each([
