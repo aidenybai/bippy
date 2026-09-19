@@ -107,6 +107,16 @@ const Status = () => {
 export default Status;
 `;
 
+const APOLLO_NEXTJS_SOURCE = `
+import { registerApolloClient } from "@apollo/experimental-nextjs-app-support";
+
+const { getClient } = registerApolloClient(() => {
+  throw new Error("Apollo initialization should be modeled");
+});
+
+export default () => getClient() ? <main /> : <aside />;
+`;
+
 const OPAQUE_RENDER_PROP_SOURCE = `
 import { Highlight } from "prism-react-renderer";
 
@@ -405,6 +415,12 @@ describe("library models", () => {
         "          <svg>",
         "            <path>",
       ].join("\n"),
+    );
+  });
+
+  it("models Apollo client registration in React server modules", async () => {
+    expect(await renderSource(APOLLO_NEXTJS_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
     );
   });
 

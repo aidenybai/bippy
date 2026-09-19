@@ -1,6 +1,11 @@
 import { objectValue, TRUE_VALUE } from "../evaluate/values.js";
 import { lazyProperties } from "../evaluate/stubs.js";
 import type { LibraryValueProvider, ModeledExports, StaticValue } from "../types.js";
+import {
+  APOLLO_NEXTJS_MODELED_EXPORTS,
+  APOLLO_NEXTJS_PACKAGES,
+  apolloNextjsValue,
+} from "./apollo-nextjs.js";
 import { AXIOS_PACKAGES, axiosValue } from "./axios.js";
 import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
@@ -110,6 +115,11 @@ interface LibraryModel {
 }
 
 const LIBRARY_MODELS: readonly LibraryModel[] = [
+  {
+    packages: APOLLO_NEXTJS_PACKAGES,
+    getValue: apolloNextjsValue,
+    modeledExports: APOLLO_NEXTJS_MODELED_EXPORTS,
+  },
   { packages: AXIOS_PACKAGES, getValue: axiosValue },
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
