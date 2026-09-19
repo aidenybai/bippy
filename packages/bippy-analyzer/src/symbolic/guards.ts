@@ -186,7 +186,7 @@ const mixVariable = (hash: number, variable: SymbolicVariable): number => {
 const mixLiteral = (hash: number, value: GuardLiteral): number =>
   mixText(mixText(hash, value === null ? "null" : typeof value), String(value));
 
-const getGuardHash = (guard: Guard): number => {
+export const getGuardHash = (guard: Guard): number => {
   const cached = guardHashes.get(guard);
   if (cached !== undefined) return cached;
   let hash = hashText(guard.kind, 2_166_136_261);
@@ -210,14 +210,13 @@ const getGuardHash = (guard: Guard): number => {
       break;
     case "not":
       hash = mixHash(hash, getGuardHash(guard.operand));
-      guardHashes.set(guard, hash);
       break;
     case "and":
     case "or":
       for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
-      guardHashes.set(guard, hash);
       break;
   }
+  guardHashes.set(guard, hash);
   return hash;
 };
 

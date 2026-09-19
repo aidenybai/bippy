@@ -8,6 +8,8 @@ import {
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
+  getGuardHash,
+  isSameGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -300,14 +302,9 @@ interface ProjectionLiterals {
   choice: Literal[];
 }
 
-interface LiteralAnalysis {
-  groups: Map<number, ProjectionLiterals>;
-  model: VariableWitness[] | null;
-}
-
-interface GuardImplication {
-  positive?: boolean;
-  negative?: boolean;
+interface GuardClause {
+  guard: GuardOr;
+  operands: Guard[];
 }
 
 const groupByProjection = (literals: Literal[]): Map<number, ProjectionLiterals> => {
@@ -388,72 +385,59 @@ const modelOfGroups = (
   return witnesses;
 };
 
-const analyzeLiterals = (literals: Literal[]): LiteralAnalysis => {
-  const groups = groupByProjection(literals);
-  return { groups, model: modelOfGroups(groups) };
-};
-
 const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null =>
-  analyzeLiterals(literals).model;
+  modelOfGroups(groupByProjection(literals));
 
 const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
+const groupLiteralsByHash = (literals: Literal[]): Map<number, Literal[]> => {
+  const literalsByHash = new Map<number, Literal[]>();
+  for (const literal of literals) {
+    const hash = getGuardHash(literal.atom);
+    const matching = literalsByHash.get(hash);
+    if (matching === undefined) literalsByHash.set(hash, [literal]);
+    else matching.push(literal);
+  }
+  return literalsByHash;
+};
+
 const isGuardImpliedByLiterals = (
   guard: Guard,
-  analysis: LiteralAnalysis,
-  cache: WeakMap<Guard, GuardImplication>,
+  literalsByHash: ReadonlyMap<number, Literal[]>,
   isNegated = false,
 ): boolean => {
-  const cached = cache.get(guard);
-  const cachedVerdict = isNegated ? cached?.negative : cached?.positive;
-  if (cachedVerdict !== undefined) return cachedVerdict;
-  let verdict: boolean;
   switch (guard.kind) {
     case "constant":
-      verdict = guard.value !== isNegated;
-      break;
+      return guard.value !== isNegated;
     case "not":
-      verdict = isGuardImpliedByLiterals(guard.operand, analysis, cache, !isNegated);
-      break;
+      return isGuardImpliedByLiterals(guard.operand, literalsByHash, !isNegated);
     case "and":
-      verdict = isNegated
+      return isNegated
         ? guard.operands.some((operand) =>
-            isGuardImpliedByLiterals(operand, analysis, cache, true),
+            isGuardImpliedByLiterals(operand, literalsByHash, true),
           )
         : guard.operands.every((operand) =>
-            isGuardImpliedByLiterals(operand, analysis, cache),
+            isGuardImpliedByLiterals(operand, literalsByHash),
           );
-      break;
     case "or":
-      verdict = isNegated
+      return isNegated
         ? guard.operands.every((operand) =>
-            isGuardImpliedByLiterals(operand, analysis, cache, true),
+            isGuardImpliedByLiterals(operand, literalsByHash, true),
           )
         : guard.operands.some((operand) =>
-            isGuardImpliedByLiterals(operand, analysis, cache),
+            isGuardImpliedByLiterals(operand, literalsByHash),
           );
-      break;
-    default: {
-      const group = analysis.groups.get(projectionKey(guard.variable));
-      const relatedLiterals =
-        group === undefined
-          ? []
-          : guard.variable.measure === "value" || guard.variable.measure === "typeof"
-            ? [...group.value, ...group.typeof]
-            : group[guard.variable.measure];
-      verdict =
-        modelOfLiterals([
-          ...relatedLiterals,
-          { atom: guard, isNegated: !isNegated },
-        ]) === null;
-    }
+    default:
+      return (
+        literalsByHash
+          .get(getGuardHash(guard))
+          ?.some(
+            (literal) =>
+              literal.isNegated === isNegated && isSameGuard(literal.atom, guard),
+          ) ?? false
+      );
   }
-  const implication = cached ?? {};
-  if (isNegated) implication.negative = verdict;
-  else implication.positive = verdict;
-  cache.set(guard, implication);
-  return verdict;
 };
 
 /**
@@ -502,16 +486,14 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         collected.push({ atom: guard, isNegated: false });
     }
   }
-  const analysis = analyzeLiterals(collected);
-  if (analysis.model === null) return null;
-  const implicationCache = new WeakMap<Guard, GuardImplication>();
-  const unresolvedDisjunctions: GuardOr[] = [];
-  let selectedDisjunction: GuardOr | null = null;
-  let selectedOperands: Guard[] = [];
+  const model = modelOfLiterals(collected);
+  if (model === null) return null;
+  const literalsByHash = groupLiteralsByHash(collected);
+  const clauses: GuardClause[] = [];
   for (const disjunction of disjunctions) {
-    if (isGuardImpliedByLiterals(disjunction, analysis, implicationCache)) continue;
+    if (isGuardImpliedByLiterals(disjunction, literalsByHash)) continue;
     const viableOperands = disjunction.operands.filter(
-      (operand) => !isGuardImpliedByLiterals(operand, analysis, implicationCache, true),
+      (operand) => !isGuardImpliedByLiterals(operand, literalsByHash, true),
     );
     if (viableOperands.length === 0) return null;
     if (viableOperands.length === 1) {
@@ -520,15 +502,30 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
         collected,
       );
     }
-    unresolvedDisjunctions.push(disjunction);
-    if (selectedDisjunction === null || viableOperands.length < selectedOperands.length) {
-      selectedDisjunction = disjunction;
-      selectedOperands = viableOperands;
+    clauses.push({ guard: disjunction, operands: viableOperands });
+  }
+  if (clauses.length === 0) return model;
+  const operandFrequency = new Map<number, number>();
+  for (const clause of clauses) {
+    for (const operand of clause.operands) {
+      const hash = getGuardHash(operand);
+      operandFrequency.set(hash, (operandFrequency.get(hash) ?? 0) + 1);
     }
   }
-  if (selectedDisjunction === null) return analysis.model;
-  const remainingDisjunctions = unresolvedDisjunctions.filter(
-    (candidate) => candidate !== selectedDisjunction,
+  const operandScore = (operand: Guard): number =>
+    operandFrequency.get(getGuardHash(operand)) ?? 0;
+  const selectedClause = clauses.reduce((selected, candidate) => {
+    if (candidate.operands.length < selected.operands.length) return candidate;
+    if (candidate.operands.length > selected.operands.length) return selected;
+    const candidateScore = Math.max(...candidate.operands.map(operandScore));
+    const selectedScore = Math.max(...selected.operands.map(operandScore));
+    return candidateScore > selectedScore ? candidate : selected;
+  });
+  const remainingDisjunctions = clauses
+    .filter((candidate) => candidate !== selectedClause)
+    .map((candidate) => candidate.guard);
+  const selectedOperands = [...selectedClause.operands].sort(
+    (left, right) => operandScore(right) - operandScore(left),
   );
   for (const operand of selectedOperands) {
     const split = findModel([...remainingDisjunctions, operand], collected);
