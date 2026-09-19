@@ -574,6 +574,7 @@ const computeSameGuard = (left: Guard, right: Guard, cache: GuardRelationCache):
 
 const isSameGuardWithin = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
   if (left === right) return true;
+  if (left.kind === "constant" || isAtomicGuard(left)) return computeSameGuard(left, right, cache);
   const cached = cache.same.get(left)?.get(right);
   if (cached !== undefined) return cached;
   const isSame = computeSameGuard(left, right, cache);
