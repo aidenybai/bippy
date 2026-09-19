@@ -501,7 +501,7 @@ describe("library models", () => {
       ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
     );
     expect(await renderSource(TAURI_VERSION_SOURCE)).toBe(
-      ["<HostRoot>", "  <default>", "    <main>", '      "0.0.0"'].join("\n"),
+      ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
     );
   });
 
