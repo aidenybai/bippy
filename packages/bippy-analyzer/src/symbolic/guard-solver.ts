@@ -11,6 +11,7 @@ import {
   formatVariable,
   isGuardImplied,
   negateGuard,
+  simplifyGuard,
 } from "./guards.js";
 
 // A finite-domain check over guard conjunctions: each symbolic variable ranges
@@ -744,19 +745,27 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
 };
 
 export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): boolean => {
-  if (base.kind === "constant" && !base.value) return false;
+  const simplifiedBase = simplifyGuard(base);
+  const simplifiedCandidate = simplifyGuard(candidate);
+  if (simplifiedBase.kind === "constant" && !simplifiedBase.value) return false;
   const narrowedCandidate =
-    candidate.kind === "and"
-      ? andGuard(candidate.operands.filter((operand) => !isGuardImplied(base, operand)))
-      : candidate.kind === "not" && candidate.operand.kind === "and"
+    simplifiedCandidate.kind === "and"
+      ? andGuard(
+          simplifiedCandidate.operands.filter(
+            (operand) => !isGuardImplied(simplifiedBase, operand),
+          ),
+        )
+      : simplifiedCandidate.kind === "not" && simplifiedCandidate.operand.kind === "and"
         ? negateGuard(
             andGuard(
-              candidate.operand.operands.filter((operand) => !isGuardImplied(base, operand)),
+              simplifiedCandidate.operand.operands.filter(
+                (operand) => !isGuardImplied(simplifiedBase, operand),
+              ),
             ),
           )
-        : candidate;
+        : simplifiedCandidate;
   if (narrowedCandidate.kind === "constant") return narrowedCandidate.value;
-  const baseAnalysis = getGuardAnalysis(base);
+  const baseAnalysis = getGuardAnalysis(simplifiedBase);
   const overlappingComponents = new Set<GuardComponent>();
   for (const key of collectProjectionKeys(narrowedCandidate, new Set())) {
     const component = baseAnalysis.componentByKey.get(key);

@@ -373,6 +373,23 @@ export const andGuard = (operands: Guard[]): Guard => combineGuards("and", opera
 
 export const orGuard = (operands: Guard[]): Guard => combineGuards("or", operands, true);
 
+const simplifiedGuards = new WeakMap<Guard, Guard>();
+
+export const simplifyGuard = (guard: Guard): Guard => {
+  const cached = simplifiedGuards.get(guard);
+  if (cached !== undefined) return cached;
+  const simplified =
+    guard.kind === "and"
+      ? andGuard(guard.operands.map(simplifyGuard))
+      : guard.kind === "or"
+        ? orGuard(guard.operands.map(simplifyGuard))
+        : guard.kind === "not"
+          ? negateGuard(simplifyGuard(guard.operand))
+          : guard;
+  simplifiedGuards.set(guard, simplified);
+  return simplified;
+};
+
 export const combineGuardContexts = (
   contexts: GuardContext[],
   combine: (guards: Guard[]) => Guard,

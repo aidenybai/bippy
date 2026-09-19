@@ -31,6 +31,7 @@ import {
   isGuardImplied,
   negateGuard,
   orGuard,
+  simplifyGuard,
   truthyGuard,
   type Guard,
   type InputVariable,
@@ -175,6 +176,14 @@ describe("symbolic tree: guard algebra", () => {
     expect(andGuard([orGuard([isTruthy, isBeta, isOpen]), orGuard([isTruthy, isBeta])])).toEqual(
       orGuard([isTruthy, isBeta]),
     );
+  });
+
+  it("normalizes guards produced by structural rewrites", () => {
+    const rewritten: Guard = {
+      kind: "and",
+      operands: [{ kind: "or", operands: [isTruthy, isBeta] }, isTruthy],
+    };
+    expect(simplifyGuard(rewritten)).toEqual(isTruthy);
   });
 
   it("removes known conjuncts from a negated conjunction", () => {
