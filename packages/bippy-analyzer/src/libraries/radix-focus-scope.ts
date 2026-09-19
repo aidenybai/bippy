@@ -5,11 +5,7 @@ import {
   objectValue,
   primitiveValue,
 } from "../evaluate/values.js";
-import type {
-  LibraryValueProvider,
-  ModeledExports,
-  StubComponent,
-} from "../types.js";
+import type { LibraryValueProvider, ModeledExports, StubComponent } from "../types.js";
 import { ForwardRefTag } from "../work-tags.js";
 
 export const RADIX_FOCUS_SCOPE_PACKAGES = ["@radix-ui/react-focus-scope"];
