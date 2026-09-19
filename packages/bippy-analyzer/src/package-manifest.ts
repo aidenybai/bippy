@@ -11,6 +11,7 @@ interface PackageManifest {
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
+  workspaces?: string[] | { packages?: string[] };
 }
 
 const dependenciesSchema = z.record(z.string(), z.string()).optional();
@@ -24,6 +25,9 @@ const packageManifestSchema: z.ZodType<PackageManifest> = z.object({
   devDependencies: dependenciesSchema,
   peerDependencies: dependenciesSchema,
   optionalDependencies: dependenciesSchema,
+  workspaces: z
+    .union([z.array(z.string()), z.object({ packages: z.array(z.string()).optional() })])
+    .optional(),
 });
 
 export const readPackageManifest = (manifestPath: string): PackageManifest =>
