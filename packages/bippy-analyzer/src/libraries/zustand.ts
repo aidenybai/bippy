@@ -58,6 +58,8 @@ interface ZustandState extends JournaledState<StaticValue> {
   current: StaticValue;
 }
 
+const USE_REF: StaticValue = { kind: "react-api", api: "useRef" };
+
 const createState = (): ZustandState => {
   const state: ZustandState = {
     allocation: allocate(),
@@ -158,10 +160,14 @@ const useStore = (
   selector: StaticValue | undefined,
   tools: StubRenderTools,
 ): StaticValue => {
+  const getSnapshot = nativeFunction("getSnapshot", (_args, snapshotTools) => {
+    const snapshot = getState(store);
+    return selector === undefined ? snapshot : snapshotTools.call(selector, [snapshot]);
+  });
   return subscribeToExternalStore(
     getObjectProperty(store.api, "subscribe"),
-    getObjectProperty(store.api, "getState"),
-    selector,
+    getSnapshot,
+    undefined,
     tools,
   );
 };
@@ -228,7 +234,18 @@ const shallow = nativeFunction("shallow", ([left, right]) =>
     : decidedBooleanValue(compareShallowly(left, right), "Zustand shallow comparison"),
 );
 
-const useShallow = nativeFunction("useShallow", ([selector]) => selector ?? UNDEFINED_VALUE);
+const useShallow = nativeFunction("useShallow", ([selector], tools) => {
+  if (selector === undefined) return UNDEFINED_VALUE;
+  const reference = tools.call(USE_REF, [UNDEFINED_VALUE]);
+  return nativeFunction("shallowSelector", ([state], selectorTools) => {
+    const selection = selectorTools.call(selector, [state ?? UNDEFINED_VALUE]);
+    if (reference.kind !== "object") return selection;
+    const previous = getObjectProperty(reference, "current");
+    if (compareShallowly(previous, selection) === true) return previous;
+    selectorTools.setProperty(reference, "current", selection);
+    return selection;
+  });
+});
 
 const immer = nativeFunction("immer", ([initializer]) =>
   nativeFunction("immerInitializer", ([set, get, api], tools) => {
@@ -260,10 +277,17 @@ const immer = nativeFunction("immer", ([initializer]) =>
 
 const standaloneUseStore = nativeFunction("useStore", ([api, selector], tools) => {
   if (api?.kind !== "object") return UNDEFINED_VALUE;
+  const getState = getObjectProperty(api, "getState");
+  const getSnapshot =
+    selector === undefined
+      ? getState
+      : nativeFunction("getSnapshot", (_args, snapshotTools) =>
+          snapshotTools.call(selector, [snapshotTools.call(getState, [])]),
+        );
   return subscribeToExternalStore(
     getObjectProperty(api, "subscribe"),
-    getObjectProperty(api, "getState"),
-    selector,
+    getSnapshot,
+    undefined,
     tools,
   );
 });

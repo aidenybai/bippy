@@ -214,6 +214,25 @@ export default () =>
   useStore.getState().dimensions.width === 4 ? <main /> : <aside />;
 `;
 
+const ZUSTAND_SHALLOW_SOURCE = `
+import { useEffect, useRef } from "react";
+import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
+
+const useStore = create(() => ({
+  label: "ready",
+  unrelated: 0,
+}));
+
+export default () => {
+  const renders = useRef(0);
+  renders.current += 1;
+  const selection = useStore(useShallow((state) => ({ label: state.label })));
+  useEffect(() => useStore.setState({ unrelated: 1 }), []);
+  return <main>{selection.label}<span />{renders.current}</main>;
+};
+`;
+
 const ZUSTAND_MIDDLEWARE_SOURCE = `
 import { create } from "zustand";
 import { redux } from "zustand/middleware";
@@ -534,6 +553,19 @@ describe("library models", () => {
   it("preserves untouched Zustand fields across symbolic partial updates", async () => {
     expect(await renderSource(ZUSTAND_BRANCH_UPDATE_SOURCE)).toBe(
       ["<HostRoot>", "  <default>", "    <main>"].join("\n"),
+    );
+  });
+
+  it("keeps shallow selections stable across unrelated Zustand updates", async () => {
+    expect(await renderSource(ZUSTAND_SHALLOW_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <main>",
+        '      "ready"',
+        "      <span>",
+        '      "1"',
+      ].join("\n"),
     );
   });
 
