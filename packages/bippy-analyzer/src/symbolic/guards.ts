@@ -42,54 +42,46 @@ export type GuardLiteral = string | number | boolean | null;
 
 export type CompareOperator = "<" | "<=" | ">" | ">=";
 
-const guardHashKey = Symbol("guard hash");
-const guardKey = Symbol("guard key");
-
-interface GuardMetadata {
-  [guardHashKey]?: number;
-  [guardKey]?: string;
-}
-
-export interface GuardConstant extends GuardMetadata {
+export interface GuardConstant {
   kind: "constant";
   value: boolean;
 }
 
-export interface GuardTruthy extends GuardMetadata {
+export interface GuardTruthy {
   kind: "truthy";
   variable: SymbolicVariable;
 }
 
-export interface GuardEquals extends GuardMetadata {
+export interface GuardEquals {
   kind: "eq";
   variable: SymbolicVariable;
   value: GuardLiteral;
 }
 
-export interface GuardCompare extends GuardMetadata {
+export interface GuardCompare {
   kind: "compare";
   variable: SymbolicVariable;
   operator: CompareOperator;
   value: number;
 }
 
-export interface GuardInSet extends GuardMetadata {
+export interface GuardInSet {
   kind: "in-set";
   variable: SymbolicVariable;
   values: GuardLiteral[];
 }
 
-export interface GuardNot extends GuardMetadata {
+export interface GuardNot {
   kind: "not";
   operand: Guard;
 }
 
-export interface GuardAnd extends GuardMetadata {
+export interface GuardAnd {
   kind: "and";
   operands: Guard[];
 }
 
-export interface GuardOr extends GuardMetadata {
+export interface GuardOr {
   kind: "or";
   operands: Guard[];
 }
@@ -128,6 +120,8 @@ export interface NormalizedPredicate {
   /** The branch's alternatives are stored in the opposite order from the materializer's. */
   isSwapped: boolean;
 }
+
+const guardHashes = new WeakMap<Guard, number>();
 
 const hashText = (text: string, seed: number): number => {
   let hash = seed;
@@ -192,7 +186,7 @@ const mixLiteral = (hash: number, value: GuardLiteral): number =>
   mixText(mixText(hash, value === null ? "null" : typeof value), String(value));
 
 const getGuardHash = (guard: Guard): number => {
-  const cached = guard[guardHashKey];
+  const cached = guardHashes.get(guard);
   if (cached !== undefined) return cached;
   let hash = hashText(guard.kind, 2_166_136_261);
   switch (guard.kind) {
@@ -215,13 +209,14 @@ const getGuardHash = (guard: Guard): number => {
       break;
     case "not":
       hash = mixHash(hash, getGuardHash(guard.operand));
+      guardHashes.set(guard, hash);
       break;
     case "and":
     case "or":
       for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
+      guardHashes.set(guard, hash);
       break;
   }
-  Object.defineProperty(guard, guardHashKey, { value: hash });
   return hash;
 };
 
@@ -490,12 +485,14 @@ interface GuardRelationCache {
   disjoint: WeakMap<Guard, WeakMap<Guard, boolean>>;
   implied: WeakMap<Guard, WeakMap<Guard, boolean>>;
   operands: WeakMap<Guard, Map<number, Guard[]>>;
+  same: WeakMap<Guard, WeakMap<Guard, boolean>>;
 }
 
 const createGuardRelationCache = (): GuardRelationCache => ({
   disjoint: new WeakMap(),
   implied: new WeakMap(),
   operands: new WeakMap(),
+  same: new WeakMap(),
 });
 
 const setGuardRelation = (
@@ -533,54 +530,60 @@ const areGuardsDisjointWithin = (left: Guard, right: Guard, cache: GuardRelation
   return isDisjoint;
 };
 
-let nanGuardKeySequence = 0;
+const isSameLiteralList = (left: GuardLiteral[], right: GuardLiteral[]): boolean =>
+  left.length === right.length && left.every((value, index) => value === right[index]);
 
-const getSequenceKey = (parts: string[]): string =>
-  parts.map((part) => `${part.length}:${part}`).join("");
-
-const getLiteralKey = (value: GuardLiteral): string => {
-  if (value === null) return "null";
-  if (typeof value === "number" && Number.isNaN(value)) return `nan:${++nanGuardKeySequence}`;
-  return `${typeof value}:${String(value)}`;
+const computeSameGuard = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
+  switch (left.kind) {
+    case "constant":
+      return right.kind === "constant" && left.value === right.value;
+    case "truthy":
+      return right.kind === "truthy" && isSameVariable(left.variable, right.variable);
+    case "eq":
+      return (
+        right.kind === "eq" &&
+        isSameVariable(left.variable, right.variable) &&
+        left.value === right.value
+      );
+    case "compare":
+      return (
+        right.kind === "compare" &&
+        isSameVariable(left.variable, right.variable) &&
+        left.operator === right.operator &&
+        left.value === right.value
+      );
+    case "in-set":
+      return (
+        right.kind === "in-set" &&
+        isSameVariable(left.variable, right.variable) &&
+        isSameLiteralList(left.values, right.values)
+      );
+    case "not":
+      return right.kind === "not" && isSameGuardWithin(left.operand, right.operand, cache);
+    case "and":
+    case "or":
+      return (
+        right.kind === left.kind &&
+        left.operands.length === right.operands.length &&
+        left.operands.every((operand, index) =>
+          isSameGuardWithin(operand, right.operands[index], cache),
+        )
+      );
+  }
 };
 
-const getGuardKey = (guard: Guard): string => {
-  const cached = guard[guardKey];
+const isSameGuardWithin = (left: Guard, right: Guard, cache: GuardRelationCache): boolean => {
+  if (left === right) return true;
+  if (left.kind === "constant" || isAtomicGuard(left)) return computeSameGuard(left, right, cache);
+  const cached = cache.same.get(left)?.get(right);
   if (cached !== undefined) return cached;
-  const key =
-    guard.kind === "constant"
-      ? getSequenceKey([guard.kind, String(guard.value)])
-      : guard.kind === "truthy"
-        ? getSequenceKey([guard.kind, getVariableKey(guard.variable)])
-        : guard.kind === "eq"
-          ? getSequenceKey([guard.kind, getVariableKey(guard.variable), getLiteralKey(guard.value)])
-          : guard.kind === "compare"
-            ? getSequenceKey([
-                guard.kind,
-                getVariableKey(guard.variable),
-                guard.operator,
-                getLiteralKey(guard.value),
-              ])
-            : guard.kind === "in-set"
-              ? getSequenceKey([
-                  guard.kind,
-                  getVariableKey(guard.variable),
-                  ...guard.values.map(getLiteralKey),
-                ])
-              : guard.kind === "not"
-                ? getSequenceKey([guard.kind, getGuardKey(guard.operand)])
-                : getSequenceKey([guard.kind, ...guard.operands.map(getGuardKey)]);
-  Object.defineProperty(guard, guardKey, { value: key });
-  return key;
+  const isSame = computeSameGuard(left, right, cache);
+  setGuardRelation(cache.same, left, right, isSame);
+  return isSame;
 };
 
-const isSameGuardWithin = (left: Guard, right: Guard): boolean =>
-  left === right ||
-  (left.kind === right.kind &&
-    getGuardHash(left) === getGuardHash(right) &&
-    getGuardKey(left) === getGuardKey(right));
-
-export const isSameGuard = (left: Guard, right: Guard): boolean => isSameGuardWithin(left, right);
+export const isSameGuard = (left: Guard, right: Guard): boolean =>
+  isSameGuardWithin(left, right, createGuardRelationCache());
 
 const hasEquivalentOperand = (
   guard: GuardAnd | GuardOr,
@@ -595,7 +598,8 @@ const hasEquivalentOperand = (
   return (
     operands
       .get(getGuardHash(candidate))
-      ?.some((operand) => operand === candidate || isSameGuardWithin(operand, candidate)) ?? false
+      ?.some((operand) => operand === candidate || isSameGuardWithin(operand, candidate, cache)) ??
+    false
   );
 };
 
@@ -608,7 +612,7 @@ const computeGuardImplication = (
     left === right ||
     (left.kind === right.kind &&
       getGuardHash(left) === getGuardHash(right) &&
-      getGuardKey(left) === getGuardKey(right));
+      isSameGuardWithin(left, right, cache));
   if (isStructurallySame(premise, conclusion)) return true;
   if (premise.kind === "and" && hasEquivalentOperand(premise, conclusion, cache)) return true;
   if (isAtomicGuard(premise) && isAtomicGuard(conclusion))
