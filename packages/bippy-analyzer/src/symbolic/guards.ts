@@ -121,12 +121,7 @@ export interface NormalizedPredicate {
   isSwapped: boolean;
 }
 
-interface GuardHash {
-  first: number;
-  second: number;
-}
-
-const guardHashes = new WeakMap<Guard, GuardHash>();
+const guardHashes = new WeakMap<Guard, number>();
 
 const hashText = (text: string, seed: number): number => {
   let hash = seed;
@@ -179,64 +174,56 @@ export const negateGuard = (guard: Guard): Guard => {
   return { kind: "not", operand: guard };
 };
 
-const getVariableKey = (variable: SymbolicVariable): string =>
-  JSON.stringify([variable.input, variable.path, variable.measure]);
+const mixText = (hash: number, text: string): number =>
+  mixHash(hash, hashText(text, 2_166_136_261));
 
-const getGuardHash = (guard: Guard): GuardHash => {
+const mixVariable = (hash: number, variable: SymbolicVariable): number => {
+  let mixed = mixText(hash, variable.input);
+  for (const segment of variable.path) mixed = mixText(mixed, segment);
+  return mixText(mixed, variable.measure);
+};
+
+const mixLiteral = (hash: number, value: GuardLiteral): number =>
+  mixText(mixText(hash, value === null ? "null" : typeof value), String(value));
+
+const getGuardHash = (guard: Guard): number => {
   const cached = guardHashes.get(guard);
   if (cached !== undefined) return cached;
-  let first = hashText(guard.kind, 2_166_136_261);
-  let second = hashText(guard.kind, 2_166_136_261 ^ 0x9e3779b9);
-  const mixText = (text: string): void => {
-    first = mixHash(first, hashText(text, 2_166_136_261));
-    second = mixHash(second, hashText(text, 2_166_136_261 ^ 0x9e3779b9));
-  };
-  const mixGuard = (operand: Guard): void => {
-    const operandHash = getGuardHash(operand);
-    first = mixHash(first, operandHash.first);
-    second = mixHash(second, operandHash.second);
-  };
+  let hash = hashText(guard.kind, 2_166_136_261);
   switch (guard.kind) {
     case "constant":
-      mixText(String(guard.value));
+      hash = mixText(hash, String(guard.value));
       break;
     case "truthy":
-      mixText(getVariableKey(guard.variable));
+      hash = mixVariable(hash, guard.variable);
       break;
     case "eq":
-      mixText(getVariableKey(guard.variable));
-      mixText(JSON.stringify(guard.value));
+      hash = mixLiteral(mixVariable(hash, guard.variable), guard.value);
       break;
     case "compare":
-      mixText(getVariableKey(guard.variable));
-      mixText(guard.operator);
-      mixText(String(guard.value));
+      hash = mixText(mixVariable(hash, guard.variable), guard.operator);
+      hash = mixText(hash, String(guard.value));
       break;
     case "in-set":
-      mixText(getVariableKey(guard.variable));
-      mixText(JSON.stringify(guard.values));
+      hash = mixVariable(hash, guard.variable);
+      for (const value of guard.values) hash = mixLiteral(hash, value);
       break;
     case "not":
-      mixGuard(guard.operand);
+      hash = mixHash(hash, getGuardHash(guard.operand));
+      guardHashes.set(guard, hash);
       break;
     case "and":
     case "or":
-      for (const operand of guard.operands) mixGuard(operand);
+      for (const operand of guard.operands) hash = mixHash(hash, getGuardHash(operand));
+      guardHashes.set(guard, hash);
       break;
   }
-  const hash = { first, second };
-  guardHashes.set(guard, hash);
   return hash;
 };
 
-const getGuardHashKey = (guard: Guard): string => {
-  const hash = getGuardHash(guard);
-  return `${hash.first}:${hash.second}`;
-};
-
-const hasEquivalentGuard = (guards: Map<string, Guard[]>, guard: Guard): boolean =>
+const hasEquivalentGuard = (guards: Map<number, Guard[]>, guard: Guard): boolean =>
   guards
-    .get(getGuardHashKey(guard))
+    .get(getGuardHash(guard))
     ?.some((candidate) => candidate === guard || isSameGuard(candidate, guard)) ?? false;
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
@@ -246,14 +233,14 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
   if (flattened.some((operand) => operand.kind === "constant" && operand.value === absorbing))
     return constantGuard(absorbing);
   const remaining: Guard[] = [];
-  const remainingByHash = new Map<string, Guard[]>();
+  const remainingByHash = new Map<number, Guard[]>();
   for (const operand of flattened) {
     if (operand.kind === "constant") continue;
     if (hasEquivalentGuard(remainingByHash, operand)) continue;
     const complement = negateGuard(operand);
     if (hasEquivalentGuard(remainingByHash, complement)) return constantGuard(absorbing);
     remaining.push(operand);
-    const key = getGuardHashKey(operand);
+    const key = getGuardHash(operand);
     const matching = remainingByHash.get(key);
     if (matching) matching.push(operand);
     else remainingByHash.set(key, [operand]);
