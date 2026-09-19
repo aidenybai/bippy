@@ -10,6 +10,22 @@ import {
 } from "../src/evaluate/values.js";
 
 describe("guarded timer cancellation", () => {
+  it("does not interrupt a running microtask with a nested checkpoint", () => {
+    const queue = new TimerQueue();
+    const order: string[] = [];
+    queue.queueMicrotask(() => {
+      order.push("first start");
+      queue.queueMicrotask(() => order.push("third"));
+      queue.drainMicrotasks();
+      order.push("first end");
+    });
+    queue.queueMicrotask(() => order.push("second"));
+
+    queue.drainMicrotasks();
+
+    expect(order).toEqual(["first start", "first end", "second", "third"]);
+  });
+
   it("preserves distinct handles with the same numeric range", () => {
     const queue = new TimerQueue();
     const firstHandle = queue.createHandle("setTimeout");

@@ -68,6 +68,7 @@ export class TimerQueue {
   private clockTask: ClockTask = { scheduledBy: null, delayMs: 0 };
   private deferredDepth = 0;
   private animationFrameDepth = 0;
+  private isDrainingMicrotasks = false;
   isClockSettled = false;
   isFlushing = false;
   bindTask = (task: () => void): (() => void) => task;
@@ -182,7 +183,13 @@ export class TimerQueue {
 
   /** Runs microtasks until none remain, including those they queue. */
   drainMicrotasks(): void {
-    for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
+    if (this.isDrainingMicrotasks) return;
+    this.isDrainingMicrotasks = true;
+    try {
+      for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
+    } finally {
+      this.isDrainingMicrotasks = false;
+    }
   }
 
   hasTasks(): boolean {
