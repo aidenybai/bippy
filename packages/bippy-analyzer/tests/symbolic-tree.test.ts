@@ -233,6 +233,16 @@ describe("symbolic tree: guard algebra", () => {
     );
   });
 
+  it("memoizes repeated subproblems in structural guard implications", () => {
+    let premise: Guard = isTruthy;
+    let conclusion: Guard = isBeta;
+    for (let depth = 0; depth < 20; depth++) {
+      premise = { kind: "or", operands: [premise, premise] };
+      conclusion = { kind: "and", operands: [conclusion, conclusion] };
+    }
+    expect(isGuardImplied(premise, conclusion)).toBe(false);
+  });
+
   it("combines large guard sets without quadratic duplicate scans", () => {
     const guards = Array.from({ length: 20_000 }, (_, index) =>
       equalsGuard(variable(`#${index}`), index),

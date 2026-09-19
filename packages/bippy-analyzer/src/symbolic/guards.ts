@@ -481,7 +481,9 @@ const areAtomicGuardsDisjoint = (
   return false;
 };
 
-const areGuardsDisjoint = (left: Guard, right: Guard): boolean => {
+const disjointGuards = new WeakMap<Guard, WeakMap<Guard, boolean>>();
+
+const computeGuardsDisjoint = (left: Guard, right: Guard): boolean => {
   if (isAtomicGuard(left) && isAtomicGuard(right)) return areAtomicGuardsDisjoint(left, right);
   if (left.kind === "and")
     return left.operands.some((operand) => areGuardsDisjoint(operand, right));
@@ -494,10 +496,25 @@ const areGuardsDisjoint = (left: Guard, right: Guard): boolean => {
   return false;
 };
 
+const areGuardsDisjoint = (left: Guard, right: Guard): boolean => {
+  const cached = disjointGuards.get(left)?.get(right);
+  if (cached !== undefined) return cached;
+  const isDisjoint = computeGuardsDisjoint(left, right);
+  let rightGuards = disjointGuards.get(left);
+  if (rightGuards === undefined) {
+    rightGuards = new WeakMap();
+    disjointGuards.set(left, rightGuards);
+  }
+  rightGuards.set(right, isDisjoint);
+  return isDisjoint;
+};
+
 const isSameLiteralList = (left: GuardLiteral[], right: GuardLiteral[]): boolean =>
   left.length === right.length && left.every((value, index) => value === right[index]);
 
-export const isSameGuard = (left: Guard, right: Guard): boolean => {
+const sameGuards = new WeakMap<Guard, WeakMap<Guard, boolean>>();
+
+const computeSameGuard = (left: Guard, right: Guard): boolean => {
   switch (left.kind) {
     case "constant":
       return right.kind === "constant" && left.value === right.value;
@@ -534,8 +551,25 @@ export const isSameGuard = (left: Guard, right: Guard): boolean => {
   }
 };
 
-export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
-  if (premise === conclusion || isSameGuard(premise, conclusion)) return true;
+export const isSameGuard = (left: Guard, right: Guard): boolean => {
+  if (left === right) return true;
+  if (getGuardHash(left) !== getGuardHash(right)) return false;
+  const cached = sameGuards.get(left)?.get(right);
+  if (cached !== undefined) return cached;
+  const isSame = computeSameGuard(left, right);
+  let rightGuards = sameGuards.get(left);
+  if (rightGuards === undefined) {
+    rightGuards = new WeakMap();
+    sameGuards.set(left, rightGuards);
+  }
+  rightGuards.set(right, isSame);
+  return isSame;
+};
+
+const impliedGuards = new WeakMap<Guard, WeakMap<Guard, boolean>>();
+
+const computeGuardImplication = (premise: Guard, conclusion: Guard): boolean => {
+  if (isSameGuard(premise, conclusion)) return true;
   if (
     premise.kind === "and" &&
     premise.operands.some((operand) => operand === conclusion || isSameGuard(operand, conclusion))
@@ -557,6 +591,20 @@ export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
   if (premise.kind === "not" && conclusion.kind === "not")
     return isGuardImplied(conclusion.operand, premise.operand);
   return false;
+};
+
+export const isGuardImplied = (premise: Guard, conclusion: Guard): boolean => {
+  if (premise === conclusion) return true;
+  const cached = impliedGuards.get(premise)?.get(conclusion);
+  if (cached !== undefined) return cached;
+  const isImplied = computeGuardImplication(premise, conclusion);
+  let conclusions = impliedGuards.get(premise);
+  if (conclusions === undefined) {
+    conclusions = new WeakMap();
+    impliedGuards.set(premise, conclusions);
+  }
+  conclusions.set(conclusion, isImplied);
+  return isImplied;
 };
 
 export const collectGuardVariables = (
