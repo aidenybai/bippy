@@ -1,5 +1,4 @@
 import {
-  countGuardAtoms,
   type Guard,
   type GuardCompare,
   type GuardEquals,
@@ -607,12 +606,6 @@ export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
   if (guards.length === 2) return areGuardPairSatisfiable(guards[0], guards[1]);
   return solveGuards(guards) !== null;
 };
-
-const MAX_SPECULATIVE_GUARD_ATOMS = 96;
-
-export const mayBeGuardsSatisfiable = (guards: Guard[]): boolean =>
-  guards.reduce((total, guard) => total + countGuardAtoms(guard), 0) >
-    MAX_SPECULATIVE_GUARD_ATOMS || areGuardsSatisfiable(guards);
 
 /** Guards asserted along one search path; `push` refuses a guard that would make the path contradictory. */
 export class GuardSolver {

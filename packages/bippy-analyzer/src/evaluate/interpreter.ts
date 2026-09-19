@@ -94,10 +94,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import {
-  areGuardsSatisfiable,
-  mayBeGuardsSatisfiable,
-} from "../symbolic/guard-solver.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
@@ -2457,7 +2454,7 @@ export class Interpreter {
     const resolved = getAlternativeGuards(value);
     if (!resolved) return value;
     const indices = resolved.guards.flatMap((guard, index) =>
-      mayBeGuardsSatisfiable([activeGuard, guard]) ? [index] : [],
+      areGuardsSatisfiable([activeGuard, guard]) ? [index] : [],
     );
     if (indices.length === value.alternatives.length || indices.length === 0) return value;
     return branchValue(
