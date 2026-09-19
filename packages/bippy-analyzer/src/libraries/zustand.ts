@@ -8,10 +8,12 @@ import {
   compareIdentity,
   decidedBooleanValue,
   getObjectProperty,
+  getSpreadEntries,
   getTruthiness,
   isCallable,
   isUndefinedValue,
   listValue,
+  mapValue,
   objectFromRecord,
   objectValue,
 } from "../evaluate/values.js";
@@ -81,6 +83,23 @@ const isObjectState = (state: StaticValue): boolean =>
   state.kind === "object" ||
   (state.kind === "branch" && state.alternatives.every(isObjectState));
 
+const mergeState = (previousState: StaticValue, nextState: StaticValue): StaticValue => {
+  if (isObjectState(nextState)) {
+    const entries = getSpreadEntries(nextState);
+    if (entries) {
+      return objectValue([{ kind: "spread", value: previousState }, ...entries]);
+    }
+  }
+  return mapValue(nextState, (nextAlternative) =>
+    nextAlternative.kind === "object"
+      ? objectValue([
+          { kind: "spread", value: previousState },
+          { kind: "spread", value: nextAlternative },
+        ])
+      : nextAlternative,
+  );
+};
+
 const notify = (
   store: ZustandStore,
   nextState: StaticValue,
@@ -98,13 +117,7 @@ const setState = (store: ZustandStore): StaticValue =>
     const previousState = getState(store);
     const nextState = isCallable(partial) ? tools.call(partial, [previousState]) : partial;
     const shouldReplace = getTruthiness(replace ?? FALSE_VALUE) === true;
-    const mergedState =
-      !shouldReplace && isObjectState(previousState) && isObjectState(nextState)
-        ? objectValue([
-            { kind: "spread", value: previousState },
-            { kind: "spread", value: nextState },
-          ])
-        : nextState;
+    const mergedState = shouldReplace ? nextState : mergeState(previousState, nextState);
     if (compareIdentity(previousState, mergedState) === true) return UNDEFINED_VALUE;
     tools.recordStateMutation(store.state);
     store.state.current = mergedState;
