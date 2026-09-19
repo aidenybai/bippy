@@ -74,7 +74,7 @@ it("reuses an unknown member index guard across list reads", async () => {
     [
       {
         name: "unknown member index",
-        body: `const values = ['left', 'right']; return { first: values[index], second: values[index] };`,
+        body: `const values = ['left', 'right']; const dynamicIndex = index; return { first: values[dynamicIndex], second: values[dynamicIndex] };`,
       },
     ],
     "declare const index: number;\n",
