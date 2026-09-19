@@ -4134,6 +4134,9 @@
       "framework": "spa",
       "workingDirectory": ".",
       "install": "npm ci --no-audit --no-fund",
+      "setup": [
+        "node --experimental-strip-types \"$BIPPY_CORPUS_SCRIPTS/rapidraw-browser-setup.ts\""
+      ],
       "dev": "npm run dev",
       "url": "http://localhost:1420/",
       "readyTimeoutMs": 600000,
