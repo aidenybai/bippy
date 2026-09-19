@@ -289,6 +289,24 @@ const isAbsorbedDisjunct = (guard: Guard, disjuncts: Map<number, Guard[]>): bool
   return false;
 };
 
+const isAbsorbedConjunct = (guard: Guard, conjuncts: Map<number, Guard[]>): boolean => {
+  if (guard.kind !== "or") return false;
+  if (guard.operands.some((operand) => hasEquivalentGuard(conjuncts, operand))) return true;
+  const operands = indexGuards(guard.operands);
+  for (const candidates of conjuncts.values()) {
+    for (const candidate of candidates) {
+      if (
+        candidate !== guard &&
+        candidate.kind === "or" &&
+        candidate.operands.length < guard.operands.length &&
+        candidate.operands.every((operand) => hasEquivalentGuard(operands, operand))
+      )
+        return true;
+    }
+  }
+  return false;
+};
+
 const reduceCoveredNegation = (guard: Guard, disjuncts: Map<number, Guard[]>): Guard => {
   if (guard.kind !== "and") return guard;
   const operands = guard.operands.filter((operand) => {
@@ -333,7 +351,9 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
   const merged = kind === "or" ? mergeEqualityDisjuncts(remaining) : remaining;
   const mergedByHash = merged === remaining ? remainingByHash : indexGuards(merged);
   const simplified =
-    kind === "or" ? merged.filter((operand) => !isAbsorbedDisjunct(operand, mergedByHash)) : merged;
+    kind === "or"
+      ? merged.filter((operand) => !isAbsorbedDisjunct(operand, mergedByHash))
+      : merged.filter((operand) => !isAbsorbedConjunct(operand, mergedByHash));
   if (kind === "or") {
     const simplifiedByHash = simplified === merged ? mergedByHash : indexGuards(simplified);
     const reduced = simplified.map((operand) => reduceCoveredNegation(operand, simplifiedByHash));

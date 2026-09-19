@@ -169,6 +169,14 @@ describe("symbolic tree: guard algebra", () => {
     );
   });
 
+  it("absorbs disjunctions already covered by another conjunct", () => {
+    const isOpen = truthyGuard(variable("#open"));
+    expect(andGuard([orGuard([isTruthy, isBeta]), isTruthy])).toEqual(isTruthy);
+    expect(andGuard([orGuard([isTruthy, isBeta, isOpen]), orGuard([isTruthy, isBeta])])).toEqual(
+      orGuard([isTruthy, isBeta]),
+    );
+  });
+
   it("removes known conjuncts from a negated conjunction", () => {
     const isOpen = truthyGuard(variable("#open"));
     expect(andGuard([isTruthy, isBeta, negateGuard(andGuard([isTruthy, isBeta]))])).toEqual(
