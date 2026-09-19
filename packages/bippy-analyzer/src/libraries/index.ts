@@ -11,6 +11,11 @@ import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
 import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
 import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
 import {
+  FLOATING_UI_MODELED_EXPORTS,
+  FLOATING_UI_PACKAGES,
+  floatingUiValue,
+} from "./floating-ui.js";
+import {
   FRAMER_MOTION_MODELED_EXPORTS,
   FRAMER_MOTION_PACKAGES,
   framerMotionValue,
@@ -125,6 +130,11 @@ const LIBRARY_MODELS: readonly LibraryModel[] = [
   { packages: EMOTION_PACKAGES, getValue: emotionValue },
   { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
   { packages: FOREIGN_RENDERER_PACKAGES, getValue: foreignRendererValue },
+  {
+    packages: FLOATING_UI_PACKAGES,
+    getValue: floatingUiValue,
+    modeledExports: FLOATING_UI_MODELED_EXPORTS,
+  },
   {
     packages: FRAMER_MOTION_PACKAGES,
     getValue: framerMotionValue,
