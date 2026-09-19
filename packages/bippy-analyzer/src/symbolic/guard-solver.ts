@@ -423,15 +423,11 @@ const findModel = (
     const { variable } = literal.atom;
     const group = state.groups.get(projectionKey(variable));
     if (group === undefined) return true;
-    const extended = {
-      variable: group.variable,
-      value: [...group.value],
-      typeof: [...group.typeof],
-      length: [...group.length],
-      choice: [...group.choice],
-    };
-    extended[variable.measure].push(literal);
-    return modelOfGroup(extended) !== null;
+    const literals = group[variable.measure];
+    literals.push(literal);
+    const isCompatible = modelOfGroup(group) !== null;
+    literals.pop();
+    return isCompatible;
   };
   const getGuardVerdict = (guard: Guard): boolean | null => {
     const literal = getLiteral(guard);
@@ -702,12 +698,22 @@ export const evaluateGuard = (guard: Guard, model: WitnessModel): boolean | null
     case "not":
       return negateVerdict(evaluateGuard(guard.operand, model));
     case "and": {
-      const verdicts = guard.operands.map((operand) => evaluateGuard(operand, model));
-      return verdicts.includes(false) ? false : verdicts.includes(null) ? null : true;
+      let hasUnknown = false;
+      for (const operand of guard.operands) {
+        const verdict = evaluateGuard(operand, model);
+        if (verdict === false) return false;
+        if (verdict === null) hasUnknown = true;
+      }
+      return hasUnknown ? null : true;
     }
     case "or": {
-      const verdicts = guard.operands.map((operand) => evaluateGuard(operand, model));
-      return verdicts.includes(true) ? true : verdicts.includes(null) ? null : false;
+      let hasUnknown = false;
+      for (const operand of guard.operands) {
+        const verdict = evaluateGuard(operand, model);
+        if (verdict === true) return true;
+        if (verdict === null) hasUnknown = true;
+      }
+      return hasUnknown ? null : false;
     }
     default:
       return atomHolds(guard, model);

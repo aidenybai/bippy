@@ -705,18 +705,29 @@ export const mapGuardVariables = (
   }
 };
 
+const formattedVariables = new WeakMap<SymbolicVariable, string>();
+
 export const formatVariable = (variable: SymbolicVariable): string => {
+  const cached = formattedVariables.get(variable);
+  if (cached !== undefined) return cached;
   const projection = [variable.input, ...variable.path].join(".").replace(/\.\[\]/g, "[]");
+  let formatted: string;
   switch (variable.measure) {
     case "value":
-      return projection;
+      formatted = projection;
+      break;
     case "length":
-      return `len(${projection})`;
+      formatted = `len(${projection})`;
+      break;
     case "typeof":
-      return `typeof(${projection})`;
+      formatted = `typeof(${projection})`;
+      break;
     case "choice":
-      return `choice(${projection})`;
+      formatted = `choice(${projection})`;
+      break;
   }
+  formattedVariables.set(variable, formatted);
+  return formatted;
 };
 
 const formatLiteral = (value: GuardLiteral): string => JSON.stringify(value);
