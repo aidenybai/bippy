@@ -142,6 +142,21 @@ export default () => (
 );
 `;
 
+const NEXT_AUTH_PROVIDER_SOURCE = `
+import { SessionProvider, useSession } from "next-auth/react";
+
+const Child = () => {
+  const session = useSession();
+  return session ? <main /> : <aside />;
+};
+
+export default () => (
+  <SessionProvider>
+    <Child />
+  </SessionProvider>
+);
+`;
+
 const ZUSTAND_SOURCE = `
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
@@ -450,6 +465,19 @@ describe("library models", () => {
         "<HostRoot>",
         "  <default>",
         "    <QueryClientProvider>",
+        "      <ContextProvider>",
+        "        <Child>",
+        "          <main>",
+      ].join("\n"),
+    );
+  });
+
+  it("shares the modeled next-auth session between provider and consumer", async () => {
+    expect(await renderSource(NEXT_AUTH_PROVIDER_SOURCE)).toBe(
+      [
+        "<HostRoot>",
+        "  <default>",
+        "    <SessionProvider>",
         "      <ContextProvider>",
         "        <Child>",
         "          <main>",
