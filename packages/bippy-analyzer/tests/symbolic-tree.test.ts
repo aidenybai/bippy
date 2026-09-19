@@ -267,6 +267,20 @@ describe("symbolic tree: guard algebra", () => {
     ).toBe(true);
   });
 
+  it("propagates finite literals through disjunctions", () => {
+    const selector: SymbolicVariable = { ...variable("#selector"), measure: "choice" };
+    const value: SymbolicVariable = { ...variable("#value"), measure: "choice" };
+    const values = Array.from({ length: 16 }, (_, index) => index);
+    const guard = andGuard([
+      negateGuard(inSetGuard(selector, [0])),
+      negateGuard(inSetGuard(value, values)),
+      ...values.map((entry) =>
+        orGuard([inSetGuard(selector, [0]), negateGuard(equalsGuard(value, entry))]),
+      ),
+    ]);
+    expect(solveGuards([guard])).not.toBeNull();
+  });
+
   it("decides a test whose branch is truthy exactly when it is taken", async () => {
     const space = await renderFixture("narrowed-opaque-portal-root.tsx");
     expect(space.tree.inputs).toHaveLength(0);

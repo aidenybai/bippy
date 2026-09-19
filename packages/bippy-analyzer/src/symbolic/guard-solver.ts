@@ -358,6 +358,25 @@ const modelOfGroup = (group: ProjectionLiterals): VariableWitness[] | null => {
 const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
+const getLiteral = (guard: Guard): Literal | null => {
+  if (
+    guard.kind === "truthy" ||
+    guard.kind === "eq" ||
+    guard.kind === "compare" ||
+    guard.kind === "in-set"
+  )
+    return { atom: guard, isNegated: false };
+  if (
+    guard.kind === "not" &&
+    (guard.operand.kind === "truthy" ||
+      guard.operand.kind === "eq" ||
+      guard.operand.kind === "compare" ||
+      guard.operand.kind === "in-set")
+  )
+    return { atom: guard.operand, isNegated: true };
+  return null;
+};
+
 /**
  * DPLL over the guard formulas: atoms accumulate and are checked per variable
  * before any disjunction splits, so a contradiction among the atoms is found
@@ -402,6 +421,20 @@ const findModel = (
       changedProjections.add(key);
     }
     group[variable.measure].push(literal);
+  };
+  const isLiteralCompatible = (literal: Literal): boolean => {
+    const { variable } = literal.atom;
+    const group = state.groups.get(projectionKey(variable));
+    if (group === undefined) return true;
+    const extended = {
+      variable: group.variable,
+      value: [...group.value],
+      typeof: [...group.typeof],
+      length: [...group.length],
+      choice: [...group.choice],
+    };
+    extended[variable.measure].push(literal);
+    return modelOfGroup(extended) !== null;
   };
   try {
     while (remaining.length > 0) {
@@ -456,7 +489,20 @@ const findModel = (
       }
     }
     const [disjunction] = disjunctions.splice(disjunctionIndex, 1);
+    const viableOperands: Guard[] = [];
     for (const operand of disjunction.operands) {
+      const literal = getLiteral(operand);
+      if (literal === null) {
+        viableOperands.push(operand);
+        continue;
+      }
+      if (!isLiteralCompatible(literal)) continue;
+      if (!isLiteralCompatible({ atom: literal.atom, isNegated: !literal.isNegated })) {
+        return findModel(disjunctions, state);
+      }
+      viableOperands.push(operand);
+    }
+    for (const operand of viableOperands) {
       const split = findModel([...disjunctions, operand], state);
       if (split) return split;
     }
