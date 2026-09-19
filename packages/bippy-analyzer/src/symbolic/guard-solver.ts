@@ -689,6 +689,7 @@ const areGuardPairSatisfiable = (base: Guard, candidate: Guard): boolean => {
 };
 
 export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): boolean => {
+  if (base.kind === "constant" && !base.value) return false;
   const baseAnalysis = getGuardAnalysis(base);
   const overlappingComponents = new Set<GuardComponent>();
   for (const key of collectProjectionKeys(candidate, new Set())) {

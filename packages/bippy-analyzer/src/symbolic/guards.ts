@@ -283,6 +283,16 @@ const reduceCoveredNegation = (guard: Guard, disjuncts: Map<number, Guard[]>): G
   return operands.length === guard.operands.length ? guard : combineGuards("and", operands, false);
 };
 
+const reduceCoveredConjuncts = (guard: Guard, conjuncts: Map<number, Guard[]>): Guard => {
+  if (guard.kind !== "not" || guard.operand.kind !== "and") return guard;
+  const operands = guard.operand.operands.filter(
+    (operand) => !hasEquivalentGuard(conjuncts, operand),
+  );
+  return operands.length === guard.operand.operands.length
+    ? guard
+    : negateGuard(combineGuards("and", operands, false));
+};
+
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   const flattened = operands.flatMap((operand) =>
     operand.kind === kind ? operand.operands : [operand],
@@ -312,6 +322,11 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
     const reduced = simplified.map((operand) => reduceCoveredNegation(operand, simplifiedByHash));
     if (reduced.some((operand, index) => operand !== simplified[index])) {
       return combineGuards("or", reduced, true);
+    }
+  } else {
+    const reduced = simplified.map((operand) => reduceCoveredConjuncts(operand, mergedByHash));
+    if (reduced.some((operand, index) => operand !== simplified[index])) {
+      return combineGuards("and", reduced, false);
     }
   }
   return simplified.length === 1 ? simplified[0] : { kind, operands: simplified };

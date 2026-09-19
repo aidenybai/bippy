@@ -166,6 +166,16 @@ describe("symbolic tree: guard algebra", () => {
     );
   });
 
+  it("removes known conjuncts from a negated conjunction", () => {
+    const isOpen = truthyGuard(variable("#open"));
+    expect(andGuard([isTruthy, isBeta, negateGuard(andGuard([isTruthy, isBeta]))])).toEqual(
+      constantGuard(false),
+    );
+    expect(andGuard([isTruthy, isBeta, negateGuard(andGuard([isTruthy, isBeta, isOpen]))])).toEqual(
+      andGuard([isTruthy, isBeta, negateGuard(isOpen)]),
+    );
+  });
+
   it("compacts finite alternatives and their catch-all consensus", () => {
     const mode = variable("#mode");
     const named = [0, 1, 2].map((value) => equalsGuard(mode, value));
@@ -236,6 +246,7 @@ describe("symbolic tree: guard algebra", () => {
 
   it("checks candidates against only the active path components they share", () => {
     const active = andGuard([isTruthy, isBeta]);
+    expect(isGuardCompatibleWithActivePath(constantGuard(false), isTruthy)).toBe(false);
     expect(isGuardCompatibleWithActivePath(active, negateGuard(isBeta))).toBe(false);
     expect(
       isGuardCompatibleWithActivePath(active, equalsGuard(variable("#independent"), "open")),
