@@ -15,6 +15,7 @@ import type {
   StaticPrimitiveValue,
   StaticValue,
 } from "../types.js";
+import { isSameEscapeTuple } from "./escape-memo.js";
 import type { EscapeArguments, EscapeDependency, EscapeMemo, EscapeTuple } from "./escape-memo.js";
 import { isUserDrivenEventHandlerProp } from "./event-listeners.js";
 import { findOwningScope } from "./scope.js";
@@ -100,6 +101,7 @@ type RecordDependency = (dependency: EscapeDependency, key: string) => void;
 
 /** Containers one walk already traversed: in full, or only for the callables they hand to an unresolved callee. */
 interface EscapeVisits {
+  active: Map<StaticFunctionValue, EscapeTuple[]>;
   escaped: Set<StaticValue>;
   handed: Set<StaticValue>;
 }
@@ -639,7 +641,7 @@ const bindArguments = (callee: StaticFunctionValue, argumentValues: EscapeTuple)
  * walk went stale since are followed again first.
  */
 export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): void => {
-  const visits: EscapeVisits = { escaped: new Set(), handed: new Set() };
+  const visits: EscapeVisits = { active: new Map(), escaped: new Set(), handed: new Set() };
   followStaleCallables(walk, visits);
   visitEscapedValue(value, walk, visits);
 };
@@ -647,7 +649,7 @@ export const forEachEscapedCallable = (value: StaticValue, walk: EscapeWalk): vo
 /** Follows again the escaped closures whose walk went stale, as their code may run at any time. */
 export const followStaleCallables = (
   walk: EscapeWalk,
-  visits: EscapeVisits = { escaped: new Set(), handed: new Set() },
+  visits: EscapeVisits = { active: new Map(), escaped: new Set(), handed: new Set() },
 ): void => {
   for (const [closure, tuples] of walk.memo.takeStale()) {
     for (const tuple of tuples) invokeOnce(closure, tuple, walk, visits);
@@ -706,15 +708,25 @@ const invokeOnce = (
   walk: EscapeWalk,
   visits: EscapeVisits,
 ): void => {
+  const activeTuples = visits.active.get(closure);
+  if (activeTuples?.some((activeTuple) => isSameEscapeTuple(activeTuple, argumentValues))) return;
   if (!walk.memo.follow(closure, argumentValues)) return;
-  forEachInvokedCallable(
-    closure,
-    argumentValues === null && !closure.boundArgs?.length
-      ? null
-      : bindArguments(closure, argumentValues),
-    walk,
-    visits,
-  );
+  if (activeTuples) activeTuples.push(argumentValues);
+  else visits.active.set(closure, [argumentValues]);
+  try {
+    forEachInvokedCallable(
+      closure,
+      argumentValues === null && !closure.boundArgs?.length
+        ? null
+        : bindArguments(closure, argumentValues),
+      walk,
+      visits,
+    );
+  } finally {
+    const currentActiveTuples = visits.active.get(closure);
+    currentActiveTuples?.splice(currentActiveTuples.indexOf(argumentValues), 1);
+    if (currentActiveTuples?.length === 0) visits.active.delete(closure);
+  }
 };
 
 /**

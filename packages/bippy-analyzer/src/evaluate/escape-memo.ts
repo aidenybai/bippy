@@ -20,7 +20,7 @@ export type EscapeArguments = readonly (StaticValue | null)[];
 /** The arguments a closure was followed with; null when it escaped directly rather than as a callee. */
 export type EscapeTuple = EscapeArguments | null;
 
-const isSameTuple = (left: EscapeTuple, right: EscapeTuple): boolean =>
+export const isSameEscapeTuple = (left: EscapeTuple, right: EscapeTuple): boolean =>
   left === null || right === null
     ? left === right
     : left.length === right.length && left.every((argument, index) => argument === right[index]);
@@ -62,7 +62,7 @@ export class EscapeMemo {
   /** Records the tuple as followed; false when the closure was already followed with it. */
   follow(closure: StaticFunctionValue, tuple: EscapeTuple): boolean {
     const tuples = this.followed.get(closure);
-    if (tuples?.some((followed) => isSameTuple(followed, tuple))) return false;
+    if (tuples?.some((followed) => isSameEscapeTuple(followed, tuple))) return false;
     if (tuples) tuples.push(tuple);
     else this.followed.set(closure, [tuple]);
     return true;

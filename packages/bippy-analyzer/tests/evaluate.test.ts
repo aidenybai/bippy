@@ -330,6 +330,27 @@ describe("escaped bound mutations", () => {
     );
     expect(results).toEqual({ selfParameterAlias: "branch(0 | unknown)" });
   });
+
+  it("terminates when an active escaped callback invalidates its own dependency", async () => {
+    const results = await evaluateExports(
+      `
+      import { register } from "opaque-store";
+      export const reentrantInvalidation = () => {
+        const holder = { callback: () => {} };
+        const invoke = () => {
+          holder.callback = invoke;
+          holder.callback();
+        };
+        holder.callback = invoke;
+        register(holder);
+        holder.callback = invoke;
+        return 1;
+      };
+    `,
+      ["reentrantInvalidation"],
+    );
+    expect(results).toEqual({ reentrantInvalidation: "1" });
+  });
 });
 
 describe("branch-valued primitives", () => {
