@@ -445,7 +445,40 @@ const isGuardImpliedByLiterals = (
  * before any disjunction splits, so a contradiction among the atoms is found
  * without exploring the disjunctions' product.
  */
-const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
+let guardSolverCalls = 0;
+let nextGuardSolverDepth = 1;
+let nextGuardSolverPending = 1;
+let nextGuardSolverLiterals = 1;
+
+const findModel = (
+  pending: Guard[],
+  literals: Literal[],
+  depth = 0,
+): VariableWitness[] | null => {
+  guardSolverCalls++;
+  if (
+    process.env.BIPPY_GUARD_PROFILE === "1" &&
+    (depth >= nextGuardSolverDepth ||
+      pending.length >= nextGuardSolverPending ||
+      literals.length >= nextGuardSolverLiterals ||
+      guardSolverCalls % 100_000 === 0)
+  ) {
+    while (depth >= nextGuardSolverDepth) nextGuardSolverDepth *= 2;
+    while (pending.length >= nextGuardSolverPending) nextGuardSolverPending *= 2;
+    while (literals.length >= nextGuardSolverLiterals) nextGuardSolverLiterals *= 2;
+    process.stderr.write(
+      `[guard-solver-profile] ${JSON.stringify({
+        calls: guardSolverCalls,
+        depth,
+        pending: pending.length,
+        literals: literals.length,
+        kinds: pending.reduce<Record<string, number>>((counts, guard) => {
+          counts[guard.kind] = (counts[guard.kind] ?? 0) + 1;
+          return counts;
+        }, {}),
+      })}\n`,
+    );
+  }
   const remaining = [...pending];
   const collected = [...literals];
   const disjunctions: GuardOr[] = [];
@@ -500,6 +533,7 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
       return findModel(
         [...disjunctions.filter((candidate) => candidate !== disjunction), viableOperands[0]],
         collected,
+        depth + 1,
       );
     }
     clauses.push({ guard: disjunction, operands: viableOperands });
@@ -528,7 +562,7 @@ const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | n
     (left, right) => operandScore(right) - operandScore(left),
   );
   for (const operand of selectedOperands) {
-    const split = findModel([...remainingDisjunctions, operand], collected);
+    const split = findModel([...remainingDisjunctions, operand], collected, depth + 1);
     if (split) return split;
   }
   return null;
