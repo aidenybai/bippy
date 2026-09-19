@@ -4140,7 +4140,8 @@
       "settleMs": 8000,
       "static": {
         "rootDirectory": ".",
-        "entry": "src/main.tsx"
+        "entry": "src/main.tsx",
+        "externalPackageAllowList": ["lucide-react"]
       },
       "notes": "Static-only: RapidRAW is a Tauri 2 desktop app with no web target. Served by Vite in a plain browser, the first render throws `Cannot read properties of undefined (reading 'metadata')` from `@tauri-apps/api/window` (`getCurrentWindow()` reads `window.__TAURI_INTERNALS__` in `App.tsx` and `window/TitleBar.tsx`) before React commits a root, and the UI is driven by 96 distinct `invoke()` commands into the Rust/wgpu backend (settings, folder tree, thumbnails, GPU image processing), so no browser capture of the desktop UI exists to compare against."
     },
@@ -4158,7 +4159,8 @@
       "settleMs": 8000,
       "static": {
         "rootDirectory": ".",
-        "route": "/"
+        "route": "/",
+        "externalPackageAllowList": ["next-themes"]
       },
       "notes": "Not exact: three opaque provider boundaries (`NextThemesProvider` from next-themes, `QueryClientProvider` from @tanstack/react-query, `PanelGroup`/`Panel` from react-resizable-panels) hide 853 of the 1000 runtime fibers, and the rest of the page (Radix dialogs/popovers/tooltips, lucide icons, zustand stores, Remotion player, @designcombo timeline) yields 129 symbolic inputs and 1916 guards, so the 341,835,808-state space is only enumerated to 256 states and the capture matches outside that set. Allow-listing `@radix-ui/*`, `lucide-react`, `next-themes` and `@tanstack/react-query` for analysis did not finish the static render within 30 minutes."
     },
