@@ -61,21 +61,23 @@ const projectionRoots = new Map<string, ProjectionNode>();
 const projectionKeyCache = new WeakMap<SymbolicVariable, number>();
 let nextProjectionId = 0;
 
+const getProjectionNode = (
+  nodes: Map<string, ProjectionNode>,
+  segment: string,
+): ProjectionNode => {
+  const existing = nodes.get(segment);
+  if (existing !== undefined) return existing;
+  const created = { id: nextProjectionId++, children: new Map<string, ProjectionNode>() };
+  nodes.set(segment, created);
+  return created;
+};
+
 const projectionKey = (variable: SymbolicVariable): number => {
   const cached = projectionKeyCache.get(variable);
   if (cached !== undefined) return cached;
-  let node = projectionRoots.get(variable.input);
-  if (node === undefined) {
-    node = { id: nextProjectionId++, children: new Map() };
-    projectionRoots.set(variable.input, node);
-  }
+  let node = getProjectionNode(projectionRoots, variable.input);
   for (const segment of variable.path) {
-    let child = node.children.get(segment);
-    if (child === undefined) {
-      child = { id: nextProjectionId++, children: new Map() };
-      node.children.set(segment, child);
-    }
-    node = child;
+    node = getProjectionNode(node.children, segment);
   }
   projectionKeyCache.set(variable, node.id);
   return node.id;
