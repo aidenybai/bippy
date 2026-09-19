@@ -226,17 +226,6 @@ const hasEquivalentGuard = (guards: Map<number, Guard[]>, guard: Guard): boolean
     .get(getGuardHash(guard))
     ?.some((candidate) => candidate === guard || isSameGuard(candidate, guard)) ?? false;
 
-const indexGuards = (guards: Guard[]): Map<number, Guard[]> => {
-  const indexed = new Map<number, Guard[]>();
-  for (const guard of guards) {
-    const hash = getGuardHash(guard);
-    const matching = indexed.get(hash);
-    if (matching) matching.push(guard);
-    else indexed.set(hash, [guard]);
-  }
-  return indexed;
-};
-
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
   const flattened = operands.flatMap((operand) =>
     operand.kind === kind ? operand.operands : [operand],
@@ -257,28 +246,6 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
     else remainingByHash.set(key, [operand]);
   }
   if (remaining.length === 0) return constantGuard(!absorbing);
-  if (kind === "or" && remaining.length > 1) {
-    const terms = remaining.map((operand) => (operand.kind === "and" ? operand.operands : [operand]));
-    const termIndexes = terms.slice(1).map(indexGuards);
-    const shared = terms[0].filter((operand) =>
-      termIndexes.every((indexed) => hasEquivalentGuard(indexed, operand)),
-    );
-    if (shared.length > 0) {
-      const sharedIndex = indexGuards(shared);
-      const remainders = terms.map((term) =>
-        combineGuards(
-          "and",
-          term.filter((operand) => !hasEquivalentGuard(sharedIndex, operand)),
-          false,
-        ),
-      );
-      return combineGuards(
-        "and",
-        [...shared, combineGuards("or", remainders, true)],
-        false,
-      );
-    }
-  }
   return remaining.length === 1 ? remaining[0] : { kind, operands: remaining };
 };
 

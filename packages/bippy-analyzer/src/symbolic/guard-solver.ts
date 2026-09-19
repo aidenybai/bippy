@@ -4,6 +4,7 @@ import {
   type GuardEquals,
   type GuardInSet,
   type GuardLiteral,
+  type GuardOr,
   type GuardTruthy,
   type SymbolicVariable,
   formatVariable,
@@ -353,194 +354,60 @@ const modelOfLiterals = (literals: Literal[]): VariableWitness[] | null => {
 const negateOperands = (operands: Guard[]): Guard[] =>
   operands.map((operand) => ({ kind: "not", operand }));
 
-interface EncodedGuards {
-  clauses: number[][];
-  atoms: Map<number, GuardAtom>;
-  variableCount: number;
-}
-
-const atomKey = (atom: GuardAtom): string => {
-  const variable = formatVariable(atom.variable);
-  switch (atom.kind) {
-    case "truthy":
-      return JSON.stringify([atom.kind, variable]);
-    case "eq":
-      return JSON.stringify([atom.kind, variable, atom.value]);
-    case "compare":
-      return JSON.stringify([atom.kind, variable, atom.operator, atom.value]);
-    case "in-set":
-      return JSON.stringify([atom.kind, variable, atom.values]);
-  }
-};
-
-const encodeGuards = (guards: Guard[]): EncodedGuards => {
-  const clauses: number[][] = [];
-  const atoms = new Map<number, GuardAtom>();
-  const variableByGuard = new WeakMap<Guard, number>();
-  const variableByFormula = new Map<string, number>();
-  let variableCount = 0;
-  const addClause = (literals: number[]): void => {
-    const unique = new Set<number>();
-    for (const literal of literals) {
-      if (unique.has(-literal)) return;
-      unique.add(literal);
-    }
-    clauses.push([...unique]);
-  };
-  const createVariable = (key: string): [number, boolean] => {
-    const existing = variableByFormula.get(key);
-    if (existing !== undefined) return [existing, false];
-    const variable = ++variableCount;
-    variableByFormula.set(key, variable);
-    return [variable, true];
-  };
-  const encodeGuard = (guard: Guard): number => {
-    const existing = variableByGuard.get(guard);
-    if (existing !== undefined) return existing;
-    let key: string;
-    let children: number[] = [];
+/**
+ * DPLL over the guard formulas: atoms accumulate and are checked per variable
+ * before any disjunction splits, so a contradiction among the atoms is found
+ * without exploring the disjunctions' product.
+ */
+const findModel = (pending: Guard[], literals: Literal[]): VariableWitness[] | null => {
+  const remaining = [...pending];
+  const collected = [...literals];
+  const disjunctions: GuardOr[] = [];
+  while (remaining.length > 0) {
+    const guard = remaining.pop();
+    if (!guard) break;
     switch (guard.kind) {
       case "constant":
-        key = `constant:${guard.value}`;
-        break;
-      case "truthy":
-      case "eq":
-      case "compare":
-      case "in-set":
-        key = `atom:${atomKey(guard)}`;
-        break;
-      case "not":
-        children = [encodeGuard(guard.operand)];
-        key = `not:${children[0]}`;
+        if (!guard.value) return null;
         break;
       case "and":
+        remaining.push(...guard.operands);
+        break;
       case "or":
-        children = guard.operands.map(encodeGuard);
-        key = `${guard.kind}:${children.join(",")}`;
-        break;
-    }
-    const [variable, isNew] = createVariable(key);
-    variableByGuard.set(guard, variable);
-    if (!isNew) return variable;
-    switch (guard.kind) {
-      case "constant":
-        addClause([guard.value ? variable : -variable]);
-        break;
-      case "truthy":
-      case "eq":
-      case "compare":
-      case "in-set":
-        atoms.set(variable, guard);
+        disjunctions.push(guard);
         break;
       case "not": {
-        const [child] = children;
-        if (child === undefined) throw new Error("Missing negated guard variable");
-        addClause([-variable, -child]);
-        addClause([variable, child]);
-        break;
-      }
-      case "and":
-        for (const child of children) addClause([-variable, child]);
-        addClause([variable, ...children.map((child) => -child)]);
-        break;
-      case "or":
-        for (const child of children) addClause([variable, -child]);
-        addClause([-variable, ...children]);
-        break;
-    }
-    return variable;
-  };
-  for (const guard of guards) addClause([encodeGuard(guard)]);
-  return { clauses, atoms, variableCount };
-};
-
-const assignLiteral = (assignments: Int8Array, literal: number): boolean => {
-  const variable = Math.abs(literal);
-  const value = literal > 0 ? 1 : -1;
-  const existing = assignments[variable];
-  if (existing !== 0) return existing === value;
-  assignments[variable] = value;
-  return true;
-};
-
-const propagateUnits = (clauses: number[][], assignments: Int8Array): boolean => {
-  let didAssign = true;
-  while (didAssign) {
-    didAssign = false;
-    for (const clause of clauses) {
-      let isSatisfied = false;
-      let unassignedCount = 0;
-      let unassignedLiteral = 0;
-      for (const literal of clause) {
-        const value = assignments[Math.abs(literal)];
-        if (value === 0) {
-          unassignedCount++;
-          unassignedLiteral = literal;
-        } else if ((literal > 0 && value > 0) || (literal < 0 && value < 0)) {
-          isSatisfied = true;
-          break;
+        const { operand } = guard;
+        switch (operand.kind) {
+          case "constant":
+            if (operand.value) return null;
+            break;
+          case "not":
+            remaining.push(operand.operand);
+            break;
+          case "and":
+            remaining.push({ kind: "or", operands: negateOperands(operand.operands) });
+            break;
+          case "or":
+            remaining.push(...negateOperands(operand.operands));
+            break;
+          default:
+            collected.push({ atom: operand, isNegated: true });
         }
-      }
-      if (isSatisfied) continue;
-      if (unassignedCount === 0) return false;
-      if (unassignedCount === 1) {
-        if (!assignLiteral(assignments, unassignedLiteral)) return false;
-        didAssign = true;
-      }
-    }
-  }
-  return true;
-};
-
-const getTheoryModel = (
-  atoms: ReadonlyMap<number, GuardAtom>,
-  assignments: Int8Array,
-): VariableWitness[] | null => {
-  const literals: Literal[] = [];
-  for (const [variable, atom] of atoms) {
-    const value = assignments[variable];
-    if (value !== 0) literals.push({ atom, isNegated: value < 0 });
-  }
-  return modelOfLiterals(literals);
-};
-
-const selectBranchLiteral = (clauses: number[][], assignments: Int8Array): number | null => {
-  let selected: number[] | null = null;
-  for (const clause of clauses) {
-    let isSatisfied = false;
-    const unassigned: number[] = [];
-    for (const literal of clause) {
-      const value = assignments[Math.abs(literal)];
-      if (value === 0) unassigned.push(literal);
-      else if ((literal > 0 && value > 0) || (literal < 0 && value < 0)) {
-        isSatisfied = true;
         break;
       }
-    }
-    if (!isSatisfied && (selected === null || unassigned.length < selected.length)) {
-      selected = unassigned;
+      default:
+        collected.push({ atom: guard, isNegated: false });
     }
   }
-  return selected?.[0] ?? null;
-};
-
-const findModel = (guards: Guard[]): VariableWitness[] | null => {
-  const encoded = encodeGuards(guards);
-  const search = (assignments: Int8Array): VariableWitness[] | null => {
-    if (!propagateUnits(encoded.clauses, assignments)) return null;
-    const model = getTheoryModel(encoded.atoms, assignments);
-    if (model === null) return null;
-    const branchLiteral = selectBranchLiteral(encoded.clauses, assignments);
-    if (branchLiteral === null) return model;
-    const preferred = assignments.slice();
-    if (assignLiteral(preferred, branchLiteral)) {
-      const result = search(preferred);
-      if (result !== null) return result;
-    }
-    const alternate = assignments.slice();
-    return assignLiteral(alternate, -branchLiteral) ? search(alternate) : null;
-  };
-  return search(new Int8Array(encoded.variableCount + 1));
+  const model = modelOfLiterals(collected);
+  const disjunction = disjunctions.pop();
+  if (model === null || disjunction === undefined) return model;
+  for (const operand of disjunction.operands) {
+    const split = findModel([...disjunctions, operand], collected);
+    if (split) return split;
+  }
+  return null;
 };
 
 const conjuncts = (guards: Guard[]): Guard[] =>
@@ -620,7 +487,7 @@ const independentComponents = (guards: Guard[]): GuardComponent[] => {
 export const solveGuards = (guards: Guard[]): VariableWitness[] | null => {
   const witnesses: VariableWitness[] = [];
   for (const component of independentComponents(guards)) {
-    const model = findModel(component.guards);
+    const model = findModel(component.guards, []);
     if (model === null) return null;
     witnesses.push(...model);
   }
@@ -705,7 +572,7 @@ const getGuardAnalysis = (guard: Guard): GuardAnalysis => {
   let isSatisfiable = true;
   for (const component of components) {
     for (const key of component.keys) componentByKey.set(key, component);
-    if (isSatisfiable && findModel(component.guards) === null) isSatisfiable = false;
+    if (isSatisfiable && findModel(component.guards, []) === null) isSatisfiable = false;
   }
   const analysis = { componentByKey, isSatisfiable };
   guardAnalysisCache.set(guard, analysis);

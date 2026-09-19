@@ -152,20 +152,6 @@ describe("symbolic tree: guard algebra", () => {
     });
   });
 
-  it("factors conditions shared by every disjunct", () => {
-    const isOpen = truthyGuard(variable("#3"));
-    expect(
-      orGuard([andGuard([isTruthy, isBeta]), andGuard([isTruthy, isOpen])]),
-    ).toEqual(andGuard([isTruthy, orGuard([isBeta, isOpen])]));
-    expect(orGuard([isTruthy, andGuard([isTruthy, isBeta])])).toEqual(isTruthy);
-    expect(
-      orGuard([
-        andGuard([isTruthy, isBeta]),
-        andGuard([isTruthy, negateGuard(isBeta)]),
-      ]),
-    ).toEqual(isTruthy);
-  });
-
   it("combines large guard sets without quadratic duplicate scans", () => {
     const guards = Array.from({ length: 20_000 }, (_, index) =>
       equalsGuard(variable(`#${index}`), index),
