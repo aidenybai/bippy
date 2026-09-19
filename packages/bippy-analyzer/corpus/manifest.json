@@ -4171,7 +4171,8 @@
           "react-dropzone",
           "react-remove-scroll",
           "react-resizable-panels",
-          "sonner"
+          "sonner",
+          "use-sidecar"
         ]
       },
       "notes": "Not exact: three opaque provider boundaries (`NextThemesProvider` from next-themes, `QueryClientProvider` from @tanstack/react-query, `PanelGroup`/`Panel` from react-resizable-panels) hide 853 of the 1000 runtime fibers, and the rest of the page (Radix dialogs/popovers/tooltips, lucide icons, zustand stores, Remotion player, @designcombo timeline) yields 129 symbolic inputs and 1916 guards, so the 341,835,808-state space is only enumerated to 256 states and the capture matches outside that set. Allow-listing `@radix-ui/*`, `lucide-react`, `next-themes` and `@tanstack/react-query` for analysis did not finish the static render within 30 minutes."
