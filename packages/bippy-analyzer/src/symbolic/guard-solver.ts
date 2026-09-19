@@ -287,6 +287,12 @@ interface GuardModelState {
   witnessesByProjection: Map<string, VariableWitness[]>;
 }
 
+interface GuardModelChange {
+  key: string;
+  previousGroup: ProjectionLiterals | undefined;
+  previousWitnesses: VariableWitness[] | undefined;
+}
+
 const pickValue = (group: ProjectionLiterals): VariableWitness | null => {
   if (wantsFalsy(group.value) && wantsTruthy(group.value)) return null;
   const types = admittedTypes(group.typeof);
@@ -363,18 +369,18 @@ const findModel = (
 ): VariableWitness[] | null => {
   const remaining = [...pending];
   const disjunctions: GuardOr[] = [];
-  let groups = state.groups;
-  let witnessesByProjection = state.witnessesByProjection;
   const changedProjections = new Set<string>();
+  const changes: GuardModelChange[] = [];
   const addLiteral = (literal: Literal): void => {
-    if (groups === state.groups) groups = new Map(state.groups);
-    if (witnessesByProjection === state.witnessesByProjection) {
-      witnessesByProjection = new Map(state.witnessesByProjection);
-    }
     const { variable } = literal.atom;
     const key = projectionKey(variable);
-    let group = groups.get(key);
+    let group = state.groups.get(key);
     if (!changedProjections.has(key)) {
+      changes.push({
+        key,
+        previousGroup: group,
+        previousWitnesses: state.witnessesByProjection.get(key),
+      });
       group = group
         ? {
             variable: group.variable,
@@ -384,68 +390,78 @@ const findModel = (
             choice: [...group.choice],
           }
         : { variable, value: [], typeof: [], length: [], choice: [] };
-      groups.set(key, group);
+      state.groups.set(key, group);
       changedProjections.add(key);
     }
     if (group === undefined) {
       group = { variable, value: [], typeof: [], length: [], choice: [] };
-      groups.set(key, group);
+      state.groups.set(key, group);
       changedProjections.add(key);
     }
     group[variable.measure].push(literal);
   };
-  while (remaining.length > 0) {
-    const guard = remaining.pop();
-    if (!guard) break;
-    switch (guard.kind) {
-      case "constant":
-        if (!guard.value) return null;
-        break;
-      case "and":
-        remaining.push(...guard.operands);
-        break;
-      case "or":
-        disjunctions.push(guard);
-        break;
-      case "not": {
-        const { operand } = guard;
-        switch (operand.kind) {
-          case "constant":
-            if (operand.value) return null;
-            break;
-          case "not":
-            remaining.push(operand.operand);
-            break;
-          case "and":
-            remaining.push({ kind: "or", operands: negateOperands(operand.operands) });
-            break;
-          case "or":
-            remaining.push(...negateOperands(operand.operands));
-            break;
-          default:
-            addLiteral({ atom: operand, isNegated: true });
+  try {
+    while (remaining.length > 0) {
+      const guard = remaining.pop();
+      if (!guard) break;
+      switch (guard.kind) {
+        case "constant":
+          if (!guard.value) return null;
+          break;
+        case "and":
+          remaining.push(...guard.operands);
+          break;
+        case "or":
+          disjunctions.push(guard);
+          break;
+        case "not": {
+          const { operand } = guard;
+          switch (operand.kind) {
+            case "constant":
+              if (operand.value) return null;
+              break;
+            case "not":
+              remaining.push(operand.operand);
+              break;
+            case "and":
+              remaining.push({ kind: "or", operands: negateOperands(operand.operands) });
+              break;
+            case "or":
+              remaining.push(...negateOperands(operand.operands));
+              break;
+            default:
+              addLiteral({ atom: operand, isNegated: true });
+          }
+          break;
         }
-        break;
+        default:
+          addLiteral({ atom: guard, isNegated: false });
       }
-      default:
-        addLiteral({ atom: guard, isNegated: false });
+    }
+    for (const key of changedProjections) {
+      const group = state.groups.get(key);
+      if (group === undefined) continue;
+      const witnesses = modelOfGroup(group);
+      if (witnesses === null) return null;
+      state.witnessesByProjection.set(key, witnesses);
+    }
+    const disjunction = disjunctions.pop();
+    if (disjunction === undefined) return [...state.witnessesByProjection.values()].flat();
+    for (const operand of disjunction.operands) {
+      const split = findModel([...disjunctions, operand], state);
+      if (split) return split;
+    }
+    return null;
+  } finally {
+    let change = changes.pop();
+    while (change !== undefined) {
+      if (change.previousGroup === undefined) state.groups.delete(change.key);
+      else state.groups.set(change.key, change.previousGroup);
+      if (change.previousWitnesses === undefined) state.witnessesByProjection.delete(change.key);
+      else state.witnessesByProjection.set(change.key, change.previousWitnesses);
+      change = changes.pop();
     }
   }
-  for (const key of changedProjections) {
-    const group = groups.get(key);
-    if (group === undefined) continue;
-    const witnesses = modelOfGroup(group);
-    if (witnesses === null) return null;
-    witnessesByProjection.set(key, witnesses);
-  }
-  const disjunction = disjunctions.pop();
-  if (disjunction === undefined) return [...witnessesByProjection.values()].flat();
-  const nextState = { groups, witnessesByProjection };
-  for (const operand of disjunction.operands) {
-    const split = findModel([...disjunctions, operand], nextState);
-    if (split) return split;
-  }
-  return null;
 };
 
 const conjuncts = (guards: Guard[]): Guard[] =>
