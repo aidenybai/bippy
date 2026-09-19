@@ -233,6 +233,17 @@ export default () => {
 };
 `;
 
+const SWR_IMMUTABLE_SOURCE = `
+import useSWRImmutable from "swr/immutable";
+
+export default () => {
+  const { data } = useSWRImmutable("/count", null, {
+    fallbackData: { count: 7 },
+  });
+  return <main>{data.count}<span /></main>;
+};
+`;
+
 const ZUSTAND_MIDDLEWARE_SOURCE = `
 import { create } from "zustand";
 import { redux } from "zustand/middleware";
@@ -566,6 +577,12 @@ describe("library models", () => {
         "      <span>",
         '      "1"',
       ].join("\n"),
+    );
+  });
+
+  it("reads fallback data through the SWR immutable entry point", async () => {
+    expect(await renderSource(SWR_IMMUTABLE_SOURCE)).toBe(
+      ["<HostRoot>", "  <default>", "    <main>", '      "7"', "      <span>"].join("\n"),
     );
   });
 
