@@ -94,15 +94,17 @@ it("constructs Web Audio objects with concrete control surfaces", () => {
     null,
     true,
   );
+  if (audioContext.kind !== "object" || workletNode.kind !== "object")
+    throw new Error("Expected modeled Web Audio objects");
+  const port = getObjectProperty(workletNode, "port");
+  if (port.kind !== "object") throw new Error("Expected modeled AudioWorklet port");
   expect(getObjectProperty(audioContext, "sampleRate")).toEqual(primitiveValue(24_000));
   expect(getObjectProperty(audioContext, "state")).toMatchObject({
     kind: "unknown-primitive",
     primitiveType: "string",
   });
-  expect(getObjectProperty(audioContext, "createGain")).toMatchObject({ kind: "function" });
-  expect(getObjectProperty(getObjectProperty(workletNode, "port"), "postMessage")).toMatchObject({
-    kind: "function",
-  });
+  expect(getObjectProperty(audioContext, "createGain")).toMatchObject({ kind: "native-function" });
+  expect(getObjectProperty(port, "postMessage")).toMatchObject({ kind: "native-function" });
 });
 
 it("preserves array callback receivers through builtin dispatch", () => {
