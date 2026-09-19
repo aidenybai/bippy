@@ -94,7 +94,7 @@ import {
   resolveReactApi,
   resolveReactApiMember,
 } from "../react/react-api.js";
-import { isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
+import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
 import {
   andGuard,
   constantGuard,
@@ -2456,7 +2456,7 @@ export class Interpreter {
   }
 
   isTaskPossible(guard: Guard): boolean {
-    return isGuardCompatibleWithActivePath(this.taskAssumptions, guard);
+    return areGuardsSatisfiable([this.taskAssumptions, guard]);
   }
 
   private getGuardedValue(value: StaticValue, activeGuard = this.guard): StaticValue {
