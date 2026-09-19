@@ -164,12 +164,12 @@ describe("symbolic tree: guard algebra", () => {
 
   it("deduplicates deeply nested guards without expanding recursive keys", () => {
     let guard = isTruthy;
-    for (let depth = 0; depth < 100; depth++) {
+    for (let depth = 0; depth < 2_000; depth++) {
       const sibling = equalsGuard(variable(`#nested-${depth}`), depth);
       guard = depth % 2 === 0 ? andGuard([guard, sibling]) : orGuard([guard, sibling]);
     }
     expect(andGuard([guard, guard])).toEqual(guard);
-  });
+  }, 2_000);
 
   it("solves large independent guard sets without quadratic partition scans", () => {
     const guards = Array.from({ length: 20_000 }, (_, index) =>

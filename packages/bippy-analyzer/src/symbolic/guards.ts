@@ -121,11 +121,9 @@ export interface NormalizedPredicate {
   isSwapped: boolean;
 }
 
-interface GuardKeyState {
-  keys: WeakMap<Guard, number>;
-  shapes: Map<string, number>;
-  nextKey: number;
-}
+const guardKeys = new WeakMap<Guard, number>();
+const guardShapes = new Map<string, number>();
+let nextGuardKey = 0;
 
 /** `!flag ? A : B` decides the same variable as `flag ? B : A`; both are read as the latter. */
 export const normalizePredicate = (
@@ -170,8 +168,8 @@ export const negateGuard = (guard: Guard): Guard => {
 const getVariableKey = (variable: SymbolicVariable): string =>
   JSON.stringify([variable.input, variable.path, variable.measure]);
 
-const getGuardKey = (guard: Guard, state: GuardKeyState): number => {
-  const cached = state.keys.get(guard);
+const getGuardKey = (guard: Guard): number => {
+  const cached = guardKeys.get(guard);
   if (cached !== undefined) return cached;
   let shape: string;
   switch (guard.kind) {
@@ -196,22 +194,22 @@ const getGuardKey = (guard: Guard, state: GuardKeyState): number => {
       shape = JSON.stringify([guard.kind, getVariableKey(guard.variable), guard.values]);
       break;
     case "not":
-      shape = JSON.stringify([guard.kind, getGuardKey(guard.operand, state)]);
+      shape = JSON.stringify([guard.kind, getGuardKey(guard.operand)]);
       break;
     case "and":
     case "or":
       shape = JSON.stringify([
         guard.kind,
-        guard.operands.map((operand) => getGuardKey(operand, state)),
+        guard.operands.map(getGuardKey),
       ]);
       break;
   }
-  let key = state.shapes.get(shape);
+  let key = guardShapes.get(shape);
   if (key === undefined) {
-    key = state.nextKey++;
-    state.shapes.set(shape, key);
+    key = nextGuardKey++;
+    guardShapes.set(shape, key);
   }
-  state.keys.set(guard, key);
+  guardKeys.set(guard, key);
   return key;
 };
 
@@ -223,17 +221,12 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
     return constantGuard(absorbing);
   const remaining: Guard[] = [];
   const remainingKeys = new Set<number>();
-  const keyState: GuardKeyState = {
-    keys: new WeakMap(),
-    shapes: new Map(),
-    nextKey: 0,
-  };
   for (const operand of flattened) {
     if (operand.kind === "constant") continue;
-    const key = getGuardKey(operand, keyState);
+    const key = getGuardKey(operand);
     if (remainingKeys.has(key)) continue;
     const complement = negateGuard(operand);
-    if (remainingKeys.has(getGuardKey(complement, keyState))) return constantGuard(absorbing);
+    if (remainingKeys.has(getGuardKey(complement))) return constantGuard(absorbing);
     remaining.push(operand);
     remainingKeys.add(key);
   }
