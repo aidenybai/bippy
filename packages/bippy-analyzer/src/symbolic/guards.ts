@@ -263,14 +263,31 @@ const mergeEqualityDisjuncts = (guards: Guard[]): Guard[] => {
   });
 };
 
-const isAbsorbedDisjunct = (guard: Guard, disjuncts: Map<number, Guard[]>): boolean =>
-  guard.kind === "and" &&
-  guard.operands.some(
-    (operand) =>
-      hasEquivalentGuard(disjuncts, operand) ||
-      (operand.kind === "or" &&
-        operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))),
-  );
+const isAbsorbedDisjunct = (guard: Guard, disjuncts: Map<number, Guard[]>): boolean => {
+  if (guard.kind !== "and") return false;
+  if (
+    guard.operands.some(
+      (operand) =>
+        hasEquivalentGuard(disjuncts, operand) ||
+        (operand.kind === "or" &&
+          operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))),
+    )
+  )
+    return true;
+  const operands = indexGuards(guard.operands);
+  for (const candidates of disjuncts.values()) {
+    for (const candidate of candidates) {
+      if (
+        candidate !== guard &&
+        candidate.kind === "and" &&
+        candidate.operands.length < guard.operands.length &&
+        candidate.operands.every((operand) => hasEquivalentGuard(operands, operand))
+      )
+        return true;
+    }
+  }
+  return false;
+};
 
 const reduceCoveredNegation = (guard: Guard, disjuncts: Map<number, Guard[]>): Guard => {
   if (guard.kind !== "and") return guard;

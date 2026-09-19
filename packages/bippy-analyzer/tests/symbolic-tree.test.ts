@@ -158,6 +158,9 @@ describe("symbolic tree: guard algebra", () => {
   it("absorbs conjunctions already covered by another disjunct", () => {
     const isOpen = truthyGuard(variable("#3"));
     expect(orGuard([andGuard([isTruthy, isBeta]), isTruthy])).toEqual(isTruthy);
+    expect(orGuard([andGuard([isTruthy, isBeta, isOpen]), andGuard([isTruthy, isBeta])])).toEqual(
+      andGuard([isTruthy, isBeta]),
+    );
     expect(
       orGuard([orGuard([isTruthy, isBeta]), andGuard([orGuard([isTruthy, isBeta]), isOpen])]),
     ).toEqual(orGuard([isTruthy, isBeta]));

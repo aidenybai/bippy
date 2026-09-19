@@ -716,13 +716,12 @@ export const isGuardCompatibleWithActivePath = (base: Guard, candidate: Guard): 
     const component = baseAnalysis.componentByKey.get(key);
     if (component !== undefined) overlappingComponents.add(component);
   }
-  if (overlappingComponents.size === 0) return solveGuards([narrowedCandidate]) !== null;
-  return (
-    solveGuards([
-      ...[...overlappingComponents].flatMap((component) => component.guards),
-      narrowedCandidate,
-    ]) !== null
-  );
+  return overlappingComponents.size === 0
+    ? solveGuards([narrowedCandidate]) !== null
+    : solveGuards([
+        ...[...overlappingComponents].flatMap((component) => component.guards),
+        narrowedCandidate,
+      ]) !== null;
 };
 
 export const areGuardsSatisfiable = (guards: Guard[]): boolean => {
