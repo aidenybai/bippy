@@ -188,9 +188,12 @@ const pickNumber = (literals: Literal[], isInteger: boolean): number | null => {
   }
   const [lower, upper] = integerBounds(domain);
   if (isInteger && lower > upper) return null;
-  const excluded = others.filter(
-    (literal) => literal.isNegated || literal.atom.kind === "truthy",
-  ).length;
+  const excluded = others.reduce((total, literal) => {
+    if (literal.atom.kind === "truthy") return total + 1;
+    if (!literal.isNegated) return total;
+    if (literal.atom.kind === "in-set") return total + literal.atom.values.length;
+    return total + 1;
+  }, 0);
   const start = Number.isFinite(lower) ? lower : Number.isFinite(upper) ? upper - excluded - 2 : 0;
   const end = Number.isFinite(upper) ? upper : start + excluded + 2;
   for (let candidate = start; candidate <= end; candidate++) {

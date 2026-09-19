@@ -12,6 +12,7 @@ import {
   primitiveValue,
   unknownValue,
 } from "../src/evaluate/values.js";
+import { solveGuards } from "../src/symbolic/guard-solver.js";
 import {
   andGuard,
   countGuardAtoms,
@@ -89,8 +90,11 @@ describe("flattened predicates", () => {
     if (!predicate.choice) throw new Error("Expected a choice predicate");
     const guards = predicateGuards(predicate, 50);
     const namedValues = Array.from({ length: 49 }, (_, index) => index);
-    expect(guards.at(-1)).toEqual(negateGuard(inSetGuard(predicate.choice, namedValues)));
+    const catchAll = guards.at(-1);
+    if (!catchAll) throw new Error("Expected a catch-all guard");
+    expect(catchAll).toEqual(negateGuard(inSetGuard(predicate.choice, namedValues)));
     expect(guards.reduce((total, guard) => total + countGuardAtoms(guard), 0)).toBe(50);
+    expect(solveGuards([catchAll])).toEqual([{ variable: predicate.choice, value: 49 }]);
   });
 
   it("accepts serialized predicates predating per-alternative guards", () => {
