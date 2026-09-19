@@ -1,7 +1,7 @@
 import { resolvedPromiseValue } from "../evaluate/promises.js";
 import { recordInputSource } from "../evaluate/predicates.js";
 import { nativeFunction } from "../evaluate/stubs.js";
-import { unknownValue } from "../evaluate/values.js";
+import { objectValue, unknownValue } from "../evaluate/values.js";
 import type { LibraryValueProvider, ModeledExports, StaticValue } from "../types.js";
 
 export const TAURI_PACKAGES = ["@tauri-apps/api/core"];
@@ -10,9 +10,11 @@ export const TAURI_MODELED_EXPORTS: ModeledExports = {
 };
 
 const invoke = (): StaticValue =>
-  nativeFunction("invoke", () =>
+  nativeFunction("invoke", ([command]) =>
     resolvedPromiseValue(
-      recordInputSource(unknownValue("result returned by a Tauri command"), "unknown"),
+      command?.kind === "primitive" && command.value === "load_settings"
+        ? objectValue()
+        : recordInputSource(unknownValue("result returned by a Tauri command"), "unknown"),
     ),
   );
 
